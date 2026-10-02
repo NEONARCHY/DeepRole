@@ -1,4 +1,5 @@
 import type { AdapterStatus, DeepSeekAdapter } from "../core/types";
+import { estimateTokens } from "../core/text";
 
 const COMPOSER_SELECTORS = [
   "textarea:not([disabled])",
@@ -29,24 +30,25 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
       : composer.textContent ?? "";
   }
 
-  getRecentMessages(limit: number): string[] {
+  getRecentMessages(limit: number, includeServiceTurns = false): string[] {
     const values: { element: HTMLElement; text: string }[] = [];
     const seen = new Set<string>();
     const identifiedTurns: HTMLElement[] = [];
     for (const selector of MESSAGE_SELECTORS) {
       for (const element of document.querySelectorAll<HTMLElement>(selector)) {
         if (element.closest("deeprole-page-widget")) continue;
-        const text = (element.innerText || element.textContent || "").trim();
-        if (element.closest("[data-deeprole-service-reply='true']")
+        const text = (element.innerText || (element.querySelector("[data-deeprole-choices-payload]") ? "" : element.textContent) || "").trim();
+        const serviceTurn = Boolean(element.closest("[data-deeprole-service-reply='true']"))
           || text.startsWith("[DeepRole Service]")
-          || text.includes("<deeprole_data>")) continue;
+          || text.includes("<deeprole_data>");
+        if (serviceTurn && !includeServiceTurns) continue;
         const identified = selector === "[data-message-id]";
-        if (text.length < (identified ? 1 : 2) || text.length > 30_000) continue;
+        if (text.length < (identified ? 1 : 2) || text.length > (includeServiceTurns ? 200_000 : 30_000)) continue;
         if (identifiedTurns.some((turn) => turn.contains(element) || element.contains(turn))) continue;
         // Identified turns can legitimately have identical text ("continue", "?").
         // Text deduplication is only a fallback for ambiguous CSS-only elements.
         if (!identified && seen.has(text)) continue;
-        if (!isVisible(element)) continue;
+        if (!isVisible(element) && !(includeServiceTurns && (identified || serviceTurn))) continue;
         if (identified) identifiedTurns.push(element);
         seen.add(text);
         values.push({ element, text });
@@ -59,6 +61,11 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
 
   getMessageCount(): number {
     return this.getRecentMessages(500).length;
+  }
+
+  getConversationEstimate(limit = 500) {
+    const messages = this.getRecentMessages(limit, true);
+    return { estimatedTokens: estimateTokens(messages.join("\n\n")), messageCount: messages.length, atLeast: messages.length >= limit };
   }
 
   isGenerating(): boolean {

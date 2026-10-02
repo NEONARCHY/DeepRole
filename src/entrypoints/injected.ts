@@ -1,13 +1,50 @@
 import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText } from "../core/request-injection";
+import { estimateChatHistory } from "../core/chat-history";
 
 export default defineUnlistedScript(() => {
   const originalFetch = window.fetch.bind(window);
   const SOURCE = "deeprole-page-bridge";
   const pending = new Map<string, (value: string | null) => void>();
   window.addEventListener("message", (event) => {
-    if (event.source !== window || event.data?.source !== "deeprole-extension" || event.data.type !== "CONTEXT_READY") return;
+    if (event.source !== window || event.data?.source !== "deeprole-extension") return;
+    if (event.data.type === "CHAT_HISTORY_ESTIMATE_REQUEST") {
+      const { requestId, chatId } = event.data;
+      if (typeof requestId === "string" && requestId.length <= 120 && typeof chatId === "string" && /^[\w-]{1,120}$/u.test(chatId)) {
+        void readChatHistoryEstimate(requestId, chatId);
+      }
+      return;
+    }
+    if (event.data.type !== "CONTEXT_READY") return;
     pending.get(event.data.id)?.(event.data.ok && typeof event.data.context === "string" ? event.data.context : null);
   });
+  async function readChatHistoryEstimate(requestId: string, chatId: string): Promise<void> {
+    let estimate = null;
+    const currentId = location.pathname.match(/\/chat\/s\/([^/?#]+)/i)?.[1] ?? location.pathname.match(/\/chat\/([^/?#]+)/i)?.[1];
+    if (currentId !== chatId) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      // The token stays in the page. Only aggregate counts cross into the extension.
+      let token = localStorage.getItem("userToken") ?? "";
+      if (token.startsWith("{")) {
+        const parsed: unknown = JSON.parse(token);
+        token = parsed && typeof parsed === "object" && "value" in parsed && typeof parsed.value === "string" ? parsed.value : "";
+      }
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await originalFetch(`/api/v0/chat/history_messages?chat_session_id=${encodeURIComponent(chatId)}`, {
+        method: "GET", headers, credentials: "same-origin", cache: "no-store", signal: controller.signal,
+      });
+      if (!response.ok || Number(response.headers.get("content-length") ?? 0) > 30_000_000) throw new Error("history-unavailable");
+      const payload = await response.text();
+      if (payload.length > 30_000_000) throw new Error("history-too-large");
+      estimate = estimateChatHistory(JSON.parse(payload));
+    } catch { /* The page-only estimate remains available. */ }
+    finally { window.clearTimeout(timer); }
+    if (currentId === (location.pathname.match(/\/chat\/s\/([^/?#]+)/i)?.[1] ?? location.pathname.match(/\/chat\/([^/?#]+)/i)?.[1])) {
+      window.postMessage({ source: SOURCE, type: "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
+    }
+  }
   function freshContext(id: string, draft: string): Promise<string | null> {
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {

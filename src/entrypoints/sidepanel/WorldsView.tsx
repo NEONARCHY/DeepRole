@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { Check, ChevronDown, Plus } from "lucide-react";
 import { formatRecordCount, menuText } from "../../core/menu-i18n";
 import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
@@ -29,6 +30,7 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
   const [importer, setImporter] = useState(false);
   const [view, setView] = useState<"map" | "list" | "manage">("map");
   const [mapOpen, setMapOpen] = useState(false);
+  const [createWorldInMap, setCreateWorldInMap] = useState(false);
   const [sceneBusy, setSceneBusy] = useState(false);
   const mounted = useRef(false);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -39,12 +41,12 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
   const worldConnected = Boolean(world && props.connected && props.activeWorldId === world.id);
   useEffect(() => {
     if (!world || props.openMapWorldId !== world.id) return;
-    setView("map"); setMapOpen(true); props.onMapOpened?.();
+    setView("map"); setCreateWorldInMap(false); setMapOpen(true); props.onMapOpened?.();
   }, [props.openMapWorldId, world?.id]);
   const entities = props.entities.filter((e) => e.worldId === world?.id);
   const entries = props.entries.filter((e) => e.bookId ? props.books.find((b) => b.id === e.bookId)?.worldId === world?.id : e.worldId === world?.id);
   function editNode(node: LoreNode, worldId = world?.id) {
-    setMapOpen(false);
+    setMapOpen(false); setCreateWorldInMap(false);
     if (worldId) props.onWorld(worldId);
     if (node.kind === "entry") { const entry = props.entries.find((entry) => entry.id === node.recordId); if (entry) props.onEntry(entry); }
     else if (node.kind === "book") { const book = props.books.find((book) => book.id === node.recordId); if (book) props.onBook(book); }
@@ -62,13 +64,18 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
     const affected = baseEntries.filter((e) => Boolean(e.entityIds?.includes(value.id)) !== linked.includes(e.id));
     await repository.commitChecked([{ kind: "entity", id: value.id, data: value }, ...affected.map((e) => ({ kind: "entry" as const, id: e.id, data: { ...e, entityIds: [...(e.entityIds ?? []).filter((id) => id !== value.id), ...(linked.includes(e.id) ? [value.id] : [])], updatedAt: Date.now() } }))], [], [{ kind: "entity", id: value.id, data: expected }, ...baseEntries.map((entry) => ({ kind: "entry" as const, id: entry.id, data: entry }))]);
   });
+  function startNewWorld() {
+    setView("map"); setImporter(false); setEditor(null); setMessage(""); setCreateWorldInMap(true); setMapOpen(true);
+  }
+  function closeMap() { setMapOpen(false); setCreateWorldInMap(false); }
   return <div className="view-stack worlds-view" aria-busy={busy}>
     <div className="view-title"><div><small>DeepRole</small><h1>{mt("lore")}</h1></div></div>
     <p className="dr-view-subtitle">{world ? x("mapHint") : x("startHint")}</p>
-    <div className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => setEditor({ kind: "world" })}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => setImporter(!importer)}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
+    <div className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => setImporter(!importer)}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
+    {message && <p className="rp-status" role="status">{message}</p>}
+    <WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("createNewWorld")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} />
     {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
     {editor?.kind === "world" && <WorldEditor key={editor.id ?? "new-world"} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
-    {props.worlds.length > 0 && <Field name={t("worldLibrary")}><select aria-label={t("worldLibrary")} value={props.selectedWorld ?? ""} onChange={(e) => { props.onWorld(e.target.value || null); setEditor(null); }}><option value="">{t("unassigned")}</option>{props.worlds.map((w) => <option value={w.id} key={w.id}>{w.name}</option>)}</select></Field>}
     {world && <section className={worldConnected ? "lore-connection is-attached" : "lore-connection"} aria-label={mt("useWorld")}>
       <strong>{worldConnected ? mt("attached") : mt("libraryOnly")}</strong>
       <p>{x(worldConnected ? "connectedHint" : "libraryHint")}</p>
@@ -83,9 +90,9 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
     {view === "list" && props.memoryList}
     {view === "map" && world && <section className="rp-card lm-launch-card"><span className="lm-preview-orb" aria-hidden="true">✧</span><h2>{world.name}</h2><p className="rp-hint">{mt("available")}: {formatRecordCount(props.locale, entries.length)}</p><button className="button primary" onClick={() => setMapOpen(true)}>{t("mapOpen")}</button><button className="button secondary small" onClick={() => props.onEntry("new")}>{t("addMemory")}</button></section>}
     {view === "map" && !world && props.memoryList}
-    {world && <>
-      {mapOpen && <MapWorkspace locale={props.locale} worlds={props.worlds} initialWorldId={world.id} activeWorldId={props.connected ? props.activeWorldId : null} onSelect={props.onWorld} onClose={() => setMapOpen(false)} onCreate={async (name) => {
-        const now = Date.now(); const created: WorldProfile = { id: createId("world"), name, description: "", useDescriptionInContext: false, color: BOOK_COLORS[0]!, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
+    {(world || createWorldInMap) && <>
+      {mapOpen && <MapWorkspace key={createWorldInMap ? "create-new-world" : world?.id ?? "selected-world"} locale={props.locale} worlds={props.worlds} initialWorldId={createWorldInMap ? null : world?.id ?? null} startInCreate={createWorldInMap} activeWorldId={props.connected ? props.activeWorldId : null} onSelect={props.onWorld} onClose={closeMap} onCreate={async (draft) => {
+        const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...draft, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
         await repository.putIfUnchanged("world", created, null); await props.onChanged(); return created;
       }} render={(world, pane) => <LoreMap embedded activePane={pane.active} onRegister={pane.onRegister} locale={props.locale} world={world} books={props.books.filter((b) => b.worldId === world.id)} entries={props.entries.filter((e) => e.bookId ? props.books.find((b) => b.id === e.bookId)?.worldId === world.id : e.worldId === world.id)} entities={props.entities.filter((e) => e.worldId === world.id)} templates={props.templates.filter((v) => v.worldId === world.id)} selection={props.activeWorldId === world.id ? props.selection : undefined} overrides={props.activeWorldId === world.id ? props.overrides : undefined} onMemoryUse={props.connected && props.activeWorldId === world.id ? props.onMemoryUse : undefined} onActivation={async (entry, activation: ActivationMode, history) => { await changeMapActivations(world.id, [entry], activation, repository, history); await props.onChanged(); }} onBranchActivation={async (entries, activation, history, branchId) => { await changeMapActivations(world.id, entries, activation, repository, history, branchId); await props.onChanged(); }} confirmDeletions={props.confirmDeletions} onClose={pane.onClose} onEdit={(node) => pane.onExit(() => editNode(node, world.id))}
         sceneControls={props.connected && props.scene.worldId === world.id ? <fieldset className="lm-scene-controls" disabled={sceneBusy}><SceneControls worldLocked compact locale={props.locale} worlds={props.worlds} entities={props.entities} books={props.books} scene={props.scene} onChange={async (next) => { setSceneBusy(true); try { return await props.onScene(next); } finally { setSceneBusy(false); } }} /></fieldset> : undefined}
@@ -97,7 +104,7 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
         onCategory={async (id, category, history, layout) => { if (layout && category) await placeMapEntry(world.id, id, category, layout, repository, history); else await changeMapCategory(world.id, id, category, repository, history); await props.onChanged(); }}
         onLink={async (from, to, link, history) => { await changeMapLink(world.id, from, to, link, repository, history); await props.onChanged(); }}
         onPerson={async (name, token, ids) => { const id = await confirmMapPerson(world.id, name, token, ids); await props.onChanged(); return id; }} />} />}
-      {view === "manage" && <>
+      {world && view === "manage" && <>
       <section className="rp-card"><header><h2>{world.name}</h2></header><div className="button-row">
         <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "world", id: world.id })}>{t("edit")}</HelpButton>
         </div><details><summary>{uiText(props.locale, "worldTools")}</summary><div className="button-row"><HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const copy = cloneWorldPackage(await exportWorld(world.id), t("copyName", { name: world.name })); await repository.mergeRecords(copy); props.onWorld(copy.find((r) => r.kind === "world")!.id); })}>{t("duplicate")}</HelpButton>
@@ -130,7 +137,57 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
       </section>
       </>}
     </>}
-    {message && <p className="rp-status" role="status">{message}</p>}
+  </div>;
+}
+
+function WorldLibraryPicker(props: { label: string; worlds: WorldProfile[]; selectedId: string | null; unassigned: string; createLabel: string; onSelect: (id: string | null) => void; onCreate: () => void }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const items = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusIndex = useRef<number | null>(null);
+  const id = useId().replaceAll(":", "");
+  const selected = props.worlds.find((world) => world.id === props.selectedId);
+  const itemCount = props.worlds.length + 2;
+  const selectedIndex = selected ? props.worlds.findIndex((world) => world.id === selected.id) + 1 : 0;
+  useEffect(() => {
+    if (!open) return;
+    if (focusIndex.current !== null) { items.current[focusIndex.current]?.focus(); focusIndex.current = null; }
+    const outside = (event: PointerEvent | FocusEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); setOpen(false); trigger.current?.focus(); } };
+    document.addEventListener("pointerdown", outside); document.addEventListener("focusin", outside); document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("focusin", outside); document.removeEventListener("keydown", escape); };
+  }, [open]);
+  function moveFocus(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const current = items.current.findIndex((item) => item === document.activeElement);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? itemCount - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + itemCount) % itemCount;
+    items.current[next]?.focus();
+  }
+  function select(id: string | null) { props.onSelect(id); setOpen(false); trigger.current?.focus(); }
+  return <div className="dr-world-library">
+    <span className="dr-world-library-label" id={id + "-label"}>{props.label}</span>
+    <div className="dr-world-picker" ref={root}>
+      <button ref={trigger} className="dr-world-picker-trigger" type="button" aria-label={`${props.label}: ${selected?.name ?? props.unassigned}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id + "-menu"} onClick={() => setOpen((value) => !value)} onKeyDown={(event) => {
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+        event.preventDefault(); focusIndex.current = event.key === "ArrowDown" ? selectedIndex : itemCount - 1; setOpen(true);
+      }}>
+        <span className={selected ? "dr-world-picker-dot" : "dr-world-picker-dot is-empty"} style={selected ? { backgroundColor: selected.color } : undefined} aria-hidden="true" />
+        <span className="dr-world-picker-name">{selected?.name ?? props.unassigned}</span>
+        <ChevronDown size={16} aria-hidden="true" />
+      </button>
+      {open && <div className="dr-world-picker-menu" id={id + "-menu"} role="menu" aria-labelledby={id + "-label"} onKeyDown={moveFocus}>
+        <button ref={(node) => { items.current[0] = node; }} type="button" role="menuitemradio" aria-checked={!selected} onClick={() => select(null)}>
+          <span className="dr-world-picker-dot is-empty" aria-hidden="true" /><span className="dr-world-picker-name">{props.unassigned}</span>{!selected && <Check size={15} aria-hidden="true" />}
+        </button>
+        {props.worlds.map((world, index) => <button ref={(node) => { items.current[index + 1] = node; }} type="button" role="menuitemradio" aria-checked={world.id === selected?.id} key={world.id} onClick={() => select(world.id)}>
+          <span className="dr-world-picker-dot" style={{ backgroundColor: world.color }} aria-hidden="true" /><span className="dr-world-picker-name">{world.name}</span>{world.id === selected?.id && <Check size={15} aria-hidden="true" />}
+        </button>)}
+        <div className="dr-world-picker-divider" role="separator" />
+        <button ref={(node) => { items.current[props.worlds.length + 1] = node; }} className="dr-world-picker-create" type="button" role="menuitem" onClick={() => { setOpen(false); props.onCreate(); }}><Plus size={16} aria-hidden="true" />{props.createLabel}</button>
+      </div>}
+    </div>
   </div>;
 }
 

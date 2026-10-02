@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { BookOpen, ChevronDown, ChevronRight, FileText, Globe2, Link2, MapPin, Maximize2, Minimize2, Plus, Redo2, RotateCcw, Search, Sparkles, Undo2, UserRound, Users, X, ZoomIn, ZoomOut } from "lucide-react";
-import { arrangeVisibleLore, buildLoreGraph, loreAncestors, loreBranchEntryIds, loreExpandedIds, loreOverviewZoom, loreOrbitRadius, visibleLoreNodes, type LoreNode, type LoreNodeKind } from "../../core/lore-map";
+import { BookOpen, ChevronDown, ChevronRight, FileText, Globe2, Link2, MapPin, Plus, Redo2, RotateCcw, Search, Sparkles, Undo2, UserRound, Users, X, ZoomIn, ZoomOut } from "lucide-react";
+import { arrangeVisibleLore, buildLoreGraph, loreAncestors, loreBranchEntryIds, loreExpandedIds, loreOverviewZoom, visibleLoreNodes, type LoreNode, type LoreNodeKind } from "../../core/lore-map";
 import { LORE_CATEGORIES, loreCategoryLabel, validateLoreMapLayout } from "../../core/lore-categories";
 import { suggestLoreConnections } from "../../core/entry-links";
 import { createId } from "../../core/id";
@@ -117,7 +117,6 @@ export function LoreMap(props: LoreMapProps) {
   const nodes = useMemo(() => new Map(graph.nodes.map((node) => [node.id, node])), [graph]);
   const graphRef = useRef(graph); graphRef.current = graph;
   const selected = nodes.get(selectedId) ?? graph.nodes[0]!;
-  const orbitRadius = loreOrbitRadius(model.nodes.filter((node) => node.parentId === model.nodes[0]!.id).length);
   const visible = useMemo(() => visibleLoreNodes(graph, expandedIds), [graph, expandedIds]);
   const visibleNodeKey = JSON.stringify([...visible]);
   useEffect(() => { setSelectionIds((ids) => ids.filter((id) => visible.has(id))); }, [visibleNodeKey]);
@@ -379,20 +378,25 @@ export function LoreMap(props: LoreMapProps) {
   function tool(label: string, text: string, icon: ReactNode, action: () => void, pressed?: boolean) { return <span className="lm-tool"><TooltipButton onClick={action} aria-label={label} tooltip={text} aria-pressed={pressed}>{icon}</TooltipButton></span>; }
 
   return <section ref={dialog} className={"dr-loremap is-" + mode + (props.embedded ? " is-pane" : "")} role={props.embedded ? "group" : "dialog"} aria-modal={props.embedded ? undefined : mode === "full"} aria-label={props.embedded ? props.world.name : t("worldMap")} aria-busy={closing}>
-    <header className="lm-header"><div><small>DEEPROLE · {t("worldMap")}</small><h2>{props.world.name}</h2><span className="lm-chat-status">{m(props.connectedToChat ? "worldAttached" : "worldDetached")}</span></div>{!props.connectedToChat && props.canConnect && <TooltipButton className="button secondary lm-connect-world" aria-label={m("attachWorld")} tooltip={m("attachWorldHint")} disabled={connectingWorld} onClick={() => { setConnectingWorld(true); setConnectWorldError(false); void props.onConnect().then((ok) => setConnectWorldError(!ok)).catch(() => setConnectWorldError(true)).finally(() => setConnectingWorld(false)); }}>{m("attachWorld")}</TooltipButton>}<span className={"lm-save " + (saveError ? "is-error" : "")} role="status">{pending ? m("saving") : saveError ? m("failed") : m("saved")}</span>{saveError && <TooltipButton aria-label={m("retry")} onClick={() => { const tasks = failures.current.splice(0); setSaveError(false); tasks.forEach((task) => void enqueue(task)); }}><RotateCcw /></TooltipButton>}
-      {!props.embedded && <><TooltipButton onClick={() => setMode(mode === "full" ? "compact" : "full")} aria-label={t(mode === "full" ? "mapCompact" : "mapFullscreen")}>{mode === "full" ? <Minimize2 /> : <Maximize2 />}</TooltipButton><TooltipButton onClick={() => close.current()} aria-label={t("mapClose")}><X /></TooltipButton></>}</header>
     {props.sceneControls}
     <div className="lm-tools" inert={historyBusy}><label className="lm-search"><Search /><input ref={search} aria-label={t("mapSearch")} placeholder={t("mapSearch")} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
-      {tool(t("mapZoomOut"), m("controlsHelp"), <ZoomOut />, () => zoomBy(1 / 1.2))}<output aria-label={t("mapScale")}>{Math.round(camera.zoom * 100)}%</output>{tool(t("mapZoomIn"), m("controlsHelp"), <ZoomIn />, () => zoomBy(1.2))}
-      {tool(m("overview"), m("branchHelp"), <Globe2 />, () => { if (!editorGuard.current()) return; setNewEntry(null); setCollapsedIds([]); setSelectedId(graph.nodes[0]!.id); centerOverview(); })}
-      {tool(m("allLinks"), m("allLinksHint"), <Link2 />, () => setShowAllLinks(!showAllLinks), showAllLinks)}
-      <TooltipButton className="button secondary" aria-label={m("newBranch")} tooltip={m("branchHint")} onClick={() => { setNewBranch(!newBranch); setBranchParent(isCategory ? selected.recordId : ""); }}><Plus />{m("newBranch")}</TooltipButton>
-      <TooltipButton className="button primary lm-add-entry" aria-label={m("newEntry")} tooltip={m("writeFirst")} onClick={createEntry}><Plus size={16} />{m("newEntry")}</TooltipButton>
+      <div className="lm-map-view-tools" role="group" aria-label={m("controls")}>
+        {tool(t("mapZoomOut"), m("controlsHelp"), <ZoomOut />, () => zoomBy(1 / 1.2))}<output aria-label={t("mapScale")}>{Math.round(camera.zoom * 100)}%</output>{tool(t("mapZoomIn"), m("controlsHelp"), <ZoomIn />, () => zoomBy(1.2))}
+        {tool(m("overview"), m("branchHelp"), <Globe2 />, () => { if (!editorGuard.current()) return; setNewEntry(null); setCollapsedIds([]); setSelectedId(graph.nodes[0]!.id); centerOverview(); })}
+        {tool(m("allLinks"), m("allLinksHint"), <Link2 />, () => setShowAllLinks(!showAllLinks), showAllLinks)}
+      </div>
+      <div className="lm-map-actions">
+        {!props.connectedToChat && props.canConnect && <TooltipButton className="button secondary lm-connect-world" aria-label={m("attachWorld")} tooltip={m("attachWorldHint")} disabled={connectingWorld} onClick={() => { setConnectingWorld(true); setConnectWorldError(false); void props.onConnect().then((ok) => setConnectWorldError(!ok)).catch(() => setConnectWorldError(true)).finally(() => setConnectingWorld(false)); }}>{m("attachWorld")}</TooltipButton>}
+        <TooltipButton className="button secondary lm-branch-action" aria-label={m("newBranch")} tooltip={m("branchHint")} onClick={() => { setNewBranch(!newBranch); setBranchParent(isCategory ? selected.recordId : ""); }}><Plus />{m("newBranch")}</TooltipButton>
+        <TooltipButton className="button primary lm-add-entry" aria-label={m("newEntry")} tooltip={m("writeFirst")} onClick={createEntry}><Plus size={16} />{m("newEntry")}</TooltipButton>
+      </div>
       <span className="lm-history-tools" role="group" aria-label={m("history")}>
         <TooltipButton aria-label={m("undo")} tooltip={m("undoHint")} aria-keyshortcuts="Control+Z Meta+Z" disabled={pending > 0 || saveError || !history.canUndo} onClick={() => historyAction.current("undo")}><Undo2 /></TooltipButton>
         <TooltipButton aria-label={m("redo")} tooltip={m("redoHint")} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z" disabled={pending > 0 || saveError || !history.canRedo} onClick={() => historyAction.current("redo")}><Redo2 /></TooltipButton>
         <TooltipButton className="lm-session-reset" aria-label={m("sessionReset")} tooltip={m("sessionResetHint")} disabled={pending > 0 || saveError || !history.canReset && !newBranch && !connection && !renaming} onClick={() => historyAction.current("reset")}><RotateCcw /><span>{m("sessionReset")}</span></TooltipButton>
       </span>
+      <span className={"lm-save " + (saveError ? "is-error" : "")} role="status">{pending ? m("saving") : saveError ? m("failed") : m("saved")}</span>
+      {saveError && <TooltipButton aria-label={m("retry")} tooltip={m("retry")} onClick={() => { const tasks = failures.current.splice(0); setSaveError(false); tasks.forEach((task) => void enqueue(task)); }}><RotateCcw /></TooltipButton>}
     {query.trim() && <div className="lm-results">{results.map((node) => <button key={node.id} onClick={() => { if (connectFrom) startConnection(connectFrom, node.id); else reveal(node.id); setQuery(""); }}>{node.title}</button>)}{!results.length && <span>{t("mapNoResults")}</span>}</div>}
     </div>
     {historyError && <div className="lm-history-error" role="alert">{m(historyError)}</div>}
@@ -412,7 +416,6 @@ export function LoreMap(props: LoreMapProps) {
       onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => { const current = drag.current; if (current?.kind === "node" && current.before) { layoutRef.current = current.before; setLayout(current.before); } if (current?.kind === "select") setSelectionIds(current.baseSelection ?? []); drag.current = null; setMarquee(null); setGhost(null); }}>
       <div className="lm-space" style={{ width: graph.width, height: graph.height, transform: "translate(" + camera.x + "px, " + camera.y + "px) scale(" + camera.zoom + ")" }}>
         <svg className="lm-edges" width={Math.max(graph.width, ...graph.nodes.map((n) => n.x + 300))} height={Math.max(graph.height, ...graph.nodes.map((n) => n.y + 200))} aria-hidden="true"><defs><marker id={marker} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#89d7ff" /></marker></defs>
-          {!Object.keys(layout.positions).length && <g className="lm-orbits"><circle cx={graph.nodes[0]!.x} cy={graph.nodes[0]!.y} r={orbitRadius} /><circle cx={graph.nodes[0]!.x} cy={graph.nodes[0]!.y} r={150} /><circle cx={graph.nodes[0]!.x} cy={graph.nodes[0]!.y} r={175} /></g>}
           {graph.edges.filter((edge) => visible.has(edge.from) && visible.has(edge.to) && (edge.kind === "branch" || showAllLinks || edge.from === selected.id || edge.to === selected.id)).map((edge) => {
             const from = nodes.get(edge.from)!; const to = nodes.get(edge.to)!; const focused = edge.from === selected.id || edge.to === selected.id; const lore = edge.kind === "context" || edge.kind === "reference";
             const dx = to.x - from.x; const dy = to.y - from.y; const horizontal = Math.abs(dx) > Math.abs(dy);
@@ -440,13 +443,13 @@ export function LoreMap(props: LoreMapProps) {
       {marquee && (() => { const box = mapSelectionBox(marquee.start, marquee.end); return <div className="lm-marquee" style={{ left: box.x * camera.zoom + camera.x, top: box.y * camera.zoom + camera.y, width: box.width * camera.zoom, height: box.height * camera.zoom }} />; })()}
       <span className="lm-canvas-note">{selectionIds.length ? m("selectedCards").replace("{count}", String(selectionIds.length)) : showAllLinks ? m("allLinks") : m("selectedLinks")}</span>
     </div>
-    {!detailsOpen && !connection && !newBranch && (!props.entries.length || !hasInteracted) && <section className="lm-start-guide" aria-label={m("startTitle")}><strong>{props.entries.length ? m("nextStep") : m("startTitle")}</strong>{!props.entries.length && <p>{m("startText")}</p>}</section>}
+    {!detailsOpen && !connection && !newBranch && (!props.entries.length || !hasInteracted) && <section className="lm-start-guide" aria-label={m("startTitle")}><strong>{props.entries.length ? m("nextStep") : m("startTitle")}</strong>{!props.entries.length && <><p>{m("startText")}</p><button className="button primary" type="button" onClick={createEntry}>{m("addFirstEntry")}</button></>}</section>}
     {detailsOpen && <aside className="lm-details lm-popover" hidden={!!connection || newBranch} style={popupStyle} aria-label={t("mapDetails")}>
       <div className="lm-detail-heading"><small>{newEntry ? m("newEntry") : t("mapDetails")}</small><TooltipButton aria-label={m("closeDetails")} onClick={() => dismissCard.current()}><X size={16} /></TooltipButton></div><h3>{newEntry ? m("newEntry") : selected.title}</h3>
       {!newEntry && <nav className="lm-breadcrumb" aria-label={m("path")}>{loreAncestors(graph, selected.id).reverse().map((id) => <button key={id} onClick={() => { const node = nodes.get(id); if (node) choose(node); }}>{nodes.get(id)?.title}</button>)}</nav>}
       {(newEntry || entry) && <MapMemoryEditor key={(newEntry ?? entry)!.id} locale={props.locale} entry={(newEntry ?? entry)!} isNew={!!newEntry} modeControl={entry && props.onActivation ? <MemoryModeControl locale={props.locale} value={entry.activation} disabled={pending > 0 || textDirty} onChange={(activation) => { void enqueue(() => props.onActivation!(entry, activation, history)); }} /> : undefined} guard={editorGuard} onDirty={setTextDirty} onSave={props.onSaveEntry} onSaved={(record) => { setNewEntry(null); setSelectedId("entry:" + record.id); const path = new Set(loreAncestors(graphRef.current, "entry:" + record.id)); setCollapsedIds((ids) => ids.filter((id) => !path.has(id))); }} />}
       {!newEntry && <>
-      {selected.kind === "world" && <><p>{m("organization")}</p><div className="lm-section"><div className="lm-detail-heading"><h4>{m("branches")}</h4></div>{(children.get(selected.id) ?? []).map((node) => <button className="lm-branch-list" key={node.id} onClick={() => choose(node)}><i style={{ background: node.color }} />{node.title}<span>{node.count}</span><ChevronRight /></button>)}</div></>}
+      {selected.kind === "world" && <><p>{m("organization")}</p><div className="lm-section"><div className="lm-detail-heading"><h4>{m("branches")}</h4></div>{(children.get(selected.id) ?? []).map((node) => <button className="lm-branch-list" key={node.id} style={{ "--branch-color": node.color } as CSSProperties} onClick={() => choose(node)}><i style={{ background: node.color }} />{node.title}<span>{node.count}</span><ChevronRight /></button>)}</div></>}
       {entry && <div className="lm-section">
         <MemoryUse locale={props.locale} id={entry.id} selection={props.selection} overrides={props.overrides} onChange={props.onMemoryUse} />
         <details><summary>{m("moreActions")}</summary>
@@ -472,7 +475,7 @@ export function LoreMap(props: LoreMapProps) {
         <div className="lm-mode-summary">{(["always", "smart", "manual"] as const).map((mode) => <span key={mode}>{assistantText(props.locale, mode)}: {branchEntries.filter((entry) => entry.activation === mode).length}</span>)}</div>
         {!branchEntries.length ? <p>{m("empty")}</p> : <>
           <input aria-label={m("branchSearch")} placeholder={m("branchSearch")} value={branchQuery} onChange={(e) => { setBranchQuery(e.target.value); setBranchLimit(20); }} />
-          <div className="lm-branch-entries">{matchingBranchEntries.slice(0, branchLimit).map((record) => <article key={record.id}>
+          <div className="lm-branch-entries">{matchingBranchEntries.slice(0, branchLimit).map((record) => <article key={record.id} data-mode={record.activation}>
             <button className="lm-entry-read" onClick={() => { const node = nodes.get("entry:" + record.id); if (node) choose(node); }}>{nodes.get("entry:" + record.id)?.title ?? record.title}<ChevronRight size={14} /></button>
             {!record.enabled && <small>{m("entryDisabled")}</small>}
             {props.selection?.entries.some((item) => item.entry.id === record.id) && <small className="lm-entry-selected">{m("inChatContext")}</small>}

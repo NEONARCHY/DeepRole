@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: DeepRoleSettings = {
       ? "ru"
       : "en",
   onboardingComplete: false,
+  sceneChoicesEnabled: true,
   contextBudget: 2000,
   relevanceThreshold: 6,
   suggestionInterval: 20,

@@ -6,6 +6,8 @@ export interface TabSessionState {
   service?: ServiceRequest | null;
   snapshotId?: string | null;
   snapshotToken?: string | null;
+  continueOnFreshChat?: boolean;
+  continueUntil?: number | null;
   overrides?: MemoryOverrides;
 }
 export type TabSessionGuard = Partial<TabSessionState> & { serviceId?: string | null };

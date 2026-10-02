@@ -14,12 +14,22 @@
 .app-shell .dr-mode-guide .dr-mode-option small, .dr-memory-mode .dr-mode-option small { display: block; font-size: 10px; line-height: 1.45; margin: 4px 0 0; color: inherit; }
 .app-shell .dr-mode-guide .dr-mode-example { margin: 0; min-height: 44px; border-left: 2px solid var(--dr-primary); padding-left: 12px; font-size: 13px; line-height: 1.6; color: var(--dr-text); }
 .app-shell .dr-mode-guide .setting-copy { margin: 0; font-size: 12px; }
-.app-shell .dr-score-guide { padding: 12px; background: #0c151e; border: 1px solid #263747; border-radius: 10px; }
-.app-shell .dr-score-guide dl { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 12px; margin: 12px 0; }
-.app-shell .dr-score-guide dl > div { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
-.app-shell .dr-score-guide dt { font-size: 11px; line-height: 1.5; color: var(--dr-muted); }
-.app-shell .dr-score-guide dd { flex-shrink: 0; margin: 0; font-size: 12px; color: #a8d8fa; font-variant-numeric: tabular-nums; }
-.app-shell .dr-score-guide p { font-size: 11px; line-height: 1.6; color: var(--dr-muted); }
+.app-shell .dr-score-guide { display: grid; gap: 12px; padding: 14px; background: linear-gradient(145deg,#142332,#0c151e 80%); border: 1px solid #35516a; border-radius: 12px; }
+.app-shell .dr-score-guide > header { display: grid; gap: 5px; }
+.app-shell .dr-score-intro, .app-shell .dr-score-example p, .app-shell .dr-score-threshold p, .app-shell .dr-score-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--dr-muted); }
+.app-shell .dr-score-rules { display: grid; gap: 6px; margin: 0; }
+.app-shell .dr-score-rule { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid #293d4e; border-radius: 8px; background: #0e1822; }
+.app-shell .dr-score-rule dt { min-width: 0; color: var(--dr-text); font-size: 12px; line-height: 1.4; }
+.app-shell .dr-score-rule dd { margin: 0; color: #a8d8fa; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.app-shell .dr-score-example { display: grid; gap: 4px; padding: 10px; border-left: 2px solid var(--dr-primary); border-radius: 0 8px 8px 0; background: #102234; }
+.app-shell .dr-score-example strong, .app-shell .dr-score-threshold > strong { font-size: 12px; line-height: 1.4; }
+.app-shell .dr-score-threshold { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--dr-border); }
+.app-shell .dr-score-levels { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.app-shell .dr-score-level { display: grid; justify-items: center; gap: 3px; min-width: 0; padding: 7px 4px; border: 1px solid #293d4e; border-radius: 8px; background: #0e1822; color: var(--dr-muted); text-align: center; }
+.app-shell .dr-score-level b { color: var(--dr-text); font-size: 13px; font-variant-numeric: tabular-nums; }
+.app-shell .dr-score-level small { font-size: 10px; line-height: 1.3; overflow-wrap: anywhere; }
+.app-shell .dr-score-level.is-selected { border-color: #69a9d7; background: #1b354a; color: var(--dr-text); }
+.app-shell .dr-score-note { padding-top: 9px; border-top: 1px solid var(--dr-border); }
 .app-shell .dr-start-choices { display: grid; gap: 12px; }
 .app-shell .dr-start-choice { display: grid; gap: 6px; text-align: left; padding: 18px; background: linear-gradient(125deg,#192e40,#111d28); border: 1px solid #476d8c; border-radius: 14px; color: var(--dr-text); cursor: pointer; }
 .app-shell .dr-start-choice:nth-child(2) { border-color: var(--dr-border); background: #101922; }
@@ -65,4 +75,4 @@
 .app-shell .action-card:disabled:hover { transform: none; }
 @keyframes dr-service-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .dr-service-state.is-busy > svg { animation: none; } }
-@media (max-width: 350px) { .app-shell .dr-score-guide dl { grid-template-columns: 1fr; } .app-shell .dr-settings-nav button { font-size: 11px; } }
+@media (max-width: 350px) { .app-shell .dr-score-guide { padding: 12px; }.app-shell .dr-score-levels { gap: 4px; }.app-shell .dr-score-level { padding-inline: 2px; }.app-shell .dr-settings-nav button { font-size: 11px; } }

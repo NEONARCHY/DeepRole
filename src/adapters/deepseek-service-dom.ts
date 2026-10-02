@@ -1,23 +1,34 @@
 import { parseServiceData, SERVICE_START } from "../core/service-protocol";
 
 export function findDeepestServiceElements(marker: string, root: ParentNode = document): HTMLElement[] {
-  const selector = "article, [data-message-id], [data-testid*='message'], div";
+  const selector = "article, [data-message-id], [data-testid*='message'], div, p, pre, code, span";
   const elements = [...root.querySelectorAll<HTMLElement>(selector)];
   if (root instanceof HTMLElement && root.matches(selector)) elements.unshift(root);
   const matches = elements
-    .filter((element) => (element.innerText || element.textContent || "").includes(marker));
+    .filter((element) => (element.textContent || "").includes(marker));
   return matches.filter((element) => !matches.some((other) => other !== element && element.contains(other)));
 }
 
 /** Read only the reply belonging to this request, even after DOM replacement. */
 export function findServiceResponseElements(requestId: string, root: ParentNode = document): HTMLElement[] {
   return findServiceReplyRows(requestId, root)
-    .flatMap((row) => findDeepestServiceElements("<deeprole_data>", row));
+    .flatMap((row) => findDeepestServiceElements("<deeprole_data>", row)
+      .map((element) => element.dataset.deeprolePayloadHiddenFor ? row : element))
+    .filter((element, index, all) => all.indexOf(element) === index);
 }
 
 /** Find the assistant turn paired with a request, even when it returned an error instead of data. */
 export function findServiceReplyRows(requestId: string, root: ParentNode = document): HTMLElement[] {
   return serviceTurns(root).filter((turn) => turn.requestId === requestId && turn.response).map((turn) => turn.response!);
+}
+
+/** A reload restores DeepSeek's saved reply; suppress completed technical blocks again. */
+export function replaceArchivedMemoryPayloads(summary: string): void {
+  for (const turn of serviceTurns(document)) {
+    if (!turn.requestId || !turn.response) continue;
+    if (parseServiceData(turn.response.textContent || "")?.type !== "memory-suggestions") continue;
+    replaceServicePayloadWithSummary(turn.response, summary);
+  }
 }
 
 /** Replace only the machine-readable payload, preserving any visible explanation around it. */
@@ -60,6 +71,124 @@ export function replaceServicePayloadWithSummary(element: HTMLElement, summary: 
   return true;
 }
 
+export function showServicePreloader(requestId: string, row: HTMLElement, payload: HTMLElement, label: string): void {
+  if (payload !== row && !row.contains(payload)) return;
+  if (payload === row) {
+    hideServicePayloadTail(requestId, payload);
+  } else if (payload.dataset.deeprolePayloadHiddenFor !== requestId) {
+    payload.dataset.deeprolePayloadDisplay = payload.style.getPropertyValue("display");
+    payload.dataset.deeprolePayloadPriority = payload.style.getPropertyPriority("display");
+    payload.dataset.deeprolePayloadHiddenFor = requestId;
+    payload.style.setProperty("display", "none", "important");
+  }
+
+  const existing = [...row.querySelectorAll<HTMLElement>("[data-deeprole-service-preloader]")]
+    .find((element) => element.dataset.deeproleServicePreloader === requestId);
+  if (existing) return;
+
+  const card = row.ownerDocument.createElement("div");
+  card.dataset.deeproleServicePreloader = requestId;
+  card.setAttribute("role", "status");
+  card.setAttribute("aria-live", "polite");
+  card.setAttribute("aria-busy", "true");
+  card.style.cssText = "display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;box-sizing:border-box;margin:14px 0 8px;padding:11px 14px;border:1px solid rgba(126,174,216,.28);border-radius:12px;background:rgba(31,47,60,.78);color:#dceaf5;font:500 13px/1.4 system-ui,sans-serif;";
+  const spinner = row.ownerDocument.createElement("span");
+  spinner.setAttribute("aria-hidden", "true");
+  spinner.style.cssText = "display:inline-block;width:16px;height:16px;flex:0 0 16px;box-sizing:border-box;border:2px solid rgba(151,184,209,.28);border-top-color:#8bc5ef;border-radius:50%;";
+  try {
+    spinner.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 850, iterations: Infinity });
+  } catch { /* The status remains readable if Web Animations are unavailable. */ }
+  const text = row.ownerDocument.createElement("span");
+  text.textContent = label;
+  card.append(spinner, text);
+  row.append(card);
+}
+
+function hideServicePayloadTail(requestId: string, element: HTMLElement): void {
+  const existing = [element, ...element.querySelectorAll<HTMLElement>("[data-deeprole-payload-hidden-for]")]
+    .find((node) => node.dataset.deeprolePayloadHiddenFor === requestId);
+  if (existing) {
+    const card = [...element.querySelectorAll<HTMLElement>("[data-deeprole-service-preloader]")]
+      .find((node) => node.dataset.deeproleServicePreloader === requestId);
+    const visibleTail = element.ownerDocument.createRange();
+    visibleTail.setStartAfter(existing);
+    if (card) visibleTail.setEndBefore(card);
+    else visibleTail.setEnd(element, element.childNodes.length);
+    const beforeCard = visibleTail.toString().trim();
+    let afterCard = "";
+    if (card) {
+      visibleTail.setStartAfter(card);
+      visibleTail.setEnd(element, element.childNodes.length);
+      afterCard = visibleTail.toString().trim();
+    }
+    if (!beforeCard && !afterCard) return;
+    card?.remove();
+    const tail = element.ownerDocument.createRange();
+    tail.setStartAfter(existing);
+    tail.setEnd(element, element.childNodes.length);
+    if (tail.toString().trim()) existing.append(tail.extractContents());
+    if (card) element.append(card);
+    return;
+  }
+  const text = element.textContent ?? "";
+  const start = text.indexOf(SERVICE_START);
+  if (start < 0) return;
+  const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const range = element.ownerDocument.createRange();
+  let offset = 0;
+  let foundStart = false;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const length = node.textContent?.length ?? 0;
+    if (start < offset + length) {
+      range.setStart(node, start - offset);
+      foundStart = true;
+      break;
+    }
+    offset += length;
+  }
+  if (!foundStart) return;
+  range.setEnd(element, element.childNodes.length);
+  const hidden = element.ownerDocument.createElement("span");
+  hidden.dataset.deeprolePayloadHiddenFor = requestId;
+  hidden.style.setProperty("display", "none", "important");
+  hidden.append(range.extractContents());
+  range.insertNode(hidden);
+}
+
+export function removeServicePreloader(requestId: string, rows: HTMLElement[]): void {
+  for (const row of rows) {
+    const nodes = [row, ...row.querySelectorAll<HTMLElement>("*")];
+    for (const node of nodes) {
+      if (node.dataset.deeproleServicePreloader === requestId) {
+        node.querySelectorAll<HTMLElement>("span").forEach((child) => child.getAnimations().forEach((animation) => animation.cancel()));
+        node.remove();
+      }
+      if (node.dataset.deeprolePayloadHiddenFor !== requestId) continue;
+      const display = node.dataset.deeprolePayloadDisplay ?? "";
+      const priority = node.dataset.deeprolePayloadPriority ?? "";
+      if (display) node.style.setProperty("display", display, priority);
+      else node.style.removeProperty("display");
+      delete node.dataset.deeprolePayloadHiddenFor;
+      delete node.dataset.deeprolePayloadDisplay;
+      delete node.dataset.deeprolePayloadPriority;
+    }
+  }
+}
+
+/** Keep the machine block hidden if DeepSeek replaced its DOM during saving. */
+export function finishServicePreloader(requestId: string, rows: HTMLElement[], summary: string): void {
+  for (const row of rows) {
+    const card = [...row.querySelectorAll<HTMLElement>("[data-deeprole-service-preloader]")]
+      .find((node) => node.dataset.deeproleServicePreloader === requestId);
+    if (!card) continue;
+    card.querySelectorAll<HTMLElement>("span").forEach((child) => child.getAnimations().forEach((animation) => animation.cancel()));
+    card.replaceChildren(summary);
+    card.dataset.deeproleResult = "true";
+    delete card.dataset.deeproleServicePreloader;
+    card.setAttribute("aria-busy", "false");
+  }
+}
+
 export function markServiceReplyRow(element: HTMLElement, requestId?: string): void {
   const row = element.closest<HTMLElement>("[data-message-id], article, [data-testid*='message']") ?? element;
   row.dataset.deeproleServiceReply = "true";
@@ -86,14 +215,14 @@ function serviceTurns(root: ParentNode): { request: HTMLElement; response?: HTML
   uniqueRequests.sort((a, b) => follows(a.request, b.request) ? -1 : follows(b.request, a.request) ? 1 : 0);
   const payloadRows = findDeepestServiceElements(SERVICE_START, root).map((element) => {
     const row = findServiceRow(element);
-    return { row, valid: Boolean(parseServiceData(row.innerText || row.textContent || "")) };
-  }).filter((item, index, all) => item.valid && all.findIndex((other) => other.row === item.row) === index);
+    return { row };
+  }).filter((item, index, all) => all.findIndex((other) => other.row === item.row) === index);
 
   return uniqueRequests.map((turn, index) => {
     const nextRequest = uniqueRequests[index + 1]?.request;
     // DeepSeek can wrap the model reply in extra layout nodes, so it is not
-    // always the service message's immediate DOM sibling. Correlate the
-    // finished payload by document order and keep it inside this request's turn.
+    // always the service message's immediate DOM sibling. Correlate even a
+    // partial payload so the JSON is hidden while it is still streaming.
     const payload = payloadRows.find(({ row }) => row !== turn.request
       && !row.contains(turn.request) && !turn.request.contains(row)
       && follows(turn.request, row)

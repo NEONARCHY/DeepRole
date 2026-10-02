@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { BrainCircuit } from "lucide-react";
 import { menuText } from "../../core/menu-i18n";
 import { translate } from "../../core/i18n";
-import type { ContextSelection, HandoffSnapshot, MemoryEntry } from "../../core/types";
+import type { ContextSelection, ConversationEstimate, HandoffSnapshot, MemoryEntry } from "../../core/types";
 import { SectionGuide, HelpLocale } from "../shared/Help";
 import { SceneControls } from "../shared/SceneControls";
 import { EMPTY_SCENE } from "../../core/scene";
@@ -14,12 +14,15 @@ import { MemoryReview, QuickMemory } from "../shared/MemoryAssistant";
 import { TooltipButton } from "../shared/TooltipButton";
 import { ServiceProgress } from "../shared/MemoryStatus";
 import { experienceText } from "../../core/experience-i18n";
+import { sceneChoiceText } from "../../core/scene-choices";
 import { selectionReason, type ServiceActivity } from "../../core/memory-experience";
 
 export interface WidgetState {
+  pageReady: boolean;
   pendingHandoff?: string;
   activity?: ServiceActivity | null;
   generating?: boolean;
+  sceneChoicesEnabled?: boolean;
   vaultLocked: boolean;
   proposals?: MemoryProposalBatch[];
   reviewProposalId?: string | null;
@@ -39,6 +42,7 @@ export interface WidgetState {
   canAnalyzeChat: boolean;
   analysisSuggested: boolean;
   handoffOffer: HandoffSnapshot | null;
+  conversationEstimate?: ConversationEstimate | null;
   toast: string;
   availableEntries: MemoryEntry[];
 }
@@ -58,6 +62,7 @@ export function PageWidget(props: {
   onContextPositionChange: (position: { x: number; y: number }) => void;
   menuUrl: string;
   onSceneChange?: (scene: SceneState) => void | Promise<boolean>;
+  onSceneChoicesToggle?: () => void;
   onResetEntry?: (id: string) => void;
   onQuickSave?: (text: string, mode: ActivationMode, title: string) => Promise<void>;
   onDraftLore?: (brief: string) => Promise<void>;
@@ -83,9 +88,7 @@ export function PageWidget(props: {
   useEffect(() => {
     if (!menuOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (mapLayout !== "closed") menuFrame.current?.contentWindow?.postMessage({ source: "deeprole-page", type: "CLOSE_MAP" }, "*");
-      else setMenuOpen(false);
+      if (event.key === "Escape" && mapLayout !== "closed") menuFrame.current?.contentWindow?.postMessage({ source: "deeprole-page", type: "CLOSE_MAP" }, "*");
     };
     const closeFromMenu = (event: MessageEvent) => {
       if (event.source !== menuFrame.current?.contentWindow) return;
@@ -126,7 +129,11 @@ export function PageWidget(props: {
   const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate(props.state.locale, key, vars);
   const count = props.state.selection.entries.length;
   const at = (key: Parameters<typeof assistantText>[1]) => assistantText(props.state.locale, key);
-  const x = (key: Parameters<typeof experienceText>[1]) => experienceText(props.state.locale, key);
+  const x = (key: Parameters<typeof experienceText>[1], vars?: Record<string, string | number>) => experienceText(props.state.locale, key, vars);
+  const chatEstimate = props.state.conversationEstimate;
+  const chatEstimatePercent = chatEstimate ? Math.max(0, Math.min(100, chatEstimate.estimatedTokens / DEEPSEEK_WEB_CONTEXT_LIMIT * 100)) : 0;
+  const chatRemaining = chatEstimate ? Math.max(0, DEEPSEEK_WEB_CONTEXT_LIMIT - chatEstimate.estimatedTokens) : 0;
+  const chatMeterState = chatEstimatePercent >= 90 ? "is-critical" : chatEstimatePercent >= 75 ? "is-low" : chatEstimatePercent >= 50 ? "is-mid" : "is-roomy";
   const serviceBusy = props.state.activity?.phase === "preparing" || props.state.activity?.phase === "waiting";
   const analysisBlocked = serviceBusy || !!props.state.generating || !props.state.canAnalyzeChat;
   const proposals = props.state.proposals ?? [];
@@ -166,15 +173,18 @@ export function PageWidget(props: {
     window.setTimeout(() => { suppressContextClick.current = false; }, 0);
   };
   useEffect(() => {
-    if (!props.authenticationPage) return;
-    setOpen(false); setAdding(false); setQuick(false); setReviewId(null); setMenuOpen(false); setMapLayout("closed");
-  }, [props.authenticationPage]);
+    if (props.authenticationPage) {
+      setOpen(false); setAdding(false); setQuick(false); setReviewId(null); setMenuOpen(false); setMapLayout("closed");
+    } else if (props.state.pageReady) {
+      setMenuOpen(true);
+    }
+  }, [props.authenticationPage, props.state.pageReady]);
   useEffect(() => {
     const id = props.state.reviewProposalId;
     if (!id || !props.state.proposals?.some((batch) => batch.id === id)) return;
     setOpen(true); setQuick(false); setReviewId(id);
   }, [props.state.reviewProposalId, props.state.proposals]);
-  if (props.authenticationPage) {
+  if (props.authenticationPage || !props.state.pageReady) {
     return <HelpLocale.Provider value={props.state.locale}><div className="dr-root" aria-hidden="true" /></HelpLocale.Provider>;
   }
   return <HelpLocale.Provider value={props.state.locale}><div className="dr-root">
@@ -185,10 +195,17 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.warning && <Alert title={t("memoryNotAddedTitle")} text={props.state.warning} primary={t("copyContext")} onPrimary={props.onCopyContext} />}
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
-    <div ref={contextAnchor} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={contextStyle}>
-      <div className="dr-pill-row">
-      <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) { if (props.state.vaultLocked) setMenuOpen(true); else setOpen(!open); } }} aria-expanded={props.state.vaultLocked ? menuOpen : open}><span className="dr-orb" /><span><strong>{props.state.vaultLocked ? t("vaultClosed") : <>{t("context")} <b className="dr-count">{count}</b></>}</strong><small>{props.state.vaultLocked ? t("unlock") : t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button>
-      {!props.state.vaultLocked && proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length, 0)}</button>}
+      <div ref={contextAnchor} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={contextStyle}>
+        <div className="dr-pill-row">
+        <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) { if (props.state.vaultLocked) setMenuOpen(true); else setOpen(!open); } }} aria-expanded={props.state.vaultLocked ? menuOpen : open}><span className="dr-orb" /><span><strong>{props.state.vaultLocked ? t("vaultClosed") : <>{t("context")} <b className="dr-count">{count}</b></>}</strong><small>{props.state.vaultLocked ? t("unlock") : t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button>
+        {!props.state.vaultLocked && chatEstimate && chatEstimate.messageCount > 0 && <div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
+          <div className="dr-chat-meter-heading"><span>{x("chatMeterTitle")}</span><strong>~{compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M</strong></div>
+          <div className="dr-chat-meter-track" role="progressbar" aria-valuemin={0} aria-valuemax={DEEPSEEK_WEB_CONTEXT_LIMIT} aria-valuenow={Math.min(chatEstimate.estimatedTokens, DEEPSEEK_WEB_CONTEXT_LIMIT)} aria-valuetext={`~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M`}><i style={{ width: `${chatEstimatePercent}%` }} /></div>
+          <div className="dr-chat-meter-foot"><strong>{x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}</strong><small>{x(chatEstimate.source === "history" ? "chatMeterHistory" : "chatMeterPageOnly")}</small></div>
+          {chatEstimate.atLeast && <small className="dr-chat-meter-note">{x("chatMeterAtLeast")}</small>}
+        </div>}
+        {!props.state.vaultLocked && props.state.scene?.worldId && props.onSceneChoicesToggle && <button className="dr-pill dr-scene-choice-toggle" type="button" title={sceneChoiceText(props.state.locale, "toggleHelp")} aria-pressed={Boolean(props.state.sceneChoicesEnabled)} onClick={props.onSceneChoicesToggle}>{sceneChoiceText(props.state.locale, props.state.sceneChoicesEnabled ? "toggleOn" : "toggleOff")}</button>}
+        {!props.state.vaultLocked && proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length, 0)}</button>}
       {!props.state.vaultLocked && props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
       </div>
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
@@ -216,6 +233,11 @@ function clampPosition(position: { x: number; y: number }, width: number, height
     x: Math.round(Math.max(padding, Math.min(window.innerWidth - width - padding, position.x))),
     y: Math.round(Math.max(padding, Math.min(window.innerHeight - height - padding, position.y))),
   };
+}
+
+const DEEPSEEK_WEB_CONTEXT_LIMIT = 1_000_000;
+function compactTokens(value: number, locale: "ru" | "en"): string {
+  return new Intl.NumberFormat(locale === "ru" ? "ru-RU" : "en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
 function Alert(props: { title: string; text: string; primary: string; secondary?: string; onPrimary: () => void; onSecondary?: () => void }) {

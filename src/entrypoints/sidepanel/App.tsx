@@ -405,7 +405,7 @@ export function App() {
   }
 
   return (
-    <HelpLocale.Provider value={settings.locale}><div className="app-shell" data-motion={settings.animationsEnabled ? "on" : "off"}>
+    <HelpLocale.Provider value={settings.locale}><div className="app-shell" data-embedded-menu={embeddedMenu ? "true" : "false"} data-motion={settings.animationsEnabled ? "on" : "off"}>
       <header className="app-header">
         <div className="brand-mark" aria-hidden="true"><span /></div>
         <div>

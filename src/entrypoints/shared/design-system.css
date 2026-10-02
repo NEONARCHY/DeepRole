@@ -3,8 +3,10 @@
 /* Shared by extension pages and the isolated DeepSeek widget. Map geometry is separate. */
 :root, :host {
   --dr-space-1: 4px; --dr-space-2: 8px; --dr-space-3: 12px; --dr-space-4: 16px; --dr-space-6: 24px;
-  --dr-text: #e5edf5; --dr-muted: #adbdcd; --dr-border: #2d3c4c; --dr-surface: #101922;
-  --dr-primary: #7ac1fa; --dr-selected: #203b50; --dr-danger: #ff9ca7;
+  --dr-text: #e8ebe4; --dr-muted: #aeb9ad; --dr-border: #3b473f; --dr-surface: #202724;
+  --dr-bg: #151a19; --dr-panel: #1a211e; --dr-raised: #29312c;
+  --dr-primary: #8fc2eb; --dr-selected: #2d4038; --dr-success: #9dbba7;
+  --dr-warning: #d5ad78; --dr-danger: #e4a196;
   --dr-radius: 12px;
 }
 .app-shell .app-main { padding: var(--dr-space-6) var(--dr-space-4); }
@@ -18,7 +20,7 @@
 .app-shell .button-row, .app-shell .button-grid, .app-shell .quick-actions { gap: var(--dr-space-2); }
 .app-shell .button, .dr-loremap .button { min-height: 40px; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.35; gap: 8px; white-space: normal; }
 .app-shell .button.primary, .dr-loremap .button.primary { background: var(--dr-primary); border: 1px solid var(--dr-primary); color: #071521; box-shadow: none; }
-.app-shell .button.secondary, .dr-loremap .button.secondary { background: #17212c; border: 1px solid var(--dr-border); color: var(--dr-text); box-shadow: none; }
+.app-shell .button.secondary, .dr-loremap .button.secondary { background: var(--dr-raised); border: 1px solid var(--dr-border); color: var(--dr-text); box-shadow: none; }
 .app-shell .button.danger-button, .app-shell .button.danger, .dr-loremap .button.danger { background: #281c24; border: 1px solid #744653; color: var(--dr-danger); box-shadow: none; }
 .app-shell .icon-button, .dr-loremap .lm-tools > button { min-width: 36px; min-height: 36px; border-radius: 10px; flex-shrink: 0; }
 .app-shell .field-label { gap: var(--dr-space-2); font-size: 12px; color: var(--dr-muted); }
@@ -26,7 +28,7 @@
 .app-shell .input, .app-shell select { min-height: 40px; }
 .app-shell .modal { border-radius: 16px; }
 .app-shell .modal-body, .app-shell .rp-editor { gap: var(--dr-space-4); }
-.app-shell .modal-actions { position: sticky; bottom: -18px; margin: 8px -18px -18px; padding: 16px 18px; background: #111821; border-top: 1px solid var(--dr-border); gap: 8px; z-index: 2; }
+.app-shell .modal-actions { position: sticky; bottom: -18px; margin: 8px -18px -18px; padding: 16px 18px; background: var(--dr-panel); border-top: 1px solid var(--dr-border); gap: 8px; z-index: 2; }
 .app-shell .setting-copy, .app-shell .rp-hint, .app-shell .play-world-card p, .app-shell .play-context p,
 .app-shell .memory-preview { color: var(--dr-muted); font-size: 13px; line-height: 1.55; }
 .app-shell .memory-card h3 { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
@@ -43,10 +45,10 @@
 .app-shell .lm-launch-card { gap: 12px; padding: 24px 16px; }
 .app-shell .lm-launch-card .lm-preview-orb { width: 48px; height: 48px; font-size: 26px; }
 .app-shell .lm-launch-card h2, .app-shell .lm-launch-card p { margin: 0; }
-.app-shell .play-world-card { padding: 16px; gap: 12px; border-radius: 12px; background: #111e2a; }
+.app-shell .play-world-card { padding: 16px; gap: 12px; border-radius: 12px; background: var(--dr-surface); border-color: var(--dr-border); }
 .app-shell .play-context { padding: 0; }
 .app-shell .action-card { min-height: 72px; padding: 16px; gap: 12px; background: var(--dr-surface); border-color: var(--dr-border); border-radius: 12px; }
-.app-shell .action-card.primary { border-color: #4d8abc; background: #172b3e; }
+.app-shell .action-card.primary { border-color: #729ab2; background: #293b40; }
 .app-shell .action-card strong { font-size: 14px; }
 .app-shell .action-card small { font-size: 12px; line-height: 1.45; color: var(--dr-muted); }
 .app-shell .bottom-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 16px; }
@@ -58,13 +60,13 @@
 .app-shell .settings-card > header { font-size: 15px; }
 .app-shell .settings-card > header h2 { margin: 0; font-size: 15px; }
 .app-shell .settings-card > div { display: grid; gap: 16px; }
-.app-shell .settings-card .settings-score-note { padding: 12px; border-radius: 8px; background: #0b141d; font-size: 12px; }
+.app-shell .settings-card .settings-score-note { padding: 12px; border-radius: 8px; background: var(--dr-panel); font-size: 12px; }
 .app-shell .build-info { color: var(--dr-muted); font-size: 11px; line-height: 1.5; }
 .app-shell .scene-controls-line, .dr-root .scene-controls-line { gap: 8px; }
 .app-shell .scene-chip, .dr-root .scene-chip { min-height: 36px; padding: 8px; }
 .app-shell .scene-focus-panel, .dr-root .scene-focus-panel { gap: 12px; padding-top: 12px; margin-top: 12px; }
 .app-shell .scene-focus-toggle, .dr-root .scene-focus-toggle { min-height: 36px; }
-.app-shell .settings-scope { padding: 12px; border: 1px solid #385d7b; border-radius: 8px; background: #142635; }
+.app-shell .settings-scope { padding: 12px; border: 1px solid var(--dr-border); border-radius: 8px; background: var(--dr-panel); }
 .app-shell .settings-scope strong, .app-shell .settings-scope small { display: block; overflow-wrap: anywhere; }
 .app-shell .settings-scope small { margin-top: 4px; color: var(--dr-muted); font-size: 12px; }
 .app-shell .settings-form { display: grid; gap: 16px; }
@@ -80,8 +82,8 @@
 .app-shell .dr-memory-use, .dr-loremap .dr-memory-use { padding-top: 12px; margin-top: 12px; }
 .dr-memory-use .dr-use-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; font-size: 12px; }
 .dr-memory-use .dr-chat-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-.dr-memory-use .dr-chat-choices button { min-height: 36px; padding: 8px 4px; background: #101923; color: var(--dr-muted); border: 1px solid var(--dr-border); border-radius: 8px; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; cursor: pointer; }
-.dr-memory-use .dr-chat-choices button[type=button][aria-pressed=true] { border-color: #5897c7; background: var(--dr-selected); color: var(--dr-text); }
+.dr-memory-use .dr-chat-choices button { min-height: 36px; padding: 8px 4px; background: var(--dr-panel); color: var(--dr-muted); border: 1px solid var(--dr-border); border-radius: 8px; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; cursor: pointer; }
+.dr-memory-use .dr-chat-choices button[type=button][aria-pressed=true] { border-color: #78977f; background: var(--dr-selected); color: var(--dr-text); }
 .dr-memory-use .dr-memory-use-help { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--dr-muted); }
 .dr-root .dr-panel { font-size: 13px; border-radius: 12px; }
 .dr-root .dr-panel header strong { font-size: 14px; }
@@ -94,7 +96,7 @@
 .dr-root .dr-alert p, .dr-root .dr-alert button { font-size: 12px; line-height: 1.5; }
 .dr-root .dr-play-tools { gap: 8px; margin-block: 12px; }
 .dr-root .dr-play-tools button { min-height: 36px; font-size: 12px; }
-.dr-root .dr-assistant, .app-shell .dr-assistant { display: grid; gap: 16px; padding: 16px; font-size: 13px; background: #101922; border-radius: 12px; }
+.dr-root .dr-assistant, .app-shell .dr-assistant { display: grid; gap: 16px; padding: 16px; font-size: 13px; background: var(--dr-surface); border-radius: 12px; }
 .dr-root .dr-assistant > *, .app-shell .dr-assistant > * { margin: 0; }
 .dr-root .dr-assistant label, .app-shell .dr-assistant label { font-size: 12px; gap: 8px; }
 .dr-root .dr-assistant input:not([type=checkbox]), .dr-root .dr-assistant textarea,
@@ -103,7 +105,7 @@
 .dr-root .dr-assistant-actions button, .app-shell .dr-assistant-actions button,
 .dr-root .dr-assistant > button, .app-shell .dr-assistant > button { min-height: 40px; padding: 10px 12px; border-radius: 10px; font-size: 12px; }
 .dr-root .dr-assistant .dr-assistant-primary, .app-shell .dr-assistant .dr-assistant-primary { background: var(--dr-primary); color: #071521; border-color: var(--dr-primary); }
-.dr-root .dr-review-actions, .app-shell .dr-review-actions { position: sticky; bottom: -16px; padding: 12px 0; background: #101922; border-top: 1px solid var(--dr-border); }
+.dr-root .dr-review-actions, .app-shell .dr-review-actions { position: sticky; bottom: -16px; padding: 12px 0; background: var(--dr-surface); border-top: 1px solid var(--dr-border); }
 .dr-root .dr-proposal, .app-shell .dr-proposal { padding: 16px; border-radius: 12px; display: grid; gap: 12px; }
 .dr-loremap .lm-tools { gap: 8px; padding: 12px 16px; flex-wrap: wrap; }
 .dr-loremap .lm-search { flex: 1 1 220px; min-width: 140px; }
@@ -119,4 +121,51 @@
   .app-shell .view-title > .button-row { width: 100%; justify-content: space-between; }
   .app-shell .rp-view-switch button { font-size: 11px; padding-inline: 4px; }
   .app-shell .modal-actions { flex-wrap: wrap; }
+}
+
+/* Keep every native picker branded while retaining the browser's keyboard and screen-reader behavior. */
+.app-shell select,
+.app-shell .scene-controls select,
+.app-shell .lm-memory-editor select,
+.app-shell .lm-world-picker select,
+.dr-loremap select,
+.dr-loremap .lm-memory-editor select,
+.dr-loremap .lm-world-picker select,
+.dr-root select,
+.dr-root .scene-controls select {
+  appearance: none;
+  color-scheme: dark;
+  padding-right: 36px;
+  border-color: #38566d;
+  background-color: #0b141d;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a9bfd0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 14px;
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+  cursor: pointer;
+}
+.app-shell select:hover:not(:disabled),
+.app-shell .scene-controls select:hover:not(:disabled),
+.app-shell .lm-memory-editor select:hover:not(:disabled),
+.app-shell .lm-world-picker select:hover:not(:disabled),
+.dr-loremap select:hover:not(:disabled),
+.dr-loremap .lm-memory-editor select:hover:not(:disabled),
+.dr-loremap .lm-world-picker select:hover:not(:disabled),
+.dr-root select:hover:not(:disabled),
+.dr-root .scene-controls select:hover:not(:disabled) {
+  border-color: #75b7e4;
+  background-color: #111f2c;
+}
+.app-shell select:disabled,
+.dr-loremap select:disabled,
+.dr-root select:disabled { cursor: not-allowed; }
+.app-shell select option,
+.app-shell select optgroup,
+.dr-loremap select option,
+.dr-loremap select optgroup,
+.dr-root select option,
+.dr-root select optgroup {
+  color: #e5edf5;
+  background-color: #101922;
 }

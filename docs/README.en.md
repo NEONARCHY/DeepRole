@@ -15,6 +15,18 @@ A local-first roleplay memory companion for DeepSeek. Organize a world on an RPG
 4. Use **Remember** to save a fact. Check the context indicator to see what your next message will include.
 5. After an important event: **Update lore → Review changes → Save selected changes**.
 
+## Scene choices
+
+With a world connected, DeepRole asks DeepSeek to end scenes with dialogue or a meaningful action opportunity with four options: warm, neutral, confrontational, and unexpected. They appear as buttons below the reply. Clicking one **fills the composer for editing**; it never sends automatically. You can switch options until you edit the inserted text; DeepRole preserves your own draft.
+
+The **Scene choices** switch beside the context indicator applies to all chats with a connected world. The model may fail to follow the requested format, in which case no buttons appear. Choices do not award automatic relationship points or write to lore. A character's reaction depends on their personality and story context; a harsh move can appeal to one character while a kind move can provoke distrust. Save lasting consequences through the usual reviewable **Update lore** flow.
+
+## Approximate context space
+
+The chat indicator reads the history of the **open chat** through an internal DeepSeek route and estimates its text size. Scrolling should no longer change the result. Green, yellow, orange and red indicate decreasing estimated space. If history cannot be read, the indicator says it is using loaded messages only and retains the largest estimate seen while scrolling.
+
+This uses [DeepSeek's published 1M-token context](https://deepseek.com/en/news/v4-preview/) as a reference, not a precise service counter. Attachments, hidden instructions, answer branches and history trimming may change the actual send limit. DeepRole does not store the history text or sign-in token; only aggregate counts reach the extension.
+
 ## Three modes
 
 | Mode | What happens |
@@ -37,7 +49,7 @@ Reference links are visual references; activation links can bring related record
 
 ![Reviewing proposed memory changes](images/memory-review.jpg)
 
-Update lore sends a visible request to DeepSeek. The response becomes a reviewable set of suggestions, not an automatic database write. Edit text, choose modes for new records and select what to keep. Existing records retain their modes and links. The last approved batch can be undone unless its records have changed since.
+Update lore sends a visible request to DeepSeek. Technical JSON is hidden while it streams, then replaced by a status message. Completed service blocks are hidden again after a page reload. The response becomes a compact list of suggestions, not an automatic database write. Open a proposal to compare before and after, edit the text, then select it. Nothing is selected initially. Conflicted updates can explicitly become new records; discarding the whole group has an extra confirmation. Existing records retain their modes and links. The last approved batch can be undone unless its records have changed since.
 
 Models can infer too much or make mistakes. Review is essential. Empty, invalid or interrupted results do not silently overwrite lore. A casual “save this” message is not a substitute for the button and confirmation.
 

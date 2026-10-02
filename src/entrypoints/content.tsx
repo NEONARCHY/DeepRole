@@ -3,9 +3,11 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
-import { findServiceReplyRows, findServiceResponseElements, markServiceReplyRow, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
+import { dismissSceneChoiceCards, syncSceneChoiceCards } from "../adapters/deepseek-choices-dom";
+import { findServiceReplyRows, findServiceResponseElements, finishServicePreloader, markServiceReplyRow, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns, showServicePreloader } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { formatMemoryContext } from "../core/context";
+import { sceneChoiceInstruction, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
 import { createId } from "../core/id";
 import { translate, type MessageKey } from "../core/i18n";
 import {
@@ -23,11 +25,13 @@ import {
   memoryAnalysisPrompt,
   loreDraftPrompt,
   parseServiceData,
+  SERVICE_START,
 } from "../core/service-protocol";
 import { deriveKeywords, estimateTokens } from "../core/text";
 import type {
   ChatBinding,
   ContextSelection,
+  ConversationEstimate,
   DeepRoleSettings,
   HandoffSnapshot,
   MemoryBook,
@@ -40,7 +44,7 @@ import { pendingActivity, type ServiceActivity } from "../core/memory-experience
 import "./content/page-widget.css";
 import "./shared/help.css";
 import { contentRepository as repository } from "../storage/content-repository";
-import { getSettings, storageKeys } from "../storage/settings";
+import { getSettings, updateSettings, storageKeys } from "../storage/settings";
 import { LIBRARY_CHANGE_KEY } from "../storage/changes";
 import { EMPTY_SCENE, isMemoryInScene, memoryWorld } from "../core/scene";
 import type { SceneState, WorldProfile, SceneEntity, StoryTemplate } from "../core/types";
@@ -112,11 +116,25 @@ class PageController {
   private snapshotToken: string | null = null;
   private readonly deliveries = new Map<string, ContextDelivery>();
   private readonly malformedServiceReplies = new Map<string, { text: string; stableSince: number }>();
+  private pickedSceneChoice: { signature: string; text: string } | null = null;
+  private readonly pageChatEstimates = new Map<string, ConversationEstimate>();
+  private historyEstimate: { chatId: string; value: ConversationEstimate } | null = null;
+  private historyRequest: { chatId: string; id: string } | null = null;
+  private historyRetryAt = 0;
+  private historyRefreshTimer = 0;
+  private historyWasGenerating = false;
   private pendingService: ServiceRequest | null = null;
   private preparingService = false;
+  private autoContinuePending = false;
+  private autoContinueAttempted = false;
+  private autoContinueTimer = 0;
+  private autoContinueUntil = 0;
+  private autoContinueSnapshotId: string | null = null;
+  private autoContinueSnapshotToken: string | null = null;
   private serviceFeedback: ServiceActivity | null = null;
   private publishedActivity = "";
   private state: WidgetState = {
+    pageReady: false,
     vaultLocked: true,
     reviewProposalId: null,
     locale: "en",
@@ -141,12 +159,14 @@ class PageController {
   private anchorRenderFrame = 0;
 
   async start() {
+    window.addEventListener("message", (event) => this.handleBridgeMessage(event));
     this.draftScene = (await browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage).catch(() => null)) ?? { ...EMPTY_SCENE };
     this.previousChatId = this.adapter.getChatId();
     const savedPosition = await browser.storage.local.get(CONTEXT_INDICATOR_POSITION_KEY);
     this.contextIndicatorPosition = parseSavedIndicatorPosition(savedPosition[CONTEXT_INDICATOR_POSITION_KEY]);
     await this.reload();
     restoreServiceTurns();
+    this.cleanArchivedMemoryPayloads();
     document.addEventListener("input", () => this.scheduleUpdate(), true);
     document.addEventListener("selectionchange", () => this.readSelection());
     document.addEventListener("keydown", (event) => {
@@ -154,10 +174,17 @@ class PageController {
     }, true);
     window.addEventListener("scroll", this.scheduleAnchorRender, true);
     window.addEventListener("resize", this.scheduleAnchorRender);
-    window.addEventListener("message", (event) => this.handleBridgeMessage(event));
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((changes) => {
       if (location.href !== this.lastUrl) {
         this.navigate();
+      }
+      const request = this.pendingService;
+      if (request?.type === "memory-analysis" && request.chatId === this.adapter.getChatId()) {
+        this.updateMemoryPreloader(request, findServiceReplyRows(request.id), findServiceResponseElements(request.id));
+      } else if (!request && changes.some((change) =>
+        [...change.addedNodes].some((node) => node.textContent?.includes(SERVICE_START))
+        || change.type === "characterData" && change.target.parentElement?.textContent?.includes(SERVICE_START))) {
+        this.cleanArchivedMemoryPayloads();
       }
       this.scheduleScan();
     });
@@ -172,6 +199,8 @@ class PageController {
       }
       if (this.pendingService && this.state.activity?.phase === "waiting" && Date.now() - this.pendingService.createdAt >= 10 * 60 * 1000 && !this.adapter.isGenerating()) this.render();
     }, 1000);
+    this.state.pageReady = true;
+    this.render();
     this.scheduleScan();
   }
 
@@ -223,17 +252,43 @@ class PageController {
     const pendingSnapshotId = pending?.snapshotId;
     this.appliedSnapshot = pendingSnapshotId ? this.snapshots.find((item) => item.id === pendingSnapshotId) ?? null : null;
     this.snapshotToken = this.appliedSnapshot ? pending?.snapshotToken ?? null : null;
+    const continuationTarget = location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
+    const continuationValid = Boolean(pending?.continueOnFreshChat && pending.continueUntil && pending.continueUntil > Date.now() && continuationTarget && this.appliedSnapshot && this.snapshotToken);
+    this.autoContinuePending = continuationValid && !this.autoContinueAttempted;
+    this.autoContinueUntil = continuationValid ? pending?.continueUntil ?? 0 : 0;
+    this.autoContinueSnapshotId = pending?.continueOnFreshChat ? pending.snapshotId ?? null : null;
+    this.autoContinueSnapshotToken = pending?.continueOnFreshChat ? pending.snapshotToken ?? null : null;
+    if (pending?.continueOnFreshChat && !continuationValid) await this.disarmAutoContinue(Boolean(this.adapter.getChatId()) || !continuationTarget);
     if (!this.adapter.getChatId() && this.appliedSnapshot) {
       this.draftScene = { worldId: memoryWorld(this.appliedSnapshot, this.books), focusIds: this.appliedSnapshot.focusIds ?? [], bookId: this.appliedSnapshot.bookId };
     }
     await this.updateContext();
     this.updateSuggestions();
+    this.requestHistoryEstimate();
     if (this.pendingService) this.scheduleScan();
     return true;
   }
 
   private clearPrivateState() {
+    window.clearTimeout(this.historyRefreshTimer);
+    this.historyRefreshTimer = 0;
+    if (this.pendingService?.type === "memory-analysis") {
+      removeServicePreloader(this.pendingService.id, findServiceReplyRows(this.pendingService.id));
+    }
+    if (this.autoContinueTimer) window.clearTimeout(this.autoContinueTimer);
+    this.autoContinueTimer = 0;
+    this.autoContinuePending = false;
+    this.autoContinueAttempted = false;
+    this.autoContinueSnapshotId = null;
+    this.autoContinueSnapshotToken = null;
     this.state.vaultLocked = true;
+    this.state.sceneChoicesEnabled = false;
+    this.pickedSceneChoice = null;
+    this.historyEstimate = null;
+    this.historyRequest = null;
+    this.historyRetryAt = 0;
+    this.pageChatEstimates.clear();
+    syncSceneChoiceCards(false, false, this.state.locale, async () => false);
     this.entries = []; this.books = []; this.bindings = []; this.snapshots = [];
     this.worlds = []; this.entities = []; this.documents = []; this.appliedSnapshot = null; this.snapshotToken = null;
     this.deliveries.clear(); this.proposals = []; this.changes = []; this.pendingService = null;
@@ -289,7 +344,7 @@ class PageController {
     if (location.href !== scope.url || this.adapter.getChatId() !== scope.chatId) throw new Error("scene-changed");
   }
   private contextScopeKey(): string {
-    return JSON.stringify([this.currentScene(), this.overrides(), this.appliedSnapshot?.id ?? null, this.snapshotToken]);
+    return JSON.stringify([this.currentScene(), this.overrides(), this.appliedSnapshot?.id ?? null, this.snapshotToken, this.settings.sceneChoicesEnabled ?? true]);
   }
 
   private async persistScene(scene: SceneState, scope: PageScope) {
@@ -312,6 +367,7 @@ class PageController {
     }
     this.assertScope(scope);
     if (changedWorld) {
+      this.pickedSceneChoice = null;
       this.serviceFeedback = null;
       this.draftOverrides = { ...EMPTY_OVERRIDES }; await this.saveTabState({ overrides: this.draftOverrides });
       this.appliedSnapshot = null;
@@ -340,8 +396,11 @@ class PageController {
     this.selection = compiled.selection; this.documents = compiled.documents;
     const snapshot = this.appliedSnapshot && memoryWorld(this.appliedSnapshot, this.books) === scene.worldId ? this.appliedSnapshot : null;
     this.state.pendingHandoff = snapshot?.title;
-    const contextText = formatMemoryContext(this.selection, snapshot);
-    this.selection.estimatedTokens = contextText ? estimateTokens(contextText) : 0;
+    const memoryText = formatMemoryContext(this.selection, snapshot);
+    const choicesEnabled = Boolean(world && (this.settings.sceneChoicesEnabled ?? true));
+    const contextText = [memoryText, choicesEnabled ? sceneChoiceInstruction() : ""].filter(Boolean).join("\n\n");
+    this.state.sceneChoicesEnabled = choicesEnabled;
+    this.selection.estimatedTokens = memoryText ? estimateTokens(memoryText) : 0;
     this.selection.overBudgetTokens = Math.max(0, this.selection.estimatedTokens - (world ?? this.settings).contextBudget);
     this.state.proposals = this.proposals.filter((p) => p.worldId === scene.worldId);
     this.state.lastChange = this.changes.find((c) => c.worldId === scene.worldId && !c.undoneAt) ?? null;
@@ -354,7 +413,7 @@ class PageController {
       isMemoryInScene(entry, scene, this.books) &&
       !selectedIds.has(entry.id),
     );
-    this.state.contextText = contextText;
+    this.state.contextText = memoryText;
     this.publishContext(contextText);
     const signature = JSON.stringify([scene, overrides, contextText, this.selection.omittedCount]);
     if (signature !== this.publishedState) {
@@ -368,6 +427,30 @@ class PageController {
   private updateSuggestions() {
     const binding = this.currentBinding();
     const messageCount = this.adapter.getMessageCount();
+    const chatId = this.adapter.getChatId();
+    if (this.state.vaultLocked || !chatId) this.state.conversationEstimate = null;
+    else {
+      const onPage = this.adapter.getConversationEstimate(500);
+      const previous = this.pageChatEstimates.get(chatId);
+      const page: ConversationEstimate = {
+        estimatedTokens: Math.max(onPage.estimatedTokens, previous?.estimatedTokens ?? 0),
+        messageCount: Math.max(onPage.messageCount, previous?.messageCount ?? 0),
+        atLeast: onPage.atLeast || previous?.atLeast === true,
+        source: "page",
+      };
+      this.pageChatEstimates.set(chatId, page);
+      if (this.pageChatEstimates.size > 50) {
+        const oldest = [...this.pageChatEstimates.keys()].find((id) => id !== chatId);
+        if (oldest) this.pageChatEstimates.delete(oldest);
+      }
+      const history = this.historyEstimate?.chatId === chatId ? this.historyEstimate.value : null;
+      this.state.conversationEstimate = history ? {
+        estimatedTokens: Math.max(history.estimatedTokens, page.estimatedTokens),
+        messageCount: Math.max(history.messageCount, page.messageCount),
+        atLeast: history.atLeast || page.estimatedTokens > history.estimatedTokens,
+        source: "history",
+      } : page;
+    }
     this.state.analysisSuggested = Boolean(
       !this.state.vaultLocked && this.settings.suggestionsEnabled &&
       messageCount > 0 &&
@@ -377,6 +460,74 @@ class PageController {
     this.state.canAnalyzeChat = Boolean(!noChatId && messageCount > 0);
     this.state.handoffOffer = noChatId && !this.appliedSnapshot ? this.snapshots.find((s) => memoryWorld(s, this.books) === this.currentScene().worldId) ?? null : null;
     this.render();
+    this.queueAutoContinue();
+  }
+
+  private queueAutoContinue() {
+    if (!this.autoContinuePending || this.autoContinueAttempted || this.autoContinueTimer) return;
+    this.autoContinueTimer = window.setTimeout(() => {
+      this.autoContinueTimer = 0;
+      void this.tryAutoContinue();
+    }, 250);
+  }
+
+  private async disarmAutoContinue(clearSnapshot: boolean) {
+    if (this.autoContinueTimer) window.clearTimeout(this.autoContinueTimer);
+    this.autoContinueTimer = 0;
+    const wasPending = this.autoContinuePending;
+    this.autoContinuePending = false;
+    this.autoContinueAttempted = true;
+    const snapshotId = this.autoContinueSnapshotId;
+    const snapshotToken = this.autoContinueSnapshotToken;
+    const state: TabSessionState = { continueOnFreshChat: false, continueUntil: null };
+    const expected: TabSessionGuard = {};
+    if (wasPending || !snapshotId || !snapshotToken) expected.continueOnFreshChat = true;
+    if (snapshotId) expected.snapshotId = snapshotId;
+    if (snapshotToken) expected.snapshotToken = snapshotToken;
+    if (clearSnapshot) { state.snapshotId = null; state.snapshotToken = null; }
+    await this.saveTabState(state, expected);
+    if (clearSnapshot && this.appliedSnapshot?.id === snapshotId && this.snapshotToken === snapshotToken) {
+      this.appliedSnapshot = null; this.snapshotToken = null;
+      if (!this.adapter.getChatId()) {
+        this.draftScene = { ...EMPTY_SCENE };
+        await browser.runtime.sendMessage({ type: "DR_SAVE_DRAFT_SCENE", scene: this.draftScene } satisfies DeepRoleMessage).catch(() => undefined);
+      }
+      await this.updateContext();
+    }
+    this.autoContinueSnapshotId = null;
+    this.autoContinueSnapshotToken = null;
+  }
+
+  private async tryAutoContinue() {
+    if (!this.autoContinuePending || this.autoContinueAttempted) return;
+    const snapshot = this.appliedSnapshot;
+    const snapshotId = this.autoContinueSnapshotId;
+    const snapshotToken = this.autoContinueSnapshotToken;
+    const isFreshHome = () => location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
+    if (!isFreshHome()) { await this.disarmAutoContinue(true); return; }
+    if (!snapshot || snapshot.id !== snapshotId || !snapshotToken || this.snapshotToken !== snapshotToken) { await this.disarmAutoContinue(true); return; }
+    if (this.adapter.isGenerating()) { this.queueAutoContinue(); return; }
+    if (this.adapter.getDraft().trim()) { await this.disarmAutoContinue(false); return; }
+    const prompt = "Continue the roleplay from the carried-over story context. Use the same language and writing style as the previous conversation. Do not repeat the recap; begin with the next natural scene beat.";
+    if (!this.adapter.setDraft(prompt)) { this.queueAutoContinue(); return; }
+    this.autoContinuePending = false;
+    this.autoContinueAttempted = true;
+    if (Date.now() > this.autoContinueUntil) {
+      await this.saveTabState({ continueOnFreshChat: false, continueUntil: null }, { continueOnFreshChat: true, snapshotId, snapshotToken });
+      this.showToast(assistantText(this.state.locale, "handoffPromptReady"));
+      return;
+    }
+    const cleared = await this.saveTabState({ continueOnFreshChat: false, continueUntil: null }, { continueOnFreshChat: true, snapshotId, snapshotToken });
+    if (!cleared) { this.showToast(assistantText(this.state.locale, "handoffPromptReady")); return; }
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 150));
+    if (!isFreshHome()) { await this.disarmAutoContinue(true); return; }
+    if (this.state.vaultLocked || this.appliedSnapshot?.id !== snapshotId || this.snapshotToken !== snapshotToken) {
+      if (this.adapter.getDraft() === prompt) this.adapter.setDraft("");
+      return;
+    }
+    if (this.adapter.isGenerating() || this.adapter.getDraft() !== prompt) return;
+    if (!this.adapter.submitDraft()) { this.showToast(assistantText(this.state.locale, "handoffPromptReady")); return; }
+    this.showToast(assistantText(this.state.locale, "handoffContinuing"));
   }
 
   private scheduleAnchorRender = () => {
@@ -421,6 +572,7 @@ class PageController {
       onDismissHandoff={() => { this.state.handoffOffer = null; this.render(); }}
       onContextPositionChange={(position) => void this.saveContextIndicatorPosition(position)}
       onSceneChange={(scene) => this.setScene(scene).then(() => true, () => { this.showToast(sceneText(this.state.locale, "failed")); return false; })}
+      onSceneChoicesToggle={() => void this.toggleSceneChoices()}
       menuUrl={`${browser.runtime.getURL("/sidepanel.html")}?embedded=1`}
     />);
   }
@@ -454,13 +606,85 @@ class PageController {
     window.clearTimeout(this.scanTimer);
     this.scanTimer = window.setTimeout(() => {
       void this.scanServiceResponses();
+      const generating = this.adapter.isGenerating();
+      if (generating) this.historyWasGenerating = true;
+      else if (this.historyWasGenerating) {
+        this.historyWasGenerating = false;
+        this.scheduleHistoryRefresh(1800);
+      }
       this.updateSuggestions();
+      this.syncSceneChoices();
     }, 350);
+  }
+
+  private scheduleHistoryRefresh(delay: number) {
+    window.clearTimeout(this.historyRefreshTimer);
+    this.historyRefreshTimer = window.setTimeout(() => {
+      this.historyRefreshTimer = 0;
+      this.requestHistoryEstimate(true);
+    }, delay);
+  }
+
+  private requestHistoryEstimate(force = false) {
+    const chatId = this.adapter.getChatId();
+    if (this.state.vaultLocked || !chatId || this.historyRequest?.chatId === chatId) return;
+    if (Date.now() < this.historyRetryAt) {
+      this.scheduleHistoryRefresh(this.historyRetryAt - Date.now() + 50);
+      return;
+    }
+    if (!force && this.historyEstimate?.chatId === chatId) return;
+    const id = crypto.randomUUID();
+    this.historyRequest = { chatId, id };
+    window.postMessage({ source: "deeprole-extension", type: "CHAT_HISTORY_ESTIMATE_REQUEST", requestId: id, chatId }, location.origin);
+    window.setTimeout(() => {
+      if (this.historyRequest?.id !== id) return;
+      this.historyRequest = null;
+      this.historyRetryAt = Date.now() + 60_000;
+      this.scheduleHistoryRefresh(60_000);
+    }, 18_000);
+  }
+
+  private syncSceneChoices() {
+    syncSceneChoiceCards(Boolean(this.state.sceneChoicesEnabled && !this.state.vaultLocked), this.adapter.isGenerating(), this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature));
+  }
+
+  private async toggleSceneChoices() {
+    try {
+      await updateSettings({ sceneChoicesEnabled: !(this.settings.sceneChoicesEnabled ?? true) });
+      await this.reload();
+      this.syncSceneChoices();
+    } catch { this.showToast(sceneChoiceText(this.state.locale, "unavailable")); }
+  }
+
+  private async pickSceneChoice(choice: SceneChoice, signature: string): Promise<boolean> {
+    if (this.state.vaultLocked || !this.state.sceneChoicesEnabled || this.adapter.isGenerating()) {
+      this.showToast(sceneChoiceText(this.state.locale, "unavailable")); return false;
+    }
+    const draft = this.adapter.getDraft();
+    if (draft.trim() && (this.pickedSceneChoice?.signature !== signature || this.pickedSceneChoice.text !== draft)) {
+      this.showToast(sceneChoiceText(this.state.locale, "draftBusy")); return false;
+    }
+    if (!this.adapter.setDraft(choice.text)) { this.showToast(sceneChoiceText(this.state.locale, "unavailable")); return false; }
+    this.pickedSceneChoice = { signature, text: choice.text };
+    return true;
   }
 
   private scheduleServiceRetryScan(delay = 1200) {
     window.clearTimeout(this.serviceRetryTimer);
     this.serviceRetryTimer = window.setTimeout(() => this.scheduleScan(), delay);
+  }
+
+  private updateMemoryPreloader(request: ServiceRequest, rows: HTMLElement[], payloads: HTMLElement[]) {
+    if (request.type !== "memory-analysis") return;
+    const label = experienceText(this.state.locale, "memoryPreloader");
+    for (const payload of payloads) {
+      const row = rows.find((item) => item === payload || item.contains(payload));
+      if (row) showServicePreloader(request.id, row, payload, label);
+    }
+  }
+
+  private cleanArchivedMemoryPayloads() {
+    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"));
   }
 
   private readSelection() {
@@ -529,6 +753,7 @@ class PageController {
     const cancel = async (error: string) => {
       if (location.href === initialUrl && sceneKey() === initialScene && error !== "vault-locked") this.serviceFeedback = { phase: "error", type: request.type };
       if (stored) {
+        if (request.type === "memory-analysis") removeServicePreloader(request.id, findServiceReplyRows(request.id));
         if (this.pendingService?.id === request.id) this.pendingService = null;
         this.malformedServiceReplies.delete(request.id);
         await this.saveTabState({ service: null }, { serviceId: request.id });
@@ -603,8 +828,9 @@ class PageController {
     const request = this.pendingService;
     const replyRows = findServiceReplyRows(request.id);
     const candidates = findServiceResponseElements(request.id);
+    if (request.type === "memory-analysis") this.updateMemoryPreloader(request, replyRows, candidates);
     for (const element of candidates) {
-      const parsed = parseServiceData(element.innerText || element.textContent || "");
+      const parsed = parseServiceData(element.textContent || element.innerText || "");
       if (!parsed) continue;
       if (this.pendingService?.id !== request.id) return;
       this.malformedServiceReplies.delete(request.id);
@@ -623,7 +849,13 @@ class PageController {
           const summary = batch.items.length
             ? experienceText(this.state.locale, "resultReview")
             : assistantText(this.state.locale, "analysisNoChanges");
-          replaceServicePayloadWithSummary(element, summary);
+          const current = findServiceResponseElements(request.id);
+          const replaced = [element, ...current].some((candidate) => replaceServicePayloadWithSummary(candidate, summary));
+          if (replaced) removeServicePreloader(request.id, replyRows);
+          else {
+            this.updateMemoryPreloader(request, replyRows, current);
+            finishServicePreloader(request.id, replyRows, summary);
+          }
           if (!batch.items.length) void browser.runtime.sendMessage({ type: "DR_SERVICE_RESULT", outcome: "no-changes" } satisfies DeepRoleMessage).catch(() => undefined);
         } else {
           const scope = this.pageScope();
@@ -655,6 +887,7 @@ class PageController {
     this.malformedServiceReplies.set(request.id, { text, stableSince });
     if (failedByDeepSeek || (!this.adapter.isGenerating() && now - stableSince >= 12_000 && now - request.createdAt >= 12_000)) {
       if (!await this.saveTabState({ service: null }, { serviceId: request.id })) return;
+      removeServicePreloader(request.id, replyRows);
       if (this.pendingService?.id === request.id) this.pendingService = null;
       this.setServiceResult(request, "error");
       this.malformedServiceReplies.delete(request.id);
@@ -666,13 +899,14 @@ class PageController {
   }
 
   private scheduleHandoffNavigation(snapshot: HandoffSnapshot, scope: PageScope) {
+    this.autoContinueAttempted = false;
     const sceneKey = JSON.stringify(this.currentScene());
     const safeToLeave = (ownToken?: string) => location.href === scope.url && this.adapter.getChatId() === scope.chatId && JSON.stringify(this.currentScene()) === sceneKey && !this.adapter.getDraft().trim() && !this.adapter.isGenerating() && (!this.appliedSnapshot || this.appliedSnapshot.id === snapshot.id && this.snapshotToken === ownToken);
     window.setTimeout(() => {
       void (async () => {
         if (!safeToLeave()) { this.showToast(assistantText(this.state.locale, "handoffSaved")); return; }
         const token = createId("handoff");
-        if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token }, { snapshotId: null })) return;
+        if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, continueOnFreshChat: true, continueUntil: Date.now() + 90_000 }, { snapshotId: null })) return;
         if (!safeToLeave(token)) {
           await this.saveTabState({ snapshotId: null, snapshotToken: null }, { snapshotId: snapshot.id, snapshotToken: token });
           this.showToast(assistantText(this.state.locale, "handoffSaved")); return;
@@ -702,6 +936,9 @@ class PageController {
   }
 
   private async handleNavigation() {
+    if (this.autoContinuePending && !(location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId())) {
+      await this.disarmAutoContinue(true);
+    }
     const chatId = this.adapter.getChatId();
     const promoteDraft = !this.previousChatId && !!chatId;
     const nextScene = this.draftScene;
@@ -716,6 +953,7 @@ class PageController {
     }
     this.previousChatId = chatId;
     await this.reload();
+    if (!this.pendingService) this.cleanArchivedMemoryPayloads();
     if (promoteDraft && !this.currentBinding()) {
       await this.setScene(nextScene);
       const binding = this.currentBinding();
@@ -725,6 +963,11 @@ class PageController {
   }
 
   private navigate() {
+    this.pickedSceneChoice = null;
+    window.clearTimeout(this.historyRefreshTimer);
+    this.historyRequest = null;
+    this.historyRetryAt = 0;
+    this.historyWasGenerating = false;
     this.serviceFeedback = null;
     this.state.warning = "";
     this.lastUrl = location.href;
@@ -734,10 +977,34 @@ class PageController {
 
   private handleBridgeMessage(event: MessageEvent) {
     if (event.source !== window || event.data?.source !== "deeprole-page-bridge") return;
+    if (event.data.type === "CHAT_HISTORY_ESTIMATE") {
+      const request = this.historyRequest;
+      if (!request || event.data.requestId !== request.id || event.data.chatId !== request.chatId || request.chatId !== this.adapter.getChatId()) return;
+      this.historyRequest = null;
+      const value = event.data.estimate as ConversationEstimate | null;
+      if (value && Number.isFinite(value.estimatedTokens) && value.estimatedTokens >= 0 && value.estimatedTokens < 100_000_000 && Number.isInteger(value.messageCount) && value.messageCount >= 0 && value.messageCount < 100_000) {
+        this.historyRetryAt = 0;
+        const previous = this.historyEstimate?.chatId === request.chatId ? this.historyEstimate.value : null;
+        this.historyEstimate = { chatId: request.chatId, value: {
+          estimatedTokens: Math.max(value.estimatedTokens, previous?.estimatedTokens ?? 0),
+          messageCount: Math.max(value.messageCount, previous?.messageCount ?? 0),
+          atLeast: value.atLeast === true || Boolean(previous && previous.estimatedTokens > value.estimatedTokens),
+          source: "history",
+        } };
+      } else {
+        this.historyRetryAt = Date.now() + 60_000;
+        this.scheduleHistoryRefresh(60_000);
+      }
+      this.updateSuggestions();
+      return;
+    }
     if (event.data.type === "SERVICE_REQUEST_FAILED" && typeof event.data.id === "string") {
       void this.failedService(event.data.id).catch(() => undefined); return;
     }
     if (event.data.type === "REQUEST_CONTEXT" && typeof event.data.id === "string" && typeof event.data.draft === "string" && event.data.draft.length <= 100000) {
+      this.pickedSceneChoice = null;
+      this.scheduleHistoryRefresh(12_000);
+      dismissSceneChoiceCards();
       const { id, draft } = event.data; const url = location.href;
       void (async () => {
         try {
@@ -778,7 +1045,7 @@ class PageController {
     if (event.data.ok && delivery) {
       if (delivery.scope.url === location.href && delivery.scopeKey === this.contextScopeKey()) this.state.warning = "";
       void this.acknowledgeDelivery(delivery).catch(() => undefined);
-    } else if (!event.data.ok && event.data.url === location.href && this.state.contextText) {
+    } else if (!event.data.ok && event.data.url === location.href && (this.selection.entries.length > 0 || this.appliedSnapshot)) {
       this.state.warning = this.t("incompatible");
     }
     this.render();
@@ -790,6 +1057,7 @@ class PageController {
     // failure for that already received result or disturb its storage operation.
     if (!request || request.id !== id || this.processingService) return;
     if (!await this.saveTabState({ service: null }, { serviceId: id })) return;
+    removeServicePreloader(id, findServiceReplyRows(id));
     if (this.pendingService?.id === id) this.pendingService = null;
     this.setServiceResult(request, "error");
     await this.updateContext();

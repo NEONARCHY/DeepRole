@@ -122,6 +122,7 @@ export interface HandoffSnapshot {
 export interface DeepRoleSettings {
   locale: Locale;
   onboardingComplete: boolean;
+  sceneChoicesEnabled?: boolean;
   contextBudget: number;
   relevanceThreshold: number;
   suggestionInterval: number;
@@ -170,10 +171,18 @@ export interface AdapterStatus {
   checkedAt: number;
 }
 
+export interface ConversationEstimate {
+  estimatedTokens: number;
+  messageCount: number;
+  atLeast: boolean;
+  source?: "history" | "page";
+}
+
 export interface DeepSeekAdapter {
   getChatId(): string | null;
   getDraft(): string;
   getRecentMessages(limit: number): string[];
+  getConversationEstimate(limit?: number): ConversationEstimate;
   setDraft(value: string): boolean;
   submitDraft(): boolean;
   getStatus(): AdapterStatus;
