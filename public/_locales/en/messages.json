@@ -1,0 +1,5 @@
+{
+  "extName": { "message": "DeepRole" },
+  "extDescription": { "message": "A local-first memory companion for roleplay chats on DeepSeek." },
+  "contextMenuSave": { "message": "Save selection to DeepRole" }
+}

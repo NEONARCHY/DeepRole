@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8"><title>DeepSeek mock</title><style>header{position:fixed;top:16px;left:220px}form{margin:120px 0 0 500px}</style></head>
+  <body>
+    <main>
+      <header><h1 data-testid="chat-title">Observatory route</h1></header>
+      <article data-message-id="1">Mira entered the old observatory.</article>
+      <article data-message-id="2">The brass door closed behind her.</article>
+      <form id="composer-form">
+        <textarea aria-label="Message"></textarea>
+        <button type="submit" aria-label="Send">Send</button>
+      </form>
+      <p id="selection-source">A silver compass points toward the hidden city.</p>
+    </main>
+    <script type="module">
+      import { DeepSeekDomAdapter } from "/src/adapters/deepseek-dom.ts";
+      import { parseServiceData } from "/src/core/service-protocol.ts";
+      import { injectIntoJsonBody } from "/src/core/request-injection.ts";
+      import { findServiceResponseElements } from "/src/adapters/deepseek-service-dom.ts";
+      window.deepRoleTest = { DeepSeekDomAdapter, parseServiceData, injectIntoJsonBody, findServiceResponseElements };
+      document.querySelector("form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        document.body.dataset.sent = "true";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+  <head><meta charset="UTF-8"><title>DeepRole context indicator</title><style>body{min-height:700px;margin:0;background:#161b22}</style></head>
+  <body>
+    <button id="underlying-chat-control" style="position:fixed;left:32px;top:140px;z-index:1" onclick="document.body.dataset.chatControlClicked='true'">DeepSeek chat control</button>
+    <div id="root"></div>
+    <script type="module">
+      import React from "react";
+      import { createRoot } from "react-dom/client";
+      import { PageWidget } from "/src/entrypoints/content/PageWidget.tsx";
+      import "/src/entrypoints/shared/memory-assistant.css";
+      import "/src/entrypoints/content/page-widget.css";
+      import "/src/entrypoints/shared/help.css";
+      const entry = { id: "m1", bookId: null, title: "Клятва Миры", content: "Мира останется в городе до рассвета.", keywords: ["Мира"], activation: "smart", priority: "high", enabled: true, source: { type: "manual" }, createdAt: 1, updatedAt: 1 };
+      const state = { locale: "ru", selection: { entries: [{ entry, score: 12, reasons: ["keyword"], estimatedTokens: 20, manuallySelected: false }], estimatedTokens: 20, omittedCount: 0 }, warning: "", contextText: "memory", selectionText: "", selectionPosition: null, contextPosition: { x: 210, y: 52 }, analysisSuggested: true, handoffOffer: null, toast: "", availableEntries: [] };
+      if (new URLSearchParams(location.search).get("locale") === "en") state.locale = "en";
+      if (new URLSearchParams(location.search).has("assistant")) state.proposals = [{ id: "batch", worldId: null, bookId: null, chatId: "chat", focusIds: [], requestType: "memory-analysis", createdAt: 1, updatedAt: 1, items: [{ id: "c", title: "Mira's oath", content: "The promise now expires at noon.", keywords: [], activation: "smart", priority: "normal", bookId: null, selected: true, targetEntryId: entry.id, expectedEntry: entry }] }];
+      const noop = () => {};
+      const root = createRoot(document.querySelector("#root"));
+      const render = () => root.render(React.createElement(PageWidget, { state: { ...state }, onToggleEntry: noop, onAttachEntry: noop, onCopyContext: noop, onAnalyze: noop, onDismissSuggestion: noop, onSaveSelection: noop, onApplyHandoff: noop, onDismissHandoff: noop, onContextPositionChange: (position) => { window.lastContextPosition = position; }, onQuickSave: async (text, mode, title) => { window.savedMemory = { text, mode, title }; }, onDraftLore: async (brief) => { window.loreBrief = brief; }, onReview: async (batch, items) => { window.reviewed = items; }, onDiscard: async () => { window.discarded = true; }, menuUrl: "/tests/fixtures/sidepanel.html?embedded=1" }));
+      window.setWidgetState = (patch) => { Object.assign(state, patch); render(); };
+      render();
+    </script>
+  </body>
+</html>

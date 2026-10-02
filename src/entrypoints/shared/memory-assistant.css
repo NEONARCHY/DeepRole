@@ -1,0 +1,32 @@
+.dr-assistant { box-sizing: border-box; color: #e5eef8; background: #0f1822; border: 1px solid #2d4a63; border-radius: 16px; padding: 16px; font: 13px/1.5 Inter, system-ui, sans-serif; max-height: 70vh; overflow: auto; scrollbar-width: thin; }
+.dr-assistant header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.dr-assistant header > button:last-child { margin-left: auto; }
+.dr-assistant label { display: grid; gap: 5px; margin: 10px 0; }
+.dr-assistant input:not([type=checkbox]), .dr-assistant textarea { box-sizing: border-box; width: 100%; background: #090f16; color: #ecf4fc; border: 1px solid #35526a; border-radius: 8px; padding: 9px; font: inherit; }
+.dr-assistant textarea { resize: vertical; }
+.dr-assistant button, .dr-memory-use button { cursor: pointer; background: #142639; color: #e2effc; border: 1px solid #375a79; border-radius: 8px; padding: 8px 10px; font: inherit; }
+.dr-assistant button:disabled, .dr-memory-use button:disabled { opacity: .5; cursor: default; }
+.dr-assistant button:focus-visible, .dr-memory-use button:focus-visible { outline: 2px solid #7ec8ff; outline-offset: 2px; }
+.dr-assistant button[aria-pressed=true], .dr-assistant .dr-assistant-primary { background: #204b71; border-color: #63a7dc; }
+.dr-assistant p { color: #b4c8da; overflow-wrap: anywhere; }
+.dr-assistant p[role=alert] { color: #ffd29b; }
+.dr-assistant-modes, .dr-assistant-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dr-assistant details { margin-top: 14px; }
+.dr-assistant summary { cursor: pointer; color: #b7dbf6; }
+.dr-proposal { border: 1px solid #2b4256; border-radius: 12px; padding: 12px; margin: 12px 0; background: #101e2b; }
+.dr-assistant .dr-proposal-check { display: flex; align-items: center; gap: 8px; }
+.dr-proposal-before { white-space: pre-wrap; max-height: 180px; overflow: auto; }
+.dr-root .dr-memory-review .dr-proposal, .app-shell .dr-memory-review .dr-proposal { border: 0; border-top: 1px solid var(--dr-border, #2b4256); border-radius: 0; padding: 16px 0; margin: 0; background: transparent; }
+.dr-memory-review .dr-proposal-check { margin-top: 0; font-size: 14px; }
+.dr-memory-review .dr-proposal-check input { accent-color: var(--dr-primary, #7ec8ff); width: 18px; height: 18px; flex-shrink: 0; }
+.dr-memory-review .dr-proposal-before { font-size: 12px; }
+.dr-assistant .dr-review-actions { position: sticky; bottom: -16px; display: grid; gap: 8px; margin: 12px -16px -16px; padding: 12px 16px; background: var(--dr-surface, #0f1822); border-top: 1px solid var(--dr-border, #2b4256); }
+.dr-assistant .dr-review-actions button { width: 100%; min-height: 40px; }
+.dr-assistant header > button { display: grid; place-items: center; min-width: 32px; min-height: 32px; padding: 6px; }
+.dr-root .dr-panel:has(.dr-assistant) { width: min(400px, calc(100vw - 26px)); scrollbar-width: thin; scrollbar-color: #46617a transparent; }
+.dr-root .dr-panel .dr-assistant { border: 0; border-radius: 0; padding: 0; overflow: visible; max-height: none; background: transparent; }
+.dr-root .dr-panel .dr-review-actions { bottom: -12px; margin-inline: -12px; margin-bottom: -12px; padding-inline: 12px; background: #101923; }
+.dr-memory-use { padding: 10px 0; border-top: 1px solid #294255; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dr-memory-use small { color: #acc7de; }
+.dr-memory-use-help { flex-basis: 100%; margin: 0; color: #91a9bd; font-size: 11px; line-height: 1.45; }
+.dr-memory-use .dr-assistant-actions { flex-basis: 100%; }

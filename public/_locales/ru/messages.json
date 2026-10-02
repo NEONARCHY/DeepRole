@@ -1,0 +1,5 @@
+{
+  "extName": { "message": "DeepRole" },
+  "extDescription": { "message": "Локальный помощник памяти для ролевых чатов в DeepSeek." },
+  "contextMenuSave": { "message": "Сохранить выделение в DeepRole" }
+}
