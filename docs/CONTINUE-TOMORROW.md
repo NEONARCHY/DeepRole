@@ -6,17 +6,19 @@
 
 Для Codex: сначала прочитать `AGENTS.md`, `ROADMAP.md` и `docs/QA-2026-10-02.md`. Не переделывать интерфейс вслепую и не считать прохождение макета проверкой личного DeepSeek.
 
+На момент передачи: проверка типов без ошибок, 295 unit/integration и 191 E2E прошли; 21 Chrome-only сценарий ожидаемо пропущен в Firefox. На GitHub опубликован снимок рабочей папки. Старая локальная Git-история домашнего ПК не переписывалась; на рабочем ПК начинайте с нового клона ниже.
+
 ```sh
 git clone https://github.com/NEONARCHY/DeepRole.git
 cd DeepRole
 npm ci
-npm run typecheck
-npm test
 npm run build
 npm run build:firefox
+npm run typecheck
+npm test
 ```
 
-Нужны Node.js с npm, Git и браузер. Chromium-тесты настроены на установленный Microsoft Edge; Firefox для Playwright устанавливается командой `npx playwright install firefox`. Графические тесты запускаются **после сборки**, без видимых окон:
+Нужны Node.js с npm, Git и браузер. Первая сборка создаёт `.wxt/tsconfig.json`, поэтому на свежем клоне она идёт перед проверкой типов. Chromium-тесты настроены на установленный Microsoft Edge; Firefox для Playwright устанавливается командой `npx playwright install firefox`. Графические тесты запускаются **после сборки**, без видимых окон:
 
 ```sh
 npm run test:e2e -- --workers=1

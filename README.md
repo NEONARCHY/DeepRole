@@ -85,11 +85,11 @@ DeepSeek не читает всю базу постоянно. Расширен�
 
 ```sh
 npm ci
-npm run typecheck
-npm test
 npm run build
 npm run build:firefox
-npm run test:e2e -- --workers=2
+npm run typecheck
+npm test
+npm run test:e2e -- --workers=1
 npm run zip
 npm run zip:firefox
 ```
