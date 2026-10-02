@@ -20,25 +20,31 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
     return;
   }
   const turns = [...root.querySelectorAll<HTMLElement>("[data-message-id]")]
-    .filter((element) => !element.closest("deeprole-page-widget") && !element.querySelector("[data-message-id]"));
+    .filter((element) => !element.closest("deeprole-page-widget") && !element.querySelector("[data-message-id]") && element.getClientRects().length > 0);
   const latestTurn = turns.at(-1);
-  const candidates = findChoiceElements(latestTurn ?? root).flatMap(({ element, parsed }) => {
-    if (element.closest("deeprole-page-widget, [data-deeprole-service-reply='true']")) return [];
+  // DeepSeek sometimes renders the assistant body outside its message-id node.
+  // Search the page, then reject blocks belonging to an earlier turn.
+  const candidates = findChoiceElements(root).flatMap(({ element, parsed }) => {
+    if (element.closest("deeprole-page-widget, [data-deeprole-service-reply='true'], form, [contenteditable='true']")) return [];
     return [{ element, parsed, row: findSafeServiceContainer(element) }];
   });
   const last = candidates.at(-1);
   const signature = last ? choiceSignature(last.element) : "";
-  const active = !generating && last && (!latestTurn || latestTurn.contains(last.element)) && dismissedChoice !== `${location.href}:${signature}` ? last : null;
+  const belongsToLatest = !latestTurn || Boolean(last && (latestTurn.contains(last.element) || latestTurn.compareDocumentPosition(last.element) & Node.DOCUMENT_POSITION_FOLLOWING));
+  const active = !generating && last && belongsToLatest && dismissedChoice !== `${location.href}:${signature}` ? last : null;
   root.querySelectorAll<HTMLElement>(HOST).forEach((host) => {
     if (host.previousElementSibling !== active?.row) host.remove();
     else host.style.display = generating ? "none" : "";
   });
   if (!active) return;
+  const blockText = (active.element.textContent ?? "").slice(active.parsed.start, active.parsed.end);
+  const alreadyHidden = [...active.element.querySelectorAll<HTMLElement>(HIDDEN)]
+    .some((payload) => payload.textContent === blockText);
+  if (!alreadyHidden && !hideBlock(active.element, active.parsed.start, active.parsed.end)) return;
   const next = active.row.nextElementSibling;
   const existing = next instanceof HTMLElement && next.matches(HOST) ? next : null;
   if (existing?.dataset.deeproleChoicesSignature === signature && existing.dataset.deeproleChoicesLocale === locale) return;
   existing?.remove();
-  if (!active.element.querySelector(HIDDEN)) hideBlock(active.element, active.parsed.start, active.parsed.end);
   active.row.after(createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument));
 }
 
@@ -50,15 +56,33 @@ function choiceSignature(element: HTMLElement): string {
 }
 
 function findChoiceElements(root: ParentNode) {
-  const selector = "article, [data-message-id], [data-testid*='message'], div";
-  const nodes = [...root.querySelectorAll<HTMLElement>(selector)];
-  if (root instanceof HTMLElement && root.matches(selector)) nodes.unshift(root);
-  const elements = nodes
-    .flatMap((element) => { const text = element.textContent ?? ""; if (!text.includes(MARKER)) return []; const parsed = parseSceneChoices(text); return parsed ? [{ element, parsed }] : []; });
-  return elements.filter(({ element }) => !elements.some((other) => other.element !== element && element.contains(other.element)));
+  const selector = "article, [data-message-id], [data-testid*='message'], div, p, pre, code, span";
+  const doc = (root as Node).ownerDocument ?? document;
+  const walker = doc.createTreeWalker(root as Node, NodeFilter.SHOW_TEXT);
+  const seen = new Set<HTMLElement>();
+  const elements: { element: HTMLElement; parsed: NonNullable<ReturnType<typeof parseSceneChoices>> }[] = [];
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!(node.textContent ?? "").includes("deeprole")) continue;
+    for (let element = node.parentElement, depth = 0; element && depth < 12; element = element.parentElement, depth += 1) {
+      if (element.matches("script, style, body, main") || element.closest(HOST)) break;
+      if (!element.matches(selector) || element.closest(HIDDEN) || seen.has(element)) continue;
+      const text = element.textContent ?? "";
+      if (!text.includes(MARKER)) continue;
+      const parsed = parseSceneChoices(text);
+      if (!parsed) continue;
+      seen.add(element);
+      elements.push({ element, parsed });
+      break;
+    }
+  }
+  return elements.filter(({ element }) => {
+    const turn = element.closest<HTMLElement>("article, [data-message-id], [data-testid*='message'], [class*='message']");
+    // The injected prompt includes a valid example, which must not become a card.
+    return !(turn?.textContent ?? element.textContent ?? "").includes("<deeprole_choice_mode");
+  });
 }
 
-function hideBlock(element: HTMLElement, start: number, end: number): void {
+function hideBlock(element: HTMLElement, start: number, end: number): boolean {
   const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   const range = element.ownerDocument.createRange();
   let offset = 0; let foundStart = false; let foundEnd = false;
@@ -68,13 +92,14 @@ function hideBlock(element: HTMLElement, start: number, end: number): void {
     if (foundStart && end <= offset + length) { range.setEnd(node, end - offset); foundEnd = true; break; }
     offset += length;
   }
-  if (!foundStart || !foundEnd) return;
+  if (!foundStart || !foundEnd) return false;
   const hidden = element.ownerDocument.createElement("span");
   hidden.dataset.deeproleChoicesPayload = "true";
   hidden.setAttribute("aria-hidden", "true");
   hidden.style.setProperty("display", "none", "important");
   hidden.append(range.extractContents());
   range.insertNode(hidden);
+  return true;
 }
 
 function createCard(options: SceneChoice[], locale: Locale, signature: string, onPick: (choice: SceneChoice, signature: string) => Promise<boolean>, doc: Document): HTMLElement {

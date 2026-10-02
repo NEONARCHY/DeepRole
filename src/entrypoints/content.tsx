@@ -265,6 +265,7 @@ class PageController {
     await this.updateContext();
     this.updateSuggestions();
     this.requestHistoryEstimate();
+    this.syncSceneChoices();
     if (this.pendingService) this.scheduleScan();
     return true;
   }
@@ -375,7 +376,7 @@ class PageController {
       await this.saveTabState({ snapshotId: null, snapshotToken: null });
       this.state.handoffOffer = null;
     }
-    await this.updateContext(); this.updateSuggestions();
+    await this.updateContext(); this.updateSuggestions(); this.syncSceneChoices();
     void browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
   }
 
@@ -603,8 +604,9 @@ class PageController {
   }
 
   private scheduleScan() {
-    window.clearTimeout(this.scanTimer);
+    if (this.scanTimer) return;
     this.scanTimer = window.setTimeout(() => {
+      this.scanTimer = 0;
       void this.scanServiceResponses();
       const generating = this.adapter.isGenerating();
       if (generating) this.historyWasGenerating = true;
