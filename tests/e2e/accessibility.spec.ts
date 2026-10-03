@@ -49,7 +49,7 @@ test("the in-page context indicator has no automated WCAG AA violations", async 
   await expect(page.locator(".dr-alert")).toHaveCount(0);
   const contextBox = await page.getByRole("button", { name: /^Контекст/ }).boundingBox();
   expect(contextBox?.x).toBeGreaterThanOrEqual(200);
-  expect(contextBox?.y).toBeLessThan(100);
+  expect(contextBox?.y).toBeLessThan(150); // Includes the panel-layout toolbar.
   await page.screenshot({ path: testInfo.outputPath("deeprole-header-context.png"), fullPage: true });
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
@@ -63,17 +63,20 @@ test("the context indicator can be moved anywhere without opening it", async ({ 
   const indicator = page.getByRole("button", { name: /^Контекст/ });
   const before = await indicator.boundingBox();
   expect(before).not.toBeNull();
-  await indicator.hover();
+  const grip = page.locator('[data-widget="memory"] .dr-widget-move');
+  const handle = (await grip.boundingBox())!;
+  await grip.hover();
   await page.mouse.down();
   await page.mouse.move(700, 500, { steps: 8 });
   await page.mouse.up();
   const after = await indicator.boundingBox();
-  expect(after?.x).toBeGreaterThan(600);
-  expect(after?.y).toBeGreaterThan(400);
+  expect(after!.x).toBeCloseTo(before!.x + 700 - handle.x - handle.width / 2, 0);
+  expect(after!.y).toBeCloseTo(before!.y + 500 - handle.y - handle.height / 2, 0);
   await expect(page.locator(".dr-panel")).toHaveCount(0);
-  const saved = await page.evaluate(() => (window as Window & { lastContextPosition?: { x: number; y: number } }).lastContextPosition);
-  expect(saved?.x).toBeGreaterThan(600);
-  expect(saved?.y).toBeGreaterThan(400);
+  const saved = await page.evaluate(() => (window as any).savedWidgetLayout.positions.memory);
+  const tile = (await page.locator('[data-widget="memory"]').boundingBox())!;
+  expect(saved?.x).toBeCloseTo(tile.x / 1000, 2);
+  expect(saved?.y).toBeCloseTo(tile.y / 700, 2);
 });
 
 test("the DeepRole menu stays anchored, lets DeepSeek controls receive clicks, and closes only by X or Escape", async ({ page }, testInfo) => {

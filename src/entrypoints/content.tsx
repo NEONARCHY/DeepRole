@@ -1,4 +1,5 @@
 import { createRoot, type Root } from "react-dom/client";
+import { WIDGET_LAYOUT_KEY, parseWidgetLayout } from "./content/WidgetDeck";
 import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
@@ -179,8 +180,9 @@ class PageController {
       this.state.locale = this.settings.locale;
       this.draftScene = (await startupDeadline(browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage))) ?? { ...EMPTY_SCENE };
       this.previousChatId = this.adapter.getChatId();
-      const savedPosition = await startupDeadline(browser.storage.local.get(CONTEXT_INDICATOR_POSITION_KEY));
+      const savedPosition = await startupDeadline(browser.storage.local.get([CONTEXT_INDICATOR_POSITION_KEY, WIDGET_LAYOUT_KEY]));
       this.contextIndicatorPosition = parseSavedIndicatorPosition(savedPosition[CONTEXT_INDICATOR_POSITION_KEY]);
+      this.state.widgetLayout = parseWidgetLayout(savedPosition[WIDGET_LAYOUT_KEY]);
       await startupDeadline(this.reload());
       restoreServiceTurns();
       this.cleanArchivedMemoryPayloads();
@@ -216,6 +218,7 @@ class PageController {
     observer.observe(document.documentElement, { childList: true, characterData: true, subtree: true });
     browser.runtime.onMessage.addListener((message: DeepRoleMessage) => this.handleRuntimeMessage(message));
     browser.storage.onChanged.addListener((changes) => {
+      if (WIDGET_LAYOUT_KEY in changes) { this.state.widgetLayout = parseWidgetLayout(changes[WIDGET_LAYOUT_KEY]?.newValue); this.render(); }
       if ([LIBRARY_CHANGE_KEY, ...Object.values(storageKeys)].some((key) => key in changes)) void this.reload().catch(() => { this.publishContext(""); });
     });
     window.setInterval(() => {
@@ -619,6 +622,7 @@ class PageController {
       onApplyHandoff={() => { const snapshot = this.state.handoffOffer; if (snapshot) void this.applySnapshot(snapshot.id).catch(() => this.showToast(sceneText(this.state.locale, "failed"))); }}
       onDismissHandoff={() => { this.state.handoffOffer = null; this.render(); }}
       onContextPositionChange={(position) => void this.saveContextIndicatorPosition(position)}
+      onWidgetLayoutChange={async layout => { await browser.storage.local.set({ [WIDGET_LAYOUT_KEY]: layout }); this.state.widgetLayout = layout; this.render(); }}
       onSceneChange={(scene) => this.setScene(scene).then(() => true, () => { this.showToast(sceneText(this.state.locale, "failed")); return false; })}
       onSceneChoicesToggle={() => void this.toggleSceneChoices()}
       menuUrl={`${browser.runtime.getURL("/sidepanel.html")}?embedded=1`}

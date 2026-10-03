@@ -3,6 +3,7 @@ import { clamp, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
+import { scenePortraitIndex } from "../core/portrait-variations";
 
 export interface PortraitStageOptions {
   scope: string;
@@ -51,7 +52,7 @@ function arrange(stage: Stage) {
     css(widget.box, "width", `${bounds.width}px`);
     css(widget.box, "left", `${clamp(bounds.x, 8, width - bounds.width - 8)}px`);
     css(widget.box, "top", `${clamp(bounds.y, 8, height - widget.box.offsetHeight - 8)}px`);
-    css(widget.resize, "top", `${Math.max(0, widget.move.offsetHeight + widget.open.querySelector("img")!.offsetHeight - 44)}px`);
+    css(widget.resize, "top", `${Math.max(0, widget.open.querySelector("img")!.offsetHeight - 44)}px`);
   }
 }
 
@@ -186,7 +187,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       text(widget.move, `⠿ ${entity.name}`); attr(widget.move, "aria-label", `${characterText(locale, "layoutMove")}: ${entity.name}`); attr(widget.move, "title", characterText(locale, "layoutKeys"));
       attr(widget.resize, "aria-label", `${characterText(locale, "layoutResize")}: ${entity.name}`); attr(widget.resize, "title", characterText(locale, "layoutResizeKeys"));
       attr(widget.open, "aria-label", `${characterText(locale, "edit")}: ${entity.name}`);
-      const state = scene?.states[entity.id]; syncPortraitImage(widget.open.querySelector("img")!, entity.characterSheet, state?.emotion);
+      const state = scene?.states[entity.id]; syncPortraitImage(widget.open.querySelector("img")!, entity.characterSheet, state?.emotion, scenePortraitIndex(entity, scene));
       const name = widget.open.querySelector(".dr-cast-name")!; if (name.textContent !== entity.name) name.textContent = entity.name;
       const label = state ? emotionLabel(locale, state.emotion) : characterText(locale, "noState"); const mood = widget.open.querySelector("small")!; if (mood.textContent !== label) mood.textContent = label;
       const role = widget.open.querySelector<HTMLElement>(".dr-cast-role")!; const roleText = characterText(locale, entity.id === hero?.id ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : "portraitPresent"); if (role.textContent !== roleText) role.textContent = roleText;

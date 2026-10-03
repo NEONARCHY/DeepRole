@@ -24,6 +24,25 @@ const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base
 const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
 
+it("preserves portrait variations through saves, automatic updates and portable/full exports", async () => {
+  const repo = await setup(); const sprites = { neutral: ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"] };
+  await saveCharacter({ ...scope(), entityId: "mira", name: "Mira", sheet: { ...entity.characterSheet!, sprites }, state: EMPTY_STATUS, present: true }, repo);
+  const people = [await repo.get<SceneEntity>("entity", "mira")];
+  let current = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+  const cycle = current.portraitCycles!.mira!.neutral!;
+  const base = characterRevision(people as SceneEntity[], current);
+  await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, updates: [{ id: "mira", state: { ...EMPTY_STATUS, goal: "Find the key", relationship: "Trusts Noah", stats: [{ label: "Energy", value: "Rested" }] } }] }, ["neutral", "happy"], repo);
+  current = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+  expect(current.portraitCycles!.mira!.neutral!.cursor).toBe(cycle.cursor + 1);
+  expect(current.states.mira!.relationship).toBe("Trusts Noah");
+  expect((await repo.get<ChatBinding>("binding", "binding:b"))!.characterScenes).toBeUndefined();
+  const pack = await exportWorld("w", repo); expect((pack.records.find(r => r.kind === "entity")!.data as SceneEntity).characterSheet!.sprites).toEqual(sprites);
+  expect(pack.records.every(validDataRecord)).toBe(true);
+  const rows = await repo.rawRecords(); expect(rows.every(validDataRecord)).toBe(true);
+  expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(rows);
+  expect(rows.find(r => r.kind === "entity")!.data).toEqual(expect.objectContaining({ description: entity.description }));
+});
+
 describe("portrait stat highlights", () => {
   it("does not invent indicators for an unknown or empty state", () => {
     expect(characterHighlights()).toEqual([]);

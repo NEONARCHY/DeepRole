@@ -45,7 +45,8 @@ export interface CharacterSheet {
   personality: string;
   goals: string;
   background: string;
-  sprites: Record<string, string>;
+  /** A string is the legacy single portrait; arrays are emotion variations. */
+  sprites: Record<string, string | string[]>;
 }
 
 export interface CharacterStatus {
@@ -57,6 +58,8 @@ export interface CharacterStatus {
 }
 
 export interface CharacterScene {
+  /** Local display state, never sent to the model. */
+  portraitCycles?: Record<string, Record<string, PortraitCycle>>;
   lastReply?: string;
   partnerId?: string | null;
   partnerIds?: string[];
@@ -65,6 +68,8 @@ export interface CharacterScene {
   states: Record<string, CharacterStatus>;
   updatedAt: number;
 }
+
+export interface PortraitCycle { key: string; order: number[]; cursor: number }
 
 /** UI-only. Never included in model context or character revisions. */
 export interface PortraitPose { x: number; y: number; width: number; space?: "viewport" }

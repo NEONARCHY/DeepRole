@@ -1,4 +1,10 @@
-.dr-characters { box-sizing:border-box; pointer-events:auto; width:328px; max-width:calc(100vw - 32px); margin-top:var(--dr-space-2); padding:var(--dr-space-3); border:1px solid var(--dr-border); border-radius:var(--dr-radius); background:var(--dr-panel); color:var(--dr-text); font:12px/1.5 system-ui,sans-serif; }
+.dr-characters { box-sizing:border-box; pointer-events:auto; width:288px; max-width:calc(100vw - 32px); margin-top:var(--dr-space-2); padding:var(--dr-space-3); border:1px solid var(--dr-border); border-radius:var(--dr-radius); background:var(--dr-panel); color:var(--dr-text); font:12px/1.5 system-ui,sans-serif; }
+.dr-portrait-variations{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.dr-portrait-variations>div{display:grid;gap:4px;min-width:0}
+.dr-portrait-variations button{position:relative;min-width:0;padding:4px!important}
+.dr-portrait-variations img{display:block;width:100%;aspect-ratio:3/4;object-fit:contain;border-radius:6px}
+.dr-portrait-variations button[aria-pressed=true]{outline:2px solid var(--dr-primary);outline-offset:1px}
+.dr-portrait-variations button>span{position:absolute;bottom:6px;right:6px;background:var(--dr-panel);border-radius:4px;padding:1px 4px}
 .dr-character-settings { display:grid; gap:12px; }
 .dr-characters header { display:flex; align-items:center; justify-content:space-between; gap:var(--dr-space-2); }
 .dr-characters button { color:var(--dr-text); background:var(--dr-surface); border:1px solid var(--dr-border); border-radius:8px; padding:8px; min-height:44px; cursor:pointer; font:inherit; }

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { BrainCircuit } from "lucide-react";
+import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell } from "lucide-react";
+import { WidgetDeck, WidgetTile, type WidgetLayout } from "./WidgetDeck";
 import { translate } from "../../core/i18n";
 import type { ContextSelection, ConversationEstimate, HandoffSnapshot, MemoryEntry } from "../../core/types";
 import { SectionGuide, HelpLocale } from "../shared/Help";
@@ -21,6 +22,7 @@ import type { CharacterScene } from "../../core/types";
 import type { CharacterCopyKey } from "../../core/characters";
 
 export interface WidgetState {
+  widgetLayout?: WidgetLayout;
   characters?: { worldId: string; chatId: string; base: string; entities: SceneEntity[]; scene?: CharacterScene; emotions: string[]; status: CharacterCopyKey; openId?: string | null };
   pageReady: boolean;
   startupError?: boolean;
@@ -70,6 +72,7 @@ export function PageWidget(props: {
   onApplyHandoff: () => void;
   onDismissHandoff: () => void;
   onContextPositionChange: (position: { x: number; y: number }) => void;
+  onWidgetLayoutChange?: (layout: WidgetLayout) => Promise<void>;
   menuUrl: string;
   onSceneChange?: (scene: SceneState) => void | Promise<boolean>;
   onSceneChoicesToggle?: () => void;
@@ -138,7 +141,7 @@ export function PageWidget(props: {
     window.addEventListener("resize", keepVisible);
     keepVisible();
     return () => { observer.disconnect(); window.removeEventListener("resize", keepVisible); };
-  }, [props.state.contextPosition?.x, props.state.contextPosition?.y]);
+  }, [props.state.contextPosition?.x, props.state.contextPosition?.y, props.state.pageReady, props.state.startupError, props.authenticationPage]);
   const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate(props.state.locale, key, vars);
   const count = props.state.selection.entries.length;
   const at = (key: Parameters<typeof assistantText>[1]) => assistantText(props.state.locale, key);
@@ -202,7 +205,7 @@ export function PageWidget(props: {
     const place = () => {
       // Anchor to the controls, not the entire portrait/status stack. A tall
       // stack must never push the review's approval buttons outside the window.
-      const rect = (anchor.querySelector(".dr-pill-row") ?? anchor).getBoundingClientRect();
+      const rect = (anchor.querySelector('[data-widget="memory"]:not([hidden])') ?? anchor.querySelector(".dr-widget-dock") ?? anchor.querySelector(".dr-pill-row") ?? anchor).getBoundingClientRect();
       const pad = 12;
       const width = Math.max(0, Math.min(assistantOpen ? 420 : 340, window.innerWidth - pad * 2));
       const maxHeight = Math.max(0, Math.min(720, window.innerHeight * .75, window.innerHeight - pad * 2));
@@ -218,7 +221,7 @@ export function PageWidget(props: {
     window.addEventListener("resize", place);
     place();
     return () => { observer.disconnect(); window.removeEventListener("resize", place); };
-  }, [open, assistantOpen, contextPosition?.x, contextPosition?.y, props.authenticationPage, props.state.vaultLocked, props.state.pageReady]);
+  }, [open, assistantOpen, contextPosition?.x, contextPosition?.y, props.state.widgetLayout, props.authenticationPage, props.state.vaultLocked, props.state.pageReady]);
   if (props.authenticationPage || !props.state.pageReady) {
     return <HelpLocale.Provider value={props.state.locale}><div className="dr-root" aria-hidden="true" /></HelpLocale.Provider>;
   }
@@ -232,23 +235,23 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
       <div ref={contextAnchor} hidden={props.state.startupError} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={props.state.startupError ? { display: "none" } : contextStyle}>
-      <div className="dr-pill-row">
-        {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : ((props.state.showMemoryContextIndicator !== false) || (props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0)) && <div className="dr-context-indicators">
-        {props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0 && <div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
+      {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : <WidgetDeck locale={props.state.locale} saved={props.state.widgetLayout} onSave={props.onWidgetLayoutChange}>
+        {props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0 && <WidgetTile id="meter" title={x("chatMeterTitle")} icon={<Gauge size={16} />}><div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
           <div className="dr-chat-meter-heading"><span>{x("chatMeterTitle")}</span><strong>~{compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M</strong></div>
           <div className="dr-chat-meter-track" role="progressbar" aria-valuemin={0} aria-valuemax={DEEPSEEK_WEB_CONTEXT_LIMIT} aria-valuenow={Math.min(chatEstimate.estimatedTokens, DEEPSEEK_WEB_CONTEXT_LIMIT)} aria-valuetext={`~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M`}><i style={{ width: `${chatEstimatePercent}%` }} /></div>
           <div className="dr-chat-meter-foot"><strong>{x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}</strong><small>{x(chatEstimate.source === "history" ? "chatMeterHistory" : "chatMeterPageOnly")}</small></div>
           {chatEstimate.atLeast && <small className="dr-chat-meter-note">{x("chatMeterAtLeast")}</small>}
-        </div>}
-        {props.state.showMemoryContextIndicator !== false && <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setOpen(!open); }} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{count}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button>}
-        </div>}
-        {!props.state.vaultLocked && props.state.scene?.worldId && props.onSceneChoicesToggle && <button className="dr-pill dr-scene-choice-toggle" type="button" title={sceneChoiceText(props.state.locale, "toggleHelp")} aria-pressed={Boolean(props.state.sceneChoicesEnabled)} onClick={props.onSceneChoicesToggle}>{sceneChoiceText(props.state.locale, props.state.sceneChoicesEnabled ? "toggleOn" : "toggleOff")}</button>}
-        {!props.state.vaultLocked && proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length, 0)}</button>}
-      {!props.state.vaultLocked && props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
-      </div>
-      {!props.state.vaultLocked && props.state.characters && props.onSaveCharacter && <CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} />}
+        </div></WidgetTile>}
+        {props.state.showMemoryContextIndicator !== false && <WidgetTile id="memory" title={t("context")} icon={<BrainCircuit size={16} />}><button className="dr-pill" onClick={() => setOpen(!open)} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{count}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button></WidgetTile>}
+        {props.state.scene?.worldId && props.onSceneChoicesToggle && <WidgetTile id="choices" title={sceneChoiceText(props.state.locale, "toggleOn")} icon={<ListChecks size={16} />}><button className="dr-pill dr-scene-choice-toggle" type="button" title={sceneChoiceText(props.state.locale, "toggleHelp")} aria-pressed={Boolean(props.state.sceneChoicesEnabled)} onClick={props.onSceneChoicesToggle}>{sceneChoiceText(props.state.locale, props.state.sceneChoicesEnabled ? "toggleOn" : "toggleOff")}</button></WidgetTile>}
+        {(proposals.length > 0 || props.state.analysisSuggested) && <WidgetTile id="notices" title={at("review")} icon={<Bell size={16} />}>
+          {proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length, 0)}</button>}
+          {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
+        </WidgetTile>}
+        {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
+        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} /></WidgetTile>}
+      </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
-      {!props.state.vaultLocked && ((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />}
       {!props.state.vaultLocked && open && <div className="dr-panel" style={panelBounds ? { ...panelBounds, position: "fixed", right: "auto", bottom: "auto", margin: 0, zIndex: 3 } : undefined}>{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><div className="dr-memory-help-actions"><MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} /><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></div></header>
         <SectionGuide locale={props.state.locale} text={x("previewHint")} />
         {props.state.pendingHandoff && <p className="dr-inline-note">{experienceText(props.state.locale, "pendingRecap", { name: props.state.pendingHandoff })}</p>}

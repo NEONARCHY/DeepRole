@@ -3,6 +3,7 @@ import { isSameDeepSeekChat } from "../core/chat-scope";
 import { characterRevision, characterTurnKey, characterInterlocutors, DEFAULT_EMOTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
 import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
+import { advancePortraitCycles, portraitVariations } from "../core/portrait-variations";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string }
 export interface CharacterEdit extends CharacterScope {
@@ -41,10 +42,12 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     // A manual revision blocks stale writes, but the already-consumed reply
     // must remain recognized after reopening instead of reporting a false conflict.
     const next: ChatBinding = { ...binding, characterScenes: { ...binding.characterScenes, [edit.worldId]: { revision: createId("rev"), lastReply: scene?.lastReply, partnerId, partnerIds, presentIds, states: { ...scene?.states, [entity.id]: structuredClone(edit.state) }, updatedAt: now } }, updatedAt: now };
+    const nextScene = next.characterScenes![edit.worldId]!;
+    nextScene.portraitCycles = advancePortraitCycles([...entities.filter(e => !changes.some(r => r.id === e.id)), ...changes.map(r => r.data as SceneEntity)], nextScene, scene, true);
     changes.push(record("binding", next));
     // Keep full backup sizes practical. Images are encrypted with the rest of the library.
     const replaced = new Set(changes.map(r => r.id));
-    const bytes = [...all.filter(r => r.kind === "entity" && !replaced.has(r.id)), ...changes.filter(r => r.kind === "entity")].reduce((sum, r) => sum + Object.values((r.data as SceneEntity).characterSheet?.sprites ?? {}).reduce((n, s) => n + s.length, 0), 0);
+    const bytes = [...all.filter(r => r.kind === "entity" && !replaced.has(r.id)), ...changes.filter(r => r.kind === "entity")].reduce((sum, r) => sum + Object.values((r.data as SceneEntity).characterSheet?.sprites ?? {}).flatMap(portraitVariations).reduce((n, s) => n + s.length, 0), 0);
     if (bytes > 25_000_000) throw new Error("character-images-full");
     return { records: changes, removed: [], result: undefined };
   });
@@ -100,7 +103,8 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
     const partnerIds = turn.partners?.map(resolve);
     const allPeople = [...entities, ...changes.map(r => r.data as SceneEntity)];
     if (partnerIds && (partnerIds.some(id => !id || !presentIds.includes(id) || allPeople.find(e => e.id === id)?.characterSheet?.protagonist) || new Set(partnerIds).size !== partnerIds.length)) throw new Error("character-unknown");
-    changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { revision: createId("rev"), lastReply: characterTurnKey(turn), partnerId: partnerIds ? partnerIds[0] ?? null : partnerId, ...(partnerIds ? { partnerIds: partnerIds as string[] } : {}), presentIds: presentIds as string[], states, updatedAt: now } }, updatedAt: now }));
+    const nextScene = { revision: createId("rev"), lastReply: characterTurnKey(turn), partnerId: partnerIds ? partnerIds[0] ?? null : partnerId, ...(partnerIds ? { partnerIds: partnerIds as string[] } : {}), presentIds: presentIds as string[], states, updatedAt: now };
+    changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { ...nextScene, portraitCycles: advancePortraitCycles(allPeople, nextScene, scene) } }, updatedAt: now }));
     return { records: changes, removed: [], result: undefined };
   });
 }

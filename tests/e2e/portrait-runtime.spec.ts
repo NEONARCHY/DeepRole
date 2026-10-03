@@ -14,8 +14,10 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     const panel = await context.newPage(); await panel.goto(`chrome-extension://${new URL(worker.url()).host}/sidepanel.html`);
     // Wait for the repository schema: page navigation alone doesn't initialize IndexedDB.
     await expect(panel.locator(".onboarding")).toBeVisible();
+    const variations = await panel.evaluate(() => ["#486db0", "#84b79c"].map(color => { const canvas = document.createElement("canvas"); canvas.width = 12; canvas.height = 16; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 12, 16); return canvas.toDataURL("image/png"); }));
     const state = { emotion: "neutral", condition: "Safe", goal: "Find the key", relationship: "", stats: [{ label: "Energy", value: "Rested" }] };
     const people = ["Noah", "Mira", "Leon", "Guard"].map((name, index) => ({ id: name.toLowerCase(), worldId: "w", name, kind: "character", description: "ORIGINAL", aliases: [], memberIds: [], characterSheet: { gender: "neutral", protagonist: index === 0, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
+    people[1]!.characterSheet.sprites = { neutral: variations };
     const initial = { revision: "v", presentIds: people.map(p => p.id), partnerIds: ["mira", "leon"], partnerId: "mira", states: Object.fromEntries(people.map(p => [p.id, state])), updatedAt: 1 };
     const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", bookId: null, focusIds: [], messageCountAtAnalysis: 0, characterScenes: { w: initial }, createdAt: 1, updatedAt: 1 };
     await panel.evaluate(async rows => {
@@ -24,9 +26,11 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     }, [["world", { id: "w", name: "Observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 }], ...people.map(p => ["entity", p]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]] as Array<[string, any]>);
     const records = () => panel.evaluate(() => new Promise<any[]>(resolve => { const open = indexedDB.open("deeprole"); open.onsuccess = () => { const db = open.result; const request = db.transaction("records").objectStore("records").getAll(); request.onsuccess = () => { resolve(request.result); db.close(); }; }; }));
     const chat = await context.newPage(); await chat.goto(binding.chatUrl); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
+    await expect.poll(async () => { const rect = (await chat.locator('[data-widget="scene"]').boundingBox())!; return Math.round(rect.y + rect.height); }).toBeLessThanOrEqual(720);
     const append = (payload?: any) => chat.evaluate(payload => { const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "scene"; const options = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })); row.textContent = "Mira, Leon and the guard stay in the observatory.\n" + (payload ? `<deeprole_characters>${JSON.stringify(payload)}</deeprole_characters>\n` : "") + `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`; document.querySelector("#conversation")!.replaceChildren(row); }, payload);
     await append(); await expect(chat.locator(".dr-cast-widget")).toHaveCount(4); await expect(chat.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(2);
     const mira = chat.locator('.dr-cast-widget[data-character-id="mira"]'); const handle = mira.locator(".dr-cast-move");
+    await expect(mira.locator("img")).toHaveAttribute("src", variations[0]!);
     await handle.scrollIntoViewIfNeeded(); const box = (await handle.boundingBox())!; await chat.mouse.move(box.x + 50, box.y + 20); await chat.mouse.down(); await chat.mouse.move(box.x - 100, box.y + 90, { steps: 6 }); await chat.mouse.up();
     await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.portraitLayouts?.w?.positions?.mira?.y).toBeGreaterThan(0);
     const before = await records(); expect(before.find(r => r.id === binding.id).data.characterScenes.w).toEqual(initial); const savedPose = before.find(r => r.id === binding.id).data.portraitLayouts.w.positions.mira;
@@ -37,6 +41,8 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     expect(schema.partners).toEqual([]); expect(prompts[0]).toContain("A change of addressee is not a departure"); expect(prompts[0]).not.toContain("portraitLayouts");
     const payload = { request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: "worried" } }] };
     await append(payload); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);
+    expect(prompts[0]).not.toContain("base64"); expect(prompts[0]).not.toContain("portraitCycles");
     await expect(chat.locator(".dr-cast-widget")).toHaveCount(4); await expect(chat.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(1); await expect(chat.locator('.dr-cast-widget[data-character-id="leon"] small')).toHaveText("Worried");
     expect((await records()).find(r => r.id === binding.id).data.portraitLayouts.w.positions.mira).toEqual(savedPose);
     await mira.locator(".dr-cast-portrait").focus(); await mira.locator(".dr-cast-portrait").press("Enter"); const dialog = chat.getByRole("dialog"); const partner = dialog.getByRole("checkbox", { name: "Talking to the protagonist", exact: true });
@@ -55,7 +61,8 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await expect(gallery.getByLabel("Name", { exact: true })).toHaveValue("Leon");
     await gallery.getByLabel("Condition", { exact: true }).fill("At the telescope.");
     await gallery.getByRole("button", { name: "Save character", exact: true }).click();
-    await expect(gallery.locator(".dr-character-gallery-card")).toHaveCount(4);
+    await expect(gallery.locator(".dr-character-gallery-view")).toBeVisible();
+    await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.condition).toBe("At the telescope.");
     current = (await records()).find(r => r.id === binding.id).data;
     expect(current.characterScenes.w.states.leon.condition).toBe("At the telescope.");
     expect(current.portraitLayouts.w.positions.mira).toEqual(savedPose);
@@ -65,5 +72,11 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     expect((await records()).find(r => r.id === "binding:b").data.portraitLayouts).toBeUndefined();
     await chat.goto(binding.chatUrl); await append(payload); await expect(mira).toHaveCSS("position", "absolute"); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     expect((await records()).find(r => r.id === binding.id).data.characterScenes.w).toEqual(current.characterScenes.w); expect(prompts).toHaveLength(1);
+    await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);
+    await chat.getByRole("button", { name: "Minimize: Characters", exact: true }).click();
+    await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
+    await chat.reload(); await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
+    await expect(chat.locator(".dr-characters")).toBeHidden();
+    await chat.locator('[data-restore-widget="characters"]').click(); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
   } finally { await context.close(); }
 });

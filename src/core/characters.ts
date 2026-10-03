@@ -1,4 +1,5 @@
 import type { CharacterSheet, CharacterStatus, CharacterScene, SceneEntity, Locale } from "./types";
+import { validPortrait, validPortraitVariations, validPortraitCycles, portraitVariations } from "./portrait-variations";
 
 export const CHARACTER_MARKER = "<deeprole_characters>";
 export const EMPTY_CHARACTER: CharacterSheet = { gender: "neutral", protagonist: false, appearance: "", personality: "", goals: "", background: "", sprites: {} };
@@ -10,11 +11,11 @@ const safeKey = (v: string) => v.length > 0 && !["__proto__", "prototype", "cons
 const validIds = (v: unknown): v is string[] => Array.isArray(v) && v.length <= 12 && v.every(id => str(id, 160) && safeKey(id)) && new Set(v).size === v.length;
 export const validEmotions = (v: unknown): v is string[] => Array.isArray(v) && v.length >= 1 && v.length <= 12 && v.every(s => str(s, 32) && safeKey(s) && s === s.trim()) && new Set(v).size === v.length && v.includes("neutral");
 export const emotionsFor = (v: unknown) => validEmotions(v) ? v : DEFAULT_EMOTIONS;
-export const validSprite = (v: unknown): v is string => str(v, 180_000) && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(v);
+export const validSprite = validPortrait;
 export function validCharacterSheet(v: unknown): v is CharacterSheet {
   return object(v) && ["male", "female", "neutral"].includes(String(v.gender)) && typeof v.protagonist === "boolean"
     && ["appearance", "personality", "goals", "background"].every(k => str(v[k], 1200))
-    && object(v.sprites) && Object.keys(v.sprites).length <= 12 && Object.entries(v.sprites).every(([k, s]) => safeKey(k) && k.length <= 32 && validSprite(s));
+    && object(v.sprites) && Object.keys(v.sprites).length <= 12 && Object.entries(v.sprites).every(([k, s]) => safeKey(k) && k.length <= 32 && validPortraitVariations(s));
 }
 export function validCharacterStatus(v: unknown): v is CharacterStatus {
   return object(v) && str(v.emotion, 32) && safeKey(v.emotion) && ["condition", "goal", "relationship"].every(k => str(v[k], 240))
@@ -22,7 +23,7 @@ export function validCharacterStatus(v: unknown): v is CharacterStatus {
 }
 export function validCharacterScenes(v: unknown): boolean {
   return object(v) && Object.keys(v).length <= 100 && Object.entries(v).every(([key, s]) => safeKey(key) && object(s) && str(s.revision, 160) && (s.lastReply === undefined || str(s.lastReply, 160)) && (s.partnerId === undefined || s.partnerId === null || str(s.partnerId, 160) && safeKey(s.partnerId)) && typeof s.updatedAt === "number" && Number.isFinite(s.updatedAt)
-    && validIds(s.presentIds) && (s.partnerIds === undefined || validIds(s.partnerIds) && s.partnerIds.every(id => (s.presentIds as string[]).includes(id))) && object(s.states)
+    && (s.portraitCycles === undefined || validPortraitCycles(s.portraitCycles)) && validIds(s.presentIds) && (s.partnerIds === undefined || validIds(s.partnerIds) && s.partnerIds.every(id => (s.presentIds as string[]).includes(id))) && object(s.states)
     && Object.keys(s.states).length <= 100 && Object.entries(s.states).every(([id, state]) => safeKey(id) && validCharacterStatus(state)));
 }
 export function characterRevision(entities: SceneEntity[], scene?: CharacterScene): string {
@@ -130,8 +131,12 @@ const galleryCopy = {
   ru: { openGallery: "Открыть галерею персонажей", gallery: "Все персонажи", backGallery: "К персонажам", editCharacter: "Редактировать персонажа", floatingHint: "Портреты можно перемещать по всему экрану. Размер — за угол.", floatingSettingHint: "Плавающие портреты всех участников. Перетаскивайте за имя; позиции и размеры сохраняются для этого чата и мира." },
   en: { openGallery: "Open character gallery", gallery: "All characters", backGallery: "Back to characters", editCharacter: "Edit character", floatingHint: "Move portraits anywhere on screen. Resize from the corner.", floatingSettingHint: "Floating portraits of everyone in the scene. Drag the name; positions and sizes are saved for this chat and world." },
 };
-export type CharacterCopyKey = keyof typeof copy.en | keyof typeof castCopy.en | keyof typeof layoutCopy.en | keyof typeof galleryCopy.en | "unbound";
-export const characterText = (locale: Locale, key: CharacterCopyKey): string => key === "unbound" ? unboundCopy[locale] : key in galleryCopy[locale] ? galleryCopy[locale][key as keyof typeof galleryCopy.en] : key in layoutCopy[locale] ? layoutCopy[locale][key as keyof typeof layoutCopy.en] : key in castCopy[locale] ? castCopy[locale][key as keyof typeof castCopy.en] : copy[locale][key as keyof typeof copy.en];
+const variationCopy = {
+  ru: { variations: "Вариации", addVariations: "Добавить изображения", variationLimit: "До 12 разных изображений на эмоцию. Уберите лишние и попробуйте ещё раз.", variationHint: "До 12 вариантов. PNG/JPG/WebP до 5 МБ. Новый портрет после обновления сцены, без повторов внутри круга.", stateHelp: "Как обновляются эти поля", stateAuto: "Эти поля обновляет DeepSeek после ответа, если прислал изменения. Без обновления остаются прежние значения. Ваши правки сохраняются кнопкой внизу и учитываются со следующего сообщения.", imagesFull: "Лимит изображений в библиотеке — 25 МБ. Удалите ненужные вариации и сохраните снова." },
+  en: { variations: "Variations", addVariations: "Add images", variationLimit: "Up to 12 different images per emotion. Remove extras and try again.", variationHint: "Up to 12 images, PNG/JPG/WebP up to 5 MB each. Scene updates cycle through them in random order without repeats.", stateHelp: "How these fields update", stateAuto: "DeepSeek updates these fields after a reply if it sends changes. Otherwise, previous values remain. Save your edits with the button below; they are included from your next message.", imagesFull: "The library image limit is 25 MB. Remove unused variations and save again." },
+};
+export type CharacterCopyKey = keyof typeof copy.en | keyof typeof castCopy.en | keyof typeof layoutCopy.en | keyof typeof galleryCopy.en | keyof typeof variationCopy.en | "unbound";
+export const characterText = (locale: Locale, key: CharacterCopyKey): string => key === "unbound" ? unboundCopy[locale] : key in variationCopy[locale] ? variationCopy[locale][key as keyof typeof variationCopy.en] : key in galleryCopy[locale] ? galleryCopy[locale][key as keyof typeof galleryCopy.en] : key in layoutCopy[locale] ? layoutCopy[locale][key as keyof typeof layoutCopy.en] : key in castCopy[locale] ? castCopy[locale][key as keyof typeof castCopy.en] : copy[locale][key as keyof typeof copy.en];
 export const emotionLabel = (locale: Locale, value: string) => value === "neutral" ? copy[locale].neutralEmotion : DEFAULT_EMOTIONS.includes(value) ? copy[locale][value as "happy"] : value;
 export function characterInterlocutors(entities: SceneEntity[], scene?: CharacterScene): SceneEntity[] {
   const hero = entities.find(entity => entity.characterSheet?.protagonist);
@@ -167,18 +172,20 @@ export function characterDescription(entity: SceneEntity, locale: Locale = "en")
 
 export function portraitSource(entity: SceneEntity, state?: CharacterStatus): string | null {
   const sprites = entity.characterSheet?.sprites;
-  return [sprites?.[state?.emotion ?? "neutral"], sprites?.neutral].find(validSprite) ?? null;
+  return portraitVariations(sprites?.[state?.emotion ?? "neutral"])[0] ?? portraitVariations(sprites?.neutral)[0] ?? null;
 }
 
 /** Only local raster images, then the local vector silhouette. Never repair stored data. */
-export function portraitSources(sheet?: CharacterSheet, emotion = "neutral"): string[] {
-  return [...new Set([sheet?.sprites[emotion], sheet?.sprites.neutral].filter(validSprite)), silhouetteSource(sheet?.gender)];
+export function portraitSources(sheet?: CharacterSheet, emotion = "neutral", variation = 0): string[] {
+  const selected = portraitVariations(sheet?.sprites[emotion]);
+  const images = selected.length ? selected : portraitVariations(sheet?.sprites.neutral);
+  return [...new Set([images[variation], ...images, ...portraitVariations(sheet?.sprites.neutral)].filter(validSprite)), silhouetteSource(sheet?.gender)];
 }
 
 /** A malformed image must not become a blank tile or trigger an endless retry loop. */
 const portraitImageCache = new WeakMap<HTMLImageElement, string[]>();
-export function syncPortraitImage(image: HTMLImageElement, sheet?: CharacterSheet, emotion = "neutral"): void {
-  const sources = portraitSources(sheet, emotion); const previous = portraitImageCache.get(image);
+export function syncPortraitImage(image: HTMLImageElement, sheet?: CharacterSheet, emotion = "neutral", variation = 0): void {
+  const sources = portraitSources(sheet, emotion, variation); const previous = portraitImageCache.get(image);
   if (previous?.length === sources.length && previous.every((source, index) => source === sources[index])) return;
   portraitImageCache.set(image, sources);
   let index = 0;

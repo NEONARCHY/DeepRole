@@ -101,6 +101,7 @@ export async function removeEntity(id: string, repo: DeepRoleRepository = reposi
         if (binding.characterScenes) {
           binding.characterScenes = structuredClone(binding.characterScenes);
           for (const scene of Object.values(binding.characterScenes)) {
+            if (scene.portraitCycles?.[id]) { delete scene.portraitCycles[id]; dirty = true; }
             if (scene.partnerId === id) { scene.partnerId = null; dirty = true; }
             if (scene.partnerIds?.includes(id)) { scene.partnerIds = scene.partnerIds.filter(partner => partner !== id); scene.partnerId = scene.partnerIds[0] ?? null; dirty = true; }
             if (scene.states[id] || scene.presentIds.includes(id)) { delete scene.states[id]; scene.presentIds = scene.presentIds.filter(v => v !== id); scene.revision = createId("rev"); delete scene.lastReply; dirty = true; }
