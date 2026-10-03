@@ -29,7 +29,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   expect(stored.characterSheetsEnabled).toBe(true);
 });
 
-for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 1280]) {
+for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 900, 1280]) {
   test(`character sheet, sprites and editing ${locale} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 850 });
     await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
@@ -63,12 +63,15 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 1280]
     await expectPortraitRatio(avatars.first().locator("img"));
     await expectPortraitRatio(avatars.last().locator("img"));
     const castContent = await page.locator(".dr-cast-content").boundingBox();
-    if (width < 760) expect(castContent!.y).toBeGreaterThan(castImage!.y + castImage!.height);
+    if (width < 900) expect(castContent!.y).toBeGreaterThan(castImage!.y + castImage!.height);
     else expect(castContent!.y).toBe(castImage!.y);
+    if (width >= 760) expect(castImage!.width).toBeGreaterThanOrEqual(190);
+    expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     await page.evaluate(() => (window as any).syncPortraits(["hero"])); await expect(avatars).toHaveCount(1); await expect(avatars).toHaveAccessibleName(/Noah/);
     await avatars.click(); await expect(dialog).toBeVisible(); await expect(dialog.getByLabel(locale === "ru" ? "Мой главный герой" : "My protagonist")).toBeChecked();
     await page.keyboard.press("Escape"); await expect(dialog).toHaveCount(0);
     await page.evaluate(() => (window as any).syncPortraits()); await page.screenshot({ path: info.outputPath(`portraits-${locale}-${width}.png`), fullPage: true });
+    await page.locator("[data-deeprole-choices-host]").screenshot({ path: info.outputPath(`scene-${locale}-${width}.png`) });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }

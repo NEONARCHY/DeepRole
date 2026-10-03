@@ -689,3 +689,78 @@ test("the menu and background writer use one cross-window library lock", async (
     expect((await databaseRecords(panel)).filter((row) => row.kind === "entry").map((row) => row.data.content)).toEqual(["CROSS_WINDOW_SAVE"]);
   } finally { await panel.evaluate(() => (window as any).releaseLock?.()).catch(() => undefined); await context.close(); }
 });
+
+for (const destinationKnown of [false, true]) test(`continuing into a fresh chat preserves the world, book and scene focus without leaking chat-only overrides (destination ${destinationKnown})`, async () => {
+  const world = { id: "transfer-world", name: "North Tower", description: "", color: "#9aaeff", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const hero = { id: "transfer-hero", worldId: world.id, kind: "character", name: "Noah", description: "Archivist", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1,
+    characterSheet: { gender: "male", protagonist: true, appearance: "Blue coat", personality: "Patient", goals: "Find the key", background: "", sprites: {} } };
+  const book = { id: "transfer-book", worldId: world.id, name: "Tower rules", description: "", color: "#9aaeff", active: true, createdAt: 1, updatedAt: 1 };
+  const binding = { id: "a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: world.id, bookId: book.id, focusIds: [hero.id], memoryOverrides: { includedIds: ["chat-only"], excludedIds: [] }, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([
+    ["world", world], ["book", book], ["entity", hero], ["binding", binding],
+    ["entry", { ...entry("rule"), worldId: world.id, bookId: book.id, activation: "always" }],
+    ["entry", { ...entry("chat-only"), worldId: world.id, bookId: book.id, activation: "manual" }],
+    ["entry", { ...entry("other-world"), worldId: "elsewhere", activation: "always" }],
+  ]);
+  try {
+    const sent: string[] = [];
+    await context.addInitScript((destinationKnown) => {
+      window.addEventListener("DOMContentLoaded", () => {
+        if (location.pathname !== "/") return;
+        document.querySelector("form")!.addEventListener("submit", event => {
+          event.preventDefault(); const composer = document.querySelector("textarea")!;
+          const prompt = composer.value; composer.value = "";
+          void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, ...(destinationKnown ? { chat_session_id: "world-continued" } : {}) }) }).then(() => {
+            history.pushState({}, "", "/chat/s/world-continued");
+            const request = document.documentElement.dataset.lastCharacterRequest;
+            document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="fresh-answer"><div class="ds-markdown"></div></article>';
+            document.querySelector(".ds-markdown")!.textContent = "Noah waits in the tower." + (request ? '<deeprole_characters>' + JSON.stringify({ request, present: ["Noah"], partner: null, updates: [{ id: "Noah", name: "Noah", state: { emotion: "happy", condition: "Safe", goal: "Find the key", relationship: "", stats: [] } }] }) + '</deeprole_characters>' : "");
+          });
+        });
+      }, { once: true });
+    }, destinationKnown);
+    // Inspect only the synthetic request at the network boundary, then mimic
+    // the model echoing its exact request marker in the first story reply.
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", async route => {
+      const prompt = route.request().postDataJSON().prompt; sent.push(prompt);
+      const request = prompt.match(/Schema: (.*)\nRoster:/)?.[1];
+      if (request) await chat.evaluate(id => { document.documentElement.dataset.lastCharacterRequest = id; }, JSON.parse(request).request);
+      await route.fulfill({ contentType: "application/json", body: "{}" });
+    });
+    await enableServiceComposer(chat); await chat.bringToFront();
+    expect(await command(panel, { type: "DR_RUN_SERVICE", request: { id: "world-continue-test", type: "continue-handoff", bookId: book.id, createdAt: Date.now() } })).toEqual({ ok: true });
+    await chat.evaluate(() => { document.querySelector("[data-message-id='service-answer']")!.textContent = '<deeprole_data>' + JSON.stringify({ type: "handoff", title: "North Tower", summary: "TRANSFER_SCENE: Noah has a brass key. Mira waits at 18:10." }) + '</deeprole_data>'; });
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/world-continued", { timeout: 20000 });
+    const prompt = sent.find(value => value.includes("[Story handoff]"))!;
+    expect(prompt).toContain("TRANSFER_SCENE"); expect(prompt).toContain("CANON_rule");
+    expect(prompt).toContain("Blue coat"); expect(prompt).toContain("Noah");
+    expect(prompt).not.toContain("CANON_other-world"); expect(prompt).not.toContain("CANON_chat-only");
+    await expect.poll(async () => (await databaseRecords(panel)).find(row => row.kind === "binding" && row.data.chatId === "world-continued")?.data).toMatchObject({ worldId: world.id, bookId: book.id, focusIds: [hero.id] });
+    const records = await databaseRecords(panel);
+    expect(records.find(row => row.kind === "entity" && row.id === hero.id).data).toEqual(hero);
+    expect(records.find(row => row.kind === "binding" && row.id === "a").data.memoryOverrides).toEqual(binding.memoryOverrides);
+    if (destinationKnown) {
+      expect(prompt).toContain("Schema:");
+      await expect.poll(async () => (await databaseRecords(panel)).find(row => row.kind === "binding" && row.data.chatId === "world-continued")?.data.characterScenes?.[world.id]?.states?.[hero.id]).toMatchObject({ emotion: "happy", condition: "Safe" });
+    } else expect(prompt).not.toContain("Schema:");
+    await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /TRANSFER_SCENE/);
+    await chat.reload();
+    await expect(chat.getByRole("combobox", { name: "World", exact: true })).toHaveValue(world.id);
+    await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /CANON_rule/);
+    await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /TRANSFER_SCENE|CANON_other-world|CANON_chat-only/);
+  } finally { await context.close(); }
+});
+
+test("a request directed to another chat receives none of the current chat's context", async () => {
+  const { context, panel, chat } = await setup([["entry", { ...entry("private-current-chat"), activation: "always" }]]);
+  try {
+    const sent: string[] = [];
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
+      sent.push(route.request().postDataJSON().prompt);
+      return route.fulfill({ contentType: "application/json", body: "{}" });
+    });
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Continue elsewhere", chat_session_id: "different-chat" }) }));
+    expect(sent).toEqual(["Continue elsewhere"]);
+    expect((await databaseRecords(panel)).filter(row => row.kind === "entry").map(row => row.data.content)).toEqual(["CANON_private-current-chat"]);
+  } finally { await context.close(); }
+});

@@ -397,14 +397,15 @@ class PageController {
     void browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
   }
 
-  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string) {
+  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string, requestChatId?: string) {
     const scene = this.currentScene();
     const world = this.worlds.find((w) => w.id === scene.worldId);
     const chatId = this.adapter.getChatId();
     const characterEntities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character");
     const characterScene = world ? this.currentBinding()?.characterScenes?.[world.id] : undefined;
-    const sheetsEnabled = !!(world && chatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked);
-    const characterContext = sheetsEnabled ? characterInstruction(world!.id, chatId!, characterEntities, characterScene, emotionsFor(this.settings.characterEmotions), scene.focusIds, [draft, ...this.adapter.getRecentMessages(2)].join("\n"), characterRequestId) : "";
+    const profilesEnabled = !!(world && this.settings.characterSheetsEnabled && !this.state.vaultLocked);
+    const sheetsEnabled = profilesEnabled && !!chatId;
+    const characterContext = profilesEnabled ? characterInstruction(world!.id, chatId ?? requestChatId ?? "", characterEntities, characterScene, emotionsFor(this.settings.characterEmotions), scene.focusIds, [draft, ...this.adapter.getRecentMessages(2)].join("\n"), characterRequestId) : "";
     const characterScope = `${scene.worldId}:${chatId}`;
     if (this.characterScan && this.characterScan.scope !== characterScope) { this.characterScan = null; this.characterStatus = "idle"; }
     this.state.characters = sheetsEnabled ? { worldId: world!.id, chatId: chatId!, base: characterRevision(characterEntities, characterScene), entities: characterEntities, scene: characterScene, emotions: emotionsFor(this.settings.characterEmotions), status: this.characterStatus, openId: this.state.characters?.openId } : undefined;
@@ -1129,6 +1130,7 @@ class PageController {
       this.scheduleHistoryRefresh(12_000);
       dismissSceneChoiceCards();
       const { id, draft } = event.data; const url = location.href;
+      const requestChatId = typeof event.data.chatId === "string" && /^[\w-]{1,120}$/u.test(event.data.chatId) ? event.data.chatId : undefined;
       void (async () => {
         try {
           if (this.adapter.getChatId() !== this.previousChatId) this.navigate();
@@ -1144,6 +1146,10 @@ class PageController {
           const generation = this.reloadGeneration;
           const sceneKey = this.contextScopeKey();
           const scene = this.currentScene();
+          const currentChatId = this.adapter.getChatId();
+          // An API request to another existing chat must not receive this page's lore.
+          if (requestChatId && currentChatId && requestChatId !== currentChatId) throw new Error("context-changed");
+          const characterChatId = currentChatId ?? (location.pathname === "/" ? requestChatId : undefined);
           const delivery: ContextDelivery = {
             scope: this.pageScope(), scopeKey: sceneKey,
             snapshot: this.appliedSnapshot && memoryWorld(this.appliedSnapshot, this.books) === scene.worldId ? this.appliedSnapshot : null,
@@ -1151,13 +1157,14 @@ class PageController {
           };
           // Capture this request's result, not the shared preview which another
           // draft can replace while the final vault check is awaiting storage.
-          const context = await this.updateContext(draft, id);
+          const context = await this.updateContext(draft, id, characterChatId);
           if (await repository.isLocked()) { this.publishContext(""); throw new Error("vault-locked"); }
           this.assertScope(delivery.scope);
           if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
-          const characters = this.state.characters;
-          if (characters) {
-            delivery.characterRequest = { id, worldId: characters.worldId, chatId: characters.chatId, base: characters.base, createdAt: Date.now(), accepted: false };
+          if (scene.worldId && characterChatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked) {
+            const entities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character");
+            const characterScene = this.currentBinding()?.characterScenes?.[scene.worldId];
+            delivery.characterRequest = { id, worldId: scene.worldId, chatId: characterChatId, base: characterRevision(entities, characterScene), createdAt: Date.now(), accepted: false };
             if (!await this.saveTabState({ characterRequest: delivery.characterRequest })) throw new Error("context-changed");
           }
           this.assertScope(delivery.scope);

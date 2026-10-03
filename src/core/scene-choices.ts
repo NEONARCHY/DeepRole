@@ -56,7 +56,9 @@ export function parseSceneChoices(text: string): { choices: SceneChoices; start:
 
 const copy = {
   ru: {
-    title: "Выберите ответ или действие", hint: "Нажмите вариант, затем измените его перед отправкой.",
+    title: "Ваш ход", hint: "Выбор попадёт в поле сообщения. Отправляете вы.",
+    navigation: "На вариантах: стрелки — переход, 1–4 — выбор.", selected: "Вставлено в поле сообщения: «{label}». Можно изменить перед отправкой.",
+    notInserted: "Вариант не вставлен. Ваш текст не заменён — проверьте поле сообщения.",
     positive: "Доброжелательно", neutral: "Нейтрально", negative: "Жёстко", surprise: "Неожиданный ход",
     toggleOn: "Выборы в сценах · вкл", toggleOff: "Выборы в сценах · выкл", toggleHelp: "Четыре варианта в ролевых сценах всех чатов с подключённым миром.",
     draftBusy: "Сначала завершите или очистите свой черновик.", unavailable: "Поле ввода сейчас недоступно.",
@@ -66,7 +68,9 @@ const copy = {
     changed: "Сцена уже изменилась. Запросите варианты под новым ответом.", busy: "Дождитесь завершения текущего ответа или запроса.",
   },
   en: {
-    title: "Choose a reply or action", hint: "Pick an option, then edit it before sending.",
+    title: "Your move", hint: "A choice fills the message box. You decide when to send.",
+    navigation: "On the options: arrows to move, 1–4 to choose.", selected: "Inserted into the message box: “{label}”. You can edit it before sending.",
+    notInserted: "The option was not inserted. Your text was left unchanged — check the message box.",
     positive: "Warm", neutral: "Neutral", negative: "Confrontational", surprise: "Unexpected move",
     toggleOn: "Scene choices · on", toggleOff: "Scene choices · off", toggleHelp: "Four options in roleplay scenes across chats with a connected world.",
     draftBusy: "Finish or clear your current draft first.", unavailable: "The composer is unavailable right now.",

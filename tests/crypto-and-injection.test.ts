@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, replaceOutgoingUserText } from "../src/core/request-injection";
+import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, replaceOutgoingUserText, outgoingChatId } from "../src/core/request-injection";
 import { decryptJson, encryptJson } from "../src/storage/crypto";
+
+it("reads only a valid request destination, never one in model text or nested history", () => {
+  expect(outgoingChatId(JSON.stringify({ prompt: "Scene", chat_session_id: "fresh-chat-123" }))).toBe("fresh-chat-123");
+  for (const value of [null, [], { chat_session_id: 7 }, { chat_session_id: "../../other" }, { prompt: '{"chat_session_id":"other"}' }, { messages: [{ chat_session_id: "other" }] }]) expect(outgoingChatId(JSON.stringify(value))).toBeNull();
+  expect(outgoingChatId("bad JSON")).toBeNull();
+});
 
 describe("encrypted backups", () => {
   it("round-trips data with AES-256-GCM", async () => {

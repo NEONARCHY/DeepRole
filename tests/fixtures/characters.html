@@ -12,8 +12,10 @@ const entities=[{id:"hero",name:"Noah",worldId:"w",kind:"character",description:
 const count=Number(new URL(location.href).searchParams.get("count"));
 if(count===1)entities.splice(1); else if(count===40)for(let i=2;i<40;i++)entities.push({...entities[1],id:`extra-${i}`,name:`Character ${i}`});
 const scene={revision:"1",presentIds:["hero","mira"],states:{hero:{...EMPTY_STATUS},mira:{...EMPTY_STATUS,emotion:"happy",condition:"Safe",stats:[{label:"Energy",value:"Rested"}]}},updatedAt:1};
-const options=["positive","neutral","negative","surprise"].map(kind=>({kind,label:kind,text:"I ask about the letter."}));
-document.querySelector("#reply").textContent="Mira holds a letter.\n<deeprole_choices>"+JSON.stringify({version:1,options})+"</deeprole_choices>";
+const labels=locale==="ru"?["Поблагодарить Миру","Осмотреть конверт","Отказаться открывать","Предложить обмен"]:["Thank Mira","Examine the envelope","Refuse to open it","Offer a trade"];
+const texts=locale==="ru"?["«Спасибо, Мира. Давай разберёмся вместе».","Подношу конверт к свету и изучаю печать, не вскрывая его.","«Я не стану открывать чужое письмо. Сначала найдём владельца».","«Обменяемся подсказками? У меня есть ключ, а у тебя — письмо». "]:["Thank you, Mira. Let’s work this out together.","I hold the envelope to the light and examine its seal without opening it.","I won’t open someone else’s letter. Let’s find its owner first.","Shall we trade clues? I have a key, and you have a letter."];
+const options=["positive","neutral","negative","surprise"].map((kind,index)=>({kind,label:labels[index],text:texts[index]}));
+document.querySelector("#reply").textContent=(locale==="ru"?"Мира держит запечатанный конверт.":"Mira holds a sealed envelope.")+"\n<deeprole_choices>"+JSON.stringify({version:1,options})+"</deeprole_choices>";
 function App(){const [settings,setSettings]=useState({...DEFAULT_SETTINGS,locale,characterSheetsEnabled:true}); const [openId,setOpenId]=useState(null);
 window.openCharacter=(id)=>setOpenId(id);
 window.syncPortraits=(present=scene.presentIds)=>{syncSceneChoiceCards(true,false,locale,async()=>true);syncChoicePortraits(true,entities,{...scene,presentIds:present},locale,id=>setOpenId(id));};

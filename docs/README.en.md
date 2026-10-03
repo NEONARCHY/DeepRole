@@ -25,6 +25,8 @@ Mark **My protagonist** for the left portrait beside reply options; the current 
 
 With a world connected, DeepRole asks DeepSeek to end scenes with dialogue or a meaningful action opportunity with four options: warm, neutral, confrontational, and unexpected. They appear as buttons below the reply. Clicking one **fills the composer for editing**; it never sends automatically. You can switch options until you edit the inserted text; DeepRole preserves your own draft.
 
+The **Your move** panel puts larger portraits beside the actions on wide screens and above them in narrow windows. A highlight and status confirm which action is in the composer, not sent. With a choice button focused, arrows move between buttons and **1–4** select an action. These shortcuts do not intercept typing in your message.
+
 When you reopen a chat, ready options below its latest reply are restored from loaded history **without a new request**. If DeepSeek omitted options or returned an invalid format, click **Suggest options** below the reply. This sends a visible request for four moves without continuing the scene. A nonempty draft blocks the request; retries after an error are explicit, never automatic.
 
 The **Scene choices** switch beside the context indicator applies to all chats with a connected world. Choices do not award automatic relationship points or write to lore. A character's reaction depends on their personality and story context; a harsh move can appeal to one character while a kind move can provoke distrust. Save lasting consequences through the usual reviewable **Update lore** flow.
@@ -84,4 +86,4 @@ npm run zip
 npm run zip:firefox
 ```
 
-Load `.output/chrome-mv3` in Chrome/Brave or `.output/firefox-mv2` in Firefox. Rebuilding does not reload an installed copy. Reload the extension, then DeepSeek. [QA report](QA-2026-10-03.md) distinguishes live model checks from local automated tests. Screenshots show the local demonstration, not personal chats.
+Load `.output/chrome-mv3` in Chrome/Brave or `.output/firefox-mv2` in Firefox. Rebuilding does not reload an installed copy. Reload the extension, then DeepSeek. [Latest QA report](QA-2026-10-03-round2.md) distinguishes live model checks from local automated tests. Screenshots show the local demonstration, not personal chats.

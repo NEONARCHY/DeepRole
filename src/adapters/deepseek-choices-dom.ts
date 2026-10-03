@@ -190,21 +190,60 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   host.dataset.deeproleChoicesLocale = locale;
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = `:host{display:block;margin:16px 0;font:14px/1.45 system-ui,sans-serif;color:#e6ebee}section{max-width:690px;padding:16px;border:1px solid #3b4a53;border-radius:14px;background:#172027;box-shadow:0 8px 24px #0002}h3{margin:0 0 4px;font-size:15px;font-weight:650}p{margin:0 0 13px;color:#a9b8c1;font-size:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}button{box-sizing:border-box;width:100%;min-height:88px;padding:11px 12px;text-align:left;border:1px solid #455762;border-radius:10px;background:#202c34;color:#e6ebee;cursor:pointer;font:inherit}button:hover,button:focus-visible{border-color:#9bc9e6;background:#283944;outline:none}button[aria-pressed=true]{border-color:#9bc9e6;background:#294357}button:disabled{opacity:.55;cursor:wait}small{display:block;margin-bottom:4px;color:#a9b8c1;font-size:11px}strong{display:block;font-size:13px;font-weight:600;white-space:normal;overflow-wrap:anywhere}.preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:5px;color:#a9b8c1;font-size:12px;overflow-wrap:anywhere}@media(max-width:600px){.grid{grid-template-columns:1fr}button{min-height:68px}}`;
+  style.textContent = `${designTokens}
+    :host{display:block;container-type:inline-size;margin:var(--dr-space-4) 0;font:14px/1.5 system-ui,sans-serif;color:var(--dr-text)}
+    section{box-sizing:border-box;max-width:1000px;padding:var(--dr-space-4);border:1px solid var(--dr-border);border-radius:var(--dr-radius);background:var(--dr-panel)}
+    h3{margin:0 0 var(--dr-space-1);font-size:17px;font-weight:650}p{margin:0 0 var(--dr-space-4);color:var(--dr-muted);font-size:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:var(--dr-space-2)}
+    .grid button{position:relative;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit}
+    .grid button:hover{border-color:var(--dr-border-strong);background:var(--dr-raised)}
+    button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}
+    .grid button[aria-pressed=true]{border-color:var(--dr-primary);background:var(--dr-primary-soft)}
+    button:disabled{opacity:.65;cursor:wait}small{display:block;margin-bottom:var(--dr-space-1);color:var(--dr-muted);font-size:11px}
+    .number{position:absolute;inset-inline-end:10px;top:10px;min-width:20px;text-align:center;border:1px solid var(--dr-border-strong);border-radius:5px;color:var(--dr-muted);font:12px/20px system-ui}
+    .grid small{padding-inline-end:24px}strong{display:block;font-size:14px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
+    .preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--dr-space-1);color:var(--dr-muted);font-size:12px;overflow-wrap:anywhere}
+    .choice-status{min-height:18px;margin:var(--dr-space-3) 0 0;overflow-wrap:anywhere}.choice-status[data-selected=true]{color:var(--dr-primary)}
+    @container(min-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  `;
   const section = doc.createElement("section");
   section.setAttribute("aria-label", sceneChoiceText(locale, "title"));
   const title = doc.createElement("h3"); title.textContent = sceneChoiceText(locale, "title");
   const hint = doc.createElement("p"); hint.textContent = sceneChoiceText(locale, "hint");
   const grid = doc.createElement("div"); grid.className = "grid"; grid.setAttribute("role", "group"); grid.setAttribute("aria-label", sceneChoiceText(locale, "title"));
-  for (const choice of options) {
+  grid.title = sceneChoiceText(locale, "navigation");
+  const status = doc.createElement("p"); status.className = "choice-status"; status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
+  status.textContent = sceneChoiceText(locale, "navigation");
+  let picking = false;
+  for (const [index, choice] of options.entries()) {
     const button = doc.createElement("button"); button.type = "button"; button.setAttribute("aria-pressed", "false");
+    button.title = choice.text;
+    const number = doc.createElement("span"); number.className = "number"; number.textContent = String(index + 1); number.setAttribute("aria-hidden", "true");
     const category = doc.createElement("small"); category.textContent = sceneChoiceText(locale, choice.kind);
     const label = doc.createElement("strong"); label.textContent = choice.label;
     const preview = doc.createElement("span"); preview.className = "preview"; preview.textContent = choice.text;
-    button.append(category, label, preview);
-    button.addEventListener("click", () => { void onPick(choice, signature).then((ok) => { if (ok) grid.querySelectorAll("button").forEach((item) => item.setAttribute("aria-pressed", String(item === button))); }); });
+    button.append(number, category, label, preview);
+    button.addEventListener("click", () => {
+      if (picking) return; picking = true;
+      const buttons = grid.querySelectorAll<HTMLButtonElement>("button"); buttons.forEach(item => { item.disabled = true; });
+      void onPick(choice, signature).then(ok => {
+        if (!host.isConnected) return;
+        if (!ok) { status.textContent = sceneChoiceText(locale, "notInserted"); status.dataset.selected = "false"; return; }
+        buttons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+        status.textContent = sceneChoiceText(locale, "selected").replace("{label}", choice.label); status.dataset.selected = "true";
+      }).catch(() => { if (host.isConnected) status.textContent = sceneChoiceText(locale, "unavailable"); })
+        .finally(() => { picking = false; buttons.forEach(item => { item.disabled = false; }); });
+    });
     grid.append(button);
   }
-  section.append(title, hint, grid); shadow.append(style, section);
+  grid.addEventListener("keydown", event => {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || picking) return;
+    const buttons = [...grid.querySelectorAll<HTMLButtonElement>("button")];
+    const current = buttons.indexOf(event.target as HTMLButtonElement); if (current < 0) return;
+    if (/^[1-4]$/u.test(event.key)) { event.preventDefault(); buttons[Number(event.key) - 1]?.click(); return; }
+    const offset = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+    if (offset) { event.preventDefault(); buttons[(current + offset + buttons.length) % buttons.length]?.focus(); }
+  });
+  section.append(title, hint, grid, status); shadow.append(style, section);
   return host;
 }

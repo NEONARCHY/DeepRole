@@ -136,7 +136,7 @@ describe("history restoration and explicit recovery", () => {
   it("localizes recovery and restores the final card when a complete answer arrives", () => {
     const row = answer("Scene"); sync("en"); expect(recovery()?.shadowRoot?.querySelector("button")?.textContent).toBe("Suggest options");
     row.textContent = "Scene\n" + payload; sync("en"); expect(recovery()).toBeNull();
-    expect(host()?.shadowRoot?.querySelector("h3")?.textContent).toBe("Choose a reply or action");
+    expect(host()?.shadowRoot?.querySelector("h3")?.textContent).toBe("Your move");
   });
   it("keeps existing hosts during repeated idle scans instead of churning the DOM", () => {
     const row = answer("Scene"); sync(); const buttonHost = recovery();

@@ -3,6 +3,16 @@ export interface InjectionResult {
   body: string;
 }
 
+/** Destination from the site's request, never from generated text or an old URL. */
+export function outgoingChatId(body: string): string | null {
+  try {
+    const payload: unknown = JSON.parse(body);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    const id = (payload as Record<string, unknown>).chat_session_id;
+    return typeof id === "string" && /^[\w-]{1,120}$/u.test(id) ? id : null;
+  } catch { return null; }
+}
+
 /** Read the exact outgoing draft even if the website already cleared its composer. */
 export function outgoingUserText(body: string): string | null {
   try {

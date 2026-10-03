@@ -25,6 +25,11 @@ const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, 
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
 
 describe("locally bound character replies", () => {
+  it("shares first-message profiles without inventing a destination or requesting unbound updates", () => {
+    const prompt = characterInstruction("w", "", [entity], undefined, ["neutral"], [entity.id], "");
+    expect(prompt).toContain("Blue coat"); expect(prompt).toContain("Mira");
+    expect(prompt).not.toContain("<deeprole_characters>"); expect(prompt).not.toContain("Schema:");
+  });
   const receipt = () => ({ id: "request-123456", ...scope(), accepted: true, createdAt: 1 });
   it("uses a request marker and names, not local world/entity identifiers", () => {
     const prompt = characterInstruction("world-local-secret", "a", [entity], undefined, ["neutral"], [], "", receipt().id);
