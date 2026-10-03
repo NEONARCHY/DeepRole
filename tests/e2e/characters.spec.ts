@@ -33,10 +33,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
   test(`character sheet, sprites and editing ${locale} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 850 });
     await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
-    const tileImage = await page.locator(".dr-character-row img").first().boundingBox();
-    expect(tileImage!.width).toBeGreaterThanOrEqual(112);
-    await expectPortraitRatio(page.locator(".dr-character-row img").first());
-    await expectPortraitRatio(page.locator(".dr-character-row img").last());
+    await expect(page.locator(".dr-character-row img")).toHaveCount(0);
+    await page.getByRole("button", { name: locale === "ru" ? "Открыть галерею персонажей" : "Open character gallery" }).click();
+    await expectPortraitRatio(page.locator(".dr-character-gallery-card img").first());
+    await expectPortraitRatio(page.locator(".dr-character-gallery-card img").last());
+    await page.keyboard.press("Escape");
     expect((await new AxeBuilder({ page }).include(".dr-characters").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
     const dialog = page.getByRole("dialog"); await expect(dialog).toBeVisible();
@@ -58,13 +59,17 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     const avatars = page.locator(".dr-cast-portrait"); await expect(avatars).toHaveCount(2);
     const castImage = await avatars.first().locator("img").boundingBox();
     expect(castImage!.width).toBeGreaterThanOrEqual(120);
-    // Firefox may report 164 CSS px as 163.99994 after scrolling.
-    expect(castImage!.height + 0.01).toBeGreaterThanOrEqual(164);
+    // Small viewports use 120px floating portraits, still exactly 3:4.
+    expect(castImage!.height + 0.01).toBeGreaterThanOrEqual(160);
     await expectPortraitRatio(avatars.first().locator("img"));
     await expectPortraitRatio(avatars.last().locator("img"));
     const castContent = await page.locator(".dr-cast-content").boundingBox();
-    if (width < 900) expect(castContent!.y).toBeGreaterThan(castImage!.y + castImage!.height);
-    else expect(castContent!.y + 44).toBe(castImage!.y);
+    const sprites = page.getByRole("checkbox", { name: locale === "ru" ? "Портреты рядом с вариантами ответа" : "Portraits beside reply options", exact: true });
+    await sprites.uncheck(); await expect(avatars).toHaveCount(0);
+    expect((await page.locator("[data-deeprole-choices-host] section").boundingBox())!.height).toBeCloseTo(castContent!.height, 1);
+    await sprites.check(); await expect(avatars).toHaveCount(2);
+    await expect(page.locator("[data-deeprole-choices-host] .dr-cast-portrait")).toHaveCount(0);
+    await expect(page.locator("[data-deeprole-portrait-layer]")).toHaveCSS("position", "fixed");
     if (width >= 760) expect(castImage!.width).toBeGreaterThanOrEqual(190);
     expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     await page.evaluate(() => (window as any).syncPortraits(["hero"])); await expect(avatars).toHaveCount(1); await expect(avatars).toHaveAccessibleName(/Noah/);
@@ -99,17 +104,18 @@ for (const count of [1, 40]) test(`portrait grid stays usable with ${count} char
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto(`/tests/fixtures/characters.html?count=${count}`);
   if (count === 40) await page.getByRole("button", { name: "All · 40", exact: true }).click();
-  const tiles = page.locator(".dr-character-row"); await expect(tiles).toHaveCount(count);
+  await page.getByRole("button", { name: "Open character gallery", exact: true }).click();
+  const tiles = page.locator(".dr-character-gallery-card"); await expect(tiles).toHaveCount(count);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  const list = page.locator(".dr-character-list");
+  const list = page.locator(".dr-character-gallery-grid");
   if (count === 1) {
-    const image = await tiles.locator("img").boundingBox(); expect(image!.width).toBe(220); expect(image!.height).toBeGreaterThan(290);
+    const image = await tiles.locator("img").boundingBox(); expect(image!.width).toBeGreaterThanOrEqual(120); expect(image!.height).toBeGreaterThan(160);
     await expectPortraitRatio(tiles.locator("img"));
-    await tiles.locator("strong").scrollIntoViewIfNeeded(); await tiles.click();
+    await tiles.getByRole("button", { name: /Edit character:/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
   } else {
     expect(await list.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
-    await tiles.last().scrollIntoViewIfNeeded(); await tiles.last().click();
+    await tiles.last().getByRole("button").scrollIntoViewIfNeeded(); await tiles.last().getByRole("button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
   }
 });

@@ -60,7 +60,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await page.evaluate(stats => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, stats } } } }); }, six);
     const tile = page.locator(".dr-character-row").filter({ hasText: "Mira" });
     const portrait = page.locator(".dr-cast-portrait.right");
-    await expect(tile.locator(".dr-character-highlights>span")).toHaveText(stats.map(stat => `${stat.label}: ${stat.value}`));
+    await expect(tile.locator("img")).toHaveCount(0); await expect(tile).toContainText(locale === "ru" ? "Радость" : "Happy");
     await expect(portrait.locator(".dr-cast-highlights>span")).toHaveText(stats.map(stat => `${stat.label}: ${stat.value}`));
     await expect(portrait).toHaveAccessibleDescription(stats.map(stat => `${stat.label}: ${stat.value}`).join(" "));
     const before = await page.evaluate(() => (window as any).getCast().scene);
@@ -75,7 +75,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "2", states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, emotion: "worried", stats: [{ label: "Keys", value: "0" }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }] } } } }); });
     await expect(portrait).toBeFocused(); await expect(portrait.locator("small")).toHaveText(locale === "ru" ? "Тревога" : "Worried");
     await expect(portrait.locator(".dr-cast-highlights>span")).toHaveText(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
-    await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
+    await expect(tile).toContainText(locale === "ru" ? "Тревога" : "Worried");
     await expect(portrait.locator(".dr-cast-highlights img")).toHaveCount(0); await expect(tile.locator(".dr-character-highlights img")).toHaveCount(0);
     expect((await new AxeBuilder({ page }).include(".dr-characters").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -154,14 +154,14 @@ test("live emotion changes preserve portrait focus and recover corrupt local ima
   await expect(right).toBeFocused(); await expect(right.locator("small")).toHaveText("Worried");
   const neutral = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 120; canvas.height = 160; canvas.getContext("2d")!.fillRect(0, 0, 120, 160); return canvas.toDataURL("image/png"); });
   await page.evaluate(value => { const cast = (window as any).getCast(); (window as any).setCast({ entities: cast.entities.map((e: any) => e.id === "mira" ? { ...e, updatedAt: 2, characterSheet: { ...e.characterSheet, sprites: { worried: "data:image/png;base64,AAAA", neutral: value } } } : e) }); }, neutral);
-  const tileImage = page.locator(".dr-character-row").filter({ hasText: "Mira" }).locator("img");
+  const tile = page.locator(".dr-character-row").filter({ hasText: "Mira" });
   await expect(right).toBeFocused(); await expect(right.locator("img")).toHaveAttribute("src", neutral);
-  await expect(tileImage).toHaveAttribute("src", neutral); await expect.poll(() => tileImage.evaluate((img: HTMLImageElement) => img.naturalHeight)).toBe(160);
+  await expect(tile.locator("img")).toHaveCount(0);
   await right.press("Enter");
   const editorImage = page.getByRole("dialog").locator(".dr-character-portrait-editor img"); await editorImage.scrollIntoViewIfNeeded(); await expect(editorImage).toHaveAttribute("src", neutral);
   await page.keyboard.press("Escape"); await expect(page.getByRole("dialog")).toHaveCount(0); await expect(right).toBeFocused();
   await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ entities: cast.entities.map((e: any) => e.id === "mira" ? { ...e, updatedAt: 3, characterSheet: { ...e.characterSheet, sprites: { worried: "data:image/png;base64,AAAA", neutral: "data:image/png;base64,BBBB" } } } : e) }); });
-  await expect(right.locator("img")).toHaveAttribute("src", /^data:image\/svg\+xml,/); await expect(tileImage).toHaveAttribute("src", /^data:image\/svg\+xml,/);
+  await expect(right.locator("img")).toHaveAttribute("src", /^data:image\/svg\+xml,/);
   await expect.poll(() => right.locator("img").evaluate((img: HTMLImageElement) => img.naturalHeight)).toBe(160);
   expect(await page.evaluate(() => (window as any).getCast().entities.find((e: any) => e.id === "mira").characterSheet.sprites.worried)).toBe("data:image/png;base64,AAAA");
 });

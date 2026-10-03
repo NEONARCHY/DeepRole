@@ -1,0 +1,88 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
+
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1600]) test(`compact cast and same-window gallery editor ${locale} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto(`/tests/fixtures/characters.html?locale=${locale}&count=40`);
+  const panel = page.locator(".dr-characters");
+  await expect(panel.locator("img")).toHaveCount(0);
+  await expect(panel.locator(".dr-character-row")).toHaveCount(2);
+  expect((await panel.boundingBox())!.height).toBeLessThan(300);
+  const expand = panel.getByRole("button", { name: locale === "ru" ? "Открыть галерею персонажей" : "Open character gallery" });
+  await expand.click(); const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveCount(1); await expect(dialog.locator(".dr-character-gallery-card")).toHaveCount(40);
+  const box = (await dialog.boundingBox())!;
+  expect(box.x + box.width / 2).toBeCloseTo(width / 2, 0);
+  expect(box.y + box.height / 2).toBeCloseTo(450, 0);
+  expect(box.height).toBeLessThan(900);
+  await expect(dialog.getByRole("searchbox")).toBeFocused();
+  expect((await new AxeBuilder({ page }).include(".dr-character-gallery").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: info.outputPath(`gallery-${locale}-${width}.png`) });
+  await dialog.getByRole("searchbox").fill("Mira");
+  const card = dialog.locator(".dr-character-gallery-card"); await expect(card).toHaveCount(1);
+  await expect(card.locator(".dr-character-highlights>span")).toHaveText(["Energy: Rested"]);
+  const image = (await card.locator("img").boundingBox())!; expect(image.width / image.height).toBeCloseTo(.75, 3);
+  await dialog.evaluate(node => { (window as any).galleryDialog = node; });
+  const pencil = card.getByRole("button", { name: `${locale === "ru" ? "Редактировать персонажа" : "Edit character"}: Mira`, exact: true });
+  await pencil.click(); await expect(dialog).toHaveCount(1);
+  expect(await dialog.evaluate(node => node === (window as any).galleryDialog)).toBe(true);
+  const name = dialog.getByLabel(locale === "ru" ? "Имя" : "Name", { exact: true }); await expect(name).toBeFocused();
+  await name.fill("Mira revised");
+  await page.evaluate(() => { (window as any).rejectSave = true; });
+  const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character" });
+  await save.click(); await expect(dialog.getByRole("alert")).toBeVisible(); await expect(name).toHaveValue("Mira revised");
+  await page.evaluate(() => { (window as any).rejectSave = false; }); await save.click();
+  await expect(dialog).toHaveCount(1); expect(await dialog.evaluate(node => node === (window as any).galleryDialog)).toBe(true);
+  await expect(card).toContainText("Mira revised"); await expect(card.getByRole("button")).toBeFocused();
+  await expect(dialog.getByRole("searchbox")).toHaveValue("Mira");
+  expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ name: "Mira revised", entityId: "mira", worldId: "w", chatId: "a" });
+  await page.keyboard.press("Escape"); await expect(dialog).toHaveCount(0); await expect(expand).toBeFocused();
+  await expect(panel.locator("img")).toHaveCount(0); await expect(panel).toContainText("Mira revised");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("floating portraits escape clipping and never add a gap to the reply", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1600, height: 1000 }); await page.goto("/tests/fixtures/characters.html?locale=en");
+  await page.waitForFunction(() => !!(window as any).syncPortraits);
+  await page.evaluate(() => {
+    document.querySelector<HTMLElement>("#conversation")!.style.cssText = "width:690px;margin:20px auto;overflow:hidden;transform:translateZ(0)";
+    document.querySelector<HTMLElement>("#app")!.style.cssText = "position:absolute;left:16px;top:20px";
+    (window as any).syncPortraits();
+  });
+  const host = page.locator("[data-deeprole-choices-host]"); const layer = page.locator("[data-deeprole-portrait-layer]");
+  await expect(layer).toHaveCSS("position", "fixed");
+  expect(await layer.evaluate(el => el.parentElement === document.body)).toBe(true);
+  await expect(host.locator(".dr-cast-widget")).toHaveCount(0);
+  const answer = page.locator("#reply"); const choices = host.locator("section");
+  const before = (await choices.boundingBox())!;
+  expect(before.y - ((await answer.boundingBox())!.y + (await answer.boundingBox())!.height)).toBeLessThan(40);
+  const mira = layer.locator('[data-character-id="mira"].dr-cast-widget'); const move = mira.locator(".dr-cast-move");
+  await move.focus(); await move.press("ArrowUp"); await expect(host.locator(".dr-cast-layout-status")).toHaveText("Layout saved");
+  const handle = (await move.boundingBox())!; await page.mouse.move(handle.x + 50, handle.y + 20); await page.mouse.down(); await page.mouse.move(140, 160, { steps: 8 }); await page.mouse.up();
+  const moved = (await mira.boundingBox())!; expect(moved.x).toBeLessThan((await host.boundingBox())!.x - 100);
+  expect((await choices.boundingBox())!.y).toBeCloseTo(before.y, 1);
+  expect((await choices.boundingBox())!.height).toBeCloseTo(before.height, 1);
+  const pose = await page.evaluate(() => (window as any).savedLayout.pose); expect(pose.space).toBe("viewport");
+  await page.evaluate(() => window.scrollTo(0, 500));
+  expect((await mira.boundingBox())!.y).toBeCloseTo(moved.y, 1);
+  await page.screenshot({ path: info.outputPath("floating-outside-chat.png") });
+  await page.reload(); await expect(mira).toHaveCSS("position", "absolute");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem(JSON.stringify(["w", "a"]))!).positions.mira)).toEqual(pose);
+  await page.evaluate(() => { document.querySelector("[data-deeprole-choices-host]")!.remove(); (window as any).syncPortraits(); });
+  await expect(layer).toHaveCount(1); await expect(layer.locator(".dr-cast-widget")).toHaveCount(2);
+});
+
+test("gallery navigation protects drafts and the close icon exits the whole window", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 }); await page.goto("/tests/fixtures/characters.html?locale=en");
+  const expand = page.getByRole("button", { name: "Open character gallery", exact: true });
+  await expand.click(); const dialog = page.getByRole("dialog");
+  const pencil = dialog.getByRole("button", { name: "Edit character: Mira", exact: true });
+  await pencil.click(); const name = dialog.getByLabel("Name", { exact: true }); await name.fill("Private draft");
+  page.once("dialog", event => event.dismiss()); await page.keyboard.press("Escape"); await expect(name).toHaveValue("Private draft");
+  page.once("dialog", event => event.accept()); await dialog.getByRole("button", { name: "Back to characters", exact: true }).first().click();
+  await expect(dialog.locator(".dr-character-gallery-card")).toHaveCount(2); await expect(pencil).toBeFocused();
+  expect(await page.evaluate(() => (window as any).saved)).toBeUndefined();
+  await pencil.click(); await expect(name).toHaveValue("Mira"); await name.fill("Another draft");
+  page.once("dialog", event => event.accept()); await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(dialog).toHaveCount(0); await expect(expand).toBeFocused();
+});

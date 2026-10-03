@@ -272,8 +272,8 @@ test("full-text choices keep both large scene portraits and readable action para
   const card = page.locator("[data-deeprole-choices-host]");
   await card.getByRole("button", { name: "Текст целиком", exact: true }).click();
   await expect(card.locator(".preview").first()).toHaveText(texts[0]!);
-  await expect(card.locator(".dr-cast-portrait")).toHaveCount(2);
-  for (const image of await card.locator(".dr-cast-portrait img").all()) {
+  await expect(page.locator("[data-deeprole-portrait-layer] .dr-cast-portrait")).toHaveCount(2);
+  for (const image of await page.locator("[data-deeprole-portrait-layer] .dr-cast-portrait img").all()) {
     const bounds = await image.boundingBox(); expect(bounds!.width).toBeGreaterThanOrEqual(180); expect(bounds!.width / bounds!.height).toBeCloseTo(.75, 2);
   }
   expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);

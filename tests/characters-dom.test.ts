@@ -62,11 +62,12 @@ it("reuses choices and decorates only current participants, without duplicate bu
   const scene: CharacterScene = { revision: "v", presentIds: ["hero", "mira", "noah"], partnerId: "noah", states: {}, updatedAt: 1 };
   const pick = vi.fn(async () => true); const open = vi.fn(); syncSceneChoiceCards(true, false, "en", pick); syncChoicePortraits(true, people, scene, "en", open);
   const host = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!;
-  expect([...host.shadowRoot!.querySelectorAll(".dr-cast-portrait")].map(b => b.getAttribute("aria-label"))).toEqual(["Open character: hero", "Open character: noah", "Open character: mira"]);
+  const floating = document.querySelector<HTMLElement>("[data-deeprole-portrait-layer]")!.shadowRoot!;
+  expect([...floating.querySelectorAll(".dr-cast-portrait")].map(b => b.getAttribute("aria-label"))).toEqual(["Open character: hero", "Open character: noah", "Open character: mira"]);
   syncSceneChoiceCards(true, false, "en", pick); syncChoicePortraits(true, people, scene, "en", open);
-  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.querySelectorAll(".grid button, .dr-cast-portrait")).toHaveLength(7);
-  host.shadowRoot!.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!.click(); expect(open).toHaveBeenCalledWith("noah");
-  syncChoicePortraits(true, people, { ...scene, revision: "v2", partnerId: null }, "en", open); expect(host.shadowRoot!.querySelectorAll(".dr-cast-portrait")).toHaveLength(3);
+  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4); expect(floating.querySelectorAll(".dr-cast-portrait")).toHaveLength(3); expect(host.shadowRoot!.querySelectorAll(".dr-cast-portrait")).toHaveLength(0);
+  floating.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!.click(); expect(open).toHaveBeenCalledWith("noah");
+  syncChoicePortraits(true, people, { ...scene, revision: "v2", partnerId: null }, "en", open); expect(floating.querySelectorAll(".dr-cast-portrait")).toHaveLength(3);
   syncChoicePortraits(false, people, scene, "en", open); expect(host.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4);
 });
 
@@ -104,7 +105,7 @@ it("keeps portrait focus and nodes across emotion updates, and uses the current 
   const oldOpen = vi.fn(); const newOpen = vi.fn();
   syncSceneChoiceCards(true, false, "en", vi.fn(async () => true));
   syncChoicePortraits(true, people, scene, "en", oldOpen);
-  const shadow = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!.shadowRoot!;
+  const shadow = document.querySelector<HTMLElement>("[data-deeprole-portrait-layer]")!.shadowRoot!;
   const button = shadow.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!;
   const image = button.querySelector("img"); button.focus();
   syncChoicePortraits(true, people, { ...scene, revision: "v2", states: { mira: { ...EMPTY_STATUS, emotion: "worried" } } }, "en", newOpen);
@@ -125,7 +126,7 @@ it("updates stat highlights as plain text without recreating the portrait or chu
   const people: SceneEntity[] = ["hero", "mira"].map(id => ({ id, name: id, kind: "character", worldId: "w", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: id === "hero" } }));
   const scene: CharacterScene = { revision: "v", presentIds: ["hero", "mira"], states: { mira: { ...EMPTY_STATUS, stats: [{ label: "Keys", value: "0" }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }, { label: "Energy", value: "Rested" }] } }, updatedAt: 1 };
   const open = vi.fn(); syncSceneChoiceCards(true, false, "en", vi.fn(async () => true)); syncChoicePortraits(true, people, scene, "en", open);
-  const shadow = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!.shadowRoot!;
+  const shadow = document.querySelector<HTMLElement>("[data-deeprole-portrait-layer]")!.shadowRoot!;
   const portrait = shadow.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!; const highlights = portrait.querySelector<HTMLElement>(".dr-cast-highlights")!;
   expect([...highlights.children].map(node => node.textContent)).toEqual(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
   expect(highlights.querySelector("img")).toBeNull(); expect(highlights.hidden).toBe(false);

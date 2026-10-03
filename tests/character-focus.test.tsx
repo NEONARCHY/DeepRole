@@ -34,3 +34,14 @@ it("does not claim an unsaved edit when an invalid upload changed no portrait", 
   fireEvent.keyDown(dialog, { key: "Escape" }); expect(confirm).not.toHaveBeenCalled();
   expect(container.querySelector("[role=dialog]")).toBeNull();
 });
+
+it("keeps filled field names separate from their saved values and the compact list has no images", () => {
+  const entity: SceneEntity = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, appearance: "Blue coat" }, createdAt: 1, updatedAt: 1 };
+  const view = render(<CharacterPanel locale="en" entities={[entity]} scene={{ revision: "v", presentIds: ["mira"], states: { mira: { ...EMPTY_STATUS, condition: "Safe", goal: "Find a key", relationship: "Trusted" } }, updatedAt: 1 }} emotions={["neutral"]} base="v" worldId="w" chatId="a" status="updated" onSave={vi.fn(async () => {})} onRetry={vi.fn()} />);
+  expect(view.container.querySelectorAll(".dr-character-row img")).toHaveLength(0);
+  fireEvent.click(view.getByRole("button", { name: /Mira/ }));
+  expect(view.getByRole("textbox", { name: "Appearance and clothing" })).toHaveValue("Blue coat");
+  expect(view.getByRole("textbox", { name: "Condition" })).toHaveValue("Safe");
+  expect(view.getByRole("textbox", { name: "Current goal" })).toHaveValue("Find a key");
+  expect(view.getByRole("textbox", { name: "Relationships" })).toHaveValue("Trusted");
+});

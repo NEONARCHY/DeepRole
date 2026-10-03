@@ -2,6 +2,7 @@ import { characterCast, characterHighlights, characterInterlocutors, characterTe
 import { clamp, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
+import designTokens from "../entrypoints/shared/design-tokens.css?raw";
 
 export interface PortraitStageOptions {
   scope: string;
@@ -10,8 +11,9 @@ export interface PortraitStageOptions {
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
 type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; statsKey?: string };
-type Stage = { frame: HTMLElement; extra: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; busy: boolean; dragging: boolean; observer: ResizeObserver };
+type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; busy: boolean; dragging: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
+const activeStages = new Set<Stage>();
 let statsId = 0;
 const text = (node: HTMLElement, value: string) => { if (node.textContent !== value) node.textContent = value; };
 const attr = (node: HTMLElement, key: string, value: string) => { if (node.getAttribute(key) !== value) node.setAttribute(key, value); };
@@ -19,23 +21,50 @@ const css = (node: HTMLElement, key: string, value: string) => { if (node.style.
 
 function arrange(stage: Stage) {
   const width = stage.frame.clientWidth;
-  let bottom = 0;
+  const height = stage.frame.clientHeight;
+  if (!width || !height) return;
+  const anchor = (stage.anchor.shadowRoot?.querySelector("section") ?? stage.anchor).getBoundingClientRect();
+  const rows = Math.max(1, Math.ceil(stage.widgets.size / 2));
+  const defaultWidth = clamp(Math.min(192, (height / Math.min(rows, 4) - 128) * .75, width < 600 ? 120 : 192), 96, 192);
+  const rowHeight = defaultWidth * 4 / 3 + 160;
+  const visibleRows = Math.max(1, Math.floor((height - 16) / rowHeight));
+  const columns = Math.max(2, Math.ceil(stage.widgets.size / visibleRows));
+  const sideWidth = Math.ceil(columns / 2) * (defaultWidth + 16) + 8;
+  const outsideFits = anchor.left >= sideWidth && width - anchor.right >= sideWidth;
+  const startY = clamp(anchor.top, 8, height - Math.min(rows, visibleRows) * rowHeight - 8);
+  let index = 0;
   for (const widget of stage.widgets.values()) {
-    if (!widget.pose) { if (widget.box.style.cssText) widget.box.style.cssText = ""; css(widget.slot, "min-height", ""); }
-    else {
-      const bounds = portraitBounds(widget.pose, width);
-      for (const [key, value] of Object.entries({ position: "absolute", left: `${bounds.x}px`, top: `${bounds.y}px`, width: `${bounds.width}px`, "z-index": "2" })) css(widget.box, key, value);
-      // The slot remains reserved: moving a portrait must not jerk the options away.
-      css(widget.slot, "min-height", `${widget.box.offsetHeight}px`);
-      bottom = Math.max(bottom, bounds.y + widget.box.offsetHeight);
+    const side = index % 2 === 0 ? "left" : "right";
+    const pairedCapacity = Math.floor(columns / 2) * 2 * visibleRows;
+    const center = columns % 2 === 1 && index >= pairedCapacity;
+    const row = center ? index - pairedCapacity : Math.floor(index / 2) % visibleRows;
+    const band = Math.floor(index++ / (visibleRows * 2));
+    const column = center ? Math.floor(columns / 2) : side === "left" ? band : columns - 1 - band;
+    const defaultX = outsideFits ? side === "left" ? anchor.left - (band + 1) * (defaultWidth + 16) : anchor.right + 16 + band * (defaultWidth + 16)
+      : columns > 2 ? 8 + column * (width - defaultWidth - 16) / (columns - 1) : side === "left" ? anchor.left - defaultWidth - 16 : anchor.right + 16;
+    const bounds = widget.pose ? portraitBounds(widget.pose, width - 16, height - 16) : { width: defaultWidth, x: defaultX, y: startY + row * rowHeight };
+    // Legacy poses used chat coordinates. Convert for display only, without rewriting stored data.
+    if (widget.pose && widget.pose.space !== "viewport") {
+      const legacy = portraitBounds(widget.pose, anchor.width);
+      bounds.x = anchor.left + legacy.x; bounds.y = anchor.top + legacy.y;
     }
+    css(widget.box, "width", `${bounds.width}px`);
+    css(widget.box, "left", `${clamp(bounds.x, 8, width - bounds.width - 8)}px`);
+    css(widget.box, "top", `${clamp(bounds.y, 8, height - widget.box.offsetHeight - 8)}px`);
     css(widget.resize, "top", `${Math.max(0, widget.move.offsetHeight + widget.open.querySelector("img")!.offsetHeight - 44)}px`);
   }
-  css(stage.frame, "min-height", bottom ? `${bottom + 8}px` : "");
+}
+
+function dispose(stage: Stage) {
+  stage.disposed = true; stage.observer.disconnect();
+  stage.anchor.ownerDocument.defaultView?.removeEventListener("resize", stage.onResize);
+  stage.overlay.remove(); stage.toolbar.remove();
+  stage.anchor.shadowRoot?.querySelector("section")?.classList.remove("dr-cast-content");
+  stages.delete(stage.anchor); activeStages.delete(stage);
 }
 
 async function persist(stage: Stage, id: string | null, pose: PortraitPose | null, rollback: () => void) {
-  if (!stage.options) return;
+  if (!stage.options || stage.disposed) return;
   stage.busy = true; stage.reset.disabled = true;
   stage.status.textContent = characterText(stage.locale, "layoutSaving");
   try {
@@ -60,8 +89,8 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
   };
   control.addEventListener("pointerdown", event => {
     if (event.button !== 0 || !event.isPrimary || gesture || stage.busy || stage.dragging) return;
-    const rect = widget.box.getBoundingClientRect(); const frame = stage.frame.getBoundingClientRect();
-    gesture = { pointer: event.pointerId, x: event.clientX, y: event.clientY, startX: rect.left - frame.left, startY: rect.top - frame.top, width: rect.width, previous: widget.pose ? { ...widget.pose } : undefined, changed: false };
+    const rect = widget.box.getBoundingClientRect();
+    gesture = { pointer: event.pointerId, x: event.clientX, y: event.clientY, startX: rect.left, startY: rect.top, width: rect.width, previous: widget.pose ? { ...widget.pose } : undefined, changed: false };
     stage.dragging = true; control.setPointerCapture(event.pointerId); control.classList.add("is-dragging"); control.focus(); event.preventDefault();
   });
   control.addEventListener("pointermove", event => {
@@ -70,7 +99,7 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     if (Math.abs(dx) + Math.abs(dy) < 4 && !gesture.changed) return;
     gesture.changed = true;
     const width = resize ? clamp(gesture.width + (Math.abs(dx) >= Math.abs(dy * .75) ? dx : dy * .75), 96, 360) : gesture.width;
-    widget.pose = portraitPose(gesture.startX + (resize ? 0 : dx), gesture.startY + (resize ? 0 : dy), width, stage.frame.clientWidth);
+    widget.pose = portraitPose(gesture.startX + (resize ? 0 : dx), gesture.startY + (resize ? 0 : dy), width, stage.frame.clientWidth - 16, stage.frame.clientHeight - 16);
     arrange(stage); event.preventDefault();
   });
   control.addEventListener("pointerup", event => { if (event.pointerId === gesture?.pointer) finish(false); });
@@ -79,17 +108,18 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
   control.addEventListener("keydown", event => {
     if (event.key === "Escape" && gesture) { event.preventDefault(); event.stopPropagation(); finish(true); return; }
     if (!event.key.startsWith("Arrow") || stage.busy || stage.dragging) return;
-    const rect = widget.box.getBoundingClientRect(); const frame = stage.frame.getBoundingClientRect(); const previous = widget.pose ? { ...widget.pose } : undefined;
+    const rect = widget.box.getBoundingClientRect(); const previous = widget.pose ? { ...widget.pose } : undefined;
     const step = event.shiftKey ? 24 : 8;
     const dx = event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0;
     const dy = event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0;
-    widget.pose = portraitPose(rect.left - frame.left + (resize ? 0 : dx), rect.top - frame.top + (resize ? 0 : dy), rect.width + (resize ? dx || dy : 0), stage.frame.clientWidth);
+    widget.pose = portraitPose(rect.left + (resize ? 0 : dx), rect.top + (resize ? 0 : dy), rect.width + (resize ? dx || dy : 0), stage.frame.clientWidth - 16, stage.frame.clientHeight - 16);
     arrange(stage); event.preventDefault(); event.stopPropagation();
     void persist(stage, id, { ...widget.pose }, () => { widget.pose = previous; });
   });
 }
 
 export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], scene: CharacterScene | undefined, locale: Locale, onOpen: (id: string) => void, root: ParentNode = document, options?: PortraitStageOptions) {
+  for (const stage of activeStages) if (!stage.anchor.isConnected || !stage.anchor.shadowRoot?.querySelector("section")) dispose(stage);
   for (const host of root.querySelectorAll<HTMLElement>("[data-deeprole-choices-host]")) {
     const shadow = host.shadowRoot; const section = shadow?.querySelector("section");
     if (!shadow || !section) continue;
@@ -97,22 +127,27 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
     let stage = stages.get(host);
     const scope = options?.scope ?? "";
     if (!people.length || stage && stage.scope !== scope) {
-      if (stage) { stage.observer.disconnect(); shadow.append(section); section.classList.remove("dr-cast-content"); stage.frame.remove(); stage.toolbar.remove(); stages.delete(host); stage = undefined; }
+      if (stage) { dispose(stage); stage = undefined; }
       if (!people.length) continue;
     }
     if (!stage) {
       const doc = host.ownerDocument;
       if (!shadow.querySelector("[data-portrait-stage-style]")) { const style = doc.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
+      const overlay = doc.createElement("div"); overlay.dataset.deeprolePortraitLayer = "true";
+      const floating = overlay.attachShadow({ mode: "open" });
+      const style = doc.createElement("style"); style.textContent = designTokens + portraitStyle;
       const frame = doc.createElement("div"); frame.className = "dr-cast-frame";
-      const extra = doc.createElement("div"); extra.className = "dr-cast-extras";
-      section.classList.add("dr-cast-content"); frame.append(section, extra);
+      floating.append(style, frame); doc.body.append(overlay);
+      section.classList.add("dr-cast-content");
       const toolbar = doc.createElement("div"); toolbar.className = "dr-cast-toolbar";
       const hint = doc.createElement("p"); const reset = doc.createElement("button"); reset.type = "button";
       const status = doc.createElement("p"); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite"); status.className = "dr-cast-layout-status";
-      toolbar.append(hint, reset, status); shadow.append(toolbar, frame);
-      const observer = new ResizeObserver(() => { const active = stages.get(host); if (host.isConnected && active) arrange(active); else observer.disconnect(); });
-      stage = { frame, extra, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, busy: false, dragging: false, observer };
-      stages.set(host, stage); observer.observe(host);
+      toolbar.append(hint, reset, status); shadow.append(toolbar);
+      const onResize = () => { const active = stages.get(host); if (active && !active.disposed) arrange(active); };
+      const observer = new ResizeObserver(onResize);
+      stage = { anchor: host, overlay, frame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, busy: false, dragging: false, observer, onResize, disposed: false };
+      stages.set(host, stage); activeStages.add(stage); observer.observe(host); observer.observe(frame);
+      doc.defaultView?.addEventListener("resize", onResize);
       reset.addEventListener("click", () => {
         if (stage!.busy || stage!.dragging) return;
         const previous = new Map([...stage!.widgets].map(([id, widget]) => [id, widget.pose]));
@@ -121,9 +156,9 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       });
     }
     stage.options = options; stage.locale = locale;
-    text(stage.hint, characterText(locale, "layoutHint")); text(stage.reset, characterText(locale, "layoutReset"));
+    text(stage.hint, characterText(locale, "floatingHint")); text(stage.reset, characterText(locale, "layoutReset"));
     const partners = new Set(characterInterlocutors(entities, scene).map(person => person.id));
-    const focused = shadow.activeElement as HTMLElement | null;
+    const focused = stage.overlay.shadowRoot!.activeElement as HTMLElement | null;
     const hero = entities.find(entity => entity.characterSheet?.protagonist);
     const other = people.find(entity => entity.id !== hero?.id);
     for (const [id, widget] of stage.widgets) if (!people.some(person => person.id === id)) { widget.slot.remove(); stage.widgets.delete(id); }
@@ -144,7 +179,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         manipulate(stage, widget, entity.id, move, false); manipulate(stage, widget, entity.id, resize, true);
       }
       attr(widget.slot, "class", `dr-cast-slot ${side}`);
-      const parent = side === "extra" ? stage.extra : stage.frame;
+      const parent = stage.frame;
       if (widget.slot.parentElement !== parent) parent.append(widget.slot);
       attr(widget.open, "class", `dr-cast-portrait ${side}`);
       if (!stage.dragging && !stage.busy) widget.pose = options?.layout?.resetAt === (options?.resetAt ?? 0) ? options.layout.positions[entity.id] : options ? undefined : widget.pose;
@@ -167,9 +202,11 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       }
       widget.open.onclick = () => onOpen(entity.id);
     }
-    const ordered = [stage.widgets.get(hero?.id ?? "")?.slot, stage.widgets.get(other?.id ?? "")?.slot, section, stage.extra].filter((node): node is HTMLElement => !!node);
-    for (const [index, node] of ordered.entries()) if (stage.frame.children[index] !== node) stage.frame.insertBefore(node, stage.frame.children[index] ?? null);
-    if (focused?.isConnected && shadow.activeElement !== focused) focused.focus({ preventScroll: true });
+    // Scene order may change when the hero or interlocutors change. Keep existing
+    // nodes and saved poses, but use the current cast order for unplaced defaults.
+    stage.widgets = new Map(people.map(entity => [entity.id, stage!.widgets.get(entity.id)!]));
+    for (const [index, widget] of [...stage.widgets.values()].entries()) if (stage.frame.children[index] !== widget.slot) stage.frame.insertBefore(widget.slot, stage.frame.children[index] ?? null);
+    if (focused?.isConnected && stage.overlay.shadowRoot!.activeElement !== focused) focused.focus({ preventScroll: true });
     arrange(stage);
   }
 }

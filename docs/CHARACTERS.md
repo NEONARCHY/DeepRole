@@ -4,8 +4,8 @@
 
 1. Подключите мир к открытому чату.
 2. Карточки включены по умолчанию. Если раньше отключали их, включите **Настройки → Приложение → Персонажи → Карточки персонажей**.
-3. Под индикаторами контекста появятся крупные портреты. В **«В сцене»** видны герой и присутствующие участники. В **«Все»** доступны остальные персонажи и поиск по имени или псевдониму. Нажмите портрет, чтобы открыть анкету, или **+**, чтобы добавить персонажа.
-4. В своей карточке отметьте **Мой главный герой**. По умолчанию он слева от вариантов, первый собеседник — справа. Остальные участники сцены тоже видны, каждый со своим портретом и настроением. На узком экране первые два портрета находятся над вариантами, остальные — ниже.
+3. Под индикаторами контекста появится компактный список имён, ролей и настроений, без изображений. В **«В сцене»** видны герой и присутствующие участники, в **«Все»** — весь список с поиском. Имя открывает анкету, **+** добавляет персонажа. Кнопка раскрытия рядом с **+** открывает по центру галерею всех персонажей с портретами; карандаш открывает редактор в этом же окне. После сохранения вы вернётесь в галерею, поиск останется прежним.
+4. В своей карточке отметьте **Мой главный герой**. Плавающие портреты по умолчанию располагаются по сторонам вариантов: герой слева, первый собеседник справа. Остальные участники тоже видны со своим настроением. Портреты можно вынести за колонку чата; в узком окне они уменьшаются. Они не занимают место между ответом и вариантами.
 5. Продолжайте обычный разговор. После завершения ответа обновятся настроение, состояние, ближайшая цель, отношения и заданные показатели.
 
 После импорта обычных записей список персонажей может быть пустым: DeepSeek заполнит его со следующим ответом, либо добавьте карточку кнопкой **+**. Сам импорт не запускает генерацию. Карточки разрешают автоматически сохранять состояние персонажей из ответов; их можно отключить. Обычное **«Обновить лор»** по-прежнему требует вашего подтверждения.
@@ -46,12 +46,12 @@ BDS переносит названия, текст и режимы записе
 
 Портреты рядом с вариантами — отдельные элементы, без общего фона с кнопками выбора.
 
-- Перетащите **имя с ручкой ⠿**, чтобы переместить портрет внутри области этого ответа.
+- Перетащите **имя с ручкой ⠿**, чтобы переместить портрет в любое место экрана, в том числе за границы колонки чата.
 - Потяните **нижний правый угол**, чтобы изменить размер. Изображение всегда остаётся **3:4**; ширина — от 96 до 360 px. В узком окне оно временно уменьшается, не теряя сохранённого размера.
 - Нажмите **изображение**, чтобы открыть анкету, эмоции и все показатели.
 - **Сбросить расстановку** возвращает обычное расположение в текущем чате. Общий сброс доступен в **Настройки → Приложение → Персонажи**.
 
-Расположение сохраняется автоматически после отпускания мыши — отдельно для каждого чата и мира. Оно привязано к персонажу, не к месту в списке. Перенос не меняет память и не отправляет сообщения DeepSeek. Ошибка сохранения возвращает предыдущую позицию. На ручке работают стрелки; Shift увеличивает шаг, Esc отменяет перетаскивание. Стрелки на угловой кнопке меняют размер. Портреты можно наложить друг на друга или на варианты; если это мешает, переместите их или сбросьте расстановку.
+Расположение сохраняется автоматически после отпускания мыши — отдельно для каждого чата и мира. Оно привязано к персонажу и экрану, не к месту в списке: после перемещения портрет остаётся на выбранном месте при прокрутке. Перенос не меняет память и не отправляет сообщения DeepSeek. Ошибка сохранения возвращает предыдущую позицию. На ручке работают стрелки; Shift увеличивает шаг, Esc отменяет перетаскивание. Стрелки на угловой кнопке меняют размер. Портреты можно наложить друг на друга или на варианты; если это мешает, переместите их или сбросьте расстановку. Старые расстановки читаются без удаления; первое новое перемещение сохраняет экранную позицию.
 
 ## Портреты и эмоции
 
@@ -59,7 +59,7 @@ BDS переносит названия, текст и режимы записе
 
 Если нужной картинки нет или браузер не может её открыть, показывается обычный портрет, затем — выбранный мужской, женский или нейтральный силуэт. Сохранённые изображения при этом не удаляются; новое изображение можно загрузить в ту же эмоцию.
 
-Портреты показываются крупно: под индикаторами — сетка с именами и настроением, рядом с вариантами ответа — герой и все присутствующие участники. Нажмите изображение, чтобы открыть анкету и изменить данные.
+Под индикаторами — компактные имена и статусы. Крупные портреты доступны в центральной галерее и плавающем слое рядом с вариантами. В галерее нажмите карандаш, в плавающем слое — изображение, чтобы изменить анкету.
 
 В **Настройки → Приложение → Персонажи** можно сохранить свой список эмоций: одна в строке, до 12 вместе с `neutral`. Если в чате выбран мир, список сохраняется для этого мира. Без выбранного мира меняется общий список для миров без собственного списка. Новые названия передаются DeepSeek с последующим сообщением. Удаление эмоции из списка не удаляет ваши картинки; их можно убрать в карточке.
 
@@ -85,11 +85,11 @@ BDS переносит названия, текст и режимы записе
 
 **Export** now opens one dialog: **This world** includes lore, profiles, portraits and the world's emotion list; **Full backup** includes every world, settings and saved chat states. Imported world emotions are available automatically without replacing other worlds' settings. In **Settings → App → Characters**, changes apply to the connected world; with no world selected, they change the shared fallback list. Older world files remain compatible.
 
-Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. **In scene** shows your protagonist and current participants; **All** has the complete roster and name/alias search. If participants aren’t known yet, everyone is shown with a short note. Filters affect the display only and reset when you switch chats or worlds. Open a portrait below the context indicators, edit and save. Mark **My protagonist** for the left portrait; the current interlocutor appears on the right.
+Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. **In scene** shows your protagonist and current participants; **All** has the complete roster and name/alias search. The compact list below the context indicators contains names, roles and moods, not images. Select a name to edit. The expand button beside **+** opens a centered portrait gallery of every character; use the pencil to edit within the same window. Saving returns to the gallery without clearing its search. If participants aren’t known yet, everyone is shown with a short note. Filters affect the display only and reset when you switch chats or worlds. Mark **My protagonist** for the left floating portrait; the current interlocutor starts on the right.
 
 **In the scene** means physically present; their portrait stays visible even when they talk to someone else. **Talking to the protagonist** can be checked for several people at once. Save the sheet to apply the selection to this chat. Unchecking one speaker leaves the others unchanged and does not make them leave. The protagonist cannot be their own speaker. The next completed reply may change the list. Reopening an already consumed reply does not undo your edit.
 
-All scene participants have separate portraits, outside the reply options’ background. Drag the **name handle**, resize from the **lower-right corner**, or select the **image** to open the sheet. Images stay 3:4. Positions and sizes are saved separately for each chat and world; moving them never changes memory or sends a request. **Reset layout** restores the current chat; **Settings → App → Characters** offers an all-chat reset. Arrow keys move the focused handle or resize the focused corner; Shift gives larger steps, Esc cancels dragging. Positions are within the current reply area, not pinned to the browser viewport.
+All scene participants have separate floating portraits, outside the reply options’ background. Drag the **name handle** anywhere on screen, including outside the chat column; resize from the **lower-right corner**, or select the **image** to open the sheet. Images stay 3:4. Moving portraits never creates a gap between the reply and its options. Positions and sizes are saved separately for each chat and world; moving them never changes memory or sends a request. Saved positions stay pinned while scrolling and fit inside a resized viewport. **Reset layout** restores the current chat; **Settings → App → Characters** offers an all-chat reset. Arrow keys move the focused handle or resize the focused corner; Shift gives larger steps, Esc cancels dragging. Legacy layouts remain readable; the next move stores a viewport position.
 
 The portrait editor starts on the current mood. **Portrait emotion** previews an image without changing the character’s mood or requiring a save. Change the actual mood under **Now in this chat**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
 

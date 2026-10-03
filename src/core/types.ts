@@ -67,7 +67,7 @@ export interface CharacterScene {
 }
 
 /** UI-only. Never included in model context or character revisions. */
-export interface PortraitPose { x: number; y: number; width: number }
+export interface PortraitPose { x: number; y: number; width: number; space?: "viewport" }
 export interface PortraitLayout { resetAt: number; positions: Record<string, PortraitPose> }
 
 export interface SceneState {

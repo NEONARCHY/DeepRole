@@ -19,25 +19,25 @@ async function ratio(image: Locator) { const box = (await image.boundingBox())!;
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) test(`independent multi-character portraits and constructor ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 950 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`); await cast(page);
-  const host = page.locator("[data-deeprole-choices-host]"); const widgets = host.locator(".dr-cast-widget");
+  const host = page.locator("[data-deeprole-choices-host]"); const floating = page.locator("[data-deeprole-portrait-layer]"); const widgets = floating.locator(".dr-cast-widget");
   await expect(widgets).toHaveCount(4);
-  await expect(host.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(2);
+  await expect(floating.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(2);
   await expect(host.locator("section .dr-cast-widget")).toHaveCount(0);
   for (const image of await widgets.locator("img").all()) await ratio(image);
-  const mira = host.locator('.dr-cast-widget[data-character-id="mira"]'); const leon = host.locator('.dr-cast-widget[data-character-id="extra-0"]');
+  const mira = floating.locator('.dr-cast-widget[data-character-id="mira"]'); const leon = floating.locator('.dr-cast-widget[data-character-id="extra-0"]');
   await expect(leon.locator("small")).toHaveText(locale === "ru" ? "Тревога" : "Worried");
   await expect(leon.locator(".dr-cast-highlights>span")).toHaveText(["Energy: Tired", "Clues: 2"]);
-  await host.screenshot({ path: info.outputPath(`cast-${locale}-${width}.png`) });
+  await page.screenshot({ path: info.outputPath(`cast-${locale}-${width}.png`) });
   const sceneBefore = await page.evaluate(() => (window as any).getCast().scene);
   await drag(page, mira.locator(".dr-cast-move"), width < 500 ? -60 : -200, 80);
   await expect(host.getByRole("status").filter({ hasText: locale === "ru" ? "Расстановка сохранена" : "Layout saved" })).toBeVisible();
-  const moved = await page.evaluate(() => (window as any).savedLayout); expect(moved.id).toBe("mira"); expect(moved.pose.y).toBeGreaterThan(60);
+  const moved = await page.evaluate(() => (window as any).savedLayout); expect(moved.id).toBe("mira"); expect(moved.pose.y).toBeGreaterThan(0); expect(moved.pose.space).toBe("viewport");
   const initialWidth = (await mira.locator("img").boundingBox())!.width;
   await drag(page, mira.locator(".dr-cast-resize"), 40, 45);
   expect((await mira.locator("img").boundingBox())!.width).toBeGreaterThan(initialWidth); await ratio(mira.locator("img"));
   expect(await page.evaluate(() => (window as any).getCast().scene)).toEqual(sceneBefore);
   expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
-  await host.screenshot({ path: info.outputPath(`constructor-${locale}-${width}.png`) });
+  await page.screenshot({ path: info.outputPath(`constructor-${locale}-${width}.png`) });
   await mira.locator(".dr-cast-portrait").click(); await expect(page.getByRole("dialog")).toBeVisible(); await page.keyboard.press("Escape");
   await expect(mira.locator(".dr-cast-portrait")).toBeFocused();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem(JSON.stringify(["w", "a"]))!).positions.mira);
@@ -47,7 +47,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   // ResizeObserver applies the saved position on the next layout turn.
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await host.getByRole("button", { name: locale === "ru" ? "Сбросить расстановку" : "Reset layout", exact: true }).click();
-  await expect(page.locator('.dr-cast-widget[data-character-id="mira"]')).toHaveCSS("position", "relative");
+  await expect(page.locator('.dr-cast-widget[data-character-id="mira"]')).toHaveCSS("position", "absolute");
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem(JSON.stringify(["w", "a"]))!).positions)).toEqual({});
 });
 
@@ -63,18 +63,48 @@ test("keyboard, cancelled gestures, save errors and scope changes are safe", asy
   await page.evaluate(() => { (window as any).rejectLayout = false; });
   await move.scrollIntoViewIfNeeded(); const box = (await move.boundingBox())!; await page.mouse.move(box.x + 15, box.y + 15); await page.mouse.down(); await page.mouse.move(box.x - 30, box.y + 70); await page.keyboard.press("Escape"); await page.mouse.up();
   const cancelled = await mira.boundingBox(); expect(cancelled!.x).toBeCloseTo(after!.x, 1); expect(cancelled!.y).toBeCloseTo(after!.y, 1);
-  await page.evaluate(() => (window as any).setCast({ chatId: "b" })); await expect(mira).toHaveCSS("position", "relative");
+  await page.evaluate(() => (window as any).setCast({ chatId: "b" })); await expect(mira).toHaveCSS("position", "absolute");
   await page.evaluate(() => (window as any).setCast({ chatId: "a" })); await expect(mira).toHaveCSS("position", "absolute");
-  await page.getByRole("button", { name: "Reset layouts in all chats", exact: true }).click(); await expect(mira).toHaveCSS("position", "relative");
+  await page.getByRole("button", { name: "Reset layouts in all chats", exact: true }).click(); await expect(mira).toHaveCSS("position", "absolute");
 });
 
 test("twelve participants remain present across changes of addressee", async ({ page }, info) => {
   await page.setViewportSize({ width: 1100, height: 950 }); await page.goto("/tests/fixtures/characters.html?locale=en"); await cast(page, 12);
   await expect(page.locator(".dr-cast-widget")).toHaveCount(12);
+  const initialBoxes = await Promise.all((await page.locator(".dr-cast-widget").all()).map(widget => widget.boundingBox()));
+  for (let i = 0; i < initialBoxes.length; i++) for (let j = i + 1; j < initialBoxes.length; j++) {
+    const a = initialBoxes[i]!; const b = initialBoxes[j]!;
+    expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
+  }
   await page.evaluate(() => { const current = (window as any).getCast(); (window as any).setCast({ scene: { ...current.scene, partnerIds: [], partnerId: null } }); });
   await expect(page.locator(".dr-cast-widget")).toHaveCount(12); await expect(page.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(0);
   await page.evaluate(() => { const current = (window as any).getCast(); (window as any).setCast({ scene: { ...current.scene, partnerIds: ["extra-0"], partnerId: "extra-0", presentIds: current.scene.presentIds.filter((id: string) => id !== "mira") } }); });
   await expect(page.locator(".dr-cast-widget")).toHaveCount(11); await expect(page.locator('.dr-cast-widget[data-character-id="mira"]')).toHaveCount(0);
-  await page.locator("[data-deeprole-choices-host]").screenshot({ path: info.outputPath("twelve-cast.png") });
+  await page.screenshot({ path: info.outputPath("twelve-cast.png") });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("odd column counts and a changed protagonist never overlap unplaced portraits", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 950 }); await page.goto("/tests/fixtures/characters.html?locale=en"); await cast(page, 6);
+  const widgets = page.locator(".dr-cast-widget"); await expect(widgets).toHaveCount(6);
+  const nonOverlapping = async () => {
+    const boxes = await Promise.all((await widgets.all()).map(widget => widget.boundingBox()));
+    const choices = (await page.locator("[data-deeprole-choices-host] section").boundingBox())!;
+    for (const box of boxes) expect(box!.x + box!.width <= choices.x || box!.x >= choices.x + choices.width).toBe(true);
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i]!; const b = boxes[j]!;
+      expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
+    }
+  };
+  await nonOverlapping();
+  await page.evaluate(() => {
+    const current = (window as any).getCast();
+    (window as any).setCast({ entities: current.entities.map((entity: any) => ({ ...entity, characterSheet: { ...entity.characterSheet, protagonist: entity.id === "mira" } })), scene: { ...current.scene, partnerId: "hero", partnerIds: ["hero"] } });
+  });
+  await expect(page.locator('.dr-cast-widget[data-character-id="mira"] .dr-cast-role')).toHaveText("Your protagonist");
+  await nonOverlapping();
+  const hero = (await page.locator('.dr-cast-widget[data-character-id="mira"]').boundingBox())!;
+  const partner = (await page.locator('.dr-cast-widget[data-character-id="hero"]').boundingBox())!;
+  expect(hero.x).toBeLessThan(partner.x);
+  expect(await page.evaluate(() => (window as any).savedLayout)).toBeUndefined();
 });

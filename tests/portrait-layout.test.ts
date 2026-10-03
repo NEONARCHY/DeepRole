@@ -65,6 +65,24 @@ describe("multiple speakers and bystanders", () => {
 });
 
 describe("saved UI layout", () => {
+  it("stores viewport coordinates without accepting ambiguous or unsafe versions", () => {
+    const floating = portraitPose(900, 300, 240, 1200, 900);
+    expect(floating).toEqual({ x: .9375, y: 1 / 3, width: 240, space: "viewport" });
+    expect(portraitBounds(floating, 1200, 900)).toEqual({ x: 900, y: 300, width: 240 });
+    expect(validPortraitPose(floating)).toBe(true);
+    expect(validPortraitPose({ ...floating, y: 1.01 })).toBe(false);
+    expect(validPortraitPose({ ...floating, space: "unknown" })).toBe(false);
+    expect(validPortraitPose(pose)).toBe(true);
+  });
+  it("preserves floating positions in backups without sending them to DeepSeek", async () => {
+    const repo = await setup(); const floating = { x: .9, y: .2, width: 260, space: "viewport" as const };
+    await savePortraitLayout({ ...edit(), pose: floating }, repo);
+    const backup = await parseBackup(JSON.stringify(await createBackup(undefined, repo)));
+    const restored = backup.records.find(r => r.id === binding.id)!;
+    expect(validDataRecord(restored)).toBe(true);
+    expect((restored.data as ChatBinding).portraitLayouts!.w!.positions.mira).toEqual(floating);
+    expect((restored.data as ChatBinding).characterScenes!.w).toEqual(initial);
+  });
   it.each([{ ...pose, x: NaN }, { ...pose, y: -1 }, { ...pose, y: 1201 }, { ...pose, x: 1.01 }, { ...pose, width: 0 }, { ...pose, width: Infinity }, { ...pose, width: 361 }])("rejects unsafe coordinates %j", value => expect(validPortraitPose(value)).toBe(false));
   it("clamps resizing and adapts to narrow panels without changing the saved width", () => {
     expect(portraitPose(-20, -10, 900, 300)).toEqual({ x: 0, y: 0, width: 360 });
