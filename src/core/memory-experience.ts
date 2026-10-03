@@ -6,9 +6,10 @@ export interface ServiceActivity {
   phase: "preparing" | "waiting" | "empty" | "error";
   type: ServiceRequest["type"];
 }
-export function pendingActivity(request: ServiceRequest | null, chatId: string | null, generating: boolean, now = Date.now()): ServiceActivity | null {
+export const SERVICE_TIMEOUT_MS = 10 * 60 * 1000;
+export function pendingActivity(request: ServiceRequest | null, chatId: string | null, _generating: boolean, now = Date.now()): ServiceActivity | null {
   if (!request || (request.chatId ?? null) !== chatId) return null;
-  return { phase: generating || now - request.createdAt < 10 * 60 * 1000 ? "waiting" : "error", type: request.type };
+  return { phase: now - request.createdAt < SERVICE_TIMEOUT_MS ? "waiting" : "error", type: request.type };
 }
 export function memoryReadiness(connected: boolean, warning: string | undefined, selected: number, available: number): "offline" | "failed" | "ready" | "empty" | "matching" {
   if (!connected) return "offline";

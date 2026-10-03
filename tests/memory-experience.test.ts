@@ -29,7 +29,7 @@ describe("service progress", () => {
   });
   it("unblocks a stale request without erasing its correlation metadata", () => {
     expect(pendingActivity(request, "a", false, 600100)?.phase).toBe("error");
-    expect(pendingActivity(request, "a", true, 600100)?.phase).toBe("waiting");
+    expect(pendingActivity(request, "a", true, 600100)?.phase).toBe("error");
     expect(request.id).toBe("request-1");
   });
   it("supports creating lore before the new chat has an id", () => {

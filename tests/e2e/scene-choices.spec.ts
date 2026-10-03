@@ -5,6 +5,29 @@ const options = ["positive", "neutral", "negative", "surprise"].map((kind, index
 const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
+for (const locale of ["ru", "en"] as const) test(`tall live DeepSeek virtual rows keep choices stable and reject a newer user turn ${locale}`, async ({ page }) => {
+  await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
+  const modern = `<div data-virtual-list-item-key="1"><div class="ds-message"><div class="ds-collapsible-text">Open the archive.</div></div></div><div data-virtual-list-item-key="2"><div class="ds-message" id="modern"><div class="ds-markdown ds-assistant-message-main-content"><p>${'Mira holds the key. '.repeat(150)}</p><p><span>${payload.replaceAll('<', '&lt;')}</span><br><span>&lt;deeprole_characters&gt;{"request":"test"}&lt;/deeprole_characters&gt;</span></p></div></div></div>`;
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), modern);
+  const card = page.locator('[data-deeprole-choices-host]');
+  await expect(card.locator('.grid button')).toHaveCount(4);
+  expect(await card.evaluate(node => node.previousElementSibling?.id)).toBe('modern');
+  const signature = await card.getAttribute('data-deeprole-choices-signature');
+  for (let i = 0; i < 6; i++) await page.evaluate(() => (window as any).choicesTest.sync());
+  await expect(card).toHaveAttribute('data-deeprole-choices-signature', signature!);
+  await expect(page.locator('.ds-markdown')).not.toContainText('<deeprole_choices>', { useInnerText: true });
+  await page.reload(); await expect(card.locator('.grid button')).toHaveCount(4);
+  await page.evaluate(() => {
+    const user=document.createElement('div'); user.className='ds-message'; user.dataset.deeproleMemoryRequest='memory'; user.style.display='none'; user.textContent='[DeepRole Service]\n[Request ID: memory]\nAnalyze';
+    const reply=document.createElement('div'); reply.className='ds-message'; reply.dataset.deeproleMemoryPresentation='memory'; reply.dataset.deeproleServiceReply='true'; reply.textContent='Memory proposals ready.';
+    document.querySelector('#conversation')!.append(user,reply); (window as any).choicesTest.sync();
+  });
+  await expect(card.locator('.grid button')).toHaveCount(4);
+  await page.evaluate(() => { const user = document.createElement('div'); user.className = 'ds-message'; user.innerHTML = '<div class="ds-collapsible-text">Wait for Leon.</div>'; document.querySelector('#conversation')!.append(user); (window as any).choicesTest.sync(); });
+  await expect(card).toHaveCount(0);
+  await expect(page.locator('[data-deeprole-choices-recovery]')).toHaveCount(0);
+});
+
 for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
   test(`restored options and explicit recovery ${locale} at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 800 });

@@ -7,6 +7,7 @@ export const SERVICE_PREFIX = "[DeepRole Service]";
 
 export function memoryAnalysisPrompt(bookName?: string, existing: MemoryEntry[] = [], locale: Locale = "en"): string {
   return `${SERVICE_PREFIX}
+[DeepRole Memory Analysis]
 Analyze the roleplay conversation so far and identify only durable facts that will be useful later: character traits, relationships, important events, promises, locations, rules, and unresolved plot points.
 First write one brief, user-facing summary in ${locale === "ru" ? "Russian" : "English"}: say how many useful suggestions you found and remind the user that nothing is saved until they approve it. Do not include step-by-step analysis.
 Then return valid JSON only between ${SERVICE_START} and ${SERVICE_END}. Do not use Markdown fences.

@@ -126,13 +126,13 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect(chat.locator(".dr-service-state")).toContainText("DeepSeek is preparing suggestions");
     expect(sent).toHaveLength(afterAnalysis);
     expect(sent.at(-1)).not.toContain("<deeprole_context");
-    await expect(chat.locator("[data-message-id='service-user']")).toBeVisible();
+    await expect(chat.locator("[data-message-id='service-user']")).toBeHidden();
     await expect(chat.locator("[data-message-id='user']")).toBeVisible();
     await chat.evaluate(() => { (window as any).serviceReply.textContent = '<deeprole_data>{"type":"memory-suggestions","items":[{"targetEntryId":"Optional thread","title":"Optional thread","content":"REVIEWED_NEW_CANON","keywords":[]}]}</deeprole_data>'; });
     await expect(chat.getByRole("button", { name: "Review changes", exact: true })).toBeVisible();
     await expect(chat.locator(".dr-memory-review")).toBeVisible();
     await expect(chat.locator("[data-message-id='service-reply']")).toContainText("Review the records in DeepRole, then choose Save selected changes.");
-    await expect(chat.locator("[data-message-id='service-reply']")).not.toContainText("<deeprole_data>");
+    await expect(chat.locator("[data-message-id='service-reply']")).not.toContainText("<deeprole_data>", { useInnerText: true });
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /PRECISE_NEW_CANON/);
     await expect(chat.getByRole("button", { name: "Save selected changes · 0", exact: true })).toBeDisabled();
     await chat.locator(".dr-proposal-summary").click();

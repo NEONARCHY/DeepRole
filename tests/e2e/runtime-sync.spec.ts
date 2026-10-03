@@ -198,7 +198,8 @@ test("a visible DeepSeek generation error releases the pending analysis and allo
     await reply.evaluate((element) => { element.textContent = "Сообщение генерируется, повторите попытку позже."; });
     await expect.poll(() => pendingService(panel)).toBeNull();
     await expect(reply).toBeVisible();
-    await expect(reply).toContainText("Сообщение генерируется");
+    await expect(reply).toContainText("Could not prepare suggestions", { useInnerText: true });
+    await expect(reply.locator('[data-deeprole-service-preloader]')).toHaveCount(0);
     expect((await databaseRecords(panel)).filter((row) => row.kind === "proposal" || row.kind === "entry")).toEqual([]);
     expect(await command(panel, { type: "DR_RUN_SERVICE", request: { ...request, id: "visible-error-retry", createdAt: Date.now() } })).toEqual({ ok: true });
     await expect.poll(() => sent).toBe(2);
@@ -254,7 +255,8 @@ for (const type of ["memory-analysis", "handoff"] as const) {
       expect(await command(panel, { type: "DR_RUN_SERVICE", request: { id: "current-service", type, bookId: null, createdAt: Date.now() } })).toEqual({ ok: true });
       await expect.poll(async () => (await databaseRecords(panel)).filter((row) => row.kind === (type === "handoff" ? "snapshot" : "proposal")).map((row) => type === "handoff" ? row.data.summary : row.data.items[0].content)).toEqual(["CORRECT_NEW_RESULT"]);
       await expect(chat.locator("[data-message-id='ordinary-quote']")).toBeVisible();
-      await expect(chat.locator("[data-message-id='service-user']")).toBeVisible();
+      if (type === "memory-analysis") await expect(chat.locator("[data-message-id='service-user']")).toBeHidden();
+      else await expect(chat.locator("[data-message-id='service-user']")).toBeVisible();
       await expect(chat.locator("[data-message-id='service-answer']")).toBeVisible();
     } finally { await context.close(); }
   });
@@ -266,6 +268,89 @@ async function pendingService(panel: Page) {
     return (Object.entries(state).find(([key]) => key.startsWith("deeprole_tab_state_"))?.[1] as any)?.service;
   });
 }
+
+test("one analysis plaque survives virtualized request removal and prepares proposals, not lore", async ({}, info) => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    await context.route('https://chat.deepseek.com/api/v0/chat/completion', route => route.fulfill({ contentType: 'application/json', body: '{}' }));
+    await enableServiceComposer(chat);
+    expect(await command(panel, { type: 'DR_RUN_SERVICE', request: { id: 'virtual-memory', type: 'memory-analysis', bookId: null, createdAt: Date.now() } })).toEqual({ ok: true });
+    await chat.evaluate(() => {
+      const user = document.querySelector<HTMLElement>("[data-message-id='service-user']")!;
+      const answer = document.querySelector<HTMLElement>("[data-message-id='service-answer']")!;
+      const prompt = user.textContent!; user.removeAttribute('data-message-id'); user.className = 'ds-message'; user.innerHTML = '<div class="ds-collapsible-text"></div>'; user.firstElementChild!.textContent = prompt;
+      answer.removeAttribute('data-message-id'); answer.className = 'ds-message';
+      for (const [node, key] of [[user, '39'], [answer, '40']] as const) { const wrapper = document.createElement('div'); wrapper.dataset.virtualListItemKey = key; node.before(wrapper); wrapper.append(node); }
+      answer.innerHTML = '<div class="ds-markdown ds-assistant-message-main-content"><p>Checking the observatory.</p><p>&lt;deeprole_data&gt;</p></div>';
+      const stop = document.createElement('button'); stop.id = 'stop'; stop.setAttribute('aria-label', 'Stop generating'); stop.textContent = 'Stop'; document.querySelector('form')!.append(stop);
+    });
+    await expect.poll(() => pendingService(panel)).toMatchObject({ replyIdentity: '["virtual","40"]' });
+    await expect(chat.locator('[data-deeprole-service-preloader]')).toHaveCount(1);
+    await expect(chat.locator('.ds-assistant-message-main-content')).toBeHidden();
+    await expect(chat.locator('.ds-collapsible-text')).toBeHidden();
+    await chat.screenshot({ path: info.outputPath('analysis-one-plaque.png') });
+    await chat.evaluate(() => {
+      document.querySelector('[data-virtual-list-item-key="39"]')!.remove();
+      const final = document.querySelector('.ds-assistant-message-main-content')!;
+      const json = document.createElement('p'); json.textContent = JSON.stringify({ type: 'memory-suggestions', items: [{ title: 'Archive key', content: 'Mira gave the brass archive key to Noah.', keywords: ['key'] }] });
+      const end = document.createElement('p'); end.textContent = '</deeprole_data>'; final.append(json, end);
+      document.querySelector('#stop')!.remove();
+    });
+    await expect.poll(() => pendingService(panel)).toBeNull();
+    await expect.poll(async () => (await databaseRecords(panel)).filter(row => row.kind === 'proposal').length).toBe(1);
+    expect((await databaseRecords(panel)).filter(row => row.kind === 'entry')).toHaveLength(0);
+    await expect(chat.getByRole('region', { name: 'Review changes', exact: true }).getByRole('checkbox')).toHaveCount(1);
+    await expect(chat.locator('[data-deeprole-service-preloader]')).toHaveCount(0);
+    await expect(chat.locator('[data-deeprole-memory-card]')).toHaveCount(1);
+    await expect(chat.locator('#conversation')).not.toContainText('deeprole_data', { useInnerText: true });
+    await chat.screenshot({ path: info.outputPath('analysis-ready-review.png') });
+  } finally { await context.close(); }
+});
+
+test("an hour-old empty analysis stops loading even when DeepSeek's stop control is stuck", async () => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    await enableServiceComposer(chat);
+    await chat.evaluate(() => {
+      const request = document.createElement('article'); request.textContent = '[DeepRole Service]\n[Request ID: expired-memory]\nAnalyze';
+      const reply = document.createElement('article'); reply.dataset.messageId = 'expired-reply';
+      document.querySelector('#conversation')!.append(request, reply);
+      const stop = document.createElement('button'); stop.id = 'stuck-stop'; stop.setAttribute('aria-label', 'Stop generating'); stop.textContent = 'Stop'; document.querySelector('form')!.append(stop);
+    });
+    await panel.evaluate(async () => { const api = (globalThis as any).chrome; const [tab] = await api.tabs.query({ url: 'https://chat.deepseek.com/*', active: true }); await api.storage.session.set({ ['deeprole_tab_state_' + tab.id]: { service: { id: 'expired-memory', type: 'memory-analysis', worldId: null, bookId: null, chatId: 'a', createdAt: Date.now() - 90 * 60_000 } } }); });
+    await command(panel, { type: 'DR_DATA_CHANGED' });
+    await expect.poll(() => pendingService(panel)).toBeNull();
+    await expect(chat.locator('[data-deeprole-service-preloader]')).toHaveCount(0);
+    await expect(chat.locator('[data-deeprole-memory-card]')).toHaveAttribute('aria-busy', 'false');
+    await expect(chat.locator('[data-deeprole-memory-card]')).toContainText('Could not prepare suggestions');
+    expect((await databaseRecords(panel)).filter(row => row.kind === 'proposal' || row.kind === 'entry')).toHaveLength(0);
+  } finally { await context.close(); }
+});
+
+for (const failSession of [false,true]) test(`failed proposal storage ends the spinner and allows explicit retry (session failure ${failSession})`, async () => {
+  const { context, panel, chat, worker } = await setup([]);
+  try {
+    await context.route('https://chat.deepseek.com/api/v0/chat/completion', route => route.fulfill({contentType:'application/json',body:'{}'}));
+    await enableServiceComposer(chat);
+    expect(await command(panel,{type:'DR_RUN_SERVICE',request:{id:'storage-failure',type:'memory-analysis',bookId:null,createdAt:Date.now()}})).toEqual({ok:true});
+    await worker.evaluate(failSession => {
+      const original=IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put=function(value,...args){if(value?.kind==='proposal'){IDBObjectStore.prototype.put=original;(globalThis as any).proposalFailed=true;throw new Error('QA proposal storage unavailable');}return original.call(this,value,...args);};
+      if(failSession){const api=(globalThis as any).chrome;const set=api.storage.session.set.bind(api.storage.session);api.storage.session.set=(values:any)=>{if(Object.values(values).some((v:any)=>v?.service===null)){api.storage.session.set=set;throw new Error('QA session store unavailable');}return set(values);};}
+    },failSession);
+    await chat.evaluate(()=>{document.querySelector("[data-message-id='service-answer']")!.textContent='<deeprole_data>{"type":"memory-suggestions","items":[{"title":"Archive key","content":"Noah has the brass key."}]}</deeprole_data>';});
+    await expect.poll(()=>worker.evaluate(()=>(globalThis as any).proposalFailed)).toBe(true);
+    await expect.poll(()=>command(panel,{type:'DR_GET_PAGE_STATE'})).toMatchObject({activity:{phase:'error',type:'memory-analysis'}});
+    await expect(chat.locator('[data-deeprole-service-preloader]')).toHaveCount(0);
+    await expect(chat.locator('[data-deeprole-memory-card]')).toHaveAttribute('aria-busy','false');
+    expect((await databaseRecords(panel)).filter(row=>row.kind==='proposal'||row.kind==='entry')).toHaveLength(0);
+    expect(await command(panel,{type:'DR_RUN_SERVICE',request:{id:'storage-retry',type:'memory-analysis',bookId:null,createdAt:Date.now()}})).toEqual({ok:true});
+    await chat.evaluate(()=>{const replies=document.querySelectorAll("[data-message-id='service-answer']");replies[replies.length-1]!.textContent='<deeprole_data>{"type":"memory-suggestions","items":[{"title":"Archive key","content":"Noah has the brass key."}]}</deeprole_data>';});
+    await expect.poll(()=>pendingService(panel)).toBeNull();
+    await expect.poll(async()=>(await databaseRecords(panel)).filter(row=>row.kind==='proposal').length).toBe(1);
+    expect((await databaseRecords(panel)).filter(row=>row.kind==='entry')).toHaveLength(0);
+  } finally {await context.close();}
+});
 
 for (const type of ["memory-analysis", "handoff"] as const) test(`modern DeepSeek split-span ${type} parses only the final answer`, async ({}, info) => {
   const { context, panel, chat } = await setup([]);
@@ -287,8 +372,15 @@ for (const type of ["memory-analysis", "handoff"] as const) test(`modern DeepSee
       payload.append(start, JSON.stringify(json), end); final.append(explanation, payload); answer.append(reasoning, final);
     }, type);
     await expect.poll(async () => (await databaseRecords(panel)).filter(row => row.kind === (type === "handoff" ? "snapshot" : "proposal")).length).toBe(1);
-    await expect(chat.locator(".ds-assistant-message-main-content")).toContainText("This explanation remains visible.");
-    await expect(chat.locator(".ds-think-content")).toContainText("deeprole_data");
+    if (type === "handoff") {
+      await expect(chat.locator(".ds-assistant-message-main-content")).toContainText("This explanation remains visible.");
+      await expect(chat.locator(".ds-think-content")).toBeVisible();
+    } else {
+      await expect(chat.locator(".ds-assistant-message-main-content")).toBeHidden();
+      await expect(chat.locator(".ds-think-content")).toBeHidden();
+      await expect(chat.locator('[data-deeprole-service-preloader]')).toHaveCount(0);
+      await expect(chat.locator('[data-deeprole-memory-card]')).toHaveCount(1);
+    }
     expect((await databaseRecords(panel)).filter(row => row.kind === "entry")).toHaveLength(0);
     if (type === "memory-analysis") {
       const review = chat.getByRole("region", { name: "Review changes", exact: true });
@@ -590,6 +682,27 @@ test("character cast: installed roster, preview, focus and outgoing mood stay sy
 const choicesWorld = { id: "choices-world", name: "Test observatory", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
 const choicesBinding = { id: "binding:a", chatId: "a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
 const choicesPayload = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map((kind) => ({ kind, label: "Move " + kind, text: "MY_MOVE_" + kind })) }) + '</deeprole_choices>';
+test("existing choices render without a connected world, but send nothing and respect the setting", async () => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await chat.evaluate(payload => {
+      const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "saved-scene";
+      row.textContent = "Mira waits by the archive. " + payload; document.querySelector("#conversation")!.append(row);
+    }, choicesPayload);
+    await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible();
+    await expect(chat.locator("[data-deeprole-choices-recovery]")).toHaveCount(0);
+    await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /deeprole_choice_mode/);
+    await chat.getByRole("button", { name: /Move positive/ }).click();
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_MOVE_positive");
+    expect(sent).toBe(0); expect(await databaseRecords(panel)).toHaveLength(0);
+    await panel.evaluate(async () => { const api = (globalThis as any).chrome; const values = await api.storage.local.get("deeprole_settings"); await api.storage.local.set({ deeprole_settings: { ...values.deeprole_settings, sceneChoicesEnabled: false } }); });
+    await command(panel, { type: "DR_DATA_CHANGED" });
+    await expect(chat.locator("[data-deeprole-choices-host]")).toHaveCount(0);
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_MOVE_positive");
+  } finally { await context.close(); }
+});
 async function enableChoicesScene(chat: Page) {
   await enableServiceComposer(chat);
   await chat.locator("[data-message-id='user']").evaluate((row) => row.setAttribute("data-role", "user"));

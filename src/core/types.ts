@@ -260,6 +260,8 @@ export interface VaultConfig {
 }
 
 export interface ServiceRequest {
+  /** Observed native reply key, never an inferred id or model-provided selector. */
+  replyIdentity?: string;
   id: string;
   chatUrl?: string;
   worldId?: string | null;

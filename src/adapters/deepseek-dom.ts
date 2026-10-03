@@ -69,7 +69,7 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
   }
 
   isGenerating(): boolean {
-    return [...document.querySelectorAll<HTMLElement>("[data-testid='stop-generation'], button[aria-label*='Stop'], button[aria-label*='停止'], button[aria-label*='Останов'], button[title*='Stop']")]
+    return [...document.querySelectorAll<HTMLElement>("[data-testid='stop-generation'], :is(button,[role='button'])[aria-label*='Stop' i], :is(button,[role='button'])[aria-label*='停止'], :is(button,[role='button'])[aria-label*='Останов' i], :is(button,[role='button'])[title*='Stop' i]")]
       .some((control) => isVisible(control) && !control.matches(":disabled") && control.getAttribute("aria-disabled") !== "true" && !/disabled/i.test(control.className));
   }
 

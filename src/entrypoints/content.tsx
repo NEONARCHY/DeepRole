@@ -3,8 +3,9 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
+import { nativeMessageIdentity } from "../adapters/deepseek-message-dom";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards } from "../adapters/deepseek-choices-dom";
-import { findServiceReplyRows, findServiceResponseElements, finishServicePreloader, markServiceReplyRow, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns, showServicePreloader } from "../adapters/deepseek-service-dom";
+import { findServiceReplyRows, findServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { formatMemoryContext } from "../core/context";
 import { parseSceneChoices, sceneChoiceInstruction, sceneChoiceRecoveryPrompt, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
@@ -40,7 +41,7 @@ import type {
   MemoryOverrides, MemoryProposalBatch, LoreChange,
 } from "../core/types";
 import { PageWidget, type WidgetState } from "./content/PageWidget";
-import { pendingActivity, type ServiceActivity } from "../core/memory-experience";
+import { pendingActivity, SERVICE_TIMEOUT_MS, type ServiceActivity } from "../core/memory-experience";
 import "./content/page-widget.css";
 import "./shared/help.css";
 import { contentRepository as repository } from "../storage/content-repository";
@@ -126,6 +127,7 @@ class PageController {
   private snapshotToken: string | null = null;
   private readonly deliveries = new Map<string, ContextDelivery>();
   private readonly malformedServiceReplies = new Map<string, { text: string; stableSince: number }>();
+  private readonly failedServiceIds = new Set<string>();
   private pickedSceneChoice: { signature: string; text: string } | null = null;
   private readonly pageChatEstimates = new Map<string, ConversationEstimate>();
   private historyEstimate: { chatId: string; value: ConversationEstimate } | null = null;
@@ -190,7 +192,7 @@ class PageController {
       }
       const request = this.pendingService;
       if (request?.type === "memory-analysis" && request.chatId === this.adapter.getChatId()) {
-        this.updateMemoryPreloader(request, findServiceReplyRows(request.id), findServiceResponseElements(request.id));
+        this.updateMemoryPreloader(request);
       } else if (!request && changes.some((change) =>
         [...change.addedNodes].some((node) => node.textContent?.includes(SERVICE_START))
         || change.type === "characterData" && change.target.parentElement?.textContent?.includes(SERVICE_START))) {
@@ -207,7 +209,8 @@ class PageController {
       if (location.href !== this.lastUrl) {
         this.navigate();
       }
-      if (this.pendingService && this.state.activity?.phase === "waiting" && Date.now() - this.pendingService.createdAt >= 10 * 60 * 1000 && !this.adapter.isGenerating()) this.render();
+      // Empty/stopped streams may never mutate the DOM again.
+      if (this.pendingService) this.scheduleScan();
     }, 1000);
     this.state.pageReady = true;
     this.render();
@@ -262,6 +265,7 @@ class PageController {
     this.proposals = libraryRecords<MemoryProposalBatch>(records, "proposal"); this.changes = libraryRecords<LoreChange>(records, "change");
     this.draftOverrides = pending?.overrides ?? this.draftOverrides;
     this.pendingService = pending?.service ?? null;
+    if (this.pendingService && this.failedServiceIds.has(this.pendingService.id)) this.pendingService = null;
     const pendingSnapshotId = pending?.snapshotId;
     this.appliedSnapshot = pendingSnapshotId ? this.snapshots.find((item) => item.id === pendingSnapshotId) ?? null : null;
     this.snapshotToken = this.appliedSnapshot ? pending?.snapshotToken ?? null : null;
@@ -678,9 +682,11 @@ class PageController {
 
   private syncSceneChoices() {
     const busy = this.preparingService || pendingActivity(this.pendingService, this.adapter.getChatId(), this.adapter.isGenerating())?.phase === "waiting";
-    syncSceneChoiceCards(Boolean(this.state.sceneChoicesEnabled && !this.state.vaultLocked), this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, {
+    // Existing reply options are read-only UI, not a world-bound memory update.
+    // New recovery requests still require the connected-world feature flag.
+    syncSceneChoiceCards((this.settings.sceneChoicesEnabled ?? true) && !this.state.vaultLocked, this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, this.state.sceneChoicesEnabled ? {
       busy, onRequest: (signature) => this.requestSceneChoices(signature),
-    });
+    } : undefined);
     const characters = this.state.characters;
     const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;
     const resetAt = this.settings.portraitLayoutResetAt ?? 0;
@@ -772,7 +778,7 @@ class PageController {
   }
 
   private async pickSceneChoice(choice: SceneChoice, signature: string): Promise<boolean> {
-    if (this.state.vaultLocked || !this.state.sceneChoicesEnabled || this.adapter.isGenerating() || this.preparingService || this.currentActivity()?.phase === "waiting") {
+    if (this.state.vaultLocked || this.settings.sceneChoicesEnabled === false || this.adapter.isGenerating() || this.preparingService || this.currentActivity()?.phase === "waiting") {
       this.showToast(sceneChoiceText(this.state.locale, "unavailable")); return false;
     }
     const draft = this.adapter.getDraft();
@@ -789,17 +795,25 @@ class PageController {
     this.serviceRetryTimer = window.setTimeout(() => this.scheduleScan(), delay);
   }
 
-  private updateMemoryPreloader(request: ServiceRequest, rows: HTMLElement[], payloads: HTMLElement[]) {
+  private updateMemoryPreloader(request: ServiceRequest) {
     if (request.type !== "memory-analysis") return;
     const label = experienceText(this.state.locale, "memoryPreloader");
-    for (const payload of payloads) {
-      const row = rows.find((item) => item === payload || item.contains(payload));
-      if (row) showServicePreloader(request.id, row, payload, label);
-    }
+    this.rememberServiceReply(request);
+    presentMemoryAnalysis(request.id, label, undefined, document, request.replyIdentity);
+  }
+
+  private rememberServiceReply(request: ServiceRequest) {
+    if (this.pendingService?.id !== request.id) return;
+    const row = findServiceReplyRows(request.id, document, request.type === "scene-choices" ? "<deeprole_choices>" : SERVICE_START)[0];
+    const identity = row && nativeMessageIdentity(row);
+    if (!identity || identity === request.replyIdentity) return;
+    request.replyIdentity = identity;
+    // The guard prevents this late metadata write resurrecting a completed request.
+    void this.saveTabState({ service: { ...request } }, { serviceId: request.id }).catch(() => undefined);
   }
 
   private cleanArchivedMemoryPayloads() {
-    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"));
+    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"), this.pendingService?.id);
   }
 
   private readSelection() {
@@ -884,6 +898,7 @@ class PageController {
       const reloadedError = guard();
       if (reloadedError) return { ok: false, error: reloadedError };
       request = { ...request, ...this.currentScene(), chatId: this.adapter.getChatId() ?? undefined, chatUrl: initialUrl, startedMessageCount: this.adapter.getMessageCount() };
+      delete request.replyIdentity;
       // Previous service results must not become suggestions in a different world.
       const book = this.books.find((item) => item.id === request.bookId);
       // Bound the service request; omitted records must not be silently updated.
@@ -909,8 +924,8 @@ class PageController {
       // A user can type, navigate or start an answer while fingerprints/storage await.
       const submitError = guard(true);
       if (submitError) return await cancel(submitError);
-      // Analysis is an ordinary visible chat message, not a hidden replacement
-      // for text the user typed into the chat.
+      // Submit a dedicated service turn, never a replacement for the user's
+      // draft. Memory analysis is presented as one plaque, not technical text.
       if (!this.adapter.setDraft(prompt) || !this.adapter.submitDraft()) {
         if (this.adapter.getDraft() === prompt) this.adapter.setDraft("");
         return await cancel("composer-not-found");
@@ -942,7 +957,8 @@ class PageController {
   private async scanServiceResponses() {
     if (this.processingService || !this.pendingService || this.pendingService.chatId !== this.adapter.getChatId()) return;
     const request = this.pendingService;
-    const replyRows = findServiceReplyRows(request.id, document, request.type === "scene-choices" ? "<deeprole_choices>" : SERVICE_START);
+    this.rememberServiceReply(request);
+    const replyRows = findServiceReplyRows(request.id, document, request.type === "scene-choices" ? "<deeprole_choices>" : SERVICE_START, request.replyIdentity);
     if (request.type === "scene-choices") {
       replyRows.forEach((row) => { row.dataset.deeproleSceneChoicesReply = "true"; });
       const completed = replyRows.some((row) => parseSceneChoices(row.textContent ?? ""));
@@ -958,8 +974,8 @@ class PageController {
       } else if (!completed) await this.handleUnusableServiceReply(request, replyRows);
       return;
     }
-    const candidates = findServiceResponseElements(request.id);
-    if (request.type === "memory-analysis") this.updateMemoryPreloader(request, replyRows, candidates);
+    const candidates = findServiceResponseElements(request.id, document, request.replyIdentity);
+    if (request.type === "memory-analysis") this.updateMemoryPreloader(request);
     for (const element of candidates) {
       const parsed = parseServiceData(element.textContent || element.innerText || "");
       if (!parsed) continue;
@@ -980,13 +996,7 @@ class PageController {
           const summary = batch.items.length
             ? experienceText(this.state.locale, "resultReview")
             : assistantText(this.state.locale, "analysisNoChanges");
-          const current = findServiceResponseElements(request.id);
-          const replaced = [element, ...current].some((candidate) => replaceServicePayloadWithSummary(candidate, summary));
-          if (replaced) removeServicePreloader(request.id, replyRows);
-          else {
-            this.updateMemoryPreloader(request, replyRows, current);
-            finishServicePreloader(request.id, replyRows, summary);
-          }
+          presentMemoryAnalysis(request.id, experienceText(this.state.locale, "memoryPreloader"), summary, document, request.replyIdentity);
           if (!batch.items.length) void browser.runtime.sendMessage({ type: "DR_SERVICE_RESULT", outcome: "no-changes" } satisfies DeepRoleMessage).catch(() => undefined);
         } else {
           const scope = this.pageScope();
@@ -999,7 +1009,7 @@ class PageController {
         }
         if (this.pendingService?.id === request.id) this.pendingService = null;
         await this.saveTabState({ service: null }, { serviceId: request.id }); await this.reload();
-      } catch { this.showToast(assistantText(this.state.locale, "failed")); }
+      } catch { await this.endUnusableService(request).catch(() => undefined); }
       finally { this.processingService = false; }
       return;
     }
@@ -1007,27 +1017,42 @@ class PageController {
   }
 
   private async handleUnusableServiceReply(request: ServiceRequest, replyRows: HTMLElement[]) {
-    if (!replyRows.length || this.pendingService?.id !== request.id) return;
-    const text = replyRows.map((row) => row.innerText || row.textContent || "").join("\n").trim();
-    if (!text) return;
+    if (this.pendingService?.id !== request.id) return;
+    const expired = Date.now() - request.createdAt >= SERVICE_TIMEOUT_MS;
+    if (!replyRows.length && !expired) return;
+    const text = replyRows.map(serviceReplyText).join("\n").trim();
+    // A thinking-only or empty assistant placeholder is not an invalid final answer.
+    if (!text && !expired) { this.scheduleServiceRetryScan(); return; }
     replyRows.forEach((row) => markServiceReplyRow(row, request.id));
     const failedByDeepSeek = /message is generating.{0,80}try again later|сообщение генерируется.{0,80}повторите попытку позже/iu.test(text);
     const previous = this.malformedServiceReplies.get(request.id);
     const now = Date.now();
     const stableSince = previous?.text === text ? previous.stableSince : now;
     this.malformedServiceReplies.set(request.id, { text, stableSince });
-    if (failedByDeepSeek || (!this.adapter.isGenerating() && now - stableSince >= 12_000 && now - request.createdAt >= 12_000)) {
-      if (!await this.saveTabState({ service: null }, { serviceId: request.id })) return;
-      removeServicePreloader(request.id, replyRows);
-      if (this.pendingService?.id === request.id) this.pendingService = null;
-      this.setServiceResult(request, "error");
-      this.malformedServiceReplies.delete(request.id);
-      await this.updateContext();
-      this.syncSceneChoices();
-      this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "invalidServiceResult"));
+    if (expired || failedByDeepSeek || (!this.adapter.isGenerating() && now - stableSince >= 12_000 && now - request.createdAt >= 12_000)) {
+      await this.endUnusableService(request);
       return;
     }
     if (!this.adapter.isGenerating()) this.scheduleServiceRetryScan();
+  }
+
+  private async endUnusableService(request: ServiceRequest) {
+    if (this.pendingService?.id !== request.id) return;
+    try {
+      if (!await this.saveTabState({ service: null }, { serviceId: request.id })) return;
+    } catch {
+      // Even an unavailable background/session store must not keep the page
+      // spinning. A newer request is never cleared without its guarded write.
+    }
+    this.failedServiceIds.add(request.id);
+    if (request.type === "memory-analysis") presentMemoryAnalysis(request.id,
+      experienceText(this.state.locale, "memoryPreloader"), experienceText(this.state.locale, "memoryAnalysisFailed"), document, request.replyIdentity);
+    else removeServicePreloader(request.id, findServiceReplyRows(request.id));
+    if (this.pendingService?.id === request.id) this.pendingService = null;
+    this.setServiceResult(request, "error");
+    this.malformedServiceReplies.delete(request.id);
+    await this.updateContext(); this.syncSceneChoices(); this.render();
+    this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "invalidServiceResult"));
   }
 
   private scheduleHandoffNavigation(snapshot: HandoffSnapshot, scope: PageScope) {
@@ -1206,12 +1231,7 @@ class PageController {
     // Once a complete valid result is being saved, a late abort must not report
     // failure for that already received result or disturb its storage operation.
     if (!request || request.id !== id || this.processingService) return;
-    if (!await this.saveTabState({ service: null }, { serviceId: id })) return;
-    removeServicePreloader(id, findServiceReplyRows(id));
-    if (this.pendingService?.id === id) this.pendingService = null;
-    this.setServiceResult(request, "error");
-    await this.updateContext();
-    this.syncSceneChoices();
+    await this.endUnusableService(request);
     this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "networkFailed"));
   }
 

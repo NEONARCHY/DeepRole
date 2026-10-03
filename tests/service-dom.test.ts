@@ -1,9 +1,53 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { findDeepestServiceElements, findSafeServiceContainer, findServiceReplyRows, findServiceResponseElements, replaceServicePayloadWithSummary, restoreServiceTurns } from "../src/adapters/deepseek-service-dom";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { findDeepestServiceElements, findSafeServiceContainer, findServiceReplyRows, findServiceResponseElements, presentMemoryAnalysis, serviceReplyText, replaceServicePayloadWithSummary, restoreServiceTurns } from "../src/adapters/deepseek-service-dom";
 import { SERVICE_PREFIX } from "../src/core/service-protocol";
+import { nativeMessageIdentity } from "../src/adapters/deepseek-message-dom";
 
 describe("DeepSeek service message isolation", () => {
-  afterEach(() => { document.body.innerHTML = ""; });
+  afterEach(() => { document.body.innerHTML = ""; vi.restoreAllMocks(); });
+
+  it("uses a single real turn for tall virtualized DeepSeek replies with paragraph-split JSON", () => {
+    document.body.innerHTML = '<section><div data-virtual-list-item-key="1"><div class="ds-message" id="request"><div class="ds-collapsible-text"></div></div></div><div data-virtual-list-item-key="2"><div class="ds-message" id="answer"><div class="ds-think-content">Thinking</div><div class="ds-markdown ds-assistant-message-main-content" id="final"><p>Summary</p><p>&lt;deeprole_data&gt;</p><p>{"type":"memory-suggestions","items":[]}</p><p>&lt;/deeprole_data&gt;</p></div></div></div></section>';
+    document.querySelector('.ds-collapsible-text')!.textContent = '[DeepRole Service]\n[Request ID: tall]\nAnalyze';
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 100, y: 0, width: 680, height: 1600, top: 0, left: 100, right: 780, bottom: 1600, toJSON() {} });
+    const answer = document.getElementById('answer')!;
+    expect(findServiceReplyRows('tall')).toEqual([answer]);
+    expect(findSafeServiceContainer(document.querySelector('#final p')!)).toBe(answer);
+    expect(findServiceResponseElements('tall')).toEqual([document.getElementById('final')]);
+    presentMemoryAnalysis('tall', 'Preparing'); presentMemoryAnalysis('tall', 'Preparing');
+    expect(document.querySelectorAll('[data-deeprole-service-preloader]')).toHaveLength(1);
+    expect(serviceReplyText(answer)).toContain('"items":[]');
+    expect(serviceReplyText(answer)).not.toContain('Preparing');
+    expect(document.getElementById('request')!.dataset.deeproleMemoryRequest).toBe('tall');
+    const identity = nativeMessageIdentity(answer);
+    document.querySelector('[data-virtual-list-item-key="1"]')!.remove();
+    expect(findServiceResponseElements('tall')).toEqual([]);
+    expect(findServiceResponseElements('tall', document, identity)).toEqual([document.getElementById('final')]);
+    presentMemoryAnalysis('tall', 'Preparing', 'Ready', document, identity);
+    presentMemoryAnalysis('tall', 'Preparing', 'Ready', document, identity);
+    expect(document.querySelectorAll('[data-deeprole-service-preloader]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-deeprole-memory-card]')).toHaveLength(1);
+    expect(document.querySelector('[data-deeprole-memory-card]')!.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it("moves the lone waiting card from the request to the empty response without modifying native content", () => {
+    document.body.innerHTML = '<section><article id="request">[DeepRole Service]\n[Request ID: empty]\nAnalyze</article></section>';
+    presentMemoryAnalysis('empty', 'Preparing');
+    const requestText = serviceReplyText(document.getElementById('request')!);
+    const reply = document.createElement('article'); document.querySelector('section')!.append(reply);
+    presentMemoryAnalysis('empty', 'Preparing');
+    expect(findServiceReplyRows('empty')).toEqual([reply]);
+    expect(document.querySelectorAll('[data-deeprole-memory-card]')).toHaveLength(1);
+    expect(reply.querySelector('[data-deeprole-memory-card]')).not.toBeNull();
+    expect(serviceReplyText(reply)).toBe('');
+    expect(serviceReplyText(document.getElementById('request')!)).toBe(requestText);
+  });
+
+  it("never pairs an unanswered service with an ordinary later user's quoted JSON", () => {
+    document.body.innerHTML = '<section><div class="ds-message" id="request"><div class="ds-collapsible-text">[DeepRole Service]\n[Request ID: absent]\nAnalyze</div></div><div class="ds-message"><div class="ds-collapsible-text">Explain &lt;deeprole_data&gt;{"type":"memory-suggestions","items":[]}&lt;/deeprole_data&gt;</div></div></section>';
+    expect(findServiceResponseElements('absent')).toEqual([]);
+    expect(findServiceReplyRows('absent')).toEqual([]);
+  });
 
   it("selects only the deepest technical text instead of the whole chat page", () => {
     document.body.innerHTML = `<main id="page"><section id="conversation"><article data-message-id="service"><div id="technical">${SERVICE_PREFIX} analyze</div></article><textarea /></section></main>`;

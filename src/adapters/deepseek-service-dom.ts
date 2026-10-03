@@ -1,6 +1,5 @@
 import { parseServiceData, SERVICE_END, SERVICE_START } from "../core/service-protocol";
-
-const REASONING = ".ds-think-content, .ds-think-content-wrapper, [data-testid*='thinking'], [data-testid*='reasoning']";
+import { nativeMessageRow, nativeMessageRows, nativeMessageIdentity, isUserMessage, REASONING } from "./deepseek-message-dom";
 
 export function findDeepestServiceElements(marker: string, root: ParentNode = document): HTMLElement[] {
   const selector = "article, [data-message-id], [data-testid*='message'], div, p, pre, code, span";
@@ -12,8 +11,8 @@ export function findDeepestServiceElements(marker: string, root: ParentNode = do
 }
 
 /** Read only the reply belonging to this request, even after DOM replacement. */
-export function findServiceResponseElements(requestId: string, root: ParentNode = document): HTMLElement[] {
-  return findServiceReplyRows(requestId, root)
+export function findServiceResponseElements(requestId: string, root: ParentNode = document, replyIdentity?: string): HTMLElement[] {
+  return findServiceReplyRows(requestId, root, SERVICE_START, replyIdentity)
     .flatMap((row) => {
       // DeepSeek renders the opening marker, JSON and closing marker in separate
       // spans. The deepest match can be just the opening tag, not the payload.
@@ -26,23 +25,30 @@ export function findServiceResponseElements(requestId: string, root: ParentNode 
             if (text.indexOf(SERVICE_END, text.indexOf(SERVICE_START) + SERVICE_START.length) >= 0) return current;
             if (current === scope || current === row) break;
           }
-          return element;
+          // While streaming, read the whole final-answer scope. The opener
+          // alone cannot include JSON added in a later paragraph.
+          return scope;
         }));
     })
-    .filter((element, index, all) => all.indexOf(element) === index);
+    .filter((element, index, all) => all.indexOf(element) === index && !all.some(other => other !== element && other.contains(element)));
 }
 
 /** Find the assistant turn paired with a request, even when it returned an error instead of data. */
-export function findServiceReplyRows(requestId: string, root: ParentNode = document, marker = SERVICE_START): HTMLElement[] {
-  return serviceTurns(root, marker).filter((turn) => turn.requestId === requestId && turn.response).map((turn) => turn.response!);
+export function findServiceReplyRows(requestId: string, root: ParentNode = document, marker = SERVICE_START, replyIdentity?: string): HTMLElement[] {
+  const paired = serviceTurns(root, marker).filter(turn => turn.requestId === requestId && turn.response).map(turn => turn.response!);
+  if (paired.length || !replyIdentity) return paired;
+  // DeepSeek unmounts the preceding user request when a long answer scrolls it
+  // out of the virtual list. Only a previously observed paired key is safe.
+  return nativeMessageRows(root).filter(row => nativeMessageIdentity(row) === replyIdentity && !isUserMessage(row));
 }
 
 /** A reload restores DeepSeek's saved reply; suppress completed technical blocks again. */
-export function replaceArchivedMemoryPayloads(summary: string): void {
+export function replaceArchivedMemoryPayloads(summary: string, pendingId?: string): void {
   for (const turn of serviceTurns(document)) {
-    if (!turn.requestId || !turn.response) continue;
+    if (!turn.requestId || turn.requestId === pendingId || !turn.response) continue;
+    if (turn.response.querySelector('[data-deeprole-memory-card][data-deeprole-result]')) continue;
     for (const payload of findServiceResponseElements(turn.requestId)) {
-      if (parseServiceData(payload.textContent || "")?.type === "memory-suggestions") replaceServicePayloadWithSummary(payload, summary);
+      if (parseServiceData(payload.textContent || "")?.type === "memory-suggestions") presentMemoryAnalysis(turn.requestId, summary, summary);
     }
   }
 }
@@ -89,21 +95,24 @@ export function replaceServicePayloadWithSummary(element: HTMLElement, summary: 
 
 export function showServicePreloader(requestId: string, row: HTMLElement, payload: HTMLElement, label: string): void {
   if (payload !== row && !row.contains(payload)) return;
-  if (payload === row || (payload.textContent ?? "").slice(0, (payload.textContent ?? "").indexOf(SERVICE_START)).trim()) {
-    hideServicePayloadTail(requestId, payload);
-  } else if (payload.dataset.deeprolePayloadHiddenFor !== requestId) {
-    payload.dataset.deeprolePayloadDisplay = payload.style.getPropertyValue("display");
-    payload.dataset.deeprolePayloadPriority = payload.style.getPropertyPriority("display");
-    payload.dataset.deeprolePayloadHiddenFor = requestId;
-    payload.style.setProperty("display", "none", "important");
+  memoryPresentationStyle(row.ownerDocument);
+  row.dataset.deeproleMemoryPresentation = requestId;
+  // Preserve native text nodes: React can continue streaming/replacing them,
+  // and parsing always reads the original reply rather than our status text.
+  for (const node of [...row.childNodes]) {
+    if (node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) continue;
+    const wrapper = row.ownerDocument.createElement("span");
+    node.before(wrapper); wrapper.append(node);
   }
-
-  const existing = [...row.querySelectorAll<HTMLElement>("[data-deeprole-service-preloader]")]
-    .find((element) => element.dataset.deeproleServicePreloader === requestId);
-  if (existing) return;
+  const cards = [...row.ownerDocument.querySelectorAll<HTMLElement>("[data-deeprole-memory-card], [data-deeprole-service-preloader]")]
+    .filter(element => element.dataset.deeproleMemoryCard === requestId || element.dataset.deeproleServicePreloader === requestId);
+  const existing = cards.find(element => element.parentElement === row);
+  cards.filter(element => element !== existing).forEach(element => element.remove());
+  if (existing) { existing.dataset.deeproleMemoryCard = requestId; return; }
 
   const card = row.ownerDocument.createElement("div");
   card.dataset.deeproleServicePreloader = requestId;
+  card.dataset.deeproleMemoryCard = requestId;
   card.setAttribute("role", "status");
   card.setAttribute("aria-live", "polite");
   card.setAttribute("aria-busy", "true");
@@ -112,7 +121,7 @@ export function showServicePreloader(requestId: string, row: HTMLElement, payloa
   spinner.setAttribute("aria-hidden", "true");
   spinner.style.cssText = "display:inline-block;width:16px;height:16px;flex:0 0 16px;box-sizing:border-box;border:2px solid #414146;border-top-color:#9aaeff;border-radius:50%;";
   try {
-    spinner.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 850, iterations: Infinity });
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) spinner.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 850, iterations: Infinity });
   } catch { /* The status remains readable if Web Animations are unavailable. */ }
   const text = row.ownerDocument.createElement("span");
   text.textContent = label;
@@ -120,55 +129,31 @@ export function showServicePreloader(requestId: string, row: HTMLElement, payloa
   row.append(card);
 }
 
-function hideServicePayloadTail(requestId: string, element: HTMLElement): void {
-  const existing = [element, ...element.querySelectorAll<HTMLElement>("[data-deeprole-payload-hidden-for]")]
-    .find((node) => node.dataset.deeprolePayloadHiddenFor === requestId);
-  if (existing) {
-    const card = [...element.querySelectorAll<HTMLElement>("[data-deeprole-service-preloader]")]
-      .find((node) => node.dataset.deeproleServicePreloader === requestId);
-    const visibleTail = element.ownerDocument.createRange();
-    visibleTail.setStartAfter(existing);
-    if (card) visibleTail.setEndBefore(card);
-    else visibleTail.setEnd(element, element.childNodes.length);
-    const beforeCard = visibleTail.toString().trim();
-    let afterCard = "";
-    if (card) {
-      visibleTail.setStartAfter(card);
-      visibleTail.setEnd(element, element.childNodes.length);
-      afterCard = visibleTail.toString().trim();
-    }
-    if (!beforeCard && !afterCard) return;
-    card?.remove();
-    const tail = element.ownerDocument.createRange();
-    tail.setStartAfter(existing);
-    tail.setEnd(element, element.childNodes.length);
-    if (tail.toString().trim()) existing.append(tail.extractContents());
-    if (card) element.append(card);
-    return;
-  }
-  const text = element.textContent ?? "";
-  const start = text.indexOf(SERVICE_START);
-  if (start < 0) return;
-  const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  const range = element.ownerDocument.createRange();
-  let offset = 0;
-  let foundStart = false;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const length = node.textContent?.length ?? 0;
-    if (start < offset + length) {
-      range.setStart(node, start - offset);
-      foundStart = true;
-      break;
-    }
-    offset += length;
-  }
-  if (!foundStart) return;
-  range.setEnd(element, element.childNodes.length);
-  const hidden = element.ownerDocument.createElement("span");
-  hidden.dataset.deeprolePayloadHiddenFor = requestId;
-  hidden.style.setProperty("display", "none", "important");
-  hidden.append(range.extractContents());
-  range.insertNode(hidden);
+function memoryPresentationStyle(doc: Document): void {
+  if (doc.querySelector("style[data-deeprole-memory-style]")) return;
+  const style = doc.createElement("style"); style.dataset.deeproleMemoryStyle = "true";
+  style.textContent = "[data-deeprole-memory-presentation]>:not([data-deeprole-memory-card]){display:none!important}[data-deeprole-memory-request]{display:none!important}";
+  doc.head.append(style);
+}
+
+/** One plaque for an explicit analysis, including before the first response byte. */
+export function presentMemoryAnalysis(requestId: string, label: string, summary?: string, root: ParentNode = document, replyIdentity?: string): void {
+  const turn = serviceTurns(root).find(turn => turn.requestId === requestId);
+  const row = turn?.response ?? findServiceReplyRows(requestId, root, SERVICE_START, replyIdentity)[0] ?? turn?.request;
+  if (!row) return;
+  if (turn?.response) turn.request.dataset.deeproleMemoryRequest = requestId;
+  showServicePreloader(requestId, row, row, label);
+  if (summary !== undefined) finishServicePreloader(requestId, [row], summary);
+}
+
+/** Ignore all extension feedback when assessing whether the native reply stopped changing. */
+export function serviceReplyText(row: HTMLElement): string {
+  const walker = row.ownerDocument.createTreeWalker(row, NodeFilter.SHOW_TEXT, {
+    acceptNode: node => node.parentElement?.closest(`${REASONING}, [data-deeprole-memory-card], [data-deeprole-service-preloader], [data-deeprole-result]`) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+  });
+  let text = "";
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) text += node.textContent ?? "";
+  return text.trim();
 }
 
 export function removeServicePreloader(requestId: string, rows: HTMLElement[]): void {
@@ -176,9 +161,11 @@ export function removeServicePreloader(requestId: string, rows: HTMLElement[]): 
     const nodes = [row, ...row.querySelectorAll<HTMLElement>("*")];
     for (const node of nodes) {
       if (node.dataset.deeproleServicePreloader === requestId) {
-        node.querySelectorAll<HTMLElement>("span").forEach((child) => child.getAnimations().forEach((animation) => animation.cancel()));
+        node.querySelectorAll<HTMLElement>("span").forEach((child) => child.getAnimations?.().forEach((animation) => animation.cancel()));
         node.remove();
       }
+      if (node.dataset.deeproleMemoryPresentation === requestId) delete node.dataset.deeproleMemoryPresentation;
+      if (node.dataset.deeproleMemoryRequest === requestId) delete node.dataset.deeproleMemoryRequest;
       if (node.dataset.deeprolePayloadHiddenFor !== requestId) continue;
       const display = node.dataset.deeprolePayloadDisplay ?? "";
       const priority = node.dataset.deeprolePayloadPriority ?? "";
@@ -194,10 +181,11 @@ export function removeServicePreloader(requestId: string, rows: HTMLElement[]): 
 /** Keep the machine block hidden if DeepSeek replaced its DOM during saving. */
 export function finishServicePreloader(requestId: string, rows: HTMLElement[], summary: string): void {
   for (const row of rows) {
-    const card = [...row.querySelectorAll<HTMLElement>("[data-deeprole-service-preloader]")]
-      .find((node) => node.dataset.deeproleServicePreloader === requestId);
+    const card = [...row.querySelectorAll<HTMLElement>("[data-deeprole-memory-card]")]
+      .find((node) => node.dataset.deeproleMemoryCard === requestId);
     if (!card) continue;
-    card.querySelectorAll<HTMLElement>("span").forEach((child) => child.getAnimations().forEach((animation) => animation.cancel()));
+    if (card.dataset.deeproleResult && card.textContent === summary) continue;
+    card.querySelectorAll<HTMLElement>("span").forEach((child) => child.getAnimations?.().forEach((animation) => animation.cancel()));
     card.replaceChildren(summary);
     card.dataset.deeproleResult = "true";
     delete card.dataset.deeproleServicePreloader;
@@ -221,7 +209,7 @@ export function restoreServiceTurns(root: ParentNode = document): void {
 
 function serviceTurns(root: ParentNode, marker = SERVICE_START): { request: HTMLElement; response?: HTMLElement; requestId?: string }[] {
   const requests = findDeepestServiceElements("[DeepRole Service]", root).flatMap((element) => {
-    const text = (element.innerText || element.textContent || "").trim();
+    const text = (element.textContent || "").trim();
     if (!text.startsWith("[DeepRole Service]")) return [];
     const request = findServiceRow(element);
     const requestId = text.match(/^\[DeepRole Service\]\s*\[Request ID: ([\w-]{1,120})\](?:\s|$)/)?.[1];
@@ -229,24 +217,28 @@ function serviceTurns(root: ParentNode, marker = SERVICE_START): { request: HTML
   });
   const uniqueRequests = requests.filter((turn, index) => requests.findIndex((other) => other.request === turn.request) === index);
   uniqueRequests.sort((a, b) => follows(a.request, b.request) ? -1 : follows(b.request, a.request) ? 1 : 0);
-  const payloadRows = findDeepestServiceElements(marker, root).filter(element => !element.closest(REASONING)).map((element) => {
+  const payloadRows = findDeepestServiceElements(marker, root).filter(element => !element.closest(REASONING) && !isUserMessage(element)).map((element) => {
     const row = findServiceRow(element);
     return { row };
   }).filter((item, index, all) => all.findIndex((other) => other.row === item.row) === index);
 
   return uniqueRequests.map((turn, index) => {
     const nextRequest = uniqueRequests[index + 1]?.request;
+    const nativeNext = nativeMessageRows(root).find(row => follows(turn.request, row) && !row.contains(turn.request));
     // DeepSeek can wrap the model reply in extra layout nodes, so it is not
     // always the service message's immediate DOM sibling. Correlate even a
     // partial payload so the JSON is hidden while it is still streaming.
     const payload = payloadRows.find(({ row }) => row !== turn.request
       && !row.contains(turn.request) && !turn.request.contains(row)
       && follows(turn.request, row)
+      && (!nativeNext || row === nativeNext || nativeNext.contains(row))
       && (!nextRequest || follows(row, nextRequest)));
     const next = turn.request.nextElementSibling;
     const adjacent = next instanceof HTMLElement && isTurnBoundary(next)
+      && !isUserMessage(next)
       && !(next.innerText || next.textContent || "").trim().startsWith("[DeepRole Service]") ? next : undefined;
-    return { ...turn, response: payload?.row ?? adjacent };
+    return { ...turn, response: payload?.row ?? (nativeNext && !isUserMessage(nativeNext)
+      && !(nativeNext.textContent ?? "").trim().startsWith("[DeepRole Service]") ? nativeNext : adjacent) };
   });
 }
 
@@ -255,6 +247,8 @@ function follows(first: HTMLElement, second: HTMLElement): boolean {
 }
 
 export function findSafeServiceContainer(element: HTMLElement): HTMLElement {
+  const native = nativeMessageRow(element);
+  if (native) return native;
   let current: HTMLElement | null = element;
   for (let depth = 0; current && depth < 7; depth += 1, current = current.parentElement) {
     if (isMessageLike(current) && isSafeContainer(current)) return current;
@@ -266,6 +260,8 @@ export function findSafeServiceContainer(element: HTMLElement): HTMLElement {
 }
 
 function findServiceRow(element: HTMLElement): HTMLElement {
+  const native = nativeMessageRow(element);
+  if (native) return native;
   const explicitRow = element.closest<HTMLElement>("article, [data-message-id], [data-testid*='message']");
   if (explicitRow && isTurnBoundary(explicitRow)
     && explicitRow.querySelectorAll("article, [data-message-id], [data-testid*='message']").length === 0) return explicitRow;

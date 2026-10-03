@@ -1,6 +1,7 @@
 import { parseSceneChoices, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
 import type { Locale } from "../core/types";
 import { findSafeServiceContainer } from "./deepseek-service-dom";
+import { nativeMessageRow, isUserMessage } from "./deepseek-message-dom";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
 
 const MARKER = "<deeprole_choices>";
@@ -9,6 +10,7 @@ const HIDDEN = "[data-deeprole-choices-payload]";
 const RECOVERY = "[data-deeprole-choices-recovery]";
 const USER = "[data-role='user'], [data-message-role='user'], [data-testid*='user-message'], .ds-message--user";
 const REASONING = "[data-testid*='thinking'], [data-testid*='reasoning'], .ds-think-content, .ds-think-content-wrapper";
+const MEMORY_SERVICE = "[data-deeprole-memory-presentation], [data-deeprole-memory-request]";
 let dismissedChoice: string | null = null;
 type ChoiceHandler = (choice: SceneChoice, signature: string) => Promise<boolean>;
 const choiceHandlers = new WeakMap<HTMLElement, ChoiceHandler>();
@@ -22,14 +24,14 @@ export function dismissSceneChoiceCards(root: ParentNode = document, remember = 
 }
 
 function latestTurn(root: ParentNode): HTMLElement | undefined {
-  const turns = [...root.querySelectorAll<HTMLElement>("[data-message-id], [data-testid*='message'], article, [data-message-role], [data-role='user'], [data-role='assistant']")]
-    .filter((element) => !element.closest(`deeprole-page-widget, ${HOST}, ${RECOVERY}, ${REASONING}`)
-      && !element.querySelector("[data-message-id], article, [data-message-role], [data-role='user'], [data-role='assistant']")
+  const turns = [...root.querySelectorAll<HTMLElement>(".ds-message, [data-message-id], [data-testid*='message'], article, [data-message-role], [data-role='user'], [data-role='assistant']")]
+    .filter((element) => !element.closest(`deeprole-page-widget, ${HOST}, ${RECOVERY}, ${REASONING}, ${MEMORY_SERVICE}`)
+      && !element.querySelector(".ds-message, [data-message-id], article, [data-message-role], [data-role='user'], [data-role='assistant']")
       && element.getClientRects().length > 0);
   const last = turns.at(-1);
   // Some site versions put the assistant Markdown after an empty message-id row.
   const markdown = [...root.querySelectorAll<HTMLElement>(".ds-markdown")]
-    .filter((element) => !element.closest(`deeprole-page-widget, ${USER}, ${REASONING}`) && element.getClientRects().length > 0).at(-1);
+    .filter((element) => !element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, ${MEMORY_SERVICE}`) && element.getClientRects().length > 0).at(-1);
   return markdown && (!last || last.compareDocumentPosition(markdown) & Node.DOCUMENT_POSITION_FOLLOWING) ? markdown : last;
 }
 
@@ -48,7 +50,7 @@ export function latestSceneChoiceTarget(root: ParentNode = document): { row: HTM
     while (previous && (previous.matches(`${HOST}, ${RECOVERY}`) || !previous.textContent?.trim() || isChoicesRequest(previous))) previous = previous.previousElementSibling;
     turn = previous instanceof HTMLElement ? previous : undefined;
   }
-  if (!turn || turn.closest(USER)) return null;
+  if (!turn || isUserMessage(turn)) return null;
   const text = (turn.textContent ?? "").trim();
   if (!text || text.startsWith("[DeepRole Service]") || text.includes("<deeprole_choice_mode")) return null;
   const row = findSafeServiceContainer(turn);
@@ -101,7 +103,7 @@ function currentChoice(root: ParentNode) {
   const latest = latestTurn(root);
   // Some DeepSeek versions place final Markdown outside its message-id row.
   const candidates = findChoiceElements(root).flatMap(({ element, parsed }) => {
-    if (element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, form, [contenteditable='true']`)) return [];
+    if (element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, form, [contenteditable='true']`) || isUserMessage(element)) return [];
     if (element.closest("[data-deeprole-service-reply='true']:not([data-deeprole-scene-choices-reply='true'])")) return [];
     return [{ element, parsed, row: findSafeServiceContainer(element) }];
   });
@@ -109,7 +111,7 @@ function currentChoice(root: ParentNode) {
   if (!last || latest && !latest.contains(last.element) && !(latest.compareDocumentPosition(last.element) & Node.DOCUMENT_POSITION_FOLLOWING)) return null;
   // The safe placement container can be only a paragraph in a tall reply.
   // Identity must still cover its entire assistant turn, not just that paragraph.
-  const reply = last.element.closest<HTMLElement>("article, [data-message-id], [data-message-role], [data-role='assistant'], [data-testid*='assistant-message']") ?? last.row;
+  const reply = nativeMessageRow(last.element) ?? last.row;
   return { ...last, signature: `${location.href}:${reply.getAttribute("data-message-id") ?? ""}:${textSignature(JSON.stringify(last.parsed.choices))}:${choiceReplySignature(reply)}` };
 }
 
@@ -172,7 +174,7 @@ function findChoiceElements(root: ParentNode) {
       const text = element.textContent ?? "";
       if (!text.includes(MARKER)) continue;
       const parsed = parseSceneChoices(text);
-      if (!parsed) continue;
+      if (!parsed) { if (nativeMessageRow(element) === element) break; continue; }
       seen.add(element);
       elements.push({ element, parsed });
       break;
