@@ -79,3 +79,11 @@
 @media (prefers-reduced-motion: reduce) {
   .rp-import-dropzone { transition: none; }
 }
+
+.rp-import-browse { display:grid; gap:8px; min-width:0; }
+.rp-import-browse > .rp-hint { margin:0; }
+.rp-import-search { display:flex; align-items:center; gap:8px; color:var(--dr-muted); }
+.rp-import-search input { flex:1; min-width:0; }
+.rp-import-pages { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--dr-muted); font-size:12px; }
+.rp-import-pages .button { min-height:40px; min-width:44px; padding:8px; }
+.rp-import-preview { overscroll-behavior:contain; }

@@ -171,11 +171,9 @@
 .lm-pane-empty-create strong { font-size:15px; }.lm-pane-empty-create p { max-width:360px; margin:0; color:var(--dr-primary); font-size:12px; line-height:1.6; }
 .lm-scene-controls { min-inline-size:0; margin:0; border:0; padding:4px 12px; border-bottom:1px solid var(--dr-border); }.lm-scene-controls .scene-controls-line { justify-content:flex-start; }.lm-scene-controls .scene-focus-toggle { max-width:100%; overflow-wrap:anywhere; }
 .dr-map-workspace .lm-scene-controls .scene-controls { width:100%; margin:0; padding:4px 0; border:0; box-shadow:none; background:transparent; }
-.dr-map-workspace .lm-scene-controls .scene-focus-panel { max-height:180px; }
 @container (max-width:700px) { .lm-tools { flex-wrap:wrap; gap:6px; padding:8px; }.lm-search { flex-basis:100%; }.lm-header { gap:7px; padding:8px; flex-wrap:wrap; }.lm-header h2 { font-size:15px; }.lm-save { display:none; }.lm-history-tools { border:0; padding:0; }.lm-tools .lm-add-entry { flex:1; justify-content:center; }.dr-loremap>footer { display:none; }.lm-start-guide { bottom:38px; }.lm-header>div { flex-basis:45%; } }
 @media (max-width:650px) { .lm-workspace-panes.is-split { flex-direction:column; }.lm-workspace-panes.is-split .lm-workspace-pane { border-inline-end:0; border-bottom:1px solid var(--dr-border); }.lm-workspace-header>small { display:none; }.lm-workspace-header { gap:5px; padding:6px; }.lm-workspace-header>button { font-size:10px; }.lm-workspace-title { flex-basis:100%; }.lm-world-picker>span { display:none; } }
-@media (max-width:650px) { .lm-workspace-panes.is-split { overflow:auto; }.lm-workspace-panes.is-split .lm-workspace-pane { flex:1 0 440px; }.lm-scene-controls .scene-focus-panel { max-height:180px; } }
-@media (max-width:650px) { .lm-workspace-panes.is-split .lm-workspace-pane:has(.scene-focus-panel) { flex-basis:800px; } }
+@media (max-width:650px) { .lm-workspace-panes.is-split { overflow:auto; }.lm-workspace-panes.is-split .lm-workspace-pane { flex:1 0 480px; } }
 
 /* Calm, editorial map styling: keep the existing graph and controls, soften the surfaces. */
 .dr-loremap {
@@ -313,7 +311,9 @@
 .lm-workspace-header { background: var(--dr-panel); border-bottom-color: var(--lm-border); }
 .lm-workspace-header>button[aria-pressed=true] { color: var(--dr-text)!important; background: var(--dr-raised)!important; border-color: var(--dr-primary)!important; }
 .lm-workspace-pane { border-color: var(--lm-border); }
-.lm-workspace-pane.is-active-pane>.lm-world-picker { background: var(--dr-surface); border-bottom-color: var(--dr-primary); box-shadow: inset 0 2px 0 var(--dr-primary); }
+.lm-workspace-pane.is-active-pane>.lm-world-picker { background: var(--dr-surface); border-bottom-color: var(--dr-border-strong); }
+.lm-chat-world { flex:none; padding:4px 7px; border-radius:6px; background:var(--dr-surface); color:var(--dr-primary); font-size:10px; font-weight:600; }
+.lm-world-picker:has(.lm-chat-world) { flex-wrap:wrap; }
 .lm-world-picker { background: var(--dr-panel); border-bottom-color: var(--lm-border); }
 .lm-world-picker select { background: var(--lm-surface); border-color: var(--lm-border); }
 .lm-tools { background: var(--dr-surface); border-bottom-color: var(--lm-border); }
@@ -396,11 +396,12 @@
   border-radius: 14px;
   transform: none;
 }
-.lm-world-picker select { flex: 0 1 280px; max-width: 100%; }
+.lm-world-picker select { flex: 1 1 140px; max-width: 100%; }
 
 /* The narrow editor is a desktop tool window, not a stack of full-width actions.
    Keep primary creation actions together and put history beside zoom controls. */
 @container (max-width: 700px) {
+  .lm-world-picker > span { display:none; }
   .lm-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   .lm-search { grid-column: 1 / -1; min-width: 0; }
   .lm-map-view-tools { grid-column: 1; grid-row: 2; gap: 3px; }
@@ -412,8 +413,26 @@
   .lm-map-actions > .lm-connect-world { grid-column: 1 / -1; }
   .lm-save, .lm-results { grid-column: 1 / -1; }
 }
-@media (max-width: 650px) and (max-height: 700px) {
+@container (max-width: 380px) {
+  .lm-map-view-tools { grid-column:1 / -1; grid-row:2; }
+  .lm-history-tools { grid-column:1 / -1; grid-row:3; justify-self:end; }
+  .lm-map-actions { grid-row:4; }
+}
+@media (max-width: 380px) {
+  .lm-workspace-panes.is-split .lm-workspace-pane { flex-basis:540px; }
+}
+@media (max-height: 700px) {
   .dr-map-workspace.is-compact { height: calc(100vh - 24px); }
+  @container (min-width: 480px) and (max-width: 700px) {
+    .lm-tools { grid-template-columns:minmax(0, 1fr) auto auto; }
+    .lm-search { grid-column:1; grid-row:1; }
+    .lm-map-actions { display:contents; }
+    .lm-map-actions > .lm-add-entry { grid-column:2 / -1; grid-row:1; }
+    .lm-map-view-tools { grid-column:1; grid-row:2; }
+    .lm-history-tools { grid-column:2; grid-row:2; }
+    .lm-map-actions > .lm-branch-action { grid-column:3; grid-row:2; }
+    .lm-map-actions > .lm-connect-world { grid-column:1 / -1; grid-row:3; }
+  }
 }
 .lm-search { flex: 0 1 280px; }
 

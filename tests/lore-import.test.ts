@@ -69,4 +69,19 @@ describe("portable JSON lore", () => {
     [{ title: "A", content: "A" }, { title: "Empty", content: "" }], { format: "deeprole-backup", entries: [{ title: "A", content: "A" }] },
   ])("rejects malformed or ambiguous input atomically: %j", (value) => expect(() => parseLoreImport(JSON.stringify(value))).toThrow());
   it("rejects oversize input before parsing", () => expect(() => parseLoreImport(" ".repeat(10_000_001))).toThrow());
+  it.each(["json", "bds"])("preserves all 10,000 entries at the %s limit and rejects overflow atomically", format => {
+    const entries = Array.from({ length: 10_000 }, (_, i) => ({ title: `Fact ${i + 1}`, content: `  Exact fact ${i + 1}.\r\nSecond line.  `, activation: "manual", enabled: false, keywords: [`key-${i + 1}`] }));
+    const source = format === "json" ? { entries } : Object.fromEntries(entries.map(entry => [entry.title, { value: entry.content, importance: "called" }]));
+    const text = JSON.stringify(source); const lore = parseLoreImport(text);
+    expect(lore.items).toHaveLength(10_000);
+    const records = buildLoreImport(lore, "Large world", "manual");
+    const saved = records.filter(record => record.kind === "entry").map(record => record.data as MemoryEntry);
+    expect(saved).toHaveLength(10_000); expect(records.every(validDataRecord)).toBe(true);
+    expect(saved.map(entry => entry.content)).toEqual(entries.map(entry => entry.content));
+    expect(saved[9999]).toMatchObject({ title: "Fact 10000", activation: "manual", content: entries[9999]!.content });
+    if (format === "json") expect(saved[9999]).toMatchObject({ enabled: false, keywords: ["key-10000"] });
+    const overflow = format === "json" ? { entries: [...entries, entries[0]] } : { ...source, Overflow: { value: "Extra", importance: "called" } };
+    expect(() => parseLoreImport(JSON.stringify(overflow))).toThrow();
+    expect(JSON.stringify(source)).toBe(text);
+  });
 });

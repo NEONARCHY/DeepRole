@@ -8,7 +8,7 @@ import { BOOK_COLORS } from "../../core/defaults";
 import { createId } from "../../core/id";
 import { sceneText, type SceneKey } from "../../core/scene-i18n";
 import { buildLoreImport, parseLoreImport, type LoreImport } from "../../core/lore-import";
-import type { Locale, MemoryBook, MemoryEntry, SceneEntity, SceneState, StoryTemplate, WorldProfile } from "../../core/types";
+import type { DataRecord, Locale, MemoryBook, MemoryEntry, SceneEntity, SceneState, StoryTemplate, WorldProfile } from "../../core/types";
 import { repository } from "../../storage/repository";
 import { saveEditorRecord } from "../../storage/editing";
 import { changeMapActivations, changeMapCategory, changeMapLink, confirmMapPerson, placeMapEntry, removeMapBranch, saveMapLayout } from "../../storage/lore-map";
@@ -16,6 +16,7 @@ import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parse
 import { HelpButton } from "../shared/Help";
 import { LoreMap } from "./LoreMap";
 import { MapWorkspace } from "./MapWorkspace";
+import { LoreImportPreview } from "./LoreImportPreview";
 import "./lore-import.css";
 import { SceneControls } from "../shared/SceneControls";
 import type { LoreNode } from "../../core/lore-map";
@@ -97,7 +98,7 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
         const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...draft, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
         await repository.putIfUnchanged("world", created, null); await props.onChanged(); return created;
       }} render={(world, pane) => <LoreMap embedded activePane={pane.active} onRegister={pane.onRegister} locale={props.locale} world={world} books={props.books.filter((b) => b.worldId === world.id)} entries={props.entries.filter((e) => e.bookId ? props.books.find((b) => b.id === e.bookId)?.worldId === world.id : e.worldId === world.id)} entities={props.entities.filter((e) => e.worldId === world.id)} templates={props.templates.filter((v) => v.worldId === world.id)} selection={props.activeWorldId === world.id ? props.selection : undefined} overrides={props.activeWorldId === world.id ? props.overrides : undefined} onMemoryUse={props.connected && props.activeWorldId === world.id ? props.onMemoryUse : undefined} onActivation={async (entry, activation: ActivationMode, history) => { await changeMapActivations(world.id, [entry], activation, repository, history); await props.onChanged(); }} onBranchActivation={async (entries, activation, history, branchId) => { await changeMapActivations(world.id, entries, activation, repository, history, branchId); await props.onChanged(); }} confirmDeletions={props.confirmDeletions} onClose={pane.onClose} onEdit={(node) => pane.onExit(() => editNode(node, world.id))}
-        sceneControls={props.connected && props.scene.worldId === world.id ? <fieldset className="lm-scene-controls" disabled={sceneBusy}><SceneControls worldLocked compact locale={props.locale} worlds={props.worlds} entities={props.entities} books={props.books} scene={props.scene} onChange={async (next) => { setSceneBusy(true); try { return await props.onScene(next); } finally { setSceneBusy(false); } }} /></fieldset> : undefined}
+        sceneControls={props.connected && props.scene.worldId === world.id ? <fieldset className="lm-scene-controls" disabled={sceneBusy}><SceneControls worldLocked compact overlay locale={props.locale} worlds={props.worlds} entities={props.entities} books={props.books} scene={props.scene} onChange={async (next) => { setSceneBusy(true); try { return await props.onScene(next); } finally { setSceneBusy(false); } }} /></fieldset> : undefined}
         connectedToChat={props.connected && props.activeWorldId === world.id} canConnect={props.connected && !sceneBusy} onConnect={async () => { setSceneBusy(true); try { return await props.onUseWorld(world.id); } finally { setSceneBusy(false); } }}
         onHistoryChanged={props.onChanged}
         onSaveEntry={async (entry, expected) => { await saveEditorRecord("entry", entry, expected); await props.onChanged(); }}
@@ -273,47 +274,65 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
   const [fileName, setFileName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const readGeneration = useRef(0);
+  const mounted = useRef(false);
+  const committing = useRef(false);
+  const [savingImport, setSavingImport] = useState(false);
+  const requestClose = () => { if (!committing.current) props.onClose(); };
   useEffect(() => {
+    mounted.current = true;
     const previous = document.activeElement as HTMLElement | null;
     const dialog = dialogRef.current;
     const focusable = () => [...(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]') ?? [])].filter((element) => element.getClientRects().length);
     dialog?.querySelector<HTMLElement>(".rp-import-choose")?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); props.onClose(); return; }
+      if (event.key === "Escape") { event.preventDefault(); if (!committing.current) props.onClose(); return; }
       if (event.key !== "Tab") return;
       const controls = focusable(); const first = controls[0]; const last = controls.at(-1);
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     };
     document.addEventListener("keydown", onKeyDown, true);
-    return () => { document.removeEventListener("keydown", onKeyDown, true); if (previous?.isConnected) previous.focus(); };
+    return () => { mounted.current = false; readGeneration.current++; document.removeEventListener("keydown", onKeyDown, true); if (previous?.isConnected) previous.focus(); };
   }, []);
   async function readFile(file: File) {
+    if (committing.current) return;
+    const generation = ++readGeneration.current;
+    const current = () => mounted.current && generation === readGeneration.current;
     setBusy(true); setLore(null); setAcceptUnsupported(false); setPack(null); setWorldId(""); setError(""); setFileName(file.name);
     try {
       if (file.size > 10_000_000) throw new Error();
-      const text = await file.text(); const data = JSON.parse(text.replace(/^\uFEFF/, ""));
+      const text = await file.text(); if (!current()) return;
+      const data = JSON.parse(text.replace(/^\uFEFF/, ""));
       if (data?.format === "deeprole-world") { const value = parseWorldPackage(text); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
       else { const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
-    } catch { setError(t("fileInvalid")); }
-    finally { setBusy(false); }
+    } catch { if (current()) setError(t("fileInvalid")); }
+    finally { if (current()) setBusy(false); }
+  }
+  async function importRecords(build: () => DataRecord[], attachToChat: boolean) {
+    if (committing.current || busy) return;
+    committing.current = true; setSavingImport(true); setBusy(true); setError("");
+    try { const records = build(); await repository.mergeRecords(records); await props.onDone(worldId || records.find(record => record.kind === "world")!.id, attachToChat); }
+    catch { if (mounted.current) setError(t("failed")); }
+    finally { committing.current = false; if (mounted.current) { setSavingImport(false); setBusy(false); } }
   }
   function onDrop(event: ReactDragEvent<HTMLDivElement>) {
     event.preventDefault(); setDragging(false);
     const file = event.dataTransfer.files[0];
     if (file) void readFile(file);
   }
-  return <div className="modal-backdrop lore-import-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) props.onClose(); }}>
-    <section ref={dialogRef} className="modal lore-import-modal" role="dialog" aria-modal="true" aria-label={t("importFile")}>
-      <header><h2>{t("importFile")}</h2><button type="button" className="icon-button" onClick={props.onClose} aria-label={t("cancel")}><X /></button></header>
+  return <div className="modal-backdrop lore-import-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
+    <section ref={dialogRef} className="modal lore-import-modal" role="dialog" aria-modal="true" aria-label={t("importFile")} aria-busy={busy}>
+      <header><h2>{t("importFile")}</h2><button type="button" className="icon-button" disabled={savingImport} onClick={requestClose} aria-label={t("cancel")}><X /></button></header>
       <div className="modal-body">
     <div className={`rp-import-dropzone${dragging ? " is-dragging" : ""}`} role="region" aria-label={t("importDropTitle")} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }} onDragLeave={(event) => { event.preventDefault(); if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={onDrop}>
       <Upload aria-hidden="true" /><strong>{fileName || t("importDropTitle")}</strong><p>{dragging ? t("importDropActive") : t("importDropHint")}</p>
       <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t("chooseFile")}</button>
       <input ref={inputRef} className="rp-import-input" aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readFile(file); }} />
     </div>
+    {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
     {props.canAttach && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label><p className="rp-hint">{menuText(props.locale, "attachHint")}</p></>}
-    {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field><HelpButton className="button primary" disabled={busy || !name.trim()} onClick={async () => { setBusy(true); try { const records = cloneWorldPackage(pack, name.trim()); await repository.mergeRecords(records); await props.onDone(records.find((r) => r.kind === "world")!.id, attach && props.canAttach); } catch { setError(t("failed")); } finally { setBusy(false); } }}>{t("confirmImport")}</HelpButton></>}
+    {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field><HelpButton className="button primary" disabled={busy || !name.trim()} onClick={() => void importRecords(() => cloneWorldPackage(pack, name.trim()), attach && props.canAttach)}>{t("confirmImport")}</HelpButton></>}
     {items.length > 0 && <>
       <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>
       <p className="rp-status">{t("previewModes", { count: items.length, always: items.filter((i) => i.activation === "always").length, smart: items.filter((i) => i.activation === "smart").length, manual: items.filter((i) => i.activation === "manual").length, disabled: items.filter((i) => !i.enabled).length })}</p>
@@ -322,8 +341,8 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       <Field name={t("name")}><input aria-label={t("name")} className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
       <details><summary>{t("advanced")}</summary><Field name={t("destination")} help={t("worldHint")}><select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
       {lore?.format === "bds" && <><p>{t("alwaysMapping")}</p><Field name={t("mapping")} help={t("mappingHint")}><select aria-label={t("mapping")} value={mode} onChange={(e) => setMode(e.target.value as "smart" | "manual")}><option value="smart">{t("smart")}</option><option value="manual">{t("manual")}</option></select></Field></>}</details>
-      <div className="rp-import-preview">{items.map((item, i) => <details key={i}><summary>{item.title} · {t(item.activation)}{!item.enabled ? " · " + t("importDisabled") : ""}</summary><pre>{item.content}</pre>{item.keywords.length > 0 && <p>{t("importKeys")}: {item.keywords.join(", ")}</p>}</details>)}</div>
-      <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={async () => { if (!lore) return; setBusy(true); try { const records = buildLoreImport(lore, name.trim(), mode, worldId || undefined); await repository.mergeRecords(records); await props.onDone(worldId || records.find((r) => r.kind === "world")!.id, attach && props.canAttach); } catch { setError(t("failed")); } finally { setBusy(false); } }}>{t("confirmImport")}</HelpButton>
+      <LoreImportPreview locale={props.locale} items={items} />
+      <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => { if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach && props.canAttach); }}>{t("confirmImport")}</HelpButton>
     </>}
     {error && <p role="alert">{error}</p>}
       </div>
