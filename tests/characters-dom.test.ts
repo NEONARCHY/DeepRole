@@ -20,6 +20,42 @@ it("folds just the JSON while keeping the story and parsed state stable", () => 
   expect(r.querySelector("summary")!.textContent).toBe("Обновлено после ответа"); expect(latestCharacterResponse()?.turn).toEqual(first);
   foldCharacterPayload(r, "en", "stale"); expect(r.querySelectorAll("details")).toHaveLength(1); expect(r.querySelector("summary")!.textContent).toContain("Update skipped");
 });
+it("folds only the final character payload, never an example in reasoning", () => {
+  const r = row("The final scene.\n" + payload + "\nThe door stays closed.");
+  const thinking = document.createElement("div"); thinking.className = "ds-think-content";
+  thinking.textContent = "I am considering this example: " + payload; r.prepend(thinking);
+  const before = thinking.innerHTML;
+  foldCharacterPayload(r, "en", "updated");
+  expect(thinking.innerHTML).toBe(before);
+  expect(thinking.querySelector("details")).toBeNull();
+  expect(r.querySelector("[data-deeprole-characters-result]")?.closest(".ds-think-content")).toBeNull();
+  expect(r.querySelector("[data-deeprole-characters-result] pre")?.textContent).toBe(payload);
+  expect(r.querySelector("summary")?.textContent).toBe("Updated after reply");
+  expect(latestCharacterResponse()?.turn?.present).toEqual(["mira"]);
+  expect(r.textContent).toContain("The final scene."); expect(r.textContent).toContain("The door stays closed.");
+});
+it("does not fold a reasoning-only character block", () => {
+  const r = row("No state was sent in the final reply.");
+  const thinking = document.createElement("div"); thinking.dataset.testid = "reasoning-content"; thinking.textContent = payload; r.prepend(thinking);
+  const before = r.innerHTML; foldCharacterPayload(r, "en", "missing");
+  expect(r.innerHTML).toBe(before); expect(latestCharacterResponse()?.turn).toBeNull();
+});
+it("folds a final payload split across Markdown spans and keeps its surrounding story", () => {
+  const r = row(""); const prefix = document.createElement("p"); prefix.textContent = "Mira raises the lamp.";
+  const body = document.createElement("div"); body.className = "ds-markdown";
+  for (const part of [payload.slice(0, 40), payload.slice(40, 90), payload.slice(90)]) { const span = document.createElement("span"); span.textContent = part; body.append(span); }
+  const suffix = document.createElement("p"); suffix.textContent = "The seal remains intact."; r.append(prefix, body, suffix);
+  const first = latestCharacterResponse()?.turn;
+  foldCharacterPayload(r, "ru", "updated"); foldCharacterPayload(r, "en", "stale");
+  expect(r.querySelectorAll("details")).toHaveLength(1); expect(r.querySelector("pre")?.textContent).toBe(payload);
+  expect(latestCharacterResponse()?.turn).toEqual(first); expect(prefix.textContent).toBe("Mira raises the lamp."); expect(suffix.textContent).toBe("The seal remains intact.");
+  expect(r.querySelector("summary")?.textContent).toBe("Update skipped: sheets have already changed.");
+});
+it("leaves interleaved reasoning intact rather than extracting it into transport details", () => {
+  const r = row(""); const start = document.createTextNode(payload.slice(0, 40)); const end = document.createTextNode(payload.slice(40));
+  const thinking = document.createElement("div"); thinking.className = "ds-think-content-wrapper"; thinking.textContent = "Independent thought."; r.append(start, thinking, end);
+  const before = r.innerHTML; foldCharacterPayload(r, "en", "updated"); expect(r.innerHTML).toBe(before);
+});
 it("reuses choices and decorates only current participants, without duplicate buttons", () => {
   const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: kind })); row(`<deeprole_choices>${JSON.stringify({ version: 1, options: choices })}</deeprole_choices>`);
   const people: SceneEntity[] = ["hero", "mira", "noah"].map(id => ({ id, name: id, kind: "character", worldId: "w", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: id === "hero" } }));
@@ -48,6 +84,18 @@ it("keeps reply choices when the same reply also folds a character update", () =
   expect(host!.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4);
 });
 
+it("keeps the same choice card when thinking or the localized character summary changes", () => {
+  const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: kind }));
+  const reply = row("Mira raises the lamp.\n" + payload + "\n<deeprole_choices>" + JSON.stringify({ version: 1, options: choices }) + "</deeprole_choices>");
+  const thinking = document.createElement("div"); thinking.className = "ds-think-content"; thinking.textContent = "Thinking."; reply.prepend(thinking);
+  const pick = vi.fn(async () => true); syncSceneChoiceCards(true, false, "en", pick);
+  const host = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!; const button = host.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!;
+  button.focus(); thinking.textContent = "Thinking in more detail."; foldCharacterPayload(reply, "ru", "updated"); syncSceneChoiceCards(true, false, "en", pick);
+  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.activeElement).toBe(button);
+  foldCharacterPayload(reply, "en", "stale"); syncSceneChoiceCards(true, false, "en", pick);
+  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.activeElement).toBe(button);
+});
+
 it("keeps portrait focus and nodes across emotion updates, and uses the current click callback", () => {
   const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: kind }));
   row(`<deeprole_choices>${JSON.stringify({ version: 1, options: choices })}</deeprole_choices>`);
@@ -69,6 +117,26 @@ it("keeps portrait focus and nodes across emotion updates, and uses the current 
   const observer = new MutationObserver(() => {}); observer.observe(shadow, { childList: true, attributes: true, characterData: true, subtree: true });
   syncChoicePortraits(true, people, { ...scene, revision: "v2", states: { mira: { ...EMPTY_STATUS, emotion: "worried" } } }, "ru", newOpen);
   expect(observer.takeRecords()).toEqual([]); observer.disconnect();
+});
+
+it("updates stat highlights as plain text without recreating the portrait or churning unchanged DOM", () => {
+  const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: kind }));
+  row(`<deeprole_choices>${JSON.stringify({ version: 1, options: choices })}</deeprole_choices>`);
+  const people: SceneEntity[] = ["hero", "mira"].map(id => ({ id, name: id, kind: "character", worldId: "w", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: id === "hero" } }));
+  const scene: CharacterScene = { revision: "v", presentIds: ["hero", "mira"], states: { mira: { ...EMPTY_STATUS, stats: [{ label: "Keys", value: "0" }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }, { label: "Energy", value: "Rested" }] } }, updatedAt: 1 };
+  const open = vi.fn(); syncSceneChoiceCards(true, false, "en", vi.fn(async () => true)); syncChoicePortraits(true, people, scene, "en", open);
+  const shadow = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!.shadowRoot!;
+  const portrait = shadow.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!; const highlights = portrait.querySelector<HTMLElement>(".dr-cast-highlights")!;
+  expect([...highlights.children].map(node => node.textContent)).toEqual(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
+  expect(highlights.querySelector("img")).toBeNull(); expect(highlights.hidden).toBe(false);
+  expect(portrait.getAttribute("aria-describedby")).toBe(highlights.id);
+  const image = portrait.querySelector("img"); portrait.focus();
+  const observer = new MutationObserver(() => {}); observer.observe(shadow, { childList: true, attributes: true, characterData: true, subtree: true });
+  syncChoicePortraits(true, people, structuredClone(scene), "en", open); expect(observer.takeRecords()).toEqual([]); observer.disconnect();
+  syncChoicePortraits(true, people, { ...scene, revision: "v2", states: {} }, "ru", open);
+  expect(shadow.querySelector(".dr-cast-portrait.right")).toBe(portrait); expect(portrait.querySelector("img")).toBe(image); expect(shadow.activeElement).toBe(portrait);
+  expect(highlights.hidden).toBe(true); expect(highlights.childElementCount).toBe(0); expect(portrait.hasAttribute("aria-describedby")).toBe(false);
+  portrait.click(); expect(open).toHaveBeenCalledWith("mira"); expect(scene.states.mira!.stats).toHaveLength(3);
 });
 
 it("falls back once through local portraits without retrying corrupt bytes on every update", () => {

@@ -460,6 +460,55 @@ test("character sheets: real extension sync, manual edits, return and chat isola
   } finally { await context.close(); }
 });
 
+test("character stats: installed final payload ignores thinking, survives reopening and stays scoped", async ({}, info) => {
+  test.setTimeout(60000);
+  const world = { id: "w", name: "Test observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const people = ["Noah", "Mira"].map((name, i) => ({ id: name.toLowerCase(), worldId: "w", name, kind: "character", description: "ORIGINAL_PROFILE", aliases: [], memberIds: [], characterSheet: { gender: i ? "female" : "male", protagonist: !i, appearance: "Blue coat", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const lore = { ...entry("canon"), worldId: "w" };
+  const { context, panel, chat } = await setup([["world", world], ...people.map(person => ["entity", person] as [string, any]), ["entry", lore], ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b" }]]);
+  try {
+    const sent: string[] = []; const schemas: any[] = [];
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { const prompt = route.request().postDataJSON().prompt; sent.push(prompt); schemas.push(JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)[1])); return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, examine the sealed letter." }) }));
+    const makePayload = (request: string, value = "Rested", emotion = "happy") => ({ request, present: ["Noah", "Mira"], partner: "Mira", updates: [{ id: "Mira", state: { emotion, condition: "Safe", goal: "Find the key", relationship: "Cautious", stats: [{ label: "Energy", value }, { label: "Keys", value: "0" }, { label: "Clues", value: "2" }] } }] });
+    const append = (payload: any) => chat.evaluate(payload => {
+      const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "stats-answer";
+      const thinking = document.createElement("div"); thinking.className = "ds-think-content"; thinking.textContent = "Considering an example: <deeprole_characters>" + JSON.stringify({ ...payload, present: ["Noah"], partner: null, updates: [] }) + "</deeprole_characters>";
+      const body = document.createElement("div"); body.className = "ds-markdown"; const raw = '<deeprole_characters>' + JSON.stringify(payload) + '</deeprole_characters>';
+      const prefix = document.createElement("p"); prefix.textContent = "Mira raises the lamp."; body.append(prefix);
+      for (const part of [raw.slice(0, 40), raw.slice(40, 90), raw.slice(90)]) { const span = document.createElement("span"); span.textContent = part; body.append(span); }
+      const suffix = document.createElement("p"); suffix.textContent = "The seal remains intact."; body.append(suffix);
+      const choices = document.createElement("p"); choices.textContent = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })) }) + '</deeprole_choices>'; body.append(choices);
+      row.append(thinking, body); document.querySelector("#conversation")!.replaceChildren(row);
+      return thinking.innerHTML;
+    }, payload);
+    const payload = makePayload(schemas[0].request); const beforeThinking = await append(payload);
+    const status = chat.locator(".dr-character-status"); const portrait = chat.locator(".dr-cast-portrait.right"); const tile = chat.locator(".dr-character-row").filter({ hasText: "Mira" });
+    await expect(status).toHaveText("Updated after reply"); await expect(portrait).toHaveAccessibleName("Open character: Mira");
+    await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Energy: Rested", "Keys: 0"]); await expect(portrait.locator(".dr-cast-highlights>span")).toHaveText(["Energy: Rested", "Keys: 0"]);
+    expect(await chat.locator(".ds-think-content").innerHTML()).toBe(beforeThinking); await expect(chat.locator(".ds-think-content details")).toHaveCount(0);
+    await expect(chat.locator(".ds-markdown [data-deeprole-characters-result] pre")).toContainText(JSON.stringify(payload));
+    await expect(chat.locator(".ds-markdown [data-deeprole-characters-summary]")).toHaveText("Updated after reply");
+    await expect(chat.locator(".ds-markdown")).toContainText("Mira raises the lamp."); await expect(chat.locator(".ds-markdown")).toContainText("The seal remains intact.");
+    const rows = await databaseRecords(panel); const savedScene = rows.find(r => r.id === binding.id).data.characterScenes.w;
+    expect(rows.find(r => r.kind === "entry").data).toEqual(lore); expect(rows.filter(r => r.kind === "entity").map(r => r.data)).toEqual(expect.arrayContaining(people));
+    expect(savedScene.states.mira.stats).toHaveLength(3); expect(rows.find(r => r.id === "binding:b").data.characterScenes).toBeUndefined();
+    await chat.screenshot({ path: info.outputPath("installed-character-stats.png") });
+    await chat.reload(); await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Energy: Rested", "Keys: 0"]);
+    await append(payload); await expect(status).toHaveText("Updated after reply");
+    expect((await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w).toEqual(savedScene);
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Continue examining the seal." }) }));
+    expect(sent).toHaveLength(2); expect(sent[1]).toContain('"label":"Energy","value":"Rested"'); expect(sent[1]).not.toContain("data:image");
+    await append(makePayload(schemas[1].request, "Tired", "worried"));
+    await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Energy: Tired", "Keys: 0"]); await expect(portrait.locator("small")).toHaveText("Worried");
+    await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(chat.locator(".dr-character-highlights")).toHaveCount(0); await expect(chat.locator(".dr-character-row")).toHaveCount(2);
+    expect((await databaseRecords(panel)).find(r => r.id === "binding:b").data.characterScenes).toBeUndefined();
+    await chat.goto("https://chat.deepseek.com/chat/s/a"); await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Energy: Tired", "Keys: 0"]);
+    expect((await databaseRecords(panel)).find(r => r.kind === "entry").data).toEqual(lore);
+  } finally { await context.close(); }
+});
+
 test("character cast: installed roster, preview, focus and outgoing mood stay synchronized", async ({}, info) => {
   test.setTimeout(60000);
   const world = { id: "w", name: "Test observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };

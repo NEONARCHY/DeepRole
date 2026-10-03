@@ -51,6 +51,41 @@ for (const locale of ["ru", "en"] as const) {
   });
 }
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
+  test(`known stat highlights stay readable, current and read-only ${locale} ${width}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 950 });
+    await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
+    const stats = locale === "ru" ? [{ label: "Энергия", value: "Отдохнула" }, { label: "Доверие", value: "Осторожное" }] : [{ label: "Energy", value: "Rested" }, { label: "Trust", value: "Cautious" }];
+    const six = [...stats, ...["Keys", "Clues", "Health", "Focus"].map(label => ({ label, value: "0" }))];
+    await page.evaluate(stats => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, stats } } } }); }, six);
+    const tile = page.locator(".dr-character-row").filter({ hasText: "Mira" });
+    const portrait = page.locator(".dr-cast-portrait.right");
+    await expect(tile.locator(".dr-character-highlights>span")).toHaveText(stats.map(stat => `${stat.label}: ${stat.value}`));
+    await expect(portrait.locator(".dr-cast-highlights>span")).toHaveText(stats.map(stat => `${stat.label}: ${stat.value}`));
+    await expect(portrait).toHaveAccessibleDescription(stats.map(stat => `${stat.label}: ${stat.value}`).join(" "));
+    const before = await page.evaluate(() => (window as any).getCast().scene);
+    await portrait.focus(); await portrait.press("Enter"); const dialog = page.getByRole("dialog");
+    await expect(dialog.locator(".dr-character-stat")).toHaveCount(6);
+    await expect(dialog.getByLabel(`${locale === "ru" ? "Значение" : "Value"} 6`, { exact: true })).toHaveValue("0");
+    await page.keyboard.press("Escape"); await expect(dialog).toHaveCount(0); await expect(portrait).toBeFocused();
+    expect(await page.evaluate(() => (window as any).getCast().scene)).toEqual(before); expect(await page.evaluate(() => (window as any).saved)).toBeUndefined();
+    await portrait.scrollIntoViewIfNeeded();
+    await page.locator("[data-deeprole-choices-host]").screenshot({ path: info.outputPath(`portrait-stats-${locale}-${width}.png`) });
+    await page.locator(".dr-characters").screenshot({ path: info.outputPath(`panel-stats-${locale}-${width}.png`) });
+    await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "2", states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, emotion: "worried", stats: [{ label: "Keys", value: "0" }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }] } } } }); });
+    await expect(portrait).toBeFocused(); await expect(portrait.locator("small")).toHaveText(locale === "ru" ? "Тревога" : "Worried");
+    await expect(portrait.locator(".dr-cast-highlights>span")).toHaveText(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
+    await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
+    await expect(portrait.locator(".dr-cast-highlights img")).toHaveCount(0); await expect(tile.locator(".dr-character-highlights img")).toHaveCount(0);
+    expect((await new AxeBuilder({ page }).include(".dr-characters").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "3", states: {} } }); });
+    await expect(tile.locator(".dr-character-highlights")).toHaveCount(0); await expect(portrait.locator(".dr-cast-highlights")).toBeHidden();
+    await expect(portrait).not.toHaveAttribute("aria-describedby"); await expect(portrait).toBeFocused();
+    expect(await page.evaluate(() => (window as any).saved)).toBeUndefined();
+  });
+}
+
 test("scene, scope and aliases update without leaking the previous roster filter", async ({ page }) => {
   await page.goto("/tests/fixtures/characters.html?locale=en&count=40");
   const panel = page.locator(".dr-characters"); const tiles = panel.locator(".dr-character-row");

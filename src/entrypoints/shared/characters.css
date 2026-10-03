@@ -18,6 +18,8 @@
 .dr-character-row>span:first-of-type { display:grid; gap:3px; min-width:0; padding:0 4px 4px; }
 .dr-character-row strong { overflow-wrap:anywhere; font-size:13px; line-height:1.35; }
 .dr-character-row small,.dr-character-hint,.dr-character-status { color:var(--dr-muted); font-size:11px; line-height:1.5; }
+.dr-character-highlights { display:grid; gap:var(--dr-space-1); min-width:0; }
+.dr-character-highlights>span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; padding:var(--dr-space-1) var(--dr-space-2); border-radius:6px; background:var(--dr-bg); font-size:12px; line-height:1.4; }
 .dr-character-status { margin:4px 0 8px; }
 .dr-character-hint { display:block; margin:8px 0 0; }
 .dr-character-presence { position:absolute; top:14px; right:14px; height:9px; width:9px; border:1px solid var(--dr-muted); border-radius:50%; background:var(--dr-bg); box-shadow:0 0 0 3px var(--dr-bg); }

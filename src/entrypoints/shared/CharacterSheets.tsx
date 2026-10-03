@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2 } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite } from "../../core/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights } from "../../core/characters";
 import type { CharacterEdit } from "../../storage/characters";
 
 function CharacterPortrait({ sheet, emotion, ...attributes }: Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & { sheet?: CharacterSheet; emotion?: string }) {
@@ -59,10 +59,11 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
       {!props.scene && castView === "scene" && <p className="dr-character-hint">{t("castFallback")}</p>}
     </>}
     {shown.length ? <div className="dr-character-list">{shown.map(entity => {
-      const state = props.scene?.states[entity.id]; const present = props.scene?.presentIds.includes(entity.id);
+      const state = props.scene?.states[entity.id]; const present = props.scene?.presentIds.includes(entity.id); const highlights = characterHighlights(state);
       return <button key={entity.id} className="dr-character-row" type="button" onClick={() => setEdit({ entity, scene: props.scene, base: props.base })} title={`${t("edit")}: ${entity.name}. ${state?.condition || t("noState")}`}>
         <CharacterPortrait width={144} height={192} loading="lazy" sheet={entity.characterSheet} emotion={state?.emotion} alt="" />
         <span><strong>{entity.name}</strong><small>{state ? emotionLabel(props.locale, state.emotion) : t("noState")}</small></span>
+        {highlights.length > 0 && <span className="dr-character-highlights">{highlights.map((stat, index) => <span key={index} title={`${stat.label}: ${stat.value}`}>{stat.label}: {stat.value}</span>)}</span>}
         <span className={`dr-character-presence ${present ? "is-present" : ""}`} aria-label={t(present ? "present" : "absent")} title={t(present ? "present" : "absent")} />
       </button>;
     })}</div> : <p>{t(entities.length ? castView === "all" ? "noMatches" : "noCast" : "empty")}</p>}

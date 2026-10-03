@@ -22,6 +22,8 @@
 
 **Сейчас в этом чате** — настроение, состояние, ближайшая цель, отношения, до шести показателей и присутствие в сцене. Эти данные сохраняются между посещениями, но не переносятся в другой чат. Неизвестные значения остаются пустыми: приложение не вычисляет «очки отношений» само.
 
+Под портретом видны первые два заполненных показателя в порядке анкеты, например «Энергия: Отдохнула». Все шесть можно посмотреть и изменить по нажатию на портрет. Если показателей нет, пустые шкалы не появляются. Это уже сохранённые данные сцены, а не отдельный анализ: новых запросов или токенов не требуется. Они отражают ответ модели или вашу правку, не независимую проверку событий.
+
 Ручные правки вступают в силу после **Сохранить персонажа**. Сохранённая анкета активного персонажа попадёт в следующий запрос. Исходный импортированный текст не переписывается и доступен в карточке отдельно. В инструкции модели новые поля имеют приоритет над прежним описанием — это указание модели, а не гарантия её ответа.
 
 ## Портреты и эмоции
@@ -58,4 +60,4 @@ Sheets are enabled by default. Connect a world and continue chatting, or use **+
 
 The portrait editor starts on the current mood. **Portrait emotion** previews an image without changing the character’s mood or requiring a save. Change the actual mood under **Now in this chat**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
 
-Shared profiles belong to the world; automatically updated states belong only to the current chat. Existing profiles are not overwritten by model replies. No extra requests are sent. Images stay local; the model receives only allowed emotion names. Upload portraits in each sheet and edit the emotion list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports exclude chat states. See ROADMAP for automated and live-account verification status.
+Shared profiles belong to the world; automatically updated states belong only to the current chat. Existing profiles are not overwritten by model replies. The first two filled stats appear below the portraits, in sheet order; open a portrait to see or edit all six. Unknown values stay empty. This uses saved scene data with no extra requests or tokens, not an independent check of the story. Images stay local; the model receives only allowed emotion names. Upload portraits in each sheet and edit the emotion list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports exclude chat states. See ROADMAP for automated and live-account verification status.

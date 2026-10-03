@@ -107,7 +107,22 @@ function currentChoice(root: ParentNode) {
   });
   const last = candidates.at(-1);
   if (!last || latest && !latest.contains(last.element) && !(latest.compareDocumentPosition(last.element) & Node.DOCUMENT_POSITION_FOLLOWING)) return null;
-  return { ...last, signature: `${location.href}:${last.row.getAttribute("data-message-id") ?? ""}:${textSignature(JSON.stringify(last.parsed.choices))}` };
+  // The safe placement container can be only a paragraph in a tall reply.
+  // Identity must still cover its entire assistant turn, not just that paragraph.
+  const reply = last.element.closest<HTMLElement>("article, [data-message-id], [data-message-role], [data-role='assistant'], [data-testid*='assistant-message']") ?? last.row;
+  return { ...last, signature: `${location.href}:${reply.getAttribute("data-message-id") ?? ""}:${textSignature(JSON.stringify(last.parsed.choices))}:${choiceReplySignature(reply)}` };
+}
+
+/** Regeneration can reuse both the message id and options. Bind to the final
+ * reply too, but ignore live thinking and our localized transport summary. */
+function choiceReplySignature(row: HTMLElement): string {
+  const walker = row.ownerDocument.createTreeWalker(row, NodeFilter.SHOW_TEXT, {
+    acceptNode: node => node.parentElement?.closest(`${REASONING}, [data-deeprole-characters-summary]`) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+  });
+  let text = "";
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) text += node.textContent ?? "";
+  // Markdown may introduce or remove whitespace at transport boundaries.
+  return textSignature(text.replace(/(<\/?deeprole_(?:choices|characters)>)/gu, " $1 "));
 }
 
 function textSignature(text: string): string {

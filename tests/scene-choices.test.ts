@@ -120,6 +120,19 @@ describe("history restoration and explicit recovery", () => {
     answer("Scene\n" + payload); sync(); dismissSceneChoiceCards(); sync(); expect(host()).toBeNull();
     dismissSceneChoiceCards(document, false); sync(); expect(host()).not.toBeNull();
   });
+  it("restores identical options when a regenerated answer reuses its message id", () => {
+    const row = answer("Mira holds the letter.\n" + payload); sync();
+    dismissSceneChoiceCards(); sync(); expect(host()).toBeNull();
+    row.textContent = "Mira puts the letter on the table.\n" + payload; sync();
+    expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4); expect(request).not.toHaveBeenCalled();
+  });
+  it("rejects a stale choice when the story changes but the four options are identical", async () => {
+    const row = answer("Mira holds the letter.\n" + payload); sync();
+    const button = host()!.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!;
+    row.textContent = "Mira puts the letter on the table.\n" + payload;
+    button.click(); await Promise.resolve();
+    expect(pick).not.toHaveBeenCalled(); expect(host()!.shadowRoot!.querySelector(".choice-status")?.textContent).toContain("Сцена уже изменилась");
+  });
   it("puts a transport retry next to the original scene, not under a user message", () => {
     const scene = answer("The gate opens.");
     const command = answer(sceneChoiceRecoveryPrompt("ru"), "request"); command.dataset.role = "user";

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { bindCharacterTurn, characterTurnKey, characterInstruction, characterRevision, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, validCharacterSheet, validEmotions, portraitSource, silhouetteSource, type CharacterTurn } from "../src/core/characters";
+import { bindCharacterTurn, characterTurnKey, characterInstruction, characterRevision, characterHighlights, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, validCharacterSheet, validEmotions, portraitSource, silhouetteSource, type CharacterTurn } from "../src/core/characters";
 import { validDataRecord, parseBackupSettings } from "../src/core/record-validation";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
@@ -23,6 +23,23 @@ afterEach(async () => { await Promise.all(databases.map(db => db.delete())); dat
 const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base: characterRevision([entity]) });
 const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
+
+describe("portrait stat highlights", () => {
+  it("does not invent indicators for an unknown or empty state", () => {
+    expect(characterHighlights()).toEqual([]);
+    expect(characterHighlights({ ...EMPTY_STATUS, condition: "Safe", goal: "Find the key", relationship: "Trusts Noah" })).toEqual([]);
+  });
+  it("shows only the first two known values, preserves zero and does not mutate memory", () => {
+    const state = { ...EMPTY_STATUS, stats: [{ label: "Keys", value: "0" }, { label: "Energy", value: "Rested" }, { label: "Trust", value: "Cautious" }] };
+    const before = structuredClone(state); const result = characterHighlights(state);
+    expect(result).toEqual(state.stats.slice(0, 2)); expect(result[0]).not.toBe(state.stats[0]);
+    result[0]!.value = "Edited preview"; expect(state).toEqual(before);
+  });
+  it("skips empty and repeated values without interpreting model text", () => {
+    const stats = [{ label: "", value: "8" }, { label: "Energy", value: " " }, { label: "Trust", value: "Unknown" }, { label: " Trust ", value: " Unknown " }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }];
+    expect(characterHighlights({ ...EMPTY_STATUS, stats })).toEqual([stats[2], stats[4]]);
+  });
+});
 
 describe("locally bound character replies", () => {
   it("shares first-message profiles without inventing a destination or requesting unbound updates", () => {

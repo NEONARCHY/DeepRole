@@ -47,6 +47,25 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
   });
 }
 
+for (const locale of ["ru", "en"] as const) test(`regeneration with identical options uses the current story ${locale}`, async ({ page }) => {
+  await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), history);
+  const card = page.locator("[data-deeprole-choices-host]"); const composer = page.getByRole("textbox", { name: "Message", exact: true });
+  await composer.fill("MY OWN DRAFT");
+  await page.locator(".ds-markdown p").evaluate(p => { p.textContent = "Mira leaves the letter on the table."; });
+  await card.locator(".grid button").first().click();
+  await expect(card.locator(".choice-status")).toContainText(locale === "ru" ? "Сцена уже изменилась" : "The scene has changed");
+  await expect(composer).toHaveValue("MY OWN DRAFT");
+  await page.evaluate(() => (window as any).choicesTest.sync());
+  await expect(card.locator(".grid button")).toHaveCount(4); await composer.fill("");
+  await card.locator(".grid button").first().click(); await expect(composer).toHaveValue("I choose positive.");
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: true })); await expect(card).toHaveCount(0);
+  await page.locator(".ds-markdown p").evaluate(p => { p.textContent = "Mira picks the letter up again."; });
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
+  await expect(card.locator(".grid button")).toHaveCount(4); await expect(page.getByRole("button", { name: locale === "ru" ? "Предложить варианты" : "Suggest options", exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => ({ sent: (window as any).sent, requests: (window as any).requests }))).toEqual({ sent: 0, requests: 0 });
+});
+
 test("keyboard choice navigation is local, never sends and never overwrites a personal draft", async ({ page }) => {
   await page.goto("/tests/fixtures/scene-choices.html?locale=en");
   await page.evaluate(html => (window as any).choicesTest.setHistory(html), history);
