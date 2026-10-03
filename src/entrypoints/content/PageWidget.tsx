@@ -15,6 +15,7 @@ import { experienceText } from "../../core/experience-i18n";
 import { sceneChoiceText } from "../../core/scene-choices";
 import { selectionReason, type ServiceActivity } from "../../core/memory-experience";
 import { CharacterPanel } from "../shared/CharacterSheets";
+import { MemoryGuide } from "../shared/MemoryGuide";
 import type { CharacterEdit } from "../../storage/characters";
 import type { CharacterScene } from "../../core/types";
 import type { CharacterCopyKey } from "../../core/characters";
@@ -246,7 +247,7 @@ export function PageWidget(props: {
       {!props.state.vaultLocked && props.state.characters && props.onSaveCharacter && <CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} />}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
       {!props.state.vaultLocked && ((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />}
-      {!props.state.vaultLocked && open && <div className="dr-panel" style={panelBounds ? { ...panelBounds, position: "fixed", right: "auto", bottom: "auto", margin: 0, zIndex: 3 } : undefined}>{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></header>
+      {!props.state.vaultLocked && open && <div className="dr-panel" style={panelBounds ? { ...panelBounds, position: "fixed", right: "auto", bottom: "auto", margin: 0, zIndex: 3 } : undefined}>{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><div className="dr-memory-help-actions"><MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} /><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></div></header>
         <SectionGuide locale={props.state.locale} text={x("previewHint")} />
         {props.state.pendingHandoff && <p className="dr-inline-note">{experienceText(props.state.locale, "pendingRecap", { name: props.state.pendingHandoff })}</p>}
         <div className="dr-play-tools">{props.onQuickSave && <button onClick={() => { setQuick(!quick); setReviewId(null); }}>{at("remember")}</button>}<button disabled={analysisBlocked} onClick={props.onAnalyze}>{at("analyze")}</button>{props.state.analysisSuggested && <button onClick={props.onDismissSuggestion}>{t("later")}</button>}</div>

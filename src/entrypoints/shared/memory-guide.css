@@ -1,0 +1,24 @@
+.dr-memory-help, .app-shell .dr-memory-help, .dr-panel header .dr-memory-help {
+  display:inline-grid; place-items:center; flex-shrink:0; width:36px; height:36px; min-height:36px; padding:0;
+  border:1px solid var(--dr-border-strong); border-radius:50%; background:var(--dr-primary-soft); color:var(--dr-primary); font:650 16px/1 system-ui,sans-serif; cursor:pointer; pointer-events:auto;
+}
+.dr-memory-help:hover { background:var(--dr-selected); }
+.dr-memory-help:focus-visible, .dr-memory-guide button:focus-visible, .dr-memory-guide-body:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
+.dr-memory-help-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.dr-memory-help-actions { display:flex; align-items:center; gap:8px; }
+.dr-memory-guide { box-sizing:border-box; width:min(680px,calc(100vw - 24px)); max-width:none; max-height:calc(100dvh - 24px); padding:0; margin:auto; border:1px solid var(--dr-border-strong); border-radius:16px; background:var(--dr-panel); color:var(--dr-text); font:14px/1.55 system-ui,sans-serif; box-shadow:0 24px 70px #0008; pointer-events:auto; overflow:hidden; }
+.dr-memory-guide[open] { display:flex; flex-direction:column; }
+.dr-memory-guide::backdrop { background:#0005; }
+.dr-memory-guide>header { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; border-bottom:1px solid var(--dr-border); }
+.dr-memory-guide h2 { margin:0; font-size:18px; font-weight:650; line-height:1.35; }
+.dr-memory-guide h3 { margin:0 0 10px; font-size:15px; font-weight:650; }
+.dr-memory-guide-body { min-height:0; overflow:auto; overscroll-behavior:contain; padding:20px; }
+.dr-memory-guide-body>p { margin:0 0 16px; }
+.dr-memory-guide-current { padding:10px 12px; border-radius:10px; background:var(--dr-primary-soft); }
+.dr-memory-guide section+section { margin-top:24px; padding-top:20px; border-top:1px solid var(--dr-border); }
+.dr-memory-guide ul { padding-inline-start:20px; margin:0; display:grid; gap:10px; }
+.dr-memory-guide li { overflow-wrap:anywhere; }
+.dr-memory-guide>footer { padding:12px 20px; border-top:1px solid var(--dr-border); display:flex; justify-content:flex-end; flex-shrink:0; }
+.dr-memory-guide button { min-height:40px; padding:8px 12px; border:1px solid var(--dr-border); border-radius:9px; background:var(--dr-raised); color:var(--dr-text); font:inherit; cursor:pointer; }
+.dr-memory-guide>header>button { width:40px; padding:0; font-size:24px; flex-shrink:0; }
+@media(max-width:420px) { .dr-memory-help, .app-shell .dr-memory-help, .dr-panel header .dr-memory-help { width:44px; height:44px; min-height:44px; } .dr-memory-guide>header,.dr-memory-guide>footer { padding:12px; } .dr-memory-guide-body { padding:16px 12px; } }

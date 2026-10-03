@@ -4,6 +4,7 @@ import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
 import { assistantText } from "../../core/assistant-i18n";
 import { MemoryConflictError } from "../../storage/repository";
+import { MemoryGuide } from "../shared/MemoryGuide";
 import type { DeepRoleSettings, Locale, WorldProfile } from "../../core/types";
 
 export function MemorySelectionSettings(props: {
@@ -29,9 +30,9 @@ export function MemorySelectionSettings(props: {
       .catch((error) => setStatus(error instanceof MemoryConflictError ? "conflict" : "failed")).finally(() => setBusy(false));
   }}>
     <div className="settings-scope"><strong>{props.world ? uiText(props.locale, "worldScope", { name: props.world.name }) : t("globalScope")}</strong><small>{t("scopeHint")}</small></div>
-    <label className="field-label"><span>{translate(props.locale, "sensitivity")}</span><select aria-label={translate(props.locale, "sensitivity")} aria-describedby={hintId + "-sensitivity"} disabled={busy} value={threshold} onChange={(e) => { setThreshold(Number(e.target.value)); setStatus(null); }}>
+    <div className="field-label"><div className="dr-memory-help-heading"><label htmlFor={hintId + "-select"}>{translate(props.locale, "sensitivity")}</label><MemoryGuide locale={props.locale} threshold={threshold} /></div><select id={hintId + "-select"} aria-label={translate(props.locale, "sensitivity")} aria-describedby={hintId + "-sensitivity"} disabled={busy} value={threshold} onChange={(e) => { setThreshold(Number(e.target.value)); setStatus(null); }}>
       <option value={4}>{t("wide")}</option><option value={6}>{t("balanced")}</option>{threshold !== 4 && threshold !== 6 && threshold !== 9 && <option value={threshold}>{t("precise")}</option>}<option value={9}>{t("precise")}</option>
-    </select><small id={hintId + "-sensitivity"}>{t("sensitivityHint")}</small></label>
+    </select><small id={hintId + "-sensitivity"}>{t("sensitivityHint")}</small></div>
     <section className="dr-score-guide" aria-label={experienceText(props.locale, "scoreTitle")}>
       <header><h3>{experienceText(props.locale, "scoreTitle")}</h3><p className="dr-score-intro">{experienceText(props.locale, "scoreIntro")}</p></header>
       <dl className="dr-score-rules">{scoreRows.map(([key, value]) => <div className="dr-score-rule" key={key}><dt>{experienceText(props.locale, key)}</dt><dd>{value}</dd></div>)}</dl>

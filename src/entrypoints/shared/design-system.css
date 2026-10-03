@@ -1,4 +1,5 @@
 @import "./memory-mode.css";
+@import "./memory-guide.css";
 @import "./experience.css";
 @import "./design-tokens.css";
 /* Shared by extension pages and the isolated DeepSeek widget. Map geometry is separate. */

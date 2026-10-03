@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Memory guide shadow-root test</title></head><body style="margin:0;background:#181818"><main><h1 style="color:white">Memory guide test</h1><div id="host"></div></main><script type="module">
+import React from "react";
+import {createRoot} from "react-dom/client";
+import {MemoryGuide} from "/src/entrypoints/shared/MemoryGuide.tsx";
+import tokens from "/src/entrypoints/shared/design-tokens.css?raw";
+import styles from "/src/entrypoints/shared/memory-guide.css?raw";
+const locale=new URL(location.href).searchParams.get("locale")??"en";
+document.documentElement.lang=locale;
+const shadow=document.querySelector("#host").attachShadow({mode:"open"});
+const style=document.createElement("style");style.textContent=tokens+styles;shadow.append(style);
+const root=document.createElement("div");root.className="dr-root";shadow.append(root);
+createRoot(root).render(React.createElement(MemoryGuide,{locale,threshold:9}));
+</script></body></html>
