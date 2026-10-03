@@ -29,6 +29,10 @@ export default defineBackground(() => {
   });
 
   browser.runtime.onMessage.addListener((message: DeepRoleMessage, sender) => {
+    if (message.type === "DR_PING") {
+      if (sender.id !== browser.runtime.id) return;
+      return Promise.resolve({ ok: true, build: import.meta.env.VITE_BUILD_TIME });
+    }
     if (message.type === "DR_MIGRATE_LEGACY") {
       if (sender.id !== browser.runtime.id) return;
       return migrateLegacyProposals().then(() => ({ ok: true }), () => ({ ok: false }));

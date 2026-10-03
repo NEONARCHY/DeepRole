@@ -7,7 +7,7 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
   const dir = path.join(info.project.outputDir, "profiles");
   await mkdir(dir, { recursive: true });
   const profile = await mkdtemp(path.join(dir, "startup-"));
-  let extension = path.resolve(".output/chrome-mv3");
+  let extension = path.resolve(process.env.DEEPROLE_QA_EXTENSION ?? ".output/chrome-mv3");
   if (mode === "no-worker") {
     extension = info.outputPath("workerless-extension");
     await cp(path.resolve(".output/chrome-mv3"), extension, { recursive: true });

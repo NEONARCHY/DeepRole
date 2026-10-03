@@ -2,6 +2,7 @@ import type { Locale } from "./types";
 
 const copy = {
   ru: {
+    checkExtension: "Проверить расширение",
     menuLoadError: "Меню не смогло подключиться к памяти. Во вкладке DeepRole доступ к ней не зависит от ограничений страницы.",
     openMenuTab: "Открыть DeepRole во вкладке",
     retryMenu: "Попробовать снова",
@@ -43,6 +44,7 @@ const copy = {
     chatMeterHistory: "По истории чата", chatMeterPageOnly: "Пока только загруженные сообщения", chatMeterAtLeast: "История может быть неполной",
   },
   en: {
+    checkExtension: "Check extension",
     menuLoadError: "The menu could not connect to memory. Opening DeepRole in a tab avoids the page’s storage restrictions.",
     openMenuTab: "Open DeepRole in a tab",
     retryMenu: "Try again",

@@ -15,6 +15,7 @@ export interface TabSessionState {
 export type TabSessionGuard = Partial<TabSessionState> & { serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage =
+  | { type: "DR_PING" }
   | RepositoryRequest
   | { type: "DR_MIGRATE_LEGACY" }
   | { type: "DR_GET_PAGE_STATE" }

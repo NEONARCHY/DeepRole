@@ -408,6 +408,7 @@ export function App() {
     {embeddedMenu && <HelpButton className="button primary" onClick={() => void openMenuTab()}>{experienceText(settings.locale, "openMenuTab")}</HelpButton>}
     {toast && <p role="status">{toast}</p>}
     <HelpButton className="button" onClick={() => void refresh()}>{experienceText(settings.locale, "retryMenu")}</HelpButton>
+    <a className="button" href={browser.runtime.getURL("/recovery.html")} target="_blank" rel="noreferrer">{experienceText(settings.locale, "checkExtension")}</a>
   </main>;
   if (loading) return <LoadingScreen />;
 
