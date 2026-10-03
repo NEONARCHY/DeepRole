@@ -28,10 +28,10 @@ it("reuses choices and decorates only current participants, without duplicate bu
   const host = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!;
   expect([...host.shadowRoot!.querySelectorAll(".dr-cast-portrait")].map(b => b.getAttribute("aria-label"))).toEqual(["Open character: hero", "Open character: noah"]);
   syncSceneChoiceCards(true, false, "en", pick); syncChoicePortraits(true, people, scene, "en", open);
-  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.querySelectorAll("button")).toHaveLength(6);
+  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.querySelectorAll(".grid button, .dr-cast-portrait")).toHaveLength(6);
   host.shadowRoot!.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!.click(); expect(open).toHaveBeenCalledWith("noah");
   syncChoicePortraits(true, people, { ...scene, revision: "v2", partnerId: null }, "en", open); expect(host.shadowRoot!.querySelectorAll(".dr-cast-portrait")).toHaveLength(1);
-  syncChoicePortraits(false, people, scene, "en", open); expect(host.shadowRoot!.querySelectorAll("button")).toHaveLength(4);
+  syncChoicePortraits(false, people, scene, "en", open); expect(host.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4);
 });
 
 it("keeps reply choices when the same reply also folds a character update", () => {

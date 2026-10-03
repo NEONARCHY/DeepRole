@@ -538,6 +538,49 @@ test("scene recovery is explicit and visible, then survives reopening without an
   } finally { await context.close(); }
 });
 
+test("scene choices: full text, keyboard, expired turns and return use the installed extension", async ({}, info) => {
+  const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await chat.setViewportSize({ width: 900, height: 760 });
+    await enableChoicesScene(chat);
+    const longText = 'I examine the seal, without opening the envelope or taking it from Mira. '.repeat(7);
+    const options = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: "Move " + kind, text: kind === "neutral" ? longText : "MY_MOVE_" + kind }));
+    const reply = '<deeprole_choices>' + JSON.stringify({ version: 1, options }) + '</deeprole_choices>';
+    await chat.locator("[data-message-id='answer']").evaluate((row, payload) => { row.textContent = 'Mira holds a sealed envelope.\n' + payload; }, reply);
+    const card = chat.locator("[data-deeprole-choices-host]");
+    const buttons = card.locator(".grid button");
+    const composer = chat.getByRole("textbox", { name: "Message", exact: true });
+    await expect(buttons).toHaveCount(4);
+    await card.getByRole("button", { name: "Full text", exact: true }).click();
+    await expect(card.locator(".preview").nth(1)).toHaveText(longText);
+    await expect(composer).toHaveValue(""); expect(sent).toBe(0);
+    await buttons.first().focus(); await chat.keyboard.press("ArrowDown"); await expect(buttons.nth(2)).toBeFocused();
+    await chat.keyboard.press("4"); await expect(composer).toHaveValue("MY_MOVE_surprise"); await expect(composer).toBeFocused();
+    await buttons.nth(1).click(); await expect(composer).toHaveValue(longText);
+    await composer.fill("MY EDITED MOVE"); await buttons.first().focus(); await chat.keyboard.press("Enter");
+    await expect(card.locator(".choice-status")).toContainText("The option was not inserted"); await expect(buttons.first()).toBeFocused();
+    const savedHistory = await chat.locator("#conversation").evaluate(row => row.innerHTML);
+    await chat.screenshot({ path: info.outputPath("installed-choice-text.png") });
+    // The DOM changes and the click happen in one task, before the observer can clear the old card.
+    await buttons.first().evaluate(button => {
+      const row = document.createElement("article"); row.dataset.messageId = "new-scene"; row.dataset.role = "assistant"; row.textContent = "A new scene at the tower.";
+      document.querySelector("#conversation")!.append(row); (button as HTMLButtonElement).click();
+    });
+    await expect(composer).toHaveValue("MY EDITED MOVE"); expect(sent).toBe(0);
+    await expect(buttons).toHaveCount(0);
+    await chat.evaluate(() => { history.pushState({}, "", "/chat/s/b"); });
+    await expect.poll(() => command(panel, { type: "DR_GET_PAGE_STATE" })).toMatchObject({ chatId: "b", scene: { worldId: null } });
+    await expect(card).toHaveCount(0);
+    await context.route("https://chat.deepseek.com/chat/s/a", route => route.fulfill({ contentType: "text/html", body: fixture.replace('<div id="conversation"></div>', `<div id="conversation">${savedHistory}</div>`) }));
+    await chat.goto("about:blank"); await chat.goto("https://chat.deepseek.com/chat/s/a");
+    await expect(buttons).toHaveCount(4); await expect(card.getByRole("button", { name: "Full text", exact: true })).toHaveAttribute("aria-expanded", "false");
+    await expect(composer).toHaveValue(""); expect(sent).toBe(0);
+    expect((await databaseRecords(panel)).filter(row => ["entry", "proposal", "snapshot"].includes(row.kind))).toEqual([]);
+  } finally { await context.close(); }
+});
+
 test("scene recovery never overwrites a draft or submits twice", async () => {
   const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
   try {

@@ -53,12 +53,12 @@ describe("scene choice protocol", () => {
 describe("history restoration and explicit recovery", () => {
   it("restores choices from saved history without requesting anything", () => {
     answer("The gate opens.\n" + payload); sync();
-    expect(host()?.shadowRoot?.querySelectorAll("button")).toHaveLength(4);
+    expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4);
     expect(recovery()).toBeNull(); expect(request).not.toHaveBeenCalled();
     expect(document.querySelector("[data-deeprole-choices-payload]")?.textContent).toBe(payload);
     expect(document.querySelector("article")?.textContent).toContain("The gate opens.");
     host()!.remove(); sync();
-    expect(host()?.shadowRoot?.querySelectorAll("button")).toHaveLength(4);
+    expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4);
   });
   it("has a stable signature and one card across Markdown rerenders", () => {
     const row = answer("Scene\n" + payload); sync();
@@ -73,7 +73,7 @@ describe("history restoration and explicit recovery", () => {
   it("rebuilds a cloned empty host rather than mistaking it for restored buttons", () => {
     answer("Scene\n" + payload); sync();
     document.body.innerHTML = document.body.innerHTML; sync();
-    expect(host()?.shadowRoot?.querySelectorAll("button")).toHaveLength(4);
+    expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4);
   });
   it("offers recovery for a missing or malformed block, but does not send on its own", async () => {
     answer("The gate opens. <deeprole_choices>{broken}</deeprole_choices>"); sync();
@@ -86,7 +86,7 @@ describe("history restoration and explicit recovery", () => {
   });
   it("picks text only through the supplied draft handler", async () => {
     answer("Scene\n" + payload); sync();
-    const button = host()!.shadowRoot!.querySelector("button")!; button.click(); await Promise.resolve();
+    const button = host()!.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!; button.click(); await Promise.resolve();
     expect(pick).toHaveBeenCalledWith(options[0], host()!.dataset.deeproleChoicesSignature);
     expect(button.getAttribute("aria-pressed")).toBe("true");
   });
@@ -150,6 +150,51 @@ describe("history restoration and explicit recovery", () => {
     answer(payload.replace("positive", "positive").replace('"label":"positive"', '"label":"<img src=x onerror=alert(1)>"')); sync();
     expect(host()?.shadowRoot?.querySelector("img")).toBeNull();
     expect(host()?.shadowRoot?.querySelector("strong")?.textContent).toContain("<img");
+  });
+  it("rejects an old option immediately when a new turn appears before the next scan", async () => {
+    answer("Old scene\n" + payload); sync();
+    const button = host()!.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!;
+    answer("A different scene.", "new"); button.click(); await Promise.resolve();
+    expect(pick).not.toHaveBeenCalled();
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+  it("uses the current handler without rebuilding an unchanged card", async () => {
+    answer("Scene\n" + payload); sync(); const firstHost = host();
+    const nextPick = vi.fn(async () => true);
+    syncSceneChoiceCards(true, false, "ru", nextPick);
+    expect(host()).toBe(firstHost);
+    host()!.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!.click(); await Promise.resolve();
+    expect(nextPick).toHaveBeenCalledOnce(); expect(pick).not.toHaveBeenCalled();
+  });
+  it("keeps pending options focusable while preventing a duplicate selection", async () => {
+    let finish!: (ok: boolean) => void;
+    const pendingPick = vi.fn(() => new Promise<boolean>(resolve => { finish = resolve; }));
+    answer("Scene\n" + payload); syncSceneChoiceCards(true, false, "ru", pendingPick);
+    const card = host()!; const button = card.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!;
+    button.focus(); button.click(); button.click();
+    expect(pendingPick).toHaveBeenCalledOnce(); expect(button.disabled).toBe(false);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(card.shadowRoot!.activeElement).toBe(button);
+    finish(false); await Promise.resolve(); await Promise.resolve();
+    expect(button.getAttribute("aria-disabled")).toBe("false");
+    expect(card.shadowRoot!.activeElement).toBe(button);
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+  it.each(["ru", "en"] as const)("expands full option text locally and preserves it across idle scans (%s)", locale => {
+    answer("Scene\n" + payload); sync(locale);
+    const card = host()!; const toggle = card.shadowRoot!.querySelector<HTMLButtonElement>(".choice-expand")!;
+    toggle.focus(); toggle.click(); sync(locale);
+    expect(host()).toBe(card); expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(card.shadowRoot!.querySelector(".grid")?.getAttribute("data-expanded")).toBe("true");
+    expect(card.shadowRoot!.activeElement).toBe(toggle); expect(pick).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
+    toggle.click(); expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+  it("settles a synchronously throwing handler without leaving options busy", () => {
+    answer("Scene\n" + payload); syncSceneChoiceCards(true, false, "ru", () => { throw new Error("broken composer"); });
+    const card = host()!; const button = card.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!; button.click();
+    expect(card.shadowRoot!.querySelector(".grid")?.getAttribute("aria-busy")).toBe("false");
+    expect(button.getAttribute("aria-disabled")).toBe("false");
+    expect(card.shadowRoot!.querySelector(".choice-status")?.textContent).toBe("Поле ввода сейчас недоступно.");
   });
   it("correlates only the reply of the matching options request through layout wrappers", () => {
     const first = answer("[DeepRole Service]\n[Request ID: old]\n[DeepRole Scene Choices]"); first.dataset.role = "user";

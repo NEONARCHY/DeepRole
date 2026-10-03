@@ -10,6 +10,8 @@ const RECOVERY = "[data-deeprole-choices-recovery]";
 const USER = "[data-role='user'], [data-message-role='user'], [data-testid*='user-message'], .ds-message--user";
 const REASONING = "[data-testid*='thinking'], [data-testid*='reasoning'], .ds-think-content, .ds-think-content-wrapper";
 let dismissedChoice: string | null = null;
+type ChoiceHandler = (choice: SceneChoice, signature: string) => Promise<boolean>;
+const choiceHandlers = new WeakMap<HTMLElement, ChoiceHandler>();
 
 export function dismissSceneChoiceCards(root: ParentNode = document, remember = true): void {
   const host = [...root.querySelectorAll<HTMLElement>(HOST)].at(-1);
@@ -60,24 +62,15 @@ export function latestSceneChoiceTarget(root: ParentNode = document): { row: HTM
 }
 
 /** Keep the story in DeepSeek's reply while replacing only its machine-readable choices. */
-export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: (choice: SceneChoice, signature: string) => Promise<boolean>, root: ParentNode = document, recovery?: { busy: boolean; onRequest: (signature: string) => Promise<boolean> }): void {
+export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode = document, recovery?: { busy: boolean; onRequest: (signature: string) => Promise<boolean> }): void {
   if (!enabled) {
     root.querySelectorAll<HTMLElement>(HOST).forEach((host) => host.remove());
     root.querySelectorAll<HTMLElement>(RECOVERY).forEach((host) => host.remove());
     return;
   }
-  const latest = latestTurn(root);
-  // DeepSeek sometimes renders the assistant body outside its message-id node.
-  // Search the page, then reject blocks belonging to an earlier turn.
-  const candidates = findChoiceElements(root).flatMap(({ element, parsed }) => {
-    if (element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, form, [contenteditable='true']`)) return [];
-    if (element.closest("[data-deeprole-service-reply='true']:not([data-deeprole-scene-choices-reply='true'])")) return [];
-    return [{ element, parsed, row: findSafeServiceContainer(element) }];
-  });
-  const last = candidates.at(-1);
-  const signature = last ? `${location.href}:${last.row.getAttribute("data-message-id") ?? ""}:${textSignature(JSON.stringify(last.parsed.choices))}` : "";
-  const belongsToLatest = !latest || Boolean(last && (latest.contains(last.element) || latest.compareDocumentPosition(last.element) & Node.DOCUMENT_POSITION_FOLLOWING));
-  const active = !generating && last && belongsToLatest && dismissedChoice !== `${location.href}:${signature}` ? last : null;
+  const current = currentChoice(root);
+  const signature = current?.signature ?? "";
+  const active = !generating && current && dismissedChoice !== `${location.href}:${signature}` ? current : null;
   root.querySelectorAll<HTMLElement>(HOST).forEach((host) => {
     if (host.previousElementSibling !== active?.row) host.remove();
     else host.style.display = generating ? "none" : "";
@@ -98,9 +91,23 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   const next = active.row.nextElementSibling;
   const existing = next instanceof HTMLElement && next.matches(HOST) ? next : null;
   if (existing?.dataset.deeproleChoicesSignature === signature && existing.dataset.deeproleChoicesLocale === locale
-    && existing.shadowRoot?.querySelectorAll(".grid button").length === 4) return;
+    && existing.shadowRoot?.querySelectorAll(".grid button").length === 4) { choiceHandlers.set(existing, onPick); return; }
   existing?.remove();
-  active.row.after(createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument));
+  active.row.after(createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument, root));
+}
+
+/** Recheck at click time as well as polling time: an old visible card is not permission to pick an old turn. */
+function currentChoice(root: ParentNode) {
+  const latest = latestTurn(root);
+  // Some DeepSeek versions place final Markdown outside its message-id row.
+  const candidates = findChoiceElements(root).flatMap(({ element, parsed }) => {
+    if (element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, form, [contenteditable='true']`)) return [];
+    if (element.closest("[data-deeprole-service-reply='true']:not([data-deeprole-scene-choices-reply='true'])")) return [];
+    return [{ element, parsed, row: findSafeServiceContainer(element) }];
+  });
+  const last = candidates.at(-1);
+  if (!last || latest && !latest.contains(last.element) && !(latest.compareDocumentPosition(last.element) & Node.DOCUMENT_POSITION_FOLLOWING)) return null;
+  return { ...last, signature: `${location.href}:${last.row.getAttribute("data-message-id") ?? ""}:${textSignature(JSON.stringify(last.parsed.choices))}` };
 }
 
 function textSignature(text: string): string {
@@ -183,34 +190,45 @@ function hideBlock(element: HTMLElement, start: number, end: number): boolean {
   return true;
 }
 
-function createCard(options: SceneChoice[], locale: Locale, signature: string, onPick: (choice: SceneChoice, signature: string) => Promise<boolean>, doc: Document): HTMLElement {
+function createCard(options: SceneChoice[], locale: Locale, signature: string, onPick: ChoiceHandler, doc: Document, root: ParentNode): HTMLElement {
   const host = doc.createElement("div");
   host.dataset.deeproleChoicesHost = "true";
   host.dataset.deeproleChoicesSignature = signature;
   host.dataset.deeproleChoicesLocale = locale;
+  choiceHandlers.set(host, onPick);
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
   style.textContent = `${designTokens}
     :host{display:block;container-type:inline-size;margin:var(--dr-space-4) 0;font:14px/1.5 system-ui,sans-serif;color:var(--dr-text)}
     section{box-sizing:border-box;max-width:1000px;padding:var(--dr-space-4);border:1px solid var(--dr-border);border-radius:var(--dr-radius);background:var(--dr-panel)}
-    h3{margin:0 0 var(--dr-space-1);font-size:17px;font-weight:650}p{margin:0 0 var(--dr-space-4);color:var(--dr-muted);font-size:12px}
+    .choice-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--dr-space-3);margin-bottom:var(--dr-space-1)}h3{margin:0;min-width:0;font-size:17px;font-weight:650}p{margin:0 0 var(--dr-space-4);color:var(--dr-muted);font-size:12px}
+    .choice-expand{flex-shrink:0;min-height:44px;max-width:55%;padding:var(--dr-space-2) var(--dr-space-3);border:1px solid var(--dr-border);border-radius:8px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:600 12px/1.4 system-ui,sans-serif}.choice-expand:hover{background:var(--dr-raised)}
     .grid{display:grid;grid-template-columns:1fr;gap:var(--dr-space-2)}
     .grid button{position:relative;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit}
     .grid button:hover{border-color:var(--dr-border-strong);background:var(--dr-raised)}
     button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}
     .grid button[aria-pressed=true]{border-color:var(--dr-primary);background:var(--dr-primary-soft)}
-    button:disabled{opacity:.65;cursor:wait}small{display:block;margin-bottom:var(--dr-space-1);color:var(--dr-muted);font-size:11px}
+    button:disabled,button[aria-disabled=true]{opacity:.65;cursor:wait}small{display:block;margin-bottom:var(--dr-space-1);color:var(--dr-muted);font-size:11px}
     .number{position:absolute;inset-inline-end:10px;top:10px;min-width:20px;text-align:center;border:1px solid var(--dr-border-strong);border-radius:5px;color:var(--dr-muted);font:12px/20px system-ui}
     .grid small{padding-inline-end:24px}strong{display:block;font-size:14px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
-    .preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--dr-space-1);color:var(--dr-muted);font-size:12px;overflow-wrap:anywhere}
+    .preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--dr-space-1);color:var(--dr-muted);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}.grid[data-expanded=true] .preview{display:block;-webkit-line-clamp:unset}
     .choice-status{min-height:18px;margin:var(--dr-space-3) 0 0;overflow-wrap:anywhere}.choice-status[data-selected=true]{color:var(--dr-primary)}
     @container(min-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   `;
   const section = doc.createElement("section");
   section.setAttribute("aria-label", sceneChoiceText(locale, "title"));
   const title = doc.createElement("h3"); title.textContent = sceneChoiceText(locale, "title");
+  const heading = doc.createElement("div"); heading.className = "choice-heading";
+  const expand = doc.createElement("button"); expand.type = "button"; expand.className = "choice-expand"; expand.textContent = sceneChoiceText(locale, "expand"); expand.setAttribute("aria-expanded", "false"); expand.setAttribute("aria-controls", "scene-choice-options");
   const hint = doc.createElement("p"); hint.textContent = sceneChoiceText(locale, "hint");
   const grid = doc.createElement("div"); grid.className = "grid"; grid.setAttribute("role", "group"); grid.setAttribute("aria-label", sceneChoiceText(locale, "title"));
+  grid.id = "scene-choice-options";
+  expand.addEventListener("click", () => {
+    const expanded = expand.getAttribute("aria-expanded") !== "true";
+    expand.setAttribute("aria-expanded", String(expanded)); grid.dataset.expanded = String(expanded);
+    expand.textContent = sceneChoiceText(locale, expanded ? "collapse" : "expand");
+  });
+  heading.append(title, expand);
   grid.title = sceneChoiceText(locale, "navigation");
   const status = doc.createElement("p"); status.className = "choice-status"; status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
   status.textContent = sceneChoiceText(locale, "navigation");
@@ -224,26 +242,36 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     const preview = doc.createElement("span"); preview.className = "preview"; preview.textContent = choice.text;
     button.append(number, category, label, preview);
     button.addEventListener("click", () => {
-      if (picking) return; picking = true;
-      const buttons = grid.querySelectorAll<HTMLButtonElement>("button"); buttons.forEach(item => { item.disabled = true; });
-      void onPick(choice, signature).then(ok => {
-        if (!host.isConnected) return;
-        if (!ok) { status.textContent = sceneChoiceText(locale, "notInserted"); status.dataset.selected = "false"; return; }
-        buttons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
-        status.textContent = sceneChoiceText(locale, "selected").replace("{label}", choice.label); status.dataset.selected = "true";
-      }).catch(() => { if (host.isConnected) status.textContent = sceneChoiceText(locale, "unavailable"); })
-        .finally(() => { picking = false; buttons.forEach(item => { item.disabled = false; }); });
+      if (picking || !host.isConnected) return;
+      const current = currentChoice(root);
+      if (current?.signature !== signature || current.row !== host.previousElementSibling) { status.textContent = sceneChoiceText(locale, "changed"); status.dataset.selected = "false"; return; }
+      picking = true;
+      const buttons = grid.querySelectorAll<HTMLButtonElement>("button");
+      grid.setAttribute("aria-busy", "true"); buttons.forEach(item => item.setAttribute("aria-disabled", "true"));
+      void (async () => {
+        try {
+          const ok = await choiceHandlers.get(host)!(choice, signature);
+          if (!host.isConnected) return;
+          if (!ok) { status.textContent = sceneChoiceText(locale, "notInserted"); status.dataset.selected = "false"; return; }
+          buttons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+          status.textContent = sceneChoiceText(locale, "selected").replace("{label}", choice.label); status.dataset.selected = "true";
+        } catch { if (host.isConnected) { status.textContent = sceneChoiceText(locale, "unavailable"); status.dataset.selected = "false"; } }
+        finally { picking = false; grid.setAttribute("aria-busy", "false"); buttons.forEach(item => item.setAttribute("aria-disabled", "false")); }
+      })();
     });
     grid.append(button);
   }
   grid.addEventListener("keydown", event => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || picking) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (picking) { if (/^[1-4]$|^Arrow(?:Right|Down|Left|Up)$|^(?:Home|End)$/u.test(event.key)) event.preventDefault(); return; }
     const buttons = [...grid.querySelectorAll<HTMLButtonElement>("button")];
     const current = buttons.indexOf(event.target as HTMLButtonElement); if (current < 0) return;
     if (/^[1-4]$/u.test(event.key)) { event.preventDefault(); buttons[Number(event.key) - 1]?.click(); return; }
-    const offset = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+    if (event.key === "Home" || event.key === "End") { event.preventDefault(); buttons[event.key === "Home" ? 0 : buttons.length - 1]?.focus(); return; }
+    const columns = Math.max(1, doc.defaultView?.getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/u).length ?? 1);
+    const offset = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" ? columns : event.key === "ArrowUp" ? -columns : 0;
     if (offset) { event.preventDefault(); buttons[(current + offset + buttons.length) % buttons.length]?.focus(); }
   });
-  section.append(title, hint, grid, status); shadow.append(style, section);
+  section.append(heading, hint, grid, status); shadow.append(style, section);
   return host;
 }

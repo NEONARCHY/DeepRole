@@ -31,6 +31,8 @@ The **Your move** panel puts larger portraits beside the actions on wide screens
 
 When you reopen a chat, ready options below its latest reply are restored from loaded history **without a new request**. If DeepSeek omitted options or returned an invalid format, click **Suggest options** below the reply. This sends a visible request for four moves without continuing the scene. A nonempty draft blocks the request; retries after an error are explicit, never automatic.
 
+**Full text** expands the four replies inside the panel: no hover, request or draft change. Arrows follow the actual grid; Home/End move to the first/last action. A stale option is rejected at click time if a newer scene has already appeared, even before the next interface refresh.
+
 The **Scene choices** switch beside the context indicator applies to all chats with a connected world. Choices do not award automatic relationship points or write to lore. A character's reaction depends on their personality and story context; a harsh move can appeal to one character while a kind move can provoke distrust. Save lasting consequences through the usual reviewable **Update lore** flow.
 
 ## Approximate context space
