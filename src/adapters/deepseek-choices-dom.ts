@@ -8,19 +8,23 @@ const MARKER = "<deeprole_choices>";
 const HOST = "[data-deeprole-choices-host]";
 const HIDDEN = "[data-deeprole-choices-payload]";
 const RECOVERY = "[data-deeprole-choices-recovery]";
+const LOADING = "[data-deeprole-choices-loading]";
+const settling = new WeakMap<ParentNode, { signature: string; changedAt: number; row?: HTMLElement; observedGeneration: boolean; timer?: ReturnType<typeof setTimeout> }>();
 const USER = "[data-role='user'], [data-message-role='user'], [data-testid*='user-message'], .ds-message--user";
 const REASONING = "[data-testid*='thinking'], [data-testid*='reasoning'], .ds-think-content, .ds-think-content-wrapper";
-const MEMORY_SERVICE = "[data-deeprole-memory-presentation], [data-deeprole-memory-request]";
+const MEMORY_SERVICE = "[data-deeprole-memory-presentation], [data-deeprole-memory-request], [data-deeprole-choices-request]";
 let dismissedChoice: string | null = null;
 type ChoiceHandler = (choice: SceneChoice, signature: string) => Promise<boolean>;
 const choiceHandlers = new WeakMap<HTMLElement, ChoiceHandler>();
 
 export function dismissSceneChoiceCards(root: ParentNode = document, remember = true): void {
+  const state = settling.get(root); if (state?.timer) clearTimeout(state.timer); settling.delete(root);
   const host = [...root.querySelectorAll<HTMLElement>(HOST)].at(-1);
   if (!remember) dismissedChoice = null;
   else if (host?.dataset.deeproleChoicesSignature) dismissedChoice = `${location.href}:${host.dataset.deeproleChoicesSignature}`;
   root.querySelectorAll<HTMLElement>(HOST).forEach((card) => card.remove());
   root.querySelectorAll<HTMLElement>(RECOVERY).forEach((card) => card.remove());
+  root.querySelectorAll<HTMLElement>(LOADING).forEach((card) => card.remove());
 }
 
 function latestTurn(root: ParentNode): HTMLElement | undefined {
@@ -64,12 +68,17 @@ export function latestSceneChoiceTarget(root: ParentNode = document): { row: HTM
 }
 
 /** Keep the story in DeepSeek's reply while replacing only its machine-readable choices. */
-export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode = document, recovery?: { busy: boolean; onRequest: (signature: string) => Promise<boolean> }): void {
+export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode = document, recovery?: { busy: boolean; loading?: boolean; onRequest: (signature: string) => Promise<boolean> }): void {
+  const previous = settling.get(root);
+  if (previous?.timer) clearTimeout(previous.timer);
   if (!enabled) {
     root.querySelectorAll<HTMLElement>(HOST).forEach((host) => host.remove());
     root.querySelectorAll<HTMLElement>(RECOVERY).forEach((host) => host.remove());
+    root.querySelectorAll<HTMLElement>(LOADING).forEach((host) => host.remove());
+    settling.delete(root);
     return;
   }
+  concealChoicePayloads(root);
   const current = currentChoice(root);
   const signature = current?.signature ?? "";
   const active = !generating && current && dismissedChoice !== `${location.href}:${signature}` ? current : null;
@@ -77,7 +86,18 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
     if (host.previousElementSibling !== active?.row) host.remove();
     else host.style.display = generating ? "none" : "";
   });
-  const target = !generating && !active && recovery ? latestSceneChoiceTarget(root) : null;
+  const scene = latestSceneChoiceTarget(root);
+  const state = previous && previous.signature === scene?.signature ? previous : { signature: scene?.signature ?? "", changedAt: Date.now(), row: scene?.row, observedGeneration: previous?.row === scene?.row && !!previous?.observedGeneration };
+  const sceneText = scene?.row.textContent ?? "";
+  if (generating || sceneText.includes("<deeprole_choices") && !sceneText.includes("</deeprole_choices>")) state.observedGeneration = true;
+  settling.set(root, state);
+  const settlingReply = !active && state.observedGeneration && !!scene && Date.now() - state.changedAt < 1200;
+  const waiting = generating || !!recovery?.busy || settlingReply;
+  const target = !waiting && !active && recovery ? scene : null;
+  const loadingRow = waiting && recovery?.loading !== false && (recovery || current) ? scene?.row ?? current?.row : null;
+  root.querySelectorAll<HTMLElement>(LOADING).forEach(host => { if (host.previousElementSibling !== loadingRow || host.lang !== locale) host.remove(); });
+  if (loadingRow && !loadingRow.nextElementSibling?.matches(LOADING)) loadingRow.after(createLoading(locale, loadingRow.ownerDocument));
+  if (settlingReply && !generating && !recovery?.busy) state.timer = setTimeout(() => syncSceneChoiceCards(enabled, generating, locale, onPick, root, recovery), 1250 - (Date.now() - state.changedAt));
   root.querySelectorAll<HTMLElement>(RECOVERY).forEach((host) => {
     if (host.previousElementSibling !== target?.row || host.dataset.deeproleChoicesSignature !== target?.signature
       || host.dataset.deeproleChoicesLocale !== locale || host.dataset.busy !== String(recovery?.busy) || !host.shadowRoot) host.remove();
@@ -96,6 +116,46 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
     && existing.shadowRoot?.querySelectorAll(".grid button").length === 4) { choiceHandlers.set(existing, onPick); return; }
   existing?.remove();
   active.row.after(createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument, root));
+}
+
+/** Hide unfinished transport too; retain its text for parsers and site updates. */
+function concealChoicePayloads(root: ParentNode): void {
+  for (const element of root.querySelectorAll<HTMLElement>(".ds-markdown, [data-role='assistant'], [data-message-role='assistant'], article, [data-message-id]")) {
+    if (element.closest(`${USER}, ${REASONING}, ${HOST}, ${RECOVERY}, ${LOADING}`) || isUserMessage(element)) continue;
+    if (element.querySelector(`.ds-markdown, ${REASONING}`)) continue;
+    if (!(element.textContent ?? "").includes("<deeprole_choices")) continue;
+    // Frameworks may rewrite their original text node instead of replacing the
+    // Markdown container. Discard our previous wrapper only when a new opening
+    // marker appears outside it; ordinary appended stream chunks keep it.
+    const visible = element.cloneNode(true) as HTMLElement;
+    visible.querySelectorAll(HIDDEN).forEach(node => node.remove());
+    if (visible.textContent?.includes("<deeprole_choices")) element.querySelectorAll(HIDDEN).forEach(node => node.remove());
+    const text = element.textContent ?? "";
+    if (text.includes("<deeprole_choice_mode")) continue;
+    const start = text.indexOf("<deeprole_choices");
+    if (start < 0) continue;
+    const closing = text.indexOf("</deeprole_choices>", start);
+    const end = closing < 0 ? text.length : closing + "</deeprole_choices>".length;
+    hideBlock(element, start, end);
+  }
+  for (const row of root.querySelectorAll<HTMLElement>(".ds-message, article, [data-message-id]")) {
+    const text = row.textContent?.trim() ?? "";
+    if (text.startsWith("[DeepRole Service]") && text.includes("[DeepRole Scene Choices]") && !row.querySelector(".ds-message, article, [data-message-id]")) {
+      row.dataset.deeproleChoicesRequest = "true";
+      row.style.setProperty("display", "none", "important");
+    }
+  }
+}
+
+function createLoading(locale: Locale, doc: Document): HTMLElement {
+  const host = doc.createElement("div"); host.dataset.deeproleChoicesLoading = "true"; host.lang = locale;
+  const shadow = host.attachShadow({ mode: "open" });
+  const style = doc.createElement("style");
+  style.textContent = `${designTokens}:host{display:block;margin:16px 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-muted)}.loading{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--dr-border);border-radius:12px;background:var(--dr-panel)}.spinner{width:14px;height:14px;border:2px solid var(--dr-border);border-top-color:var(--dr-primary);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}}`;
+  const label = doc.createElement("div"); label.className = "loading"; label.setAttribute("role", "status");
+  const spinner = doc.createElement("span"); spinner.className = "spinner"; spinner.setAttribute("aria-hidden", "true");
+  label.append(spinner, doc.createTextNode(sceneChoiceText(locale, "waiting"))); shadow.append(style, label);
+  return host;
 }
 
 /** Recheck at click time as well as polling time: an old visible card is not permission to pick an old turn. */
@@ -150,7 +210,8 @@ function createRecoveryCard(locale: Locale, signature: string, recovery: { busy:
   button.setAttribute("aria-describedby", "request-hint"); hint.id = "request-hint";
   button.addEventListener("click", () => {
     button.disabled = true;
-    void recovery.onRequest(signature).finally(() => { if (host.isConnected) button.disabled = recovery.busy; });
+    const loading = createLoading(locale, doc); host.replaceWith(loading);
+    void recovery.onRequest(signature).then(ok => { if (!ok && loading.isConnected) loading.replaceWith(host); }).catch(() => { if (loading.isConnected) loading.replaceWith(host); }).finally(() => { button.disabled = recovery.busy; });
   });
   box.append(button, hint); shadow.append(style, box);
   return host;
@@ -190,19 +251,23 @@ function findChoiceElements(root: ParentNode) {
 function hideBlock(element: HTMLElement, start: number, end: number): boolean {
   const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   const range = element.ownerDocument.createRange();
-  let offset = 0; let foundStart = false; let foundEnd = false;
+  let offset = 0; let foundStart = false; let foundEnd = false; let visible = false;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const length = node.textContent?.length ?? 0;
+    if (offset < end && offset + length > start && !node.parentElement?.closest(HIDDEN)) visible = true;
     if (!foundStart && start < offset + length) { range.setStart(node, start - offset); foundStart = true; }
     if (foundStart && end <= offset + length) { range.setEnd(node, end - offset); foundEnd = true; break; }
     offset += length;
   }
   if (!foundStart || !foundEnd) return false;
+  if (!visible) return true;
+  if (range.cloneContents().querySelector(REASONING)) return false;
   const hidden = element.ownerDocument.createElement("span");
   hidden.dataset.deeproleChoicesPayload = "true";
   hidden.setAttribute("aria-hidden", "true");
   hidden.style.setProperty("display", "none", "important");
   hidden.append(range.extractContents());
+  hidden.querySelectorAll(HIDDEN).forEach(node => node.replaceWith(...node.childNodes));
   range.insertNode(hidden);
   return true;
 }

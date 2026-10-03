@@ -699,7 +699,7 @@ class PageController {
     // Existing reply options are read-only UI, not a world-bound memory update.
     // New recovery requests still require the connected-world feature flag.
     syncSceneChoiceCards((this.settings.sceneChoicesEnabled ?? true) && !this.state.vaultLocked, this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, this.state.sceneChoicesEnabled ? {
-      busy, onRequest: (signature) => this.requestSceneChoices(signature),
+      busy, loading: !busy || this.pendingService?.type === "scene-choices" || this.serviceFeedback?.type === "scene-choices", onRequest: (signature) => this.requestSceneChoices(signature),
     } : undefined);
     const characters = this.state.characters;
     const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;

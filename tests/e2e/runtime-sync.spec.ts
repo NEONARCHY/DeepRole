@@ -714,9 +714,12 @@ async function enableChoicesScene(chat: Page) {
   await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeVisible();
 }
 
-test("scene recovery is explicit and visible, then survives reopening without another request", async () => {
+test("scene recovery hides its request behind a loader, then survives reopening without another request", async () => {
   const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
   try {
+    // Match DeepSeek's centered conversation column, outside the fixed context widget.
+    await chat.setViewportSize({ width: 1600, height: 800 });
+    await chat.addStyleTag({ content: "main { max-width:690px; margin:0 auto; }" });
     const sent: string[] = [];
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent.push(route.request().postDataJSON()?.prompt ?? ""); return route.fulfill({ contentType: "application/json", body: "{}" }); });
     await enableChoicesScene(chat); await chat.bringToFront();
@@ -724,7 +727,8 @@ test("scene recovery is explicit and visible, then survives reopening without an
     await chat.getByRole("button", { name: "Suggest options", exact: true }).click();
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0]).toContain("[DeepRole Scene Choices]"); expect(sent[0]).toContain("Do not continue or rewrite the scene");
-    await expect(chat.locator("[data-message-id='service-user']")).toBeVisible();
+    await expect(chat.locator("[data-message-id='service-user']")).toBeHidden();
+    await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(1);
     await expect(chat.locator("[data-message-id='answer']")).toHaveText("The gate opened.");
     await expect.poll(() => pendingService(panel)).toMatchObject({ type: "scene-choices" });
     const pending = await pendingService(panel); expect(pending.baseVersions).toBeUndefined(); expect(pending.sceneSignature).not.toContain("gate opened");
@@ -801,7 +805,7 @@ test("scene recovery never overwrites a draft or submits twice", async () => {
     await expect(chat.getByText("Finish or clear your current draft first.", { exact: true })).toBeVisible();
     await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_UNSENT_DRAFT"); expect(sent).toBe(0);
     await chat.getByRole("textbox", { name: "Message", exact: true }).fill("");
-    await chat.getByRole("button", { name: "Suggest options", exact: true }).dblclick();
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
     await expect.poll(() => sent).toBe(1);
     await expect.poll(() => pendingService(panel)).toMatchObject({ type: "scene-choices" });
   } finally { await context.close(); }

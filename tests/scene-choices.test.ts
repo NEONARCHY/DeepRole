@@ -51,6 +51,51 @@ describe("scene choice protocol", () => {
 });
 
 describe("history restoration and explicit recovery", () => {
+  it("hides streamed chunks, retains parseable data and preserves text after the block", () => {
+    const row = answer("Scene. " + payload.slice(0, 60));
+    sync("ru", true, true);
+    expect(row.querySelector("[data-deeprole-choices-payload]")?.textContent).toBe(payload.slice(0, 60));
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
+    expect(recovery()).toBeNull();
+    row.append(document.createTextNode(payload.slice(60) + " Story continues."));
+    sync("ru", true, true); sync("ru", true, true);
+    expect(parseSceneChoices(row.textContent!)?.choices.options).toHaveLength(4);
+    expect(row.textContent).toContain("Story continues.");
+    expect(row.querySelectorAll("[data-deeprole-choices-payload] [data-deeprole-choices-payload]")).toHaveLength(0);
+    sync(); expect(host()).not.toBeNull();
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0);
+  });
+  it("handles a framework updating its original text node during streaming", () => {
+    const row = answer("Scene. " + payload.slice(0, 55));
+    const node = row.firstChild!;
+    sync("en", true, true);
+    node.textContent = "Scene. " + payload;
+    sync("en", true, true); sync("en");
+    expect(row.textContent).toBe("Scene. " + payload);
+    expect(host()!.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4);
+  });
+  it("leaves reasoning and user text untouched while concealing only final choices", () => {
+    const row = answer("", "reasoning-scene");
+    const thought = document.createElement("div"); thought.className = "ds-think-content"; thought.textContent = "Thinking " + payload;
+    const final = document.createElement("div"); final.className = "ds-markdown"; final.textContent = "Scene " + payload;
+    row.append(thought, final);
+    const user = answer("User " + payload, "user"); user.dataset.role = "user";
+    sync("ru", true, true);
+    expect(thought.textContent).toBe("Thinking " + payload);
+    expect(thought.querySelector("[data-deeprole-choices-payload]")).toBeNull();
+    expect(user.textContent).toBe("User " + payload);
+    expect(user.querySelector("[data-deeprole-choices-payload]")).toBeNull();
+    expect(final.querySelector("[data-deeprole-choices-payload]")).not.toBeNull();
+  });
+  it("hides the manual request while preserving service reply correlation", () => {
+    answer("Scene.");
+    const command = answer("[DeepRole Service]\n[Request ID: choices]\n[DeepRole Scene Choices]", "command"); command.dataset.role = "user";
+    const reply = answer(payload, "reply");
+    sync();
+    expect(command.style.display).toBe("none");
+    expect(findServiceReplyRows("choices", document, "<deeprole_choices>")).toEqual([reply]);
+    expect(host()).not.toBeNull();
+  });
   it("assigns a persistent semantic color to each type before selection", () => {
     answer("Scene\n" + payload); sync();
     const buttons = [...host()!.shadowRoot!.querySelectorAll<HTMLButtonElement>(".grid button")];

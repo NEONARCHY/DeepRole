@@ -20,7 +20,7 @@ export function sceneChoiceInstruction(): string {
   ].join("\n");
 }
 
-/** An explicit, visible request. The existing scene stays intact; no choice is made. */
+/** An explicit user-triggered request; transport is hidden and the scene stays intact. */
 export function sceneChoiceRecoveryPrompt(locale: Locale): string {
   const request = locale === "ru"
     ? "Предложи четыре ответа или действия моего героя для последней ролевой сцены перед этим запросом. Не продолжай и не переписывай сцену. Ничего не выбирай за меня и не обновляй память. Если выше уже был такой запрос, используй исходную сцену, а не служебный ответ."
@@ -64,7 +64,7 @@ const copy = {
     toggleOn: "Выборы в сценах · вкл", toggleOff: "Выборы в сценах · выкл", toggleHelp: "Четыре варианта в ролевых сценах всех чатов с подключённым миром.",
     draftBusy: "Сначала завершите или очистите свой черновик.", unavailable: "Поле ввода сейчас недоступно.",
     request: "Предложить варианты", requestHint: "Отправит запрос в чат: четыре хода без продолжения сцены.",
-    waiting: "DeepSeek готовит варианты…", waitingHint: "Ответ виден в чате. Выбор появится после завершения.",
+    waiting: "Варианты ответов готовятся…", waitingHint: "Варианты появятся после завершения ответа.",
     failed: "Варианты не получены", failedHint: "Проверьте ответ в чате. Можно запросить варианты ещё раз. Лор не менялся.",
     changed: "Сцена уже изменилась. Запросите варианты под новым ответом.", busy: "Дождитесь завершения текущего ответа или запроса.",
   },
@@ -77,7 +77,7 @@ const copy = {
     toggleOn: "Scene choices · on", toggleOff: "Scene choices · off", toggleHelp: "Four options in roleplay scenes across chats with a connected world.",
     draftBusy: "Finish or clear your current draft first.", unavailable: "The composer is unavailable right now.",
     request: "Suggest options", requestHint: "Sends a request in chat: four moves without continuing the scene.",
-    waiting: "DeepSeek is preparing options…", waitingHint: "The reply is visible in chat. Options appear when it finishes.",
+    waiting: "Preparing reply options…", waitingHint: "Options appear when the reply finishes.",
     failed: "Options could not be retrieved", failedHint: "Check the reply in chat. You can request options again. Lore is unchanged.",
     changed: "The scene has changed. Request options below the new reply.", busy: "Wait for the current reply or request to finish.",
   },

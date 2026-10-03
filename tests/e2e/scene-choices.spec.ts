@@ -6,6 +6,45 @@ const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</d
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
+  test(`streaming choices hide transport and show one loader ${locale} ${width}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 700 });
+    await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
+    const request = page.getByRole("button", { name: locale === "ru" ? "Предложить варианты" : "Suggest options", exact: true });
+    await request.click();
+    const loader = page.locator("[data-deeprole-choices-loading]");
+    await expect(loader).toHaveCount(1);
+    await expect(request).toHaveCount(0);
+    await page.evaluate(() => (window as any).choicesTest.update({ generating: true }));
+    for (const size of [24, 50, 140, payload.length - 8]) {
+      const partial = payload.slice(0, size);
+      await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-role="assistant" data-message-id="live"><div class="ds-markdown"><p>Mira holds the key.</p><p>${partial.replaceAll("<", "&lt;")}</p></div></article>`);
+      await expect(page.locator(".ds-markdown")).toHaveText("Mira holds the key.", { useInnerText: true });
+      await expect(loader).toHaveCount(1);
+      await expect(request).toHaveCount(0);
+      for (let i = 0; i < 3; i++) await page.evaluate(() => (window as any).choicesTest.sync());
+      await expect(loader).toHaveCount(1);
+    }
+    await expect(loader.getByRole("status")).toHaveText(locale === "ru" ? "Варианты ответов готовятся…" : "Preparing reply options…");
+    await page.screenshot({ path: info.outputPath("choices-preloader.png") });
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html), history);
+    await expect(page.locator(".ds-markdown")).not.toContainText("deeprole_choices", { useInnerText: true });
+    await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
+    await expect(loader).toHaveCount(0);
+    await expect(page.locator("[data-deeprole-choices-host] .grid button")).toHaveCount(4);
+    await expect(request).toHaveCount(0);
+    // Abort/truncate: no technical text or permanent spinner, only a final retry.
+    await page.evaluate(() => (window as any).choicesTest.update({ generating: true }));
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-role="assistant" data-message-id="broken"><div class="ds-markdown">Mira waits. ${payload.slice(0, 70).replaceAll("<", "&lt;")}</div></article>`);
+    await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
+    await expect(request).toBeVisible();
+    await expect(loader).toHaveCount(0);
+    await expect(page.locator(".ds-markdown")).not.toContainText("deeprole_choices", { useInnerText: true });
+    await page.screenshot({ path: info.outputPath("choices-retry.png") });
+    expect(await page.evaluate(() => (window as any).sent)).toBe(0);
+  });
+}
+
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
   test(`pastel choice types stay distinct at rest, hover and selection ${locale} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 850 });
     await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
