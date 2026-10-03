@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2 } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights } from "../../core/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutor } from "../../core/characters";
 import type { CharacterEdit } from "../../storage/characters";
 
 function CharacterPortrait({ sheet, emotion, ...attributes }: Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & { sheet?: CharacterSheet; emotion?: string }) {
@@ -69,7 +69,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
     })}</div> : <p>{t(entities.length ? castView === "all" ? "noMatches" : "noCast" : "empty")}</p>}
     <small className="dr-character-hint">{t("hint")}</small>
     {entities.length > 0 && !entities.some(e => e.characterSheet?.protagonist) && <small className="dr-character-hint">{t("heroHint")}</small>}
-    {edit && createPortal(<CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} locale={props.locale} entity={edit.entity} scene={edit.scene} emotions={props.emotions} onClose={() => setEdit(null)} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />, panel.current?.closest(".dr-root") ?? panel.current ?? document.body)}
+    {edit && createPortal(<CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={!!edit.entity && characterInterlocutor(props.entities, edit.scene)?.id === edit.entity.id} emotions={props.emotions} onClose={() => setEdit(null)} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />, panel.current?.closest(".dr-root") ?? panel.current ?? document.body)}
   </section>;
 }
 
@@ -89,12 +89,15 @@ async function readPortrait(file: File): Promise<string> {
   } finally { URL.revokeObjectURL(url); }
 }
 
-export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; emotions: string[]; onClose: () => void; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean }) => Promise<void> }) {
+export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; interlocutor?: boolean; emotions: string[]; onClose: () => void; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean }) => Promise<void> }) {
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
   const [name, setName] = useState(props.entity?.name ?? "");
   const [sheet, setSheet] = useState<CharacterSheet>(() => structuredClone(props.entity?.characterSheet ?? EMPTY_CHARACTER));
   const [state, setState] = useState<CharacterStatus>(() => structuredClone(props.scene?.states[props.entity?.id ?? ""] ?? EMPTY_STATUS));
   const [present, setPresent] = useState(!!props.scene?.presentIds.includes(props.entity?.id ?? ""));
+  const [interlocutor, setInterlocutor] = useState<boolean | null>(null);
+  const selectedPartner = interlocutor ?? props.interlocutor ?? (!!props.entity && props.scene?.partnerId === props.entity.id);
+  const partnerHelp = useId();
   const [emotion, setEmotion] = useState(state.emotion); const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<CharacterCopyKey | null>(null); const [dirty, setDirty] = useState(false);
   const dialog = useRef<HTMLDivElement>(null); const input = useRef<HTMLInputElement>(null); const mounted = useRef(true);
@@ -118,17 +121,18 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
     }
   }}><div ref={dialog} className="dr-character-dialog" role="dialog" aria-modal="true" aria-labelledby="dr-character-editor-title">
     <header><h2 id="dr-character-editor-title">{props.entity?.name ?? t("add")}</h2><button type="button" aria-label={t("cancel")} disabled={busy || uploading} onClick={close}><X size={20} /></button></header>
-    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); void props.onSave({ name, sheet, state, present }).catch(() => { if (mounted.current) setError("failed"); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
+    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).catch(() => { if (mounted.current) setError("failed"); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
       <div className="dr-character-editor-body">
         <p className="dr-character-hint">{t("scope")}</p>
         <fieldset disabled={busy}><legend>{t("profile")}</legend>
           <label>{t("name")}<input required value={name} maxLength={80} onChange={e => setName(e.target.value)} /></label>
-          <label className="dr-character-check"><input type="checkbox" checked={sheet.protagonist} onChange={e => setSheet({ ...sheet, protagonist: e.target.checked })} />{t("protagonist")}</label>
+          <label className="dr-character-check"><input type="checkbox" checked={sheet.protagonist} onChange={e => { setSheet({ ...sheet, protagonist: e.target.checked }); if (e.target.checked && selectedPartner) setInterlocutor(false); }} />{t("protagonist")}</label>
           {(["appearance", "personality", "goals", "background"] as const).map(key => <label key={key}>{t(key)}<textarea rows={2} maxLength={1200} value={sheet[key]} onChange={e => setSheet({ ...sheet, [key]: e.target.value })} /></label>)}
           {props.entity?.description && <details><summary>{t("background")}</summary><p className="dr-character-original">{props.entity.description}</p></details>}
         </fieldset>
         <fieldset disabled={busy}><legend>{t("state")}</legend>
-          <label className="dr-character-check"><input type="checkbox" checked={present} onChange={e => setPresent(e.target.checked)} />{t("present")}</label>
+          <label className="dr-character-check"><input type="checkbox" checked={present} onChange={e => { setPresent(e.target.checked); if (!e.target.checked && selectedPartner) setInterlocutor(false); }} />{t("present")}</label>
+          {!sheet.protagonist && <div className="dr-character-partner-control"><label className="dr-character-check"><input type="checkbox" aria-describedby={partnerHelp} checked={selectedPartner} onChange={e => { setInterlocutor(e.target.checked); if (e.target.checked) setPresent(true); }} />{t("interlocutor")}</label><small id={partnerHelp} className="dr-character-hint">{t("interlocutorHint")}</small></div>}
           <label>{t("emotion")}<select aria-label={t("emotion")} value={state.emotion} onChange={e => setState({ ...state, emotion: e.target.value })}>{options.map(value => <option key={value} value={value}>{emotionLabel(props.locale, value)}</option>)}</select></label>
           {(["condition", "goal", "relationship"] as const).map(key => <label key={key}>{t(key)}<textarea rows={2} maxLength={240} value={state[key]} onChange={e => setState({ ...state, [key]: e.target.value })} /></label>)}
           <strong>{t("stats")}</strong>

@@ -1,12 +1,12 @@
 import { createId } from "../core/id";
 import { isSameDeepSeekChat } from "../core/chat-scope";
-import { characterRevision, characterTurnKey, DEFAULT_EMOTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
+import { characterRevision, characterTurnKey, characterInterlocutor, DEFAULT_EMOTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
 import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string }
 export interface CharacterEdit extends CharacterScope {
-  entityId: string | null; name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean;
+  entityId: string | null; name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean;
 }
 function current(all: DataRecord[], scope: CharacterScope) {
   if ([scope.worldId, scope.chatId].some(id => !id || ["__proto__", "prototype", "constructor"].includes(id))) throw new Error("character-scope");
@@ -21,6 +21,7 @@ const record = (kind: "entity" | "binding", data: SceneEntity | ChatBinding): Da
 
 export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository): Promise<void> {
   if (!edit.name.trim() || edit.name.length > 80 || !validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
+  if ((edit.interlocutor !== undefined && typeof edit.interlocutor !== "boolean") || (edit.interlocutor === true && (!edit.present || edit.sheet.protagonist))) throw new Error("character-invalid");
   await repo.updateRecords(all => {
     const { binding, entities, scene } = current(all, edit);
     const before = entities.find(e => e.id === edit.entityId);
@@ -33,8 +34,14 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     const presentIds = (scene?.presentIds ?? []).filter(id => id !== entity.id);
     if (edit.present) presentIds.push(entity.id);
     if (presentIds.length > 12) throw new Error("character-limit");
-    const partnerId = scene?.partnerId === null ? null : scene?.partnerId && presentIds.includes(scene.partnerId) ? scene.partnerId : undefined;
-    const next: ChatBinding = { ...binding, characterScenes: { ...binding.characterScenes, [edit.worldId]: { revision: createId("rev"), partnerId, presentIds, states: { ...scene?.states, [entity.id]: structuredClone(edit.state) }, updatedAt: now } }, updatedAt: now };
+    const wasPartner = characterInterlocutor(entities, scene)?.id === entity.id;
+    let partnerId = scene?.partnerId;
+    if (edit.interlocutor === true) partnerId = entity.id;
+    else if (wasPartner && (edit.interlocutor === false || !edit.present || edit.sheet.protagonist)) partnerId = null;
+    else if (partnerId && !presentIds.includes(partnerId)) partnerId = undefined;
+    // A manual revision blocks stale writes, but the already-consumed reply
+    // must remain recognized after reopening instead of reporting a false conflict.
+    const next: ChatBinding = { ...binding, characterScenes: { ...binding.characterScenes, [edit.worldId]: { revision: createId("rev"), lastReply: scene?.lastReply, partnerId, presentIds, states: { ...scene?.states, [entity.id]: structuredClone(edit.state) }, updatedAt: now } }, updatedAt: now };
     changes.push(record("binding", next));
     // Keep full backup sizes practical. Images are encrypted with the rest of the library.
     const replaced = new Set(changes.map(r => r.id));

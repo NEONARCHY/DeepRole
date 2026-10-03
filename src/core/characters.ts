@@ -106,12 +106,16 @@ const unboundCopy = {
   en: "Couldn’t match the update to your message. Characters can update after the next reply.",
 };
 const castCopy = {
-  ru: { sceneCast: "В сцене", allCast: "Все", castView: "Каких персонажей показывать", searchCast: "Найти персонажа", noMatches: "Персонаж не найден. Попробуйте другое имя.", noCast: "В этой сцене пока никого нет. Все персонажи доступны во вкладке «Все».", castFallback: "Участники ещё не определены — показаны все персонажи.", portraitEmotion: "Эмоция портрета", previewOnly: "Просмотр портрета не меняет настроение персонажа." },
-  en: { sceneCast: "In scene", allCast: "All", castView: "Characters to show", searchCast: "Find a character", noMatches: "No character found. Try another name.", noCast: "No one is in this scene yet. Find everyone under All.", castFallback: "Scene participants aren’t known yet — showing everyone.", portraitEmotion: "Portrait emotion", previewOnly: "Previewing a portrait doesn’t change the character’s mood." },
+  ru: { sceneCast: "В сцене", allCast: "Все", castView: "Каких персонажей показывать", searchCast: "Найти персонажа", noMatches: "Персонаж не найден. Попробуйте другое имя.", noCast: "В этой сцене пока никого нет. Все персонажи доступны во вкладке «Все».", castFallback: "Участники ещё не определены — показаны все персонажи.", portraitEmotion: "Эмоция портрета", previewOnly: "Просмотр портрета не меняет настроение персонажа.", interlocutor: "Собеседник героя", interlocutorHint: "Портрет справа от вариантов. Следующий ответ может сменить собеседника." },
+  en: { sceneCast: "In scene", allCast: "All", castView: "Characters to show", searchCast: "Find a character", noMatches: "No character found. Try another name.", noCast: "No one is in this scene yet. Find everyone under All.", castFallback: "Scene participants aren’t known yet — showing everyone.", portraitEmotion: "Portrait emotion", previewOnly: "Previewing a portrait doesn’t change the character’s mood.", interlocutor: "Talking to the protagonist", interlocutorHint: "Portrait beside the reply options, on the right. The next reply may change who’s talking." },
 };
 export type CharacterCopyKey = keyof typeof copy.en | keyof typeof castCopy.en | "unbound";
 export const characterText = (locale: Locale, key: CharacterCopyKey): string => key === "unbound" ? unboundCopy[locale] : key in castCopy[locale] ? castCopy[locale][key as keyof typeof castCopy.en] : copy[locale][key as keyof typeof copy.en];
 export const emotionLabel = (locale: Locale, value: string) => value === "neutral" ? copy[locale].neutralEmotion : DEFAULT_EMOTIONS.includes(value) ? copy[locale][value as "happy"] : value;
+export function characterInterlocutor(entities: SceneEntity[], scene?: CharacterScene): SceneEntity | undefined {
+  const hero = entities.find(entity => entity.characterSheet?.protagonist);
+  return scene?.partnerId === null ? undefined : entities.find(entity => entity.id !== hero?.id && scene?.presentIds.includes(entity.id) && (!scene.partnerId || scene.partnerId === entity.id));
+}
 /** A read-only glimpse of known stats, never scores inferred from mood or choices. */
 export function characterHighlights(state?: CharacterStatus): CharacterStatus["stats"] {
   const seen = new Set<string>();

@@ -19,6 +19,9 @@
 .dr-character-row strong { overflow-wrap:anywhere; font-size:13px; line-height:1.35; }
 .dr-character-row small,.dr-character-hint,.dr-character-status { color:var(--dr-muted); font-size:11px; line-height:1.5; }
 .dr-character-highlights { display:grid; gap:var(--dr-space-1); min-width:0; }
+.dr-character-partner-control { display:grid; gap:var(--dr-space-1); padding:var(--dr-space-3); background:var(--dr-bg); border:1px solid var(--dr-border); border-radius:var(--dr-radius); }
+.dr-character-partner-control .dr-character-hint { margin:0; }
+.dr-character-dialog .dr-character-partner-control .dr-character-check { min-height:44px; cursor:pointer; }
 .dr-character-highlights>span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; padding:var(--dr-space-1) var(--dr-space-2); border-radius:6px; background:var(--dr-bg); font-size:12px; line-height:1.4; }
 .dr-character-status { margin:4px 0 8px; }
 .dr-character-hint { display:block; margin:8px 0 0; }

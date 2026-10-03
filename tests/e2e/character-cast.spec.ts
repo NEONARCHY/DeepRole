@@ -86,6 +86,46 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
   });
 }
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
+  test(`manual interlocutor stays clear and editable ${locale} ${width}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 950 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
+    const partnerName = locale === "ru" ? "Собеседник героя" : "Talking to the protagonist";
+    const presentName = locale === "ru" ? "В сцене" : "In the scene";
+    const dialog = page.getByRole("dialog"); const tile = page.locator(".dr-character-row").filter({ hasText: "Mira" });
+    await tile.click(); const partner = dialog.getByRole("checkbox", { name: partnerName, exact: true });
+    await expect(partner).toBeChecked(); await partner.uncheck();
+    await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+    expect(await page.evaluate(() => (window as any).saved.interlocutor)).toBe(false);
+    await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: null, presentIds: ["hero"] } }); });
+    await page.locator(".dr-characters").getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Все" : "All"}`) }).click();
+    await tile.click(); await expect(partner).not.toBeChecked(); const present = dialog.getByRole("checkbox", { name: presentName, exact: true });
+    await expect(present).not.toBeChecked(); await partner.focus(); await partner.press("Space");
+    await expect(partner).toBeChecked(); await expect(present).toBeChecked(); await expect(partner).toBeFocused();
+    await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("happy");
+    await expect(partner).toHaveAccessibleDescription(/(Портрет справа|Portrait beside)/);
+    await present.uncheck(); await expect(partner).not.toBeChecked(); await partner.check();
+    await page.evaluate(() => { (window as any).rejectSave = true; });
+    const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true });
+    await save.click(); await expect(dialog.getByRole("alert")).toBeVisible(); await expect(partner).toBeChecked();
+    await page.evaluate(() => { (window as any).rejectSave = false; }); await partner.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`partner-draft-recovery-${locale}-${width}.png`) });
+    expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await save.click(); await expect(dialog).toHaveCount(0);
+    expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: true, present: true, state: { emotion: "happy" }, chatId: "a" });
+    await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: "mira", presentIds: ["hero", "mira"] } }); });
+    await page.locator(".dr-cast-portrait.right").click(); await expect(partner).toBeChecked(); await partner.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`manual-partner-${locale}-${width}.png`) });
+    await page.keyboard.press("Escape");
+    await page.locator(".dr-character-row").filter({ hasText: "Noah" }).click(); await expect(partner).toHaveCount(0);
+    await dialog.getByRole("checkbox", { name: locale === "ru" ? "Мой главный герой" : "My protagonist", exact: true }).uncheck();
+    await expect(partner).toBeVisible(); await partner.check();
+    await dialog.getByRole("checkbox", { name: locale === "ru" ? "Мой главный герой" : "My protagonist", exact: true }).check();
+    await expect(partner).toHaveCount(0); await save.click();
+    expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: false, sheet: { protagonist: true } });
+  });
+}
+
 test("scene, scope and aliases update without leaking the previous roster filter", async ({ page }) => {
   await page.goto("/tests/fixtures/characters.html?locale=en&count=40");
   const panel = page.locator(".dr-characters"); const tiles = panel.locator(".dr-character-row");

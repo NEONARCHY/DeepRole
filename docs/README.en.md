@@ -25,6 +25,8 @@ Mark **My protagonist** for the left portrait beside reply options; the current 
 
 The first two filled stats, such as energy or trust, appear below the portraits. Open a portrait for the rest. These are saved scene values: no extra requests, tokens or invented meters.
 
+Wrong person on the right? Open their sheet → **Talking to the protagonist → Save character**. This affects only this chat and sends no message. The next DeepSeek reply may change the interlocutor as the scene evolves.
+
 ## Scene choices
 
 With a world connected, DeepRole asks DeepSeek to end scenes with dialogue or a meaningful action opportunity with four options: warm, neutral, confrontational, and unexpected. They appear as buttons below the reply. Clicking one **fills the composer for editing**; it never sends automatically. You can switch options until you edit the inserted text; DeepRole preserves your own draft.
@@ -92,4 +94,4 @@ npm run zip
 npm run zip:firefox
 ```
 
-Load `.output/chrome-mv3` in Chrome/Brave or `.output/firefox-mv2` in Firefox. Rebuilding does not reload an installed copy. Reload the extension, then DeepSeek. [Latest QA report](QA-2026-10-03-round7.md) distinguishes live model checks from local automated tests. Screenshots show the local demonstration, not personal chats.
+Load `.output/chrome-mv3` in Chrome/Brave or `.output/firefox-mv2` in Firefox. Rebuilding does not reload an installed copy. Reload the extension, then DeepSeek. [Latest QA report](QA-2026-10-03-round8.md) distinguishes live model checks from local automated tests. Screenshots show the local demonstration, not personal chats.

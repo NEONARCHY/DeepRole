@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { bindCharacterTurn, characterTurnKey, characterInstruction, characterRevision, characterHighlights, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, validCharacterSheet, validEmotions, portraitSource, silhouetteSource, type CharacterTurn } from "../src/core/characters";
+import { bindCharacterTurn, characterTurnKey, characterInstruction, characterRevision, characterHighlights, characterInterlocutor, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, validCharacterSheet, validEmotions, portraitSource, silhouetteSource, type CharacterTurn } from "../src/core/characters";
 import { validDataRecord, parseBackupSettings } from "../src/core/record-validation";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
@@ -117,6 +117,84 @@ it("keeps one protagonist when a profile is duplicated", async () => {
   const entities = await repo.list<SceneEntity>("entity");
   expect(entities.filter(e => e.characterSheet?.protagonist)).toHaveLength(1);
   expect(entities.find(e => e.name === "Copy")?.characterSheet?.appearance).toBe("Blue coat");
+});
+
+describe("manual interlocutor", () => {
+  it("keeps the legacy fallback but respects explicit absence, presence and protagonist", () => {
+    const hero = { ...entity, id: "hero", characterSheet: { ...entity.characterSheet!, protagonist: true } };
+    const other = { ...entity, id: "other", name: "Leon" }; const people = [hero, entity, other];
+    const scene = { revision: "1", presentIds: ["hero", "mira", "other"], states: {}, updatedAt: 1 };
+    expect(characterInterlocutor(people, scene)).toBe(entity);
+    expect(characterInterlocutor(people, { ...scene, partnerId: "other" })).toBe(other);
+    for (const partnerId of [null, "missing", "hero"]) expect(characterInterlocutor(people, { ...scene, partnerId })).toBeUndefined();
+    expect(characterInterlocutor(people, { ...scene, presentIds: ["hero"], partnerId: "other" })).toBeUndefined();
+    expect(characterInterlocutor(people)).toBeUndefined();
+  });
+  it("switches only this chat, keeps other profiles and does not clear an unrelated partner", async () => {
+    const repo = await setup(); const other = { ...entity, id: "leon", name: "Leon" };
+    await repo.mergeRecords([{ kind: "entity", id: other.id, data: other }]);
+    const initial = { ...turn(), base: characterRevision([entity, other]), present: ["mira", "leon"], partner: "mira" };
+    await applyCharacterTurn({ ...scope(), base: initial.base }, initial, undefined, repo);
+    const beforeB = await repo.get<ChatBinding>("binding", "binding:b");
+    const edit = async (person: SceneEntity, interlocutor: boolean) => {
+      const people = await repo.list<SceneEntity>("entity"); const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w;
+      await saveCharacter({ ...scope(), base: characterRevision(people, scene), entityId: person.id, name: person.name, sheet: person.characterSheet!, state: scene!.states[person.id] ?? EMPTY_STATUS, present: true, interlocutor }, repo);
+    };
+    await edit(other, true); expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.partnerId).toBe("leon");
+    expect(await repo.get<SceneEntity>("entity", entity.id)).toEqual(entity);
+    await edit(entity, false); expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.partnerId).toBe("leon");
+    await edit(other, false); const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    expect(scene.partnerId).toBeNull(); expect(scene.presentIds).toEqual(["mira", "leon"]);
+    expect(scene.lastReply).toBe(characterTurnKey(initial)); expect(await repo.get<ChatBinding>("binding", "binding:b")).toEqual(beforeB);
+  });
+  it("selects a newly created person and can clear an inferred legacy interlocutor", async () => {
+    const repo = await setup();
+    await saveCharacter({ ...scope(), entityId: null, name: "Leon", sheet: EMPTY_CHARACTER, state: EMPTY_STATUS, present: true, interlocutor: true }, repo);
+    const people = await repo.list<SceneEntity>("entity"); const leon = people.find(e => e.name === "Leon")!;
+    const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!; expect(scene.partnerId).toBe(leon.id);
+    const legacy = { ...scene, partnerId: undefined };
+    await repo.mergeRecords([{ kind: "binding", id: binding.id, data: { ...binding, characterScenes: { w: legacy } } }]);
+    await saveCharacter({ ...scope(), base: characterRevision(people, legacy), entityId: leon.id, name: leon.name, sheet: leon.characterSheet!, state: EMPTY_STATUS, present: true, interlocutor: false }, repo);
+    expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.partnerId).toBeNull();
+  });
+  it.each(["absent", "protagonist", "nonboolean"])("rejects an invalid %s choice atomically", async reason => {
+    const repo = await setup(); const before = await repo.rawRecords();
+    await expect(saveCharacter({ ...scope(), entityId: entity.id, name: entity.name, sheet: { ...entity.characterSheet!, protagonist: reason === "protagonist" }, state: EMPTY_STATUS, present: reason !== "absent", interlocutor: reason === "nonboolean" ? "yes" as unknown as boolean : true }, repo)).rejects.toThrow("character-invalid");
+    expect(await repo.rawRecords()).toEqual(before);
+  });
+  it("clears the partner when they leave without silently picking a bystander", async () => {
+    const repo = await setup(); const leon = { ...entity, id: "leon", name: "Leon" };
+    await repo.mergeRecords([{ kind: "entity", id: leon.id, data: leon }]); const base = characterRevision([entity, leon]);
+    await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, present: ["mira", "leon"], partner: "mira" }, undefined, repo);
+    const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    await saveCharacter({ ...scope(), base: characterRevision([entity, leon], scene), entityId: entity.id, name: entity.name, sheet: entity.characterSheet!, state: EMPTY_STATUS, present: false }, repo);
+    const next = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    expect(next.partnerId).toBeNull(); expect(next.presentIds).toEqual(["leon"]); expect(characterInterlocutor([entity, leon], next)).toBeUndefined();
+  });
+  it("does not exceed the scene limit or save any part of a refused selection", async () => {
+    const repo = await setup(); const people = Array.from({ length: 12 }, (_, i) => ({ ...entity, id: `extra-${i}`, name: `Person ${i}` }));
+    await repo.mergeRecords(people.map(data => ({ kind: "entity" as const, id: data.id, data })));
+    const base = characterRevision([entity, ...people]); await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, present: people.map(e => e.id), updates: [] }, undefined, repo);
+    const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w; const before = await repo.rawRecords();
+    await expect(saveCharacter({ ...scope(), base: characterRevision([entity, ...people], scene), entityId: entity.id, name: entity.name, sheet: entity.characterSheet!, state: EMPTY_STATUS, present: true, interlocutor: true }, repo)).rejects.toThrow("character-limit");
+    expect(await repo.rawRecords()).toEqual(before);
+  });
+  it("rejects a stale manual selection without overwriting the newer scene", async () => {
+    const repo = await setup(); await applyCharacterTurn(scope(), turn(), undefined, repo); const before = await repo.rawRecords();
+    await expect(saveCharacter({ ...scope(), entityId: entity.id, name: entity.name, sheet: entity.characterSheet!, state: EMPTY_STATUS, present: true, interlocutor: true }, repo)).rejects.toThrow("character-conflict");
+    expect(await repo.rawRecords()).toEqual(before);
+  });
+});
+
+it("keeps the consumed reply marker after a manual edit without reverting the edit", async () => {
+  const repo = await setup(); const incoming = turn();
+  await applyCharacterTurn(scope(), incoming, undefined, repo);
+  const before = (await repo.get<ChatBinding>("binding", binding.id))!;
+  await saveCharacter({ ...scope(), base: characterRevision([entity], before.characterScenes!.w), entityId: entity.id, name: entity.name, sheet: entity.characterSheet!, state: { ...EMPTY_STATUS, condition: "Manually checked" }, present: true }, repo);
+  const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+  expect(scene.lastReply).toBe(characterTurnKey(incoming));
+  expect(scene.states.mira!.condition).toBe("Manually checked"); expect(scene.revision).not.toBe(before.characterScenes!.w!.revision);
+  await expect(applyCharacterTurn(scope(), incoming, undefined, repo)).rejects.toThrow("character-conflict");
 });
 
 it("preserves an explicit no-interlocutor state after a manual edit", async () => {

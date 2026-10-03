@@ -452,8 +452,10 @@ test("character sheets: real extension sync, manual edits, return and chat isola
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent.push(route.request().postDataJSON().prompt); return route.fulfill({ contentType: "application/json", body: "{}" }); });
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Continue" }) }));
     expect(sent).toHaveLength(1); expect(sent[0]).toContain("MANUAL_BLUE_COAT"); expect(sent[0]).toContain("Find the key"); expect(sent[0]).not.toContain("data:image");
+    const manuallySaved = (await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w;
     await chat.evaluate(value => { const article = document.createElement("article"); article.dataset.role = "assistant"; article.dataset.messageId = "old-answer"; article.textContent = '<deeprole_characters>' + JSON.stringify(value) + '</deeprole_characters>'; document.querySelector("#conversation")!.append(article); }, payload);
-    await expect(chat.locator(".dr-character-status")).toContainText("Update skipped");
+    await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    expect((await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w).toEqual(manuallySaved);
     expect((await databaseRecords(panel)).find(r => r.id === "mira").data.characterSheet.appearance).toBe("MANUAL_BLUE_COAT");
     await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(chat.locator(".dr-character-row")).toContainText("No updates yet");
     await chat.goto("https://chat.deepseek.com/chat/s/a"); await expect(chat.locator(".dr-character-row")).toContainText("Happy");
@@ -506,6 +508,46 @@ test("character stats: installed final payload ignores thinking, survives reopen
     expect((await databaseRecords(panel)).find(r => r.id === "binding:b").data.characterScenes).toBeUndefined();
     await chat.goto("https://chat.deepseek.com/chat/s/a"); await expect(tile.locator(".dr-character-highlights>span")).toHaveText(["Energy: Tired", "Keys: 0"]);
     expect((await databaseRecords(panel)).find(r => r.kind === "entry").data).toEqual(lore);
+  } finally { await context.close(); }
+});
+
+test("manual interlocutor: installed selection, consumed replies and new scenes stay synchronized", async ({}, info) => {
+  test.setTimeout(60000);
+  const world = { id: "w", name: "Test observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const people = ["Noah", "Mira", "Leon"].map((name, i) => ({ id: name.toLowerCase(), worldId: "w", name, kind: "character", description: "ORIGINAL_PROFILE", aliases: [], memberIds: [], characterSheet: { gender: "neutral", protagonist: !i, appearance: "Blue coat", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ...people.map(person => ["entity", person] as [string, any]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b" }]]);
+  try {
+    const schemas: any[] = []; const prompts: string[] = [];
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { const prompt = route.request().postDataJSON().prompt; prompts.push(prompt); schemas.push(JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)[1])); return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    const send = () => chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira examines the sealed letter." }) }));
+    const makePayload = (request: string, condition = "Safe") => ({ request, present: ["Noah", "Mira"], partner: "Mira", updates: [{ id: "Mira", state: { emotion: "happy", condition, goal: "Find the key", relationship: "Cautious", stats: [{ label: "Energy", value: "Rested" }] } }] });
+    const append = (payload: any) => chat.evaluate(payload => { const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "manual-partner-scene"; const choices = { version: 1, options: ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })) }; row.textContent = "Mira raises the lamp.\n<deeprole_characters>" + JSON.stringify(payload) + "</deeprole_characters>\n<deeprole_choices>" + JSON.stringify(choices) + "</deeprole_choices>"; document.querySelector("#conversation")!.replaceChildren(row); }, payload);
+    await send(); const initial = makePayload(schemas[0].request); await append(initial);
+    const status = chat.locator(".dr-character-status"); const portrait = chat.locator(".dr-cast-portrait.right");
+    await expect(status).toHaveText("Updated after reply"); await expect(portrait).toHaveAccessibleName("Open character: Mira");
+    const before = await databaseRecords(panel); const consumed = before.find(r => r.id === binding.id).data.characterScenes.w.lastReply;
+    await chat.getByRole("button", { name: "All · 3", exact: true }).click(); await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    const dialog = chat.getByRole("dialog"); await expect(dialog.getByRole("checkbox", { name: "In the scene", exact: true })).not.toBeChecked();
+    await dialog.getByRole("checkbox", { name: "Talking to the protagonist", exact: true }).check();
+    await expect(dialog.getByRole("checkbox", { name: "In the scene", exact: true })).toBeChecked();
+    await chat.getByRole("button", { name: "Save character", exact: true }).click(); await expect(dialog).toHaveCount(0);
+    await expect(portrait).toHaveAccessibleName("Open character: Leon"); await expect(status).toHaveText("Saved to memory"); expect(prompts).toHaveLength(1);
+    const saved = await databaseRecords(panel); const scene = saved.find(r => r.id === binding.id).data.characterScenes.w;
+    expect(scene.partnerId).toBe("leon"); expect(scene.presentIds).toEqual(["noah", "mira", "leon"]); expect(scene.lastReply).toBe(consumed);
+    expect(saved.find(r => r.id === "binding:b")).toEqual(before.find(r => r.id === "binding:b"));
+    for (const person of people) expect(saved.find(r => r.id === person.id).data.description).toBe("ORIGINAL_PROFILE");
+    expect(saved.find(r => r.id === "mira")).toEqual(before.find(r => r.id === "mira"));
+    await chat.screenshot({ path: info.outputPath("installed-manual-partner.png") });
+    await chat.reload(); await append(initial); await expect(status).toHaveText("Updated after reply"); await expect(portrait).toHaveAccessibleName("Open character: Leon");
+    expect((await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w).toEqual(scene);
+    await send(); expect(prompts).toHaveLength(2); expect(prompts[1]).not.toContain("data:image"); await append(makePayload(schemas[1].request, "At the doorway"));
+    await expect(portrait).toHaveAccessibleName("Open character: Mira"); await expect(status).toHaveText("Updated after reply");
+    expect((await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w.presentIds).toEqual(["noah", "mira"]);
+    await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(chat.locator(".dr-character-row small")).toHaveText(["No updates yet", "No updates yet", "No updates yet"]);
+    expect((await databaseRecords(panel)).find(r => r.id === "binding:b")).toEqual(before.find(r => r.id === "binding:b"));
+    await chat.goto("https://chat.deepseek.com/chat/s/a"); await append(makePayload(schemas[1].request, "At the doorway")); await expect(portrait).toHaveAccessibleName("Open character: Mira");
+    expect(prompts).toHaveLength(2);
   } finally { await context.close(); }
 });
 

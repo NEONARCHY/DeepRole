@@ -1,5 +1,5 @@
 import { latestSceneChoiceTarget } from "./deepseek-choices-dom";
-import { parseCharacterTurn, characterText, emotionLabel, syncPortraitImage, characterHighlights, type CharacterCopyKey } from "../core/characters";
+import { parseCharacterTurn, characterText, emotionLabel, syncPortraitImage, characterHighlights, characterInterlocutor, type CharacterCopyKey } from "../core/characters";
 import type { CharacterScene, Locale, SceneEntity } from "../core/types";
 
 const REASONING = ".ds-think-content, .ds-think-content-wrapper, [data-testid*='thinking'], [data-testid*='reasoning']";
@@ -52,7 +52,7 @@ export function syncChoicePortraits(enabled: boolean, entities: SceneEntity[], s
     const shadow = host.shadowRoot; const section = shadow?.querySelector("section");
     if (!shadow || !section) continue;
     const hero = entities.find(e => e.characterSheet?.protagonist);
-    const other = scene?.partnerId === null ? undefined : entities.find(e => e.id !== hero?.id && scene?.presentIds.includes(e.id) && (!scene.partnerId || scene.partnerId === e.id));
+    const other = characterInterlocutor(entities, scene);
     const people = enabled ? [hero, other].filter((e): e is SceneEntity => !!e) : [];
     const existing = new Map([...section.querySelectorAll<HTMLButtonElement>(".dr-cast-portrait")].map(button => [button.dataset.characterId, button]));
     for (const [id, button] of existing) if (!people.some(entity => entity.id === id)) button.remove();

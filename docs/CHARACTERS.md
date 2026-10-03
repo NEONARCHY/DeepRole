@@ -26,6 +26,12 @@
 
 Ручные правки вступают в силу после **Сохранить персонажа**. Сохранённая анкета активного персонажа попадёт в следующий запрос. Исходный импортированный текст не переписывается и доступен в карточке отдельно. В инструкции модели новые поля имеют приоритет над прежним описанием — это указание модели, а не гарантия её ответа.
 
+## Если справа не тот персонаж
+
+Откройте нужную карточку через **Все** или портрет. В разделе **Сейчас в этом чате** отметьте **Собеседник героя** и нажмите **Сохранить персонажа**. Персонаж одновременно появится в сцене; его портрет займёт правую сторону вариантов. Это выбор только для открытого чата, без отправки сообщения и дополнительного анализа.
+
+Снимите эту отметку, если герой сейчас ни с кем не разговаривает. Если убрать персонажа из сцены, его портрет справа тоже исчезнет — случайный свидетель не подставится вместо него. Главный герой не может быть своим собеседником. Следующий ответ DeepSeek может сменить собеседника по событиям сцены: ручная отметка не закрепляет его навсегда. Повторное открытие уже учтённого ответа не отменяет вашу правку.
+
 ## Портреты и эмоции
 
 В карточке откройте **Портреты и эмоции**, выберите **«Эмоцию портрета»** и загрузите PNG, JPG или WebP до 5 МБ. Для обычного состояния используйте **Спокойствие / neutral**. Редактор сначала показывает портрет для текущего настроения. Переключение предпросмотра не меняет настроение и не требует сохранения; само настроение меняется выше, в разделе «Сейчас в этом чате».
@@ -57,6 +63,8 @@
 ## English quick start
 
 Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. **In scene** shows your protagonist and current participants; **All** has the complete roster and name/alias search. If participants aren’t known yet, everyone is shown with a short note. Filters affect the display only and reset when you switch chats or worlds. Open a portrait below the context indicators, edit and save. Mark **My protagonist** for the left portrait; the current interlocutor appears on the right.
+
+To correct the right portrait, open the person under **All**, check **Talking to the protagonist** under **Now in this chat**, then **Save character**. This also marks them as present, without sending a message. Uncheck it for no interlocutor. Removing them from the scene clears the right portrait rather than picking a bystander. The protagonist cannot be their own interlocutor. The selection belongs only to this chat; the next model reply may change it. Reopening an already consumed reply does not undo your edit.
 
 The portrait editor starts on the current mood. **Portrait emotion** previews an image without changing the character’s mood or requiring a save. Change the actual mood under **Now in this chat**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
 
