@@ -9,7 +9,8 @@ const HOST = "[data-deeprole-choices-host]";
 const HIDDEN = "[data-deeprole-choices-payload]";
 const RECOVERY = "[data-deeprole-choices-recovery]";
 const LOADING = "[data-deeprole-choices-loading]";
-const settling = new WeakMap<ParentNode, { signature: string; changedAt: number; row?: HTMLElement; observedGeneration: boolean; timer?: ReturnType<typeof setTimeout> }>();
+type SettlingState = { signature: string; changedAt: number; row?: HTMLElement; observedGeneration: boolean; busy?: boolean; requestSource?: string; timer?: ReturnType<typeof setTimeout> };
+const settling = new WeakMap<ParentNode, SettlingState>();
 const USER = "[data-role='user'], [data-message-role='user'], [data-testid*='user-message'], .ds-message--user";
 const REASONING = "[data-testid*='thinking'], [data-testid*='reasoning'], .ds-think-content, .ds-think-content-wrapper";
 const MEMORY_SERVICE = "[data-deeprole-memory-presentation], [data-deeprole-memory-request], [data-deeprole-choices-request]";
@@ -68,7 +69,7 @@ export function latestSceneChoiceTarget(root: ParentNode = document): { row: HTM
 }
 
 /** Keep the story in DeepSeek's reply while replacing only its machine-readable choices. */
-export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode = document, recovery?: { busy: boolean; loading?: boolean; onRequest: (signature: string) => Promise<boolean> }): void {
+export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode = document, recovery?: { busy: boolean; loading?: boolean; requestSignature?: string; onRequest: (signature: string) => Promise<boolean> }): void {
   const previous = settling.get(root);
   if (previous?.timer) clearTimeout(previous.timer);
   if (!enabled) {
@@ -87,14 +88,19 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
     else host.style.display = generating ? "none" : "";
   });
   const scene = latestSceneChoiceTarget(root);
-  const state = previous && previous.signature === scene?.signature ? previous : { signature: scene?.signature ?? "", changedAt: Date.now(), row: scene?.row, observedGeneration: previous?.row === scene?.row && !!previous?.observedGeneration };
+  const requestSource = recovery?.busy ? recovery.requestSignature ?? (previous?.busy ? previous.requestSource : previous?.signature) : undefined;
+  const state: SettlingState = previous && previous.signature === scene?.signature ? previous : { signature: scene?.signature ?? "", changedAt: Date.now(), row: scene?.row, observedGeneration: previous?.row === scene?.row && !!previous?.observedGeneration };
+  state.busy = !!recovery?.busy; state.requestSource = requestSource;
   const sceneText = scene?.row.textContent ?? "";
   if (generating || sceneText.includes("<deeprole_choices") && !sceneText.includes("</deeprole_choices>")) state.observedGeneration = true;
   settling.set(root, state);
   const settlingReply = !active && state.observedGeneration && !!scene && Date.now() - state.changedAt < 1200;
   const waiting = generating || !!recovery?.busy || settlingReply;
   const target = !waiting && !active && recovery ? scene : null;
-  const loadingRow = waiting && recovery?.loading !== false && (recovery || current) ? scene?.row ?? current?.row : null;
+  // Generating story text (or waiting for a manual request) is not yet generating
+  // options. Concealment marks only the actual choices transport, never thinking.
+  const choicesStarted = (!!scene?.row.querySelector(HIDDEN) || !!current) && !(requestSource && scene?.signature === requestSource);
+  const loadingRow = !active && waiting && choicesStarted && recovery?.loading !== false && (recovery || current) ? scene?.row ?? current?.row : null;
   root.querySelectorAll<HTMLElement>(LOADING).forEach(host => { if (host.previousElementSibling !== loadingRow || host.lang !== locale) host.remove(); });
   if (loadingRow && !loadingRow.nextElementSibling?.matches(LOADING)) loadingRow.after(createLoading(locale, loadingRow.ownerDocument));
   if (settlingReply && !generating && !recovery?.busy) state.timer = setTimeout(() => syncSceneChoiceCards(enabled, generating, locale, onPick, root, recovery), 1250 - (Date.now() - state.changedAt));
@@ -210,8 +216,9 @@ function createRecoveryCard(locale: Locale, signature: string, recovery: { busy:
   button.setAttribute("aria-describedby", "request-hint"); hint.id = "request-hint";
   button.addEventListener("click", () => {
     button.disabled = true;
-    const loading = createLoading(locale, doc); host.replaceWith(loading);
-    void recovery.onRequest(signature).then(ok => { if (!ok && loading.isConnected) loading.replaceWith(host); }).catch(() => { if (loading.isConnected) loading.replaceWith(host); }).finally(() => { button.disabled = recovery.busy; });
+    host.style.setProperty("display", "none", "important");
+    // The next sync shows a loader only once reply JSON starts, not at send time.
+    void Promise.resolve().then(() => recovery.onRequest(signature)).then(ok => { if (!ok && host.isConnected) host.style.removeProperty("display"); }).catch(() => { if (host.isConnected) host.style.removeProperty("display"); }).finally(() => { button.disabled = recovery.busy; });
   });
   box.append(button, hint); shadow.append(style, box);
   return host;

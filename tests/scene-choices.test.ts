@@ -51,6 +51,59 @@ describe("scene choice protocol", () => {
 });
 
 describe("history restoration and explicit recovery", () => {
+  it("waits for actual choices JSON, not story, thinking or character state", () => {
+    const row = answer("", "live");
+    const thought = document.createElement("div"); thought.className = "ds-think-content"; thought.textContent = payload;
+    const body = document.createElement("div"); body.className = "ds-markdown"; body.textContent = "Mira opens the gate.";
+    row.append(thought, body);
+    sync("ru", true, true);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0); expect(recovery()).toBeNull();
+    body.append(" More story. <deeprole_characters>{}</deeprole_characters>"); sync("ru", true, true);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0);
+    body.append(payload.slice(0, 55)); sync("ru", true, true); sync("ru", true, true);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
+    expect(body.querySelector("[data-deeprole-choices-payload]")?.textContent).toBe(payload.slice(0, 55));
+  });
+  it("removes an earlier loader when a different story starts", () => {
+    answer("Scene. " + payload.slice(0, 55)); sync("en", true, true);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
+    answer("A new scene begins.", "new"); sync("en", true, true);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0); expect(recovery()).toBeNull();
+  });
+  it("keeps story-only settling silent before offering the final fallback", () => {
+    vi.useFakeTimers();
+    try {
+      answer("Mira opens the gate."); sync("en", true, true); sync("en");
+      expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0); expect(recovery()).toBeNull();
+      vi.advanceTimersByTime(1250);
+      expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0); expect(recovery()).not.toBeNull();
+    } finally { vi.useRealTimers(); }
+  });
+  it("does not show a loader merely because a manual request is busy", () => {
+    answer("Mira opens the gate.");
+    syncSceneChoiceCards(true, true, "ru", pick, document, { busy: true, onRequest: request });
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0); expect(recovery()).toBeNull();
+  });
+  it("never mistakes old malformed JSON for the newly requested response", () => {
+    answer("Scene. <deeprole_choices>{broken}</deeprole_choices>"); sync();
+    const requestSignature = latestSceneChoiceTarget()!.signature;
+    syncSceneChoiceCards(true, true, "ru", pick, document, { busy: true, requestSignature, onRequest: request });
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0);
+    answer(payload.slice(0, 55), "new-reply");
+    syncSceneChoiceCards(true, true, "ru", pick, document, { busy: true, requestSignature, onRequest: request });
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
+  });
+  it.each([false, "throw"])("restores a refused manual request without an early loader: %s", async result => {
+    answer("Mira opens the gate.");
+    const reject = vi.fn(async () => { if (result === "throw") throw new Error("offline"); return false; });
+    syncSceneChoiceCards(true, false, "en", pick, document, { busy: false, onRequest: reject });
+    const card = recovery()!; const button = card.shadowRoot!.querySelector<HTMLButtonElement>("button")!;
+    button.click();
+    expect(card.style.display).toBe("none"); expect(button.disabled).toBe(true);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0);
+    await vi.waitFor(() => { expect(button.disabled).toBe(false); expect(card.style.display).toBe(""); });
+    expect(reject).toHaveBeenCalledOnce();
+  });
   it("hides streamed chunks, retains parseable data and preserves text after the block", () => {
     const row = answer("Scene. " + payload.slice(0, 60));
     sync("ru", true, true);

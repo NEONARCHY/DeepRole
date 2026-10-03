@@ -10,11 +10,16 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await page.setViewportSize({ width, height: 700 });
     await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
     const request = page.getByRole("button", { name: locale === "ru" ? "Предложить варианты" : "Suggest options", exact: true });
-    await request.click();
     const loader = page.locator("[data-deeprole-choices-loading]");
-    await expect(loader).toHaveCount(1);
-    await expect(request).toHaveCount(0);
     await page.evaluate(() => (window as any).choicesTest.update({ generating: true }));
+    // Story generation alone must not announce that options are being prepared.
+    for (const scene of ["Mira holds the key.", "Mira holds the key. She looks towards the gate."]) {
+      await page.evaluate(scene => (window as any).choicesTest.setHistory(`<article data-role="assistant" data-message-id="live"><div class="ds-think-content">Planning &lt;deeprole_choices&gt;</div><div class="ds-markdown"><p>${scene}</p></div></article>`), scene);
+      await expect(loader).toHaveCount(0);
+      await expect(request).toHaveCount(0);
+      await expect(page.locator(".ds-markdown")).toHaveText(scene, { useInnerText: true });
+    }
+    await page.screenshot({ path: info.outputPath("story-no-preloader.png") });
     for (const size of [24, 50, 140, payload.length - 8]) {
       const partial = payload.slice(0, size);
       await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-role="assistant" data-message-id="live"><div class="ds-markdown"><p>Mira holds the key.</p><p>${partial.replaceAll("<", "&lt;")}</p></div></article>`);
@@ -40,6 +45,16 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await expect(loader).toHaveCount(0);
     await expect(page.locator(".ds-markdown")).not.toContainText("deeprole_choices", { useInnerText: true });
     await page.screenshot({ path: info.outputPath("choices-retry.png") });
+    // A manual request also stays silent until its actual response JSON starts.
+    await request.click(); await expect(request).toHaveCount(0); await expect(loader).toHaveCount(0);
+    await page.evaluate(() => (window as any).choicesTest.update({ generating: true }));
+    await page.evaluate(() => (window as any).choicesTest.setHistory('<article data-role="assistant" data-message-id="manual"><div class="ds-markdown">Preparing the next move.</div></article>'));
+    await expect(loader).toHaveCount(0); await expect(request).toHaveCount(0);
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-role="assistant" data-message-id="manual"><div class="ds-markdown">${payload.slice(0, 70).replaceAll("<", "&lt;")}</div></article>`);
+    await expect(loader).toHaveCount(1); await expect(page.locator(".ds-markdown")).not.toContainText("deeprole_choices", { useInnerText: true });
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html), history);
+    await page.evaluate(() => (window as any).choicesTest.update({ generating: false, busy: false }));
+    await expect(loader).toHaveCount(0); await expect(page.locator("[data-deeprole-choices-host] .grid button")).toHaveCount(4);
     expect(await page.evaluate(() => (window as any).sent)).toBe(0);
   });
 }
@@ -125,6 +140,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await request.focus(); await page.keyboard.press("Enter");
     expect(await page.evaluate(() => (window as any).requests)).toBe(1);
     await page.evaluate((html) => (window as any).choicesTest.setHistory(html), history);
+    await page.evaluate(() => (window as any).choicesTest.update({ busy: false }));
     await expect(page.getByRole("button", { name: /Thank Mira/ })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("button", { name: /Thank Mira/ })).toBeVisible();

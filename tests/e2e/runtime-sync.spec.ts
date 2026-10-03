@@ -686,6 +686,36 @@ test("character cast: installed roster, preview, focus and outgoing mood stay sy
 const choicesWorld = { id: "choices-world", name: "Test observatory", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
 const choicesBinding = { id: "binding:a", chatId: "a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
 const choicesPayload = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map((kind) => ({ kind, label: "Move " + kind, text: "MY_MOVE_" + kind })) }) + '</deeprole_choices>';
+test("automatic choices loader waits for actual JSON, not story or thinking, in the installed extension", async ({}, info) => {
+  const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    await chat.setViewportSize({ width: 1600, height: 800 }); await chat.addStyleTag({ content: "main { max-width:690px; margin:0 auto; }" });
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await enableChoicesScene(chat);
+    const loader = chat.locator("[data-deeprole-choices-loading]");
+    const request = chat.getByRole("button", { name: "Suggest options", exact: true });
+    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("MY_UNSENT_DRAFT");
+    await chat.evaluate(payload => {
+      const stop = document.createElement("button"); stop.dataset.testid = "stop-generation"; stop.textContent = "Stop"; document.body.append(stop);
+      const row = document.querySelector("[data-message-id='answer']")!;
+      const thought = document.createElement("div"); thought.className = "ds-think-content"; thought.textContent = payload;
+      const body = document.createElement("div"); body.className = "ds-markdown"; body.textContent = "Mira opens the gate.";
+      row.replaceChildren(thought, body);
+    }, choicesPayload);
+    await expect(request).toHaveCount(0); await expect(loader).toHaveCount(0);
+    await chat.screenshot({ path: info.outputPath("story-no-loader.png") });
+    await chat.locator(".ds-markdown").evaluate((body, payload) => { body.append(" " + payload.slice(0, 75)); }, choicesPayload);
+    await expect(loader).toHaveCount(1); await expect(chat.locator(".ds-markdown")).toHaveText("Mira opens the gate.", { useInnerText: true });
+    await chat.screenshot({ path: info.outputPath("json-loader.png") });
+    await chat.locator(".ds-markdown").evaluate((body, payload) => { body.textContent = "Mira opens the gate. " + payload; }, choicesPayload);
+    await expect(loader).toHaveCount(1); await expect(chat.locator("[data-deeprole-choices-host]")).toHaveCount(0);
+    await chat.locator("[data-testid='stop-generation']").evaluate(stop => stop.remove());
+    await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible(); await expect(loader).toHaveCount(0);
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_UNSENT_DRAFT");
+    expect(sent).toBe(0); expect((await databaseRecords(panel)).filter(row => row.kind === "entry")).toHaveLength(0);
+  } finally { await context.close(); }
+});
 test("existing choices render without a connected world, but send nothing and respect the setting", async () => {
   const { context, panel, chat } = await setup([]);
   try {
@@ -714,7 +744,7 @@ async function enableChoicesScene(chat: Page) {
   await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeVisible();
 }
 
-test("scene recovery hides its request behind a loader, then survives reopening without another request", async () => {
+test("scene recovery waits for response JSON before a loader, then survives reopening without another request", async () => {
   const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
   try {
     // Match DeepSeek's centered conversation column, outside the fixed context widget.
@@ -728,10 +758,15 @@ test("scene recovery hides its request behind a loader, then survives reopening 
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0]).toContain("[DeepRole Scene Choices]"); expect(sent[0]).toContain("Do not continue or rewrite the scene");
     await expect(chat.locator("[data-message-id='service-user']")).toBeHidden();
-    await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(1);
+    await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(0);
     await expect(chat.locator("[data-message-id='answer']")).toHaveText("The gate opened.");
     await expect.poll(() => pendingService(panel)).toMatchObject({ type: "scene-choices" });
     const pending = await pendingService(panel); expect(pending.baseVersions).toBeUndefined(); expect(pending.sceneSignature).not.toContain("gate opened");
+    await chat.locator("[data-message-id='service-answer']").evaluate(row => { row.setAttribute("data-role", "assistant"); row.textContent = "Preparing the next move."; });
+    await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(0);
+    await chat.locator("[data-message-id='service-answer']").evaluate((row, text) => { row.textContent = text.slice(0, 75); }, choicesPayload);
+    await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(1);
+    await expect(chat.locator("[data-message-id='service-answer']")).not.toContainText("deeprole_choices", { useInnerText: true });
     await chat.locator("[data-message-id='service-answer']").evaluate((row, text) => { row.setAttribute("data-role", "assistant"); row.textContent = text; }, choicesPayload);
     await expect.poll(() => pendingService(panel)).toBeNull();
     await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible();

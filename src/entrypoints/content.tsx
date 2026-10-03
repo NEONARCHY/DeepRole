@@ -699,7 +699,7 @@ class PageController {
     // Existing reply options are read-only UI, not a world-bound memory update.
     // New recovery requests still require the connected-world feature flag.
     syncSceneChoiceCards((this.settings.sceneChoicesEnabled ?? true) && !this.state.vaultLocked, this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, this.state.sceneChoicesEnabled ? {
-      busy, loading: !busy || this.pendingService?.type === "scene-choices" || this.serviceFeedback?.type === "scene-choices", onRequest: (signature) => this.requestSceneChoices(signature),
+      busy, loading: !busy || this.pendingService?.type === "scene-choices" || this.serviceFeedback?.type === "scene-choices", requestSignature: this.pendingService?.type === "scene-choices" ? this.pendingService.sceneSignature : undefined, onRequest: (signature) => this.requestSceneChoices(signature),
     } : undefined);
     const characters = this.state.characters;
     const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;
@@ -945,7 +945,7 @@ class PageController {
         return await cancel("composer-not-found");
       }
       this.state.analysisSuggested = false;
-      this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "waiting") : this.t("deepseekAnalyzing"));
+      if (request.type !== "scene-choices") this.showToast(this.t("deepseekAnalyzing"));
       return { ok: true };
     } catch {
       await cancel("service-failed").catch(() => undefined);
