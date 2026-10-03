@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CharacterSettings } from "../shared/CharacterSheets";
+import { MemoryGuide } from "../shared/MemoryGuide";
 import { characterText } from "../../core/characters";
 import {
   ArchiveRestore,
@@ -443,7 +444,7 @@ export function App() {
           />
         )}
 
-        {activeTab === "overview" && <details className="play-continuation"><summary>{mt("continue")}</summary>
+        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary>{mt("continue")}</summary>
           <HandoffView
             t={t}
             locale={settings.locale}
@@ -459,7 +460,7 @@ export function App() {
               await refresh();
             }}
           />
-        </details>}
+        </details></div>}
 
         {activeTab === "settings" && (
           <SettingsView

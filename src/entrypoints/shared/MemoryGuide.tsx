@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { memoryGuide } from "../../core/memory-guide";
+import { storyGuide } from "../../core/story-guide";
 import type { Locale } from "../../core/types";
 
 /** A full manual, not a hover-only tooltip. Shared by settings and chat preview. */
-export function MemoryGuide(props: { locale: Locale; threshold?: number }) {
-  const guide = memoryGuide(props.locale);
+export function MemoryGuide(props: { locale: Locale; threshold?: number; topic?: "memory" | "story" }) {
+  const guide = props.topic === "story" ? storyGuide(props.locale) : memoryGuide(props.locale);
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);

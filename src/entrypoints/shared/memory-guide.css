@@ -6,6 +6,11 @@
 .dr-memory-help:focus-visible, .dr-memory-guide button:focus-visible, .dr-memory-guide-body:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
 .dr-memory-help-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .dr-memory-help-actions { display:flex; align-items:center; gap:8px; }
+.dr-story-continuation { position:relative; }
+.dr-story-help { position:absolute; inset-inline-end:0; top:14px; z-index:1; }
+.dr-story-continuation .play-continuation > summary { padding-inline-end:56px; min-height:44px; display:flex; align-items:center; gap:8px; }
+.dr-story-continuation .play-continuation > summary::before { content:"▸"; }
+.dr-story-continuation .play-continuation[open] > summary::before { content:"▾"; }
 .dr-memory-guide { box-sizing:border-box; width:min(680px,calc(100vw - 24px)); max-width:none; max-height:calc(100dvh - 24px); padding:0; margin:auto; border:1px solid var(--dr-border-strong); border-radius:16px; background:var(--dr-panel); color:var(--dr-text); font:14px/1.55 system-ui,sans-serif; box-shadow:0 24px 70px #0008; pointer-events:auto; overflow:hidden; }
 .dr-memory-guide[open] { display:flex; flex-direction:column; }
 .dr-memory-guide::backdrop { background:#0005; }
