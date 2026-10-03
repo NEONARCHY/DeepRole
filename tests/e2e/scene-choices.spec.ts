@@ -5,6 +5,51 @@ const options = ["positive", "neutral", "negative", "surprise"].map((kind, index
 const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
+  test(`pastel choice types stay distinct at rest, hover and selection ${locale} ${width}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 850 });
+    await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
+    const labels = locale === "ru" ? ["Поблагодарить Миру", "Спросить о письме", "Отказаться от конверта", "Предложить обмен"] : options.map(option => option.label);
+    const scene = locale === "ru" ? "Мира держит запечатанный конверт. Что вы сделаете?" : "Mira holds a sealed envelope. What will you do?";
+    const coloredHistory = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>${scene}</p><pre>${`<deeprole_choices>${JSON.stringify({version: 1, options: options.map((option, i) => ({...option, label: labels[i], text: locale === "ru" ? ["«Спасибо, Мира. Давай вместе разберёмся, что это за письмо».", "«Откуда у тебя этот конверт?» Не касаюсь печати и жду ответа.", "«Я не буду его открывать, пока не узнаю, откуда он».", "«Покажи печать — я покажу ключ. Попробуем найти связь?»"][i] : option.text}))})}</deeprole_choices>`.replaceAll("<", "&lt;")}</pre></div></article>`;
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html), coloredHistory);
+    const card = page.locator("[data-deeprole-choices-host]"); const buttons = card.locator(".grid button");
+    const colors = async () => buttons.evaluateAll(elements => {
+      const canvas = document.createElement("canvas"); canvas.width = canvas.height = 1;
+      const context = canvas.getContext("2d")!;
+      const rgb = (color: string) => { context.clearRect(0, 0, 1, 1); context.fillStyle = color; context.fillRect(0, 0, 1, 1); return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+      const luminance = (color: number[]) => color.map(n => n / 255).map(n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4).reduce((sum, n, i) => sum + n * [.2126, .7152, .0722][i]!, 0);
+      const contrast = (a: string, b: string) => { const first = luminance(rgb(a)); const second = luminance(rgb(b)); return (Math.max(first, second) + .05) / (Math.min(first, second) + .05); };
+      return elements.map(button => {
+        const style = getComputedStyle(button); const background = style.backgroundColor;
+        const numberStyle = getComputedStyle(button.querySelector(".number")!);
+        return { kind: (button as HTMLElement).dataset.choiceKind, background: rgb(background).join(","), pressed: button.getAttribute("aria-pressed"), contrasts: [contrast(style.color, background), contrast(getComputedStyle(button.querySelector(".preview")!).color, background), contrast(getComputedStyle(button.querySelector("small")!).color, background), contrast(numberStyle.color, button.getAttribute("aria-pressed") === "true" ? numberStyle.backgroundColor : background)], edgeContrast: contrast(style.borderInlineStartColor, background) };
+      });
+    });
+    const assertReadable = (samples: Awaited<ReturnType<typeof colors>>) => {
+      expect(new Set(samples.map(sample => sample.background)).size).toBe(4);
+      for (const sample of samples) { for (const value of sample.contrasts) expect(value, `${sample.kind} text contrast`).toBeGreaterThanOrEqual(4.5); expect(sample.edgeContrast).toBeGreaterThanOrEqual(3); }
+    };
+    const rest = await colors(); assertReadable(rest); expect(rest.every(sample => sample.pressed === "false")).toBe(true);
+    await card.screenshot({ path: info.outputPath(`pastel-rest-${locale}-${width}.png`) });
+    for (let i = 0; i < 4; i++) {
+      await buttons.nth(i).hover(); const hovered = await colors(); assertReadable(hovered); expect(hovered[i]!.background).not.toBe(rest[i]!.background);
+      await page.getByRole("textbox", { name: "Message", exact: true }).fill(""); await buttons.nth(i).click();
+      const selected = await colors(); assertReadable(selected); expect(selected.filter(sample => sample.pressed === "true")).toHaveLength(1);
+      expect(selected[i]!.pressed).toBe("true"); expect(selected[i]!.background).not.toBe(rest[i]!.background);
+      await expect(buttons.nth(i)).toHaveAttribute("data-choice-kind", options[i]!.kind);
+      expect(await buttons.nth(i).locator(".number").evaluate(number => getComputedStyle(number, "::before").content)).toContain("✓");
+    }
+    expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+    await card.screenshot({ path: info.outputPath(`pastel-selected-${locale}-${width}.png`) });
+    await buttons.first().focus(); await page.keyboard.press("ArrowRight");
+    await expect(buttons.nth(1)).toBeFocused(); expect(await buttons.nth(1).evaluate(button => getComputedStyle(button).outlineStyle)).toBe("solid");
+    await page.reload(); await expect(buttons).toHaveCount(4); assertReadable(await colors());
+    expect(await buttons.evaluateAll(elements => elements.every(button => button.getAttribute("aria-pressed") === "false"))).toBe(true);
+    expect(await page.evaluate(() => [(window as any).requests, (window as any).sent])).toEqual([0, 0]);
+  });
+}
+
 for (const locale of ["ru", "en"] as const) test(`tall live DeepSeek virtual rows keep choices stable and reject a newer user turn ${locale}`, async ({ page }) => {
   await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
   const modern = `<div data-virtual-list-item-key="1"><div class="ds-message"><div class="ds-collapsible-text">Open the archive.</div></div></div><div data-virtual-list-item-key="2"><div class="ds-message" id="modern"><div class="ds-markdown ds-assistant-message-main-content"><p>${'Mira holds the key. '.repeat(150)}</p><p><span>${payload.replaceAll('<', '&lt;')}</span><br><span>&lt;deeprole_characters&gt;{"request":"test"}&lt;/deeprole_characters&gt;</span></p></div></div></div>`;

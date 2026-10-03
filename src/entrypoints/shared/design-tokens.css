@@ -7,5 +7,10 @@
   --dr-selected: #3b3d46; --dr-border-strong: #5d5d65; --dr-primary-soft: #292f44;
   --dr-success: #9bbfaa; --dr-warning: #e3b57b; --dr-danger: #efa0a0;
   --dr-danger-soft: #352628; --dr-warning-soft: #332c24;
+  /* Low-chroma pastels share a lightness; labels also identify each choice. */
+  --dr-choice-positive: oklch(82% 0.065 160);
+  --dr-choice-neutral: oklch(82% 0.060 245);
+  --dr-choice-negative: oklch(82% 0.070 15);
+  --dr-choice-surprise: oklch(82% 0.070 305);
   --dr-radius: 12px;
 }

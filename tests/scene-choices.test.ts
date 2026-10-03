@@ -51,6 +51,15 @@ describe("scene choice protocol", () => {
 });
 
 describe("history restoration and explicit recovery", () => {
+  it("assigns a persistent semantic color to each type before selection", () => {
+    answer("Scene\n" + payload); sync();
+    const buttons = [...host()!.shadowRoot!.querySelectorAll<HTMLButtonElement>(".grid button")];
+    expect(buttons.map(button => button.dataset.choiceKind)).toEqual(options.map(option => option.kind));
+    expect(buttons.every(button => button.getAttribute("aria-pressed") === "false")).toBe(true);
+    sync("en");
+    expect([...host()!.shadowRoot!.querySelectorAll<HTMLButtonElement>(".grid button")].map(button => button.dataset.choiceKind)).toEqual(options.map(option => option.kind));
+    expect(pick).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
+  });
   it("restores choices from saved history without requesting anything", () => {
     answer("The gate opens.\n" + payload); sync();
     expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4);

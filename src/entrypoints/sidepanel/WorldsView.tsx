@@ -360,6 +360,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>
       <p className="rp-status">{t("previewModes", { count: items.length, always: items.filter((i) => i.activation === "always").length, smart: items.filter((i) => i.activation === "smart").length, manual: items.filter((i) => i.activation === "manual").length, disabled: items.filter((i) => !i.enabled).length })}</p>
       <p className="rp-hint">{t("jsonPreservation")}</p>
+      <p className="rp-hint rp-import-character-hint">{t("loreCardsHint")}</p>
       {!!lore?.unsupportedFields.length && <div className="rp-status" role="note"><p>{t("unsupportedImport", { fields: lore.unsupportedFields.join(", ") })}</p><label className="rp-check"><input type="checkbox" checked={acceptUnsupported} onChange={(e) => setAcceptUnsupported(e.target.checked)} />{t("acceptUnsupported")}</label></div>}
       <Field name={t("name")}><input aria-label={t("name")} className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
       <details><summary>{t("advanced")}</summary><Field name={t("destination")} help={t("worldHint")}><select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>

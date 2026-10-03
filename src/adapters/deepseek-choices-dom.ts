@@ -221,13 +221,19 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     .choice-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--dr-space-3);margin-bottom:var(--dr-space-1)}h3{margin:0;min-width:0;font-size:17px;font-weight:650}p{margin:0 0 var(--dr-space-4);color:var(--dr-muted);font-size:12px}
     .choice-expand{flex-shrink:0;min-height:44px;max-width:55%;padding:var(--dr-space-2) var(--dr-space-3);border:1px solid var(--dr-border);border-radius:8px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:600 12px/1.4 system-ui,sans-serif}.choice-expand:hover{background:var(--dr-raised)}
     .grid{display:grid;grid-template-columns:1fr;gap:var(--dr-space-2)}
-    .grid button{position:relative;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit}
-    .grid button:hover{border-color:var(--dr-border-strong);background:var(--dr-raised)}
+    .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid color-mix(in oklab,var(--choice-tint) 40%,var(--dr-surface));border-inline-start:3px solid var(--choice-tint);border-radius:10px;background:color-mix(in oklab,var(--choice-tint) 14%,var(--dr-surface));color:var(--dr-text);cursor:pointer;font:inherit}
+    .grid button[data-choice-kind=positive]{--choice-tint:var(--dr-choice-positive)}
+    .grid button[data-choice-kind=negative]{--choice-tint:var(--dr-choice-negative)}
+    .grid button[data-choice-kind=surprise]{--choice-tint:var(--dr-choice-surprise)}
+    .grid button:hover{border-color:var(--choice-tint);background:color-mix(in oklab,var(--choice-tint) 18%,var(--dr-surface))}
     button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}
-    .grid button[aria-pressed=true]{border-color:var(--dr-primary);background:var(--dr-primary-soft)}
+    .grid button[aria-pressed=true]{border-color:var(--choice-tint);background:color-mix(in oklab,var(--choice-tint) 22%,var(--dr-surface));box-shadow:inset 0 0 0 1px var(--choice-tint)}
+    .grid button[aria-pressed=true] .preview{color:var(--dr-text)}
     button:disabled,button[aria-disabled=true]{opacity:.65;cursor:wait}small{display:block;margin-bottom:var(--dr-space-1);color:var(--dr-muted);font-size:11px}
-    .number{position:absolute;inset-inline-end:10px;top:10px;min-width:20px;text-align:center;border:1px solid var(--dr-border-strong);border-radius:5px;color:var(--dr-muted);font:12px/20px system-ui}
-    .grid small{padding-inline-end:24px}strong{display:block;font-size:14px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
+    .number{position:absolute;inset-inline-end:10px;top:10px;min-width:20px;text-align:center;border:1px solid color-mix(in oklab,var(--choice-tint) 45%,var(--dr-surface));border-radius:5px;color:var(--choice-tint);font:12px/20px system-ui}
+    .grid button[aria-pressed=true] .number{background:var(--choice-tint);color:var(--dr-bg);border-color:var(--choice-tint)}
+    .grid button[aria-pressed=true] .number::before{content:'✓';margin-inline-end:3px}
+    .grid small{padding-inline-end:40px;color:var(--choice-tint)}strong{display:block;font-size:14px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
     .preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--dr-space-1);color:var(--dr-muted);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}.grid[data-expanded=true] .preview{display:block;-webkit-line-clamp:unset}
     .choice-status{min-height:18px;margin:var(--dr-space-3) 0 0;overflow-wrap:anywhere}.choice-status[data-selected=true]{color:var(--dr-primary)}
     @container(min-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -252,6 +258,7 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   let picking = false;
   for (const [index, choice] of options.entries()) {
     const button = doc.createElement("button"); button.type = "button"; button.setAttribute("aria-pressed", "false");
+    button.dataset.choiceKind = choice.kind;
     button.title = choice.text;
     const number = doc.createElement("span"); number.className = "number"; number.textContent = String(index + 1); number.setAttribute("aria-hidden", "true");
     const category = doc.createElement("small"); category.textContent = sceneChoiceText(locale, choice.kind);

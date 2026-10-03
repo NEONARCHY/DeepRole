@@ -428,7 +428,7 @@ for (const navigation of ["direct", "SPA"] as const) test(`character sheets: emp
     await expect(chat.getByRole("dialog")).toHaveCount(0);
     expect((await databaseRecords(panel)).find(r => r.kind === "entity").data.characterSheet.appearance).toBe("Blue coat");
     await append({ ...payload, world: "another-world" });
-    await expect(chat.locator(".dr-character-status")).toContainText("another copy of the world");
+    await expect(chat.locator(".dr-character-status")).toContainText("previous world instance");
     await expect(chat.locator(".dr-character-row")).toHaveCount(1);
     await chat.reload();
     await expect(chat.locator(".dr-character-row")).toContainText("Happy");
@@ -459,6 +459,10 @@ test("character sheets: a verified local request ignores obsolete scope tags and
     await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     await expect(chat.locator(".dr-character-row")).toHaveCount(2);
     await expect(chat.locator(".dr-cast-portrait.right")).toHaveAccessibleName(/Mira/);
+    const choiceButtons = chat.locator("[data-deeprole-choices-host]").locator(".grid button");
+    await expect(choiceButtons).toHaveCount(4);
+    expect(await choiceButtons.evaluateAll(buttons => buttons.map(button => (button as HTMLElement).dataset.choiceKind))).toEqual(["positive", "neutral", "negative", "surprise"]);
+    expect(await choiceButtons.evaluateAll(buttons => new Set(buttons.map(button => getComputedStyle(button).backgroundColor)).size)).toBe(4);
     await chat.screenshot({ path: path.resolve("private-assets/character-request-proof-20261003.png") });
     expect((await databaseRecords(panel)).find(r => r.id === hero.id).data.description).toBe("ORIGINAL");
     await chat.reload(); await expect(chat.locator(".dr-character-row")).toHaveCount(2);
