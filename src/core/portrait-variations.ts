@@ -1,6 +1,8 @@
 import type { CharacterScene, CharacterSheet, PortraitCycle, SceneEntity } from "./types";
 
 export const MAX_PORTRAIT_VARIATIONS = 12;
+// Removed/renamed active emotions keep their local images and shuffle history.
+export const MAX_STORED_PORTRAIT_EMOTIONS = 64;
 export const validPortrait = (value: unknown): value is string => typeof value === "string" && value.length <= 180_000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
 const variationCache = new WeakMap<object, { source: unknown[]; images: string[] }>();
 export const portraitVariations = (value: unknown): string[] => {
@@ -23,7 +25,7 @@ export function validPortraitCycles(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const safe = (key: string) => key.length > 0 && key.length <= 160 && !["__proto__", "prototype", "constructor"].includes(key);
   return Object.keys(value).length <= 100 && Object.entries(value).every(([id, cycles]) => safe(id) && cycles && typeof cycles === "object" && !Array.isArray(cycles)
-    && Object.keys(cycles).length <= 12 && Object.entries(cycles).every(([emotion, cycle]) => {
+    && Object.keys(cycles).length <= MAX_STORED_PORTRAIT_EMOTIONS && Object.entries(cycles).every(([emotion, cycle]) => {
       if (!safe(emotion) || emotion.length > 32 || !cycle || typeof cycle !== "object" || Array.isArray(cycle)) return false;
       const c = cycle as Partial<PortraitCycle>;
       return typeof c.key === "string" && c.key.length <= 40 && Array.isArray(c.order) && c.order.length > 0 && c.order.length <= MAX_PORTRAIT_VARIATIONS

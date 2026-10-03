@@ -16,7 +16,9 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
   // Vertical movement has room even on the 320px screen.
   const oldY = (await meter.boundingBox())!.y;
   await grip.press("ArrowDown"); expect((await meter.boundingBox())!.y).toBeCloseTo(oldY + 8, 0);
-  for (const id of ["meter", "memory", "choices", "characters", "scene"]) await page.locator(`[data-widget="${id}"] .dr-widget-tools button`).last().click();
+  for (const id of ["meter", "memory", "choices", "characters", "scene"]) {
+    const tile = page.locator(`[data-widget="${id}"]`); await tile.hover(); await tile.locator(".dr-widget-tools button").last().click();
+  }
   const buttons = page.locator("[data-restore-widget]"); await expect(buttons).toHaveCount(5);
   const boxes = await buttons.evaluateAll(nodes => nodes.map(n => ({ y: n.getBoundingClientRect().y, right: n.getBoundingClientRect().right })));
   expect(new Set(boxes.map(b => b.y)).size).toBe(1); expect(Math.max(...boxes.map(b => b.right))).toBeLessThanOrEqual(width);
@@ -50,4 +52,52 @@ test("late initialization fits the panel stack back inside the viewport", async 
   await expect(page.locator(".dr-widget-deck")).toHaveCount(0);
   await page.evaluate(() => (window as any).setWidgetState({ pageReady: true }));
   await expect.poll(async () => { const rect = (await page.locator('[data-widget="scene"]').boundingBox())!; return rect.y + rect.height; }).toBeLessThanOrEqual(650);
+});
+
+for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`panel tools reveal only on their own hover ${locale} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 950 });
+  await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);
+  const tiles = page.locator(".dr-widget-tile"), tools = page.locator(".dr-widget-tools");
+  await expect(tiles).toHaveCount(5);
+  const rects = () => tiles.evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }));
+  const before = await rects();
+  await page.mouse.move(width - 1, 949);
+  for (const toolbar of await tools.all()) { await expect(toolbar).toHaveCSS("opacity", "0"); await expect(toolbar).toHaveCSS("pointer-events", "none"); }
+  const allGrip = page.locator(".dr-widget-deck-tools>.dr-widget-move");
+  await expect(allGrip).toHaveCSS("opacity", "0");
+  await page.screenshot({ path: info.outputPath(`panels-idle-${locale}-${width}.png`) });
+  for (let i = 0; i < 5; i++) {
+    await tiles.nth(i).hover();
+    for (let j = 0; j < 5; j++) await expect(tools.nth(j)).toHaveCSS("opacity", i === j ? "1" : "0");
+    await expect(allGrip).toHaveCSS("opacity", "0");
+  }
+  expect(await rects()).toEqual(before);
+  const panel = page.locator('[data-widget="characters"]'); await panel.hover();
+  await page.screenshot({ path: info.outputPath(`panel-hover-${locale}-${width}.png`) });
+  await panel.locator(".dr-widget-tools button").last().click();
+  const restore = page.locator('[data-restore-widget="characters"]'); await expect(restore).toBeVisible();
+  await page.mouse.move(width - 1, 949); await expect(restore).toHaveCSS("opacity", "1");
+  await restore.click(); await expect(panel).toBeVisible();
+  // A mouse click can leave focus behind; that alone must not keep tools showing.
+  await page.mouse.move(width - 1, 949); await expect(panel.locator(".dr-widget-tools")).toHaveCSS("opacity", "0");
+  await page.locator(".dr-widget-dock").hover(); await expect(allGrip).toHaveCSS("opacity", "1");
+  await page.mouse.move(width - 1, 949); await expect(allGrip).toHaveCSS("opacity", "0");
+  await page.keyboard.press("Tab"); await panel.locator(".dr-widget-move").focus();
+  await expect(panel.locator(".dr-widget-tools")).toHaveCSS("opacity", "1");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(panel.locator(".dr-widget-tools")).toHaveCSS("transition-duration", "0s");
+});
+
+test("touch panels keep move and minimize controls available", async ({ browser }, info) => {
+  const context = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 850 } });
+  try {
+    const page = await context.newPage(); await page.goto("http://127.0.0.1:4173/tests/fixtures/page-widget.html?panels=1&locale=ru");
+    expect(await page.evaluate(() => matchMedia("(hover:hover) and (pointer:fine)").matches)).toBe(false);
+    const panel = page.locator('[data-widget="characters"]');
+    await expect(panel.locator(".dr-widget-tools")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".dr-widget-deck-tools>.dr-widget-move")).toHaveCSS("opacity", "1");
+    await panel.locator(".dr-widget-tools button").last().tap();
+    await page.locator('[data-restore-widget="characters"]').tap(); await expect(panel).toBeVisible();
+    await page.screenshot({ path: info.outputPath("touch-panels.png") });
+  } finally { await context.close(); }
 });

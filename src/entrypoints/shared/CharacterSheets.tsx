@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2, Expand, Pencil, ArrowLeft } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutors, characterSaveError } from "../../core/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutors, characterSaveError, MAX_ACTIVE_EMOTIONS } from "../../core/characters";
 import type { CharacterEdit } from "../../storage/characters";
 import { MAX_PORTRAIT_VARIATIONS, portraitVariations, scenePortraitIndex } from "../../core/portrait-variations";
 import { characterEditBaseline, type CharacterEditBaseline } from "../../core/character-edit";
@@ -32,7 +32,7 @@ export function CharacterSettings({ settings, onSettings, worldEmotions, onEmoti
         void Promise.resolve(onSettings({ ...settings, portraitLayoutResetAt: Math.max(Date.now(), (settings.portraitLayoutResetAt ?? 0) + 1) })).catch(() => setLayoutError(true)).finally(() => setBusy(false));
       }}>{t("layoutResetAll")}</button>
       {layoutError && <p role="alert" className="error-text">{t("layoutFailed")}</p>}
-      <label className="field-label" htmlFor={emotionsId}>{t("emotions")}</label><textarea id={emotionsId} rows={6} maxLength={396} value={draft} onChange={e => { setDraft(e.target.value); setError(false); }} aria-describedby="dr-emotions-help" />
+      <label className="field-label" htmlFor={emotionsId}>{t("emotions")}</label><textarea id={emotionsId} rows={6} maxLength={MAX_ACTIVE_EMOTIONS * 33} value={draft} onChange={e => { setDraft(e.target.value); setError(false); }} aria-describedby="dr-emotions-help" />
       <p id="dr-emotions-help" className="setting-copy">{t("emotionsHint")}</p>
       {error && <p role="alert" className="error-text">{t(validEmotions(emotions) ? "failed" : "emotionError")}</p>}
       <button className="button secondary" disabled={busy} onClick={() => { if (!validEmotions(emotions)) { setError(true); return; } setBusy(true); void Promise.resolve(onEmotions ? onEmotions(emotions) : onSettings({ ...settings, characterEmotions: emotions })).catch(() => setError(true)).finally(() => setBusy(false)); }}>{t("saveEmotions")}</button>

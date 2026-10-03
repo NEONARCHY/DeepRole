@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles } from "../src/core/portrait-variations";
-import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes } from "../src/core/characters";
+import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes, validEmotions } from "../src/core/characters";
 import { parseWidgetLayout } from "../src/entrypoints/content/WidgetDeck";
 import type { CharacterScene, PortraitCycle, SceneEntity } from "../src/core/types";
 
@@ -9,6 +9,19 @@ const person: SceneEntity = { id: "mira", name: "Mira", kind: "character", world
 const scene = (): CharacterScene => ({ revision: "1", presentIds: ["mira"], states: { mira: { ...EMPTY_STATUS } }, updatedAt: 1 });
 
 describe("portrait variation cycles", () => {
+  it("keeps archived portrait emotions independently of the 32 active model emotions", () => {
+    const names = ["neutral", ...Array.from({ length: 63 }, (_, i) => `mood-${i}`)];
+    const sprites = Object.fromEntries(names.map(name => [name, images]));
+    const cycles = Object.fromEntries(names.map(name => [name, nextPortraitCycle(images)]));
+    expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites })).toBe(true);
+    expect(validPortraitCycles({ mira: cycles })).toBe(true);
+    expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { ...sprites, extra: images } })).toBe(false);
+    expect(validPortraitCycles({ mira: { ...cycles, extra: nextPortraitCycle(images) } })).toBe(false);
+    expect(validEmotions(names.slice(0, 32))).toBe(true);
+    expect(validEmotions(names.slice(0, 33))).toBe(false);
+    const prompt = characterInstruction("w", "a", [{ ...person, characterSheet: { ...EMPTY_CHARACTER, sprites } }], scene(), ["neutral", "happy"], [], "Mira");
+    expect(prompt).not.toContain("mood-"); expect(prompt).not.toContain("base64");
+  });
   it("accepts legacy portraits and bounded image arrays, rejects unsafe or duplicate images", () => {
     expect(validCharacterSheet(person.characterSheet)).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: images[0] } })).toBe(true);

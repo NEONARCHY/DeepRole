@@ -67,7 +67,7 @@ BDS переносит названия, текст и режимы записе
 
 ### Перемещение и сворачивание панелей
 
-Список персонажей по умолчанию уже. У контекста чата, подключённой памяти, персонажей, переключателя вариантов и мира есть свои ручки перемещения и маленькая кнопка **−**. Нажмите **Вместе**, чтобы любая ручка двигала группу, или используйте общую ручку над панелями. Выключите **Вместе** для независимого перемещения.
+Список персонажей по умолчанию уже. У контекста чата, подключённой памяти, персонажей, переключателя вариантов и мира есть свои ручки перемещения и маленькая кнопка **−**. Они появляются при наведении только на свою панель или при фокусе с клавиатуры; на сенсорном экране доступны постоянно. Нажмите **Вместе**, чтобы любая ручка двигала группу, или используйте общую ручку над панелями. Выключите **Вместе** для независимого перемещения.
 
 Свёрнутые панели собираются в один ряд значков. Нажмите значок, чтобы вернуть панель. Стрелка сброса возвращает начальную расстановку и разворачивает всё. Позиции и сворачивание сохраняются в этом браузере; на лор и токены не влияют. Ручки перемещения и изменения размера **портретов** появляются при наведении или клавиатурном фокусе; на сенсорном экране доступны постоянно.
 
@@ -77,7 +77,7 @@ BDS переносит названия, текст и режимы записе
 
 Под индикаторами — компактные имена и статусы. Крупные портреты доступны в центральной галерее и плавающем слое рядом с вариантами. В галерее нажмите карандаш, в плавающем слое — изображение, чтобы изменить анкету.
 
-В **Настройки → Приложение → Персонажи** можно сохранить свой список эмоций: одна в строке, до 12 вместе с `neutral`. Если в чате выбран мир, список сохраняется для этого мира. Без выбранного мира меняется общий список для миров без собственного списка. Новые названия передаются DeepSeek с последующим сообщением. Удаление эмоции из списка не удаляет ваши картинки; их можно убрать в карточке.
+В **Настройки → Приложение → Персонажи** можно сохранить свой список эмоций: одна в строке, до 32 вместе с `neutral`. Если в чате выбран мир, список сохраняется для этого мира. Без выбранного мира меняется общий список для миров без собственного списка. Новые названия передаются DeepSeek с последующим сообщением. Удаление эмоции из списка не удаляет ваши картинки; их можно убрать в карточке. Карточка хранит до 64 наборов эмоций, включая неактивные. DeepSeek получает только активный список из настроек, без изображений.
 
 Изображения хранятся локально. При загрузке уменьшаются до 384 px по большей стороне и сжимаются. DeepSeek получает название эмоции, **но не картинку**. Автоматического рисования новых изображений во время чата нет: переключаются только ваши готовые варианты.
 
@@ -88,7 +88,7 @@ BDS переносит названия, текст и режимы записе
 - Длинные анкеты всё равно стоят токенов. Пишите факты коротко; для больших справок используйте обычные записи лора. При превышении бюджета приложение предупреждает, а не обрезает сохранённый текст.
 - Принимается только завершённый блок последнего ответа с подходящими миром, чатом и версией. Запоздалый ответ не затирает ручную правку. Повторно открытый ответ не применяется второй раз.
 - Если DeepSeek пропустил блок или нарушил формат, карточки остаются прежними и показывается короткий статус. Новая скрытая генерация не запускается. При ошибке сохранения доступна явная повторная попытка.
-- Автообновление ограничено 40 персонажами мира, 12 участниками сцены и шестью показателями на карточку. До 12 эмоций и до 12 изображений на каждую; общий лимит встроенных изображений — около 25 МБ в текстовом представлении.
+- Автообновление ограничено 40 персонажами мира, 12 участниками сцены и шестью показателями на карточку. До 32 активных эмоций и до 12 изображений на каждую; общий лимит встроенных изображений — около 25 МБ в текстовом представлении.
 - Кнопка **Экспорт** открывает выбор: **Этот мир** переносит лор, анкеты, портреты и список эмоций; **Полная резервная копия** дополнительно переносит все миры, настройки, состояния чатов и расстановку портретов. При импорте мира его эмоции подключаются автоматически, не заменяя настройки других миров. Локальный сейф шифрует эти данные вместе с остальной библиотекой.
 
 Технический блок в ответе сворачивается в короткий статус: сам сюжет и размышления не скрываются. Приложение не может гарантировать, что DeepSeek всегда соблюдёт формат или правильно поймёт события. Любое состояние можно исправить вручную.
@@ -109,7 +109,7 @@ Each accepted scene update advances a shuffled cycle without repeating an image 
 
 ### Panel controls and automatic states
 
-Context, memory, characters, reply-choice toggle and world controls have individual drag handles and **−** buttons. Enable **Together** to move the group using any handle, or use the top group handle. Minimized panels snap into one row of icons; select an icon to restore it. The reset arrow restores the default layout and expands all panels. Layout is saved in this browser and does not affect lore or tokens. Portrait drag and resize handles appear on hover or keyboard focus; touch devices keep them available.
+Context, memory, characters, reply-choice toggle and world controls have individual drag handles and **−** buttons, revealed only on their own panel’s hover or keyboard focus. Touch devices keep them available. Enable **Together** to move the group using any handle, or use the top group handle. Minimized panels snap into one row of icons; select an icon to restore it. The reset arrow restores the default layout and expands all panels. Layout is saved in this browser and does not affect lore or tokens. Portrait drag and resize handles appear on hover or keyboard focus; touch devices keep them available.
 
 Mood, condition, current goal, relationships and stats already update automatically when DeepSeek includes valid changes in its completed reply. Missing or invalid updates leave previous values unchanged. These are the model's interpretation of the scene, not independently measured scores. Shared profile fields are not overwritten. Save manual edits to include them in the next message.
 
@@ -123,4 +123,4 @@ All scene participants have separate floating portraits, outside the reply optio
 
 The portrait editor starts on the current mood. **Portrait emotion** previews an image without changing the character’s mood or requiring a save. Change the actual mood under **Now in this chat**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
 
-Shared profiles belong to the world; automatically updated states belong only to the current chat. Existing profiles are not overwritten by model replies. The first two filled stats appear below the portraits, in sheet order; open a portrait to see or edit all six. Unknown values stay empty. This uses saved scene data with no extra requests or tokens, not an independent check of the story. Images stay local; the model receives only allowed emotion names. Upload portraits in each sheet and edit the emotion list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports exclude chat states. See ROADMAP for automated and live-account verification status.
+Shared profiles belong to the world; automatically updated states belong only to the current chat. Existing profiles are not overwritten by model replies. The first two filled stats appear below the portraits, in sheet order; open a portrait to see or edit all six. Unknown values stay empty. This uses saved scene data with no extra requests or tokens, not an independent check of the story. Images stay local; the model receives only allowed emotion names. You can configure up to 32 active emotions, including neutral. Sheets can retain up to 64 image sets, including retired emotions; removing a name from the active list does not delete its portraits. Upload portraits in each sheet and edit the emotion list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports exclude chat states. See ROADMAP for automated and live-account verification status.

@@ -18,12 +18,14 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     const state = { emotion: "neutral", condition: "Safe", goal: "Find the key", relationship: "", stats: [{ label: "Energy", value: "Rested" }] };
     const people = ["Noah", "Mira", "Leon", "Guard"].map((name, index) => ({ id: name.toLowerCase(), worldId: "w", name, kind: "character", description: "ORIGINAL", aliases: [], memberIds: [], characterSheet: { gender: "neutral", protagonist: index === 0, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
     people[1]!.characterSheet.sprites = { neutral: variations };
+    people[2]!.characterSheet.sprites = Object.fromEntries(["neutral", "retired-mood", ...Array.from({ length: 10 }, (_, i) => `mood-${i}`)].map(name => [name, variations]));
+    const emotions = ["neutral", "happy", "worried", ...Array.from({ length: 29 }, (_, i) => `emotion-${i}`)];
     const initial = { revision: "v", presentIds: people.map(p => p.id), partnerIds: ["mira", "leon"], partnerId: "mira", states: Object.fromEntries(people.map(p => [p.id, state])), updatedAt: 1 };
     const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", bookId: null, focusIds: [], messageCountAtAnalysis: 0, characterScenes: { w: initial }, createdAt: 1, updatedAt: 1 };
     await panel.evaluate(async rows => {
       await new Promise<void>((resolve, reject) => { const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error); open.onsuccess = () => { const db = open.result; const tx = db.transaction("records", "readwrite"); for (const [kind, data] of rows) tx.objectStore("records").put({ pk: `${kind}:${data.id}`, kind, id: data.id, data, updatedAt: 1 }); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); }; });
       await (window as any).chrome.storage.local.set({ deeprole_settings: { locale: "en", onboardingComplete: true, characterSheetsEnabled: true, portraitLayoutResetAt: 0 } });
-    }, [["world", { id: "w", name: "Observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 }], ...people.map(p => ["entity", p]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]] as Array<[string, any]>);
+    }, [["world", { id: "w", name: "Observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, characterEmotions: emotions, createdAt: 1, updatedAt: 1 }], ...people.map(p => ["entity", p]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]] as Array<[string, any]>);
     const records = () => panel.evaluate(() => new Promise<any[]>(resolve => { const open = indexedDB.open("deeprole"); open.onsuccess = () => { const db = open.result; const request = db.transaction("records").objectStore("records").getAll(); request.onsuccess = () => { resolve(request.result); db.close(); }; }; }));
     const chat = await context.newPage(); await chat.goto(binding.chatUrl); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
     await expect.poll(async () => { const rect = (await chat.locator('[data-widget="scene"]').boundingBox())!; return Math.round(rect.y + rect.height); }).toBeLessThanOrEqual(720);
@@ -73,6 +75,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.goto(binding.chatUrl); await append(payload); await expect(mira).toHaveCSS("position", "absolute"); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     expect((await records()).find(r => r.id === binding.id).data.characterScenes.w).toEqual(current.characterScenes.w); expect(prompts).toHaveLength(1);
     await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);
+    await chat.locator('[data-widget="characters"]').hover();
     await chat.getByRole("button", { name: "Minimize: Characters", exact: true }).click();
     await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
     await chat.reload(); await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
@@ -93,6 +96,8 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     let hero = (await records()).find(r => r.id === "leon").data;
     expect(hero.characterSheet.protagonist).toBe(true);
     expect(hero.characterSheet.sprites.happy).toHaveLength(1);
+    expect(Object.keys(hero.characterSheet.sprites)).toHaveLength(13);
+    expect(hero.characterSheet.sprites["retired-mood"]).toEqual(variations);
     expect((await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Open the telescope");
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
@@ -111,5 +116,14 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
     await expect(dialog.getByLabel("Current goal", { exact: true })).toHaveValue("Open the telescope");
+    await expect(dialog.getByLabel("Mood", { exact: true }).locator("option")).toHaveCount(32);
+    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("retired-mood");
+    await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
+    await dialog.getByRole("button", { name: "Close", exact: true }).first().click();
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon studies the stars." }) }));
+    expect(prompts.at(-1)).toContain(emotions[31]!);
+    expect(prompts.at(-1)).not.toContain("retired-mood");
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: emotions[31] } }] });
+    await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.emotion).toBe(emotions[31]);
   } finally { await context.close(); }
 });

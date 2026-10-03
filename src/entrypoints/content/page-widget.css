@@ -69,6 +69,13 @@ button { font: inherit; }
 .dr-widget-minimized:empty{display:none}
 .dr-widget-minimized button{flex:none;min-width:32px;min-height:32px;border-radius:10px;color:var(--dr-text)}
 .dr-widget-dock small{max-width:220px;color:var(--dr-warning)}
+/* Keep touch controls available; mouse tools belong only to their own panel.
+   Opacity preserves geometry and keyboard focus, unlike display/visibility. */
+@media (hover:hover) and (pointer:fine) {
+  .dr-widget-tools,.dr-widget-deck-tools>.dr-widget-move{opacity:0;pointer-events:none;transition:opacity .14s ease-out}
+  .dr-widget-tile:hover>.dr-widget-tools,.dr-widget-tools:has(:focus-visible),.dr-widget-tools:has(.dr-widget-move:active){opacity:1;pointer-events:auto}
+  .dr-widget-dock:hover .dr-widget-deck-tools>.dr-widget-move,.dr-widget-deck-tools>.dr-widget-move:is(:focus-visible,:active){opacity:1;pointer-events:auto}
+}
 .dr-chat-meter-heading { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:10px; line-height:1.2; }
 .dr-chat-meter-heading>span { color:var(--dr-muted); }
 .dr-chat-meter-heading>strong { color:var(--dr-text); font-size:10px; font-variant-numeric:tabular-nums; white-space:nowrap; }

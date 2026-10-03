@@ -22,6 +22,22 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   const settings = page.locator(".dr-character-settings");
   await expect(settings.getByRole("textbox")).toBeVisible();
   await expect(settings.getByRole("checkbox")).toHaveCount(2);
+  const emotions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `emotion-${i}`)];
+  const saveEmotions = settings.getByRole("button", { name: locale === "ru" ? "Сохранить эмоции" : "Save emotions", exact: true });
+  await settings.getByRole("textbox").fill(emotions.join("\n")); await saveEmotions.click();
+  await expect(settings.getByRole("alert")).toHaveCount(0);
+  // This preview intentionally reseeds storage on reload; verify persistence
+  // directly and remount the settings section. MV3 tests cover browser reload.
+  await expect.poll(() => page.evaluate(async () => {
+    const { repository } = await import("/src/storage/repository.ts" as string);
+    return (await repository.get("world", "world-a"))?.characterEmotions;
+  })).toEqual(emotions);
+  await page.getByRole("button", { name: locale === "ru" ? "Память" : "Memory", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Приложение" : "App", exact: true }).click();
+  await expect(settings.getByRole("textbox")).toHaveValue(emotions.join("\n"));
+  await settings.getByRole("textbox").fill([...emotions, "extra"].join("\n")); await saveEmotions.click();
+  await expect(settings.getByRole("alert")).toContainText("32");
+  await settings.getByRole("textbox").fill(emotions.join("\n")); await saveEmotions.click();
   expect((await new AxeBuilder({ page }).include(".dr-character-settings").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await settings.screenshot({ path: info.outputPath(`character-settings-${locale}.png`) });

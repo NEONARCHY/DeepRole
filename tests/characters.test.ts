@@ -4,7 +4,7 @@ import { validDataRecord, parseBackupSettings } from "../src/core/record-validat
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { applyCharacterTurn, saveCharacter } from "../src/storage/characters";
-import { removeEntity, removeWorld, exportWorld, cloneWorldPackage, duplicateEntity } from "../src/storage/worlds";
+import { removeEntity, removeWorld, exportWorld, parseWorldPackage, cloneWorldPackage, duplicateEntity } from "../src/storage/worlds";
 import { parseBackup, createBackup } from "../src/storage/backup";
 import { injectIntoJsonBody } from "../src/core/request-injection";
 import type { ChatBinding, SceneEntity, WorldProfile } from "../src/core/types";
@@ -122,6 +122,48 @@ it("preserves portrait variations through saves, automatic updates and portable/
   const rows = await repo.rawRecords(); expect(rows.every(validDataRecord)).toBe(true);
   expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(rows);
   expect(rows.find(r => r.kind === "entity")!.data).toEqual(expect.objectContaining({ description: entity.description }));
+});
+
+it("saves a thirteenth portrait emotion after replacing an active emotion, including reopening and exports", async () => {
+  const repo = await setup();
+  const names = ["neutral", "retired-mood", ...Array.from({ length: 10 }, (_, i) => `mood-${i}`)];
+  const images = ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"];
+  let person = { ...entity, characterSheet: { ...entity.characterSheet!, sprites: Object.fromEntries(names.map(name => [name, images])) } };
+  await repo.put("entity", person);
+  const active = [...names.filter(name => name !== "retired-mood"), "happy"];
+  await repo.put("world", { ...world, characterEmotions: active });
+  const opened = () => ({ ...scope(), original: characterEditBaseline(person, [person]), entityId: person.id, name: person.name, sheet: structuredClone(person.characterSheet!), state: structuredClone(EMPTY_STATUS), present: false });
+  let edit = opened(); edit.sheet.sprites.happy = images;
+  await saveCharacter(edit, repo);
+  person = (await repo.get<SceneEntity>("entity", entity.id))! as typeof person;
+  expect(Object.keys(person.characterSheet.sprites)).toHaveLength(13);
+  // The editor's opening snapshot can now itself contain thirteen image groups.
+  edit = opened(); edit.sheet.protagonist = true; edit.sheet.appearance = "Green coat";
+  await saveCharacter(edit, repo);
+  const pack = await exportWorld("w", repo);
+  const copied = cloneWorldPackage(pack).find(r => r.kind === "entity")!.data as SceneEntity;
+  expect(copied.characterSheet).toMatchObject({ protagonist: true, appearance: "Green coat", sprites: { "retired-mood": images, happy: images } });
+  expect(Object.keys(copied.characterSheet!.sprites)).toHaveLength(13);
+  expect((pack.records.find(r => r.kind === "world")!.data as WorldProfile).characterEmotions).toEqual(active);
+  expect(pack.records.every(validDataRecord)).toBe(true);
+  const rows = await repo.rawRecords();
+  expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(rows);
+  expect(rows.find(r => r.kind === "entity")!.data).toMatchObject({ description: entity.description });
+});
+
+it("preserves 32 active emotions through settings, world transfer and a model update", async () => {
+  const repo = await setup();
+  const emotions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `emotion-${i}`)];
+  expect(parseBackupSettings({ characterEmotions: emotions }).characterEmotions).toEqual(emotions);
+  await repo.put("world", { ...world, characterEmotions: emotions });
+  const pack = await exportWorld("w", repo);
+  expect((cloneWorldPackage(pack).find(r => r.kind === "world")!.data as WorldProfile).characterEmotions).toEqual(emotions);
+  expect(parseWorldPackage(JSON.stringify(pack)).records.every(validDataRecord)).toBe(true);
+  const reply = { ...turn(), updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: emotions[31]! } }] };
+  const prompt = characterInstruction("w", "a", [entity], undefined, emotions, [], "Mira");
+  expect(prompt).toContain(emotions[31]!);
+  await applyCharacterTurn(scope(), reply, emotions, repo);
+  expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.emotion).toBe(emotions[31]);
 });
 
 describe("portrait stat highlights", () => {
