@@ -36,7 +36,6 @@ export type DeepRoleMessage =
   | { type: "DR_PENDING_SUGGESTIONS"; items: MemoryCandidate[] }
   | { type: "DR_SERVICE_RESULT"; outcome: "no-changes" }
   | { type: "DR_OPEN_PANEL" }
-  | { type: "DR_OPEN_FULL_MENU" }
   | { type: "DR_SAVE_SELECTION"; text: string };
 
 export const PENDING_SUGGESTIONS_KEY = "deeprole_pending_suggestions";

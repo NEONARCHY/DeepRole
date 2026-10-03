@@ -29,16 +29,6 @@ export default defineBackground(() => {
   });
 
   browser.runtime.onMessage.addListener((message: DeepRoleMessage, sender) => {
-    if (message.type === "DR_OPEN_FULL_MENU") {
-      const url = browser.runtime.getURL("/sidepanel.html");
-      if (sender.id !== browser.runtime.id || !sender.url?.startsWith(`${url}?embedded=1`)) return;
-      return browser.tabs.query({}).then(async tabs => {
-        const existing = tabs.find(tab => tab.url === url && tab.windowId === sender.tab?.windowId);
-        if (existing?.id !== undefined) await browser.tabs.update(existing.id, { active: true });
-        else await browser.tabs.create({ url, active: true, ...(sender.tab?.windowId !== undefined ? { windowId: sender.tab.windowId } : {}) });
-        return { ok: true };
-      });
-    }
     if (message.type === "DR_MIGRATE_LEGACY") {
       if (sender.id !== browser.runtime.id) return;
       return migrateLegacyProposals().then(() => ({ ok: true }), () => ({ ok: false }));

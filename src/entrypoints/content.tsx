@@ -7,6 +7,8 @@ import { nativeMessageIdentity } from "../adapters/deepseek-message-dom";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards } from "../adapters/deepseek-choices-dom";
 import { findServiceReplyRows, findServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
+import { DEFAULT_SETTINGS } from "../core/defaults";
+import { startupDeadline } from "../core/startup";
 import { formatMemoryContext } from "../core/context";
 import { parseSceneChoices, sceneChoiceInstruction, sceneChoiceRecoveryPrompt, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
 import { createId } from "../core/id";
@@ -85,12 +87,6 @@ export default defineContentScript({
 });
 
 interface PageScope { url: string; chatId: string | null }
-function startupDeadline<T>(task: Promise<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error("startup-timeout")), 8000);
-    task.then(resolve, reject).finally(() => window.clearTimeout(timer));
-  });
-}
 interface ContextDelivery {
   characterRequest?: CharacterRequestReceipt;
   scope: PageScope;
@@ -109,7 +105,7 @@ class PageController {
   private characterStatus: CharacterCopyKey = "idle";
   private readonly adapter = new DeepSeekDomAdapter();
   private root: Root | null = null;
-  private settings!: DeepRoleSettings;
+  private settings: DeepRoleSettings = { ...DEFAULT_SETTINGS };
   private entries: MemoryEntry[] = [];
   private books: MemoryBook[] = [];
   private worlds: WorldProfile[] = [];
@@ -179,6 +175,8 @@ class PageController {
   async start() {
     window.addEventListener("message", (event) => this.handleBridgeMessage(event));
     try {
+      this.settings = await startupDeadline(getSettings());
+      this.state.locale = this.settings.locale;
       this.draftScene = (await startupDeadline(browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage))) ?? { ...EMPTY_SCENE };
       this.previousChatId = this.adapter.getChatId();
       const savedPosition = await startupDeadline(browser.storage.local.get(CONTEXT_INDICATOR_POSITION_KEY));

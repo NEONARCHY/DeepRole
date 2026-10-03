@@ -1,18 +1,26 @@
 import { chromium, expect, test } from "@playwright/test";
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled", "rejected", "library-rejected", "library-stalled", "normal", "normal-ru"] as const) test(`installed ${browser} menu survives ${mode} startup`, async ({}, info) => {
+for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled", "rejected", "library-rejected", "library-stalled", "normal", "normal-ru", "no-worker"] as const) test(`installed ${browser} menu survives ${mode} startup`, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Chrome MV3 installed build");
   const dir = path.join(info.project.outputDir, "profiles");
   await mkdir(dir, { recursive: true });
   const profile = await mkdtemp(path.join(dir, "startup-"));
-  const extension = path.resolve(".output/chrome-mv3");
+  let extension = path.resolve(".output/chrome-mv3");
+  if (mode === "no-worker") {
+    extension = info.outputPath("workerless-extension");
+    await cp(path.resolve(".output/chrome-mv3"), extension, { recursive: true });
+    const manifestPath = path.join(extension, "manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    delete manifest.background;
+    await writeFile(manifestPath, JSON.stringify(manifest));
+  }
   const context = await chromium.launchPersistentContext(profile, { ...(browser === "edge" ? { channel: "msedge" } : { executablePath: "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe" }), headless: true, args: [`--load-extension=${extension}`, `--disable-extensions-except=${extension}`] });
   try {
-    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
-    if (mode === "normal-ru") await worker.evaluate(() => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru" } }));
-    await worker.evaluate(mode => {
+    const worker = mode === "no-worker" ? undefined : context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
+    if (mode === "normal-ru") await worker!.evaluate(() => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru" } }));
+    await worker?.evaluate(mode => {
       const api = (globalThis as any).chrome;
       const localGet = api.storage.local.get.bind(api.storage.local);
       (globalThis as any).restoreStartup = () => { api.storage.local.get = localGet; api.storage.session.get = get; };
@@ -34,11 +42,13 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
     }, mode);
     await context.route("https://chat.deepseek.com/**", route => route.fulfill({ contentType: "text/html", body: '<main><form><textarea aria-label="Message"></textarea><button>Send</button></form></main>' }));
     const chat = await context.newPage();
+    const errors: string[] = [];
+    chat.on("pageerror", error => errors.push(error.message));
     await chat.goto("https://chat.deepseek.com/");
     await expect(chat.locator(".dr-launcher")).toBeVisible({ timeout: 12000 });
     if (!mode.startsWith("normal")) await expect(chat.getByRole("alert")).toContainText(/Memory could not connect|Память не подключилась/);
     else await expect(chat.getByRole("alert")).toHaveCount(0);
-    await worker.evaluate(() => (globalThis as any).restoreStartup());
+    await worker?.evaluate(() => (globalThis as any).restoreStartup());
     await chat.locator(".dr-launcher").click();
     const menu = chat.frameLocator("iframe[title='DeepRole']");
     if (browser === "brave") {
@@ -57,12 +67,41 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
       await expect.poll(() => context.pages().length).toBe(pageCount);
     } else await expect(menu.locator(".onboarding")).toBeVisible();
     await expect(chat.getByRole("textbox", { name: "Message" })).toHaveValue("");
+    expect(errors.filter(error => error.includes("sceneChoicesEnabled"))).toEqual([]);
     await chat.screenshot({ path: info.outputPath(`startup-${mode}.png`) });
-    if (!mode.startsWith("normal")) {
-      await worker.evaluate(() => (globalThis as any).restoreStartup());
+    if (!mode.startsWith("normal") && mode !== "no-worker") {
+      await worker!.evaluate(() => (globalThis as any).restoreStartup());
       await chat.reload();
       await expect(chat.locator(".dr-launcher")).toBeVisible();
       await expect(chat.getByRole("alert")).toHaveCount(0);
     }
+  } finally { await context.close(); }
+});
+
+for (const stalledKey of ["deeprole_settings", "deeprole_vault"]) test(`menu bounds stalled ${stalledKey} reads and recovers`, async ({}, info) => {
+  test.skip(info.project.name !== "chromium", "Installed MV3 build");
+  const dir = path.join(info.project.outputDir, "profiles");
+  await mkdir(dir, { recursive: true });
+  const profile = await mkdtemp(path.join(dir, "menu-timeout-"));
+  const extension = path.resolve(".output/chrome-mv3");
+  const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--load-extension=${extension}`, `--disable-extensions-except=${extension}`] });
+  try {
+    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
+    const id = new URL(worker.url()).host;
+    const menu = await context.newPage();
+    await menu.addInitScript(key => {
+      const api = (globalThis as any).chrome;
+      if (!api?.storage?.local) return;
+      const original = api.storage.local.get.bind(api.storage.local);
+      (globalThis as any).restoreMenuReads = () => { api.storage.local.get = original; };
+      api.storage.local.get = (keys: string) => keys === key ? new Promise(() => {}) : original(keys);
+    }, stalledKey);
+    await menu.goto(`chrome-extension://${id}/sidepanel.html`);
+    await expect(menu.getByRole("alert")).toBeVisible({ timeout: 12000 });
+    await menu.screenshot({ path: info.outputPath("menu-timeout.png") });
+    await menu.evaluate(() => (globalThis as any).restoreMenuReads());
+    await menu.getByRole("button", { name: "Try again" }).click();
+    await expect(menu.locator(".onboarding")).toBeVisible();
+    await expect(menu.getByRole("alert")).toHaveCount(0);
   } finally { await context.close(); }
 });

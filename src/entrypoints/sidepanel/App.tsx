@@ -56,6 +56,7 @@ import { MemoryModeControl } from "../shared/MemoryModeControl";
 import { MemorySelectionSettings } from "./MemorySelectionSettings";
 import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
+import { startupDeadline } from "../../core/startup";
 import type { ServiceActivity } from "../../core/memory-experience";
 import { MemoryStatus, ServiceProgress } from "../shared/MemoryStatus";
 import { TooltipButton } from "../shared/TooltipButton";
@@ -159,10 +160,10 @@ export function App() {
   const refresh = useCallback(async () => {
     const generation = ++refreshGeneration.current;
     try {
-      const nextSettings = await getSettings();
+      const nextSettings = await startupDeadline(getSettings());
       if (generation !== refreshGeneration.current) return;
       setSettingsState(nextSettings);
-      const isLocked = await repository.isLocked();
+      const isLocked = await startupDeadline(repository.isLocked());
       if (generation !== refreshGeneration.current) return;
       setLocked(isLocked);
       if (isLocked) {
@@ -171,8 +172,8 @@ export function App() {
         setLoading(false);
         return;
       }
-      await browser.runtime.sendMessage({ type: "DR_MIGRATE_LEGACY" } satisfies DeepRoleMessage).catch(() => undefined);
-      const records = await repository.rawRecords();
+      await startupDeadline(browser.runtime.sendMessage({ type: "DR_MIGRATE_LEGACY" } satisfies DeepRoleMessage), 2000).catch(() => undefined);
+      const records = await startupDeadline(repository.rawRecords());
       if (generation !== refreshGeneration.current) return;
       setLoadError(false);
       setBooks(libraryRecords<MemoryBook>(records, "book")); setEntries(libraryRecords<MemoryEntry>(records, "entry"));
@@ -191,6 +192,16 @@ export function App() {
       if (generation === refreshGeneration.current) setLoading(false);
     }
   }, [clearPrivateState]);
+
+  const openMenuTab = async () => {
+    try {
+      const url = browser.runtime.getURL("/sidepanel.html");
+      const tabs = await startupDeadline(browser.tabs.query({ currentWindow: true }));
+      const existing = tabs.find(tab => tab.url === url);
+      if (existing?.id !== undefined) await browser.tabs.update(existing.id, { active: true });
+      else await browser.tabs.create({ url, active: true });
+    } catch { setToast(experienceText(settings.locale, "menuLoadError")); }
+  };
 
   const refreshPage = useCallback(async () => {
     const generation = ++pageGeneration.current;
@@ -394,7 +405,8 @@ export function App() {
   if (loadError) return <main className="center-screen" role="alert">
     <h1>DeepRole</h1>
     <p>{experienceText(settings.locale, "menuLoadError")}</p>
-    {embeddedMenu && <HelpButton className="button primary" onClick={() => void browser.runtime.sendMessage({ type: "DR_OPEN_FULL_MENU" } satisfies DeepRoleMessage).catch(() => setLoadError(true))}>{experienceText(settings.locale, "openMenuTab")}</HelpButton>}
+    {embeddedMenu && <HelpButton className="button primary" onClick={() => void openMenuTab()}>{experienceText(settings.locale, "openMenuTab")}</HelpButton>}
+    {toast && <p role="status">{toast}</p>}
     <HelpButton className="button" onClick={() => void refresh()}>{experienceText(settings.locale, "retryMenu")}</HelpButton>
   </main>;
   if (loading) return <LoadingScreen />;
