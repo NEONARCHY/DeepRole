@@ -1,6 +1,5 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
 
 async function records(page: Page) {
@@ -13,7 +12,8 @@ async function records(page: Page) {
 test("canonical memory stays synchronized through editing, sending, proposals and undo", async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Installed Chrome MV3 runtime; shared UI tested separately in Firefox");
   test.setTimeout(90000);
-  const profile = await mkdtemp(path.join(tmpdir(), "deeprole-memory-test-"));
+  const profiles = path.join(testInfo.project.outputDir, "profiles"); await mkdir(profiles, { recursive: true });
+  const profile = await mkdtemp(path.join(profiles, "deeprole-memory-test-"));
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${path.resolve(".output/chrome-mv3")}`, `--load-extension=${path.resolve(".output/chrome-mv3")}`] });
   context.setDefaultTimeout(10000);
   try {
@@ -111,6 +111,10 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect(chat.locator(".dr-service-state")).toContainText("Preparing the request");
     await chat.getByRole("textbox", { name: "Message", exact: true }).fill("Typed during preparation");
     await worker.evaluate(() => (globalThis as any).releasePreparation());
+    // The identical toast from the previous attempt may still be visible.
+    // Wait for this cancellation before clearing the draft for the next attempt.
+    await expect(chat.locator(".dr-service-state")).toHaveClass(/is-error/);
+    await expect(chat.getByRole("button", { name: "Update lore", exact: true })).toBeEnabled();
     await expect(chat.locator(".dr-toast")).toContainText("Your message is still in the chat box");
     await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("Typed during preparation");
     expect(sent).toHaveLength(beforeBusy);
@@ -192,7 +196,8 @@ test("canonical memory stays synchronized through editing, sending, proposals an
 test("new-chat lore drafting stays a proposal and preserves manual choices through the first SPA send", async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Installed Chrome MV3 runtime; shared UI tested separately in Firefox");
   test.setTimeout(90000);
-  const profile = await mkdtemp(path.join(tmpdir(), "deeprole-new-chat-test-"));
+  const profiles = path.join(testInfo.project.outputDir, "profiles"); await mkdir(profiles, { recursive: true });
+  const profile = await mkdtemp(path.join(profiles, "deeprole-new-chat-test-"));
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${path.resolve(".output/chrome-mv3")}`, `--load-extension=${path.resolve(".output/chrome-mv3")}`] });
   context.setDefaultTimeout(10000);
   try {

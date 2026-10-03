@@ -682,7 +682,16 @@ class PageController {
       busy, onRequest: (signature) => this.requestSceneChoices(signature),
     });
     const characters = this.state.characters;
-    syncChoicePortraits(!!characters && this.settings.characterSpritesEnabled !== false && !this.state.vaultLocked, characters?.entities ?? [], characters?.scene, this.state.locale, id => { if (this.state.characters) { this.state.characters.openId = id; this.render(); } });
+    const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;
+    const resetAt = this.settings.portraitLayoutResetAt ?? 0;
+    syncChoicePortraits(!!characters && this.settings.characterSpritesEnabled !== false && !this.state.vaultLocked, characters?.entities ?? [], characters?.scene, this.state.locale, id => { if (this.state.characters) { this.state.characters.openId = id; this.render(); } }, document, worldId && chatId ? {
+      scope: JSON.stringify([worldId, chatId]), layout: this.currentBinding()?.portraitLayouts?.[worldId], resetAt,
+      onSave: async (entityId, pose) => {
+        if (this.state.vaultLocked || chatId !== this.adapter.getChatId() || worldId !== this.currentScene().worldId) throw new Error("character-scope");
+        await repository.savePortraitLayout({ worldId, chatId, chatUrl, resetAt, entityId, pose });
+        if (chatId === this.adapter.getChatId() && worldId === this.currentScene().worldId) { await this.reload(); this.syncSceneChoices(); }
+      },
+    } : undefined);
   }
 
   private async saveCharacter(edit: Omit<CharacterEdit, "chatUrl">) {

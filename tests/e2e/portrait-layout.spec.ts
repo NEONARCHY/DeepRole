@@ -1,0 +1,80 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+async function cast(page: Page, count = 4) {
+  await page.waitForFunction(() => !!(window as any).getCast);
+  await page.evaluate(count => {
+    const current = (window as any).getCast();
+    const others = Array.from({ length: count - 2 }, (_, index) => ({ ...current.entities[1], id: `extra-${index}`, name: index === 0 ? "Leon" : `Visitor ${index}`, characterSheet: { ...current.entities[1].characterSheet, sprites: {} } }));
+    const entities = [...current.entities, ...others];
+    (window as any).setCast({ entities, scene: { ...current.scene, presentIds: entities.map((p: any) => p.id), partnerIds: ["mira", "extra-0"], partnerId: "mira", states: { ...current.scene.states, "extra-0": { ...current.scene.states.mira, emotion: "worried", stats: [{ label: "Energy", value: "Tired" }, { label: "Clues", value: "2" }] } } } });
+  }, count);
+}
+async function drag(page: Page, handle: Locator, dx: number, dy: number) {
+  await handle.scrollIntoViewIfNeeded(); const box = (await handle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy, { steps: 6 }); await page.mouse.up();
+}
+async function ratio(image: Locator) { const box = (await image.boundingBox())!; expect(box.width / box.height).toBeCloseTo(.75, 3); }
+
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) test(`independent multi-character portraits and constructor ${locale} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 950 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`); await cast(page);
+  const host = page.locator("[data-deeprole-choices-host]"); const widgets = host.locator(".dr-cast-widget");
+  await expect(widgets).toHaveCount(4);
+  await expect(host.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(2);
+  await expect(host.locator("section .dr-cast-widget")).toHaveCount(0);
+  for (const image of await widgets.locator("img").all()) await ratio(image);
+  const mira = host.locator('.dr-cast-widget[data-character-id="mira"]'); const leon = host.locator('.dr-cast-widget[data-character-id="extra-0"]');
+  await expect(leon.locator("small")).toHaveText(locale === "ru" ? "Тревога" : "Worried");
+  await expect(leon.locator(".dr-cast-highlights>span")).toHaveText(["Energy: Tired", "Clues: 2"]);
+  await host.screenshot({ path: info.outputPath(`cast-${locale}-${width}.png`) });
+  const sceneBefore = await page.evaluate(() => (window as any).getCast().scene);
+  await drag(page, mira.locator(".dr-cast-move"), width < 500 ? -60 : -200, 80);
+  await expect(host.getByRole("status").filter({ hasText: locale === "ru" ? "Расстановка сохранена" : "Layout saved" })).toBeVisible();
+  const moved = await page.evaluate(() => (window as any).savedLayout); expect(moved.id).toBe("mira"); expect(moved.pose.y).toBeGreaterThan(60);
+  const initialWidth = (await mira.locator("img").boundingBox())!.width;
+  await drag(page, mira.locator(".dr-cast-resize"), 40, 45);
+  expect((await mira.locator("img").boundingBox())!.width).toBeGreaterThan(initialWidth); await ratio(mira.locator("img"));
+  expect(await page.evaluate(() => (window as any).getCast().scene)).toEqual(sceneBefore);
+  expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+  await host.screenshot({ path: info.outputPath(`constructor-${locale}-${width}.png`) });
+  await mira.locator(".dr-cast-portrait").click(); await expect(page.getByRole("dialog")).toBeVisible(); await page.keyboard.press("Escape");
+  await expect(mira.locator(".dr-cast-portrait")).toBeFocused();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem(JSON.stringify(["w", "a"]))!).positions.mira);
+  await page.reload(); await expect(page.locator('.dr-cast-widget[data-character-id="mira"]')).toHaveCSS("position", "absolute");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem(JSON.stringify(["w", "a"]))!).positions.mira)).toEqual(saved);
+  await page.setViewportSize({ width: 320, height: 950 });
+  // ResizeObserver applies the saved position on the next layout turn.
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await host.getByRole("button", { name: locale === "ru" ? "Сбросить расстановку" : "Reset layout", exact: true }).click();
+  await expect(page.locator('.dr-cast-widget[data-character-id="mira"]')).toHaveCSS("position", "relative");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem(JSON.stringify(["w", "a"]))!).positions)).toEqual({});
+});
+
+test("keyboard, cancelled gestures, save errors and scope changes are safe", async ({ page }) => {
+  await page.goto("/tests/fixtures/characters.html?locale=en"); await cast(page);
+  const mira = page.locator('.dr-cast-widget[data-character-id="mira"]'); const move = mira.locator(".dr-cast-move"); const resize = mira.locator(".dr-cast-resize");
+  await move.focus(); await move.press("ArrowDown"); await expect(page.getByRole("status").filter({ hasText: "Layout saved" })).toBeVisible();
+  const pose = await page.evaluate(() => (window as any).savedLayout.pose);
+  await resize.focus(); await resize.press("ArrowRight"); await expect.poll(() => page.evaluate(() => (window as any).savedLayout.pose.width)).toBe(pose.width + 8); await ratio(mira.locator("img"));
+  await page.evaluate(() => { (window as any).rejectLayout = true; }); const before = await mira.boundingBox();
+  await drag(page, move, -50, 60); await expect(page.getByRole("status").filter({ hasText: "Couldn’t save the layout" })).toBeVisible();
+  const after = await mira.boundingBox(); expect(after!.x).toBeCloseTo(before!.x, 1); expect(after!.y).toBeCloseTo(before!.y, 1);
+  await page.evaluate(() => { (window as any).rejectLayout = false; });
+  await move.scrollIntoViewIfNeeded(); const box = (await move.boundingBox())!; await page.mouse.move(box.x + 15, box.y + 15); await page.mouse.down(); await page.mouse.move(box.x - 30, box.y + 70); await page.keyboard.press("Escape"); await page.mouse.up();
+  const cancelled = await mira.boundingBox(); expect(cancelled!.x).toBeCloseTo(after!.x, 1); expect(cancelled!.y).toBeCloseTo(after!.y, 1);
+  await page.evaluate(() => (window as any).setCast({ chatId: "b" })); await expect(mira).toHaveCSS("position", "relative");
+  await page.evaluate(() => (window as any).setCast({ chatId: "a" })); await expect(mira).toHaveCSS("position", "absolute");
+  await page.getByRole("button", { name: "Reset layouts in all chats", exact: true }).click(); await expect(mira).toHaveCSS("position", "relative");
+});
+
+test("twelve participants remain present across changes of addressee", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1100, height: 950 }); await page.goto("/tests/fixtures/characters.html?locale=en"); await cast(page, 12);
+  await expect(page.locator(".dr-cast-widget")).toHaveCount(12);
+  await page.evaluate(() => { const current = (window as any).getCast(); (window as any).setCast({ scene: { ...current.scene, partnerIds: [], partnerId: null } }); });
+  await expect(page.locator(".dr-cast-widget")).toHaveCount(12); await expect(page.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(0);
+  await page.evaluate(() => { const current = (window as any).getCast(); (window as any).setCast({ scene: { ...current.scene, partnerIds: ["extra-0"], partnerId: "extra-0", presentIds: current.scene.presentIds.filter((id: string) => id !== "mira") } }); });
+  await expect(page.locator(".dr-cast-widget")).toHaveCount(11); await expect(page.locator('.dr-cast-widget[data-character-id="mira"]')).toHaveCount(0);
+  await page.locator("[data-deeprole-choices-host]").screenshot({ path: info.outputPath("twelve-cast.png") });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

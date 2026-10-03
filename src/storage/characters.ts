@@ -1,6 +1,6 @@
 import { createId } from "../core/id";
 import { isSameDeepSeekChat } from "../core/chat-scope";
-import { characterRevision, characterTurnKey, characterInterlocutor, DEFAULT_EMOTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
+import { characterRevision, characterTurnKey, characterInterlocutors, DEFAULT_EMOTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
 import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
 
@@ -34,14 +34,13 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     const presentIds = (scene?.presentIds ?? []).filter(id => id !== entity.id);
     if (edit.present) presentIds.push(entity.id);
     if (presentIds.length > 12) throw new Error("character-limit");
-    const wasPartner = characterInterlocutor(entities, scene)?.id === entity.id;
-    let partnerId = scene?.partnerId;
-    if (edit.interlocutor === true) partnerId = entity.id;
-    else if (wasPartner && (edit.interlocutor === false || !edit.present || edit.sheet.protagonist)) partnerId = null;
-    else if (partnerId && !presentIds.includes(partnerId)) partnerId = undefined;
+    let partnerIds = characterInterlocutors(entities, scene).map(person => person.id).filter(id => presentIds.includes(id));
+    if (edit.interlocutor === false || !edit.present || edit.sheet.protagonist) partnerIds = partnerIds.filter(id => id !== entity.id);
+    if (edit.interlocutor === true) partnerIds = [entity.id, ...partnerIds.filter(id => id !== entity.id)];
+    const partnerId = partnerIds[0] ?? null;
     // A manual revision blocks stale writes, but the already-consumed reply
     // must remain recognized after reopening instead of reporting a false conflict.
-    const next: ChatBinding = { ...binding, characterScenes: { ...binding.characterScenes, [edit.worldId]: { revision: createId("rev"), lastReply: scene?.lastReply, partnerId, presentIds, states: { ...scene?.states, [entity.id]: structuredClone(edit.state) }, updatedAt: now } }, updatedAt: now };
+    const next: ChatBinding = { ...binding, characterScenes: { ...binding.characterScenes, [edit.worldId]: { revision: createId("rev"), lastReply: scene?.lastReply, partnerId, partnerIds, presentIds, states: { ...scene?.states, [entity.id]: structuredClone(edit.state) }, updatedAt: now } }, updatedAt: now };
     changes.push(record("binding", next));
     // Keep full backup sizes practical. Images are encrypted with the rest of the library.
     const replaced = new Set(changes.map(r => r.id));
@@ -98,7 +97,10 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
     if (presentIds.some(id => !id) || new Set(presentIds).size !== presentIds.length) throw new Error("character-unknown");
     const partnerId = turn.partner ? resolve(turn.partner) : turn.partner;
     if (turn.partner && (!partnerId || !presentIds.includes(partnerId))) throw new Error("character-unknown");
-    changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { revision: createId("rev"), lastReply: characterTurnKey(turn), partnerId, presentIds: presentIds as string[], states, updatedAt: now } }, updatedAt: now }));
+    const partnerIds = turn.partners?.map(resolve);
+    const allPeople = [...entities, ...changes.map(r => r.data as SceneEntity)];
+    if (partnerIds && (partnerIds.some(id => !id || !presentIds.includes(id) || allPeople.find(e => e.id === id)?.characterSheet?.protagonist) || new Set(partnerIds).size !== partnerIds.length)) throw new Error("character-unknown");
+    changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { revision: createId("rev"), lastReply: characterTurnKey(turn), partnerId: partnerIds ? partnerIds[0] ?? null : partnerId, ...(partnerIds ? { partnerIds: partnerIds as string[] } : {}), presentIds: presentIds as string[], states, updatedAt: now } }, updatedAt: now }));
     return { records: changes, removed: [], result: undefined };
   });
 }

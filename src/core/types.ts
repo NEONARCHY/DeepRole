@@ -58,11 +58,16 @@ export interface CharacterStatus {
 export interface CharacterScene {
   lastReply?: string;
   partnerId?: string | null;
+  partnerIds?: string[];
   revision: string;
   presentIds: string[];
   states: Record<string, CharacterStatus>;
   updatedAt: number;
 }
+
+/** UI-only. Never included in model context or character revisions. */
+export interface PortraitPose { x: number; y: number; width: number }
+export interface PortraitLayout { resetAt: number; positions: Record<string, PortraitPose> }
 
 export interface SceneState {
   worldId: string | null;
@@ -122,6 +127,7 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  portraitLayouts?: Record<string, PortraitLayout>;
   characterScenes?: Record<string, CharacterScene>;
   memoryOverrides?: MemoryOverrides;
   id: string;
@@ -149,6 +155,7 @@ export interface HandoffSnapshot {
 }
 
 export interface DeepRoleSettings {
+  portraitLayoutResetAt?: number;
   characterSheetsEnabled?: boolean;
   characterSpritesEnabled?: boolean;
   characterEmotions?: string[];

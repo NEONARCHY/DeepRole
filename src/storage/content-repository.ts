@@ -2,8 +2,10 @@ import { browser } from "wxt/browser";
 import type { DataRecord, RecordKind, RecordValue } from "../core/types";
 import type { CharacterEdit, CharacterScope } from "./characters";
 import type { CharacterTurn } from "../core/characters";
+import type { PortraitLayoutEdit } from "./portrait-layout";
 
 export type RepositoryRequest =
+  | { type: "DR_REPOSITORY"; operation: "savePortraitLayout"; edit: PortraitLayoutEdit }
   | { type: "DR_REPOSITORY"; operation: "saveCharacter"; edit: CharacterEdit }
   | { type: "DR_REPOSITORY"; operation: "applyCharacterTurn"; scope: CharacterScope; turn: CharacterTurn }
   | { type: "DR_REPOSITORY"; operation: "snapshot" }
@@ -22,6 +24,7 @@ async function call<T>(message: RepositoryRequest): Promise<T> {
 // IndexedDB in a content script belongs to the website, not the extension.
 // All content access is routed to the extension-owned background repository.
 export const contentRepository = {
+  savePortraitLayout: (edit: PortraitLayoutEdit) => call<void>({ type: "DR_REPOSITORY", operation: "savePortraitLayout", edit }),
   saveCharacter: (edit: CharacterEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveCharacter", edit }),
   applyCharacterTurn: (scope: CharacterScope, turn: CharacterTurn) => call<void>({ type: "DR_REPOSITORY", operation: "applyCharacterTurn", scope, turn }),
   rawRecords: () => call<DataRecord[]>({ type: "DR_REPOSITORY", operation: "snapshot" }),

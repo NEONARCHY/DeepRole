@@ -75,10 +75,12 @@ export async function removeWorld(worldId: string, repo: DeepRoleRepository = re
     const changed = all.filter((r) => !removed.includes(r) && (r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : "worldId" in r.data && r.data.worldId === worldId)).map((r) => ({ ...r, data: { ...(r.data as MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot), worldId: null, entityIds: [], focusIds: [], updatedAt: Date.now() } }));
     for (const r of all.filter(r => r.kind === "binding")) {
       const binding = r.data as ChatBinding;
-      if (!binding.characterScenes?.[worldId]) continue;
+      if (!binding.characterScenes?.[worldId] && !binding.portraitLayouts?.[worldId]) continue;
       const target = changed.find(c => c.id === r.id) ?? { ...r, data: { ...binding } };
       const scenes = { ...binding.characterScenes }; delete scenes[worldId];
       (target.data as ChatBinding).characterScenes = scenes;
+      const layouts = { ...binding.portraitLayouts }; delete layouts[worldId];
+      (target.data as ChatBinding).portraitLayouts = layouts;
       if (!changed.some(c => c.id === r.id)) changed.push(target as typeof changed[number]);
     }
     return { records: changed, removed, result: undefined };
@@ -96,8 +98,13 @@ export async function removeEntity(id: string, repo: DeepRoleRepository = reposi
           binding.characterScenes = structuredClone(binding.characterScenes);
           for (const scene of Object.values(binding.characterScenes)) {
             if (scene.partnerId === id) { scene.partnerId = null; dirty = true; }
+            if (scene.partnerIds?.includes(id)) { scene.partnerIds = scene.partnerIds.filter(partner => partner !== id); scene.partnerId = scene.partnerIds[0] ?? null; dirty = true; }
             if (scene.states[id] || scene.presentIds.includes(id)) { delete scene.states[id]; scene.presentIds = scene.presentIds.filter(v => v !== id); scene.revision = createId("rev"); delete scene.lastReply; dirty = true; }
           }
+        }
+        if (binding.portraitLayouts) {
+          binding.portraitLayouts = structuredClone(binding.portraitLayouts);
+          for (const layout of Object.values(binding.portraitLayouts)) if (layout.positions[id]) { delete layout.positions[id]; dirty = true; }
         }
       }
       if ("entityIds" in data && data.entityIds?.includes(id)) { data.entityIds = data.entityIds.filter((v) => v !== id); dirty = true; }

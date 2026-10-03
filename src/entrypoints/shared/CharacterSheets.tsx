@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2 } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutor } from "../../core/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutors } from "../../core/characters";
 import type { CharacterEdit } from "../../storage/characters";
 
 function CharacterPortrait({ sheet, emotion, ...attributes }: Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & { sheet?: CharacterSheet; emotion?: string }) {
@@ -16,6 +16,7 @@ export function CharacterSettings({ settings, onSettings }: { settings: DeepRole
   const t = (key: CharacterCopyKey) => characterText(settings.locale, key);
   const [draft, setDraft] = useState(emotionsFor(settings.characterEmotions).join("\n"));
   const [error, setError] = useState(false); const [busy, setBusy] = useState(false);
+  const [layoutError, setLayoutError] = useState(false);
   useEffect(() => setDraft(emotionsFor(settings.characterEmotions).join("\n")), [settings.characterEmotions?.join("\n")]);
   const emotions = draft.split("\n").map(s => s.trim()).filter(Boolean);
   return <section className="dr-character-settings">
@@ -23,6 +24,12 @@ export function CharacterSettings({ settings, onSettings }: { settings: DeepRole
     <p className="setting-copy">{t("enableHint")}</p>
     {settings.characterSheetsEnabled && <>
       <label className="toggle-row"><span>{t("sprites")}</span><input type="checkbox" checked={settings.characterSpritesEnabled !== false} onChange={e => void onSettings({ ...settings, characterSpritesEnabled: e.target.checked })} /></label>
+      <p className="setting-copy">{t("layoutSettingHint")}</p>
+      <button type="button" className="button secondary" disabled={busy} onClick={() => {
+        setBusy(true); setLayoutError(false);
+        void Promise.resolve(onSettings({ ...settings, portraitLayoutResetAt: Math.max(Date.now(), (settings.portraitLayoutResetAt ?? 0) + 1) })).catch(() => setLayoutError(true)).finally(() => setBusy(false));
+      }}>{t("layoutResetAll")}</button>
+      {layoutError && <p role="alert" className="error-text">{t("layoutFailed")}</p>}
       <label className="field-label" htmlFor={emotionsId}>{t("emotions")}</label><textarea id={emotionsId} rows={6} maxLength={396} value={draft} onChange={e => { setDraft(e.target.value); setError(false); }} aria-describedby="dr-emotions-help" />
       <p id="dr-emotions-help" className="setting-copy">{t("emotionsHint")}</p>
       {error && <p role="alert" className="error-text">{t(validEmotions(emotions) ? "failed" : "emotionError")}</p>}
@@ -69,7 +76,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
     })}</div> : <p>{t(entities.length ? castView === "all" ? "noMatches" : "noCast" : "empty")}</p>}
     <small className="dr-character-hint">{t("hint")}</small>
     {entities.length > 0 && !entities.some(e => e.characterSheet?.protagonist) && <small className="dr-character-hint">{t("heroHint")}</small>}
-    {edit && createPortal(<CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={!!edit.entity && characterInterlocutor(props.entities, edit.scene)?.id === edit.entity.id} emotions={props.emotions} onClose={() => setEdit(null)} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />, panel.current?.closest(".dr-root") ?? panel.current ?? document.body)}
+    {edit && createPortal(<CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={!!edit.entity && characterInterlocutors(props.entities, edit.scene).some(person => person.id === edit.entity!.id)} emotions={props.emotions} onClose={() => setEdit(null)} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />, panel.current?.closest(".dr-root") ?? panel.current ?? document.body)}
   </section>;
 }
 
@@ -132,6 +139,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
         </fieldset>
         <fieldset disabled={busy}><legend>{t("state")}</legend>
           <label className="dr-character-check"><input type="checkbox" checked={present} onChange={e => { setPresent(e.target.checked); if (!e.target.checked && selectedPartner) setInterlocutor(false); }} />{t("present")}</label>
+          <small className="dr-character-hint">{t("presentHint")}</small>
           {!sheet.protagonist && <div className="dr-character-partner-control"><label className="dr-character-check"><input type="checkbox" aria-describedby={partnerHelp} checked={selectedPartner} onChange={e => { setInterlocutor(e.target.checked); if (e.target.checked) setPresent(true); }} />{t("interlocutor")}</label><small id={partnerHelp} className="dr-character-hint">{t("interlocutorHint")}</small></div>}
           <label>{t("emotion")}<select aria-label={t("emotion")} value={state.emotion} onChange={e => setState({ ...state, emotion: e.target.value })}>{options.map(value => <option key={value} value={value}>{emotionLabel(props.locale, value)}</option>)}</select></label>
           {(["condition", "goal", "relationship"] as const).map(key => <label key={key}>{t(key)}<textarea rows={2} maxLength={240} value={state[key]} onChange={e => setState({ ...state, [key]: e.target.value })} /></label>)}

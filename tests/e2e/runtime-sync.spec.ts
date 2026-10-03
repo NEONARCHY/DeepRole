@@ -1,11 +1,12 @@
 import { chromium, expect, test, type Page, type Worker } from "@playwright/test";
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
 
 const fixture = `<!doctype html><html><head><title>Mock DeepSeek</title></head><body><main><header><h1>Roleplay</h1></header><div id="conversation"></div><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main></body></html>`;
 async function setup(records: Array<[string, any]>) {
-  const profile = await mkdtemp(path.join(tmpdir(), "deeprole-sync-test-"));
+  // Keep Windows LevelDB paths short. Playwright clears this output root on the next run.
+  const profiles = path.join(test.info().project.outputDir, "profiles"); await mkdir(profiles, { recursive: true });
+  const profile = await mkdtemp(path.join(profiles, "deeprole-sync-test-"));
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${path.resolve(".output/chrome-mv3")}`, `--load-extension=${path.resolve(".output/chrome-mv3")}`] });
   try {
   context.setDefaultTimeout(10000);
@@ -355,7 +356,7 @@ test("character sheets: a verified local request ignores obsolete scope tags and
     });
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Technical check, outside the story." }) }));
     expect(schema.request).toBeTruthy(); expect(schema.world).toBeUndefined();
-    const payload = { ...schema, world: "another-browser-world", chat: "obsolete-chat", base: "obsolete-version", present: ["Noah", "new:Mira"], partner: "new:Mira", updates: [{ id: "Noah", state: { emotion: "neutral", condition: "", goal: "", relationship: "", stats: [] } }, { id: "new:Mira", name: "Mira", state: { emotion: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
+    const payload = { ...schema, world: "another-browser-world", chat: "obsolete-chat", base: "obsolete-version", present: ["Noah", "new:Mira"], partners: ["new:Mira"], updates: [{ id: "Noah", state: { emotion: "neutral", condition: "", goal: "", relationship: "", stats: [] } }, { id: "new:Mira", name: "Mira", state: { emotion: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
     const append = (value: any) => chat.evaluate(value => {
       const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "request-" + document.querySelectorAll("article").length;
       const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the letter." }));

@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: DeepRoleSettings = {
   onboardingComplete: false,
   characterSheetsEnabled: true,
   characterSpritesEnabled: true,
+  portraitLayoutResetAt: 0,
   characterEmotions: ["neutral", "happy", "sad", "angry", "surprised", "worried"],
   sceneChoicesEnabled: true,
   showChatContextMeter: true,

@@ -102,7 +102,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await expect(present).not.toBeChecked(); await partner.focus(); await partner.press("Space");
     await expect(partner).toBeChecked(); await expect(present).toBeChecked(); await expect(partner).toBeFocused();
     await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("happy");
-    await expect(partner).toHaveAccessibleDescription(/(Портрет справа|Portrait beside)/);
+    await expect(partner).toHaveAccessibleDescription(/(Можно отметить нескольких|Select several people)/);
     await present.uncheck(); await expect(partner).not.toBeChecked(); await partner.check();
     await page.evaluate(() => { (window as any).rejectSave = true; });
     const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true });

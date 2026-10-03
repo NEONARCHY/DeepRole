@@ -64,7 +64,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     await expectPortraitRatio(avatars.last().locator("img"));
     const castContent = await page.locator(".dr-cast-content").boundingBox();
     if (width < 900) expect(castContent!.y).toBeGreaterThan(castImage!.y + castImage!.height);
-    else expect(castContent!.y).toBe(castImage!.y);
+    else expect(castContent!.y + 44).toBe(castImage!.y);
     if (width >= 760) expect(castImage!.width).toBeGreaterThanOrEqual(190);
     expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     await page.evaluate(() => (window as any).syncPortraits(["hero"])); await expect(avatars).toHaveCount(1); await expect(avatars).toHaveAccessibleName(/Noah/);

@@ -5,8 +5,8 @@ import { EMPTY_CHARACTER, EMPTY_STATUS, syncPortraitImage, silhouetteSource, por
 import type { CharacterScene, SceneEntity } from "../src/core/types";
 const payload = `<deeprole_characters>${JSON.stringify({ world: "w", chat: "a", base: "v", present: ["mira"], updates: [{ id: "mira", state: EMPTY_STATUS }] })}</deeprole_characters>`;
 function row(text: string, role = "assistant") { const el = document.createElement("article"); el.dataset.role = role; el.dataset.messageId = crypto.randomUUID(); el.textContent = text; document.body.append(el); return el; }
-beforeEach(() => { vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList); dismissSceneChoiceCards(document, false); });
-afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); });
+beforeEach(() => { vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} }); vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList); dismissSceneChoiceCards(document, false); });
+afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 it("only reads the latest assistant turn", () => { row(payload); expect(latestCharacterResponse()?.turn).not.toBeNull(); row("New question", "user"); expect(latestCharacterResponse()).toBeNull(); row("New answer without a block"); expect(latestCharacterResponse()?.turn).toBeNull(); });
 it("ignores payloads in reasoning and service replies", () => {
@@ -62,11 +62,11 @@ it("reuses choices and decorates only current participants, without duplicate bu
   const scene: CharacterScene = { revision: "v", presentIds: ["hero", "mira", "noah"], partnerId: "noah", states: {}, updatedAt: 1 };
   const pick = vi.fn(async () => true); const open = vi.fn(); syncSceneChoiceCards(true, false, "en", pick); syncChoicePortraits(true, people, scene, "en", open);
   const host = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!;
-  expect([...host.shadowRoot!.querySelectorAll(".dr-cast-portrait")].map(b => b.getAttribute("aria-label"))).toEqual(["Open character: hero", "Open character: noah"]);
+  expect([...host.shadowRoot!.querySelectorAll(".dr-cast-portrait")].map(b => b.getAttribute("aria-label"))).toEqual(["Open character: hero", "Open character: noah", "Open character: mira"]);
   syncSceneChoiceCards(true, false, "en", pick); syncChoicePortraits(true, people, scene, "en", open);
-  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.querySelectorAll(".grid button, .dr-cast-portrait")).toHaveLength(6);
+  expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host); expect(host.shadowRoot!.querySelectorAll(".grid button, .dr-cast-portrait")).toHaveLength(7);
   host.shadowRoot!.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!.click(); expect(open).toHaveBeenCalledWith("noah");
-  syncChoicePortraits(true, people, { ...scene, revision: "v2", partnerId: null }, "en", open); expect(host.shadowRoot!.querySelectorAll(".dr-cast-portrait")).toHaveLength(1);
+  syncChoicePortraits(true, people, { ...scene, revision: "v2", partnerId: null }, "en", open); expect(host.shadowRoot!.querySelectorAll(".dr-cast-portrait")).toHaveLength(3);
   syncChoicePortraits(false, people, scene, "en", open); expect(host.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4);
 });
 
