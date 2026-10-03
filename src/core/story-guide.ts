@@ -5,6 +5,11 @@ const guides = {
     title: "Как обновить и перенести историю", close: "Закрыть памятку", current: "",
     intro: "Лор хранит факты о мире. Состояние истории — пересказ для продолжения. Чтобы перенести актуальный сюжет, сначала обновите лор, затем сделайте пересказ.",
     sections: [
+      { title: "История уже идёт, а мира ещё нет?", lines: [
+        "Готовый JSON не нужен. В «Лор → Создать свой мир» создайте пустой мир и дайте ему название. Затем подключите его к текущему чату через «Игра → Мир».",
+        "Нажмите «Обновить лор», проверьте предложения DeepSeek и сохраните нужные. Так вы соберёте память из уже сыгранной истории, без ручного заполнения всех фактов.",
+        "«Обновить лор» не создаёт мир автоматически. Без выбранного мира записи сохраняются в области «Без мира», а не в отдельном мире."
+      ] },
       { title: "1. Откройте чат с последними событиями", lines: [
         "В DeepRole → Игра → Мир выберите уже загруженный мир. Открыть его в библиотеке недостаточно: он должен быть подключён к этому чату.",
         "Если JSON уже импортирован, повторно загружать его не нужно. Дождитесь конца ответа DeepSeek. Если в поле сообщения есть черновик, сохраните его отдельно и очистите поле."
@@ -12,6 +17,11 @@ const guides = {
       { title: "2. Добавьте новые события в память", lines: [
         "Нажмите «Обновить лор». DeepSeek предложит новые факты и изменения существующих записей.",
         "Откройте «Проверить изменения», сравните текст, отметьте нужное и нажмите «Сохранить выбранное». До подтверждения лор не меняется."
+      ] },
+      { title: "«Запомнить» или «Обновить лор»?", lines: [
+        "«Запомнить» — сохранить конкретный факт, который вы написали или выделили. DeepSeek не анализирует всю историю по этой кнопке.",
+        "«Обновить лор» — попросить DeepSeek найти важные факты и изменения в разговоре. Они сохранятся только после вашего подтверждения.",
+        "Это память о фактах, не копия всей переписки. Проверьте важные детали: модель может что-то пропустить. Для продолжения текущей сцены отдельно используйте «Сохранить состояние истории»."
       ] },
       { title: "3. Продолжите в новом чате", lines: [
         "В этом же чате откройте Игра → Продолжение истории → «Продолжить в новом чате». DeepSeek подготовит пересказ; DeepRole сохранит его, затем попробует открыть новый чат и отправить начало продолжения.",
@@ -28,7 +38,7 @@ const guides = {
       ] },
       { title: "Что происходит с JSON-файлом", lines: [
         "Сохранённые изменения обновляют память внутри DeepRole. Исходный JSON на диске не перезаписывается.",
-        "Для обновлённой копии сделайте новый экспорт. На другом компьютере нужен перенос данных расширения: чат DeepSeek сам по себе не переносит библиотеку DeepRole."
+        "Чтобы скачать собранный мир, нажмите «Экспорт → Этот мир». Для переноса всех миров, настроек и состояний чатов выберите «Полная резервная копия». Сам чат DeepSeek не переносит библиотеку DeepRole на другой компьютер."
       ] }
     ]
   },
@@ -36,6 +46,11 @@ const guides = {
     title: "How to update and continue your story", close: "Close guide", current: "",
     intro: "Lore stores world facts. A saved story state is a recap for continuing. To move your latest story, update the lore first, then create a recap.",
     sections: [
+      { title: "Already playing, but no world yet?", lines: [
+        "You do not need a ready-made JSON file. In “Lore → Create your world”, create an empty world and give it a name. Then connect it to the current chat through “Play → World”.",
+        "Click “Update lore”, review DeepSeek’s suggestions and save the ones you want. This builds memory from the story you have already played, without entering every fact by hand.",
+        "“Update lore” does not create a world automatically. With no world selected, records are saved under “No world”, not in a separate world."
+      ] },
       { title: "1. Open the chat with the latest events", lines: [
         "In DeepRole → Play → World, choose the world you already imported. Viewing it in the library is not enough: connect it to this chat.",
         "If you already imported the JSON, do not import it again. Wait for DeepSeek to finish. If the message box contains a draft, save it elsewhere and clear the box."
@@ -43,6 +58,11 @@ const guides = {
       { title: "2. Add new events to memory", lines: [
         "Click “Update lore”. DeepSeek will suggest new facts and changes to existing records.",
         "Open “Review changes”, compare the text, select what you want and click “Save selected changes”. Lore stays unchanged until you confirm."
+      ] },
+      { title: "“Remember” or “Update lore”?", lines: [
+        "“Remember” saves a specific fact you wrote or selected. It does not ask DeepSeek to analyze the whole story.",
+        "“Update lore” asks DeepSeek to find important facts and changes in the conversation. They are saved only after you approve them.",
+        "This is factual memory, not a copy of the full conversation. Check important details: the model may miss something. To continue the current scene, also use “Save story state”."
       ] },
       { title: "3. Continue in a new chat", lines: [
         "In the same chat, open Play → Continue your story → “Continue in a new chat”. DeepSeek will prepare a recap; DeepRole saves it, then tries to open a new chat and send the first continuation message.",
@@ -59,7 +79,7 @@ const guides = {
       ] },
       { title: "What happens to the JSON file", lines: [
         "Saving changes updates memory inside DeepRole. It does not overwrite the original JSON file on disk.",
-        "Export again to get an updated copy. On another computer, you need to transfer the extension data: a DeepSeek chat alone does not transfer your DeepRole library."
+        "To download the world you built, choose “Export → This world”. To transfer all worlds, settings and chat states, choose “Full backup”. A DeepSeek chat alone does not transfer your DeepRole library to another computer."
       ] }
     ]
   }

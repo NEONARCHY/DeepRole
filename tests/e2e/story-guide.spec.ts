@@ -14,12 +14,22 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     const title = locale === "ru" ? "Как обновить и перенести историю" : "How to update and continue your story";
     const help = page.getByRole("button", { name: title, exact: true });
     const continuation = page.locator(".play-continuation");
+    const updateCard = page.locator(".quick-actions .action-card").last();
+    await expect.poll(async () => {
+      const card = (await updateCard.boundingBox())!;
+      const divider = (await continuation.boundingBox())!;
+      return divider.y - (card.y + card.height);
+    }).toBeGreaterThanOrEqual(14);
+    await continuation.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`play-spacing-${locale}-${width}.png`) });
     await expect(continuation).not.toHaveAttribute("open", "");
     await help.click();
     const dialog = page.getByRole("dialog", { name: title });
     await expect(dialog).toBeVisible();
     await expect(continuation).not.toHaveAttribute("open", "");
-    await expect(dialog.locator("section")).toHaveCount(6);
+    await expect(dialog.locator("section")).toHaveCount(8);
+    await expect(dialog).toContainText(locale === "ru" ? "История уже идёт, а мира ещё нет?" : "Already playing, but no world yet?");
+    await expect(dialog).toContainText(locale === "ru" ? "«Запомнить» или «Обновить лор»?" : "“Remember” or “Update lore”?");
     await expect(dialog).toContainText(locale === "ru" ? "Исходный JSON на диске не перезаписывается" : "does not overwrite the original JSON file");
     await expect(dialog).toContainText(locale === "ru" ? "сама кнопка сообщение не отправляет" : "clicking Apply does not send a message");
     expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);

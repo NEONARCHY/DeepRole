@@ -6,7 +6,7 @@
 .dr-memory-help:focus-visible, .dr-memory-guide button:focus-visible, .dr-memory-guide-body:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
 .dr-memory-help-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .dr-memory-help-actions { display:flex; align-items:center; gap:8px; }
-.dr-story-continuation { position:relative; }
+.dr-story-continuation { position:relative; margin-block-start:var(--dr-space-4,16px); }
 .dr-story-help { position:absolute; inset-inline-end:0; top:14px; z-index:1; }
 .dr-story-continuation .play-continuation > summary { padding-inline-end:56px; min-height:44px; display:flex; align-items:center; gap:8px; }
 .dr-story-continuation .play-continuation > summary::before { content:"▸"; }
