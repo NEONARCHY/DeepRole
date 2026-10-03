@@ -173,6 +173,11 @@ test("a rejected analysis releases only its pending request and can be retried",
       const state = await panel.evaluate(async () => (globalThis as any).chrome.storage.session.get(null));
       return (Object.entries(state).find(([key]) => key.startsWith("deeprole_tab_state_"))?.[1] as any)?.service;
     }).toBeNull();
+    // Session storage is cleared before the runtime finishes releasing the
+    // request. Wait for the activity state used by the visible retry controls;
+    // observing the storage write alone does not mean they are ready yet.
+    await expect.poll(() => command(panel, { type: "DR_GET_PAGE_STATE" })).toMatchObject({ activity: { phase: "error", type: "memory-analysis" } });
+    await expect(panel.getByRole("button", { name: "Update lore", exact: true })).toBeEnabled();
     expect(await command(panel, { type: "DR_RUN_SERVICE", request: { ...request, id: "retry-test", createdAt: Date.now() } })).toEqual({ ok: true });
     await expect.poll(() => sent).toBe(2);
   } finally { await context.close(); }

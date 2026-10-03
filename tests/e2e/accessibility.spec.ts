@@ -94,7 +94,12 @@ test("the DeepRole menu stays anchored, lets DeepSeek controls receive clicks, a
   const drawerBox = await page.locator(".dr-menu-drawer").boundingBox();
   expect(box).not.toBeNull();
   expect(drawerBox).not.toBeNull();
-  expect(box).toEqual(positionBefore);
+  expect(positionBefore).not.toBeNull();
+  // Firefox can report fractional coordinates during the click transition;
+  // keep the anchoring check strict without requiring identical float bits.
+  for (const dimension of ["x", "y", "width", "height"] as const) {
+    expect(box![dimension]).toBeCloseTo(positionBefore![dimension], 1);
+  }
   expect(box?.y ?? 100).toBeLessThan(40);
   expect(box?.x ?? 0).toBeGreaterThanOrEqual(drawerBox?.x ?? 0);
   await page.locator("#underlying-chat-control").click();

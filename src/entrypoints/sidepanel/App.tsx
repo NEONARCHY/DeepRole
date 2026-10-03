@@ -65,7 +65,7 @@ import { InvalidEncryptedPayloadError } from "../../storage/crypto";
 import { removeBook } from "../../storage/worlds";
 
 import { HelpButton, HelpSection, HelpLocale } from "../shared/Help";
-import { WorldsView } from "./WorldsView";
+import { DeferredWorldsView as WorldsView } from "./DeferredWorldsView";
 import { SceneControls } from "../shared/SceneControls";
 import { EMPTY_SCENE, memoryWorld } from "../../core/scene";
 import { sceneText } from "../../core/scene-i18n";

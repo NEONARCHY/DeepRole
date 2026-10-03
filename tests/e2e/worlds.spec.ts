@@ -14,6 +14,9 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
   await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
   const importDialog = page.getByRole("dialog", { name: l("Добавить из файла", "Add from file"), exact: true });
   await expect(importDialog).toBeVisible();
+  await expect(page.locator(".lore-import-backdrop")).toHaveCSS("animation-name", "none");
+  await expect(importDialog).toHaveCSS("opacity", "1");
+  await expect(importDialog).toHaveCSS("background-color", "rgb(33, 33, 34)");
   const dialogBox = await importDialog.boundingBox(); const viewport = page.viewportSize()!;
   expect(Math.abs(dialogBox!.x + dialogBox!.width / 2 - viewport.width / 2)).toBeLessThan(2);
   expect(Math.abs(dialogBox!.y + dialogBox!.height / 2 - viewport.height / 2)).toBeLessThan(2);
@@ -24,11 +27,7 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
   await expect(dropzone).toHaveClass(/is-dragging/);
   await dropzone.dispatchEvent("drop", { dataTransfer: transfer });
   await expect(page.getByText(l("Распознаны записи JSON", "JSON entries recognized"), { exact: true })).toBeVisible();
-  // Audit settled colors, not an intermediate opacity during the short entrance.
-  await importDialog.evaluate(async node => {
-    const backdrop = node.closest(".modal-backdrop") ?? node;
-    await Promise.all(backdrop.getAnimations({ subtree: true }).filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined)));
-  });
+  // No transparency phase: the dialog is readable as soon as it opens.
   expect((await new AxeBuilder({ page }).include(".lore-import-modal").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
 

@@ -272,6 +272,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [committedImport, setCommittedImport] = useState<{ worldId: string; attach: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const readGeneration = useRef(0);
@@ -296,7 +297,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     return () => { mounted.current = false; readGeneration.current++; document.removeEventListener("keydown", onKeyDown, true); if (previous?.isConnected) previous.focus(); };
   }, []);
   async function readFile(file: File) {
-    if (committing.current) return;
+    if (committing.current || committedImport) return;
     const generation = ++readGeneration.current;
     const current = () => mounted.current && generation === readGeneration.current;
     setBusy(true); setLore(null); setAcceptUnsupported(false); setPack(null); setWorldId(""); setError(""); setFileName(file.name);
@@ -310,10 +311,23 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     finally { if (current()) setBusy(false); }
   }
   async function importRecords(build: () => DataRecord[], attachToChat: boolean) {
-    if (committing.current || busy) return;
+    if (committing.current || busy || committedImport) return;
     committing.current = true; setSavingImport(true); setBusy(true); setError("");
-    try { const records = build(); await repository.mergeRecords(records); await props.onDone(worldId || records.find(record => record.kind === "world")!.id, attachToChat); }
-    catch { if (mounted.current) setError(t("failed")); }
+    let saved = false;
+    try {
+      const records = build(); const id = worldId || records.find(record => record.kind === "world")!.id;
+      await repository.mergeRecords(records); saved = true;
+      if (mounted.current) setCommittedImport({ worldId: id, attach: attachToChat });
+      await props.onDone(id, attachToChat);
+    }
+    catch { if (mounted.current) setError(t(saved ? "importRefreshFailed" : "failed")); }
+    finally { committing.current = false; if (mounted.current) { setSavingImport(false); setBusy(false); } }
+  }
+  async function finishImport() {
+    if (!committedImport || committing.current || busy) return;
+    committing.current = true; setSavingImport(true); setBusy(true); setError("");
+    try { await props.onDone(committedImport.worldId, committedImport.attach); }
+    catch { if (mounted.current) setError(t("importRefreshFailed")); }
     finally { committing.current = false; if (mounted.current) { setSavingImport(false); setBusy(false); } }
   }
   function onDrop(event: ReactDragEvent<HTMLDivElement>) {
@@ -325,6 +339,15 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     <section ref={dialogRef} className="modal lore-import-modal" role="dialog" aria-modal="true" aria-label={t("importFile")} aria-busy={busy}>
       <header><h2>{t("importFile")}</h2><button type="button" className="icon-button" disabled={savingImport} onClick={requestClose} aria-label={t("cancel")}><X /></button></header>
       <div className="modal-body">
+    {committedImport ? <div className="rp-import-recovery">
+      <p className="rp-status" role="status">{t("importStored")}</p>
+      {busy && <p role="status">{t("importRefreshing")}</p>}
+      {error && <p role="alert">{error}</p>}
+      <div className="button-row">
+        <button type="button" className="button primary" disabled={busy} onClick={() => void finishImport()}>{t("importRefresh")}</button>
+        <button type="button" className="button secondary" disabled={busy} onClick={requestClose}>{t("importClose")}</button>
+      </div>
+    </div> : <fieldset className="rp-import-fields" disabled={savingImport} aria-label={t("importFile")}>
     <div className={`rp-import-dropzone${dragging ? " is-dragging" : ""}`} role="region" aria-label={t("importDropTitle")} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }} onDragLeave={(event) => { event.preventDefault(); if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={onDrop}>
       <Upload aria-hidden="true" /><strong>{fileName || t("importDropTitle")}</strong><p>{dragging ? t("importDropActive") : t("importDropHint")}</p>
       <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t("chooseFile")}</button>
@@ -345,6 +368,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => { if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach && props.canAttach); }}>{t("confirmImport")}</HelpButton>
     </>}
     {error && <p role="alert">{error}</p>}
+    </fieldset>}
       </div>
     </section>
   </div>;
