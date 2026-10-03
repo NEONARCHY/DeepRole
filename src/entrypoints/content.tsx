@@ -85,6 +85,12 @@ export default defineContentScript({
 });
 
 interface PageScope { url: string; chatId: string | null }
+function startupDeadline<T>(task: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("startup-timeout")), 8000);
+    task.then(resolve, reject).finally(() => window.clearTimeout(timer));
+  });
+}
 interface ContextDelivery {
   characterRequest?: CharacterRequestReceipt;
   scope: PageScope;
@@ -172,13 +178,22 @@ class PageController {
 
   async start() {
     window.addEventListener("message", (event) => this.handleBridgeMessage(event));
-    this.draftScene = (await browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage).catch(() => null)) ?? { ...EMPTY_SCENE };
-    this.previousChatId = this.adapter.getChatId();
-    const savedPosition = await browser.storage.local.get(CONTEXT_INDICATOR_POSITION_KEY);
-    this.contextIndicatorPosition = parseSavedIndicatorPosition(savedPosition[CONTEXT_INDICATOR_POSITION_KEY]);
-    await this.reload();
-    restoreServiceTurns();
-    this.cleanArchivedMemoryPayloads();
+    try {
+      this.draftScene = (await startupDeadline(browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage))) ?? { ...EMPTY_SCENE };
+      this.previousChatId = this.adapter.getChatId();
+      const savedPosition = await startupDeadline(browser.storage.local.get(CONTEXT_INDICATOR_POSITION_KEY));
+      this.contextIndicatorPosition = parseSavedIndicatorPosition(savedPosition[CONTEXT_INDICATOR_POSITION_KEY]);
+      await startupDeadline(this.reload());
+      restoreServiceTurns();
+      this.cleanArchivedMemoryPayloads();
+    } catch {
+      // A failed/aborted worker must not leave the launcher hidden forever.
+      // Invalidate late library reads and expose no memory until a fresh load.
+      this.reloadGeneration++;
+      this.clearPrivateState();
+      this.publishContext("");
+      this.state.startupError = true;
+    }
     document.addEventListener("input", () => this.scheduleUpdate(), true);
     document.addEventListener("selectionchange", () => this.readSelection());
     document.addEventListener("keydown", (event) => {
@@ -237,6 +252,7 @@ class PageController {
     const settings = await getSettings();
     const locked = await repository.isLocked();
     if (generation !== this.reloadGeneration) return false;
+    this.state.startupError = false;
     this.settings = settings;
     this.state.locale = this.settings.locale;
     this.state.showChatContextMeter = this.settings.showChatContextMeter;

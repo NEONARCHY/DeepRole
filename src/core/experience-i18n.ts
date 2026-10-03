@@ -2,6 +2,10 @@ import type { Locale } from "./types";
 
 const copy = {
   ru: {
+    menuLoadError: "Меню не смогло подключиться к памяти. Во вкладке DeepRole доступ к ней не зависит от ограничений страницы.",
+    openMenuTab: "Открыть DeepRole во вкладке",
+    retryMenu: "Попробовать снова",
+    startupError: "Память не подключилась. Меню доступно — попробуйте обновить страницу.",
     reviewTitle: "Название записи", reviewRequired: "У выбранной записи должны быть название и текст.",
     reviewHint: "Отметьте нужное. Текст можно исправить до сохранения.",
     reviewKeptMode: "Режим останется прежним: {mode}",
@@ -39,6 +43,10 @@ const copy = {
     chatMeterHistory: "По истории чата", chatMeterPageOnly: "Пока только загруженные сообщения", chatMeterAtLeast: "История может быть неполной",
   },
   en: {
+    menuLoadError: "The menu could not connect to memory. Opening DeepRole in a tab avoids the page’s storage restrictions.",
+    openMenuTab: "Open DeepRole in a tab",
+    retryMenu: "Try again",
+    startupError: "Memory could not connect. You can open the menu — try refreshing the page.",
     reviewTitle: "Record name", reviewRequired: "Selected records need both a name and text.",
     reviewHint: "Select what to keep. You can edit the text before saving.",
     reviewKeptMode: "Mode stays the same: {mode}",

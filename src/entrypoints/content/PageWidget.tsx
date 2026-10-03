@@ -23,6 +23,7 @@ import type { CharacterCopyKey } from "../../core/characters";
 export interface WidgetState {
   characters?: { worldId: string; chatId: string; base: string; entities: SceneEntity[]; scene?: CharacterScene; emotions: string[]; status: CharacterCopyKey; openId?: string | null };
   pageReady: boolean;
+  startupError?: boolean;
   pendingHandoff?: string;
   activity?: ServiceActivity | null;
   generating?: boolean;
@@ -223,13 +224,14 @@ export function PageWidget(props: {
   }
   return <HelpLocale.Provider value={props.state.locale}><div className="dr-root">
     <button className="dr-launcher" onClick={() => setMenuOpen(!menuOpen)} aria-label={t("openDeepRole")} aria-expanded={menuOpen}><span className="dr-orb" /><span>DeepRole</span></button>
+    {props.state.startupError && <div className="dr-toast" role="alert">{x("startupError")}</div>}
     {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisBlocked ? x(serviceBusy ? "waiting" : "generating") : x("requestsVisible")} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={props.menuUrl} title="DeepRole" /></aside></div>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
     {!props.state.vaultLocked && props.state.warning && <Alert title={t("memoryNotAddedTitle")} text={props.state.warning} primary={t("copyContext")} onPrimary={props.onCopyContext} />}
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
-      <div ref={contextAnchor} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={contextStyle}>
+      <div ref={contextAnchor} hidden={props.state.startupError} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={props.state.startupError ? { display: "none" } : contextStyle}>
       <div className="dr-pill-row">
         {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : ((props.state.showMemoryContextIndicator !== false) || (props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0)) && <div className="dr-context-indicators">
         {props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0 && <div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>

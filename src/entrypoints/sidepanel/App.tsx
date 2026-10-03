@@ -115,6 +115,7 @@ export function App() {
   const [openMapWorldId, setOpenMapWorldId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState("");
   const [bookEditor, setBookEditor] = useState<MemoryBook | "new" | null>(null);
   const [entryEditor, setEntryEditor] = useState<MemoryEntry | "new" | null>(null);
@@ -157,28 +158,35 @@ export function App() {
 
   const refresh = useCallback(async () => {
     const generation = ++refreshGeneration.current;
-    const nextSettings = await getSettings();
-    const isLocked = await repository.isLocked();
-    if (generation !== refreshGeneration.current) return;
-    setSettingsState(nextSettings);
-    setLocked(isLocked);
-    if (isLocked) {
-      clearPrivateState();
-      setLoading(false);
-      return;
-    }
     try {
+      const nextSettings = await getSettings();
+      if (generation !== refreshGeneration.current) return;
+      setSettingsState(nextSettings);
+      const isLocked = await repository.isLocked();
+      if (generation !== refreshGeneration.current) return;
+      setLocked(isLocked);
+      if (isLocked) {
+        clearPrivateState();
+        setLoadError(false);
+        setLoading(false);
+        return;
+      }
       await browser.runtime.sendMessage({ type: "DR_MIGRATE_LEGACY" } satisfies DeepRoleMessage).catch(() => undefined);
       const records = await repository.rawRecords();
       if (generation !== refreshGeneration.current) return;
+      setLoadError(false);
       setBooks(libraryRecords<MemoryBook>(records, "book")); setEntries(libraryRecords<MemoryEntry>(records, "entry"));
       setWorlds(libraryRecords<WorldProfile>(records, "world")); setEntities(libraryRecords<SceneEntity>(records, "entity")); setTemplates(libraryRecords<StoryTemplate>(records, "template"));
       setBindings(libraryRecords<ChatBinding>(records, "binding")); setSnapshots(libraryRecords<HandoffSnapshot>(records, "snapshot"));
       setProposals(libraryRecords<MemoryProposalBatch>(records, "proposal")); setChanges(libraryRecords<LoreChange>(records, "change"));
     } catch (error) {
       if (generation !== refreshGeneration.current) return;
-      if (error instanceof VaultLockedError) clearPrivateState();
-      else console.error("[DeepRole] Failed to load data", error);
+      if (error instanceof VaultLockedError) { clearPrivateState(); setLoadError(false); }
+      else {
+        clearPrivateState();
+        setLoadError(true);
+        console.error("[DeepRole] Failed to load data", error);
+      }
     } finally {
       if (generation === refreshGeneration.current) setLoading(false);
     }
@@ -383,6 +391,12 @@ export function App() {
             }}
           />);
 
+  if (loadError) return <main className="center-screen" role="alert">
+    <h1>DeepRole</h1>
+    <p>{experienceText(settings.locale, "menuLoadError")}</p>
+    {embeddedMenu && <HelpButton className="button primary" onClick={() => void browser.runtime.sendMessage({ type: "DR_OPEN_FULL_MENU" } satisfies DeepRoleMessage).catch(() => setLoadError(true))}>{experienceText(settings.locale, "openMenuTab")}</HelpButton>}
+    <HelpButton className="button" onClick={() => void refresh()}>{experienceText(settings.locale, "retryMenu")}</HelpButton>
+  </main>;
   if (loading) return <LoadingScreen />;
 
   if (locked) {
