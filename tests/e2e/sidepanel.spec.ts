@@ -12,9 +12,8 @@ test("section guidance explains the workflow without per-button question marks",
   await setEnglish(page);
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Lore", exact: true })).toBeVisible();
-  await expect(page.locator(".dr-mode-guide")).toContainText("Automatic");
-  await expect(page.locator(".dr-mode-guide")).toContainText("Every message");
-  await expect(page.locator(".dr-score-level b")).toHaveText(["4", "6", "9"]);
+  await expect(page.locator(".dr-mode-guide, .dr-score-guide")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "How memory selection works" })).toBeVisible();
   await expect(page.getByRole("spinbutton", { name: "Memory limit", exact: true })).toBeVisible();
 });
 
@@ -30,13 +29,11 @@ test("list keeps primary editing visible and secondary actions inside records", 
   await page.screenshot({ path: testInfo.outputPath("deeprole-memory.png"), fullPage: true, animations: "disabled" });
 });
 
-test("settings explain modes and expose tuning without opening any disclosure", async ({ page }, testInfo) => {
+test("compact settings expose tuning without opening any disclosure", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await expect(page.getByText("Резервная копия", { exact: true })).toBeHidden();
-  await expect(page.locator(".dr-mode-guide")).toContainText("Автоподбор");
-  await expect(page.locator(".dr-mode-guide")).toContainText("По вашему выбору");
   await expect(page.getByRole("spinbutton", { name: "Лимит памяти", exact: true })).toBeVisible();
 
   await page.getByRole("combobox", { name: "Чувствительность поиска" }).selectOption("9");

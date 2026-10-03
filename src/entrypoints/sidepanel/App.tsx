@@ -57,7 +57,6 @@ import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
 import type { ServiceActivity } from "../../core/memory-experience";
 import { MemoryStatus, ServiceProgress } from "../shared/MemoryStatus";
-import { ModeGuide } from "../shared/ModeGuide";
 import { TooltipButton } from "../shared/TooltipButton";
 import { getSettings, getVaultConfig, saveSettings } from "../../storage/settings";
 import { saveEditorRecord } from "../../storage/editing";
@@ -774,9 +773,7 @@ function SettingsView(props: {
       <div className="view-title"><div><small>DeepRole</small><h1>{props.t("settings")}</h1></div></div>
       <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "data", "app"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{x(id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
       <div className="dr-settings-page" hidden={section !== "memory"}>
-      <ModeGuide locale={props.settings.locale} />
       <SettingsCard icon={<BrainCircuit />} title={u("memorySettings")}>
-        <p className="setting-copy">{x("tuningHint")}</p>
         <MemorySelectionSettings key={props.world?.id ?? "global"} locale={props.settings.locale} world={props.world} settings={props.settings} onSave={async (values, expected) => {
           if (expected) { const next = { ...expected, ...values, updatedAt: Date.now() }; await repository.putIfUnchanged("world", next, expected); props.onRefresh(); return next; }
           else await props.onSettings({ ...props.settings, ...values });

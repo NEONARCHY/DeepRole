@@ -40,18 +40,20 @@ test("outgoing preview shows records and reasons, not a claim they were already 
   await expect(page.locator(".dr-memory-status")).not.toContainText("Добавьте первый факт");
 });
 
-for (const locale of ["ru", "en"] as const) test(`settings examples are visible immediately and reminder editing keeps typed digits (${locale})`, async ({ page }, info) => {
+for (const locale of ["ru", "en"] as const) test(`compact settings keep help accessible and reminder editing keeps typed digits (${locale})`, async ({ page }, info) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   if (locale === "en") await setEnglish(page);
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
-  const guide = page.locator(".dr-mode-guide");
-  await expect(guide).toBeVisible();
-  await expect(guide).toContainText(l("не понимает текст как ИИ", "not an AI search"));
-  await guide.getByRole("button", { name: l("Всегда Каждый раз", "Always Every message"), exact: true }).click();
-  await expect(guide.locator(".dr-mode-example")).toContainText(l("Пиши от третьего лица", "Write in third person"));
-  await page.screenshot({ path: info.outputPath(`modes-${locale}.png`), fullPage: true });
+  await expect(page.locator(".dr-mode-guide, .dr-score-guide")).toHaveCount(0);
+  const help = page.getByRole("button", { name: l("Как работает подбор памяти", "How memory selection works"), exact: true });
+  await expect(help).toBeVisible();
+  await help.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(help).toBeFocused();
+  await page.screenshot({ path: info.outputPath(`compact-settings-${locale}.png`), fullPage: true });
   await page.getByRole("button", { name: l("Приложение", "App"), exact: true }).click();
   const chatIndicator = page.getByRole("checkbox", { name: l("Контекст чата", "Chat context"), exact: true });
   const memoryIndicator = page.getByRole("checkbox", { name: l("Контекст DeepRole", "DeepRole context"), exact: true });
