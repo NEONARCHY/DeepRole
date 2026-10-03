@@ -4,11 +4,13 @@
 
 1. Подключите мир к открытому чату.
 2. Карточки включены по умолчанию. Если раньше отключали их, включите **Настройки → Приложение → Персонажи → Карточки персонажей**.
-3. Под индикаторами контекста появится список. Нажмите имя, чтобы открыть анкету, или **+**, чтобы добавить персонажа.
+3. Под индикаторами контекста появятся крупные портреты. В **«В сцене»** видны герой и присутствующие участники. В **«Все»** доступны остальные персонажи и поиск по имени или псевдониму. Нажмите портрет, чтобы открыть анкету, или **+**, чтобы добавить персонажа.
 4. В своей карточке отметьте **Мой главный герой**. Его портрет будет слева от вариантов ответа, текущего собеседника — справа. Если собеседника нет, останется только герой. На узком экране портреты располагаются над вариантами.
 5. Продолжайте обычный разговор. После завершения ответа обновятся настроение, состояние, ближайшая цель, отношения и заданные показатели.
 
 После импорта обычных записей список персонажей может быть пустым: DeepSeek заполнит его со следующим ответом, либо добавьте карточку кнопкой **+**. Сам импорт не запускает генерацию. Карточки разрешают автоматически сохранять состояние персонажей из ответов; их можно отключить. Обычное **«Обновить лор»** по-прежнему требует вашего подтверждения.
+
+Если участники сцены ещё неизвестны, показываются все персонажи с коротким пояснением. Фильтр меняет только экран, не память и не состав отправляемого контекста. При переходе в другой чат или мир снова открывается «В сцене», прежний поиск очищается.
 
 У каждого браузера своя локальная библиотека. Один и тот же чат DeepSeek в Brave и браузере Codex не означает общую память DeepRole. Повторный импорт файла создаёт отдельную копию мира: ответ для прежней копии не переносится в новую. Продолжите чат с выбранным миром, чтобы DeepSeek вернул обновление именно для него.
 
@@ -24,7 +26,9 @@
 
 ## Портреты и эмоции
 
-В карточке откройте **Портреты и эмоции**, выберите настроение и загрузите PNG, JPG или WebP до 5 МБ. Для обычного состояния используйте **Спокойствие / neutral**. Если для эмоции изображения нет, показывается обычный портрет, затем — выбранный мужской, женский или нейтральный силуэт.
+В карточке откройте **Портреты и эмоции**, выберите **«Эмоцию портрета»** и загрузите PNG, JPG или WebP до 5 МБ. Для обычного состояния используйте **Спокойствие / neutral**. Редактор сначала показывает портрет для текущего настроения. Переключение предпросмотра не меняет настроение и не требует сохранения; само настроение меняется выше, в разделе «Сейчас в этом чате».
+
+Если нужной картинки нет или браузер не может её открыть, показывается обычный портрет, затем — выбранный мужской, женский или нейтральный силуэт. Сохранённые изображения при этом не удаляются; новое изображение можно загрузить в ту же эмоцию.
 
 Портреты показываются крупно: под индикаторами — сетка с именами и настроением, рядом с вариантами ответа — герой и собеседник. На узком экране они находятся над вариантами. Нажмите на портрет, чтобы открыть анкету и изменить данные.
 
@@ -50,6 +54,8 @@
 
 ## English quick start
 
-Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. Open a character below the context indicators, edit and save. Mark **My protagonist** for the left portrait; the current interlocutor appears on the right.
+Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. **In scene** shows your protagonist and current participants; **All** has the complete roster and name/alias search. If participants aren’t known yet, everyone is shown with a short note. Filters affect the display only and reset when you switch chats or worlds. Open a portrait below the context indicators, edit and save. Mark **My protagonist** for the left portrait; the current interlocutor appears on the right.
+
+The portrait editor starts on the current mood. **Portrait emotion** previews an image without changing the character’s mood or requiring a save. Change the actual mood under **Now in this chat**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
 
 Shared profiles belong to the world; automatically updated states belong only to the current chat. Existing profiles are not overwritten by model replies. No extra requests are sent. Images stay local; the model receives only allowed emotion names. Upload portraits in each sheet and edit the emotion list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports exclude chat states. See ROADMAP for automated and live-account verification status.

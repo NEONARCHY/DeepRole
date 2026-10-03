@@ -105,8 +105,12 @@ const unboundCopy = {
   ru: "Не удалось связать обновление с вашей репликой. Персонажи смогут обновиться после следующего ответа.",
   en: "Couldn’t match the update to your message. Characters can update after the next reply.",
 };
-export type CharacterCopyKey = keyof typeof copy.en | "unbound";
-export const characterText = (locale: Locale, key: CharacterCopyKey) => key === "unbound" ? unboundCopy[locale] : copy[locale][key];
+const castCopy = {
+  ru: { sceneCast: "В сцене", allCast: "Все", castView: "Каких персонажей показывать", searchCast: "Найти персонажа", noMatches: "Персонаж не найден. Попробуйте другое имя.", noCast: "В этой сцене пока никого нет. Все персонажи доступны во вкладке «Все».", castFallback: "Участники ещё не определены — показаны все персонажи.", portraitEmotion: "Эмоция портрета", previewOnly: "Просмотр портрета не меняет настроение персонажа." },
+  en: { sceneCast: "In scene", allCast: "All", castView: "Characters to show", searchCast: "Find a character", noMatches: "No character found. Try another name.", noCast: "No one is in this scene yet. Find everyone under All.", castFallback: "Scene participants aren’t known yet — showing everyone.", portraitEmotion: "Portrait emotion", previewOnly: "Previewing a portrait doesn’t change the character’s mood." },
+};
+export type CharacterCopyKey = keyof typeof copy.en | keyof typeof castCopy.en | "unbound";
+export const characterText = (locale: Locale, key: CharacterCopyKey): string => key === "unbound" ? unboundCopy[locale] : key in castCopy[locale] ? castCopy[locale][key as keyof typeof castCopy.en] : copy[locale][key as keyof typeof copy.en];
 export const emotionLabel = (locale: Locale, value: string) => value === "neutral" ? copy[locale].neutralEmotion : DEFAULT_EMOTIONS.includes(value) ? copy[locale][value as "happy"] : value;
 export function characterDescription(entity: SceneEntity, locale: Locale = "en"): string {
   const sheet = entity.characterSheet;
@@ -115,8 +119,23 @@ export function characterDescription(entity: SceneEntity, locale: Locale = "en")
 
 export function portraitSource(entity: SceneEntity, state?: CharacterStatus): string | null {
   const sprites = entity.characterSheet?.sprites;
-  const source = sprites?.[state?.emotion ?? "neutral"] ?? sprites?.neutral;
-  return validSprite(source) ? source : null;
+  return [sprites?.[state?.emotion ?? "neutral"], sprites?.neutral].find(validSprite) ?? null;
+}
+
+/** Only local raster images, then the local vector silhouette. Never repair stored data. */
+export function portraitSources(sheet?: CharacterSheet, emotion = "neutral"): string[] {
+  return [...new Set([sheet?.sprites[emotion], sheet?.sprites.neutral].filter(validSprite)), silhouetteSource(sheet?.gender)];
+}
+
+/** A malformed image must not become a blank tile or trigger an endless retry loop. */
+const portraitImageCache = new WeakMap<HTMLImageElement, string[]>();
+export function syncPortraitImage(image: HTMLImageElement, sheet?: CharacterSheet, emotion = "neutral"): void {
+  const sources = portraitSources(sheet, emotion); const previous = portraitImageCache.get(image);
+  if (previous?.length === sources.length && previous.every((source, index) => source === sources[index])) return;
+  portraitImageCache.set(image, sources);
+  let index = 0;
+  image.onerror = () => { if (index < sources.length - 1) image.src = sources[++index]!; };
+  if (image.getAttribute("src") !== sources[0]) image.src = sources[0]!;
 }
 
 /** Static vector fallback only. Uploaded SVG/remote URLs are deliberately unsupported. */

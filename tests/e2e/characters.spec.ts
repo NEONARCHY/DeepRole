@@ -98,6 +98,7 @@ test("upload fallback, failed save keeps draft, custom emotions validation", asy
 for (const count of [1, 40]) test(`portrait grid stays usable with ${count} characters`, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto(`/tests/fixtures/characters.html?count=${count}`);
+  if (count === 40) await page.getByRole("button", { name: "All · 40", exact: true }).click();
   const tiles = page.locator(".dr-character-row"); await expect(tiles).toHaveCount(count);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const list = page.locator(".dr-character-list");

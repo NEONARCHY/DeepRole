@@ -460,6 +460,41 @@ test("character sheets: real extension sync, manual edits, return and chat isola
   } finally { await context.close(); }
 });
 
+test("character cast: installed roster, preview, focus and outgoing mood stay synchronized", async ({}, info) => {
+  test.setTimeout(60000);
+  const world = { id: "w", name: "Test observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const people = Array.from({ length: 40 }, (_, i) => ({ id: i === 0 ? "hero" : i === 1 ? "mira" : `extra-${i}`, worldId: "w", name: i === 0 ? "Noah" : i === 1 ? "Mira" : `Character ${i}`, kind: "character", description: "ORIGINAL", aliases: i === 1 ? ["Engineer"] : [], memberIds: [], characterSheet: { gender: "neutral", protagonist: i === 0, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
+  const state = { emotion: "happy", condition: "Safe", goal: "Find the key", relationship: "", stats: [] };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, characterScenes: { w: { revision: "v", presentIds: ["hero", "mira"], partnerId: "mira", states: { mira: state }, updatedAt: 1 } }, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ...people.map(person => ["entity", person] as [string, any]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]]);
+  try {
+    const tiles = chat.locator(".dr-character-row"); await expect(tiles).toHaveCount(2);
+    await chat.getByRole("button", { name: "All · 40", exact: true }).click();
+    const search = chat.getByRole("searchbox", { name: "Find a character", exact: true });
+    await search.fill("Engineer"); await expect(tiles).toHaveCount(1); await expect(tiles).toContainText("Mira");
+    await chat.getByRole("button", { name: "In scene · 2", exact: true }).click();
+    await chat.evaluate(() => { const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "scene-roster"; const options = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })); row.textContent = "Mira holds the key.\n<deeprole_choices>" + JSON.stringify({ version: 1, options }) + "</deeprole_choices>"; document.querySelector("#conversation")!.append(row); });
+    const portrait = chat.locator(".dr-cast-portrait.right"); await expect(portrait).toHaveAccessibleName("Open character: Mira");
+    await portrait.focus(); await portrait.press("Enter"); const dialog = chat.getByRole("dialog");
+    await expect(dialog.getByLabel("Portrait emotion", { exact: true })).toHaveValue("happy");
+    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("angry");
+    await dialog.getByRole("button", { name: "Close", exact: true }).first().click(); await expect(dialog).toHaveCount(0); await expect(portrait).toBeFocused();
+    await portrait.press("Enter"); await dialog.getByLabel("Mood", { exact: true }).selectOption("worried");
+    await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await expect(dialog).toHaveCount(0);
+    await expect(portrait).toBeFocused(); await expect(portrait.locator("small")).toHaveText("Worried");
+    const rows = await databaseRecords(panel); expect(rows.find(r => r.id === "binding:a").data.characterScenes.w.states.mira.emotion).toBe("worried");
+    expect(rows.filter(r => r.kind === "entity")).toHaveLength(40); expect(rows.find(r => r.id === "mira").data.description).toBe("ORIGINAL");
+    const sent: string[] = []; await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent.push(route.request().postDataJSON().prompt); return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, shall we examine the key?" }) }));
+    expect(sent).toHaveLength(1); expect(sent[0]).toContain('"emotion":"worried"'); expect(sent[0]).not.toContain("data:image");
+    await chat.screenshot({ path: info.outputPath("installed-cast.png") });
+    await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(tiles).toHaveCount(40); await expect(search).toHaveCount(0);
+    await expect(chat.locator(".dr-characters")).toContainText("showing everyone");
+    await chat.goto("https://chat.deepseek.com/chat/s/a"); await expect(tiles).toHaveCount(2); await expect(tiles.filter({ hasText: "Mira" })).toContainText("Worried");
+    await chat.reload(); await expect(tiles).toHaveCount(2); await expect(tiles.filter({ hasText: "Mira" })).toContainText("Worried");
+  } finally { await context.close(); }
+});
+
 const choicesWorld = { id: "choices-world", name: "Test observatory", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
 const choicesBinding = { id: "binding:a", chatId: "a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
 const choicesPayload = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map((kind) => ({ kind, label: "Move " + kind, text: "MY_MOVE_" + kind })) }) + '</deeprole_choices>';

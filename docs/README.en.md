@@ -21,6 +21,8 @@ Character sheets are enabled by default. Connect a world and continue chatting: 
 
 Mark **My protagonist** for the left portrait beside reply options; the current interlocutor appears on the right. Upload emotion variants or use the default silhouettes. Images stay local and cost no model tokens; profile text does use tokens. [Setup, limits and backups →](CHARACTERS.md)
 
+**In scene** shows the protagonist and current participants; **All** opens the complete roster with name and alias search. Previewing emotion portraits does not change the current mood. Portrait updates preserve keyboard focus. Unreadable images fall back to the default portrait or silhouette without deleting your stored image.
+
 ## Scene choices
 
 With a world connected, DeepRole asks DeepSeek to end scenes with dialogue or a meaningful action opportunity with four options: warm, neutral, confrontational, and unexpected. They appear as buttons below the reply. Clicking one **fills the composer for editing**; it never sends automatically. You can switch options until you edit the inserted text; DeepRole preserves your own draft.

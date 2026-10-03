@@ -5,6 +5,11 @@
 .dr-characters button:hover { background:var(--dr-raised); }
 .dr-characters button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
 .dr-characters button:disabled { opacity:.55; cursor:default; }
+.dr-character-cast-view { display:flex; gap:var(--dr-space-1); padding:var(--dr-space-1); margin-bottom:var(--dr-space-3); border-radius:var(--dr-radius); background:var(--dr-bg); }
+.dr-character-cast-view button { flex:1; min-width:0; padding:6px; border-color:transparent; background:transparent; }
+.dr-character-cast-view button[aria-pressed=true] { background:var(--dr-raised); border-color:var(--dr-border); }
+.dr-character-search { box-sizing:border-box; width:100%; min-height:44px; margin-bottom:var(--dr-space-3); padding:var(--dr-space-2) var(--dr-space-3); border:1px solid var(--dr-border); border-radius:8px; color:var(--dr-text); background:var(--dr-bg); font:inherit; }
+.dr-character-search:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
 .dr-character-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:10px; max-height:min(44dvh,440px); overflow:auto; overscroll-behavior:contain; padding:3px; margin-inline:-3px; }
 .dr-characters .dr-character-row { position:relative; display:grid; align-content:start; gap:10px; width:100%; min-width:0; padding:6px; text-align:start; background:var(--dr-surface); }
 .dr-character-row img { display:block; width:100%; height:auto; aspect-ratio:3/4; border-radius:8px; object-fit:contain; background:var(--dr-bg); }
@@ -45,4 +50,3 @@
 .dr-character-dialog .dr-character-primary:hover { background:var(--dr-action-hover); }
 .dr-character-original { white-space:pre-wrap; overflow-wrap:anywhere; color:var(--dr-muted); }
 @media(max-width:420px) { .dr-character-editor-body { padding-inline:12px; } .dr-character-dialog>header,.dr-character-dialog footer { padding:12px; } .dr-character-dialog button { min-height:44px; } .dr-character-portrait-editor { grid-template-columns:1fr; gap:12px; } .dr-character-portrait-editor img { width:min(100%,220px); justify-self:center; } }
-@media(prefers-reduced-motion:no-preference) { .dr-character-row img { transition:opacity .15s ease; } }

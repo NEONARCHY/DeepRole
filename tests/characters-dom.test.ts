@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { latestCharacterResponse, foldCharacterPayload, syncChoicePortraits } from "../src/adapters/deepseek-characters-dom";
 import { dismissSceneChoiceCards, syncSceneChoiceCards } from "../src/adapters/deepseek-choices-dom";
-import { EMPTY_CHARACTER, EMPTY_STATUS } from "../src/core/characters";
+import { EMPTY_CHARACTER, EMPTY_STATUS, syncPortraitImage, silhouetteSource, portraitSource } from "../src/core/characters";
 import type { CharacterScene, SceneEntity } from "../src/core/types";
 const payload = `<deeprole_characters>${JSON.stringify({ world: "w", chat: "a", base: "v", present: ["mira"], updates: [{ id: "mira", state: EMPTY_STATUS }] })}</deeprole_characters>`;
 function row(text: string, role = "assistant") { const el = document.createElement("article"); el.dataset.role = role; el.dataset.messageId = crypto.randomUUID(); el.textContent = text; document.body.append(el); return el; }
@@ -46,4 +46,45 @@ it("keeps reply choices when the same reply also folds a character update", () =
   syncSceneChoiceCards(true, false, "en", pick);
   expect(document.querySelector("[data-deeprole-choices-host]")).toBe(host);
   expect(host!.shadowRoot!.querySelectorAll(".grid button")).toHaveLength(4);
+});
+
+it("keeps portrait focus and nodes across emotion updates, and uses the current click callback", () => {
+  const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: kind }));
+  row(`<deeprole_choices>${JSON.stringify({ version: 1, options: choices })}</deeprole_choices>`);
+  const people: SceneEntity[] = ["hero", "mira"].map(id => ({ id, name: id, kind: "character", worldId: "w", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: id === "hero" } }));
+  const scene: CharacterScene = { revision: "v", presentIds: ["hero", "mira"], states: { mira: { ...EMPTY_STATUS, emotion: "happy" } }, updatedAt: 1 };
+  const oldOpen = vi.fn(); const newOpen = vi.fn();
+  syncSceneChoiceCards(true, false, "en", vi.fn(async () => true));
+  syncChoicePortraits(true, people, scene, "en", oldOpen);
+  const shadow = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!.shadowRoot!;
+  const button = shadow.querySelector<HTMLButtonElement>(".dr-cast-portrait.right")!;
+  const image = button.querySelector("img"); button.focus();
+  syncChoicePortraits(true, people, { ...scene, revision: "v2", states: { mira: { ...EMPTY_STATUS, emotion: "worried" } } }, "en", newOpen);
+  expect(shadow.querySelector(".dr-cast-portrait.right")).toBe(button);
+  expect(button.querySelector("img")).toBe(image); expect(shadow.activeElement).toBe(button);
+  expect(button.querySelector("small")!.textContent).toBe("Worried");
+  button.click(); expect(newOpen).toHaveBeenCalledWith("mira"); expect(oldOpen).not.toHaveBeenCalled();
+  syncChoicePortraits(true, people, { ...scene, revision: "v2", states: { mira: { ...EMPTY_STATUS, emotion: "worried" } } }, "ru", newOpen);
+  expect(shadow.activeElement).toBe(button); expect(button.querySelector("small")!.textContent).toBe("Тревога");
+  const observer = new MutationObserver(() => {}); observer.observe(shadow, { childList: true, attributes: true, characterData: true, subtree: true });
+  syncChoicePortraits(true, people, { ...scene, revision: "v2", states: { mira: { ...EMPTY_STATUS, emotion: "worried" } } }, "ru", newOpen);
+  expect(observer.takeRecords()).toEqual([]); observer.disconnect();
+});
+
+it("falls back once through local portraits without retrying corrupt bytes on every update", () => {
+  const img = document.createElement("img"); const sprites = { happy: "data:image/png;base64,AAAA", neutral: "data:image/png;base64,BBBB" };
+  const sheet = { ...EMPTY_CHARACTER, sprites }; syncPortraitImage(img, sheet, "happy");
+  expect(img.getAttribute("src")).toBe(sprites.happy);
+  img.dispatchEvent(new Event("error")); expect(img.getAttribute("src")).toBe(sprites.neutral);
+  syncPortraitImage(img, structuredClone(sheet), "happy"); expect(img.getAttribute("src")).toBe(sprites.neutral);
+  img.dispatchEvent(new Event("error")); expect(img.getAttribute("src")).toBe(silhouetteSource());
+  img.dispatchEvent(new Event("error")); expect(img.getAttribute("src")).toBe(silhouetteSource());
+  expect(sheet.sprites).toEqual(sprites);
+  syncPortraitImage(img, { ...sheet, sprites: { ...sprites, happy: "data:image/png;base64,CCCC" } }, "happy");
+  expect(img.getAttribute("src")).toBe("data:image/png;base64,CCCC");
+});
+
+it("falls back to a valid neutral portrait when an emotion source is invalid", () => {
+  const entity: SceneEntity = { id: "m", name: "Mira", kind: "character", worldId: "w", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, sprites: { happy: "https://invalid.test/image.png", neutral: "data:image/png;base64,AAAA" } } };
+  expect(portraitSource(entity, { ...EMPTY_STATUS, emotion: "happy" })).toBe(entity.characterSheet!.sprites.neutral);
 });

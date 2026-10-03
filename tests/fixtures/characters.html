@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Character sheet test</title><style>body{margin:0;background:#181818;color:#f0f0f2;font:14px system-ui}#app{padding:16px}h1{font-size:18px}#conversation{max-width:900px;margin:20px auto;padding:12px}button{font:inherit}</style></head><body><main><h1>Character sheet test</h1><div id="app"></div><div id="conversation"><article data-role="assistant"><div class="ds-markdown" id="reply"></div></article></div></main><script type="module">
-import React, {useState} from "react"; import {createRoot} from "react-dom/client";
+import React, {useEffect,useState} from "react"; import {createRoot} from "react-dom/client";
 import {CharacterPanel,CharacterSettings} from "/src/entrypoints/shared/CharacterSheets.tsx";
 import {DEFAULT_SETTINGS} from "/src/core/defaults.ts";
 import {EMPTY_CHARACTER,EMPTY_STATUS} from "/src/core/characters.ts";
@@ -16,9 +16,12 @@ const labels=locale==="ru"?["Поблагодарить Миру","Осмотр�
 const texts=locale==="ru"?["«Спасибо, Мира. Давай разберёмся вместе».","Подношу конверт к свету и изучаю печать, не вскрывая его.","«Я не стану открывать чужое письмо. Сначала найдём владельца».","«Обменяемся подсказками? У меня есть ключ, а у тебя — письмо». "]:["Thank you, Mira. Let’s work this out together.","I hold the envelope to the light and examine its seal without opening it.","I won’t open someone else’s letter. Let’s find its owner first.","Shall we trade clues? I have a key, and you have a letter."];
 const options=["positive","neutral","negative","surprise"].map((kind,index)=>({kind,label:labels[index],text:texts[index]}));
 document.querySelector("#reply").textContent=(locale==="ru"?"Мира держит запечатанный конверт.":"Mira holds a sealed envelope.")+"\n<deeprole_choices>"+JSON.stringify({version:1,options})+"</deeprole_choices>";
-function App(){const [settings,setSettings]=useState({...DEFAULT_SETTINGS,locale,characterSheetsEnabled:true}); const [openId,setOpenId]=useState(null);
+function App(){const [settings,setSettings]=useState({...DEFAULT_SETTINGS,locale,characterSheetsEnabled:true}); const [openId,setOpenId]=useState(null); const [cast,setCast]=useState({entities,scene,worldId:"w",chatId:"a"});
 window.openCharacter=(id)=>setOpenId(id);
-window.syncPortraits=(present=scene.presentIds)=>{syncSceneChoiceCards(true,false,locale,async()=>true);syncChoicePortraits(true,entities,{...scene,presentIds:present},locale,id=>setOpenId(id));};
-return React.createElement(React.Fragment,null,React.createElement(CharacterPanel,{locale,entities,scene,emotions:settings.characterEmotions,base:"v",worldId:"w",chatId:"a",status:"updated",onRetry:()=>{},onSave:async edit=>{window.saved=edit;if(window.rejectSave)throw Error("conflict");},openId,onOpened:()=>setOpenId(null)}),React.createElement("div",{style:{maxWidth:350,marginTop:24}},React.createElement(CharacterSettings,{settings,onSettings:async value=>{window.settings=value;setSettings(value);}})));}
-createRoot(document.querySelector("#app")).render(React.createElement(App));setTimeout(()=>window.syncPortraits(),100);
+window.setCast=value=>setCast(previous=>({...previous,...value}));
+window.getCast=()=>cast;
+window.syncPortraits=(present=cast.scene?.presentIds)=>{syncSceneChoiceCards(true,false,locale,async()=>true);syncChoicePortraits(true,cast.entities,cast.scene?{...cast.scene,presentIds:present}:undefined,locale,id=>setOpenId(id));};
+useEffect(()=>window.syncPortraits(),[cast]);
+return React.createElement(React.Fragment,null,React.createElement(CharacterPanel,{locale,...cast,emotions:settings.characterEmotions,base:"v",status:"updated",onRetry:()=>{},onSave:async edit=>{window.saved=edit;if(window.rejectSave)throw Error("conflict");},openId,onOpened:()=>setOpenId(null)}),React.createElement("div",{style:{maxWidth:350,marginTop:24}},React.createElement(CharacterSettings,{settings,onSettings:async value=>{window.settings=value;setSettings(value);}})));}
+createRoot(document.querySelector("#app")).render(React.createElement(App));
 </script></body></html>
