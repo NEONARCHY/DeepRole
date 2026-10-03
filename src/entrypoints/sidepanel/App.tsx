@@ -157,7 +157,7 @@ export function App() {
     return () => window.removeEventListener("keydown", closeOnEscape, true);
   }, [embeddedMenu]);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (propagateFailure = false) => {
     const generation = ++refreshGeneration.current;
     try {
       const nextSettings = await startupDeadline(getSettings());
@@ -182,6 +182,12 @@ export function App() {
       setProposals(libraryRecords<MemoryProposalBatch>(records, "proposal")); setChanges(libraryRecords<LoreChange>(records, "change"));
     } catch (error) {
       if (generation !== refreshGeneration.current) return;
+      // Import has its own saved-but-not-refreshed recovery dialog. Do not
+      // swallow its refresh failure or unmount it as a startup error.
+      if (propagateFailure) {
+        if (error instanceof VaultLockedError) clearPrivateState();
+        throw error;
+      }
       if (error instanceof VaultLockedError) { clearPrivateState(); setLoadError(false); }
       else {
         clearPrivateState();
@@ -450,7 +456,7 @@ export function App() {
         {relevantProposals.length > 0 && <section className="dr-assistant"><header><strong>{at("proposals")}</strong></header>{relevantProposals.map((batch) => <button key={batch.id} onClick={() => setReviewId(batch.id)}>{at("review")} · {batch.items.length}</button>)}</section>}
         {activeReview && <MemoryReview key={activeReview.id} locale={settings.locale} batch={activeReview} onClose={() => setReviewId(null)} onDiscard={async () => { await discardMemoryProposals(activeReview.id); await refresh(); }} onSave={async (items) => { await applyMemoryProposals(activeReview.id, items); const count = items.filter((item) => item.selected && !item.issue).length; setToast(at("memoryUpdated").replace("{count}", String(count))); await refresh(); await refreshPage(); }} />}
         {activeTab === "overview" && lastChange && <div className="button-row"><button className="button secondary small" onClick={() => void undoLoreChange(lastChange.id).then(() => refresh()).catch(() => setToast(at("conflict")))}>{at("undo")}</button></div>}
-        {activeTab === "worlds" && <WorldsView locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
+        {activeTab === "worlds" && <WorldsView locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
         {activeTab === "overview" && (
           <Overview
             t={t}

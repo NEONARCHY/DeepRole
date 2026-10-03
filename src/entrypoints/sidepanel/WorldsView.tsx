@@ -355,22 +355,26 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     </div>
     {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
     {props.canAttach && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label><p className="rp-hint">{menuText(props.locale, "attachHint")}</p></>}
-    {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field><HelpButton className="button primary" disabled={busy || !name.trim()} onClick={() => void importRecords(() => cloneWorldPackage(pack, name.trim()), attach && props.canAttach)}>{t("confirmImport")}</HelpButton></>}
+    {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field></>}
     {items.length > 0 && <>
       <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>
       <p className="rp-status">{t("previewModes", { count: items.length, always: items.filter((i) => i.activation === "always").length, smart: items.filter((i) => i.activation === "smart").length, manual: items.filter((i) => i.activation === "manual").length, disabled: items.filter((i) => !i.enabled).length })}</p>
-      <p className="rp-hint">{t("jsonPreservation")}</p>
-      <p className="rp-hint rp-import-character-hint">{t("loreCardsHint")}</p>
+      <p className="rp-hint rp-import-character-hint">{t("jsonPreservation")} {t("loreCardsHint")}</p>
       {!!lore?.unsupportedFields.length && <div className="rp-status" role="note"><p>{t("unsupportedImport", { fields: lore.unsupportedFields.join(", ") })}</p><label className="rp-check"><input type="checkbox" checked={acceptUnsupported} onChange={(e) => setAcceptUnsupported(e.target.checked)} />{t("acceptUnsupported")}</label></div>}
       <Field name={t("name")}><input aria-label={t("name")} className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
       <details><summary>{t("advanced")}</summary><Field name={t("destination")} help={t("worldHint")}><select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
       {lore?.format === "bds" && <><p>{t("alwaysMapping")}</p><Field name={t("mapping")} help={t("mappingHint")}><select aria-label={t("mapping")} value={mode} onChange={(e) => setMode(e.target.value as "smart" | "manual")}><option value="smart">{t("smart")}</option><option value="manual">{t("manual")}</option></select></Field></>}</details>
       <LoreImportPreview locale={props.locale} items={items} />
-      <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => { if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach && props.canAttach); }}>{t("confirmImport")}</HelpButton>
     </>}
     {error && <p role="alert">{error}</p>}
     </fieldset>}
       </div>
+      {!committedImport && (pack || items.length > 0) && <footer className="rp-import-footer">
+        <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => {
+          if (pack) void importRecords(() => cloneWorldPackage(pack, name.trim()), attach && props.canAttach);
+          else if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach && props.canAttach);
+        }}>{t("confirmImport")}</HelpButton>
+      </footer>}
     </section>
   </div>;
 }

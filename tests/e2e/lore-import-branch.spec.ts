@@ -14,7 +14,7 @@ for (const locale of ["ru", "en"] as const) test(`JSON preview and branch modes 
   const data = { name: "Observatory", entries: [...entries, { title: "World_rules", content: "Preserve the calendar.", activation: "always" }], extraSetting: true };
   await page.getByLabel(label("Выбрать JSON", "Choose JSON"), { exact: true }).setInputFiles({ name: "Neutral.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(data)) });
   await expect(page.getByText(label("Распознаны записи JSON", "JSON entries recognized"), { exact: true })).toBeVisible();
-  await expect(page.locator(".rp-import-character-hint")).toContainText(label("не карточки и портреты", "not character sheets or portraits"));
+  await expect(page.locator(".rp-import-character-hint")).toContainText(label("Текст записей не меняется", "Entry text stays unchanged"));
   await expect(page.locator(".rp-import-character-hint")).toContainText(label("экспорт мира DeepRole", "DeepRole world export"));
   const confirm = page.getByRole("button", { name: label("Подтвердить импорт", "Confirm import"), exact: true }); await expect(confirm).toBeDisabled();
   await expect(page.getByRole("note")).toContainText("extraSetting");

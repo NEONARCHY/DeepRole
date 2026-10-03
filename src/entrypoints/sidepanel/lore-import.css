@@ -1,5 +1,6 @@
 .modal-backdrop.lore-import-backdrop {
   align-items: center;
+  justify-items: center;
   padding: 16px;
   /* Keep text opaque from the first frame; fading the ancestor mixes it with
      the library behind the dialog, especially during fast import recovery. */
@@ -7,6 +8,8 @@
 }
 
 .lore-import-modal {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 560px);
   max-height: calc(100vh - 32px);
   border-bottom: 1px solid var(--line-strong);
@@ -20,9 +23,20 @@
 }
 
 .lore-import-modal > .modal-body {
-  max-height: calc(100vh - 108px);
+  min-height: 0;
   padding: 10px 17px 18px;
 }
+
+.lore-import-modal > header,
+.rp-import-footer { flex-shrink: 0; }
+
+.rp-import-footer {
+  padding: 12px 17px;
+  border-top: 1px solid var(--line);
+  background: var(--dr-bg);
+}
+
+.rp-import-footer > .button { width: 100%; }
 
 .lore-import-modal .rp-check {
   font-size: 11px;
