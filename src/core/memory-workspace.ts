@@ -22,7 +22,7 @@ export function changeMemoryOverride(current: MemoryOverrides, id: string, actio
 }
 
 /** Descriptions are projections of their original records, not saved entry copies. */
-export function runtimeMemoryDocuments(entries: MemoryEntry[], books: MemoryBook[], worlds: WorldProfile[], entities: SceneEntity[], scene: NonNullable<RankMemoryInput["scene"]>, searchText: string) {
+export function runtimeMemoryDocuments(entries: MemoryEntry[], _books: MemoryBook[], worlds: WorldProfile[], entities: SceneEntity[], scene: NonNullable<RankMemoryInput["scene"]>, searchText: string) {
   const origins = new Map<string, { kind: "entry" | "world" | "entity"; id: string }>();
   const documents = [...entries];
   entries.forEach((entry) => origins.set(entry.id, { kind: "entry", id: entry.id }));

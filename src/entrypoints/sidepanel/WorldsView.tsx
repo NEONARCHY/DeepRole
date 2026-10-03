@@ -13,7 +13,7 @@ import { repository } from "../../storage/repository";
 import { saveEditorRecord } from "../../storage/editing";
 import { changeMapActivations, changeMapCategory, changeMapLink, confirmMapPerson, placeMapEntry, removeMapBranch, saveMapLayout } from "../../storage/lore-map";
 import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parseWorldPackage, removeEntity, removeWorld, type WorldPackage } from "../../storage/worlds";
-import { SectionGuide, HelpButton } from "../shared/Help";
+import { HelpButton } from "../shared/Help";
 import { LoreMap } from "./LoreMap";
 import { MapWorkspace } from "./MapWorkspace";
 import "./lore-import.css";

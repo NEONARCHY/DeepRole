@@ -1,9 +1,5 @@
 import type {
-  ChatBinding,
   EncryptedEnvelope,
-  HandoffSnapshot,
-  MemoryBook,
-  MemoryEntry,
   RecordKind,
   RecordValue,
   VaultConfig,

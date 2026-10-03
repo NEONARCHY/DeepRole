@@ -9,6 +9,7 @@ test("installed extension shares its private library with chat and remembers wor
   const profile = await mkdtemp(path.join(tmpdir(), "deeprole-extension-test-"));
   const extension = path.resolve(".output/chrome-mv3");
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] });
+  context.setDefaultTimeout(10000);
   try {
     const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker", { timeout: 15000 });
     const extensionId = new URL(worker.url()).host;
@@ -81,24 +82,25 @@ test("installed extension shares its private library with chat and remembers wor
     await chat.getByRole("button", { name: "Открыть меню DeepRole", exact: true }).click();
     const menu = chat.frameLocator("iframe");
     await menu.getByRole("button", { name: "Лор", exact: true }).click();
-    await menu.getByRole("combobox", { name: "Библиотека мира", exact: true }).selectOption({ label: "Runtime World" });
+    await menu.getByRole("button", { name: /^Библиотека мира:/ }).click();
+    await menu.getByRole("menuitemradio", { name: "Runtime World", exact: true }).click();
     await menu.getByRole("button", { name: "Мир и профили", exact: true }).click();
     await menu.getByRole("button", { name: "Карта мира", exact: true }).click();
     await menu.getByRole("button", { name: "Открыть карту мира", exact: true }).click();
     const map = menu.getByRole("dialog", { name: "Карта мира", exact: true });
     await expect(map).toBeVisible();
-    await expect(chat.locator(".dr-menu-drawer")).toHaveClass(/map-full/);
-    const initialFull = (await chat.locator("iframe").boundingBox())!;
-    expect(initialFull.width).toBe(chat.viewportSize()!.width);
-    await map.getByRole("button", { name: "Свернуть в окно", exact: true }).click();
     await expect(chat.locator(".dr-menu-drawer")).toHaveClass(/map-compact/);
     const windowed = (await chat.locator("iframe").boundingBox())!;
     expect(windowed.width).toBeGreaterThan(400);
     await map.getByRole("button", { name: "Развернуть на весь экран", exact: true }).click();
     await expect(chat.locator(".dr-menu-drawer")).toHaveClass(/map-full/);
     const full = (await chat.locator("iframe").boundingBox())!;
-    expect(full.width).toBe(chat.viewportSize()!.width);
+    expect(full.width).toBe(chat.viewportSize()!.width - 24);
+    // The outer iframe can resize one frame before its inner layout. Wait for
+    // both surfaces before clicking a control whose page coordinates just moved.
+    await expect.poll(() => map.evaluate(node => Math.round(node.getBoundingClientRect().width))).toBe(Math.round(full.width));
     await map.getByRole("button", { name: "Свернуть в окно", exact: true }).click();
+    await expect(map).toHaveClass(/is-compact/);
     await expect(chat.locator(".dr-menu-drawer")).toHaveClass(/map-compact/);
     await menu.getByRole("textbox", { name: "Найти запись или ветвь…", exact: true }).focus();
     await chat.keyboard.press("Escape");

@@ -49,23 +49,27 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
   await repo.updateRecords(all => {
     const { binding, entities, scene } = current(all, scope);
     const now = Date.now(); const changes: DataRecord[] = []; const mapping = new Map(entities.map(e => [e.id, e.id]));
-    const names = new Map(entities.flatMap(e => [e.name, ...e.aliases].map(name => [name.trim().toLocaleLowerCase(), e.id] as const)));
-    if (namedIds) {
-      const seen = new Map<string, string>();
-      for (const entity of entities) for (const name of [entity.name, ...entity.aliases]) {
-        const key = name.trim().toLocaleLowerCase();
-        if (seen.has(key) && seen.get(key) !== entity.id) throw new Error("character-unknown");
-        seen.set(key, entity.id); mapping.set(name, entity.id);
-      }
+    const names = new Map<string, string | null>();
+    for (const entity of entities) for (const name of [entity.name, ...entity.aliases]) {
+      const key = name.trim().toLocaleLowerCase();
+      if (!key) continue;
+      names.set(key, names.has(key) && names.get(key) !== entity.id ? null : entity.id);
     }
+    const resolveName = (name: string) => {
+      const found = names.get(name.trim().toLocaleLowerCase());
+      if (found === null) throw new Error("character-unknown");
+      return found;
+    };
+    const resolve = (name: string) => (namedIds ? resolveName(name) : undefined) ?? mapping.get(name);
+    const updatedIds = new Set<string>();
     const states = { ...scene?.states };
     for (const update of turn.updates) {
       if (!validCharacterStatus(update.state) || !emotions.includes(update.state.emotion)) throw new Error("character-invalid");
-      let id = mapping.get(update.id);
-      if (namedIds && !id && update.name) id = names.get(update.name.trim().toLocaleLowerCase());
+      let id = resolve(update.id);
+      if (namedIds && !id && update.name) id = resolveName(update.name);
       const newName = update.id.startsWith("new:") ? (update.name ?? update.id.slice(4)).trim() : "";
       if (!id && newName && newName.length <= 80) {
-        id = names.get(newName.toLocaleLowerCase());
+        id = resolveName(newName);
         if (!id) {
           if (entities.length + changes.length >= 40) throw new Error("character-limit");
           id = createId("entity");
@@ -76,12 +80,16 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
         mapping.set(update.id, id);
       }
       if (!id) throw new Error("character-unknown");
+      // Different aliases/new: names can resolve to one person. Never silently
+      // overwrite one state with another in an otherwise atomic response.
+      if (updatedIds.has(id)) throw new Error("character-unknown");
+      updatedIds.add(id);
       mapping.set(update.id, id);
       states[id] = structuredClone(update.state);
     }
-    const presentIds = turn.present.map(id => mapping.get(id));
+    const presentIds = turn.present.map(resolve);
     if (presentIds.some(id => !id) || new Set(presentIds).size !== presentIds.length) throw new Error("character-unknown");
-    const partnerId = turn.partner ? mapping.get(turn.partner) : turn.partner;
+    const partnerId = turn.partner ? resolve(turn.partner) : turn.partner;
     if (turn.partner && (!partnerId || !presentIds.includes(partnerId))) throw new Error("character-unknown");
     changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { revision: createId("rev"), lastReply: characterTurnKey(turn), partnerId, presentIds: presentIds as string[], states, updatedAt: now } }, updatedAt: now }));
     return { records: changes, removed: [], result: undefined };

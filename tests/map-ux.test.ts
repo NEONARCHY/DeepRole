@@ -38,6 +38,11 @@ describe("Contextual world map controls", () => {
     const card = mapPopover({ x: 180, y: 300, halfWidth: 100, halfHeight: 40 }, { width: 360, height: 620 });
     expect(card.top >= 356 || card.top + card.maxHeight <= 244).toBe(true);
   });
+  it("never falls back onto the selected card when the vertical gap is short", () => {
+    const card = mapPopover({ x: 163, y: 104, halfWidth: 108, halfHeight: 36 }, { width: 326, height: 208 });
+    expect(card.top >= 156 || card.top + card.maxHeight <= 52).toBe(true);
+    expect(card.top + card.maxHeight).toBeLessThanOrEqual(196);
+  });
   it("uses book membership even though its entries are organized in other map sections", () => {
     const copy = { ...graph, nodes: [...graph.nodes, { ...graph.nodes[0]!, id: "book:b", kind: "book" as const, recordId: "b" }] };
     expect(mapConnectionEntries(copy, "book:b", [{ ...entry("Mira_portrait"), bookId: "b" }, entry("Station")])).toEqual(["Mira_portrait"]);

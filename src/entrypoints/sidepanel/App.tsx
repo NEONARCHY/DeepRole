@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CharacterSettings } from "../shared/CharacterSheets";
 import { characterText } from "../../core/characters";
 import {
@@ -22,7 +22,6 @@ import {
   Search,
   Settings2,
   ShieldCheck,
-  Sparkles,
   Trash2,
   UnlockKeyhole,
   Upload,
@@ -48,7 +47,7 @@ import type {
 import { backupFileName, createBackup, parseBackup, restoreBackup } from "../../storage/backup";
 import { repository, VaultLockedError } from "../../storage/repository";
 import { libraryRecords } from "../../core/memory-workspace";
-import { formatRecordCount, menuText } from "../../core/menu-i18n";
+import { menuText } from "../../core/menu-i18n";
 import { assistantText } from "../../core/assistant-i18n";
 import { applyMemoryProposals, discardMemoryProposals, undoLoreChange } from "../../storage/memory-proposals";
 import { MemoryReview, MemoryUse } from "../shared/MemoryAssistant";
@@ -65,7 +64,7 @@ import { saveEditorRecord } from "../../storage/editing";
 import { InvalidEncryptedPayloadError } from "../../storage/crypto";
 import { removeBook } from "../../storage/worlds";
 
-import { SectionGuide, HelpButton, HelpSection, HelpLocale } from "../shared/Help";
+import { HelpButton, HelpSection, HelpLocale } from "../shared/Help";
 import { WorldsView } from "./WorldsView";
 import { SceneControls } from "../shared/SceneControls";
 import { EMPTY_SCENE, memoryWorld } from "../../core/scene";

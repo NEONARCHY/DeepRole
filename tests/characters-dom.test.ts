@@ -2,7 +2,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { latestCharacterResponse, foldCharacterPayload, syncChoicePortraits } from "../src/adapters/deepseek-characters-dom";
 import { dismissSceneChoiceCards, syncSceneChoiceCards } from "../src/adapters/deepseek-choices-dom";
 import { EMPTY_CHARACTER, EMPTY_STATUS } from "../src/core/characters";
-import { DeepSeekDomAdapter } from "../src/adapters/deepseek-dom";
 import type { CharacterScene, SceneEntity } from "../src/core/types";
 const payload = `<deeprole_characters>${JSON.stringify({ world: "w", chat: "a", base: "v", present: ["mira"], updates: [{ id: "mira", state: EMPTY_STATUS }] })}</deeprole_characters>`;
 function row(text: string, role = "assistant") { const el = document.createElement("article"); el.dataset.role = role; el.dataset.messageId = crypto.randomUUID(); el.textContent = text; document.body.append(el); return el; }

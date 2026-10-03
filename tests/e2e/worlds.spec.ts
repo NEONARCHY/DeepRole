@@ -24,6 +24,11 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
   await expect(dropzone).toHaveClass(/is-dragging/);
   await dropzone.dispatchEvent("drop", { dataTransfer: transfer });
   await expect(page.getByText(l("Распознаны записи JSON", "JSON entries recognized"), { exact: true })).toBeVisible();
+  // Audit settled colors, not an intermediate opacity during the short entrance.
+  await importDialog.evaluate(async node => {
+    const backdrop = node.closest(".modal-backdrop") ?? node;
+    await Promise.all(backdrop.getAnimations({ subtree: true }).filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined)));
+  });
   expect((await new AxeBuilder({ page }).include(".lore-import-modal").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
 

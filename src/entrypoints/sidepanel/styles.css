@@ -59,6 +59,9 @@ svg { width: 18px; height: 18px; stroke-width: 1.8; }
 .menu-close svg { width: 17px; height: 17px; }
 .app-main { width: min(100%, 620px); margin: 0 auto; padding: 16px; }
 .view-stack { display: grid; gap: 14px; animation: rise .28s ease; }
+/* A transforming ancestor reanchors fixed windows to the view, not the screen.
+   Stop the entrance animation when an overlay opens, including a fast click. */
+.view-stack:has(.modal-backdrop, .dr-map-workspace) { animation: none; transform: none; }
 
 .hero-card { position: relative; min-height: 190px; padding: 24px; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: var(--dr-surface); box-shadow: var(--shadow); }
 .hero-card::after { content: ""; position: absolute; width: 220px; height: 220px; right: -75px; bottom: -90px; border-radius: 50%; background: var(--dr-surface); }

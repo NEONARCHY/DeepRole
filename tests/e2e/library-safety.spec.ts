@@ -134,7 +134,8 @@ test("a deleted story starter is not recreated by its open editor", async ({ pag
     await repository.put("world", { id: "w", name: "Test world", description: "", color: "#58a6ff", contextBudget: 2000, relevanceThreshold: 6, createdAt: now, updatedAt: now });
     await repository.put("template", { id: "t", worldId: "w", name: "Starter", opening: "Original start", initialState: "", focusIds: [], createdAt: now, updatedAt: now });
   });
-  await page.getByRole("combobox", { name: "Библиотека мира", exact: true }).selectOption("w");
+  await page.getByRole("button", { name: /^Библиотека мира:/ }).click();
+  await page.getByRole("menuitemradio", { name: "Test world", exact: true }).click();
   await page.getByRole("button", { name: "Мир и профили", exact: true }).click();
   await page.locator(".rp-item").filter({ hasText: "Starter" }).getByRole("button", { name: "Изменить", exact: true }).click();
   const editor = page.locator(".rp-editor");

@@ -69,6 +69,22 @@ describe("locally bound character replies", () => {
     await repo.mergeRecords([{ kind: "entity", id: duplicate.id, data: duplicate }]);
     await expect(applyCharacterTurn({ ...scope(), base: characterRevision([entity, duplicate]) }, { ...turn(), base: characterRevision([entity, duplicate]), request: receipt().id }, undefined, repo, true)).rejects.toThrow("character-unknown");
   });
+  it("updates a uniquely named character even when off-scene characters share an alias", async () => {
+    const repo = await setup();
+    const extras = ["Leon", "Noah"].map(name => ({ ...entity, id: name.toLowerCase(), name, aliases: ["navigator"] }));
+    await repo.mergeRecords(extras.map(data => ({ kind: "entity" as const, id: data.id, data })));
+    const base = characterRevision([entity, ...extras]);
+    await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, present: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }] }, undefined, repo, true);
+    const saved = (await repo.list<ChatBinding>("binding")).find(b => b.id === binding.id)!;
+    expect(saved.characterScenes?.w?.presentIds).toEqual([entity.id]);
+    expect(saved.characterScenes?.w?.states.mira?.emotion).toBe("happy");
+  });
+  it("rejects two aliases updating the same character without saving either state", async () => {
+    const repo = await setup();
+    await expect(applyCharacterTurn(scope(), { ...turn(), present: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }, { id: "new:Mira", name: "Mira", state: { ...EMPTY_STATUS, emotion: "sad" } }] }, undefined, repo, true)).rejects.toThrow("character-unknown");
+    expect((await repo.list<ChatBinding>("binding")).find(b => b.id === binding.id)?.characterScenes).toBeUndefined();
+    expect(await repo.list<SceneEntity>("entity")).toHaveLength(1);
+  });
 });
 
 it("keeps one protagonist when a profile is duplicated", async () => {

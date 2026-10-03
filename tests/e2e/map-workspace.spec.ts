@@ -26,7 +26,7 @@ async function rows(page: Page) { return page.evaluate(async () => (await import
 async function points(page: Page, pane = 0) { return page.locator(`[data-map-pane="${pane}"] .lm-node-wrap`).evaluateAll((elements) => Object.fromEntries(elements.map((node) => [(node.querySelector("[data-lore-id]") as HTMLElement).dataset.loreId, { x: parseFloat((node as HTMLElement).style.left), y: parseFloat((node as HTMLElement).style.top) }]))); }
 for (const locale of ["ru", "en"] as const) {
   test(`frame selection moves only chosen cards with stable neighbours and one undo (${locale})`, async ({ page }) => {
-    const { map, pane, l } = await setup(page, locale); const left = pane(0);
+    const { pane, l } = await setup(page, locale); const left = pane(0);
     const camera = await left.locator(".lm-space").getAttribute("style"); const before = await points(page); const records = await rows(page);
     const a = (await left.locator('[data-lore-id="entry:w11"]').boundingBox())!; const b = (await left.locator('[data-lore-id="entry:w12"]').boundingBox())!;
     const start = { x: a.x - 10, y: a.y + a.height / 2 - 3 }; const end = { x: b.x + b.width + 10, y: b.y + b.height / 2 + 3 };

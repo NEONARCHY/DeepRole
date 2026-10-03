@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { BrainCircuit } from "lucide-react";
-import { menuText } from "../../core/menu-i18n";
 import { translate } from "../../core/i18n";
 import type { ContextSelection, ConversationEstimate, HandoffSnapshot, MemoryEntry } from "../../core/types";
 import { SectionGuide, HelpLocale } from "../shared/Help";
 import { SceneControls } from "../shared/SceneControls";
 import { EMPTY_SCENE } from "../../core/scene";
-import { sceneText } from "../../core/scene-i18n";
 import type { MemoryBook, SceneEntity, SceneState, WorldProfile } from "../../core/types";
 import type { ActivationMode, MemoryProposalBatch, MemoryCandidate, LoreChange, MemoryOverrides } from "../../core/types";
 import { assistantText } from "../../core/assistant-i18n";
@@ -92,13 +90,16 @@ export function PageWidget(props: {
   const [mapLayout, setMapLayout] = useState<"closed" | "compact" | "full">("closed");
   const menuFrame = useRef<HTMLIFrameElement>(null);
   const contextAnchor = useRef<HTMLDivElement>(null);
+  const [panelBounds, setPanelBounds] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
   const [contextPosition, setContextPosition] = useState(props.state.contextPosition);
   const drag = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number; width: number; height: number; moved: boolean } | null>(null);
   const suppressContextClick = useRef(false);
   useEffect(() => {
     if (!menuOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && mapLayout !== "closed") menuFrame.current?.contentWindow?.postMessage({ source: "deeprole-page", type: "CLOSE_MAP" }, "*");
+      if (event.key !== "Escape") return;
+      if (mapLayout !== "closed") menuFrame.current?.contentWindow?.postMessage({ source: "deeprole-page", type: "CLOSE_MAP" }, "*");
+      else setMenuOpen(false);
     };
     const closeFromMenu = (event: MessageEvent) => {
       if (event.source !== menuFrame.current?.contentWindow) return;
@@ -185,8 +186,6 @@ export function PageWidget(props: {
   useEffect(() => {
     if (props.authenticationPage) {
       setOpen(false); setAdding(false); setQuick(false); setReviewId(null); setMenuOpen(false); setMapLayout("closed");
-    } else if (props.state.pageReady) {
-      setMenuOpen(true);
     }
   }, [props.authenticationPage, props.state.pageReady]);
   useEffect(() => {
@@ -194,6 +193,30 @@ export function PageWidget(props: {
     if (!id || !props.state.proposals?.some((batch) => batch.id === id)) return;
     setOpen(true); setQuick(false); setReviewId(id);
   }, [props.state.reviewProposalId, props.state.proposals]);
+  useLayoutEffect(() => {
+    if (!open || props.authenticationPage || props.state.vaultLocked || !props.state.pageReady) return;
+    const anchor = contextAnchor.current;
+    if (!anchor) return;
+    const place = () => {
+      // Anchor to the controls, not the entire portrait/status stack. A tall
+      // stack must never push the review's approval buttons outside the window.
+      const rect = (anchor.querySelector(".dr-pill-row") ?? anchor).getBoundingClientRect();
+      const pad = 12;
+      const width = Math.max(0, Math.min(assistantOpen ? 420 : 340, window.innerWidth - pad * 2));
+      const maxHeight = Math.max(0, Math.min(720, window.innerHeight * .75, window.innerHeight - pad * 2));
+      const next = {
+        left: Math.max(pad, Math.min(rect.left, window.innerWidth - width - pad)),
+        top: Math.max(pad, Math.min(rect.bottom + 8, window.innerHeight - maxHeight - pad)),
+        width, maxHeight,
+      };
+      setPanelBounds(old => old && Object.keys(next).every(key => old[key as keyof typeof next] === next[key as keyof typeof next]) ? old : next);
+    };
+    const observer = new ResizeObserver(place);
+    observer.observe(anchor);
+    window.addEventListener("resize", place);
+    place();
+    return () => { observer.disconnect(); window.removeEventListener("resize", place); };
+  }, [open, assistantOpen, contextPosition?.x, contextPosition?.y, props.authenticationPage, props.state.vaultLocked, props.state.pageReady]);
   if (props.authenticationPage || !props.state.pageReady) {
     return <HelpLocale.Provider value={props.state.locale}><div className="dr-root" aria-hidden="true" /></HelpLocale.Provider>;
   }
@@ -223,7 +246,7 @@ export function PageWidget(props: {
       {!props.state.vaultLocked && props.state.characters && props.onSaveCharacter && <CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} />}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
       {!props.state.vaultLocked && ((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />}
-      {!props.state.vaultLocked && open && <div className="dr-panel">{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></header>
+      {!props.state.vaultLocked && open && <div className="dr-panel" style={panelBounds ? { ...panelBounds, position: "fixed", right: "auto", bottom: "auto", margin: 0, zIndex: 3 } : undefined}>{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></header>
         <SectionGuide locale={props.state.locale} text={x("previewHint")} />
         {props.state.pendingHandoff && <p className="dr-inline-note">{experienceText(props.state.locale, "pendingRecap", { name: props.state.pendingHandoff })}</p>}
         <div className="dr-play-tools">{props.onQuickSave && <button onClick={() => { setQuick(!quick); setReviewId(null); }}>{at("remember")}</button>}<button disabled={analysisBlocked} onClick={props.onAnalyze}>{at("analyze")}</button>{props.state.analysisSuggested && <button onClick={props.onDismissSuggestion}>{t("later")}</button>}</div>

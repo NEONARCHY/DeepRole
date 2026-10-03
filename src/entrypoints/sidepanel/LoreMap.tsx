@@ -1,13 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { BookOpen, ChevronDown, ChevronRight, FileText, Globe2, Link2, MapPin, Plus, Redo2, RotateCcw, Search, Sparkles, Undo2, UserRound, Users, X, ZoomIn, ZoomOut } from "lucide-react";
-import { arrangeVisibleLore, buildLoreGraph, loreAncestors, loreBranchEntryIds, loreExpandedIds, loreOverviewZoom, visibleLoreNodes, type LoreNode, type LoreNodeKind } from "../../core/lore-map";
+import { BookOpen, ChevronRight, FileText, Globe2, Link2, MapPin, Plus, Redo2, RotateCcw, Search, Sparkles, Undo2, UserRound, Users, X, ZoomIn, ZoomOut } from "lucide-react";
+import { arrangeVisibleLore, buildLoreGraph, loreAncestors, loreExpandedIds, loreOverviewZoom, visibleLoreNodes, type LoreNode, type LoreNodeKind } from "../../core/lore-map";
 import { LORE_CATEGORIES, loreCategoryLabel, validateLoreMapLayout } from "../../core/lore-categories";
 import { suggestLoreConnections } from "../../core/entry-links";
 import { createId } from "../../core/id";
 import { mapEntryCount, mapText, type MapKey } from "../../core/map-i18n";
 import { sceneText } from "../../core/scene-i18n";
 import type { Locale, LoreMapLayout, MemoryBook, MemoryEntry, SceneEntity, StoryTemplate, WorldProfile } from "../../core/types";
-import { Help } from "../shared/Help";
 import { TooltipButton } from "../shared/TooltipButton";
 import { MapEditHistory } from "../../storage/lore-map-history";
 import { MemoryConflictError, repository } from "../../storage/repository";
@@ -18,7 +17,6 @@ import { mapBoxSelection, mapConnectionEntries, mapDropTarget, mapPopover, mapSe
 import { MapMemoryEditor } from "./MapMemoryEditor";
 import type { ContextSelection, MemoryOverrides, ActivationMode } from "../../core/types";
 
-type Mode = "compact" | "full";
 type Point = { x: number; y: number };
 type Connection = { from: string; to: string; sourceNode: string; targetNode: string; label: string; mode: "context" | "reference" };
 export interface MapPaneController { leave: () => Promise<boolean> }
@@ -45,7 +43,8 @@ const icons: Record<LoreNodeKind, typeof Globe2> = { world: Globe2, branch: Spar
 export function LoreMap(props: LoreMapProps) {
   const t = (key: Parameters<typeof sceneText>[1]) => sceneText(props.locale, key);
   const m = (key: MapKey) => mapText(props.locale, key);
-  const [mode, setMode] = useState<Mode>("full");
+  // Window sizing belongs to MapWorkspace; individual panes have no size mode.
+  const mode = "full";
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 0.6 });
   const [layout, setLayout] = useState<LoreMapLayout>(() => structuredClone(props.world.mapLayout ?? { positions: {}, expandedIds: [], customCategories: [] }));
   // Visibility belongs to this open map, not to the lore. Every opening starts
@@ -139,7 +138,7 @@ export function LoreMap(props: LoreMapProps) {
   const popupStyle = mapPopover({ x: selected.x * camera.zoom + camera.x, y: selected.y * camera.zoom + camera.y, halfWidth: 135 * camera.zoom, halfHeight: (selected.kind === "world" ? 80 : 45) * camera.zoom }, viewportSize);
   const connectionSources = connection ? mapConnectionEntries(model, connection.sourceNode, props.entries) : [];
   const connectionTargets = connection ? mapConnectionEntries(model, connection.targetNode, props.entries) : [];
-  const postLayout = (value: Mode | "closed") => { if (!props.embedded && window.parent !== window) window.parent.postMessage({ source: "deeprole-menu", type: "MAP_LAYOUT", mode: value }, "*"); };
+  const postLayout = (value: "full" | "closed") => { if (!props.embedded && window.parent !== window) window.parent.postMessage({ source: "deeprole-menu", type: "MAP_LAYOUT", mode: value }, "*"); };
   useEffect(() => {
     props.onRegister?.({ leave: async () => { if (drag.current || !editorGuard.current()) return false; await queue.current; return !failures.current.length; } });
     return () => props.onRegister?.(null);

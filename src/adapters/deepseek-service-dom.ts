@@ -1,4 +1,6 @@
-import { parseServiceData, SERVICE_START } from "../core/service-protocol";
+import { parseServiceData, SERVICE_END, SERVICE_START } from "../core/service-protocol";
+
+const REASONING = ".ds-think-content, .ds-think-content-wrapper, [data-testid*='thinking'], [data-testid*='reasoning']";
 
 export function findDeepestServiceElements(marker: string, root: ParentNode = document): HTMLElement[] {
   const selector = "article, [data-message-id], [data-testid*='message'], div, p, pre, code, span";
@@ -12,8 +14,21 @@ export function findDeepestServiceElements(marker: string, root: ParentNode = do
 /** Read only the reply belonging to this request, even after DOM replacement. */
 export function findServiceResponseElements(requestId: string, root: ParentNode = document): HTMLElement[] {
   return findServiceReplyRows(requestId, root)
-    .flatMap((row) => findDeepestServiceElements("<deeprole_data>", row)
-      .map((element) => element.dataset.deeprolePayloadHiddenFor ? row : element))
+    .flatMap((row) => {
+      // DeepSeek renders the opening marker, JSON and closing marker in separate
+      // spans. The deepest match can be just the opening tag, not the payload.
+      const final = [...row.querySelectorAll<HTMLElement>(".ds-assistant-message-main-content")];
+      return (final.length ? final : [row]).flatMap(scope => findDeepestServiceElements(SERVICE_START, scope)
+        .filter(element => !element.closest(REASONING))
+        .map(element => {
+          for (let current: HTMLElement | null = element; current && row.contains(current); current = current.parentElement) {
+            const text = current.textContent ?? "";
+            if (text.indexOf(SERVICE_END, text.indexOf(SERVICE_START) + SERVICE_START.length) >= 0) return current;
+            if (current === scope || current === row) break;
+          }
+          return element;
+        }));
+    })
     .filter((element, index, all) => all.indexOf(element) === index);
 }
 
@@ -26,8 +41,9 @@ export function findServiceReplyRows(requestId: string, root: ParentNode = docum
 export function replaceArchivedMemoryPayloads(summary: string): void {
   for (const turn of serviceTurns(document)) {
     if (!turn.requestId || !turn.response) continue;
-    if (parseServiceData(turn.response.textContent || "")?.type !== "memory-suggestions") continue;
-    replaceServicePayloadWithSummary(turn.response, summary);
+    for (const payload of findServiceResponseElements(turn.requestId)) {
+      if (parseServiceData(payload.textContent || "")?.type === "memory-suggestions") replaceServicePayloadWithSummary(payload, summary);
+    }
   }
 }
 
@@ -73,7 +89,7 @@ export function replaceServicePayloadWithSummary(element: HTMLElement, summary: 
 
 export function showServicePreloader(requestId: string, row: HTMLElement, payload: HTMLElement, label: string): void {
   if (payload !== row && !row.contains(payload)) return;
-  if (payload === row) {
+  if (payload === row || (payload.textContent ?? "").slice(0, (payload.textContent ?? "").indexOf(SERVICE_START)).trim()) {
     hideServicePayloadTail(requestId, payload);
   } else if (payload.dataset.deeprolePayloadHiddenFor !== requestId) {
     payload.dataset.deeprolePayloadDisplay = payload.style.getPropertyValue("display");
@@ -190,7 +206,7 @@ export function finishServicePreloader(requestId: string, rows: HTMLElement[], s
 }
 
 export function markServiceReplyRow(element: HTMLElement, requestId?: string): void {
-  const row = element.closest<HTMLElement>("[data-message-id], article, [data-testid*='message']") ?? element;
+  const row = findServiceRow(element);
   row.dataset.deeproleServiceReply = "true";
   if (requestId) row.dataset.deeproleServiceReplyId = requestId;
 }
@@ -213,7 +229,7 @@ function serviceTurns(root: ParentNode, marker = SERVICE_START): { request: HTML
   });
   const uniqueRequests = requests.filter((turn, index) => requests.findIndex((other) => other.request === turn.request) === index);
   uniqueRequests.sort((a, b) => follows(a.request, b.request) ? -1 : follows(b.request, a.request) ? 1 : 0);
-  const payloadRows = findDeepestServiceElements(marker, root).map((element) => {
+  const payloadRows = findDeepestServiceElements(marker, root).filter(element => !element.closest(REASONING)).map((element) => {
     const row = findServiceRow(element);
     return { row };
   }).filter((item, index, all) => all.findIndex((other) => other.row === item.row) === index);

@@ -397,6 +397,24 @@
   transform: none;
 }
 .lm-world-picker select { flex: 0 1 280px; max-width: 100%; }
+
+/* The narrow editor is a desktop tool window, not a stack of full-width actions.
+   Keep primary creation actions together and put history beside zoom controls. */
+@container (max-width: 700px) {
+  .lm-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .lm-search { grid-column: 1 / -1; min-width: 0; }
+  .lm-map-view-tools { grid-column: 1; grid-row: 2; gap: 3px; }
+  .lm-history-tools { grid-column: 2; grid-row: 2; gap: 4px; padding: 0; }
+  .lm-history-tools .lm-session-reset span { display: none; }
+  .lm-history-tools .lm-session-reset { padding: 0; }
+  .lm-map-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .lm-map-actions > button { min-width: 0; padding-inline: 8px; }
+  .lm-map-actions > .lm-connect-world { grid-column: 1 / -1; }
+  .lm-save, .lm-results { grid-column: 1 / -1; }
+}
+@media (max-width: 650px) and (max-height: 700px) {
+  .dr-map-workspace.is-compact { height: calc(100vh - 24px); }
+}
 .lm-search { flex: 0 1 280px; }
 
 /* Creating a world asks for a short brief instead of expanding an input bar. */

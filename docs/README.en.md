@@ -84,4 +84,4 @@ npm run zip
 npm run zip:firefox
 ```
 
-Load `.output/chrome-mv3` in Chrome/Brave or `.output/firefox-mv2` in Firefox. Rebuilding does not reload an installed copy. Reload the extension, then DeepSeek. [QA report](QA-2026-10-02.md) distinguishes live model checks from local automated tests. Screenshots show the local demonstration, not personal chats.
+Load `.output/chrome-mv3` in Chrome/Brave or `.output/firefox-mv2` in Firefox. Rebuilding does not reload an installed copy. Reload the extension, then DeepSeek. [QA report](QA-2026-10-03.md) distinguishes live model checks from local automated tests. Screenshots show the local demonstration, not personal chats.

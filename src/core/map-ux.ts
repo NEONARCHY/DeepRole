@@ -49,10 +49,10 @@ export function mapPopover(anchor: { x: number; y: number; halfWidth: number; ha
   const halfHeight = anchor.halfHeight ?? anchor.halfWidth / 3;
   // In a narrow window neither side may fit. Keep the clicked card uncovered,
   // so its second click can still deliver the branch's double-click action.
-  if (placedX < anchor.x + anchor.halfWidth && placedX + width > anchor.x - anchor.halfWidth && top < anchor.y + halfHeight && top + height > anchor.y - halfHeight) {
+  if (placedX < anchor.x + anchor.halfWidth && placedX + width > anchor.x - anchor.halfWidth && top < anchor.y + halfHeight && top + maxHeight > anchor.y - halfHeight) {
     const below = viewport.height - anchor.y - halfHeight - 16 - pad;
     const above = anchor.y - halfHeight - 16 - pad;
-    if (Math.max(below, above) >= 60) {
+    if (Math.max(below, above) > 0) {
       if (below >= above) { top = anchor.y + halfHeight + 16; maxHeight = below; }
       else { top = Math.max(pad, anchor.y - halfHeight - 16 - height); maxHeight = anchor.y - halfHeight - top - 16; }
     }

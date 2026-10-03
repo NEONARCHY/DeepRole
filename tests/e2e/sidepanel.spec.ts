@@ -14,7 +14,7 @@ test("section guidance explains the workflow without per-button question marks",
   await expect(page.getByRole("button", { name: "Lore", exact: true })).toBeVisible();
   await expect(page.locator(".dr-mode-guide")).toContainText("Automatic");
   await expect(page.locator(".dr-mode-guide")).toContainText("Every message");
-  await expect(page.locator(".dr-score-guide")).toContainText("4 / 6 / 9");
+  await expect(page.locator(".dr-score-level b")).toHaveText(["4", "6", "9"]);
   await expect(page.getByRole("spinbutton", { name: "Memory limit", exact: true })).toBeVisible();
 });
 

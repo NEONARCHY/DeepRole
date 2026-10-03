@@ -81,6 +81,8 @@ test("the DeepRole menu stays anchored, lets DeepSeek controls receive clicks, a
   await page.goto("/tests/fixtures/page-widget.html");
   const launcher = page.locator(".dr-launcher");
   await expect(launcher).toHaveAccessibleName("Открыть меню DeepRole");
+  await expect(launcher).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".dr-menu-drawer")).toHaveCount(0);
   const widthBefore = await page.evaluate(() => document.documentElement.clientWidth);
   const positionBefore = await launcher.boundingBox();
   await launcher.click();

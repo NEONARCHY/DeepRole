@@ -40,6 +40,24 @@ describe("DeepSeek service message isolation", () => {
     expect(document.querySelector<HTMLElement>("[data-message-id='answer']")?.style.display).toBe("");
   });
 
+  it("reads a complete DeepSeek Markdown payload whose markers are separate spans", () => {
+    document.body.innerHTML = '<section><div class="ds-message" id="request"></div><div class="ds-message" id="answer"><div class="ds-markdown ds-assistant-message-main-content"><p id="explanation">Review before saving.</p><p id="payload"><span>&lt;deeprole_data&gt;</span>{"type":"memory-suggestions","items":[]}<span>&lt;/deeprole_data&gt;</span></p></div></div></section>';
+    document.getElementById("request")!.textContent = '[DeepRole Service]\n[Request ID: markdown]\nAnalyze';
+    expect(findServiceResponseElements("markdown")).toEqual([document.getElementById("payload")]);
+    expect(replaceServicePayloadWithSummary(findServiceResponseElements("markdown")[0]!, "Ready to review.")).toBe(true);
+    expect(document.getElementById("explanation")?.textContent).toBe("Review before saving.");
+    expect(document.getElementById("answer")?.textContent).not.toContain("deeprole_data");
+  });
+
+  it("does not mistake the model's reasoning example for its final answer", () => {
+    document.body.innerHTML = '<section><article id="request"></article><article id="answer"><div class="ds-think-content" id="reasoning"></div><div class="ds-assistant-message-main-content"><p id="payload"></p></div></article></section>';
+    document.getElementById("request")!.textContent = '[DeepRole Service]\n[Request ID: final-only]\nAnalyze';
+    document.getElementById("reasoning")!.textContent = 'Example: <deeprole_data>{"type":"memory-suggestions","items":[]}</deeprole_data>';
+    document.getElementById("payload")!.textContent = '<deeprole_data>{"type":"memory-suggestions","items":[{"title":"Key","content":"The brass key belongs to Leon."}]}</deeprole_data>';
+    expect(findServiceResponseElements("final-only")).toEqual([document.getElementById("payload")]);
+    expect(document.getElementById("reasoning")?.style.display).toBe("");
+  });
+
   it("restores service turns hidden by an older extension version", () => {
     document.body.innerHTML = '<article data-message-id="old" data-deeprole-hidden-service="true" style="display:none!important">Old reply</article>';
     restoreServiceTurns();

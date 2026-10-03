@@ -39,7 +39,8 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /OLD_CANON/);
     await panel.bringToFront(); await panel.getByRole("button", { name: "Lore", exact: true }).click();
     await panel.getByRole("button", { name: "Memory list", exact: true }).click();
-    await panel.getByRole("combobox", { name: "World library", exact: true }).selectOption("w");
+    await panel.getByRole("button", { name: /^World library:/ }).click();
+    await panel.getByRole("menuitemradio", { name: "Test World", exact: true }).click();
     const optional = panel.locator(".memory-card").filter({ has: panel.getByRole("heading", { name: "Optional thread", exact: true }) });
     // Context actions act on the active DeepSeek tab, not this extension tab.
     await chat.bringToFront();
@@ -56,7 +57,8 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await chat.reload(); await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /PRECISE_NEW_CANON/);
     // Map and list share exactly the same activation and chat override.
     await panel.getByRole("button", { name: "Lore", exact: true }).click();
-    await panel.getByRole("combobox", { name: "World library", exact: true }).selectOption("w");
+    await panel.getByRole("button", { name: /^World library:/ }).click();
+    await panel.getByRole("menuitemradio", { name: "Test World", exact: true }).click();
     await panel.getByRole("button", { name: "World map", exact: true }).click();
     await panel.getByRole("button", { name: "Open world map", exact: true }).click();
     await panel.getByRole("textbox", { name: "Find a record or branch…", exact: true }).fill("Optional thread");
@@ -128,7 +130,10 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect(chat.locator("[data-message-id='service-reply']")).toContainText("Review the records in DeepRole, then choose Save selected changes.");
     await expect(chat.locator("[data-message-id='service-reply']")).not.toContainText("<deeprole_data>");
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /PRECISE_NEW_CANON/);
-    await expect(chat.locator(".dr-proposal-before")).toHaveText("PRECISE_NEW_CANON — MAP_EDITOR_SYNC");
+    await expect(chat.getByRole("button", { name: "Save selected changes · 0", exact: true })).toBeDisabled();
+    await chat.locator(".dr-proposal-summary").click();
+    await expect(chat.locator(".dr-proposal-before p")).toHaveText("PRECISE_NEW_CANON — MAP_EDITOR_SYNC");
+    await chat.getByRole("checkbox", { name: "Save this change: Optional thread", exact: true }).check();
     await chat.getByRole("button", { name: /^Save selected changes · \d+$/ }).click();
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /REVIEWED_NEW_CANON/);
     const canonical = (await records(panel)).filter((r) => r.kind === "entry");
@@ -228,6 +233,8 @@ test("new-chat lore drafting stays a proposal and preserves manual choices throu
     await expect(chat.locator(".dr-memory-review")).toBeVisible();
     expect((await records(panel)).filter((row) => row.kind === "entry")).toHaveLength(1);
     await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /APPROVED_RULE/);
+    await expect(chat.getByRole("button", { name: "Save selected changes · 0", exact: true })).toBeDisabled();
+    await chat.getByRole("checkbox", { name: "Save this change: No magic", exact: true }).check();
     await chat.getByRole("button", { name: /^Save selected changes · \d+$/ }).click();
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Start the game" }) }));
     expect(sent.at(-1)).toContain("APPROVED_RULE"); expect(sent.at(-1)).toContain("PINNED_DRAFT_MEMORY");

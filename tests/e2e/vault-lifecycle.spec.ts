@@ -133,7 +133,8 @@ test("an unfinished world export is cancelled on lock, while a normal export sti
     (window as any).downloads = [];
     HTMLAnchorElement.prototype.click = function () { (window as any).downloads.push(this.download); };
   });
-  await page.getByRole("combobox", { name: "Библиотека мира", exact: true }).selectOption("w");
+  await page.getByRole("button", { name: /^Библиотека мира:/ }).click();
+  await page.getByRole("menuitemradio", { name: "Export World", exact: true }).click();
   await page.getByRole("button", { name: "Мир и профили", exact: true }).click();
   const card = page.locator(".rp-card").filter({ has: page.getByRole("heading", { name: "Export World", exact: true }) });
   await card.locator("summary").click();

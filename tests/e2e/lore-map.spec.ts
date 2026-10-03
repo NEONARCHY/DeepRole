@@ -32,16 +32,16 @@ async function records(page: Page) {
 
 test("map actions have delayed hover help without question-mark badges", async ({ page }, testInfo) => {
   const map = await openMap(page);
-  await expect(map).toHaveClass(/is-full/);
-  await expect(map).toHaveAttribute("aria-modal", "true");
+  await expect(map).toHaveClass(/is-compact/);
+  await expect(map).toHaveAttribute("aria-modal", "false");
   await expect(map.locator(".lm-tools .dr-help")).toHaveCount(0);
   await expect(map.locator(".lm-node-wrap .dr-help")).toHaveCount(0);
   const zoom = map.getByRole("button", { name: "Приблизить", exact: true });
   await expect(zoom).not.toHaveAttribute("title", /.+/);
   const help = page.getByRole("tooltip");
+  await expect(help).toHaveCount(0);
   await zoom.hover();
   await page.waitForTimeout(650);
-  await expect(help).toHaveCount(0);
   await expect(help).toBeVisible();
   await expect(help).toContainText("Приблизить");
   await help.hover();
@@ -349,7 +349,7 @@ test("ports draw confirmed connections and manual overlap never changes a catego
   }, { viewport, delta });
   await page.mouse.move(panStart.x, panStart.y); await page.mouse.down({ button: "middle" });
   await page.mouse.move(panStart.x + delta.x, panStart.y + delta.y, { steps: 10 }); await page.mouse.up({ button: "middle" });
-  await map.locator(".lm-header h2").hover(); await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await map.locator(".lm-workspace-title").hover(); await expect(page.getByRole("tooltip")).toHaveCount(0);
   const a = (await source.boundingBox())!; const b = (await category.boundingBox())!;
   await page.screenshot({ path: testInfo.outputPath("before-drop.png") });
   const hits = await page.evaluate(({ a, b }) => [a, b].map((rect) => document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.closest("button")?.getAttribute("data-lore-id")), { a, b });
@@ -378,7 +378,7 @@ test("English UI and varied English title conventions work without Russian inter
   await page.getByRole("button", { name: "Confirm import", exact: true }).click();
   await page.getByRole("button", { name: "Open world map", exact: true }).click();
   const map = page.getByRole("dialog", { name: "World map", exact: true });
-  await expect(map).toHaveClass(/is-full/);
+  await expect(map).toHaveClass(/is-compact/);
   await expect(map.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
   await expect(map.getByRole("button", { name: "Redo", exact: true })).toBeDisabled();
   await expect(map.getByRole("button", { name: "Reset", exact: true })).toBeDisabled();

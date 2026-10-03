@@ -30,8 +30,11 @@ for (const locale of ["ru", "en"] as const) {
     const { map, l } = await setup(page, locale);
     await map.getByRole("button", { name: l("Закрыть карту", "Close map"), exact: true }).click();
     await page.getByRole("button", { name: l("Создать свой мир", "Create your world"), exact: true }).click();
-    const worldForm = page.locator(".rp-editor"); await worldForm.getByRole("textbox", { name: l("Название", "Name"), exact: true }).fill("First world"); await worldForm.getByRole("button", { name: l("Сохранить", "Save"), exact: true }).click();
-    await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
+    const worldForm = page.getByRole("dialog", { name: l("Создайте новый мир", "Create a new world"), exact: true });
+    await worldForm.getByRole("textbox", { name: l("Название", "Name"), exact: true }).fill("First world");
+    await worldForm.getByRole("button", { name: l("Создать мир", "Create world"), exact: true }).click();
+    await expect(worldForm).toHaveCount(0);
+    await expect(map).toBeVisible();
     await expect(map.locator(".lm-start-guide")).toContainText(l("С чего начнётся ваш мир?", "Where does your world begin?"));
     await map.getByRole("button", { name: l("Добавить запись", "Add entry"), exact: true }).click();
     const editor = map.locator(".lm-memory-editor"); await editor.getByRole("textbox", { name: l("Название записи", "Entry title"), exact: true }).fill("World rule"); await editor.locator("textarea").fill("The station loses power every night.");

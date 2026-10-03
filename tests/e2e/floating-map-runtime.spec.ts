@@ -26,6 +26,8 @@ test("production iframe is centered, modeless, and returns to the sidebar withou
     const chat = await context.newPage();
     await chat.goto("https://chat.deepseek.com/a/chat/floating-test");
     await chat.getByRole("textbox", { name: "Message", exact: true }).fill("Мой несохранённый черновик");
+    await expect(chat.locator(".dr-menu-drawer")).toHaveCount(0);
+    await chat.getByRole("button", { name: "Открыть меню DeepRole", exact: true }).click();
     await expect(chat.locator(".dr-menu-drawer iframe")).toBeVisible();
     const menu = chat.frameLocator(".dr-menu-drawer iframe");
     await menu.getByRole("button", { name: "Лор", exact: true }).click();

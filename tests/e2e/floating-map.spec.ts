@@ -9,7 +9,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [1440, 360]) {
     await page.locator("#underlying-chat-control").evaluate((node) => {
       Object.assign((node as HTMLElement).style, { top: "4px", left: "8px" });
     });
-    // The ready-page fixture opens the menu automatically, like the installed widget.
+    await expect(page.locator(".dr-menu-drawer")).toHaveCount(0);
+    await page.getByRole("button", { name: locale === "en" ? "Open DeepRole menu" : "Открыть меню DeepRole", exact: true }).click();
     await expect(page.locator(".dr-menu-drawer iframe")).toBeVisible();
     const frame = page.frameLocator(".dr-menu-drawer iframe");
     const l = (ru: string, en: string) => locale === "ru" ? ru : en;

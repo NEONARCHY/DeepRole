@@ -64,6 +64,15 @@ describe("DeepSeek-assisted service protocol", () => {
     expect(parseServiceData(`${SERVICE_START}{"type":"handoff","title":"Arc","summary":"At the gate"}${SERVICE_END}`)).toEqual({ type: "handoff", title: "Arc", summary: "At the gate" });
     expect(parseServiceData(`${SERVICE_START}{oops${SERVICE_END}`)).toBeNull();
   });
+
+  it("accepts the full handoff limit but never silently truncates an oversized summary", () => {
+    const summary = "A".repeat(30000);
+    const wrap = (value: unknown) => `${SERVICE_START}${JSON.stringify(value)}${SERVICE_END}`;
+    expect(parseServiceData(wrap({ type: "handoff", title: "North Tower", summary }))).toEqual({ type: "handoff", title: "North Tower", summary });
+    expect(parseServiceData(wrap({ type: "handoff", title: "North Tower", summary: summary + "B" }))).toBeNull();
+    expect(parseServiceData(wrap({ type: "handoff", title: "T".repeat(241), summary: "Scene" }))).toBeNull();
+    expect(parseServiceData(wrap({ type: "handoff", title: "T".repeat(240), summary: "Scene" }))).toMatchObject({ title: "T".repeat(240) });
+  });
 });
 
 describe("portable backups", () => {

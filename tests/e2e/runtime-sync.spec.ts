@@ -261,6 +261,42 @@ async function pendingService(panel: Page) {
   });
 }
 
+for (const type of ["memory-analysis", "handoff"] as const) test(`modern DeepSeek split-span ${type} parses only the final answer`, async ({}, info) => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => route.fulfill({ contentType: "application/json", body: "{}" }));
+    await enableServiceComposer(chat);
+    expect(await command(panel, { type: "DR_RUN_SERVICE", request: { id: `markdown-${type}`, type, bookId: null, createdAt: Date.now() } })).toEqual({ ok: true });
+    await chat.evaluate(type => {
+      const answer = document.querySelector<HTMLElement>("[data-message-id='service-answer']")!;
+      answer.removeAttribute("data-message-id"); answer.className = "ds-message";
+      const reasoning = document.createElement("div"); reasoning.className = "ds-think-content";
+      reasoning.textContent = '<deeprole_data>{"type":"memory-suggestions","items":[]}</deeprole_data>';
+      const final = document.createElement("div"); final.className = "ds-markdown ds-assistant-message-main-content";
+      const explanation = document.createElement("p"); explanation.textContent = "Review before saving. This explanation remains visible.";
+      const payload = document.createElement("p"); const start = document.createElement("span"); start.textContent = "<deeprole_data>";
+      const end = document.createElement("span"); end.textContent = "</deeprole_data>";
+      const json = type === "handoff" ? { type: "handoff", title: "North Tower", summary: "At 18:10 Noah has Mira's map. The brass key must reach Leon by 18:30." }
+        : { type: "memory-suggestions", items: ["Noah", "Mira", "Brass key"].map(title => ({ title, content: `QA fact: ${title}.`, keywords: [title] })) };
+      payload.append(start, JSON.stringify(json), end); final.append(explanation, payload); answer.append(reasoning, final);
+    }, type);
+    await expect.poll(async () => (await databaseRecords(panel)).filter(row => row.kind === (type === "handoff" ? "snapshot" : "proposal")).length).toBe(1);
+    await expect(chat.locator(".ds-assistant-message-main-content")).toContainText("This explanation remains visible.");
+    await expect(chat.locator(".ds-think-content")).toContainText("deeprole_data");
+    expect((await databaseRecords(panel)).filter(row => row.kind === "entry")).toHaveLength(0);
+    if (type === "memory-analysis") {
+      const review = chat.getByRole("region", { name: "Review changes", exact: true });
+      await expect(review.getByRole("checkbox")).toHaveCount(3);
+      await expect(review.getByRole("button", { name: "Save selected changes · 0", exact: true })).toBeDisabled();
+      await review.getByRole("checkbox", { name: "Save this change: Noah", exact: true }).check();
+      await review.getByRole("checkbox", { name: "Save this change: Brass key", exact: true }).check();
+      await review.getByRole("button", { name: "Save selected changes · 2", exact: true }).click();
+      await expect.poll(async () => (await databaseRecords(panel)).filter(row => row.kind === "entry").map(row => row.data.title).sort()).toEqual(["Brass key", "Noah"]);
+    }
+    await chat.screenshot({ path: info.outputPath(`modern-deepseek-${type}.png`) });
+  } finally { await context.close(); }
+});
+
 for (const navigation of ["direct", "SPA"] as const) test(`character sheets: empty roster initializes through the alternate DeepSeek chat URL (${navigation})`, async () => {
   const world = { id: "w", name: "Test world", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
@@ -594,17 +630,45 @@ test("a completed handoff never navigates away from a newly typed message", asyn
   } finally { await context.close(); }
 });
 
-test("an idle completed handoff opens a new chat and keeps its queued context", async () => {
+test("an idle completed handoff opens a new chat and keeps its full 30000-character context", async () => {
   const { context, panel, chat } = await setup([]);
   try {
-    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => route.fulfill({ contentType: "application/json", body: "{}" }));
+    const sent: string[] = []; const navigated: string[] = [];
+    chat.on("framenavigated", frame => { if (frame === chat.mainFrame()) navigated.push(frame.url()); });
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => {
+      sent.push(route.request().postDataJSON().prompt);
+      return route.fulfill({ contentType: "application/json", body: "{}" });
+    });
+    // The fresh page must behave like DeepSeek too: a submit is an API request,
+    // not a native HTML form navigation that destroys the content-script listener.
+    await context.addInitScript(() => {
+      window.addEventListener("DOMContentLoaded", () => {
+        if (location.pathname !== "/") return;
+        document.querySelector("form")!.addEventListener("submit", event => {
+          event.preventDefault();
+          const composer = document.querySelector("textarea")!; const prompt = composer.value;
+          composer.value = "";
+          void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt }) }).then(() => {
+            history.pushState({}, "", "/chat/s/continued");
+            document.querySelector("#conversation")!.textContent = "Noah reached the gate.";
+          });
+        });
+      }, { once: true });
+    });
     await enableServiceComposer(chat); await chat.bringToFront();
     expect(await command(panel, { type: "DR_RUN_SERVICE", request: { id: "idle-continue-test", type: "continue-handoff", bookId: null, createdAt: Date.now() } })).toEqual({ ok: true });
-    await chat.evaluate(() => { document.querySelector("[data-message-id='service-answer']")!.textContent = '<deeprole_data>{"type":"handoff","title":"Gate","summary":"IDLE_SAVED_GATE"}</deeprole_data>'; });
-    await expect(chat).toHaveURL("https://chat.deepseek.com/");
-    await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /IDLE_SAVED_GATE/);
+    const summary = "IDLE_SAVED_GATE" + "a".repeat(30000 - "IDLE_SAVED_GATE".length);
+    await chat.evaluate(summary => { document.querySelector("[data-message-id='service-answer']")!.textContent = '<deeprole_data>' + JSON.stringify({ type: "handoff", title: "Gate", summary }) + '</deeprole_data>'; }, summary);
+    await expect.poll(() => navigated).toContain("https://chat.deepseek.com/");
+    await expect.poll(() => sent.filter(prompt => prompt.includes(summary)).length).toBe(1);
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/continued");
+    await expect.poll(() => command(panel, { type: "DR_GET_PAGE_STATE" }).catch(() => null)).toMatchObject({ type: "DR_PAGE_STATE", chatId: "continued" });
+    await expect.poll(async () => Boolean((await databaseRecords(panel)).find(row => row.kind === "snapshot").data.appliedAt)).toBe(true);
+    expect((await databaseRecords(panel)).find(row => row.kind === "snapshot").data.summary).toBe(summary);
+    // Accepted context is consumed once, not included again in the next send.
+    await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /IDLE_SAVED_GATE/);
     expect(await command(panel, { type: "DR_APPLY_SNAPSHOT", snapshotId: "deleted-snapshot" })).toEqual({ ok: false });
-    await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /IDLE_SAVED_GATE/);
+    await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /IDLE_SAVED_GATE/);
   } finally { await context.close(); }
 });
 
