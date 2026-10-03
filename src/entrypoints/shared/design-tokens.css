@@ -1,0 +1,11 @@
+/* Shared palette and spacing, including small isolated cards inside DeepSeek. */
+:root, :host {
+  --dr-space-1: 4px; --dr-space-2: 8px; --dr-space-3: 12px; --dr-space-4: 16px; --dr-space-6: 24px;
+  --dr-text: #f0f0f2; --dr-muted: #b3b3ba; --dr-border: #414146; --dr-surface: #2b2b2e;
+  --dr-bg: #181818; --dr-panel: #212122; --dr-raised: #353538;
+  --dr-primary: #9aaeff; --dr-action: #4663ed; --dr-action-hover: #4d69ef; --dr-on-action: #fff;
+  --dr-selected: #3b3d46; --dr-border-strong: #5d5d65; --dr-primary-soft: #292f44;
+  --dr-success: #9bbfaa; --dr-warning: #e3b57b; --dr-danger: #efa0a0;
+  --dr-danger-soft: #352628; --dr-warning-soft: #332c24;
+  --dr-radius: 12px;
+}

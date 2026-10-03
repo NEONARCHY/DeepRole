@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Scene choices fixture</title>
+    <style>body{margin:0;background:#181818;color:#f0f0f2;font:15px/1.6 system-ui,sans-serif}main{max-width:690px;margin:40px auto;padding:16px}h1{font-size:20px}article{margin:16px 0}.ds-markdown p{margin:12px 0}textarea{box-sizing:border-box;width:100%;padding:14px;color:#f0f0f2;background:#2b2b2e;border:1px solid #414146;border-radius:12px}form>button{margin-top:8px;padding:10px}</style>
+  </head>
+  <body><main><h1>DeepSeek · test scene</h1><section id="conversation"></section><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main>
+    <script type="module">
+      import { dismissSceneChoiceCards, syncSceneChoiceCards } from "/src/adapters/deepseek-choices-dom.ts";
+      import { DeepSeekDomAdapter } from "/src/adapters/deepseek-dom.ts";
+      const adapter = new DeepSeekDomAdapter();
+      let state = { enabled: true, generating: false, locale: new URL(location.href).searchParams.get("locale") ?? "en" };
+      window.requests = 0; window.sent = 0;
+      document.documentElement.lang = state.locale;
+      const sync = () => syncSceneChoiceCards(state.enabled, state.generating, state.locale, async (choice) => { if (adapter.getDraft().trim()) return false; return adapter.setDraft(choice.text); }, document, { busy: false, onRequest: async () => { window.requests++; return true; } });
+      const restore = () => { document.querySelector("#conversation").innerHTML = sessionStorage.getItem("history") ?? '<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope. What will you do?</p></div></article>'; sync(); };
+      window.choicesTest = { sync, update: (next) => { Object.assign(state, next); sync(); }, setHistory: (html) => { sessionStorage.setItem("history", html); restore(); }, navigate: (html) => { dismissSceneChoiceCards(document, false); document.querySelector("#conversation").innerHTML = html; sync(); } };
+      document.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); window.sent++; });
+      restore();
+    </script>
+  </body>
+</html>

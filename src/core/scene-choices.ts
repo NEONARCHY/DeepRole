@@ -20,6 +20,17 @@ export function sceneChoiceInstruction(): string {
   ].join("\n");
 }
 
+/** An explicit, visible request. The existing scene stays intact; no choice is made. */
+export function sceneChoiceRecoveryPrompt(locale: Locale): string {
+  const request = locale === "ru"
+    ? "Предложи четыре ответа или действия моего героя для последней ролевой сцены перед этим запросом. Не продолжай и не переписывай сцену. Ничего не выбирай за меня и не обновляй память. Если выше уже был такой запрос, используй исходную сцену, а не служебный ответ."
+    : "Suggest four replies or actions for my protagonist in the last roleplay scene before this request. Do not continue or rewrite the scene, choose for me, or update memory. If a previous request asked for options, use the original scene rather than the technical reply.";
+  return ["[DeepRole Service]", "[DeepRole Scene Choices]", request,
+    "This is an explicit request for options, even though it is out of character. Return only one complete <deeprole_choices> block in the final answer, not in reasoning. Labels: at most 100 characters. Each option text: at most 600 characters.",
+    sceneChoiceInstruction(),
+  ].join("\n");
+}
+
 /** Accept only a complete, ordered set of four actionable choices. Never execute model output. */
 export function parseSceneChoices(text: string): { choices: SceneChoices; start: number; end: number } | null {
   const start = text.lastIndexOf(START);
@@ -44,7 +55,25 @@ export function parseSceneChoices(text: string): { choices: SceneChoices; start:
 }
 
 const copy = {
-  ru: { title: "Выберите ответ или действие", hint: "Нажмите вариант, затем измените его перед отправкой.", positive: "Доброжелательно", neutral: "Нейтрально", negative: "Жёстко", surprise: "Неожиданный ход", toggleOn: "Выборы в сценах · вкл", toggleOff: "Выборы в сценах · выкл", toggleHelp: "Четыре варианта в ролевых сценах всех чатов с подключённым миром.", draftBusy: "Сначала завершите или очистите свой черновик.", unavailable: "Поле ввода сейчас недоступно." },
-  en: { title: "Choose a reply or action", hint: "Pick an option, then edit it before sending.", positive: "Warm", neutral: "Neutral", negative: "Confrontational", surprise: "Unexpected move", toggleOn: "Scene choices · on", toggleOff: "Scene choices · off", toggleHelp: "Four options in roleplay scenes across chats with a connected world.", draftBusy: "Finish or clear your current draft first.", unavailable: "The composer is unavailable right now." },
+  ru: {
+    title: "Выберите ответ или действие", hint: "Нажмите вариант, затем измените его перед отправкой.",
+    positive: "Доброжелательно", neutral: "Нейтрально", negative: "Жёстко", surprise: "Неожиданный ход",
+    toggleOn: "Выборы в сценах · вкл", toggleOff: "Выборы в сценах · выкл", toggleHelp: "Четыре варианта в ролевых сценах всех чатов с подключённым миром.",
+    draftBusy: "Сначала завершите или очистите свой черновик.", unavailable: "Поле ввода сейчас недоступно.",
+    request: "Предложить варианты", requestHint: "Отправит запрос в чат: четыре хода без продолжения сцены.",
+    waiting: "DeepSeek готовит варианты…", waitingHint: "Ответ виден в чате. Выбор появится после завершения.",
+    failed: "Варианты не получены", failedHint: "Проверьте ответ в чате. Можно запросить варианты ещё раз. Лор не менялся.",
+    changed: "Сцена уже изменилась. Запросите варианты под новым ответом.", busy: "Дождитесь завершения текущего ответа или запроса.",
+  },
+  en: {
+    title: "Choose a reply or action", hint: "Pick an option, then edit it before sending.",
+    positive: "Warm", neutral: "Neutral", negative: "Confrontational", surprise: "Unexpected move",
+    toggleOn: "Scene choices · on", toggleOff: "Scene choices · off", toggleHelp: "Four options in roleplay scenes across chats with a connected world.",
+    draftBusy: "Finish or clear your current draft first.", unavailable: "The composer is unavailable right now.",
+    request: "Suggest options", requestHint: "Sends a request in chat: four moves without continuing the scene.",
+    waiting: "DeepSeek is preparing options…", waitingHint: "The reply is visible in chat. Options appear when it finishes.",
+    failed: "Options could not be retrieved", failedHint: "Check the reply in chat. You can request options again. Lore is unchanged.",
+    changed: "The scene has changed. Request options below the new reply.", busy: "Wait for the current reply or request to finish.",
+  },
 } as const;
 export function sceneChoiceText(locale: Locale, key: keyof typeof copy.en): string { return copy[locale][key]; }

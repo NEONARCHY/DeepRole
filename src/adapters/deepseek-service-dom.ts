@@ -18,8 +18,8 @@ export function findServiceResponseElements(requestId: string, root: ParentNode 
 }
 
 /** Find the assistant turn paired with a request, even when it returned an error instead of data. */
-export function findServiceReplyRows(requestId: string, root: ParentNode = document): HTMLElement[] {
-  return serviceTurns(root).filter((turn) => turn.requestId === requestId && turn.response).map((turn) => turn.response!);
+export function findServiceReplyRows(requestId: string, root: ParentNode = document, marker = SERVICE_START): HTMLElement[] {
+  return serviceTurns(root, marker).filter((turn) => turn.requestId === requestId && turn.response).map((turn) => turn.response!);
 }
 
 /** A reload restores DeepSeek's saved reply; suppress completed technical blocks again. */
@@ -91,10 +91,10 @@ export function showServicePreloader(requestId: string, row: HTMLElement, payloa
   card.setAttribute("role", "status");
   card.setAttribute("aria-live", "polite");
   card.setAttribute("aria-busy", "true");
-  card.style.cssText = "display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;box-sizing:border-box;margin:14px 0 8px;padding:11px 14px;border:1px solid rgba(126,174,216,.28);border-radius:12px;background:rgba(31,47,60,.78);color:#dceaf5;font:500 13px/1.4 system-ui,sans-serif;";
+  card.style.cssText = "display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;box-sizing:border-box;margin:14px 0 8px;padding:11px 14px;border:1px solid #414146;border-radius:12px;background:#212122;color:#f0f0f2;font:500 13px/1.4 system-ui,sans-serif;";
   const spinner = row.ownerDocument.createElement("span");
   spinner.setAttribute("aria-hidden", "true");
-  spinner.style.cssText = "display:inline-block;width:16px;height:16px;flex:0 0 16px;box-sizing:border-box;border:2px solid rgba(151,184,209,.28);border-top-color:#8bc5ef;border-radius:50%;";
+  spinner.style.cssText = "display:inline-block;width:16px;height:16px;flex:0 0 16px;box-sizing:border-box;border:2px solid #414146;border-top-color:#9aaeff;border-radius:50%;";
   try {
     spinner.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 850, iterations: Infinity });
   } catch { /* The status remains readable if Web Animations are unavailable. */ }
@@ -203,7 +203,7 @@ export function restoreServiceTurns(root: ParentNode = document): void {
   }
 }
 
-function serviceTurns(root: ParentNode): { request: HTMLElement; response?: HTMLElement; requestId?: string }[] {
+function serviceTurns(root: ParentNode, marker = SERVICE_START): { request: HTMLElement; response?: HTMLElement; requestId?: string }[] {
   const requests = findDeepestServiceElements("[DeepRole Service]", root).flatMap((element) => {
     const text = (element.innerText || element.textContent || "").trim();
     if (!text.startsWith("[DeepRole Service]")) return [];
@@ -213,7 +213,7 @@ function serviceTurns(root: ParentNode): { request: HTMLElement; response?: HTML
   });
   const uniqueRequests = requests.filter((turn, index) => requests.findIndex((other) => other.request === turn.request) === index);
   uniqueRequests.sort((a, b) => follows(a.request, b.request) ? -1 : follows(b.request, a.request) ? 1 : 0);
-  const payloadRows = findDeepestServiceElements(SERVICE_START, root).map((element) => {
+  const payloadRows = findDeepestServiceElements(marker, root).map((element) => {
     const row = findServiceRow(element);
     return { row };
   }).filter((item, index, all) => all.findIndex((other) => other.row === item.row) === index);

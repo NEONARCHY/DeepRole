@@ -12,6 +12,17 @@ function store() {
 }
 
 describe("per-tab session patches", () => {
+  it("acknowledges character sends despite browser key reordering, never an older send", async () => {
+    const { state, values } = store();
+    const receipt = { id: "request-123456", worldId: "w", chatId: "a", base: "version", accepted: false, createdAt: 1 };
+    await state.patch(1, { characterRequest: receipt });
+    values.deeprole_tab_state_1.characterRequest = Object.fromEntries(Object.entries(receipt).reverse());
+    expect(await state.patch(1, { characterRequest: { ...receipt, accepted: true } }, { characterRequestId: receipt.id })).toEqual({ ok: true });
+    await state.patch(1, { characterRequest: { ...receipt, id: "newer-request" } });
+    expect(await state.patch(1, { characterRequest: { ...receipt, accepted: true } }, { characterRequestId: receipt.id })).toEqual({ ok: false });
+    expect((await state.get(1)).characterRequest?.id).toBe("newer-request");
+    expect((await state.get(2)).characterRequest).toBeUndefined();
+  });
   it("keeps concurrent service, handoff and memory override updates", async () => {
     const { state } = store();
     await Promise.all([

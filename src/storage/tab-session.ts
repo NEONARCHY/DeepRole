@@ -23,7 +23,7 @@ export class TabSessionStore {
       if (this.closed.has(tabId)) return { ok: false };
       const previous = await this.read(tabId);
       if (this.closed.has(tabId)) return { ok: false };
-      if (expected && Object.entries(expected).some(([key, value]) => JSON.stringify((key === "serviceId" ? previous.service?.id : previous[key as keyof TabSessionState]) ?? null) !== JSON.stringify(value ?? null))) return { ok: false };
+      if (expected && Object.entries(expected).some(([key, value]) => JSON.stringify((key === "serviceId" ? previous.service?.id : key === "characterRequestId" ? previous.characterRequest?.id : previous[key as keyof TabSessionState]) ?? null) !== JSON.stringify(value ?? null))) return { ok: false };
       await this.area.set({ [`deeprole_tab_state_${tabId}`]: { ...previous, ...patch } });
       return { ok: true };
     });

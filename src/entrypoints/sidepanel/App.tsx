@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CharacterSettings } from "../shared/CharacterSheets";
+import { characterText } from "../../core/characters";
 import {
   ArchiveRestore,
   BrainCircuit,
@@ -7,6 +9,7 @@ import {
   CircleHelp,
   Download,
   Edit3,
+  Eye,
   FileKey2,
   Globe2,
   KeyRound,
@@ -782,8 +785,14 @@ function SettingsView(props: {
       </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "app"}>
+      <SettingsCard icon={<BrainCircuit />} title={characterText(props.settings.locale, "title")}><CharacterSettings settings={props.settings} onSettings={props.onSettings} /></SettingsCard>
       <SettingsCard icon={<Languages />} title={props.t("language")}>
         <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
+      </SettingsCard>
+      <SettingsCard icon={<Eye />} title={x("contextIndicatorsTitle")}>
+        <p className="setting-copy">{x("contextIndicatorsHint")}</p>
+        <label className="toggle-row"><span>{x("chatContextIndicator")}</span><input type="checkbox" checked={props.settings.showChatContextMeter} onChange={(event) => void props.onSettings({ ...props.settings, showChatContextMeter: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{x("memoryContextIndicator")}</span><input type="checkbox" checked={props.settings.showMemoryContextIndicator} onChange={(event) => void props.onSettings({ ...props.settings, showMemoryContextIndicator: event.target.checked })} /></label>
       </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "data"}>

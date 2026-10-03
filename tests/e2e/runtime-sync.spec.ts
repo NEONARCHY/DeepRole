@@ -261,6 +261,275 @@ async function pendingService(panel: Page) {
   });
 }
 
+for (const navigation of ["direct", "SPA"] as const) test(`character sheets: empty roster initializes through the alternate DeepSeek chat URL (${navigation})`, async () => {
+  const world = { id: "w", name: "Test world", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ["binding", binding]]);
+  try {
+    if (navigation === "direct") await chat.goto("https://chat.deepseek.com/a/chat/s/a");
+    else {
+      await chat.goto("https://chat.deepseek.com/");
+      await expect(chat.getByRole("button", { name: /^Context/ })).toBeVisible();
+      await chat.evaluate(() => { history.pushState({}, "", "/a/chat/s/a"); window.dispatchEvent(new PopStateEvent("popstate")); });
+    }
+    await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /new:Character name/);
+    const text = await chat.locator("html").getAttribute("data-deeprole-context");
+    const schema = JSON.parse(text!.match(/Schema: (.*)\nRoster:/)![1]!);
+    const payload = { ...schema, present: ["new:Noah"], partner: null, updates: [{ id: "new:Noah", state: { emotion: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
+    const append = async (value: any) => chat.evaluate(value => {
+      const row = document.createElement("article"); row.dataset.role = "assistant";
+      row.dataset.messageId = "reply-" + document.querySelectorAll("article").length;
+      const text = document.createElement("div"); text.className = "ds-markdown";
+      text.textContent = "Profile check.\n<deeprole_characters>" + JSON.stringify(value) + "</deeprole_characters>";
+      row.append(text); document.querySelector("#conversation")!.append(row);
+    }, value);
+    await append(payload);
+    await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    await expect(chat.locator(".dr-character-row")).toHaveCount(1);
+    await expect(chat.locator(".dr-character-row")).toContainText("Noah");
+    await expect(chat.locator(".dr-character-row")).toContainText("Happy");
+    await chat.locator(".dr-character-row").click();
+    await chat.getByRole("dialog").getByLabel("Appearance and clothing").fill("Blue coat");
+    await chat.getByRole("button", { name: "Save character", exact: true }).click();
+    await expect(chat.getByRole("dialog")).toHaveCount(0);
+    expect((await databaseRecords(panel)).find(r => r.kind === "entity").data.characterSheet.appearance).toBe("Blue coat");
+    await append({ ...payload, world: "another-world" });
+    await expect(chat.locator(".dr-character-status")).toContainText("another copy of the world");
+    await expect(chat.locator(".dr-character-row")).toHaveCount(1);
+    await chat.reload();
+    await expect(chat.locator(".dr-character-row")).toContainText("Happy");
+  } finally { await context.close(); }
+});
+
+test("character sheets: a verified local request ignores obsolete scope tags and shows its interlocutor", async () => {
+  const world = { id: "w", name: "World copy", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const hero = { id: "hero-local", worldId: "w", name: "Noah", kind: "character", description: "ORIGINAL", aliases: [], memberIds: [], characterSheet: { gender: "male", protagonist: true, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["binding", binding]]);
+  try {
+    let schema: any;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
+      schema = JSON.parse(route.request().postDataJSON().prompt.match(/Schema: (.*)\nRoster:/)[1]);
+      return route.fulfill({ contentType: "application/json", body: "{}" });
+    });
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Technical check, outside the story." }) }));
+    expect(schema.request).toBeTruthy(); expect(schema.world).toBeUndefined();
+    const payload = { ...schema, world: "another-browser-world", chat: "obsolete-chat", base: "obsolete-version", present: ["Noah", "new:Mira"], partner: "new:Mira", updates: [{ id: "Noah", state: { emotion: "neutral", condition: "", goal: "", relationship: "", stats: [] } }, { id: "new:Mira", name: "Mira", state: { emotion: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
+    const append = (value: any) => chat.evaluate(value => {
+      const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "request-" + document.querySelectorAll("article").length;
+      const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the letter." }));
+      row.textContent = "Technical check.\n<deeprole_characters>" + JSON.stringify(value) + "</deeprole_characters>\n<deeprole_choices>" + JSON.stringify({ version: 1, options: choices }) + "</deeprole_choices>";
+      document.querySelector("#conversation")!.append(row);
+    }, value);
+    await append(payload);
+    await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    await expect(chat.locator(".dr-character-row")).toHaveCount(2);
+    await expect(chat.locator(".dr-cast-portrait.right")).toHaveAccessibleName(/Mira/);
+    await chat.screenshot({ path: path.resolve("private-assets/character-request-proof-20261003.png") });
+    expect((await databaseRecords(panel)).find(r => r.id === hero.id).data.description).toBe("ORIGINAL");
+    await chat.reload(); await expect(chat.locator(".dr-character-row")).toHaveCount(2);
+    // The mock server has no history endpoint: restore the saved reply as the
+    // real site's history renderer would, without sending another request.
+    await append(payload);
+    await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    await append({ ...payload, request: "unrelated-browser-request" });
+    await expect(chat.locator(".dr-character-status")).not.toHaveText("Updated after reply");
+    await expect(chat.locator(".dr-character-row")).toHaveCount(2);
+  } finally { await context.close(); }
+});
+
+test("character sheets: independent browser libraries never adopt each other's request", async () => {
+  test.setTimeout(60000);
+  const world = { id: "w", name: "Same imported world", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const first = await setup([["world", world], ["binding", binding]]);
+  let second: Awaited<ReturnType<typeof setup>> | undefined;
+  try {
+    second = await setup([["world", world], ["binding", binding]]);
+    const schemas: any[] = [];
+    for (const instance of [first, second]) {
+      await instance.context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
+        schemas.push(JSON.parse(route.request().postDataJSON().prompt.match(/Schema: (.*)\nRoster:/)[1]));
+        return route.fulfill({ contentType: "application/json", body: "{}" });
+      });
+      await instance.chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Neutral technical check." }) }));
+    }
+    expect(schemas[0].request).not.toBe(schemas[1].request);
+    const result = (index: number) => ({ request: schemas[index].request, present: ["new:Mira"], partner: "new:Mira", updates: [{ id: "new:Mira", name: "Mira", state: { emotion: "neutral", condition: "", goal: "", relationship: "", stats: [] } }] });
+    const append = (instance: typeof first, payload: any) => instance.chat.evaluate(payload => {
+      const row = document.createElement("article"); row.dataset.role = "assistant";
+      row.textContent = "Technical reply.\n<deeprole_characters>" + JSON.stringify(payload) + "</deeprole_characters>";
+      document.querySelector("#conversation")!.append(row);
+    }, payload);
+    await append(first, result(0)); await expect(first.chat.locator(".dr-character-row")).toHaveCount(1);
+    await append(second, result(0)); await expect(second.chat.locator(".dr-character-status")).toContainText("Couldn’t match");
+    expect((await databaseRecords(second.panel)).filter(r => r.kind === "entity")).toHaveLength(0);
+    await append(second, result(1)); await expect(second.chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    await expect(second.chat.locator(".dr-character-row")).toHaveCount(1);
+    const a = (await databaseRecords(first.panel)).find(r => r.kind === "entity");
+    const b = (await databaseRecords(second.panel)).find(r => r.kind === "entity");
+    expect(a.id).not.toBe(b.id);
+  } finally { await first.context.close(); await second?.context.close(); }
+});
+
+test("character sheets: real extension sync, manual edits, return and chat isolation", async () => {
+  const world = { id: "w", name: "Test world", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const person = { id: "mira", worldId: "w", name: "Mira", kind: "character", description: "ORIGINAL_PROFILE", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1 };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: ["mira"], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ["entity", person], ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b" }]]);
+  try {
+    await expect(chat.locator(".dr-character-row")).toHaveCount(1);
+    await panel.evaluate(async () => { const api = (globalThis as any).chrome; const s = (await api.storage.local.get("deeprole_settings")).deeprole_settings; await api.storage.local.set({ deeprole_settings: { ...s, characterSheetsEnabled: false } }); });
+    await expect(chat.locator(".dr-characters")).toHaveCount(0);
+    await panel.evaluate(async () => { const api = (globalThis as any).chrome; const s = (await api.storage.local.get("deeprole_settings")).deeprole_settings; await api.storage.local.set({ deeprole_settings: { ...s, characterSheetsEnabled: true } }); });
+    await expect(chat.locator(".dr-character-row")).toHaveCount(1);
+    const getPayload = async () => {
+      const text = await chat.locator("html").getAttribute("data-deeprole-context");
+      const schema = JSON.parse(text!.match(/Schema: (.*)\nRoster:/)![1]!);
+      return { ...schema, present: ["mira"], updates: [{ id: "mira", state: { emotion: "happy", condition: "Safe at the station", goal: "Find the key", relationship: "Trusts Noah", stats: [{ label: "Energy", value: "Rested" }] } }] };
+    };
+    const payload = await getPayload();
+    await chat.evaluate(value => {
+      const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "character-reply";
+      const text = document.createElement("div"); text.className = "ds-markdown"; text.textContent = 'Mira smiles at the station.\n<deeprole_characters>' + JSON.stringify(value) + '</deeprole_characters>';
+      row.append(text); document.querySelector("#conversation")!.append(row);
+    }, payload);
+    await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
+    await expect(chat.locator(".dr-character-row")).toContainText("Happy");
+    const rows = await databaseRecords(panel); const savedBinding = rows.find(r => r.id === binding.id).data;
+    expect(savedBinding.characterScenes.w.states.mira.goal).toBe("Find the key"); expect(rows.find(r => r.id === "mira").data.description).toBe("ORIGINAL_PROFILE");
+    expect(rows.find(r => r.id === "binding:b").data.characterScenes).toBeUndefined();
+    const revision = savedBinding.characterScenes.w.revision;
+    await chat.reload(); await expect(chat.locator(".dr-character-row")).toContainText("Happy");
+    expect((await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w.revision).toBe(revision);
+    await chat.locator(".dr-character-row").click();
+    await chat.getByRole("dialog").getByLabel("Appearance and clothing").fill("MANUAL_BLUE_COAT");
+    await chat.getByRole("dialog").getByLabel("My protagonist").check();
+    await chat.getByRole("button", { name: "Save character", exact: true }).click();
+    await expect(chat.getByRole("dialog")).toHaveCount(0);
+    const sent: string[] = [];
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent.push(route.request().postDataJSON().prompt); return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Continue" }) }));
+    expect(sent).toHaveLength(1); expect(sent[0]).toContain("MANUAL_BLUE_COAT"); expect(sent[0]).toContain("Find the key"); expect(sent[0]).not.toContain("data:image");
+    await chat.evaluate(value => { const article = document.createElement("article"); article.dataset.role = "assistant"; article.dataset.messageId = "old-answer"; article.textContent = '<deeprole_characters>' + JSON.stringify(value) + '</deeprole_characters>'; document.querySelector("#conversation")!.append(article); }, payload);
+    await expect(chat.locator(".dr-character-status")).toContainText("Update skipped");
+    expect((await databaseRecords(panel)).find(r => r.id === "mira").data.characterSheet.appearance).toBe("MANUAL_BLUE_COAT");
+    await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(chat.locator(".dr-character-row")).toContainText("No updates yet");
+    await chat.goto("https://chat.deepseek.com/chat/s/a"); await expect(chat.locator(".dr-character-row")).toContainText("Happy");
+  } finally { await context.close(); }
+});
+
+const choicesWorld = { id: "choices-world", name: "Test observatory", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+const choicesBinding = { id: "binding:a", chatId: "a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+const choicesPayload = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map((kind) => ({ kind, label: "Move " + kind, text: "MY_MOVE_" + kind })) }) + '</deeprole_choices>';
+async function enableChoicesScene(chat: Page) {
+  await enableServiceComposer(chat);
+  await chat.locator("[data-message-id='user']").evaluate((row) => row.setAttribute("data-role", "user"));
+  await chat.locator("[data-message-id='answer']").evaluate((row) => row.setAttribute("data-role", "assistant"));
+  await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeVisible();
+}
+
+test("scene recovery is explicit and visible, then survives reopening without another request", async () => {
+  const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    const sent: string[] = [];
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent.push(route.request().postDataJSON()?.prompt ?? ""); return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await enableChoicesScene(chat); await chat.bringToFront();
+    expect(sent).toEqual([]);
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).click();
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0]).toContain("[DeepRole Scene Choices]"); expect(sent[0]).toContain("Do not continue or rewrite the scene");
+    await expect(chat.locator("[data-message-id='service-user']")).toBeVisible();
+    await expect(chat.locator("[data-message-id='answer']")).toHaveText("The gate opened.");
+    await expect.poll(() => pendingService(panel)).toMatchObject({ type: "scene-choices" });
+    const pending = await pendingService(panel); expect(pending.baseVersions).toBeUndefined(); expect(pending.sceneSignature).not.toContain("gate opened");
+    await chat.locator("[data-message-id='service-answer']").evaluate((row, text) => { row.setAttribute("data-role", "assistant"); row.textContent = text; }, choicesPayload);
+    await expect.poll(() => pendingService(panel)).toBeNull();
+    await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible();
+    await chat.getByRole("button", { name: /Move positive/ }).click();
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_MOVE_positive"); expect(sent).toHaveLength(1);
+    await chat.getByRole("button", { name: /Move neutral/ }).click();
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_MOVE_neutral");
+    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("MY_EDITED_MOVE");
+    await chat.getByRole("button", { name: /Move negative/ }).click();
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_EDITED_MOVE");
+    const historyHtml = await chat.locator("#conversation").evaluate((row) => row.innerHTML);
+    await context.route("https://chat.deepseek.com/chat/s/a", (route) => route.fulfill({ contentType: "text/html", body: fixture.replace('<div id="conversation"></div>', `<div id="conversation">${historyHtml}</div>`) }));
+    await chat.goto("about:blank"); await chat.goto("https://chat.deepseek.com/chat/s/a");
+    await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible(); expect(sent).toHaveLength(1);
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("");
+    const records = await databaseRecords(panel); expect(records.filter((row) => ["entry", "proposal", "snapshot"].includes(row.kind))).toEqual([]);
+  } finally { await context.close(); }
+});
+
+test("scene recovery never overwrites a draft or submits twice", async () => {
+  const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await enableChoicesScene(chat); await chat.bringToFront();
+    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("MY_UNSENT_DRAFT");
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).click();
+    await expect(chat.getByText("Finish or clear your current draft first.", { exact: true })).toBeVisible();
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY_UNSENT_DRAFT"); expect(sent).toBe(0);
+    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("");
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).dblclick();
+    await expect.poll(() => sent).toBe(1);
+    await expect.poll(() => pendingService(panel)).toMatchObject({ type: "scene-choices" });
+  } finally { await context.close(); }
+});
+
+for (const interrupt of ["draft", "scene", "chat"] as const) test(`scene recovery cancels safely when ${interrupt} changes while preparing`, async () => {
+  const { context, panel, chat, worker } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await enableChoicesScene(chat); await chat.bringToFront(); await holdNextVaultRead(worker);
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).click();
+    await expect.poll(() => worker.evaluate(() => (globalThis as any).readHeld)).toBe(true);
+    if (interrupt === "draft") await chat.getByRole("textbox", { name: "Message", exact: true }).fill("TYPED_DURING_PREPARATION");
+    else await chat.evaluate((interrupt) => {
+      if (interrupt === "chat") history.pushState({}, "", "/chat/s/b");
+      document.querySelector("[data-message-id='answer']")!.textContent = "A different scene.";
+    }, interrupt);
+    await worker.evaluate(() => (globalThis as any).releaseRead());
+    if (interrupt === "chat") {
+      await expect.poll(() => command(panel, { type: "DR_GET_PAGE_STATE" })).toMatchObject({ chatId: "b", scene: { worldId: null }, activity: null });
+      await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toHaveCount(0);
+    } else await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeEnabled();
+    expect(sent).toBe(0); expect(await pendingService(panel)).toBeFalsy();
+    if (interrupt === "draft") await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("TYPED_DURING_PREPARATION");
+  } finally { await worker.evaluate(() => (globalThis as any).releaseRead?.()).catch(() => undefined); await context.close(); }
+});
+
+test("a failed options response allows an explicit retry without writing lore", async () => {
+  const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await enableChoicesScene(chat); await chat.bringToFront(); await chat.getByRole("button", { name: "Suggest options", exact: true }).click();
+    await expect.poll(() => pendingService(panel)).toMatchObject({ type: "scene-choices" });
+    await chat.locator("[data-message-id='service-answer']").evaluate((row) => { row.textContent = "Message is generating, try again later."; });
+    await expect.poll(() => pendingService(panel)).toBeNull();
+    await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeVisible();
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).click(); await expect.poll(() => sent).toBe(2);
+    expect((await databaseRecords(panel)).filter((row) => ["entry", "proposal", "snapshot"].includes(row.kind))).toEqual([]);
+  } finally { await context.close(); }
+});
+
+test("a failed options transport restores the request button without automatic retries", async () => {
+  const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    let sent = 0;
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent++; return route.fulfill({ status: 503, contentType: "application/json", body: "{}" }); });
+    await enableChoicesScene(chat); await chat.bringToFront(); await chat.getByRole("button", { name: "Suggest options", exact: true }).click();
+    await expect.poll(() => sent).toBe(1); await expect.poll(() => pendingService(panel)).toBeNull();
+    await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeVisible();
+    await chat.getByRole("button", { name: "Suggest options", exact: true }).click(); await expect.poll(() => sent).toBe(2);
+    expect((await databaseRecords(panel)).filter((row) => ["entry", "proposal", "snapshot"].includes(row.kind))).toEqual([]);
+  } finally { await context.close(); }
+});
+
 test("aborting a service after headers releases analysis and allows an explicit retry", async () => {
   const { context, panel, chat } = await setup([]);
   try {

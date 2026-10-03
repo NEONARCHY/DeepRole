@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { useEffect, useId, useRef, useState, type DragEvent as ReactDragEvent, type ReactNode } from "react";
+import { Check, ChevronDown, Plus, Upload, X } from "lucide-react";
 import { formatRecordCount, menuText } from "../../core/menu-i18n";
 import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
+import { characterDescription, characterText } from "../../core/characters";
 import { BOOK_COLORS } from "../../core/defaults";
 import { createId } from "../../core/id";
 import { sceneText, type SceneKey } from "../../core/scene-i18n";
@@ -15,6 +16,7 @@ import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parse
 import { SectionGuide, HelpButton } from "../shared/Help";
 import { LoreMap } from "./LoreMap";
 import { MapWorkspace } from "./MapWorkspace";
+import "./lore-import.css";
 import { SceneControls } from "../shared/SceneControls";
 import type { LoreNode } from "../../core/lore-map";
 import type { ContextSelection, MemoryOverrides, ActivationMode } from "../../core/types";
@@ -71,10 +73,10 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
   return <div className="view-stack worlds-view" aria-busy={busy}>
     <div className="view-title"><div><small>DeepRole</small><h1>{mt("lore")}</h1></div></div>
     <p className="dr-view-subtitle">{world ? x("mapHint") : x("startHint")}</p>
-    <div className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => setImporter(!importer)}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
+    <div className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => { setMessage(""); setImporter(true); }}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
     {message && <p className="rp-status" role="status">{message}</p>}
     <WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("createNewWorld")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} />
-    {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
+    {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onClose={() => setImporter(false)} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
     {editor?.kind === "world" && <WorldEditor key={editor.id ?? "new-world"} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
     {world && <section className={worldConnected ? "lore-connection is-attached" : "lore-connection"} aria-label={mt("useWorld")}>
       <strong>{worldConnected ? mt("attached") : mt("libraryOnly")}</strong>
@@ -91,7 +93,7 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
     {view === "map" && world && <section className="rp-card lm-launch-card"><span className="lm-preview-orb" aria-hidden="true">✧</span><h2>{world.name}</h2><p className="rp-hint">{mt("available")}: {formatRecordCount(props.locale, entries.length)}</p><button className="button primary" onClick={() => setMapOpen(true)}>{t("mapOpen")}</button><button className="button secondary small" onClick={() => props.onEntry("new")}>{t("addMemory")}</button></section>}
     {view === "map" && !world && props.memoryList}
     {(world || createWorldInMap) && <>
-      {mapOpen && <MapWorkspace key={createWorldInMap ? "create-new-world" : world?.id ?? "selected-world"} locale={props.locale} worlds={props.worlds} initialWorldId={createWorldInMap ? null : world?.id ?? null} startInCreate={createWorldInMap} activeWorldId={props.connected ? props.activeWorldId : null} onSelect={props.onWorld} onClose={closeMap} onCreate={async (draft) => {
+      {mapOpen && <MapWorkspace key={createWorldInMap ? "create-new-world" : "selected-world"} locale={props.locale} worlds={props.worlds} initialWorldId={createWorldInMap ? null : world?.id ?? null} startInCreate={createWorldInMap} activeWorldId={props.connected ? props.activeWorldId : null} onSelect={props.onWorld} onClose={closeMap} onCreate={async (draft) => {
         const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...draft, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
         await repository.putIfUnchanged("world", created, null); await props.onChanged(); return created;
       }} render={(world, pane) => <LoreMap embedded activePane={pane.active} onRegister={pane.onRegister} locale={props.locale} world={world} books={props.books.filter((b) => b.worldId === world.id)} entries={props.entries.filter((e) => e.bookId ? props.books.find((b) => b.id === e.bookId)?.worldId === world.id : e.worldId === world.id)} entities={props.entities.filter((e) => e.worldId === world.id)} templates={props.templates.filter((v) => v.worldId === world.id)} selection={props.activeWorldId === world.id ? props.selection : undefined} overrides={props.activeWorldId === world.id ? props.overrides : undefined} onMemoryUse={props.connected && props.activeWorldId === world.id ? props.onMemoryUse : undefined} onActivation={async (entry, activation: ActivationMode, history) => { await changeMapActivations(world.id, [entry], activation, repository, history); await props.onChanged(); }} onBranchActivation={async (entries, activation, history, branchId) => { await changeMapActivations(world.id, entries, activation, repository, history, branchId); await props.onChanged(); }} confirmDeletions={props.confirmDeletions} onClose={pane.onClose} onEdit={(node) => pane.onExit(() => editNode(node, world.id))}
@@ -117,8 +119,8 @@ export function WorldsView(props: { locale: Locale; worlds: WorldProfile[]; enti
         <details><summary>{t("advanced")}</summary><label className="field-label">{t("moveBook")}<select aria-label={t("moveBook")} value="" disabled={busy} onChange={(e) => { const book = props.books.find((b) => b.id === e.target.value); if (book) void act(() => assignBookWorld(book, world.id)); }}><option value="">{t("chooseBook")}</option>{props.books.filter((b) => !b.worldId).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label></details>
       </section>
       <section className="rp-card"><header><h2>{t("entities")}</h2></header><HelpButton className="button primary small" onClick={() => setEditor({ kind: "entity" })}>{t("newEntity")}</HelpButton>
-        {editor?.kind === "entity" && <EntityEditor key={editor.id ?? "new-entity"} worldId={world.id} entity={entities.find((e) => e.id === editor.id)} entities={entities} entries={entries} t={t} busy={busy} onSave={saveEntity} onCancel={() => setEditor(null)} />}
-        {entities.map((entity) => <article key={entity.id} className="rp-item"><small>{t(entity.kind)}</small><h3>{entity.name}</h3><p>{entity.description}</p><small>{t("linkedMemory")}: {entries.filter((e) => e.entityIds?.includes(entity.id)).length}</small><div className="button-row">
+        {editor?.kind === "entity" && <EntityEditor locale={props.locale} key={editor.id ?? "new-entity"} worldId={world.id} entity={entities.find((e) => e.id === editor.id)} entities={entities} entries={entries} t={t} busy={busy} onSave={saveEntity} onCancel={() => setEditor(null)} />}
+        {entities.map((entity) => <article key={entity.id} className="rp-item"><small>{t(entity.kind)}</small><h3>{entity.name}</h3><p>{characterDescription(entity, props.locale)}</p><small>{t("linkedMemory")}: {entries.filter((e) => e.entityIds?.includes(entity.id)).length}</small><div className="button-row">
           <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "entity", id: entity.id })}>{t("edit")}</HelpButton>
           <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(() => duplicateEntity(entity, t("copyName", { name: entity.name })))}>{t("duplicate")}</HelpButton>
           <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => downloadWhenUnlocked(await exportProfile(world.id, entity.id)))}>{t("export")}</HelpButton>
@@ -214,7 +216,8 @@ function WorldEditor(props: { world?: WorldProfile; t: T; busy: boolean; onSave:
   </form>;
 }
 
-function EntityEditor(props: { worldId: string; entity?: SceneEntity; entities: SceneEntity[]; entries: MemoryEntry[]; t: T; busy: boolean; onSave: (v: SceneEntity, links: string[], expected: SceneEntity | null, baseEntries: MemoryEntry[]) => Promise<void>; onCancel: () => void }) {
+function EntityEditor(props: { locale: Locale; worldId: string; entity?: SceneEntity; entities: SceneEntity[]; entries: MemoryEntry[]; t: T; busy: boolean; onSave: (v: SceneEntity, links: string[], expected: SceneEntity | null, baseEntries: MemoryEntry[]) => Promise<void>; onCancel: () => void }) {
+  const [sheet, setSheet] = useState(props.entity?.characterSheet);
   const [base] = useState(props.entity ?? null); const [baseEntries] = useState(props.entries);
   const [useDescription, setUseDescription] = useState(props.entity?.useDescriptionInContext ?? !props.entity);
   const [name, setName] = useState(props.entity?.name ?? "");
@@ -225,10 +228,11 @@ function EntityEditor(props: { worldId: string; entity?: SceneEntity; entities: 
   const [links, setLinks] = useState(props.entries.filter((e) => e.entityIds?.includes(props.entity?.id ?? "")).map((e) => e.id));
   const [query, setQuery] = useState("");
   const t = props.t;
-  return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ id: base?.id ?? createId("entity"), worldId: props.worldId, name: name.trim(), description, useDescriptionInContext: useDescription, kind, aliases: aliases.split(",").map((s) => s.trim()).filter(Boolean), memberIds: kind === "group" ? members : [], createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, links, base, baseEntries); }}>
+  return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, characterSheet: sheet, id: base?.id ?? createId("entity"), worldId: props.worldId, name: name.trim(), description, useDescriptionInContext: useDescription, kind, aliases: aliases.split(",").map((s) => s.trim()).filter(Boolean), memberIds: kind === "group" ? members : [], createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, links, base, baseEntries); }}>
     <Field name={t("name")} help={t("entityHint")}><input className="input" aria-label={t("name")} required value={name} onChange={(e) => setName(e.target.value)} autoFocus /></Field>
     <select aria-label={t("entities")} value={kind} onChange={(e) => setKind(e.target.value as SceneEntity["kind"])}>{(["character","location","group"] as const).map((v) => <option key={v} value={v}>{t(v)}</option>)}</select>
     <Field name={t("description")} help={t("entityHint")}><textarea className="textarea" aria-label={t("description")} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+    {sheet && kind === "character" && (["appearance", "personality", "goals", "background"] as const).map(key => <Field key={key} name={characterText(props.locale, key)}><textarea className="textarea" aria-label={characterText(props.locale, key)} maxLength={1200} value={sheet[key]} onChange={e => setSheet({ ...sheet, [key]: e.target.value })} /></Field>)}
     <label className="rp-check"><input type="checkbox" aria-label={t("useDescription")} checked={useDescription} onChange={(e) => setUseDescription(e.target.checked)} />{t("useDescription")}</label>
     <Field name={t("aliases")} help={t("aliasesHint")}><input className="input" aria-label={t("aliases")} value={aliases} onChange={(e) => setAliases(e.target.value)} /></Field>
     {kind === "group" && <Field name={t("members")} help={t("sceneHint")}>{props.entities.filter((v) => v.id !== props.entity?.id && v.kind !== "group").map((v) => <label className="rp-check" key={v.id}><input type="checkbox" checked={members.includes(v.id)} onChange={(e) => setMembers(toggle(members, v.id, e.target.checked))} />{v.name}</label>)}</Field>}
@@ -253,7 +257,7 @@ function TemplateEditor(props: { worldId: string; template?: StoryTemplate; enti
   </form>;
 }
 
-function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: boolean; onDone: (worldId: string, attach: boolean) => Promise<void> }) {
+function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: boolean; onClose: () => void; onDone: (worldId: string, attach: boolean) => Promise<void> }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
   const [attach, setAttach] = useState(props.canAttach);
   const [lore, setLore] = useState<LoreImport | null>(null);
@@ -265,9 +269,50 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
   const [pack, setPack] = useState<WorldPackage | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  return <section className="rp-card"><header><h2>{t("importFile")}</h2></header><p className="rp-hint">{menuText(props.locale, "importHelp")}</p>
+  const [dragging, setDragging] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const focusable = () => [...(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]') ?? [])].filter((element) => element.getClientRects().length);
+    dialog?.querySelector<HTMLElement>(".rp-import-choose")?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); props.onClose(); return; }
+      if (event.key !== "Tab") return;
+      const controls = focusable(); const first = controls[0]; const last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => { document.removeEventListener("keydown", onKeyDown, true); if (previous?.isConnected) previous.focus(); };
+  }, []);
+  async function readFile(file: File) {
+    setBusy(true); setLore(null); setAcceptUnsupported(false); setPack(null); setWorldId(""); setError(""); setFileName(file.name);
+    try {
+      if (file.size > 10_000_000) throw new Error();
+      const text = await file.text(); const data = JSON.parse(text.replace(/^\uFEFF/, ""));
+      if (data?.format === "deeprole-world") { const value = parseWorldPackage(text); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
+      else { const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
+    } catch { setError(t("fileInvalid")); }
+    finally { setBusy(false); }
+  }
+  function onDrop(event: ReactDragEvent<HTMLDivElement>) {
+    event.preventDefault(); setDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file) void readFile(file);
+  }
+  return <div className="modal-backdrop lore-import-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) props.onClose(); }}>
+    <section ref={dialogRef} className="modal lore-import-modal" role="dialog" aria-modal="true" aria-label={t("importFile")}>
+      <header><h2>{t("importFile")}</h2><button type="button" className="icon-button" onClick={props.onClose} aria-label={t("cancel")}><X /></button></header>
+      <div className="modal-body">
+    <div className={`rp-import-dropzone${dragging ? " is-dragging" : ""}`} role="region" aria-label={t("importDropTitle")} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }} onDragLeave={(event) => { event.preventDefault(); if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={onDrop}>
+      <Upload aria-hidden="true" /><strong>{fileName || t("importDropTitle")}</strong><p>{dragging ? t("importDropActive") : t("importDropHint")}</p>
+      <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t("chooseFile")}</button>
+      <input ref={inputRef} className="rp-import-input" aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readFile(file); }} />
+    </div>
     {props.canAttach && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label><p className="rp-hint">{menuText(props.locale, "attachHint")}</p></>}
-    <label className="rp-import-file">{t("chooseFile")}<input aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={async (e) => { const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setBusy(true); setLore(null); setAcceptUnsupported(false); setPack(null); setWorldId(""); setError(""); try { if (file.size > 10_000_000) throw new Error(); const text = await file.text(); const data = JSON.parse(text.replace(/^\uFEFF/, "")); if (data?.format === "deeprole-world") { const value = parseWorldPackage(text); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); } else { const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); } } catch { setError(t("fileInvalid")); } finally { setBusy(false); } }} /></label>
     {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field><HelpButton className="button primary" disabled={busy || !name.trim()} onClick={async () => { setBusy(true); try { const records = cloneWorldPackage(pack, name.trim()); await repository.mergeRecords(records); await props.onDone(records.find((r) => r.kind === "world")!.id, attach && props.canAttach); } catch { setError(t("failed")); } finally { setBusy(false); } }}>{t("confirmImport")}</HelpButton></>}
     {items.length > 0 && <>
       <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>
@@ -281,7 +326,9 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={async () => { if (!lore) return; setBusy(true); try { const records = buildLoreImport(lore, name.trim(), mode, worldId || undefined); await repository.mergeRecords(records); await props.onDone(worldId || records.find((r) => r.kind === "world")!.id, attach && props.canAttach); } catch { setError(t("failed")); } finally { setBusy(false); } }}>{t("confirmImport")}</HelpButton>
     </>}
     {error && <p role="alert">{error}</p>}
-  </section>;
+      </div>
+    </section>
+  </div>;
 }
 
 function toggle(values: string[], id: string, checked: boolean) { return checked ? [...values, id] : values.filter((v) => v !== id); }

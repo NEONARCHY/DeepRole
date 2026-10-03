@@ -51,6 +51,17 @@ describe("backup integrity before any write", () => {
     expect(parsed.settings).toEqual({ ...DEFAULT_SETTINGS, locale: "ru" });
     expect(parsed.records).toEqual(value.records);
   });
+  it("preserves indicator visibility preferences and defaults older backups to visible", async () => {
+    const value = payload();
+    value.settings.showChatContextMeter = false;
+    value.settings.showMemoryContextIndicator = false;
+    const parsed = await parseBackup(JSON.stringify(value));
+    expect(parsed.settings.showChatContextMeter).toBe(false);
+    expect(parsed.settings.showMemoryContextIndicator).toBe(false);
+    const older = await parseBackup(JSON.stringify({ ...value, settings: { locale: "ru" } }));
+    expect(older.settings.showChatContextMeter).toBe(true);
+    expect(older.settings.showMemoryContextIndicator).toBe(true);
+  });
   it.each(["book", "entity", "template", "binding", "snapshot", "proposal", "change"])("rejects a malformed %s before replacing the library", async (kind) => {
     const value = payload(); value.records = [{ kind, id: "bad", data: { id: "bad", createdAt: 1, updatedAt: 1 } } as any];
     await expect(parseBackup(JSON.stringify(value))).rejects.toThrow();

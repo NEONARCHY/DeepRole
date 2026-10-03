@@ -3,11 +3,11 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
-import { dismissSceneChoiceCards, syncSceneChoiceCards } from "../adapters/deepseek-choices-dom";
+import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards } from "../adapters/deepseek-choices-dom";
 import { findServiceReplyRows, findServiceResponseElements, finishServicePreloader, markServiceReplyRow, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns, showServicePreloader } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { formatMemoryContext } from "../core/context";
-import { sceneChoiceInstruction, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
+import { parseSceneChoices, sceneChoiceInstruction, sceneChoiceRecoveryPrompt, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
 import { createId } from "../core/id";
 import { translate, type MessageKey } from "../core/i18n";
 import {
@@ -49,6 +49,9 @@ import { LIBRARY_CHANGE_KEY } from "../storage/changes";
 import { EMPTY_SCENE, isMemoryInScene, memoryWorld } from "../core/scene";
 import type { SceneState, WorldProfile, SceneEntity, StoryTemplate } from "../core/types";
 import { sceneText } from "../core/scene-i18n";
+import { bindCharacterTurn, characterInstruction, characterRevision, characterTurnKey, emotionsFor, type CharacterCopyKey, type CharacterRequestReceipt } from "../core/characters";
+import { foldCharacterPayload, latestCharacterResponse, syncChoicePortraits } from "../adapters/deepseek-characters-dom";
+import type { CharacterEdit } from "../storage/characters";
 import "./shared/scene.css";
 import "./shared/memory-assistant.css";
 
@@ -82,6 +85,7 @@ export default defineContentScript({
 
 interface PageScope { url: string; chatId: string | null }
 interface ContextDelivery {
+  characterRequest?: CharacterRequestReceipt;
   scope: PageScope;
   scopeKey: string;
   snapshot: HandoffSnapshot | null;
@@ -90,6 +94,12 @@ interface ContextDelivery {
 }
 
 class PageController {
+  private characterReceipt: CharacterRequestReceipt | null = null;
+  private characterReceiptTask: Promise<unknown> = Promise.resolve();
+  private characterScan: { scope: string; key: string; since: number; done: boolean } | null = null;
+  private characterSaving = false;
+  private characterScanning = false;
+  private characterStatus: CharacterCopyKey = "idle";
   private readonly adapter = new DeepSeekDomAdapter();
   private root: Root | null = null;
   private settings!: DeepRoleSettings;
@@ -226,6 +236,8 @@ class PageController {
     if (generation !== this.reloadGeneration) return false;
     this.settings = settings;
     this.state.locale = this.settings.locale;
+    this.state.showChatContextMeter = this.settings.showChatContextMeter;
+    this.state.showMemoryContextIndicator = this.settings.showMemoryContextIndicator;
     if (locked) {
       this.clearPrivateState();
       await this.updateContext();
@@ -242,6 +254,7 @@ class PageController {
     if (generation !== this.reloadGeneration) return false;
     if (!loaded) { this.clearPrivateState(); await this.updateContext(); return true; }
     const [records, pending] = loaded;
+    this.characterReceipt = pending?.characterRequest ?? null;
     this.state.vaultLocked = false;
     this.entries = libraryRecords<MemoryEntry>(records, "entry"); this.books = libraryRecords<MemoryBook>(records, "book");
     this.bindings = libraryRecords<ChatBinding>(records, "binding"); this.snapshots = libraryRecords<HandoffSnapshot>(records, "snapshot");
@@ -267,6 +280,7 @@ class PageController {
     this.requestHistoryEstimate();
     this.syncSceneChoices();
     if (this.pendingService) this.scheduleScan();
+    this.scheduleScan();
     return true;
   }
 
@@ -284,6 +298,9 @@ class PageController {
     this.autoContinueSnapshotToken = null;
     this.state.vaultLocked = true;
     this.state.sceneChoicesEnabled = false;
+    this.state.characters = undefined;
+    this.characterScan = null;
+    this.characterStatus = "idle";
     this.pickedSceneChoice = null;
     this.historyEstimate = null;
     this.historyRequest = null;
@@ -380,9 +397,17 @@ class PageController {
     void browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
   }
 
-  private async updateContext(draft = this.adapter.getDraft()) {
+  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string) {
     const scene = this.currentScene();
     const world = this.worlds.find((w) => w.id === scene.worldId);
+    const chatId = this.adapter.getChatId();
+    const characterEntities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character");
+    const characterScene = world ? this.currentBinding()?.characterScenes?.[world.id] : undefined;
+    const sheetsEnabled = !!(world && chatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked);
+    const characterContext = sheetsEnabled ? characterInstruction(world!.id, chatId!, characterEntities, characterScene, emotionsFor(this.settings.characterEmotions), scene.focusIds, [draft, ...this.adapter.getRecentMessages(2)].join("\n"), characterRequestId) : "";
+    const characterScope = `${scene.worldId}:${chatId}`;
+    if (this.characterScan && this.characterScan.scope !== characterScope) { this.characterScan = null; this.characterStatus = "idle"; }
+    this.state.characters = sheetsEnabled ? { worldId: world!.id, chatId: chatId!, base: characterRevision(characterEntities, characterScene), entities: characterEntities, scene: characterScene, emotions: emotionsFor(this.settings.characterEmotions), status: this.characterStatus, openId: this.state.characters?.openId } : undefined;
     const overrides = this.overrides();
     const compiled = compileMemoryWorkspace({
       draft,
@@ -392,16 +417,16 @@ class PageController {
       scene, books: this.books, entities: this.entities, worlds: this.worlds,
       manualIds: overrides.includedIds,
       excludedIds: overrides.excludedIds,
-      settings: world ?? this.settings,
+      settings: { ...(world ?? this.settings), contextBudget: Math.max(0, (world ?? this.settings).contextBudget - estimateTokens(characterContext)) },
     });
     this.selection = compiled.selection; this.documents = compiled.documents;
     const snapshot = this.appliedSnapshot && memoryWorld(this.appliedSnapshot, this.books) === scene.worldId ? this.appliedSnapshot : null;
     this.state.pendingHandoff = snapshot?.title;
     const memoryText = formatMemoryContext(this.selection, snapshot);
     const choicesEnabled = Boolean(world && (this.settings.sceneChoicesEnabled ?? true));
-    const contextText = [memoryText, choicesEnabled ? sceneChoiceInstruction() : ""].filter(Boolean).join("\n\n");
+    const contextText = [memoryText, characterContext, choicesEnabled ? sceneChoiceInstruction() : ""].filter(Boolean).join("\n\n");
     this.state.sceneChoicesEnabled = choicesEnabled;
-    this.selection.estimatedTokens = memoryText ? estimateTokens(memoryText) : 0;
+    this.selection.estimatedTokens = (memoryText ? estimateTokens(memoryText) : 0) + (characterContext ? estimateTokens(characterContext) : 0);
     this.selection.overBudgetTokens = Math.max(0, this.selection.estimatedTokens - (world ?? this.settings).contextBudget);
     this.state.proposals = this.proposals.filter((p) => p.worldId === scene.worldId);
     this.state.lastChange = this.changes.find((c) => c.worldId === scene.worldId && !c.undoneAt) ?? null;
@@ -550,6 +575,9 @@ class PageController {
     this.state.contextPosition = this.resolveContextIndicatorPosition();
     this.root?.render(<PageWidget
       state={{ ...this.state, selection: this.selection }}
+      onSaveCharacter={(edit) => this.saveCharacter(edit)}
+      onRetryCharacters={() => { this.characterScan = null; void this.scanCharacters(); }}
+      onCharacterOpened={() => { if (this.state.characters) this.state.characters.openId = null; }}
       authenticationPage={this.adapter.isAuthenticationPage()}
       composerActionPosition={this.adapter.getComposerAttachmentActionPosition()}
       onToggleEntry={(entry, included) => {
@@ -616,6 +644,7 @@ class PageController {
       }
       this.updateSuggestions();
       this.syncSceneChoices();
+      void this.scanCharacters();
     }, 350);
   }
 
@@ -647,7 +676,81 @@ class PageController {
   }
 
   private syncSceneChoices() {
-    syncSceneChoiceCards(Boolean(this.state.sceneChoicesEnabled && !this.state.vaultLocked), this.adapter.isGenerating(), this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature));
+    const busy = this.preparingService || pendingActivity(this.pendingService, this.adapter.getChatId(), this.adapter.isGenerating())?.phase === "waiting";
+    syncSceneChoiceCards(Boolean(this.state.sceneChoicesEnabled && !this.state.vaultLocked), this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, {
+      busy, onRequest: (signature) => this.requestSceneChoices(signature),
+    });
+    const characters = this.state.characters;
+    syncChoicePortraits(!!characters && this.settings.characterSpritesEnabled !== false && !this.state.vaultLocked, characters?.entities ?? [], characters?.scene, this.state.locale, id => { if (this.state.characters) { this.state.characters.openId = id; this.render(); } });
+  }
+
+  private async saveCharacter(edit: Omit<CharacterEdit, "chatUrl">) {
+    if (this.state.vaultLocked || !this.settings.characterSheetsEnabled || edit.chatId !== this.adapter.getChatId() || edit.worldId !== this.currentScene().worldId) throw new Error("character-scope");
+    const url = location.href;
+    await repository.saveCharacter({ ...edit, chatUrl: url });
+    if (location.href !== url) return;
+    this.characterStatus = "saved";
+    await this.reload();
+    this.syncSceneChoices();
+  }
+
+  private async scanCharacters() {
+    if (this.characterScanning) return;
+    this.characterScanning = true;
+    try { await this.scanCharacterTurn(); }
+    finally { this.characterScanning = false; }
+  }
+
+  private async scanCharacterTurn() {
+    await this.characterReceiptTask;
+    const characters = this.state.characters;
+    if (!characters || this.characterSaving || this.state.vaultLocked || this.adapter.isGenerating() || this.preparingService || this.currentActivity()?.phase === "waiting") return;
+    const response = latestCharacterResponse();
+    if (!response) return;
+    const scope = `${characters.worldId}:${characters.chatId}`;
+    const key = response.turn ? characterTurnKey(response.turn) : response.signature;
+    if (this.characterScan?.scope === scope && this.characterScan.key === key && this.characterScan.done) return;
+    if (this.characterScan?.scope !== scope || this.characterScan.key !== key) this.characterScan = { scope, key, since: Date.now(), done: false };
+    if (Date.now() - this.characterScan.since < 1200) { window.setTimeout(() => this.scheduleScan(), 1250); return; }
+    this.characterScan.done = true;
+    const rawTurn = response.turn;
+    if (rawTurn?.request) this.characterReceipt = (await browser.runtime.sendMessage({ type: "DR_GET_TAB_STATE" } satisfies DeepRoleMessage) as TabSessionState | undefined)?.characterRequest ?? null;
+    const turn = rawTurn?.request ? bindCharacterTurn(rawTurn, this.characterReceipt, characters) : rawTurn;
+    let status: CharacterCopyKey = "missing";
+    if (rawTurn && characters.scene?.lastReply === key) status = "updated";
+    else if (rawTurn?.request && !turn) status = this.characterReceipt?.id !== rawTurn.request ? "unbound" : this.characterReceipt.worldId !== characters.worldId ? "otherWorld" : this.characterReceipt.chatId !== characters.chatId ? "otherChat" : "stale";
+    else if (turn) {
+      if (turn.world !== characters.worldId) status = "otherWorld";
+      else if (turn.chat !== characters.chatId) status = "otherChat";
+      else if (turn.base !== characters.base) status = "stale";
+      else {
+        const url = location.href;
+        this.characterSaving = true;
+        try {
+          await repository.applyCharacterTurn({ worldId: characters.worldId, chatId: characters.chatId, base: characters.base, chatUrl: url }, turn);
+          if (location.href !== url || this.currentScene().worldId !== characters.worldId) return;
+          status = "updated";
+          await this.reload();
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : "";
+          status = reason === "character-conflict" ? "stale" : reason === "character-scope" ? "otherChat" : reason === "character-unknown" ? "unknown" : reason === "character-invalid" ? "invalidUpdate" : reason === "character-limit" ? "limit" : "autoFailed";
+        }
+        finally { this.characterSaving = false; }
+      }
+    }
+    if (!this.state.characters || `${this.state.characters.worldId}:${this.state.characters.chatId}` !== scope) return;
+    this.characterStatus = status; this.state.characters.status = status;
+    if (rawTurn) foldCharacterPayload(response.row, this.state.locale, status);
+    this.syncSceneChoices(); this.render();
+  }
+
+  private async requestSceneChoices(signature: string): Promise<boolean> {
+    if (this.state.vaultLocked || !this.state.sceneChoicesEnabled) return false;
+    const result = await this.runService({ id: createId("service"), type: "scene-choices", sceneSignature: signature, bookId: this.currentScene().bookId, createdAt: Date.now() });
+    if (!result.ok) this.showToast(sceneChoiceText(this.state.locale,
+      result.error === "draft-not-empty" ? "draftBusy" : result.error === "scene-changed" ? "changed" : result.error === "busy" ? "busy" : "unavailable"));
+    this.syncSceneChoices();
+    return result.ok;
   }
 
   private async toggleSceneChoices() {
@@ -659,7 +762,7 @@ class PageController {
   }
 
   private async pickSceneChoice(choice: SceneChoice, signature: string): Promise<boolean> {
-    if (this.state.vaultLocked || !this.state.sceneChoicesEnabled || this.adapter.isGenerating()) {
+    if (this.state.vaultLocked || !this.state.sceneChoicesEnabled || this.adapter.isGenerating() || this.preparingService || this.currentActivity()?.phase === "waiting") {
       this.showToast(sceneChoiceText(this.state.locale, "unavailable")); return false;
     }
     const draft = this.adapter.getDraft();
@@ -740,6 +843,7 @@ class PageController {
     const initialScene = sceneKey();
     const guard = (ownRequest = false): string | undefined => {
       if (location.href !== initialUrl || sceneKey() !== initialScene) return "scene-changed";
+      if (request.type === "scene-choices" && (!this.state.sceneChoicesEnabled || !request.sceneSignature || latestSceneChoiceTarget()?.signature !== request.sceneSignature)) return "scene-changed";
       if (this.adapter.isGenerating() || (this.pendingService && this.pendingService.chatId === this.adapter.getChatId() && (!ownRequest || this.pendingService.id !== request.id) && Date.now() - this.pendingService.createdAt < 10 * 60 * 1000)) return "busy";
       if (this.adapter.getDraft().trim()) return "draft-not-empty";
       if (request.type !== "lore-draft" && (!this.adapter.getChatId() || this.adapter.getMessageCount() === 0)) return "empty-chat";
@@ -779,8 +883,8 @@ class PageController {
       const existing = [...scope].sort((a, b) => Number(selected.has(b.id)) - Number(selected.has(a.id)) || b.updatedAt - a.updatedAt).filter((entry) => {
         characters += entry.title.length + entry.content.length + 120; return characters <= 24000;
       }).slice(0, 80);
-      request.baseVersions = Object.fromEntries(await Promise.all(existing.map(async (entry) => [entry.id, await memoryFingerprint(entry)])));
-      const basePrompt = request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale) : handoffPrompt();
+      if (request.type !== "scene-choices") request.baseVersions = Object.fromEntries(await Promise.all(existing.map(async (entry) => [entry.id, await memoryFingerprint(entry)])));
+      const basePrompt = request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale) : handoffPrompt();
       const prompt = basePrompt.replace("[DeepRole Service]\n", `[DeepRole Service]\n[Request ID: ${request.id}]\n`);
       // Keep only correlation metadata in session storage, not the user's lore brief.
       delete request.brief;
@@ -802,7 +906,7 @@ class PageController {
         return await cancel("composer-not-found");
       }
       this.state.analysisSuggested = false;
-      this.showToast(this.t("deepseekAnalyzing"));
+      this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "waiting") : this.t("deepseekAnalyzing"));
       return { ok: true };
     } catch {
       await cancel("service-failed").catch(() => undefined);
@@ -828,7 +932,22 @@ class PageController {
   private async scanServiceResponses() {
     if (this.processingService || !this.pendingService || this.pendingService.chatId !== this.adapter.getChatId()) return;
     const request = this.pendingService;
-    const replyRows = findServiceReplyRows(request.id);
+    const replyRows = findServiceReplyRows(request.id, document, request.type === "scene-choices" ? "<deeprole_choices>" : SERVICE_START);
+    if (request.type === "scene-choices") {
+      replyRows.forEach((row) => { row.dataset.deeproleSceneChoicesReply = "true"; });
+      const completed = replyRows.some((row) => parseSceneChoices(row.textContent ?? ""));
+      if (completed && !this.adapter.isGenerating()) {
+        this.processingService = true;
+        try {
+          if (!await this.saveTabState({ service: null }, { serviceId: request.id })) return;
+          if (this.pendingService?.id === request.id) this.pendingService = null;
+          this.malformedServiceReplies.delete(request.id);
+          this.setServiceResult(request, null);
+          await this.reload();
+        } finally { this.processingService = false; }
+      } else if (!completed) await this.handleUnusableServiceReply(request, replyRows);
+      return;
+    }
     const candidates = findServiceResponseElements(request.id);
     if (request.type === "memory-analysis") this.updateMemoryPreloader(request, replyRows, candidates);
     for (const element of candidates) {
@@ -894,7 +1013,8 @@ class PageController {
       this.setServiceResult(request, "error");
       this.malformedServiceReplies.delete(request.id);
       await this.updateContext();
-      this.showToast(assistantText(this.state.locale, "invalidServiceResult"));
+      this.syncSceneChoices();
+      this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "invalidServiceResult"));
       return;
     }
     if (!this.adapter.isGenerating()) this.scheduleServiceRetryScan();
@@ -966,6 +1086,7 @@ class PageController {
 
   private navigate() {
     this.pickedSceneChoice = null;
+    dismissSceneChoiceCards(document, false);
     window.clearTimeout(this.historyRefreshTimer);
     this.historyRequest = null;
     this.historyRetryAt = 0;
@@ -1030,8 +1151,15 @@ class PageController {
           };
           // Capture this request's result, not the shared preview which another
           // draft can replace while the final vault check is awaiting storage.
-          const context = await this.updateContext(draft);
+          const context = await this.updateContext(draft, id);
           if (await repository.isLocked()) { this.publishContext(""); throw new Error("vault-locked"); }
+          this.assertScope(delivery.scope);
+          if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
+          const characters = this.state.characters;
+          if (characters) {
+            delivery.characterRequest = { id, worldId: characters.worldId, chatId: characters.chatId, base: characters.base, createdAt: Date.now(), accepted: false };
+            if (!await this.saveTabState({ characterRequest: delivery.characterRequest })) throw new Error("context-changed");
+          }
           this.assertScope(delivery.scope);
           if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
           for (const [key, value] of this.deliveries) if (Date.now() - value.createdAt > 10 * 60 * 1000 || this.deliveries.size >= 64) this.deliveries.delete(key);
@@ -1045,6 +1173,10 @@ class PageController {
     const delivery = this.deliveries.get(event.data.id);
     this.deliveries.delete(event.data.id);
     if (event.data.ok && delivery) {
+      if (delivery.characterRequest) {
+        const receipt = { ...delivery.characterRequest, accepted: true };
+        this.characterReceiptTask = this.saveTabState({ characterRequest: receipt }, { characterRequestId: delivery.characterRequest.id }).then(ok => { if (ok) { this.characterReceipt = receipt; this.characterScan = null; this.scheduleScan(); } }).catch(() => undefined);
+      }
       if (delivery.scope.url === location.href && delivery.scopeKey === this.contextScopeKey()) this.state.warning = "";
       void this.acknowledgeDelivery(delivery).catch(() => undefined);
     } else if (!event.data.ok && event.data.url === location.href && (this.selection.entries.length > 0 || this.appliedSnapshot)) {
@@ -1063,7 +1195,8 @@ class PageController {
     if (this.pendingService?.id === id) this.pendingService = null;
     this.setServiceResult(request, "error");
     await this.updateContext();
-    this.showToast(assistantText(this.state.locale, "networkFailed"));
+    this.syncSceneChoices();
+    this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "networkFailed"));
   }
 
   private async acknowledgeDelivery(delivery: ContextDelivery) {

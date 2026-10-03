@@ -2,6 +2,7 @@ import { validateLoreMapLayout } from "./lore-categories";
 import { validLoreChange, validMemoryEntry, validMemoryProposal } from "./proposal-validation";
 import type { DataRecord, DeepRoleSettings } from "./types";
 import { DEFAULT_SETTINGS } from "./defaults";
+import { validCharacterSheet, validCharacterScenes, validEmotions } from "./characters";
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const id = (value: unknown): value is string => typeof value === "string" && value.length > 0;
@@ -30,11 +31,11 @@ export function validDataRecord(value: unknown): value is DataRecord {
         object(d.source) && ["manual", "selection", "suggestion", "handoff", "import"].includes(String(d.source.type)) &&
         (["chatId", "quote", "originalTitle"] as const).every((key) => d.source[key] === undefined || typeof d.source[key] === "string") &&
         (d.source.originalImportance === undefined || ["always", "called"].includes(String(d.source.originalImportance)));
-    case "entity": return id(d.worldId) && typeof d.name === "string" && typeof d.description === "string" && ["character", "location", "group"].includes(String(d.kind)) && strings(d.aliases) && strings(d.memberIds);
+    case "entity": return id(d.worldId) && typeof d.name === "string" && typeof d.description === "string" && ["character", "location", "group"].includes(String(d.kind)) && strings(d.aliases) && strings(d.memberIds) && (d.characterSheet === undefined || validCharacterSheet(d.characterSheet));
     case "template": return id(d.worldId) && typeof d.name === "string" && typeof d.opening === "string" && typeof d.initialState === "string" && strings(d.focusIds);
     case "binding":
       return id(d.chatId) && typeof d.chatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && integer(d.messageCountAtAnalysis, 0, Number.MAX_SAFE_INTEGER) &&
-        (d.memoryOverrides === undefined || object(d.memoryOverrides) && strings(d.memoryOverrides.includedIds) && strings(d.memoryOverrides.excludedIds));
+        (d.memoryOverrides === undefined || object(d.memoryOverrides) && strings(d.memoryOverrides.includedIds) && strings(d.memoryOverrides.excludedIds)) && (d.characterScenes === undefined || validCharacterScenes(d.characterScenes));
     case "snapshot": return typeof d.title === "string" && typeof d.summary === "string" && typeof d.sourceChatId === "string" && typeof d.sourceChatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && (d.appliedAt === undefined || time(d.appliedAt));
     case "proposal": return validMemoryProposal(d) && d.items.every((item) => !item.expectedEntry || validDataRecord({ kind: "entry", id: item.expectedEntry.id, data: item.expectedEntry }));
     case "change": return validLoreChange(d) && d.entries.every((pair) => validDataRecord({ kind: "entry", id: pair.after.id, data: pair.after }) && (!pair.before || validDataRecord({ kind: "entry", id: pair.before.id, data: pair.before })));
@@ -49,7 +50,7 @@ export function parseBackupSettings(value: unknown): DeepRoleSettings {
   for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof DeepRoleSettings)[]) {
     if (value[key] === undefined) continue;
     const setting = value[key];
-    const valid = key === "locale" ? setting === "ru" || setting === "en" :
+    const valid = key === "characterEmotions" ? validEmotions(setting) : key === "locale" ? setting === "ru" || setting === "en" :
       key === "contextBudget" ? integer(setting, 1, 16000) :
       key === "relevanceThreshold" ? integer(setting, 1, 100) :
       key === "recentMessageCount" ? integer(setting, 0, 500) :

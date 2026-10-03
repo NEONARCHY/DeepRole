@@ -6,7 +6,12 @@ export const DEFAULT_SETTINGS: DeepRoleSettings = {
       ? "ru"
       : "en",
   onboardingComplete: false,
+  characterSheetsEnabled: true,
+  characterSpritesEnabled: true,
+  characterEmotions: ["neutral", "happy", "sad", "angry", "surprised", "worried"],
   sceneChoicesEnabled: true,
+  showChatContextMeter: true,
+  showMemoryContextIndicator: true,
   contextBudget: 2000,
   relevanceThreshold: 6,
   suggestionInterval: 20,

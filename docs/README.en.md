@@ -15,11 +15,19 @@ A local-first roleplay memory companion for DeepSeek. Organize a world on an RPG
 4. Use **Remember** to save a fact. Check the context indicator to see what your next message will include.
 5. After an important event: **Update lore → Review changes → Save selected changes**.
 
+## Characters and portraits
+
+Character sheets are enabled by default. Connect a world and continue chatting: DeepSeek can create participant sheets with its next reply. Use **+** to add one yourself. Click a name below the context indicators to edit the profile, current state and portraits. States remain separate for each chat; existing lore is preserved and there are no extra hidden requests. Disable sheets in **Settings → App → Characters**.
+
+Mark **My protagonist** for the left portrait beside reply options; the current interlocutor appears on the right. Upload emotion variants or use the default silhouettes. Images stay local and cost no model tokens; profile text does use tokens. [Setup, limits and backups →](CHARACTERS.md)
+
 ## Scene choices
 
 With a world connected, DeepRole asks DeepSeek to end scenes with dialogue or a meaningful action opportunity with four options: warm, neutral, confrontational, and unexpected. They appear as buttons below the reply. Clicking one **fills the composer for editing**; it never sends automatically. You can switch options until you edit the inserted text; DeepRole preserves your own draft.
 
-The **Scene choices** switch beside the context indicator applies to all chats with a connected world. The model may fail to follow the requested format, in which case no buttons appear. Choices do not award automatic relationship points or write to lore. A character's reaction depends on their personality and story context; a harsh move can appeal to one character while a kind move can provoke distrust. Save lasting consequences through the usual reviewable **Update lore** flow.
+When you reopen a chat, ready options below its latest reply are restored from loaded history **without a new request**. If DeepSeek omitted options or returned an invalid format, click **Suggest options** below the reply. This sends a visible request for four moves without continuing the scene. A nonempty draft blocks the request; retries after an error are explicit, never automatic.
+
+The **Scene choices** switch beside the context indicator applies to all chats with a connected world. Choices do not award automatic relationship points or write to lore. A character's reaction depends on their personality and story context; a harsh move can appeal to one character while a kind move can provoke distrust. Save lasting consequences through the usual reviewable **Update lore** flow.
 
 ## Approximate context space
 

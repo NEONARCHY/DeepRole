@@ -1,4 +1,5 @@
-import type { MemoryBook, MemoryEntry, SceneEntity, StoryTemplate, WorldProfile } from "./types";
+import type { MemoryBook, MemoryEntry, SceneEntity, StoryTemplate, WorldProfile, Locale } from "./types";
+import { characterDescription } from "./characters";
 import { classifyLoreEntry, inferTitlePeople, loreTitleMentions, LORE_CATEGORIES, readableLoreTitle } from "./lore-categories";
 
 export type LoreNodeKind = "world" | "branch" | "book" | "entry" | "character" | "location" | "group" | "template";
@@ -20,7 +21,7 @@ export function loreOverviewZoom(graph: LoreGraph, width: number, height: number
   return Math.max(0.25, Math.min(0.6, (width - 40) / (halfWidth * 2), (height - 40) / (halfHeight * 2)));
 }
 
-export function buildLoreGraph(input: { world: WorldProfile; books: MemoryBook[]; entries: MemoryEntry[]; entities: SceneEntity[]; templates: StoryTemplate[]; labels: { memory: string; characters: string; locations: string; groups: string; templates: string }; categoryLabel?: (id: string) => string }): LoreGraph {
+export function buildLoreGraph(input: { locale?: Locale; world: WorldProfile; books: MemoryBook[]; entries: MemoryEntry[]; entities: SceneEntity[]; templates: StoryTemplate[]; labels: { memory: string; characters: string; locations: string; groups: string; templates: string }; categoryLabel?: (id: string) => string }): LoreGraph {
   const nodes: LoreNode[] = []; const edges: LoreEdge[] = []; const edgeKeys = new Set<string>();
   const byId = new Map<string, LoreNode>();
   const rootId = "world:" + input.world.id;
@@ -52,7 +53,7 @@ export function buildLoreGraph(input: { world: WorldProfile; books: MemoryBook[]
   const people = inferTitlePeople(input.entries, input.entities);
   const inferredByEntry = new Map(people.flatMap((person) => person.entryIds.map((id) => [id, person] as const)));
   const entityNodes = new Map<string, LoreNode>();
-  for (const entity of input.entities) entityNodes.set(entity.id, add(entity.kind, entity.id, entity.name, entity.description, category(entity.kind === "character" ? "characters" : entity.kind === "location" ? "locations" : "groups").id));
+  for (const entity of input.entities) entityNodes.set(entity.id, add(entity.kind, entity.id, entity.name, characterDescription(entity, input.locale), category(entity.kind === "character" ? "characters" : entity.kind === "location" ? "locations" : "groups").id));
   for (const person of people) add("branch", "person:" + person.token, person.name, "", category("characters").id, { inferredToken: person.token, inferredEntryIds: person.entryIds, confidence: "inferred" });
   for (const entry of input.entries) {
     const classification = classifyLoreEntry(entry);

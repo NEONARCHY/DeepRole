@@ -11,11 +11,13 @@ async function setup(page: Page, locale: "ru" | "en") {
     const world = (id: string) => ({ id, name: id === "w1" ? "Observatory" : "Harbour", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1, mapLayout: { positions: Object.fromEntries([1, 2, 3].map((i) => ["entry:" + id + i, { x: 2350 + (i - 2) * 450, y: 2700 }])), customCategories: [], expandedIds: [] } });
     await repository.mergeRecords([...["w1", "w2"].map((id) => ({ kind: "world", id, data: world(id) })), ...["w1", "w2"].flatMap((worldId) => [1, 2, 3].map((i) => ({ kind: "entry", id: worldId + i, data: { id: worldId + i, worldId, bookId: null, title: `${worldId} Fact ${i}`, content: `Neutral fact ${i} of ${worldId}.`, keywords: [], activation: "smart", enabled: true, priority: "normal", source: { type: "manual" }, createdAt: 1, updatedAt: 1 } })))]);
   });
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click(); await page.getByRole("combobox", { name: l("Библиотека мира", "World library"), exact: true }).selectOption("w1");
+  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: new RegExp("^" + l("Библиотека мира", "World library") + ":") }).click();
+  await page.getByRole("menuitemradio", { name: "Observatory", exact: true }).click();
   await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
   const map = page.getByRole("dialog", { name: l("Карта мира", "World map"), exact: true }); const pane = (i: number) => map.locator(`[data-map-pane="${i}"]`);
-  // The animated fixture view temporarily becomes a fixed-position containing block.
-  // Wait for the fullscreen surface, not for a centered but still 420px-wide map.
+  // The default is a floating window. These gesture tests explicitly use the large canvas.
+  await map.getByRole("button", { name: l("Развернуть на весь экран", "Expand to full screen"), exact: true }).click();
   await expect.poll(async () => Math.round((await map.boundingBox())!.width)).toBe(1400);
   await expect.poll(async () => { const canvas = (await pane(0).locator(".lm-viewport").boundingBox())!; const root = (await pane(0).locator(".node-world").boundingBox())!; return Math.abs(root.x + root.width / 2 - canvas.x - canvas.width / 2) + Math.abs(root.y + root.height / 2 - canvas.y - canvas.height / 2); }).toBeLessThan(1);
   return { map, pane, l };
@@ -49,17 +51,17 @@ for (const locale of ["ru", "en"] as const) {
     const scale = await left.locator("output").textContent(); await page.keyboard.down("Control"); await page.mouse.wheel(0, -80); await page.keyboard.up("Control"); await expect(left.locator("output")).not.toHaveText(scale!);
   });
   test(`split panes edit independently, protect drafts and create an actually empty world (${locale})`, async ({ page }, info) => {
-    const { map, pane, l } = await setup(page, locale); const before = await rows(page); await map.getByRole("button", { name: l("Два мира рядом", "Two worlds side by side"), exact: true }).click(); await expect(map.locator(".lm-workspace-pane")).toHaveCount(2);
+    const { map, pane, l } = await setup(page, locale); const before = await rows(page); await map.getByRole("button", { name: "Splitscreen Edit", exact: true }).click(); await expect(map.locator(".lm-workspace-pane")).toHaveCount(2);
     const left = pane(0); const right = pane(1); await expect(left.getByRole("combobox", { name: l("Редактируемый мир", "Editing world") })).toHaveValue("w1"); await expect(right.getByRole("combobox", { name: l("Редактируемый мир", "Editing world") })).toHaveValue("w2");
     const rightCamera = await right.locator(".lm-space").getAttribute("style"); const rightPoints = await points(page, 1);
     await left.locator('[data-lore-id="branch:locations"]').press("Alt+ArrowRight"); await expect(left.getByRole("button", { name: l("Отменить", "Undo"), exact: true })).toBeEnabled(); await expect(right.getByRole("button", { name: l("Отменить", "Undo"), exact: true })).toBeDisabled();
     expect(await right.locator(".lm-space").getAttribute("style")).toBe(rightCamera); expect(await points(page, 1)).toEqual(rightPoints);
     await right.getByRole("textbox", { name: l("Найти запись или ветвь…", "Find a record or branch…"), exact: true }).fill("w2 Fact 1"); await right.locator(".lm-results button").click(); const text = right.locator(".lm-memory-editor textarea"); await text.fill("Private unsaved draft");
-    page.once("dialog", (dialog) => dialog.dismiss()); await map.getByRole("button", { name: l("Два мира рядом", "Two worlds side by side"), exact: true }).click(); await expect(map.locator(".lm-workspace-pane")).toHaveCount(2); await expect(text).toHaveValue("Private unsaved draft");
+    page.once("dialog", (dialog) => dialog.dismiss()); await map.getByRole("button", { name: "Splitscreen Edit", exact: true }).click(); await expect(map.locator(".lm-workspace-pane")).toHaveCount(2); await expect(text).toHaveValue("Private unsaved draft");
     await right.locator(".lm-viewport").focus(); await page.keyboard.press("Control+z"); await expect(left.getByRole("button", { name: l("Отменить", "Undo"), exact: true })).toBeEnabled();
-    await map.getByRole("button", { name: l("Создать пустой мир", "Create empty world"), exact: true }).click(); const create = map.locator(".lm-world-create"); await create.getByRole("textbox", { name: l("Название", "Name"), exact: true }).fill("New empty world");
-    page.once("dialog", (dialog) => dialog.dismiss()); await create.getByRole("button", { name: l("Создать", "Create"), exact: true }).click(); await expect(text).toHaveValue("Private unsaved draft"); await expect(create).toBeVisible();
-    page.once("dialog", (dialog) => dialog.accept()); await create.getByRole("button", { name: l("Создать", "Create"), exact: true }).click(); await expect(create).toHaveCount(0); await expect(right.locator(".lm-header h2")).toHaveText("New empty world"); await expect(right.locator(".lm-node.node-entry")).toHaveCount(0);
+    await map.getByRole("button", { name: l("Создать пустой мир", "Create empty world"), exact: true }).click(); const create = map.locator(".lm-create-dialog"); await create.getByRole("textbox", { name: l("Название", "Name"), exact: true }).fill("New empty world");
+    page.once("dialog", (dialog) => dialog.dismiss()); await create.getByRole("button", { name: l("Создать мир", "Create world"), exact: true }).click(); await expect(text).toHaveValue("Private unsaved draft"); await expect(create).toBeVisible();
+    page.once("dialog", (dialog) => dialog.accept()); await create.getByRole("button", { name: l("Создать мир", "Create world"), exact: true }).click(); await expect(create).toHaveCount(0); await expect(map).toHaveClass(/is-full/); await expect(map.locator(".lm-workspace-pane")).toHaveCount(2); await expect(right.locator(".lm-world-picker select option:checked")).toHaveText("New empty world"); await expect(right.locator(".lm-node.node-entry")).toHaveCount(0);
     const all = await rows(page); const created = all.find((row: any) => row.kind === "world" && row.data.name === "New empty world").data; expect(created.description).toBe(""); expect(created.useDescriptionInContext).toBe(false); expect(all.filter((row: any) => row.kind !== "world")).toEqual(before.filter((row: any) => row.kind !== "world"));
     await page.screenshot({ path: info.outputPath(`split-worlds-${locale}.png`) });
     const audit = await new AxeBuilder({ page }).include(".dr-map-workspace").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze(); expect(audit.violations).toEqual([]);

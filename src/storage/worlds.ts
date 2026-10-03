@@ -73,6 +73,14 @@ export async function removeWorld(worldId: string, repo: DeepRoleRepository = re
     const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
     const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : ["entity","template", "proposal", "change"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
     const changed = all.filter((r) => !removed.includes(r) && (r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : "worldId" in r.data && r.data.worldId === worldId)).map((r) => ({ ...r, data: { ...(r.data as MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot), worldId: null, entityIds: [], focusIds: [], updatedAt: Date.now() } }));
+    for (const r of all.filter(r => r.kind === "binding")) {
+      const binding = r.data as ChatBinding;
+      if (!binding.characterScenes?.[worldId]) continue;
+      const target = changed.find(c => c.id === r.id) ?? { ...r, data: { ...binding } };
+      const scenes = { ...binding.characterScenes }; delete scenes[worldId];
+      (target.data as ChatBinding).characterScenes = scenes;
+      if (!changed.some(c => c.id === r.id)) changed.push(target as typeof changed[number]);
+    }
     return { records: changed, removed, result: undefined };
   });
 }
@@ -82,6 +90,16 @@ export async function removeEntity(id: string, repo: DeepRoleRepository = reposi
     const changed = all.filter((r) => r.id !== id).flatMap((r): DataRecord[] => {
       const data = { ...r.data };
       let dirty = false;
+      if (r.kind === "binding") {
+        const binding = data as ChatBinding;
+        if (binding.characterScenes) {
+          binding.characterScenes = structuredClone(binding.characterScenes);
+          for (const scene of Object.values(binding.characterScenes)) {
+            if (scene.partnerId === id) { scene.partnerId = null; dirty = true; }
+            if (scene.states[id] || scene.presentIds.includes(id)) { delete scene.states[id]; scene.presentIds = scene.presentIds.filter(v => v !== id); scene.revision = createId("rev"); delete scene.lastReply; dirty = true; }
+          }
+        }
+      }
       if ("entityIds" in data && data.entityIds?.includes(id)) { data.entityIds = data.entityIds.filter((v) => v !== id); dirty = true; }
       if ("focusIds" in data && data.focusIds?.includes(id)) { data.focusIds = data.focusIds.filter((v) => v !== id); dirty = true; }
       if ("memberIds" in data && data.memberIds.includes(id)) { data.memberIds = data.memberIds.filter((v) => v !== id); dirty = true; }
@@ -97,6 +115,7 @@ export async function duplicateEntity(entity: SceneEntity, name: string, repo: D
     if (!current) throw new Error("memory-conflict");
     const now = Date.now();
     const copy = { ...current, id: createId("entity"), name, createdAt: now, updatedAt: now };
+    if (copy.characterSheet) copy.characterSheet = { ...copy.characterSheet, protagonist: false };
     const entries = all.filter((r) => r.kind === "entry").map((r) => r.data as MemoryEntry);
     return { records: [{ kind: "entity", id: copy.id, data: copy }, ...entries.filter((e) => e.entityIds?.includes(current.id)).map((e) => ({ kind: "entry" as const, id: e.id, data: { ...e, entityIds: [...e.entityIds!, copy.id], updatedAt: now } }))], removed: [], result: undefined };
   });

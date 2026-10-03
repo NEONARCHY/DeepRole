@@ -85,8 +85,10 @@ export function MapWorkspace(props: Props) {
       <span className="lm-workspace-title">{t("worldMap")}</span>
       {!(props.startInCreate && creating === 0 && !ids[0]) && <TooltipButton className="lm-workspace-action" tooltip={m("emptyWorldHint")} aria-label={m("emptyWorld")} disabled={busy || creating !== null} onClick={() => openCreate(active)}><Plus size={16} /><span>{m("emptyWorld")}</span></TooltipButton>}
       <TooltipButton className="lm-workspace-action" tooltip={m("splitHint")} aria-label={m("split")} aria-pressed={split} disabled={busy || creating !== null} onClick={toggleSplit}><Columns2 size={16} /><span>{m("split")}</span></TooltipButton>
-      <TooltipButton aria-label={t(mode === "compact" ? "mapFullscreen" : "mapCompact")} tooltip={t(mode === "compact" ? "mapFullscreen" : "mapCompact")} aria-pressed={mode === "full"} disabled={busy || creating !== null} onClick={toggleSize}>{mode === "compact" ? <Maximize2 size={16} /> : <Minimize2 size={16} />}</TooltipButton>
-      <TooltipButton aria-label={t("mapClose")} onClick={() => closeAction.current()} disabled={busy}><X size={16} /></TooltipButton>
+      <div className="lm-window-controls">
+        <TooltipButton aria-label={t(mode === "compact" ? "mapFullscreen" : "mapCompact")} tooltip={t(mode === "compact" ? "mapFullscreen" : "mapCompact")} aria-pressed={mode === "full"} disabled={busy || creating !== null} onClick={toggleSize}>{mode === "compact" ? <Maximize2 size={16} /> : <Minimize2 size={16} />}</TooltipButton>
+        <TooltipButton aria-label={t("mapClose")} onClick={() => closeAction.current()} disabled={busy}><X size={16} /></TooltipButton>
+      </div>
     </header>
     {creating !== null && <div className="lm-create-backdrop"><form className="lm-create-dialog" role="dialog" aria-modal="true" aria-label={m("createWorldTitle")} onSubmit={(event) => void create(event)}>
       <div className="lm-create-heading"><span>{m("createWorldEyebrow")}</span><h2>{m("createWorldTitle")}</h2><p>{m("createWorldHint")}</p></div>

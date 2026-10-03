@@ -1,8 +1,10 @@
 import type { AdapterStatus, ContextSelection, MemoryCandidate, MemoryOverrides, ServiceRequest, SceneState } from "./types";
 import type { RepositoryRequest } from "../storage/content-repository";
 import type { ServiceActivity } from "./memory-experience";
+import type { CharacterRequestReceipt } from "./characters";
 
 export interface TabSessionState {
+  characterRequest?: CharacterRequestReceipt | null;
   service?: ServiceRequest | null;
   snapshotId?: string | null;
   snapshotToken?: string | null;
@@ -10,7 +12,7 @@ export interface TabSessionState {
   continueUntil?: number | null;
   overrides?: MemoryOverrides;
 }
-export type TabSessionGuard = Partial<TabSessionState> & { serviceId?: string | null };
+export type TabSessionGuard = Partial<TabSessionState> & { serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage =
   | RepositoryRequest

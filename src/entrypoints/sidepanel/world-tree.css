@@ -1,15 +1,15 @@
-.rp-tree-root i { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 16px #64b5f644; }
+.rp-tree-root i { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 16px rgba(0, 0, 0, 0.267); }
 .rp-tree-root h2 { flex: 1; }
-.rp-tree ul { list-style: none; margin: 0; padding-inline-start: 14px; border-inline-start: 1px solid #36536a; }
+.rp-tree ul { list-style: none; margin: 0; padding-inline-start: 14px; border-inline-start: 1px solid var(--dr-border); }
 .rp-tree > ul { margin-inline-start: 4px; }
 .rp-tree li { position: relative; padding-block: 5px; min-width: 0; }
-.rp-tree li::before { content: ''; position: absolute; inset-inline-start: -14px; top: 18px; width: 10px; border-top: 1px solid #36536a; }
-.rp-tree summary { cursor: pointer; padding-block: 5px; color: #d4e8f7; overflow-wrap: anywhere; }
-.rp-tree summary small { color: #a4bbcf; margin-inline-start: 5px; }
-.rp-tree-leaf { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 1px solid transparent; padding: 7px; border-radius: 7px; text-align: start; background: transparent; color: #edf4fa; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
-.rp-tree-leaf:hover { background: #192d3e; border-color: #36536a; }
-.rp-tree-leaf span { color: #8fceff; }
-.rp-tree-edge { display: block; color: #a4d6f5; font-size: 10px; overflow-wrap: anywhere; }
+.rp-tree li::before { content: ''; position: absolute; inset-inline-start: -14px; top: 18px; width: 10px; border-top: 1px solid var(--dr-border); }
+.rp-tree summary { cursor: pointer; padding-block: 5px; color: var(--dr-text); overflow-wrap: anywhere; }
+.rp-tree summary small { color: var(--dr-primary); margin-inline-start: 5px; }
+.rp-tree-leaf { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 1px solid transparent; padding: 7px; border-radius: 7px; text-align: start; background: transparent; color: var(--dr-text); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.rp-tree-leaf:hover { background: var(--dr-surface); border-color: var(--dr-border); }
+.rp-tree-leaf span { color: var(--dr-primary); }
+.rp-tree-edge { display: block; color: var(--dr-primary); font-size: 10px; overflow-wrap: anywhere; }
 .rp-entry-links { margin-top: 12px; }
 .rp-entry-links summary { cursor: pointer; padding: 10px 0; }
 .rp-entry-links > p, .rp-entry-links > input { margin-bottom: 10px; }

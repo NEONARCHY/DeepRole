@@ -53,10 +53,45 @@ for (const locale of ["ru", "en"] as const) test(`settings examples are visible 
   await expect(guide.locator(".dr-mode-example")).toContainText(l("Пиши от третьего лица", "Write in third person"));
   await page.screenshot({ path: info.outputPath(`modes-${locale}.png`), fullPage: true });
   await page.getByRole("button", { name: l("Приложение", "App"), exact: true }).click();
+  const chatIndicator = page.getByRole("checkbox", { name: l("Контекст чата", "Chat context"), exact: true });
+  const memoryIndicator = page.getByRole("checkbox", { name: l("Контекст DeepRole", "DeepRole context"), exact: true });
+  await expect(chatIndicator).toBeChecked();
+  await expect(memoryIndicator).toBeChecked();
+  await chatIndicator.uncheck();
+  await memoryIndicator.uncheck();
+  const visibility = await page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings);
+  expect(visibility.showChatContextMeter).toBe(false);
+  expect(visibility.showMemoryContextIndicator).toBe(false);
   const interval = page.getByRole("spinbutton", { name: l("Через сколько реплик", "Messages between reminders"), exact: true });
   await interval.fill(""); await interval.pressSequentially("25");
   await expect(interval).toHaveValue("25"); await interval.press("Tab");
   expect(await page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.suggestionInterval)).toBe(25);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+for (const locale of ["ru", "en"] as const) test(`chat context indicators stack in the requested order and hide independently (${locale})`, async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 850 });
+  await page.goto(`/tests/fixtures/page-widget.html${locale === "en" ? "?locale=en" : ""}`);
+  await page.evaluate(() => (window as any).setWidgetState({ conversationEstimate: { estimatedTokens: 499, messageCount: 20, atLeast: false, source: "history" } }));
+  const meter = page.locator(".dr-chat-meter");
+  const memory = page.locator(".dr-context-indicators > .dr-pill");
+  await expect(meter).toBeVisible();
+  await expect(memory).toBeVisible();
+  const meterBox = await meter.boundingBox();
+  const memoryBox = await memory.boundingBox();
+  expect(meterBox).not.toBeNull();
+  expect(memoryBox).not.toBeNull();
+  expect(memoryBox!.y).toBeGreaterThan(meterBox!.y);
+  expect(Math.abs(memoryBox!.x - meterBox!.x)).toBeLessThan(2);
+
+  await page.evaluate(() => (window as any).setWidgetState({ showChatContextMeter: false }));
+  await expect(meter).toHaveCount(0);
+  await expect(memory).toBeVisible();
+  await page.evaluate(() => (window as any).setWidgetState({ showMemoryContextIndicator: false }));
+  await expect(memory).toHaveCount(0);
+  await page.evaluate(() => (window as any).setWidgetState({ showChatContextMeter: true }));
+  await expect(meter).toBeVisible();
+  await expect(memory).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

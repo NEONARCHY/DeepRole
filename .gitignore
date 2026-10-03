@@ -6,6 +6,7 @@ playwright-report/
 test-results/
 test-results-*/
 .lazyweb/
+private-assets/
 *.zip
 !downloads/*.zip
 *.pem

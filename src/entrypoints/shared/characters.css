@@ -1,0 +1,48 @@
+.dr-characters { box-sizing:border-box; pointer-events:auto; width:328px; max-width:calc(100vw - 32px); margin-top:var(--dr-space-2); padding:var(--dr-space-3); border:1px solid var(--dr-border); border-radius:var(--dr-radius); background:var(--dr-panel); color:var(--dr-text); font:12px/1.5 system-ui,sans-serif; }
+.dr-character-settings { display:grid; gap:12px; }
+.dr-characters header { display:flex; align-items:center; justify-content:space-between; gap:var(--dr-space-2); }
+.dr-characters button { color:var(--dr-text); background:var(--dr-surface); border:1px solid var(--dr-border); border-radius:8px; padding:8px; min-height:44px; cursor:pointer; font:inherit; }
+.dr-characters button:hover { background:var(--dr-raised); }
+.dr-characters button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
+.dr-characters button:disabled { opacity:.55; cursor:default; }
+.dr-character-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:10px; max-height:min(44dvh,440px); overflow:auto; overscroll-behavior:contain; padding:3px; margin-inline:-3px; }
+.dr-characters .dr-character-row { position:relative; display:grid; align-content:start; gap:10px; width:100%; min-width:0; padding:6px; text-align:start; background:var(--dr-surface); }
+.dr-character-row img { display:block; width:100%; height:auto; aspect-ratio:3/4; border-radius:8px; object-fit:contain; background:var(--dr-bg); }
+.dr-character-row:only-child { grid-column:1/-1; }
+.dr-character-row:only-child img { width:min(100%,220px); justify-self:center; }
+.dr-character-row>span:first-of-type { display:grid; gap:3px; min-width:0; padding:0 4px 4px; }
+.dr-character-row strong { overflow-wrap:anywhere; font-size:13px; line-height:1.35; }
+.dr-character-row small,.dr-character-hint,.dr-character-status { color:var(--dr-muted); font-size:11px; line-height:1.5; }
+.dr-character-status { margin:4px 0 8px; }
+.dr-character-hint { display:block; margin:8px 0 0; }
+.dr-character-presence { position:absolute; top:14px; right:14px; height:9px; width:9px; border:1px solid var(--dr-muted); border-radius:50%; background:var(--dr-bg); box-shadow:0 0 0 3px var(--dr-bg); }
+.dr-character-presence.is-present { background:var(--dr-primary); border-color:var(--dr-primary); }
+.dr-character-dialog-layer { position:fixed; inset:0; z-index:50; display:grid; place-items:center; pointer-events:auto; background:rgba(0,0,0,.22); }
+.dr-character-dialog { width:min(640px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); display:flex; flex-direction:column; border:1px solid var(--dr-border); border-radius:18px; background:var(--dr-panel); color:var(--dr-text); box-shadow:0 20px 70px #0008; font:13px/1.5 system-ui,sans-serif; overflow:hidden; }
+.dr-character-dialog>header { padding:16px 20px; border-bottom:1px solid var(--dr-border); }
+.dr-character-dialog h2 { margin:0; font-size:18px; overflow-wrap:anywhere; }
+.dr-character-dialog form { display:flex; flex-direction:column; min-height:0; }
+.dr-character-editor-body { overflow:auto; padding:0 20px 20px; overscroll-behavior:contain; }
+.dr-character-dialog fieldset { display:grid; gap:12px; margin:20px 0 0; padding:0; border:0; min-width:0; }
+.dr-character-dialog legend { font-size:14px; font-weight:650; padding:0 0 12px; }
+.dr-character-dialog label { display:grid; gap:6px; font-size:12px; }
+.dr-character-dialog input:not([type=checkbox]),.dr-character-dialog textarea,.dr-character-dialog select,.dr-character-settings textarea { box-sizing:border-box; width:100%; min-width:0; min-height:38px; padding:9px 10px; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-bg); color:var(--dr-text); font:inherit; }
+.dr-character-dialog textarea { resize:vertical; }
+.dr-character-dialog input:focus-visible,.dr-character-dialog textarea:focus-visible,.dr-character-dialog select:focus-visible { outline:2px solid var(--dr-primary); outline-offset:1px; }
+.dr-character-dialog .dr-character-check { display:flex; align-items:center; gap:8px; }
+.dr-character-check input { accent-color:var(--dr-action); }
+.dr-character-stat { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) 34px; gap:8px; }
+.dr-character-portrait-editor { display:grid; grid-template-columns:minmax(0,176px) minmax(0,1fr); gap:20px; align-items:center; }
+.dr-character-portrait-editor img { display:block; width:100%; height:auto; aspect-ratio:3/4; object-fit:contain; background:var(--dr-bg); border-radius:12px; }
+.dr-character-portrait-editor>div { min-width:0; display:grid; gap:12px; }
+.dr-character-dialog button { display:inline-flex; gap:6px; align-items:center; justify-content:center; min-height:38px; color:var(--dr-text); background:var(--dr-surface); border:1px solid var(--dr-border); border-radius:8px; padding:8px 12px; cursor:pointer; font:inherit; }
+.dr-character-dialog button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
+.dr-character-dialog button:disabled { opacity:.55; cursor:default; }
+.dr-character-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.dr-character-dialog footer { flex-shrink:0; display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; padding:12px 20px; border-top:1px solid var(--dr-border); }
+.dr-character-dialog footer p { flex-basis:100%; margin:0; color:var(--dr-danger); }
+.dr-character-dialog .dr-character-primary { background:var(--dr-action); border-color:var(--dr-action); color:var(--dr-on-action); }
+.dr-character-dialog .dr-character-primary:hover { background:var(--dr-action-hover); }
+.dr-character-original { white-space:pre-wrap; overflow-wrap:anywhere; color:var(--dr-muted); }
+@media(max-width:420px) { .dr-character-editor-body { padding-inline:12px; } .dr-character-dialog>header,.dr-character-dialog footer { padding:12px; } .dr-character-dialog button { min-height:44px; } .dr-character-portrait-editor { grid-template-columns:1fr; gap:12px; } .dr-character-portrait-editor img { width:min(100%,220px); justify-self:center; } }
+@media(prefers-reduced-motion:no-preference) { .dr-character-row img { transition:opacity .15s ease; } }

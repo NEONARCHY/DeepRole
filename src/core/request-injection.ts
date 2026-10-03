@@ -21,7 +21,7 @@ export function outgoingUserText(body: string): string | null {
 export function injectIntoJsonBody(body: string, memoryContext: string): InjectionResult {
   const payload = JSON.parse(body) as Record<string, unknown>;
   if (typeof payload.prompt === "string") {
-    if (payload.prompt.includes("<deeprole_context") || payload.prompt.includes("<deeprole_choice_mode")) return { changed: false, body };
+    if (payload.prompt.includes("<deeprole_context") || payload.prompt.includes("<deeprole_choice_mode") || payload.prompt.includes("<deeprole_character_mode")) return { changed: false, body };
     payload.prompt = `${memoryContext}\n\n[User message]\n${payload.prompt}`;
     return { changed: true, body: JSON.stringify(payload) };
   }
@@ -31,7 +31,7 @@ export function injectIntoJsonBody(body: string, memoryContext: string): Injecti
       const message = messages[index] as Record<string, unknown> | undefined;
       if (message?.role !== "user") continue;
       // Never move backwards into an older user turn on retries/unsupported content.
-      if (typeof message.content === "string" && !message.content.includes("<deeprole_context") && !message.content.includes("<deeprole_choice_mode")) {
+      if (typeof message.content === "string" && !message.content.includes("<deeprole_context") && !message.content.includes("<deeprole_choice_mode") && !message.content.includes("<deeprole_character_mode")) {
         message.content = `${memoryContext}\n\n[User message]\n${message.content}`;
         return { changed: true, body: JSON.stringify(payload) };
       }

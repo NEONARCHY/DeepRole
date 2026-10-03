@@ -1,11 +1,38 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { setEnglish } from "./helpers/settings";
+
+for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import window and previews dropped files (${locale})`, async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 900 });
+  await page.goto("/tests/fixtures/sidepanel.html");
+  if (locale === "en") {
+    await page.getByRole("button", { name: "Настройки", exact: true }).click();
+    await setEnglish(page);
+  }
+  const l = (ru: string, en: string) => locale === "ru" ? ru : en;
+  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+  const importDialog = page.getByRole("dialog", { name: l("Добавить из файла", "Add from file"), exact: true });
+  await expect(importDialog).toBeVisible();
+  const dialogBox = await importDialog.boundingBox(); const viewport = page.viewportSize()!;
+  expect(Math.abs(dialogBox!.x + dialogBox!.width / 2 - viewport.width / 2)).toBeLessThan(2);
+  expect(Math.abs(dialogBox!.y + dialogBox!.height / 2 - viewport.height / 2)).toBeLessThan(2);
+  const dropzone = page.locator(".rp-import-dropzone");
+  await expect(dropzone).toContainText(l("Перетащите сюда файл лора", "Drop your lore file here"));
+  const transfer = await page.evaluateHandle((json) => { const value = new DataTransfer(); value.items.add(new File([json], "Тестовый мир.json", { type: "application/json" })); return value; }, JSON.stringify({ name: "Тестовый мир", entries: [{ title: "Правило", content: "Сохранить", activation: "always" }] }));
+  await dropzone.dispatchEvent("dragenter", { dataTransfer: transfer });
+  await expect(dropzone).toHaveClass(/is-dragging/);
+  await dropzone.dispatchEvent("drop", { dataTransfer: transfer });
+  await expect(page.getByText(l("Распознаны записи JSON", "JSON entries recognized"), { exact: true })).toBeVisible();
+  expect((await new AxeBuilder({ page }).include(".lore-import-modal").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+});
 
 test("imports BDS only after preview, links a profile, and isolates the library", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Лор", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  // The file chooser and the drag-and-drop path use the same preview and validation.
   const source = { "  Оригинал  ": { value: "  Текст\nс переносом.  ", importance: "called" }, "Правило": { value: "Сохранить", importance: "always" } };
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Тестовый мир.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(source)) });
   await expect(page.getByText("2 записей · всегда: 1 · автоподбор: 1 · вручную: 0 · выключено: 0")).toBeVisible();
@@ -28,7 +55,9 @@ test("imports BDS only after preview, links a profile, and isolates the library"
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await expect(page.getByText("Оригинал", { exact: true })).toBeVisible();
   await expect(page.getByText("Клятва Миры", { exact: true })).toHaveCount(0);
-  await page.getByRole("combobox", { name: "Библиотека мира", exact: true }).selectOption("");
+  await page.getByRole("button", { name: "Карта мира", exact: true }).click();
+  await page.getByRole("button", { name: /^Библиотека мира:/ }).click();
+  await page.getByRole("menuitemradio", { name: "Без мира", exact: true }).click();
   await expect(page.getByText("Клятва Миры", { exact: true })).toBeVisible();
   await expect(page.getByText("Оригинал", { exact: true })).toHaveCount(0);
 });
@@ -38,7 +67,8 @@ test("creates editable worlds and starters without sending anything", async ({ p
   await page.getByRole("button", { name: "Лор", exact: true }).click();
   await page.getByRole("button", { name: "Создать свой мир", exact: true }).click();
   await page.getByRole("textbox", { name: "Название", exact: true }).fill("Новый мир");
-  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await page.getByRole("button", { name: "Создать мир", exact: true }).click();
+  await page.getByRole("button", { name: "Закрыть карту", exact: true }).click();
   await page.getByRole("button", { name: "Мир и профили", exact: true }).click();
   await page.locator('details:has(select[aria-label="Перенести книгу в этот мир"]) > summary').click();
   await page.getByRole("combobox", { name: "Перенести книгу в этот мир", exact: true }).selectOption({ label: "Лунный предел" });
@@ -117,6 +147,7 @@ test("RPG map supports window/full-screen, pan, zoom, search and node editing", 
   await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
   await page.getByRole("button", { name: "Открыть карту мира", exact: true }).click();
   const map = page.getByRole("dialog", { name: "Карта мира", exact: true });
+  await map.getByRole("button", { name: "Развернуть на весь экран", exact: true }).click();
   await expect(map).toHaveClass(/is-full/);
   await expect(map.locator(".lm-node.node-entry")).toHaveCount(6);
   await expect(map.locator(".lm-node.node-world")).toHaveCount(1);

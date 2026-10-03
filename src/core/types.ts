@@ -24,6 +24,7 @@ export interface LoreMapLayout {
 }
 
 export interface SceneEntity {
+  characterSheet?: CharacterSheet;
   useDescriptionInContext?: boolean;
   id: string;
   worldId: string;
@@ -33,6 +34,33 @@ export interface SceneEntity {
   aliases: string[];
   memberIds: string[];
   createdAt: number;
+  updatedAt: number;
+}
+
+export interface CharacterSheet {
+  gender: "male" | "female" | "neutral";
+  protagonist: boolean;
+  appearance: string;
+  personality: string;
+  goals: string;
+  background: string;
+  sprites: Record<string, string>;
+}
+
+export interface CharacterStatus {
+  emotion: string;
+  condition: string;
+  goal: string;
+  relationship: string;
+  stats: { label: string; value: string }[];
+}
+
+export interface CharacterScene {
+  lastReply?: string;
+  partnerId?: string | null;
+  revision: string;
+  presentIds: string[];
+  states: Record<string, CharacterStatus>;
   updatedAt: number;
 }
 
@@ -94,6 +122,7 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  characterScenes?: Record<string, CharacterScene>;
   memoryOverrides?: MemoryOverrides;
   id: string;
   worldId?: string | null;
@@ -120,9 +149,14 @@ export interface HandoffSnapshot {
 }
 
 export interface DeepRoleSettings {
+  characterSheetsEnabled?: boolean;
+  characterSpritesEnabled?: boolean;
+  characterEmotions?: string[];
   locale: Locale;
   onboardingComplete: boolean;
   sceneChoicesEnabled?: boolean;
+  showChatContextMeter: boolean;
+  showMemoryContextIndicator: boolean;
   contextBudget: number;
   relevanceThreshold: number;
   suggestionInterval: number;
@@ -224,7 +258,9 @@ export interface ServiceRequest {
   worldId?: string | null;
   focusIds?: string[];
   chatId?: string;
-  type: "memory-analysis" | "lore-draft" | "handoff" | "continue-handoff";
+  type: "memory-analysis" | "lore-draft" | "handoff" | "continue-handoff" | "scene-choices";
+  /** Opaque identity only: do not store the scene text in session metadata. */
+  sceneSignature?: string;
   brief?: string;
   baseVersions?: Record<string, string>;
   startedMessageCount?: number;

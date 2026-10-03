@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Character sheet test</title><style>body{margin:0;background:#181818;color:#f0f0f2;font:14px system-ui}#app{padding:16px}h1{font-size:18px}#conversation{max-width:900px;margin:20px auto;padding:12px}button{font:inherit}</style></head><body><main><h1>Character sheet test</h1><div id="app"></div><div id="conversation"><article data-role="assistant"><div class="ds-markdown" id="reply"></div></article></div></main><script type="module">
+import React, {useState} from "react"; import {createRoot} from "react-dom/client";
+import {CharacterPanel,CharacterSettings} from "/src/entrypoints/shared/CharacterSheets.tsx";
+import {DEFAULT_SETTINGS} from "/src/core/defaults.ts";
+import {EMPTY_CHARACTER,EMPTY_STATUS} from "/src/core/characters.ts";
+import {syncSceneChoiceCards} from "/src/adapters/deepseek-choices-dom.ts";
+import {syncChoicePortraits} from "/src/adapters/deepseek-characters-dom.ts";
+import "/src/entrypoints/shared/design-system.css";
+import "/src/entrypoints/shared/characters.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en"; document.documentElement.lang=locale;
+const entities=[{id:"hero",name:"Noah",worldId:"w",kind:"character",description:"",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,gender:"male",protagonist:true,sprites:{}},createdAt:1,updatedAt:1},{id:"mira",name:"Mira",worldId:"w",kind:"character",description:"Original profile",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,gender:"female",appearance:"Blue coat",sprites:{}},createdAt:1,updatedAt:1}];
+const count=Number(new URL(location.href).searchParams.get("count"));
+if(count===1)entities.splice(1); else if(count===40)for(let i=2;i<40;i++)entities.push({...entities[1],id:`extra-${i}`,name:`Character ${i}`});
+const scene={revision:"1",presentIds:["hero","mira"],states:{hero:{...EMPTY_STATUS},mira:{...EMPTY_STATUS,emotion:"happy",condition:"Safe",stats:[{label:"Energy",value:"Rested"}]}},updatedAt:1};
+const options=["positive","neutral","negative","surprise"].map(kind=>({kind,label:kind,text:"I ask about the letter."}));
+document.querySelector("#reply").textContent="Mira holds a letter.\n<deeprole_choices>"+JSON.stringify({version:1,options})+"</deeprole_choices>";
+function App(){const [settings,setSettings]=useState({...DEFAULT_SETTINGS,locale,characterSheetsEnabled:true}); const [openId,setOpenId]=useState(null);
+window.openCharacter=(id)=>setOpenId(id);
+window.syncPortraits=(present=scene.presentIds)=>{syncSceneChoiceCards(true,false,locale,async()=>true);syncChoicePortraits(true,entities,{...scene,presentIds:present},locale,id=>setOpenId(id));};
+return React.createElement(React.Fragment,null,React.createElement(CharacterPanel,{locale,entities,scene,emotions:settings.characterEmotions,base:"v",worldId:"w",chatId:"a",status:"updated",onRetry:()=>{},onSave:async edit=>{window.saved=edit;if(window.rejectSave)throw Error("conflict");},openId,onOpened:()=>setOpenId(null)}),React.createElement("div",{style:{maxWidth:350,marginTop:24}},React.createElement(CharacterSettings,{settings,onSettings:async value=>{window.settings=value;setSettings(value);}})));}
+createRoot(document.querySelector("#app")).render(React.createElement(App));setTimeout(()=>window.syncPortraits(),100);
+</script></body></html>

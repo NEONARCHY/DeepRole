@@ -13,6 +13,9 @@ const batch: MemoryProposalBatch = {
 it.each(["ru", "en"] as const)("lets users choose new proposal mode before saving (%s)", async (locale) => {
   const save = vi.fn(async () => {});
   render(<MemoryReview locale={locale} batch={batch} onSave={save} onDiscard={async () => {}} onClose={() => {}} />);
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: /Observatory/ }));
   fireEvent.click(screen.getByRole("button", { name: locale === "ru" ? "Вручную" : "Manual" }));
   await act(async () => fireEvent.click(screen.getByRole("button", { name: /(?:Сохранить выбранное|Save selected changes) · 1/ })));
   expect(save).toHaveBeenCalledWith([expect.objectContaining({ activation: "manual" })]);
@@ -20,8 +23,10 @@ it.each(["ru", "en"] as const)("lets users choose new proposal mode before savin
 
 it("explains missing names before save instead of reporting a false storage conflict", () => {
   render(<MemoryReview locale="en" batch={batch} onSave={async () => {}} onDiscard={async () => {}} onClose={() => {}} />);
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: /Observatory/ }));
   fireEvent.change(screen.getByRole("textbox", { name: "Record name" }), { target: { value: " " } });
-  expect(screen.getByRole("alert")).toHaveTextContent("need both a name and text");
+  for (const alert of screen.getAllByRole("alert")) expect(alert).toHaveTextContent("need both a name and text");
   expect(screen.getByRole("button", { name: /Save selected changes/ })).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
   expect(screen.queryByRole("alert")).toBeNull();

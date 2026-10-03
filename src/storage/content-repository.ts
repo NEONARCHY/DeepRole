@@ -1,7 +1,11 @@
 import { browser } from "wxt/browser";
 import type { DataRecord, RecordKind, RecordValue } from "../core/types";
+import type { CharacterEdit, CharacterScope } from "./characters";
+import type { CharacterTurn } from "../core/characters";
 
 export type RepositoryRequest =
+  | { type: "DR_REPOSITORY"; operation: "saveCharacter"; edit: CharacterEdit }
+  | { type: "DR_REPOSITORY"; operation: "applyCharacterTurn"; scope: CharacterScope; turn: CharacterTurn }
   | { type: "DR_REPOSITORY"; operation: "snapshot" }
   | { type: "DR_REPOSITORY"; operation: "list"; kind: RecordKind }
   | { type: "DR_REPOSITORY"; operation: "get"; kind: RecordKind; id: string }
@@ -18,6 +22,8 @@ async function call<T>(message: RepositoryRequest): Promise<T> {
 // IndexedDB in a content script belongs to the website, not the extension.
 // All content access is routed to the extension-owned background repository.
 export const contentRepository = {
+  saveCharacter: (edit: CharacterEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveCharacter", edit }),
+  applyCharacterTurn: (scope: CharacterScope, turn: CharacterTurn) => call<void>({ type: "DR_REPOSITORY", operation: "applyCharacterTurn", scope, turn }),
   rawRecords: () => call<DataRecord[]>({ type: "DR_REPOSITORY", operation: "snapshot" }),
   list: <T extends RecordValue>(kind: RecordKind) => call<T[]>({ type: "DR_REPOSITORY", operation: "list", kind }),
   get: <T extends RecordValue>(kind: RecordKind, id: string) => call<T | null>({ type: "DR_REPOSITORY", operation: "get", kind, id }),

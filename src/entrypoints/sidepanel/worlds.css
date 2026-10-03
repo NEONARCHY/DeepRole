@@ -1,48 +1,48 @@
-.app-main>.scene-controls{margin-bottom:14px}.rp-library-filter{margin-bottom:18px}.worlds-view{font-size:12px}.rp-hint{color:#9eafc1;line-height:1.6;font-size:11px;margin:0}.rp-card{display:grid;gap:12px;padding:14px;border:1px solid #263543;border-radius:16px;background:linear-gradient(135deg,#121c26,#0d141c)}.rp-card>header{display:flex;justify-content:space-between;align-items:center;gap:10px}.rp-card h2{font-size:14px;margin:0;overflow-wrap:anywhere}.rp-world-list{display:grid;gap:7px}.rp-world-card{display:flex;align-items:center;gap:12px;text-align:start;padding:12px;border:1px solid #273b4c;border-radius:12px;background:#101821;color:#edf4fa;cursor:pointer}.rp-world-card.active{border-color:#6db6e5;background:linear-gradient(110deg,#19394e,#152536)}.rp-world-card>i{width:6px;height:32px;border-radius:4px;flex-shrink:0}.rp-world-card>span{display:grid;gap:3px;min-width:0}.rp-world-card small{color:#9eafc1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rp-world-card strong{overflow-wrap:anywhere}.rp-editor{display:grid;gap:12px;padding:14px;border:1px solid #447294;border-radius:12px;background:#101c27;scroll-margin:20px}.rp-check{display:flex;gap:9px;align-items:flex-start;color:#dbe6ef;padding:6px 0;overflow-wrap:anywhere;font-size:12px}.rp-check input{accent-color:#73c6ff;flex-shrink:0;margin-top:3px}.rp-check span{display:grid;min-width:0;gap:3px}.rp-check small{color:#97a9bc;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10px}.rp-link-list{max-height:240px;overflow:auto}.rp-item{border-top:1px solid #293944;padding-top:12px;min-width:0}.rp-item h3{margin:4px 0;font-size:13px;overflow-wrap:anywhere}.rp-item p{color:#9eafc1;white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto}.rp-item>small{color:#92c6e8}.rp-item .button-row{margin-top:10px}.rp-import-file{display:grid;gap:8px;padding:10px;border:1px dashed #3b566b;border-radius:10px;color:#b7cfdf}.rp-import-file input{width:100%;font-size:11px}.rp-import-preview{max-height:260px;overflow:auto;border:1px solid #2c4151;border-radius:9px}.rp-import-preview details{padding:9px;border-bottom:1px solid #2c4151;overflow-wrap:anywhere}.rp-import-preview summary{cursor:pointer}.rp-import-preview pre{white-space:pre-wrap;font:11px/1.6 inherit;color:#b4c4d1;overflow-wrap:anywhere}.rp-status{border:1px solid #387585;border-radius:10px;background:#10272d;padding:10px;color:#b7ecf5;line-height:1.5}.rp-empty{padding:20px;text-align:center;color:#9eafc1;line-height:1.7}.worlds-view .button-row{flex-wrap:wrap}.worlds-view button:focus-visible{outline:2px solid #81c9f8;outline-offset:2px}.worlds-view [aria-busy=true]{opacity:.7}
-.lore-connection { display: grid; gap: 10px; border: 1px solid #455063; border-radius: 12px; padding: 12px; background: #141a24; }
-.lore-connection strong { color: #c0ccda; font-size: 12px; }
-.lore-connection p { color: #acbecf; margin: 0; line-height: 1.6; }
-.lore-connection.is-attached { border-color: #326278; background: #10232d; }
-.lore-connection.is-attached strong { color: #b4e1fa; }
-.rp-view-switch { display: flex; gap: 4px; padding: 4px; border: 1px solid #263543; border-radius: 12px; background: #0b141e; }
-.rp-view-switch button { flex: 1; padding: 10px 7px; border: 0; border-radius: 8px; background: transparent; color: #aabfd0; cursor: pointer; font-size: 11px; }
-.rp-view-switch button[aria-pressed=true] { color: #dceeff; background: #233c53; box-shadow: inset 0 0 0 1px #48749b; }
+.app-main>.scene-controls{margin-bottom:14px}.rp-library-filter{margin-bottom:18px}.worlds-view{font-size:12px}.rp-hint{color:var(--dr-muted);line-height:1.6;font-size:11px;margin:0}.rp-card{display:grid;gap:12px;padding:14px;border:1px solid var(--dr-border);border-radius:16px;background:var(--dr-surface)}.rp-card>header{display:flex;justify-content:space-between;align-items:center;gap:10px}.rp-card h2{font-size:14px;margin:0;overflow-wrap:anywhere}.rp-world-list{display:grid;gap:7px}.rp-world-card{display:flex;align-items:center;gap:12px;text-align:start;padding:12px;border:1px solid var(--dr-border);border-radius:12px;background:var(--dr-bg);color:var(--dr-text);cursor:pointer}.rp-world-card.active{border-color:var(--dr-primary);background:var(--dr-surface)}.rp-world-card>i{width:6px;height:32px;border-radius:4px;flex-shrink:0}.rp-world-card>span{display:grid;gap:3px;min-width:0}.rp-world-card small{color:var(--dr-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rp-world-card strong{overflow-wrap:anywhere}.rp-editor{display:grid;gap:12px;padding:14px;border:1px solid var(--dr-border-strong);border-radius:12px;background:var(--dr-panel);scroll-margin:20px}.rp-check{display:flex;gap:9px;align-items:flex-start;color:var(--dr-text);padding:6px 0;overflow-wrap:anywhere;font-size:12px}.rp-check input{accent-color:var(--dr-primary);flex-shrink:0;margin-top:3px}.rp-check span{display:grid;min-width:0;gap:3px}.rp-check small{color:var(--dr-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10px}.rp-link-list{max-height:240px;overflow:auto}.rp-item{border-top:1px solid var(--dr-border);padding-top:12px;min-width:0}.rp-item h3{margin:4px 0;font-size:13px;overflow-wrap:anywhere}.rp-item p{color:var(--dr-muted);white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto}.rp-item>small{color:var(--dr-primary)}.rp-item .button-row{margin-top:10px}.rp-import-file{display:grid;gap:8px;padding:10px;border:1px dashed var(--dr-border);border-radius:10px;color:var(--dr-muted)}.rp-import-file input{width:100%;font-size:11px}.rp-import-preview{max-height:260px;overflow:auto;border:1px solid var(--dr-border);border-radius:9px}.rp-import-preview details{padding:9px;border-bottom:1px solid var(--dr-border);overflow-wrap:anywhere}.rp-import-preview summary{cursor:pointer}.rp-import-preview pre{white-space:pre-wrap;font:11px/1.6 inherit;color:var(--dr-muted);overflow-wrap:anywhere}.rp-status{border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-panel);padding:10px;color:var(--dr-text);line-height:1.5}.rp-empty{padding:20px;text-align:center;color:var(--dr-muted);line-height:1.7}.worlds-view .button-row{flex-wrap:wrap}.worlds-view button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:2px}.worlds-view [aria-busy=true]{opacity:.7}
+.lore-connection { display: grid; gap: 10px; border: 1px solid var(--dr-border); border-radius: 12px; padding: 12px; background: var(--dr-panel); }
+.lore-connection strong { color: var(--dr-muted); font-size: 12px; }
+.lore-connection p { color: var(--dr-muted); margin: 0; line-height: 1.6; }
+.lore-connection.is-attached { border-color: var(--dr-border); background: var(--dr-panel); }
+.lore-connection.is-attached strong { color: var(--dr-primary); }
+.rp-view-switch { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--dr-border); border-radius: 12px; background: var(--dr-bg); }
+.rp-view-switch button { flex: 1; padding: 10px 7px; border: 0; border-radius: 8px; background: transparent; color: var(--dr-muted); cursor: pointer; font-size: 11px; }
+.rp-view-switch button[aria-pressed=true] { color: var(--dr-text); background: var(--dr-raised); box-shadow: inset 0 0 0 1px #000; }
 .lm-launch-card { gap: 14px; padding: 22px; }
 .lm-launch-card .lm-preview-orb { width: 58px; height: 58px; font-size: 27px; }
 .worlds-view .dr-world-library { display: grid; gap: 6px; min-width: 0; }
-.worlds-view .dr-world-library-label { color: #adbdcd; font-size: 12px; line-height: 1.4; }
+.worlds-view .dr-world-library-label { color: var(--dr-muted); font-size: 12px; line-height: 1.4; }
 .worlds-view .dr-world-picker { position: relative; min-width: 0; }
-.worlds-view .dr-world-picker-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid #38566d; border-radius: 12px; background: linear-gradient(135deg,#111e2a,#0b141e); color: #e5edf5; font: inherit; text-align: left; cursor: pointer; }
-.worlds-view .dr-world-picker-trigger:hover, .worlds-view .dr-world-picker-trigger[aria-expanded=true] { border-color: #75b7e4; background: #132638; }
-.worlds-view .dr-world-picker-trigger > svg { flex: 0 0 auto; margin-left: auto; color: #abc5d8; transition: transform .16s ease; }
+.worlds-view .dr-world-picker-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--dr-border); border-radius: 12px; background: var(--dr-surface); color: var(--dr-text); font: inherit; text-align: left; cursor: pointer; }
+.worlds-view .dr-world-picker-trigger:hover, .worlds-view .dr-world-picker-trigger[aria-expanded=true] { border-color: var(--dr-primary); background: var(--dr-panel); }
+.worlds-view .dr-world-picker-trigger > svg { flex: 0 0 auto; margin-left: auto; color: var(--dr-primary); transition: transform .16s ease; }
 .worlds-view .dr-world-picker-trigger[aria-expanded=true] > svg { transform: rotate(180deg); }
-.worlds-view .dr-world-picker-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff12; }
-.worlds-view .dr-world-picker-dot.is-empty { border: 1px dashed #71869a; background: transparent; box-shadow: none; }
+.worlds-view .dr-world-picker-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.071); }
+.worlds-view .dr-world-picker-dot.is-empty { border: 1px dashed var(--dr-primary); background: transparent; box-shadow: none; }
 .worlds-view .dr-world-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.worlds-view .dr-world-picker-menu { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0; display: grid; gap: 3px; max-height: min(52vh, 340px); overflow: auto; padding: 6px; border: 1px solid #3d5d75; border-radius: 12px; background: #101922; box-shadow: 0 14px 36px #0009; }
-.worlds-view .dr-world-picker-menu > button { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #dce8f2; font: inherit; text-align: left; cursor: pointer; }
-.worlds-view .dr-world-picker-menu > button:hover, .worlds-view .dr-world-picker-menu > button:focus-visible { background: #1a2b39; border-color: #37536b; }
-.worlds-view .dr-world-picker-menu > button[aria-checked=true] { background: #203b50; color: #f0f7fc; }
-.worlds-view .dr-world-picker-menu > button > svg { flex: 0 0 auto; margin-left: auto; color: #8ecbfa; }
-.worlds-view .dr-world-picker-divider { height: 1px; margin: 4px 3px; background: #2d3c4c; }
-.worlds-view .dr-world-picker-menu > .dr-world-picker-create { justify-content: flex-start; color: #a8d8fa; font-weight: 600; }
+.worlds-view .dr-world-picker-menu { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0; display: grid; gap: 3px; max-height: min(52vh, 340px); overflow: auto; padding: 6px; border: 1px solid var(--dr-border); border-radius: 12px; background: var(--dr-panel); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.600); }
+.worlds-view .dr-world-picker-menu > button { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--dr-text); font: inherit; text-align: left; cursor: pointer; }
+.worlds-view .dr-world-picker-menu > button:hover, .worlds-view .dr-world-picker-menu > button:focus-visible { background: var(--dr-surface); border-color: var(--dr-border); }
+.worlds-view .dr-world-picker-menu > button[aria-checked=true] { background: var(--dr-raised); color: var(--dr-text); }
+.worlds-view .dr-world-picker-menu > button > svg { flex: 0 0 auto; margin-left: auto; color: var(--dr-primary); }
+.worlds-view .dr-world-picker-divider { height: 1px; margin: 4px 3px; background: var(--dr-raised); }
+.worlds-view .dr-world-picker-menu > .dr-world-picker-create { justify-content: flex-start; color: var(--dr-primary); font-weight: 600; }
 
 /* World library follows the map's quiet surfaces; blue stays on the current action. */
 .worlds-view .rp-card,.worlds-view .rp-editor { background: var(--dr-surface); border-color: var(--dr-border); }
 .worlds-view .rp-hint,.worlds-view .rp-world-card small,.worlds-view .dr-world-library-label { color: var(--dr-muted); }
 .worlds-view .rp-world-card { color: var(--dr-text); background: var(--dr-panel); border-color: var(--dr-border); }
 .worlds-view .rp-world-card:hover { background: var(--dr-raised); }
-.worlds-view .rp-world-card.active { background: var(--dr-selected); border-color: #7a987f; }
+.worlds-view .rp-world-card.active { background: var(--dr-selected); border-color: var(--dr-border-strong); }
 .worlds-view .rp-view-switch { background: var(--dr-panel); border-color: var(--dr-border); }
 .worlds-view .rp-view-switch button { color: var(--dr-muted); }
-.worlds-view .rp-view-switch button[aria-pressed=true] { color: #e9f4fb; background: #263b48; box-shadow: inset 0 0 0 1px var(--dr-primary); }
+.worlds-view .rp-view-switch button[aria-pressed=true] { color: var(--dr-text); background: var(--dr-raised); box-shadow: inset 0 0 0 1px var(--dr-primary); }
 .worlds-view .rp-item { border-top-color: var(--dr-border); }
 .worlds-view .rp-item p { color: var(--dr-muted); }
 .worlds-view .dr-world-picker-trigger { color: var(--dr-text); background: var(--dr-panel); border-color: var(--dr-border); }
-.worlds-view .dr-world-picker-trigger:hover,.worlds-view .dr-world-picker-trigger[aria-expanded=true] { background: var(--dr-raised); border-color: #7e9a88; }
-.worlds-view .dr-world-picker-menu { background: var(--dr-raised); border-color: #58675d; }
+.worlds-view .dr-world-picker-trigger:hover,.worlds-view .dr-world-picker-trigger[aria-expanded=true] { background: var(--dr-raised); border-color: var(--dr-border-strong); }
+.worlds-view .dr-world-picker-menu { background: var(--dr-raised); border-color: var(--dr-border); }
 .worlds-view .dr-world-picker-menu>button { color: var(--dr-text); }
-.worlds-view .dr-world-picker-menu>button:hover,.worlds-view .dr-world-picker-menu>button:focus-visible { background: #354239; border-color: #607367; }
-.worlds-view .dr-world-picker-menu>button[aria-checked=true] { background: #263b48; color: #eaf4fb; }
+.worlds-view .dr-world-picker-menu>button:hover,.worlds-view .dr-world-picker-menu>button:focus-visible { background: var(--dr-raised); border-color: var(--dr-border); }
+.worlds-view .dr-world-picker-menu>button[aria-checked=true] { background: var(--dr-raised); color: var(--dr-text); }
 .worlds-view .dr-world-picker-menu>.dr-world-picker-create { color: var(--dr-primary); }
 .worlds-view .dr-world-picker-divider { background: var(--dr-border); }
