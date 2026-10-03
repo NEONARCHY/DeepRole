@@ -48,11 +48,11 @@ test("vault has its own password and disabling an unlocked vault needs no export
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
-  await page.getByLabel("Пароль для файла (необязательно)", { exact: true }).fill("export-only");
+  await page.getByLabel("Пароль для импорта (если нужен)", { exact: true }).fill("import-only");
   await expect(page.getByRole("button", { name: "Включить локальный сейф", exact: true })).toBeDisabled();
   await page.getByLabel("Новый пароль сейфа", { exact: true }).fill("vault-only");
   await page.getByRole("button", { name: "Включить локальный сейф", exact: true }).click();
-  await page.getByLabel("Пароль для файла (необязательно)", { exact: true }).fill("");
+  await page.getByLabel("Пароль для импорта (если нужен)", { exact: true }).fill("");
   await page.getByRole("button", { name: "Отключить сейф", exact: true }).click();
   await expect(page.getByRole("button", { name: "Включить локальный сейф", exact: true })).toBeVisible();
   expect(await page.evaluate(async () => { const { repository } = await import("/src/storage/repository.ts" as string); return (await repository.list("entry")).length; })).toBe(2);

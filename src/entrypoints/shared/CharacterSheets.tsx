@@ -11,13 +11,13 @@ function CharacterPortrait({ sheet, emotion, ...attributes }: Omit<ImgHTMLAttrib
   return <img {...attributes} ref={image} />;
 }
 
-export function CharacterSettings({ settings, onSettings }: { settings: DeepRoleSettings; onSettings: (value: DeepRoleSettings) => void | Promise<void> }) {
+export function CharacterSettings({ settings, onSettings, worldEmotions, onEmotions }: { settings: DeepRoleSettings; onSettings: (value: DeepRoleSettings) => void | Promise<void>; worldEmotions?: string[]; onEmotions?: (emotions: string[]) => Promise<void> }) {
   const emotionsId = useId();
   const t = (key: CharacterCopyKey) => characterText(settings.locale, key);
-  const [draft, setDraft] = useState(emotionsFor(settings.characterEmotions).join("\n"));
+  const [draft, setDraft] = useState(emotionsFor(worldEmotions ?? settings.characterEmotions).join("\n"));
   const [error, setError] = useState(false); const [busy, setBusy] = useState(false);
   const [layoutError, setLayoutError] = useState(false);
-  useEffect(() => setDraft(emotionsFor(settings.characterEmotions).join("\n")), [settings.characterEmotions?.join("\n")]);
+  useEffect(() => setDraft(emotionsFor(worldEmotions ?? settings.characterEmotions).join("\n")), [worldEmotions?.join("\n"), settings.characterEmotions?.join("\n")]);
   const emotions = draft.split("\n").map(s => s.trim()).filter(Boolean);
   return <section className="dr-character-settings">
     <label className="toggle-row"><span>{t("enable")}</span><input type="checkbox" checked={!!settings.characterSheetsEnabled} onChange={e => void onSettings({ ...settings, characterSheetsEnabled: e.target.checked })} /></label>
@@ -33,7 +33,7 @@ export function CharacterSettings({ settings, onSettings }: { settings: DeepRole
       <label className="field-label" htmlFor={emotionsId}>{t("emotions")}</label><textarea id={emotionsId} rows={6} maxLength={396} value={draft} onChange={e => { setDraft(e.target.value); setError(false); }} aria-describedby="dr-emotions-help" />
       <p id="dr-emotions-help" className="setting-copy">{t("emotionsHint")}</p>
       {error && <p role="alert" className="error-text">{t(validEmotions(emotions) ? "failed" : "emotionError")}</p>}
-      <button className="button secondary" disabled={busy} onClick={() => { if (!validEmotions(emotions)) { setError(true); return; } setBusy(true); void Promise.resolve(onSettings({ ...settings, characterEmotions: emotions })).catch(() => setError(true)).finally(() => setBusy(false)); }}>{t("saveEmotions")}</button>
+      <button className="button secondary" disabled={busy} onClick={() => { if (!validEmotions(emotions)) { setError(true); return; } setBusy(true); void Promise.resolve(onEmotions ? onEmotions(emotions) : onSettings({ ...settings, characterEmotions: emotions })).catch(() => setError(true)).finally(() => setBusy(false)); }}>{t("saveEmotions")}</button>
     </>}
   </section>;
 }

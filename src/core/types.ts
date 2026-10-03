@@ -4,6 +4,7 @@ export type MemoryPriority = "low" | "normal" | "high";
 export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change";
 
 export interface WorldProfile {
+  characterEmotions?: string[];
   useDescriptionInContext?: boolean;
   mapLayout?: LoreMapLayout;
   id: string;

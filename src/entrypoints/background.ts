@@ -75,7 +75,8 @@ export default defineBackground(() => {
               if (!turn) throw new Error("character-invalid");
               const bound = turn.request ? bindCharacterTurn(turn, (await tabSessions.get(tabId)).characterRequest, message.scope) : turn;
               if (!bound) throw new Error("character-conflict");
-              await applyCharacterTurn(message.scope, bound, emotionsFor(settings.characterEmotions), repository, !!turn.request);
+              const characterWorld = await repository.get<import("../core/types").WorldProfile>("world", message.scope.worldId);
+              await applyCharacterTurn(message.scope, bound, emotionsFor(characterWorld?.characterEmotions ?? settings.characterEmotions), repository, !!turn.request);
             }
             return { ok: true };
           }

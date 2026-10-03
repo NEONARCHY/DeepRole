@@ -93,12 +93,14 @@ for (const cancel of ["lock", "leave"] as const) {
       (window as any).downloads = [];
       HTMLAnchorElement.prototype.click = function () { (window as any).downloads.push(this.download); };
     });
-    await page.getByRole("button", { name: "Обычный JSON", exact: true }).click();
+    await page.getByRole("button", { name: "Экспорт", exact: true }).click();
+    await page.getByRole("radio", { name: /^Полная резервная копия/ }).check();
+    await page.getByRole("button", { name: "Скачать файл", exact: true }).click();
     await expect.poll(() => page.evaluate(() => (window as any).exportReady)).toBe(true);
     if (cancel === "lock") {
       await page.evaluate(async () => { const { repository } = await import("/src/storage/repository.ts" as string); await repository.lockVault(); });
       await expect(page.getByRole("button", { name: "Разблокировать", exact: true })).toBeVisible();
-    } else { await page.getByRole("button", { name: "Лор", exact: true }).click(); }
+    } else { await page.getByRole("dialog", { name: "Экспорт", exact: true }).getByRole("button", { name: "Закрыть", exact: true }).click(); await page.getByRole("button", { name: "Лор", exact: true }).click(); }
     await page.evaluate(async () => {
       (window as any).releaseExport();
       // The fixture storage returns already-resolved promises. Drain their chain
@@ -113,7 +115,7 @@ test("encrypted backup preview works, and unsafe headers are not mistaken for pa
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
-  await page.getByLabel("Пароль для файла (необязательно)", { exact: true }).fill("backup-password");
+  await page.getByLabel("Пароль для импорта (если нужен)", { exact: true }).fill("backup-password");
   const backup = await page.evaluate(async () => { const { createBackup } = await import("/src/storage/backup.ts" as string); return createBackup("backup-password"); });
   const choose = (value: unknown) => page.locator('input[type="file"]').setInputFiles({ name: "backup.vault.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(value)) });
   await choose(backup);
@@ -139,6 +141,7 @@ test("an unfinished world export is cancelled on lock, while a normal export sti
   const card = page.locator(".rp-card").filter({ has: page.getByRole("heading", { name: "Export World", exact: true }) });
   await card.locator("summary").click();
   await card.getByRole("button", { name: "Экспорт", exact: true }).click();
+  await page.getByRole("button", { name: "Скачать файл", exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).downloads.length)).toBe(1);
   await expect(page.locator(".worlds-view")).toHaveAttribute("aria-busy", "false");
   await page.evaluate(async () => {
@@ -149,6 +152,7 @@ test("an unfinished world export is cancelled on lock, while a normal export sti
     repository.rawRecords = async () => { const records = await original(); repository.rawRecords = original; (window as any).exportReady = true; await gate; return records; };
   });
   await card.getByRole("button", { name: "Экспорт", exact: true }).click();
+  await page.getByRole("button", { name: "Скачать файл", exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).exportReady)).toBe(true);
   await page.evaluate(async () => { const { repository } = await import("/src/storage/repository.ts" as string); await repository.lockVault(); });
   await expect(page.getByRole("button", { name: "Разблокировать", exact: true })).toBeVisible();

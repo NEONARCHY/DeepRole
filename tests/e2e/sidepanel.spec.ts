@@ -43,7 +43,7 @@ test("compact settings expose tuning without opening any disclosure", async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("settings-ru-360.png"), fullPage: true });
   await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Обычный JSON", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Экспорт", exact: true })).toBeVisible();
   await expect(page.getByText("Включить локальный сейф").first()).toBeVisible();
 });
 

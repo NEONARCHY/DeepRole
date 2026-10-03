@@ -22,6 +22,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
   if (["world", "entity"].includes(String(value.kind)) && d.useDescriptionInContext !== undefined && typeof d.useDescriptionInContext !== "boolean") return false;
   switch (value.kind) {
     case "world":
+      if (d.characterEmotions !== undefined && !validEmotions(d.characterEmotions)) return false;
       if (typeof d.name !== "string" || typeof d.description !== "string" || typeof d.color !== "string" || !integer(d.contextBudget, 500, 16000) || typeof d.relevanceThreshold !== "number" || ![4, 6, 8, 9].includes(d.relevanceThreshold)) return false;
       try { if (d.mapLayout !== undefined) validateLoreMapLayout(d.mapLayout); } catch { return false; }
       return true;

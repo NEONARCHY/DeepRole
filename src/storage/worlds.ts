@@ -3,6 +3,8 @@ import { validDataRecord } from "../core/record-validation";
 import { memoryWorld } from "../core/scene";
 import type { DataRecord, MemoryBook, MemoryEntry, SceneEntity, ChatBinding, HandoffSnapshot, WorldProfile } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
+import { emotionsFor } from "../core/characters";
+import { getSettings } from "./settings";
 
 export interface WorldPackage { format: "deeprole-world"; version: 1; records: DataRecord[] }
 
@@ -12,7 +14,9 @@ export async function exportWorld(worldId: string, repo: DeepRoleRepository = re
   const records = all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
   if (!records.some((r) => r.kind === "world")) throw new Error("invalidBackup");
   const entryIds = new Set(records.filter((r) => r.kind === "entry").map((r) => r.id));
-  return { format: "deeprole-world", version: 1, records: records.map((r) => r.kind === "entry" ? { ...r, data: { ...r.data, worldId, links: (r.data as MemoryEntry).links?.filter((link) => entryIds.has(link.targetId) && link.targetId !== r.id) } } : r) };
+  const world = records.find(r => r.kind === "world")!.data as WorldProfile;
+  const emotions = emotionsFor(world.characterEmotions ?? (await getSettings()).characterEmotions);
+  return { format: "deeprole-world", version: 1, records: records.map((r) => r.kind === "world" ? { ...r, data: { ...r.data, characterEmotions: [...emotions] } } : r.kind === "entry" ? { ...r, data: { ...r.data, worldId, links: (r.data as MemoryEntry).links?.filter((link) => entryIds.has(link.targetId) && link.targetId !== r.id) } } : r) };
 }
 
 export function parseWorldPackage(text: string): WorldPackage {

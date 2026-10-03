@@ -13,7 +13,6 @@ import {
   Eye,
   FileKey2,
   Globe2,
-  KeyRound,
   Languages,
   LayoutDashboard,
   LockKeyhole,
@@ -45,7 +44,9 @@ import type {
   ServiceRequest,
   BackupPayload,
 } from "../../core/types";
-import { backupFileName, createBackup, parseBackup, restoreBackup } from "../../storage/backup";
+import { parseBackup, restoreBackup } from "../../storage/backup";
+import { ExportDialog } from "./ExportDialog";
+import { exportText } from "../../core/export-i18n";
 import { repository, VaultLockedError } from "../../storage/repository";
 import { libraryRecords } from "../../core/memory-workspace";
 import { menuText } from "../../core/menu-i18n";
@@ -118,6 +119,7 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState("");
+  const [exportRequest, setExportRequest] = useState<{ worldId?: string | null } | null>(null);
   const [bookEditor, setBookEditor] = useState<MemoryBook | "new" | null>(null);
   const [entryEditor, setEntryEditor] = useState<MemoryEntry | "new" | null>(null);
   const [entryBase, setEntryBase] = useState<MemoryEntry | null>(null);
@@ -140,6 +142,7 @@ export function App() {
     setBooks([]); setEntries([]); setSnapshots([]); setWorlds([]); setEntities([]); setTemplates([]);
     setBindings([]); setProposals([]); setChanges([]); setReviewId(null);
     setBookEditor(null); setEntryEditor(null); setEntryBase(null); setEditorWorld(null);
+    setExportRequest(null);
     setPage(EMPTY_PAGE); setToast("");
   }, []);
 
@@ -148,7 +151,7 @@ export function App() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (document.querySelector(".dr-loremap")) return;
-      if (document.querySelector('[role="dialog"]')) return;
+      if (document.querySelector('[role="dialog"], dialog[open]')) return;
       event.preventDefault();
       event.stopPropagation();
       window.parent.postMessage({ source: "deeprole-menu", type: "CLOSE" }, "*");
@@ -456,7 +459,7 @@ export function App() {
         {relevantProposals.length > 0 && <section className="dr-assistant"><header><strong>{at("proposals")}</strong></header>{relevantProposals.map((batch) => <button key={batch.id} onClick={() => setReviewId(batch.id)}>{at("review")} · {batch.items.length}</button>)}</section>}
         {activeReview && <MemoryReview key={activeReview.id} locale={settings.locale} batch={activeReview} onClose={() => setReviewId(null)} onDiscard={async () => { await discardMemoryProposals(activeReview.id); await refresh(); }} onSave={async (items) => { await applyMemoryProposals(activeReview.id, items); const count = items.filter((item) => item.selected && !item.issue).length; setToast(at("memoryUpdated").replace("{count}", String(count))); await refresh(); await refreshPage(); }} />}
         {activeTab === "overview" && lastChange && <div className="button-row"><button className="button secondary small" onClick={() => void undoLoreChange(lastChange.id).then(() => refresh()).catch(() => setToast(at("conflict")))}>{at("undo")}</button></div>}
-        {activeTab === "worlds" && <WorldsView locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
+        {activeTab === "worlds" && <WorldsView onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
         {activeTab === "overview" && (
           <Overview
             t={t}
@@ -497,6 +500,7 @@ export function App() {
 
         {activeTab === "settings" && (
           <SettingsView
+            onExport={() => setExportRequest({ worldId: scene.worldId ?? libraryWorld })}
             t={t}
             settings={settings}
             world={worlds.find((world) => world.id === scene.worldId)}
@@ -507,6 +511,7 @@ export function App() {
         )}
       </main>
 
+      {exportRequest && <ExportDialog locale={settings.locale} worlds={worlds} worldId={exportRequest.worldId} onClose={() => setExportRequest(null)} />}
       <nav className="bottom-nav" aria-label={t("navigation")}>
         <NavButton active={activeTab === "overview"} label={mt("play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
         <NavButton active={activeTab === "worlds"} label={mt("lore")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
@@ -723,6 +728,7 @@ function HandoffView(props: {
 }
 
 function SettingsView(props: {
+  onExport: () => void;
   t: ReturnType<typeof useTranslator>;
   settings: DeepRoleSettings;
   world?: WorldProfile;
@@ -748,18 +754,6 @@ function SettingsView(props: {
     return () => { mounted.current = false; };
   }, []);
   async function canFinish() { return mounted.current && !await repository.isLocked() && mounted.current; }
-
-  async function exportBackup(encrypted: boolean) {
-    if (backupBusy || encrypted && !password) return;
-    setBackupBusy(true);
-    try {
-      const backup = await createBackup(encrypted ? password : undefined);
-      if (!await canFinish()) return;
-      downloadJson(backupFileName(encrypted), backup);
-      props.onToast(props.t("exportSuccess"));
-    } catch { if (mounted.current) props.onToast(props.t("exportFailed")); }
-    finally { setBackupBusy(false); }
-  }
 
   async function importBackup(file: File) {
     if (backupBusy) return;
@@ -815,7 +809,14 @@ function SettingsView(props: {
       </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "app"}>
-      <SettingsCard icon={<BrainCircuit />} title={characterText(props.settings.locale, "title")}><CharacterSettings settings={props.settings} onSettings={props.onSettings} /></SettingsCard>
+      <SettingsCard icon={<BrainCircuit />} title={characterText(props.settings.locale, "title")}>
+        {props.world && <p className="setting-copy">{exportText(props.settings.locale, "emotionScope").replace("{name}", props.world.name)}</p>}
+        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldEmotions={props.world?.characterEmotions} onSettings={props.onSettings} onEmotions={props.world ? async emotions => {
+          const world = props.world!;
+          await repository.putIfUnchanged("world", { ...world, characterEmotions: emotions, updatedAt: Date.now() }, world);
+          props.onRefresh();
+        } : undefined} />
+      </SettingsCard>
       <SettingsCard icon={<Languages />} title={props.t("language")}>
         <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
       </SettingsCard>
@@ -829,7 +830,7 @@ function SettingsView(props: {
       <SettingsCard icon={<FileKey2 />} title={u("backup")}>
         <p className="setting-copy">{u("backupHint")}</p>
         <label className="field-label"><span className="help-field-title">{u("backupPassword")}</span><input className="input" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-        <div className="button-grid"><HelpButton className="button secondary" disabled={backupBusy} onClick={() => void exportBackup(false)}><Download />{props.t("plainJson")}</HelpButton><HelpButton className="button secondary" disabled={backupBusy || !password} onClick={() => void exportBackup(true)}><KeyRound />{props.t("encryptedBackup")}</HelpButton><HelpButton className="button secondary" disabled={backupBusy} onClick={() => fileInput.current?.click()}><Upload />{props.t("importData")}</HelpButton></div>
+        <div className="button-grid"><HelpButton className="button secondary" disabled={backupBusy} onClick={props.onExport}><Download />{exportText(props.settings.locale, "title")}</HelpButton><HelpButton className="button secondary" disabled={backupBusy} onClick={() => fileInput.current?.click()}><Upload />{props.t("importData")}</HelpButton></div>
         <input ref={fileInput} hidden type="file" accept=".json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = ""; }} />
       </SettingsCard>
       </div>
@@ -969,4 +970,3 @@ function LoadingScreen() { return <div className="center-screen"><div className=
 function useTranslator() { return (key: MessageKey, vars?: Record<string, string | number>) => translate("en", key, vars); }
 
 async function notifyDataChanged() { try { await browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage); } catch { /* no active listeners */ } }
-function downloadJson(name: string, value: unknown) { const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = name; link.click(); URL.revokeObjectURL(url); }

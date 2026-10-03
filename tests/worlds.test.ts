@@ -7,6 +7,8 @@ import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parseWorldPackage, removeEntity, removeWorld } from "../src/storage/worlds";
 import { createBackup, parseBackup, restoreBackup } from "../src/storage/backup";
+import { EMPTY_CHARACTER, emotionsFor, characterInstruction } from "../src/core/characters";
+import { getSettings, saveSettings } from "../src/storage/settings";
 
 const now = 123;
 const world: WorldProfile = { id: "w1", name: "World one", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: now, updatedAt: now };
@@ -96,6 +98,38 @@ describe("world repository operations", () => {
     const entry = await repo.get<MemoryEntry>("entry", "m1");
     expect(entry?.content).toBe(memory().content); expect(entry?.entityIds).toEqual([]);
     expect((await repo.get<MemoryBook>("book", book.id))?.worldId).toBeNull();
+  });
+  it("transfers world emotions and portrait bytes without changing global settings or lore", async () => {
+    const { repo } = await setup();
+    const previous = await getSettings();
+    try {
+      await saveSettings({ ...previous, characterEmotions: ["neutral", "laugh"] });
+      await repo.put("entity", { ...character, characterSheet: { ...EMPTY_CHARACTER, sprites: { laugh: "data:image/png;base64,YQ==" } } });
+      const pack = parseWorldPackage(JSON.stringify(await exportWorld(world.id, repo)));
+      const exported = pack.records.find(r => r.kind === "world")!.data as WorldProfile;
+      expect(exported.characterEmotions).toEqual(["neutral", "laugh"]);
+      expect((await repo.get<WorldProfile>("world", world.id))?.characterEmotions).toBeUndefined();
+      const copy = cloneWorldPackage(pack, "Transferred");
+      await repo.mergeRecords(copy);
+      const copied = copy.find(r => r.kind === "world")!.data as WorldProfile;
+      expect(copied.characterEmotions).toEqual(exported.characterEmotions);
+      expect((copy.find(r => r.kind === "entity")!.data as SceneEntity).characterSheet?.sprites.laugh).toBe("data:image/png;base64,YQ==");
+      expect((copy.find(r => r.kind === "entry")!.data as MemoryEntry).content).toBe(memory().content);
+      await saveSettings({ ...previous, characterEmotions: ["neutral", "angry"] });
+      expect(emotionsFor(copied.characterEmotions)).toEqual(["neutral", "laugh"]);
+      const instruction = characterInstruction(world.id, "chat", [character], undefined, ["neutral", "laugh"], [], "");
+      expect(instruction).toContain("laugh");
+      expect((await getSettings()).characterEmotions).toEqual(["neutral", "angry"]);
+    } finally { await saveSettings(previous); }
+  });
+  it("rejects invalid world emotion lists and still accepts legacy packages", async () => {
+    const { repo } = await setup();
+    const pack = await exportWorld(world.id, repo);
+    const exported = pack.records.find(r => r.kind === "world")!.data as WorldProfile;
+    delete exported.characterEmotions;
+    expect(() => parseWorldPackage(JSON.stringify(pack))).not.toThrow();
+    exported.characterEmotions = ["laugh"];
+    expect(() => parseWorldPackage(JSON.stringify(pack))).toThrow();
   });
   it("duplicating/deleting profiles only changes links, not lore", async () => {
     const { repo } = await setup();

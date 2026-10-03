@@ -35,7 +35,7 @@ test("full restore requires explicit consent; Escape cancels without writing", a
 test("invalid plain backup is not mistaken for a wrong password", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
-  await page.getByLabel("Пароль для файла (необязательно)", { exact: true }).fill("A password for future exports");
+  await page.getByLabel("Пароль для импорта (если нужен)", { exact: true }).fill("An import password");
   await page.locator('input[type="file"]').setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from('{"format":"deeprole-backup","records":[]}') });
   await expect(page.getByRole("status")).toHaveText("Не удалось прочитать резервную копию");
   expect(await readEntries(page)).toHaveLength(2);
