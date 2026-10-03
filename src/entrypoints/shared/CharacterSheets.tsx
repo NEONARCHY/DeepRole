@@ -2,9 +2,10 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2, Expand, Pencil, ArrowLeft } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutors } from "../../core/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutors, characterSaveError } from "../../core/characters";
 import type { CharacterEdit } from "../../storage/characters";
 import { MAX_PORTRAIT_VARIATIONS, portraitVariations, scenePortraitIndex } from "../../core/portrait-variations";
+import { characterEditBaseline, type CharacterEditBaseline } from "../../core/character-edit";
 
 function CharacterPortrait({ sheet, emotion, variation = 0, ...attributes }: Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & { sheet?: CharacterSheet; emotion?: string; variation?: number }) {
   const image = useRef<HTMLImageElement>(null);
@@ -42,7 +43,8 @@ export function CharacterSettings({ settings, onSettings, worldEmotions, onEmoti
 export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[]; scene?: CharacterScene; emotions: string[]; base: string; worldId: string; chatId: string; status: CharacterCopyKey; generating?: boolean; onSave: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<void>; onRetry: () => void; openId?: string | null; onOpened?: () => void }) {
   const panel = useRef<HTMLElement>(null);
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
-  const [edit, setEdit] = useState<{ entity: SceneEntity | null; scene?: CharacterScene; base: string } | null>(null);
+  const [edit, setEdit] = useState<{ entity: SceneEntity | null; scene?: CharacterScene; base: string; original: CharacterEditBaseline } | null>(null);
+  const openEdit = (entity: SceneEntity | null) => setEdit({ entity, scene: props.scene, base: props.base, original: characterEditBaseline(entity, props.entities, props.scene) });
   const [gallery, setGallery] = useState(false); const [galleryQuery, setGalleryQuery] = useState("");
   const galleryRef = useRef<HTMLDivElement>(null); const galleryOrigin = useRef<HTMLElement | null>(null); const editOrigin = useRef<HTMLElement | null>(null);
   const [castView, setCastView] = useState<"scene" | "all">("scene"); const [query, setQuery] = useState("");
@@ -56,7 +58,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
   useEffect(() => {
     if (!props.openId) return;
     const entity = props.entities.find(e => e.id === props.openId);
-    if (entity) setEdit({ entity, scene: props.scene, base: props.base });
+    if (entity) openEdit(entity);
     props.onOpened?.();
   }, [props.openId]);
   const entities = [...props.entities].sort((a, b) => Number(!!b.characterSheet?.protagonist) - Number(!!a.characterSheet?.protagonist) || Number(props.scene?.presentIds.includes(b.id)) - Number(props.scene?.presentIds.includes(a.id)) || a.name.localeCompare(b.name));
@@ -64,8 +66,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
   const shown = (castView === "all" ? entities : cast).filter(entity => castView !== "all" || [entity.name, ...entity.aliases].some(name => name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
   const partners = new Set(characterInterlocutors(props.entities, props.scene).map(person => person.id));
   const role = (entity: SceneEntity) => t(entity.characterSheet?.protagonist ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : props.scene?.presentIds.includes(entity.id) ? "present" : "absent");
-  const openEdit = (entity: SceneEntity | null) => setEdit({ entity, scene: props.scene, base: props.base });
-  const editor = edit && <CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} embedded={gallery} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={!!edit.entity && characterInterlocutors(props.entities, edit.scene).some(person => person.id === edit.entity!.id)} emotions={props.emotions} onClose={() => setEdit(null)} onExit={() => { setEdit(null); setGallery(false); }} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />;
+  const editor = edit && <CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} embedded={gallery} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={edit.original.interlocutor} emotions={props.emotions} onClose={() => setEdit(null)} onExit={() => { setEdit(null); setGallery(false); }} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, original: edit.original, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />;
   return <section ref={panel} className="dr-characters" aria-label={t("title")}>
     <header><strong>{t("title")}</strong><div className="dr-character-header-actions"><button type="button" aria-label={t("openGallery")} title={t("openGallery")} onClick={event => { galleryOrigin.current = event.currentTarget; editOrigin.current = null; setGallery(true); }}><Expand size={16} /></button><button type="button" aria-label={t("add")} title={t("add")} disabled={entities.length >= 40} onClick={() => openEdit(null)}><Plus size={16} /></button></div></header>
     <p className="dr-character-status" role="status">{t(props.generating ? "waiting" : props.status)}</p>
@@ -80,7 +81,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
     </>}
     {shown.length ? <div className="dr-character-list">{shown.map(entity => {
       const state = props.scene?.states[entity.id];
-      return <button key={entity.id} className="dr-character-row" type="button" onClick={() => setEdit({ entity, scene: props.scene, base: props.base })} title={`${t("edit")}: ${entity.name}. ${state?.condition || t("noState")}`}>
+      return <button key={entity.id} className="dr-character-row" type="button" onClick={() => openEdit(entity)} title={`${t("edit")}: ${entity.name}. ${state?.condition || t("noState")}`}>
         <span><strong>{entity.name}</strong><small>{role(entity)}</small></span><small className="dr-character-row-mood">{state ? emotionLabel(props.locale, state.emotion) : t("noState")}</small>
       </button>;
     })}</div> : <p>{t(entities.length ? castView === "all" ? "noMatches" : "noCast" : "empty")}</p>}
@@ -158,7 +159,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
     }
   }}><div ref={dialog} className={props.embedded ? "dr-character-editor" : "dr-character-dialog"} role={props.embedded ? undefined : "dialog"} aria-modal={props.embedded ? undefined : true} aria-labelledby={props.embedded ? undefined : "dr-character-editor-title"}>
     <header>{props.embedded && <button type="button" aria-label={t("backGallery")} title={t("backGallery")} disabled={busy || uploading} onClick={close}><ArrowLeft size={18} /></button>}<h2 id="dr-character-editor-title">{props.entity?.name ?? t("add")}</h2><button type="button" aria-label={t("cancel")} disabled={busy || uploading} onClick={exit}><X size={20} /></button></header>
-    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).catch(error => { if (mounted.current) setError(error instanceof Error && error.message === "character-images-full" ? "imagesFull" : "failed"); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
+    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).catch(error => { if (mounted.current) setError(characterSaveError(error)); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
       <div className="dr-character-editor-body">
         <p className="dr-character-hint">{t("scope")}</p>
         <fieldset disabled={busy}><legend>{t("profile")}</legend>

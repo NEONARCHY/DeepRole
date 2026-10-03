@@ -4,18 +4,20 @@ import { characterRevision, characterTurnKey, characterInterlocutors, DEFAULT_EM
 import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
 import { advancePortraitCycles, portraitVariations } from "../core/portrait-variations";
+import { characterEditBaseline, mergeCharacterEdit, type CharacterEditBaseline } from "../core/character-edit";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string }
 export interface CharacterEdit extends CharacterScope {
   entityId: string | null; name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean;
+  original?: CharacterEditBaseline;
 }
-function current(all: DataRecord[], scope: CharacterScope) {
+function current(all: DataRecord[], scope: CharacterScope, checkRevision = true) {
   if ([scope.worldId, scope.chatId].some(id => !id || ["__proto__", "prototype", "constructor"].includes(id))) throw new Error("character-scope");
   const binding = all.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === scope.chatId)?.data as ChatBinding | undefined;
   const entities = all.filter(r => r.kind === "entity" && (r.data as SceneEntity).worldId === scope.worldId && (r.data as SceneEntity).kind === "character").map(r => r.data as SceneEntity);
   if (!binding || binding.worldId !== scope.worldId || !isSameDeepSeekChat(binding.chatUrl, scope.chatUrl, scope.chatId) || !all.some(r => r.kind === "world" && r.id === scope.worldId)) throw new Error("character-scope");
   const scene = binding.characterScenes?.[scope.worldId];
-  if (characterRevision(entities, scene) !== scope.base) throw new Error("character-conflict");
+  if (checkRevision && characterRevision(entities, scene) !== scope.base) throw new Error("character-conflict");
   return { binding, entities, scene };
 }
 const record = (kind: "entity" | "binding", data: SceneEntity | ChatBinding): DataRecord => ({ kind, id: data.id, data });
@@ -23,10 +25,16 @@ const record = (kind: "entity" | "binding", data: SceneEntity | ChatBinding): Da
 export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository): Promise<void> {
   if (!edit.name.trim() || edit.name.length > 80 || !validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
   if ((edit.interlocutor !== undefined && typeof edit.interlocutor !== "boolean") || (edit.interlocutor === true && (!edit.present || edit.sheet.protagonist))) throw new Error("character-invalid");
+  const original = edit.original;
+  if (original !== undefined && (!original || typeof original.name !== "string" || original.name.length > 80 || !validCharacterSheet(original.sheet) || !validCharacterStatus(original.state) || typeof original.present !== "boolean" || typeof original.interlocutor !== "boolean" || !Array.isArray(original.protagonists) || original.protagonists.length > 40 || !original.protagonists.every(id => typeof id === "string" && id.length <= 160))) throw new Error("character-invalid");
   await repo.updateRecords(all => {
-    const { binding, entities, scene } = current(all, edit);
+    const { binding, entities, scene } = current(all, edit, !original);
     const before = entities.find(e => e.id === edit.entityId);
     if (edit.entityId && !before || !before && entities.length >= 40) throw new Error("character-conflict");
+    // Model updates retain strict revision checks. Manual edits use their opening
+    // snapshot to merge disjoint fields atomically under the same library lock.
+    if (original) edit = { ...edit, ...mergeCharacterEdit(original, edit, characterEditBaseline(before ?? null, entities, scene)) };
+    if (!validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
     const now = Date.now();
     const entity: SceneEntity = { ...(before ?? { id: createId("entity"), kind: "character", worldId: edit.worldId, description: "", aliases: [], memberIds: [], createdAt: now }), name: edit.name.trim(), characterSheet: structuredClone(edit.sheet), updatedAt: Math.max(now, (before?.updatedAt ?? 0) + 1) };
     const changes: DataRecord[] = [record("entity", entity)];

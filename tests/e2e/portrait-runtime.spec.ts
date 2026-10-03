@@ -78,5 +78,38 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.reload(); await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
     await expect(chat.locator(".dr-characters")).toBeHidden();
     await chat.locator('[data-restore-widget="characters"]').click(); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
+    // A new protagonist must accept emotion images in the same save, and again after reopening.
+    await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    await dialog.getByRole("checkbox", { name: "My protagonist", exact: true }).check();
+    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
+    await dialog.locator('input[type=file]').setInputFiles({ name: "hero.png", mimeType: "image/png", buffer: Buffer.from(variations[0]!.split(",")[1]!, "base64") });
+    await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);
+    // A reply can finish while the portrait picker/editor is open.
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon notices the telescope is unlocked." }) }));
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: "happy", goal: "Open the telescope" } }] });
+    await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Open the telescope");
+    await dialog.getByRole("button", { name: "Save character", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    let hero = (await records()).find(r => r.id === "leon").data;
+    expect(hero.characterSheet.protagonist).toBe(true);
+    expect(hero.characterSheet.sprites.happy).toHaveLength(1);
+    expect((await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Open the telescope");
+    await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
+    await dialog.locator('input[type=file]').setInputFiles({ name: "hero2.png", mimeType: "image/png", buffer: Buffer.from(variations[1]!.split(",")[1]!, "base64") });
+    await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
+    await chat.screenshot({ path: info.outputPath("protagonist-emotion-portraits.png") });
+    await dialog.getByRole("button", { name: "Save character", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    hero = (await records()).find(r => r.id === "leon").data;
+    expect(hero.characterSheet.sprites.happy).toHaveLength(2);
+    expect((await records()).filter(r => r.kind === "entity" && r.data.characterSheet.protagonist).map(r => r.id)).toEqual(["leon"]);
+    await chat.reload(); await append();
+    await expect(chat.locator('.dr-cast-widget[data-character-id="leon"] img')).toHaveAttribute("src", new RegExp("^data:image/"));
+    await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    await expect(dialog.getByRole("checkbox", { name: "My protagonist", exact: true })).toBeChecked();
+    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
+    await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
+    await expect(dialog.getByLabel("Current goal", { exact: true })).toHaveValue("Open the telescope");
   } finally { await context.close(); }
 });

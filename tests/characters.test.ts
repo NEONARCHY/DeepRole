@@ -9,6 +9,7 @@ import { parseBackup, createBackup } from "../src/storage/backup";
 import { injectIntoJsonBody } from "../src/core/request-injection";
 import type { ChatBinding, SceneEntity, WorldProfile } from "../src/core/types";
 import { isSameDeepSeekChat } from "../src/core/chat-scope";
+import { characterEditBaseline } from "../src/core/character-edit";
 
 const entity: SceneEntity = { id: "mira", worldId: "w", name: "Mira", kind: "character", description: "  ORIGINAL LORE\n", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, appearance: "Blue coat", sprites: {} } };
 const world: WorldProfile = { id: "w", name: "World", description: "", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
@@ -23,6 +24,86 @@ afterEach(async () => { await Promise.all(databases.map(db => db.delete())); dat
 const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base: characterRevision([entity]) });
 const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
+
+describe("manual portrait edits alongside live updates", () => {
+  const images = { happy: ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"] };
+  const opened = () => ({ ...scope(), original: characterEditBaseline(entity, [entity]), entityId: entity.id, name: entity.name, sheet: structuredClone(entity.characterSheet!), state: structuredClone(EMPTY_STATUS), present: false });
+
+  it("saves a new protagonist and emotion images without rolling back a reply received while editing", async () => {
+    const repo = await setup(); const edit = opened();
+    edit.sheet.protagonist = true; edit.sheet.sprites = images;
+    await applyCharacterTurn(scope(), turn(), undefined, repo);
+    const live = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    await saveCharacter(edit, repo);
+    const person = (await repo.get<SceneEntity>("entity", entity.id))!;
+    const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    expect(person.characterSheet!.sprites).toEqual(images);
+    expect(person.characterSheet!.protagonist).toBe(true);
+    expect(person.description).toBe(entity.description);
+    expect(scene.states).toEqual(live.states); expect(scene.presentIds).toEqual(live.presentIds);
+    expect(scene.lastReply).toBe(live.lastReply); expect(scene.partnerIds).toEqual([]);
+    expect((await repo.get<ChatBinding>("binding", "binding:b"))!.characterScenes).toBeUndefined();
+    expect((await repo.rawRecords()).every(validDataRecord)).toBe(true);
+  });
+
+  it("preserves unrelated state changes while applying a manually edited field", async () => {
+    const repo = await setup(); const edit = opened(); edit.state.goal = "Find the telescope";
+    await applyCharacterTurn(scope(), turn(), undefined, repo);
+    await saveCharacter(edit, repo);
+    const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    expect(scene.states.mira).toMatchObject({ ...turn().updates[0]!.state, goal: edit.state.goal });
+  });
+
+  it("merges separate emotions uploaded in two editors", async () => {
+    const repo = await setup(); const first = opened(), second = opened();
+    first.sheet.sprites.happy = images.happy; second.sheet.sprites.neutral = images.happy[0]!;
+    await saveCharacter(first, repo); await saveCharacter(second, repo);
+    expect((await repo.get<SceneEntity>("entity", entity.id))!.characterSheet!.sprites).toEqual({ ...images, neutral: images.happy[0] });
+  });
+
+  it.each(["portrait", "profile", "state"])("rejects competing edits to the same %s without a partial save", async kind => {
+    const repo = await setup(); const first = opened(), second = opened();
+    if (kind === "portrait") { first.sheet.sprites.happy = images.happy[0]!; second.sheet.sprites.happy = images.happy[1]!; }
+    if (kind === "profile") { first.sheet.appearance = "Green coat"; second.sheet.appearance = "Red coat"; }
+    if (kind === "state") { first.state.goal = "Open the door"; second.state.goal = "Close the door"; }
+    await saveCharacter(first, repo); const before = await repo.rawRecords();
+    second.sheet.protagonist = true;
+    await expect(saveCharacter(second, repo)).rejects.toThrow("character-edit-conflict");
+    expect(await repo.rawRecords()).toEqual(before);
+    expect(second.sheet.protagonist).toBe(true); // failed save does not mutate the draft
+  });
+
+  it("accepts identical concurrent edits instead of reporting a conflict", async () => {
+    const repo = await setup(); const edit = opened(); edit.sheet.sprites = images;
+    await saveCharacter(edit, repo); await expect(saveCharacter(edit, repo)).resolves.toBeUndefined();
+  });
+
+  it("does not restore a hero deselected elsewhere when saving only their portrait", async () => {
+    const repo = await setup(); const hero = { ...entity, characterSheet: { ...entity.characterSheet!, protagonist: true } };
+    const leon = { ...entity, id: "leon", name: "Leon" };
+    await repo.put("entity", hero); await repo.put("entity", leon);
+    const edit = { ...opened(), sheet: { ...hero.characterSheet, sprites: images }, original: characterEditBaseline(hero, [hero, leon]) };
+    await saveCharacter({ ...opened(), entityId: leon.id, name: leon.name, original: characterEditBaseline(leon, [hero, leon]), sheet: { ...leon.characterSheet!, protagonist: true } }, repo);
+    await saveCharacter(edit, repo);
+    expect((await repo.get<SceneEntity>("entity", entity.id))!.characterSheet).toMatchObject({ protagonist: false, sprites: images });
+    expect((await repo.get<SceneEntity>("entity", leon.id))!.characterSheet!.protagonist).toBe(true);
+  });
+
+  it("does not override another editor's new hero selection", async () => {
+    const repo = await setup(); const leon = { ...entity, id: "leon", name: "Leon" }; await repo.put("entity", leon);
+    const edit = { ...opened(), sheet: { ...entity.characterSheet!, protagonist: true }, original: characterEditBaseline(entity, [entity, leon]) };
+    await saveCharacter({ ...opened(), entityId: leon.id, name: leon.name, original: characterEditBaseline(leon, [entity, leon]), sheet: { ...leon.characterSheet!, protagonist: true } }, repo);
+    const before = await repo.rawRecords(); await expect(saveCharacter(edit, repo)).rejects.toThrow("character-edit-conflict"); expect(await repo.rawRecords()).toEqual(before);
+  });
+
+  it.each(["world", "chat", "deleted"])("keeps %s protections even with an editor baseline", async kind => {
+    const repo = await setup(); const edit = opened(); edit.sheet.sprites = images;
+    if (kind === "world") await repo.put("binding", { ...binding, worldId: null });
+    if (kind === "chat") edit.chatUrl = "https://chat.deepseek.com/chat/s/b";
+    if (kind === "deleted") await repo.delete("entity", entity.id);
+    const before = await repo.rawRecords(); await expect(saveCharacter(edit, repo)).rejects.toThrow(/character-(scope|conflict)/); expect(await repo.rawRecords()).toEqual(before);
+  });
+});
 
 it("preserves portrait variations through saves, automatic updates and portable/full exports", async () => {
   const repo = await setup(); const sprites = { neutral: ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"] };

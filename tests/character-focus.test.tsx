@@ -1,10 +1,28 @@
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { CharacterPanel } from "../src/entrypoints/shared/CharacterSheets";
-import { EMPTY_CHARACTER, EMPTY_STATUS } from "../src/core/characters";
+import { EMPTY_CHARACTER, EMPTY_STATUS, characterSaveError } from "../src/core/characters";
 import type { SceneEntity } from "../src/core/types";
 
 afterEach(() => { cleanup(); document.body.replaceChildren(); vi.restoreAllMocks(); });
+
+it("keeps the opening baseline and draft when the live scene changes", async () => {
+  const entity: SceneEntity = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "", aliases: [], memberIds: [], characterSheet: EMPTY_CHARACTER, createdAt: 1, updatedAt: 1 };
+  const scene = { revision: "1", presentIds: ["mira"], states: { mira: EMPTY_STATUS }, updatedAt: 1 };
+  const onSave = vi.fn(async () => {});
+  const props = { locale: "en" as const, entities: [entity], scene, emotions: ["neutral"], base: "old", worldId: "w", chatId: "a", status: "updated" as const, onSave, onRetry: vi.fn() };
+  const view = render(<CharacterPanel {...props} />);
+  fireEvent.click(view.getByRole("button", { name: /Mira/ }));
+  fireEvent.click(view.getByRole("checkbox", { name: "My protagonist" }));
+  view.rerender(<CharacterPanel {...props} base="new" scene={{ ...scene, revision: "2", states: { mira: { ...EMPTY_STATUS, goal: "New scene goal" } } }} />);
+  fireEvent.click(view.getByRole("button", { name: "Save character" }));
+  await waitFor(() => expect(view.queryByRole("dialog")).toBeNull());
+  expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ base: "old", sheet: expect.objectContaining({ protagonist: true }), interlocutor: false, original: expect.objectContaining({ sheet: EMPTY_CHARACTER, state: EMPTY_STATUS, interlocutor: true }) }));
+});
+
+it.each([["character-edit-conflict", "saveConflict"], ["character-invalid", "saveInvalid"], ["character-images-full", "imagesFull"], ["character-scope", "saveScope"], ["character-limit", "saveLimit"], ["offline", "saveFailed"]])("distinguishes %s from other save failures", (error, key) => {
+  expect(characterSaveError(new Error(error))).toBe(key);
+});
 
 it("returns focus to a portrait in another shadow root after closing its editor", () => {
   const widget = document.createElement("div"); const root = widget.attachShadow({ mode: "open" });

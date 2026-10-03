@@ -93,7 +93,7 @@ test("upload fallback, failed save keeps draft, custom emotions validation", asy
   await expectPortraitRatio(dialog.locator(".dr-character-portrait-editor img"), false);
   await page.evaluate(() => { (window as any).rejectSave = true; });
   await dialog.getByLabel("Name", { exact: true }).fill("Mira edited"); await dialog.getByRole("button", { name: "Save character" }).click();
-  await expect(dialog.getByRole("alert")).toContainText("Couldn’t save"); await expect(dialog.getByLabel("Name", { exact: true })).toHaveValue("Mira edited");
+  await expect(dialog.getByRole("alert")).toContainText("Couldn’t reach storage"); await expect(dialog.getByLabel("Name", { exact: true })).toHaveValue("Mira edited");
   await page.evaluate(() => { (window as any).rejectSave = false; }); await dialog.getByRole("button", { name: "Save character" }).click();
   await page.getByLabel("Portrait emotions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save emotions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep neutral");
   await page.getByLabel("Portrait emotions", { exact: true }).fill("neutral\nFocused"); await page.getByRole("button", { name: "Save emotions" }).click();

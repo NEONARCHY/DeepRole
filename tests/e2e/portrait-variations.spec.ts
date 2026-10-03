@@ -4,6 +4,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multip
   await page.setViewportSize({ width, height: 900 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   const images = await page.evaluate(() => ["#4a68b9", "#d3a36a", "#83bba7"].map(color => { const canvas = document.createElement("canvas"); canvas.width = 120; canvas.height = 160; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 120, 160); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(60, 54, 22, 0, 2 * Math.PI); ctx.fill(); return canvas.toDataURL("image/png").split(",")[1]!; }));
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");
+  await dialog.getByRole("checkbox", { name: locale === "ru" ? "Мой главный герой" : "My protagonist", exact: true }).check();
   await dialog.locator("input[type=file]").setInputFiles(images.map((image, i) => ({ name: `portrait-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") })));
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(3);
   const preview = dialog.locator(".dr-character-portrait-editor img"); const first = await preview.getAttribute("src");
@@ -12,6 +13,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multip
   await page.screenshot({ path: info.outputPath(`variations-${locale}-${width}.png`) });
   await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
   expect(await page.evaluate(() => (window as any).saved.sheet.sprites.happy.length)).toBe(3);
+  expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ sheet: { protagonist: true }, interlocutor: false, original: { sheet: { protagonist: false }, interlocutor: true } });
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(3);
   await dialog.locator(".dr-portrait-variations>div").nth(1).locator("button").last().click();
