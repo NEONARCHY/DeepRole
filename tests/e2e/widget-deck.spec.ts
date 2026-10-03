@@ -1,5 +1,27 @@
 import { test, expect } from "@playwright/test";
 
+test("legacy overlaps, pointer collisions and tiny viewport have safe spacing", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.addInitScript(() => localStorage.setItem("deeprole.widgetLayout.v1", JSON.stringify({ minimized: [], together: false, positions: Object.fromEntries(["dock", "meter", "memory", "characters", "scene", "choices"].map(id => [id, { x: .1, y: .1 }])) })));
+  await page.goto("/tests/fixtures/page-widget.html?panels=1&locale=en");
+  const overlaps = () => page.locator(".dr-widget-dock,.dr-widget-tile:not([hidden])").evaluateAll(nodes => {
+    const rects = nodes.map(n => n.getBoundingClientRect());
+    return rects.flatMap((a, i) => rects.slice(i + 1).filter(b => a.left < b.right + 7.5 && a.right + 7.5 > b.left && a.top < b.bottom + 7.5 && a.bottom + 7.5 > b.top)).length;
+  });
+  await expect(page.locator(".dr-widget-tile")).toHaveCount(5); await expect.poll(overlaps).toBe(0);
+  const panel = page.locator('[data-widget="characters"]'); await panel.hover();
+  const grip = (await panel.locator(".dr-widget-move").boundingBox())!, target = (await page.locator('[data-widget="meter"]').boundingBox())!;
+  await page.mouse.move(grip.x + 5, grip.y + 5); await page.mouse.down(); await page.mouse.move(target.x + 8, target.y + 8, { steps: 8 }); await page.mouse.up();
+  await expect.poll(overlaps).toBe(0);
+  await panel.hover(); await panel.locator(".dr-widget-tools button").last().click(); await page.locator('[data-restore-widget="characters"]').click();
+  await expect.poll(overlaps).toBe(0); await page.screenshot({ path: info.outputPath("safe-panels.png") });
+  await page.setViewportSize({ width: 320, height: 400 });
+  await expect(page.locator(".dr-widget-deck")).toHaveAttribute("data-overflow", "true"); await expect.poll(overlaps).toBe(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath("safe-panels-small.png") });
+  await page.setViewportSize({ width: 1100, height: 900 }); await expect(page.locator(".dr-widget-deck")).not.toHaveAttribute("data-overflow", "true"); await expect.poll(overlaps).toBe(0);
+});
+
 for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`independent panels and minimized dock ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 950 });
   await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);

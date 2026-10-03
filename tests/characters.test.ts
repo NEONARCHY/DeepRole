@@ -10,6 +10,7 @@ import { injectIntoJsonBody } from "../src/core/request-injection";
 import type { ChatBinding, SceneEntity, WorldProfile } from "../src/core/types";
 import { isSameDeepSeekChat } from "../src/core/chat-scope";
 import { characterEditBaseline } from "../src/core/character-edit";
+import { assignLibraryImages, withPortraitLibrary } from "../src/core/portrait-library";
 
 const entity: SceneEntity = { id: "mira", worldId: "w", name: "Mira", kind: "character", description: "  ORIGINAL LORE\n", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, appearance: "Blue coat", sprites: {} } };
 const world: WorldProfile = { id: "w", name: "World", description: "", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
@@ -24,6 +25,37 @@ afterEach(async () => { await Promise.all(databases.map(db => db.delete())); dat
 const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base: characterRevision([entity]) });
 const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
+
+it("persists an unassigned library through live updates, reopening, assignment and both exports", async () => {
+  const repo = await setup(); const images = Array.from({ length: 20 }, (_, i) => `data:image/png;base64,${btoa(`image-${i}`)}`);
+  const edit = { ...scope(), original: characterEditBaseline(entity, [entity]), entityId: entity.id, name: entity.name, sheet: withPortraitLibrary(entity.characterSheet!, images), state: EMPTY_STATUS, present: false };
+  await applyCharacterTurn(scope(), turn(), undefined, repo); await saveCharacter(edit, repo);
+  let person = (await repo.get<SceneEntity>("entity", entity.id))!;
+  expect(person.characterSheet!.portraitLibrary).toEqual(images);
+  const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+  expect(scene.states.mira!.condition).toBe("Safe");
+  await saveCharacter({ ...edit, base: characterRevision([person], scene), original: characterEditBaseline(person, [person], scene), sheet: assignLibraryImages(person.characterSheet!, "happy", images.slice(0, 3)), state: scene.states.mira!, present: true }, repo);
+  person = (await repo.get<SceneEntity>("entity", entity.id))!;
+  expect(person.characterSheet!.portraitLibrary).toEqual(images.slice(3)); expect(person.characterSheet!.sprites.happy).toEqual(images.slice(0, 3));
+  const currentScene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+  const base = characterRevision([person], currentScene);
+  await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, updates: [{ id: "mira", state: { ...EMPTY_STATUS, goal: "Open the observatory" } }] }, undefined, repo);
+  expect((await repo.get<SceneEntity>("entity", entity.id))!.characterSheet).toEqual(person.characterSheet);
+  const pack = await parseWorldPackage(JSON.stringify(await exportWorld("w", repo)));
+  expect((cloneWorldPackage(pack).find(r => r.kind === "entity")!.data as SceneEntity).characterSheet).toEqual(person.characterSheet);
+  expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(await repo.rawRecords());
+});
+
+it("rejects conflicting library edits and over-budget libraries without partial writes", async () => {
+  const repo = await setup(); const edit = { ...scope(), original: characterEditBaseline(entity, [entity]), entityId: entity.id, name: entity.name, sheet: { ...entity.characterSheet!, portraitLibrary: ["data:image/png;base64,AAAA"] }, state: EMPTY_STATUS, present: false };
+  await saveCharacter(edit, repo); const before = await repo.rawRecords();
+  await expect(saveCharacter({ ...edit, sheet: { ...edit.sheet, portraitLibrary: ["data:image/png;base64,BBBB"] } }, repo)).rejects.toThrow("character-edit-conflict");
+  expect(await repo.rawRecords()).toEqual(before);
+  const person = (await repo.get<SceneEntity>("entity", entity.id))!;
+  const images = Array.from({ length: 140 }, (_, i) => "data:image/png;base64," + btoa(String(i).padStart(6, "0")) + "A".repeat(179000));
+  await expect(saveCharacter({ ...edit, original: characterEditBaseline(person, [person]), sheet: { ...edit.sheet, portraitLibrary: images } }, repo)).rejects.toThrow("character-images-full");
+  expect(await repo.rawRecords()).toEqual(before);
+});
 
 describe("manual portrait edits alongside live updates", () => {
   const images = { happy: ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"] };

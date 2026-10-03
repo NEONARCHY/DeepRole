@@ -55,7 +55,10 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     changes.push(record("binding", next));
     // Keep full backup sizes practical. Images are encrypted with the rest of the library.
     const replaced = new Set(changes.map(r => r.id));
-    const bytes = [...all.filter(r => r.kind === "entity" && !replaced.has(r.id)), ...changes.filter(r => r.kind === "entity")].reduce((sum, r) => sum + Object.values((r.data as SceneEntity).characterSheet?.sprites ?? {}).flatMap(portraitVariations).reduce((n, s) => n + s.length, 0), 0);
+    const bytes = [...all.filter(r => r.kind === "entity" && !replaced.has(r.id)), ...changes.filter(r => r.kind === "entity")].reduce((sum, r) => {
+      const sheet = (r.data as SceneEntity).characterSheet;
+      return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? [])].reduce((n, s) => n + s.length, 0);
+    }, 0);
     if (bytes > 25_000_000) throw new Error("character-images-full");
     return { records: changes, removed: [], result: undefined };
   });

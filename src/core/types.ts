@@ -47,6 +47,8 @@ export interface CharacterSheet {
   background: string;
   /** A string is the legacy single portrait; arrays are emotion variations. */
   sprites: Record<string, string | string[]>;
+  /** Unassigned local images. Assigned images are reused from sprites. */
+  portraitLibrary?: string[];
 }
 
 export interface CharacterStatus {

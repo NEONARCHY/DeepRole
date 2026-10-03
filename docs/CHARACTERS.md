@@ -57,6 +57,14 @@ BDS переносит названия, текст и режимы записе
 
 ## Портреты и эмоции
 
+### Загрузить пачку и назначить эмоции позже
+
+В карточке персонажа откройте **Портреты и эмоции → Библиотека изображений → Загрузить в библиотеку**. Выберите сразу несколько файлов. Они появятся в разделе **Без эмоции** — заранее распределять их не нужно.
+
+Нажмите нужные миниатюры, выберите эмоцию внизу и нажмите **Назначить эмоции**. Для другой эмоции можно выбрать другие картинки или повторно использовать те же из вкладки **Все**. Чтобы оставить распределение на потом, просто нажмите **Сохранить персонажа**: неназначенные картинки тоже сохранятся. Без этой кнопки изменения остаются черновиком.
+
+Библиотека отдельная у каждого персонажа. Она переносится с экспортом мира и полной копией. Картинки не отправляются DeepSeek. До 256 неназначенных изображений на персонажа; до 12 вариаций на эмоцию. Общий лимит изображений расширения — 25 МБ после обработки. Удаление вариации из эмоции оставляет картинку в библиотеке; окончательно убрать неназначенную картинку можно корзиной в библиотеке.
+
 ### Несколько изображений для одной эмоции
 
 1. Выберите эмоцию в карточке персонажа и нажмите **Добавить изображения**. Можно выбрать сразу несколько файлов. До **12 разных изображений на одну эмоцию**, PNG/JPG/WebP до 5 МБ каждый.
@@ -66,6 +74,8 @@ BDS переносит названия, текст и режимы записе
 Открытие галереи, перемещение, обновление страницы и повторный просмотр ответа не переключают вариацию. При смене настроения используется набор новой эмоции, а при его отсутствии — набор neutral. Порядок сохраняется отдельно для каждого чата. Все вариации входят в экспорт мира и полную копию; текущий шаг круга — только в полную копию вместе с состоянием чата. Старые файлы с одним изображением продолжают работать.
 
 ### Перемещение и сворачивание панелей
+
+Панели контекста, выбора мира, персонажей и блок управления держат между собой зазор минимум 8 пикселей, включая кнопки при наведении. При перетаскивании панель занимает ближайшее свободное место. Старые перекрытия исправляются при показе; разворачивание панели и изменение размера окна тоже учитываются. Если экран слишком мал, панели собираются в прокручиваемую колонку; свободное перемещение возвращается, когда места достаточно. Плавающие портреты персонажей остаются независимыми.
 
 Список персонажей по умолчанию уже. У контекста чата, подключённой памяти, персонажей, переключателя вариантов и мира есть свои ручки перемещения и маленькая кнопка **−**. Они появляются при наведении только на свою панель или при фокусе с клавиатуры; на сенсорном экране доступны постоянно. Нажмите **Вместе**, чтобы любая ручка двигала группу, или используйте общую ручку над панелями. Выключите **Вместе** для независимого перемещения.
 
@@ -98,6 +108,16 @@ BDS переносит названия, текст и режимы записе
 Автотесты покрывают парсер, атомарное сохранение, конфликты, изоляцию чатов, резервные копии, сейф, изображения, клавиатуру и RU/EN-интерфейс на узком экране. Сквозной тест загружает production-расширение в отдельный профиль Edge и проверяет настоящий исходящий запрос на макете DeepSeek. В живом аккаунте отдельно проверены создание карточки, ручное сохранение, смена эмоции и портрета после нейтрального ответа, сохранность после обновления страницы. Проверены браузер Codex и Brave с независимыми библиотеками. Это не гарантия соблюдения формата во всех ответах модели; подробности и ограничения — в ROADMAP.
 
 ## English quick start
+
+### Upload now, assign emotions later
+
+Open a character sheet → **Portraits and emotions → Image library → Upload to library**. Select multiple files at once. They appear under **Unassigned**, so you can organize them later.
+
+Select thumbnails, choose an emotion below, then click **Assign to emotion**. Switch to **All** to reuse an already assigned image for another emotion. Click **Save character** to keep the library, even if you have not assigned any emotions yet. Until then, changes are only a draft.
+
+Each character has a separate library. World exports and full backups include it; images are never sent to DeepSeek. Limits: 256 unassigned images per character, 12 variations per emotion, and 25 MB of processed image data across the extension. Removing an emotion variation keeps its image in the library. Use the library’s trash button to delete an unassigned image.
+
+Context, character, world and control panels keep at least an 8 px gap, including their hover controls. Dragging finds the nearest free space; old overlaps, restored panels and viewport changes are handled too. On very small screens they use a scrollable column until there is enough space for free positioning. Floating character portraits remain independent.
 
 You can select **My protagonist** and upload emotion portraits before pressing **Save character** once. If a scene update arrives while editing, portraits still save and fields you left untouched keep their latest values. Competing changes to the same field or the same emotion’s image set show a warning; unsaved edits remain in the open form.
 

@@ -6,6 +6,19 @@
 .dr-portrait-variations button[aria-pressed=true]{outline:2px solid var(--dr-primary);outline-offset:1px}
 .dr-portrait-variations button>span{position:absolute;bottom:6px;right:6px;background:var(--dr-panel);border-radius:4px;padding:1px 4px}
 .dr-character-settings { display:grid; gap:12px; }
+.dr-portrait-library{display:grid;gap:12px;min-width:0;border-top:1px solid var(--dr-border);padding-top:16px}
+.dr-portrait-library>header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.dr-portrait-library .dr-character-hint{margin:0}
+.dr-portrait-library button[aria-pressed=true]{border-color:var(--dr-primary);background:var(--dr-primary-soft)}
+.dr-portrait-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px;max-height:360px;overflow:auto;overscroll-behavior:contain;padding:3px}
+.dr-portrait-library-grid>article{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dr-portrait-library-grid small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;color:var(--dr-muted);font-size:11px}
+.dr-character-dialog .dr-library-image{position:relative;padding:3px;flex:none}
+.dr-library-image img{display:block;width:100%;aspect-ratio:3/4;object-fit:contain;border-radius:6px}
+.dr-library-image>span{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--dr-action);color:var(--dr-on-action)}
+.dr-library-assign{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;padding-top:12px;border-top:1px solid var(--dr-border)}
+.dr-library-assign>span{align-self:center;color:var(--dr-muted)}
+.dr-library-assign>button{max-width:170px;overflow-wrap:anywhere}
 .dr-characters header { display:flex; align-items:center; justify-content:space-between; gap:var(--dr-space-2); }
 .dr-characters button { color:var(--dr-text); background:var(--dr-surface); border:1px solid var(--dr-border); border-radius:8px; padding:8px; min-height:44px; cursor:pointer; font:inherit; }
 .dr-characters button:hover { background:var(--dr-raised); }

@@ -1,5 +1,6 @@
 import type { CharacterSheet, CharacterStatus, CharacterScene, SceneEntity, Locale } from "./types";
 import { validPortrait, validPortraitVariations, validPortraitCycles, portraitVariations, MAX_STORED_PORTRAIT_EMOTIONS } from "./portrait-variations";
+import { validPortraitLibrary } from "./portrait-library";
 
 export const CHARACTER_MARKER = "<deeprole_characters>";
 export const EMPTY_CHARACTER: CharacterSheet = { gender: "neutral", protagonist: false, appearance: "", personality: "", goals: "", background: "", sprites: {} };
@@ -16,6 +17,7 @@ export const validSprite = validPortrait;
 export function validCharacterSheet(v: unknown): v is CharacterSheet {
   return object(v) && ["male", "female", "neutral"].includes(String(v.gender)) && typeof v.protagonist === "boolean"
     && ["appearance", "personality", "goals", "background"].every(k => str(v[k], 1200))
+    && (v.portraitLibrary === undefined || validPortraitLibrary(v.portraitLibrary))
     && object(v.sprites) && Object.keys(v.sprites).length <= MAX_STORED_PORTRAIT_EMOTIONS && Object.entries(v.sprites).every(([k, s]) => safeKey(k) && k.length <= 32 && validPortraitVariations(s));
 }
 export function validCharacterStatus(v: unknown): v is CharacterStatus {

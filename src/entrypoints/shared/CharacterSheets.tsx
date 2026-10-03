@@ -2,10 +2,13 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2, Expand, Pencil, ArrowLeft } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, validSprite, characterHighlights, characterInterlocutors, characterSaveError, MAX_ACTIVE_EMOTIONS } from "../../core/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, characterHighlights, characterInterlocutors, characterSaveError, MAX_ACTIVE_EMOTIONS } from "../../core/characters";
 import type { CharacterEdit } from "../../storage/characters";
 import { MAX_PORTRAIT_VARIATIONS, portraitVariations, scenePortraitIndex } from "../../core/portrait-variations";
 import { characterEditBaseline, type CharacterEditBaseline } from "../../core/character-edit";
+import { libraryImages, unassignPortrait, withPortraitLibrary } from "../../core/portrait-library";
+import { PortraitLibrary, portraitLibraryTitle, portraitLibraryFull } from "./PortraitLibrary";
+import { readPortrait } from "./portrait-file";
 
 function CharacterPortrait({ sheet, emotion, variation = 0, ...attributes }: Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & { sheet?: CharacterSheet; emotion?: string; variation?: number }) {
   const image = useRef<HTMLImageElement>(null);
@@ -107,21 +110,6 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
   </section>;
 }
 
-async function readPortrait(file: File): Promise<string> {
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 5_000_000) throw new Error("image-invalid");
-  const url = URL.createObjectURL(file);
-  try {
-    const image = new Image(); image.src = url; await image.decode();
-    if (image.naturalWidth * image.naturalHeight > 25_000_000 || !image.naturalWidth || !image.naturalHeight) throw new Error("image-invalid");
-    const scale = Math.min(1, 384 / Math.max(image.naturalWidth, image.naturalHeight));
-    const canvas = document.createElement("canvas"); canvas.width = Math.max(1, Math.round(image.naturalWidth * scale)); canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-    const context = canvas.getContext("2d"); if (!context) throw new Error("image-invalid");
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const data = canvas.toDataURL("image/webp", .8);
-    if (!validSprite(data)) throw new Error("image-invalid");
-    return data;
-  } finally { URL.revokeObjectURL(url); }
-}
 
 export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; interlocutor?: boolean; emotions: string[]; embedded?: boolean; onClose: () => void; onExit?: () => void; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean }) => Promise<void> }) {
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
@@ -134,6 +122,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
   const partnerHelp = useId();
   const [emotion, setEmotion] = useState(state.emotion); const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false);
   const [variation, setVariation] = useState(0);
+  const [libraryOpen, setLibraryOpen] = useState(false); const [libraryError, setLibraryError] = useState("");
   const variations = portraitVariations(sheet.sprites[emotion]);
   useEffect(() => setVariation(0), [emotion]);
   const [error, setError] = useState<CharacterCopyKey | null>(null); const [dirty, setDirty] = useState(false);
@@ -159,7 +148,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
     }
   }}><div ref={dialog} className={props.embedded ? "dr-character-editor" : "dr-character-dialog"} role={props.embedded ? undefined : "dialog"} aria-modal={props.embedded ? undefined : true} aria-labelledby={props.embedded ? undefined : "dr-character-editor-title"}>
     <header>{props.embedded && <button type="button" aria-label={t("backGallery")} title={t("backGallery")} disabled={busy || uploading} onClick={close}><ArrowLeft size={18} /></button>}<h2 id="dr-character-editor-title">{props.entity?.name ?? t("add")}</h2><button type="button" aria-label={t("cancel")} disabled={busy || uploading} onClick={exit}><X size={20} /></button></header>
-    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).catch(error => { if (mounted.current) setError(characterSaveError(error)); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
+    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); setLibraryError(""); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).catch(error => { if (mounted.current) setError(characterSaveError(error)); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
       <div className="dr-character-editor-body">
         <p className="dr-character-hint">{t("scope")}</p>
         <fieldset disabled={busy}><legend>{t("profile")}</legend>
@@ -184,12 +173,14 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
           <div><label>{t("gender")}<select aria-label={t("gender")} value={sheet.gender} onChange={e => setSheet({ ...sheet, gender: e.target.value as CharacterSheet["gender"] })}>{(["neutral", "male", "female"] as const).map(value => <option key={value} value={value}>{t(value)}</option>)}</select></label>
           <label>{t("portraitEmotion")}<select aria-label={t("portraitEmotion")} data-portrait-preview value={emotion} onChange={e => setEmotion(e.target.value)}>{portraitOptions.map(value => <option key={value} value={value}>{emotionLabel(props.locale, value)}{sheet.sprites[value] ? " ✓" : ""}</option>)}</select></label><small className="dr-character-hint">{t("previewOnly")}</small></div>
         </div><p className="dr-character-hint">{t("variationHint")}</p>
-        <div className="dr-portrait-variations" role="group" aria-label={t("variations")}>{variations.map((src, index) => <div key={src}><button type="button" aria-label={`${t("variations")} ${index + 1}`} aria-pressed={index === variation} onClick={() => setVariation(index)}><img src={src} alt="" /><span>{index + 1}</span></button><button type="button" aria-label={`${t("remove")} ${t("variations")} ${index + 1}`} onClick={() => { const next = variations.filter((_, i) => i !== index); const sprites = { ...sheet.sprites }; if (next.length) sprites[emotion] = next; else delete sprites[emotion]; setSheet({ ...sheet, sprites }); setVariation(0); setDirty(true); }}><Trash2 size={14} /></button></div>)}</div>
+        <div className="dr-portrait-variations" role="group" aria-label={t("variations")}>{variations.map((src, index) => <div key={src}><button type="button" aria-label={`${t("variations")} ${index + 1}`} aria-pressed={index === variation} onClick={() => setVariation(index)}><img src={src} alt="" /><span>{index + 1}</span></button><button type="button" aria-label={`${t("remove")} ${t("variations")} ${index + 1}`} onClick={() => { try { setSheet(unassignPortrait(sheet, emotion, index)); setVariation(0); setDirty(true); setLibraryError(""); } catch { setLibraryError(portraitLibraryFull(props.locale)); } }}><Trash2 size={14} /></button></div>)}</div>
         <div className="dr-character-actions"><button type="button" disabled={variations.length >= MAX_PORTRAIT_VARIATIONS} onClick={() => input.current?.click()}><Upload size={16} />{t("addVariations")} · {variations.length}/{MAX_PORTRAIT_VARIATIONS}</button></div>
-        <input ref={input} hidden type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={e => { const files = Array.from(e.target.files ?? []); e.target.value = ""; if (!files.length) return; if (files.length + variations.length > MAX_PORTRAIT_VARIATIONS) { setError("variationLimit"); return; } setUploading(true); setError(null); void (async () => { const images: string[] = []; for (const file of files) images.push(await readPortrait(file)); return images; })().then(images => { if (mounted.current) { setSheet(previous => ({ ...previous, sprites: { ...previous.sprites, [emotion]: [...new Set([...portraitVariations(previous.sprites[emotion]), ...images])] } })); setDirty(true); } }).catch(() => { if (mounted.current) setError("imageError"); }).finally(() => { if (mounted.current) setUploading(false); }); }} />
+        <input ref={input} hidden type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={e => { const files = Array.from(e.target.files ?? []); e.target.value = ""; if (!files.length) return; if (files.length + variations.length > MAX_PORTRAIT_VARIATIONS) { setError("variationLimit"); return; } setUploading(true); setError(null); void (async () => { const images: string[] = []; for (const file of files) images.push(await readPortrait(file)); return images; })().then(images => { if (mounted.current) { setSheet(previous => withPortraitLibrary({ ...previous, sprites: { ...previous.sprites, [emotion]: [...new Set([...portraitVariations(previous.sprites[emotion]), ...images])] } }, previous.portraitLibrary ?? [])); setDirty(true); } }).catch(() => { if (mounted.current) setError("imageError"); }).finally(() => { if (mounted.current) setUploading(false); }); }} />
+        <button type="button" aria-expanded={libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}>{portraitLibraryTitle(props.locale)} · {libraryImages(sheet).length}</button>
+        {libraryOpen && <PortraitLibrary sheet={sheet} locale={props.locale} emotions={portraitOptions} emotion={emotion} onEmotion={setEmotion} onBusy={setUploading} onChange={next => { setSheet(previous => withPortraitLibrary({ ...previous, sprites: next.sprites }, next.portraitLibrary ?? [])); setDirty(true); setError(null); setLibraryError(""); setVariation(0); }} />}
         </fieldset>
       </div>
-      <footer>{error && <p role="alert">{t(error)}</p>}<button type="button" disabled={busy || uploading} onClick={close}>{t(props.embedded ? "backGallery" : "cancel")}</button><button className="dr-character-primary" type="submit" disabled={busy || uploading || !name.trim()}>{t(busy ? "saving" : "save")}</button></footer>
+      <footer>{(error || libraryError) && <p role="alert">{error ? t(error) : libraryError}</p>}<button type="button" disabled={busy || uploading} onClick={close}>{t(props.embedded ? "backGallery" : "cancel")}</button><button className="dr-character-primary" type="submit" disabled={busy || uploading || !name.trim()}>{t(busy ? "saving" : "save")}</button></footer>
     </form>
   </div></div>;
 }

@@ -125,5 +125,32 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     expect(prompts.at(-1)).not.toContain("retired-mood");
     await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: emotions[31] } }] });
     await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.emotion).toBe(emotions[31]);
+    // Bulk images are persisted locally before any emotion is assigned.
+    const inbox = await chat.evaluate(() => ["#934156", "#976319", "#387784"].map(color => {
+      const canvas = document.createElement("canvas"); canvas.width = 90; canvas.height = 120; const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = color; ctx.fillRect(0, 0, 90, 120); return canvas.toDataURL("image/png").split(",")[1]!;
+    }));
+    await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    await dialog.getByRole("button", { name: /^Image library ·/ }).click();
+    const library = dialog.locator(".dr-portrait-library");
+    await library.locator('input[type=file]').setInputFiles(inbox.map((image, i) => ({ name: `inbox-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") })));
+    await expect(library.locator(".dr-library-image")).toHaveCount(3);
+    await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await expect(dialog).toHaveCount(0);
+    expect((await records()).find(r => r.id === "leon").data.characterSheet.portraitLibrary).toHaveLength(3);
+    await chat.reload(); await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    await dialog.getByRole("button", { name: /^Image library ·/ }).click();
+    await library.getByRole("button", { name: /^Unassigned ·/ }).click(); await expect(library.locator(".dr-library-image")).toHaveCount(3);
+    for (let i = 0; i < 3; i++) await library.locator(".dr-library-image").nth(i).click();
+    await library.locator("select").selectOption(emotions[31]!);
+    await library.getByRole("button", { name: "Assign to emotion", exact: true }).click();
+    await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(3);
+    await chat.screenshot({ path: info.outputPath("installed-portrait-library.png") });
+    await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await expect(dialog).toHaveCount(0);
+    hero = (await records()).find(r => r.id === "leon").data;
+    expect(hero.characterSheet.portraitLibrary).toBeUndefined(); expect(hero.characterSheet.sprites[emotions[31]!]).toHaveLength(3);
+    await chat.reload(); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon looks through the telescope." }) }));
+    expect(prompts.at(-1)).not.toContain("portraitLibrary"); expect(prompts.at(-1)).not.toContain("data:image");
+    expect((await records()).find(r => r.id === "leon").data.characterSheet.sprites[emotions[31]!]).toEqual(hero.characterSheet.sprites[emotions[31]!]);
   } finally { await context.close(); }
 });

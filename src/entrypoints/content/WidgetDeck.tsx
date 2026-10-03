@@ -1,6 +1,7 @@
 import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent } from "react";
 import { GripHorizontal, Layers, Minus, RotateCcw } from "lucide-react";
 import type { Locale } from "../../core/types";
+import { nearestWidgetSpace, type WidgetRect } from "../../core/widget-spacing";
 
 const ids = ["meter", "memory", "characters", "scene", "choices", "notices"] as const;
 type Id = typeof ids[number];
@@ -34,11 +35,33 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
   const [layout, setLayout] = useState(() => parseWidgetLayout(saved));
   const current = useRef(layout); current.current = layout;
   const [error, setError] = useState(false);
+  const [overflow, setOverflow] = useState(false);
   const [, resized] = useState(0);
   const refs = useRef(new Map<string, HTMLDivElement>());
   const dock = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ id: string; pointer: number; x: number; y: number; before: WidgetLayout; frozen: WidgetLayout; rects: Map<string, DOMRect>; all: boolean; moved: boolean } | null>(null);
   const saveId = useRef(0);
+  // Repair legacy overlaps and size changes locally; a later user move persists
+  // the repaired geometry. If no packing fits, use a scrollable, non-overlapping stack.
+  useLayoutEffect(() => {
+    if (gesture.current || !dock.current) return;
+    const nodes = [["dock", dock.current], ...tiles.filter(tile => !layout.minimized.includes(tile.id)).map(tile => [tile.id, refs.current.get(tile.id)] as const)] as const;
+    const placed: WidgetRect[] = []; const next = structuredClone(layout); let changed = false, stackY = 8;
+    for (const [id, node] of nodes) {
+      if (!node) continue;
+      const rect = node.getBoundingClientRect(); const saved = layout.positions[id as Id | "dock"];
+      const wanted = { x: overflow ? saved ? saved.x * innerWidth : 8 : rect.x, y: overflow ? saved ? saved.y * innerHeight : stackY : rect.y, width: rect.width, height: rect.height };
+      stackY += rect.height + 8;
+      const safe = nearestWidgetSpace(wanted, placed, { width: innerWidth, height: innerHeight });
+      if (!safe) { if (!overflow) setOverflow(true); return; }
+      placed.push(safe);
+      if (overflow || Math.abs(safe.x - rect.x) > .5 || Math.abs(safe.y - rect.y) > .5) {
+        next.positions[id as Id | "dock"] = { x: safe.x / innerWidth, y: safe.y / innerHeight }; changed = true;
+      }
+    }
+    if (overflow) setOverflow(false);
+    if (changed) { current.current = next; setLayout(next); }
+  });
   useEffect(() => { if (!gesture.current) setLayout(parseWidgetLayout(saved)); }, [saved]);
   useLayoutEffect(() => {
     const update = () => resized(n => n + 1);
@@ -53,6 +76,7 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     void onSave?.(value).catch(() => { if (id === saveId.current) { setLayout(rollback); setError(true); } });
   };
   const style = (id: string) => {
+    if (overflow) return undefined;
     const point = layout.positions[id as Id];
     if (!point) return undefined;
     const node = id === "dock" ? dock.current : refs.current.get(id);
@@ -67,10 +91,17 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     return { frozen, rects };
   };
   const shift = (frozen: WidgetLayout, rects: Map<string, DOMRect>, id: string, all: boolean, dx: number, dy: number) => {
+    if (overflow) return frozen;
     const moving = [...rects].filter(([key]) => all || key === id).map(([, rect]) => rect);
     if (!moving.length) return frozen;
     dx = Math.max(8 - Math.min(...moving.map(r => r.left)), Math.min(dx, window.innerWidth - 8 - Math.max(...moving.map(r => r.right))));
     dy = Math.max(8 - Math.min(...moving.map(r => r.top)), Math.min(dy, window.innerHeight - 8 - Math.max(...moving.map(r => r.bottom))));
+    if (!all) {
+      const source = rects.get(id)!;
+      const safe = nearestWidgetSpace({ x: source.x + dx, y: source.y + dy, width: source.width, height: source.height }, [...rects].filter(([key]) => key !== id).map(([, r]) => ({ x: r.x, y: r.y, width: r.width, height: r.height })), { width: innerWidth, height: innerHeight });
+      if (!safe) return frozen;
+      dx = safe.x - source.x; dy = safe.y - source.y;
+    }
     const next = structuredClone(frozen);
     for (const [key, p] of Object.entries(next.positions)) if (all || key === id) next.positions[key as Id] = { x: Math.max(0, Math.min(1, p.x + dx / window.innerWidth)), y: Math.max(0, Math.min(1, p.y + dy / window.innerHeight)) };
     return next;
@@ -98,7 +129,7 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     const delta = directions[event.key]; if (!delta) return; event.preventDefault(); const { frozen, rects } = snapshot(); const step = event.shiftKey ? 32 : 8;
     commit(shift(frozen, rects, id, id === "dock" || current.current.together, delta.x * step, delta.y * step));
   }}><GripHorizontal size={14} /></button>;
-  return <div className="dr-widget-deck">
+  return <div className="dr-widget-deck" data-overflow={overflow || undefined}>
     <div className="dr-widget-dock" ref={dock} style={style("dock")}>
       <div className="dr-widget-deck-tools">{handle("dock", t.all)}<button type="button" title={t.mode} aria-label={t.mode} aria-pressed={layout.together} onClick={() => commit({ ...layout, together: !layout.together })}><Layers size={13} /><span>{t.together}</span></button><button type="button" title={t.reset} aria-label={t.reset} onClick={() => commit(empty())}><RotateCcw size={13} /></button></div>
       <div className="dr-widget-minimized">{tiles.filter(tile => layout.minimized.includes(tile.id)).map(tile => <button type="button" key={tile.id} data-restore-widget={tile.id} aria-expanded={false} title={`${t.restore}: ${tile.title}`} aria-label={`${t.restore}: ${tile.title}`} onClick={() => { commit({ ...layout, minimized: layout.minimized.filter(id => id !== tile.id) }); requestAnimationFrame(() => refs.current.get(tile.id)?.querySelector<HTMLButtonElement>("button")?.focus()); }}>{tile.icon}</button>)}</div>

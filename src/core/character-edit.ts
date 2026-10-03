@@ -1,5 +1,6 @@
 import type { CharacterScene, CharacterSheet, CharacterStatus, SceneEntity } from "./types";
 import { characterInterlocutors, EMPTY_CHARACTER, EMPTY_STATUS } from "./characters";
+import { withPortraitLibrary } from "./portrait-library";
 
 /** Local editor baseline, never part of the prompt or exported world. */
 export interface CharacterEditBaseline {
@@ -46,12 +47,14 @@ export function mergeCharacterEdit(original: CharacterEditBaseline, draft: Omit<
     const image = mergeField(original.sheet.sprites[key], draft.sheet.sprites[key], current.sheet.sprites[key]);
     if (image === undefined) delete sheet.sprites[key]; else sheet.sprites[key] = image;
   }
+  const library = mergeField(original.sheet.portraitLibrary ?? [], draft.sheet.portraitLibrary ?? [], current.sheet.portraitLibrary ?? []);
+  const mergedSheet = withPortraitLibrary(sheet, library);
   for (const key of ["emotion", "condition", "goal", "relationship", "stats"] as const) {
     Object.assign(state, { [key]: mergeField(original.state[key], draft.state[key], current.state[key]) });
   }
   const present = mergeField(original.present, draft.present, current.present);
   return {
-    name: mergeField(original.name, draft.name, current.name), sheet, state, present,
+    name: mergeField(original.name, draft.name, current.name), sheet: mergedSheet, state, present,
     interlocutor: !present || sheet.protagonist ? false : mergeField(original.interlocutor, draft.interlocutor ?? original.interlocutor, current.interlocutor),
   };
 }
