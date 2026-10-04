@@ -69,8 +69,17 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
   }
 
   isGenerating(): boolean {
-    return [...document.querySelectorAll<HTMLElement>("[data-testid='stop-generation'], :is(button,[role='button'])[aria-label*='Stop' i], :is(button,[role='button'])[aria-label*='停止'], :is(button,[role='button'])[aria-label*='Останов' i], :is(button,[role='button'])[title*='Stop' i]")]
-      .some((control) => isVisible(control) && !control.matches(":disabled") && control.getAttribute("aria-disabled") !== "true" && !/disabled/i.test(control.className));
+    const active = (control: HTMLElement) => isVisible(control) && !control.matches(":disabled") && control.getAttribute("aria-disabled") !== "true" && !/disabled/i.test(control.className);
+    if ([...document.querySelectorAll<HTMLElement>("[data-testid='stop-generation'], :is(button,[role='button'])[aria-label*='Stop' i], :is(button,[role='button'])[aria-label*='停止'], :is(button,[role='button'])[aria-label*='Останов' i], :is(button,[role='button'])[title*='Stop' i]")].some(active)) return true;
+    // DeepSeek's compact composer can render an unlabelled square stop icon.
+    // Only inspect the composer controls; square icons elsewhere are unrelated.
+    const composer = this.findComposer();
+    for (let parent = composer?.parentElement, depth = 0; parent && depth < 6; parent = parent.parentElement, depth += 1) {
+      const controls = [...parent.querySelectorAll<HTMLElement>("button, [role='button']")].filter(active);
+      if (controls.some(control => control.querySelector("svg rect:not([fill='none']), svg path[d^='M2 4.88'], svg [data-testid*='stop' i], svg [data-icon*='stop' i]"))) return true;
+      if (parent instanceof HTMLFormElement) break;
+    }
+    return false;
   }
 
   setDraft(value: string): boolean {

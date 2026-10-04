@@ -16,6 +16,7 @@ import { experienceText } from "../../core/experience-i18n";
 import { sceneChoiceText } from "../../core/scene-choices";
 import { selectionReason, type ServiceActivity } from "../../core/memory-experience";
 import { CharacterPanel } from "../shared/CharacterSheets";
+import { DeepSeekDomAdapter } from "../../adapters/deepseek-dom";
 import { MemoryGuide } from "../shared/MemoryGuide";
 import type { CharacterEdit, CharacterSaveResult } from "../../storage/characters";
 import type { CharacterScene } from "../../core/types";
@@ -133,7 +134,7 @@ export function PageWidget(props: {
     const keepVisible = () => setContextPosition((current) => {
       if (!current || !contextAnchor.current) return current;
       const rect = contextAnchor.current.getBoundingClientRect();
-      const next = clampPosition(current, rect.width, rect.height);
+      const next = clampPosition(current, rect.width, rect.height, chatTitleMinimumLeft(rect.width), chatTitleMinimumTop());
       return next.x === current.x && next.y === current.y ? current : next;
     });
     const observer = new ResizeObserver(keepVisible);
@@ -172,7 +173,7 @@ export function PageWidget(props: {
     if (!active.moved && Math.hypot(dx, dy) < 4) return;
     active.moved = true;
     setOpen(false);
-    setContextPosition(clampPosition({ x: active.originX + dx, y: active.originY + dy }, active.width, active.height));
+    setContextPosition(clampPosition({ x: active.originX + dx, y: active.originY + dy }, active.width, active.height, chatTitleMinimumLeft(active.width), chatTitleMinimumTop()));
   };
   const finishContextDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const active = drag.current;
@@ -182,7 +183,7 @@ export function PageWidget(props: {
     const finalPosition = clampPosition({
       x: active.originX + event.clientX - active.startX,
       y: active.originY + event.clientY - active.startY,
-    }, active.width, active.height);
+    }, active.width, active.height, chatTitleMinimumLeft(active.width), chatTitleMinimumTop());
     setContextPosition(finalPosition);
     suppressContextClick.current = true;
     props.onContextPositionChange(finalPosition);
@@ -235,7 +236,7 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
       <div ref={contextAnchor} hidden={props.state.startupError} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={props.state.startupError ? { display: "none" } : contextStyle}>
-      {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : <WidgetDeck locale={props.state.locale} saved={props.state.widgetLayout} onSave={props.onWidgetLayoutChange}>
+      {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : <WidgetDeck locale={props.state.locale} saved={props.state.widgetLayout} onSave={props.onWidgetLayoutChange} minimumLeft={chatTitleMinimumLeft(290)} minimumTop={chatTitleMinimumTop()}>
         {props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0 && <WidgetTile id="meter" title={x("chatMeterTitle")} icon={<Gauge size={16} />}><div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
           <div className="dr-chat-meter-heading"><span>{x("chatMeterTitle")}</span><strong>~{compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M</strong></div>
           <div className="dr-chat-meter-track" role="progressbar" aria-valuemin={0} aria-valuemax={DEEPSEEK_WEB_CONTEXT_LIMIT} aria-valuenow={Math.min(chatEstimate.estimatedTokens, DEEPSEEK_WEB_CONTEXT_LIMIT)} aria-valuetext={`~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M`}><i style={{ width: `${chatEstimatePercent}%` }} /></div>
@@ -269,11 +270,17 @@ export function PageWidget(props: {
   </div></HelpLocale.Provider>;
 }
 
-function clampPosition(position: { x: number; y: number }, width: number, height: number): { x: number; y: number } {
+function chatTitleMinimumLeft(width: number): number {
+  const titleX = new DeepSeekDomAdapter().getChatTitleAnchor()?.x ?? 8;
+  return titleX + width + 8 <= window.innerWidth ? titleX : 8;
+}
+function chatTitleMinimumTop(): number { return new DeepSeekDomAdapter().getChatTitleAnchor()?.y ?? 8; }
+
+function clampPosition(position: { x: number; y: number }, width: number, height: number, minimumLeft = 8, minimumTop = 8): { x: number; y: number } {
   const padding = 8;
   return {
-    x: Math.round(Math.max(padding, Math.min(window.innerWidth - width - padding, position.x))),
-    y: Math.round(Math.max(padding, Math.min(window.innerHeight - height - padding, position.y))),
+    x: Math.round(Math.max(minimumLeft, Math.min(window.innerWidth - width - padding, position.x))),
+    y: Math.round(Math.max(minimumTop, Math.min(window.innerHeight - height - padding, position.y))),
   };
 }
 

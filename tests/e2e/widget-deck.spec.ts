@@ -78,6 +78,25 @@ test("late initialization fits the panel stack back inside the viewport", async 
   await expect.poll(async () => { const rect = (await page.locator('[data-widget="scene"]').boundingBox())!; return rect.y + rect.height; }).toBeLessThanOrEqual(650);
 });
 
+test("saved panels stay under the chat title when the sidebar takes space", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1500, height: 950 });
+  await page.addInitScript(() => localStorage.setItem("deeprole.widgetLayout.v1", JSON.stringify({ minimized: [], together: false, positions: { dock: { x: .11, y: .1 }, meter: { x: .11, y: .15 }, memory: { x: .11, y: .25 }, characters: { x: .11, y: .34 }, scene: { x: .11, y: .7 } } })));
+  await page.goto("/tests/fixtures/page-widget.html?panels=1&locale=ru");
+  await page.evaluate(() => {
+    const title = document.createElement("div"); title.className = "chat-title"; title.textContent = "История"; title.style.cssText = "position:fixed;left:280px;top:20px;width:120px;height:28px"; document.body.append(title);
+    const composer = document.createElement("textarea"); composer.style.cssText = "position:fixed;left:560px;bottom:20px;width:500px;height:70px"; document.body.append(composer);
+    window.dispatchEvent(new Event("resize"));
+  });
+  const panels = page.locator(".dr-widget-dock,.dr-widget-tile:not([hidden])");
+  await expect.poll(async () => Math.min(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().left)))).toBeGreaterThanOrEqual(280);
+  expect(Math.min(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top)))).toBeGreaterThanOrEqual(56);
+  await page.screenshot({ path: info.outputPath("sidebar-panels-wide.png") });
+  await page.setViewportSize({ width: 640, height: 950 });
+  await expect.poll(async () => Math.min(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().left)))).toBeGreaterThanOrEqual(280);
+  expect(Math.max(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().right)))).toBeLessThanOrEqual(640);
+  await page.screenshot({ path: info.outputPath("sidebar-panels-compressed.png") });
+});
+
 for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`panel tools reveal only on their own hover ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 950 });
   await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);

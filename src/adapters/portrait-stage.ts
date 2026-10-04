@@ -25,6 +25,8 @@ function arrange(stage: Stage) {
   const height = stage.frame.clientHeight;
   if (!width || !height) return;
   const anchor = (stage.anchor.shadowRoot?.querySelector("section") ?? stage.anchor).getBoundingClientRect();
+  const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
+  const anchorVisible = anchor.bottom > 0 && anchor.top < height - 100;
   const rows = Math.max(1, Math.ceil(stage.widgets.size / 2));
   const defaultWidth = clamp(Math.min(192, (height / Math.min(rows, 4) - 128) * .75, width < 600 ? 120 : 192), 96, 192);
   const rowHeight = defaultWidth * 4 / 3 + 160;
@@ -32,8 +34,14 @@ function arrange(stage: Stage) {
   const columns = Math.max(2, Math.ceil(stage.widgets.size / visibleRows));
   const sideWidth = Math.ceil(columns / 2) * (defaultWidth + 16) + 8;
   const outsideFits = anchor.left >= sideWidth && width - anchor.right >= sideWidth;
+  const inlineWidth = Math.min(defaultWidth, Math.max(72, (anchor.width - 48) / 2));
+  const estimatedLeft = [...stage.widgets.values()].filter((widget, index) => widget.pose?.dock === "left" || !widget.pose?.dock && index % 2 === 0).length;
+  const estimatedRight = stage.widgets.size - estimatedLeft;
+  if (section) section.style.paddingTop = !anchorVisible || outsideFits ? "" : `${Math.ceil(Math.max(estimatedLeft, estimatedRight) * (inlineWidth * 4 / 3 + 112) + 12)}px`;
   const startY = clamp(anchor.top, 8, height - Math.min(rows, visibleRows) * rowHeight - 8);
+  const dockStartY = clamp(anchor.top, 8, height - Math.min(Math.max(estimatedLeft, estimatedRight), visibleRows) * rowHeight - 8);
   let index = 0;
+  const dockCounts = { left: 0, right: 0 };
   for (const widget of stage.widgets.values()) {
     const side = index % 2 === 0 ? "left" : "right";
     const pairedCapacity = Math.floor(columns / 2) * 2 * visibleRows;
@@ -43,9 +51,17 @@ function arrange(stage: Stage) {
     const column = center ? Math.floor(columns / 2) : side === "left" ? band : columns - 1 - band;
     const defaultX = outsideFits ? side === "left" ? anchor.left - (band + 1) * (defaultWidth + 16) : anchor.right + 16 + band * (defaultWidth + 16)
       : columns > 2 ? 8 + column * (width - defaultWidth - 16) / (columns - 1) : side === "left" ? anchor.left - defaultWidth - 16 : anchor.right + 16;
-    const bounds = widget.pose ? portraitBounds(widget.pose, width - 16, height - 16) : { width: defaultWidth, x: defaultX, y: startY + row * rowHeight };
+    const saved = widget.pose ? portraitBounds(widget.pose, width - 16, height - 16) : null;
+    const collidesWithChoices = saved && saved.x < anchor.right && saved.x + saved.width > anchor.left && saved.y < anchor.bottom && saved.y + saved.width * 4 / 3 + 70 > anchor.top;
+    const dock = anchorVisible ? widget.pose?.dock ?? (collidesWithChoices ? side : widget.pose ? null : side) : null;
+    const dockRow = dock ? dockCounts[dock]++ : 0;
+    const dockWidth = outsideFits ? defaultWidth : inlineWidth;
+    const dockX = outsideFits ? dock === "left" ? anchor.left - (dockWidth + 12) * (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) + 1 : 1) : anchor.right + 12 + (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) : 0) * (dockWidth + 12)
+      : dock === "left" ? anchor.left + 12 : anchor.right - dockWidth - 12;
+    const dockY = outsideFits ? dockStartY + (dockRow % visibleRows) * rowHeight : anchor.top + 12 + dockRow * (inlineWidth * 4 / 3 + 112);
+    const bounds = dock ? { width: dockWidth, x: dockX, y: dockY } : saved ?? { width: defaultWidth, x: defaultX, y: startY + row * rowHeight };
     // Legacy poses used chat coordinates. Convert for display only, without rewriting stored data.
-    if (widget.pose && widget.pose.space !== "viewport") {
+    if (!dock && widget.pose && widget.pose.space !== "viewport") {
       const legacy = portraitBounds(widget.pose, anchor.width);
       bounds.x = anchor.left + legacy.x; bounds.y = anchor.top + legacy.y;
     }
@@ -56,11 +72,22 @@ function arrange(stage: Stage) {
   }
 }
 
+function nearbyDock(stage: Stage, x: number, y: number, width: number): "left" | "right" | undefined {
+  const anchor = (stage.anchor.shadowRoot?.querySelector("section") ?? stage.anchor).getBoundingClientRect();
+  if (y < anchor.top - 100 || y > anchor.top + 130) return undefined;
+  const center = x + width / 2;
+  if (Math.abs(center - anchor.left) < 105) return "left";
+  if (Math.abs(center - anchor.right) < 105) return "right";
+  return undefined;
+}
+
 function dispose(stage: Stage) {
   stage.disposed = true; stage.observer.disconnect();
   stage.anchor.ownerDocument.defaultView?.removeEventListener("resize", stage.onResize);
+  stage.anchor.ownerDocument.defaultView?.removeEventListener("scroll", stage.onResize, true);
   stage.overlay.remove(); stage.toolbar.remove();
-  stage.anchor.shadowRoot?.querySelector("section")?.classList.remove("dr-cast-content");
+  const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
+  section?.classList.remove("dr-cast-content"); if (section) section.style.paddingTop = "";
   stages.delete(stage.anchor); activeStages.delete(stage);
 }
 
@@ -101,6 +128,8 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     gesture.changed = true;
     const width = resize ? clamp(gesture.width + (Math.abs(dx) >= Math.abs(dy * .75) ? dx : dy * .75), 96, 360) : gesture.width;
     widget.pose = portraitPose(gesture.startX + (resize ? 0 : dx), gesture.startY + (resize ? 0 : dy), width, stage.frame.clientWidth - 16, stage.frame.clientHeight - 16);
+    if (!resize) widget.pose.dock = nearbyDock(stage, gesture.startX + dx, gesture.startY + dy, width);
+    else if (gesture.previous?.dock) widget.pose.dock = gesture.previous.dock;
     arrange(stage); event.preventDefault();
   });
   control.addEventListener("pointerup", event => { if (event.pointerId === gesture?.pointer) finish(false); });
@@ -114,6 +143,7 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     const dx = event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0;
     const dy = event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0;
     widget.pose = portraitPose(rect.left + (resize ? 0 : dx), rect.top + (resize ? 0 : dy), rect.width + (resize ? dx || dy : 0), stage.frame.clientWidth - 16, stage.frame.clientHeight - 16);
+    if (resize && previous?.dock) widget.pose.dock = previous.dock;
     arrange(stage); event.preventDefault(); event.stopPropagation();
     void persist(stage, id, { ...widget.pose }, () => { widget.pose = previous; });
   });
@@ -149,6 +179,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       stage = { anchor: host, overlay, frame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, busy: false, dragging: false, observer, onResize, disposed: false };
       stages.set(host, stage); activeStages.add(stage); observer.observe(host); observer.observe(frame);
       doc.defaultView?.addEventListener("resize", onResize);
+      doc.defaultView?.addEventListener("scroll", onResize, true);
       reset.addEventListener("click", () => {
         if (stage!.busy || stage!.dragging) return;
         const previous = new Map([...stage!.widgets].map(([id, widget]) => [id, widget.pose]));

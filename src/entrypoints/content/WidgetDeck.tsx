@@ -1,4 +1,4 @@
-import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent } from "react";
+import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent } from "react";
 import { GripHorizontal, Layers, Minus, RotateCcw } from "lucide-react";
 import type { Locale } from "../../core/types";
 import { nearestWidgetSpace, WIDGET_GAP, type WidgetRect } from "../../core/widget-spacing";
@@ -29,7 +29,7 @@ interface TileProps { id: Id; title: string; icon: ReactNode; children: ReactNod
 export function WidgetTile({ children }: TileProps) { return <>{children}</>; }
 
 /** UI-only positioning. No world, portrait, or memory data is stored here. */
-export function WidgetDeck({ children, locale, saved, onSave }: { children: ReactNode; locale: Locale; saved?: WidgetLayout; onSave?: (layout: WidgetLayout) => Promise<void> }) {
+export function WidgetDeck({ children, locale, saved, onSave, minimumLeft = WIDGET_GAP, minimumTop = WIDGET_GAP }: { children: ReactNode; locale: Locale; saved?: WidgetLayout; onSave?: (layout: WidgetLayout) => Promise<void>; minimumLeft?: number; minimumTop?: number }) {
   const t = copy[locale];
   const tiles = Children.toArray(children).filter(isValidElement<TileProps>).map(child => child.props);
   const [layout, setLayout] = useState(() => parseWidgetLayout(saved));
@@ -52,7 +52,7 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
       const rect = node.getBoundingClientRect(); const saved = layout.positions[id as Id | "dock"];
       const wanted = { x: overflow ? saved ? saved.x * innerWidth : WIDGET_GAP : rect.x, y: overflow ? saved ? saved.y * innerHeight : stackY : rect.y, width: rect.width, height: rect.height };
       stackY += rect.height + WIDGET_GAP;
-      const safe = nearestWidgetSpace(wanted, placed, { width: innerWidth, height: innerHeight });
+      const safe = nearestWidgetSpace(wanted, placed, { width: innerWidth, height: innerHeight }, minimumLeft, minimumTop);
       if (!safe) { if (!overflow) setOverflow(true); return; }
       placed.push(safe);
       if (overflow || Math.abs(safe.x - rect.x) > .5 || Math.abs(safe.y - rect.y) > .5) {
@@ -80,7 +80,7 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     const point = layout.positions[id as Id];
     if (!point) return undefined;
     const node = id === "dock" ? dock.current : refs.current.get(id);
-    return { position: "fixed" as const, left: Math.max(WIDGET_GAP, Math.min(point.x * window.innerWidth, window.innerWidth - (node?.offsetWidth ?? 120) - WIDGET_GAP)), top: Math.max(WIDGET_GAP, Math.min(point.y * window.innerHeight, window.innerHeight - (node?.offsetHeight ?? 40) - WIDGET_GAP)) };
+    return { position: "fixed" as const, left: Math.max(minimumLeft, Math.min(point.x * window.innerWidth, window.innerWidth - (node?.offsetWidth ?? 120) - WIDGET_GAP)), top: Math.max(minimumTop, Math.min(point.y * window.innerHeight, window.innerHeight - (node?.offsetHeight ?? 40) - WIDGET_GAP)) };
   };
   const snapshot = () => {
     const rects = new Map<string, DOMRect>();
@@ -94,11 +94,11 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     if (overflow) return frozen;
     const moving = [...rects].filter(([key]) => all || key === id).map(([, rect]) => rect);
     if (!moving.length) return frozen;
-    dx = Math.max(WIDGET_GAP - Math.min(...moving.map(r => r.left)), Math.min(dx, window.innerWidth - WIDGET_GAP - Math.max(...moving.map(r => r.right))));
-    dy = Math.max(WIDGET_GAP - Math.min(...moving.map(r => r.top)), Math.min(dy, window.innerHeight - WIDGET_GAP - Math.max(...moving.map(r => r.bottom))));
+    dx = Math.max(minimumLeft - Math.min(...moving.map(r => r.left)), Math.min(dx, window.innerWidth - WIDGET_GAP - Math.max(...moving.map(r => r.right))));
+    dy = Math.max(minimumTop - Math.min(...moving.map(r => r.top)), Math.min(dy, window.innerHeight - WIDGET_GAP - Math.max(...moving.map(r => r.bottom))));
     if (!all) {
       const source = rects.get(id)!;
-      const safe = nearestWidgetSpace({ x: source.x + dx, y: source.y + dy, width: source.width, height: source.height }, [...rects].filter(([key]) => key !== id).map(([, r]) => ({ x: r.x, y: r.y, width: r.width, height: r.height })), { width: innerWidth, height: innerHeight });
+      const safe = nearestWidgetSpace({ x: source.x + dx, y: source.y + dy, width: source.width, height: source.height }, [...rects].filter(([key]) => key !== id).map(([, r]) => ({ x: r.x, y: r.y, width: r.width, height: r.height })), { width: innerWidth, height: innerHeight }, minimumLeft, minimumTop);
       if (!safe) return frozen;
       dx = safe.x - source.x; dy = safe.y - source.y;
     }
@@ -129,7 +129,7 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     const delta = directions[event.key]; if (!delta) return; event.preventDefault(); const { frozen, rects } = snapshot(); const step = event.shiftKey ? 32 : 8;
     commit(shift(frozen, rects, id, id === "dock" || current.current.together, delta.x * step, delta.y * step));
   }}><GripHorizontal size={14} /></button>;
-  return <div className="dr-widget-deck" data-overflow={overflow || undefined}>
+  return <div className="dr-widget-deck" data-overflow={overflow || undefined} style={{ "--dr-min-left": `${minimumLeft}px`, "--dr-min-top": `${minimumTop}px` } as CSSProperties}>
     <div className="dr-widget-dock" ref={dock} style={style("dock")}>
       <div className="dr-widget-deck-tools">{handle("dock", t.all)}<button type="button" title={t.mode} aria-label={t.mode} aria-pressed={layout.together} onClick={() => commit({ ...layout, together: !layout.together })}><Layers size={13} /><span>{t.together}</span></button><button type="button" title={t.reset} aria-label={t.reset} onClick={() => commit(empty())}><RotateCcw size={13} /></button></div>
       <div className="dr-widget-minimized">{tiles.filter(tile => layout.minimized.includes(tile.id)).map(tile => <button type="button" key={tile.id} data-restore-widget={tile.id} aria-expanded={false} title={`${t.restore}: ${tile.title}`} aria-label={`${t.restore}: ${tile.title}`} onClick={() => { commit({ ...layout, minimized: layout.minimized.filter(id => id !== tile.id) }); requestAnimationFrame(() => refs.current.get(tile.id)?.querySelector<HTMLButtonElement>("button")?.focus()); }}>{tile.icon}</button>)}</div>

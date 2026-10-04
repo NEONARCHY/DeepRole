@@ -74,7 +74,7 @@ export interface CharacterScene {
 export interface PortraitCycle { key: string; order: number[]; cursor: number }
 
 /** UI-only. Never included in model context or character revisions. */
-export interface PortraitPose { x: number; y: number; width: number; space?: "viewport" }
+export interface PortraitPose { x: number; y: number; width: number; space?: "viewport"; dock?: "left" | "right" }
 export interface PortraitLayout { resetAt: number; positions: Record<string, PortraitPose> }
 
 export interface SceneState {

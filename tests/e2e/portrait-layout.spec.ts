@@ -108,3 +108,28 @@ test("odd column counts and a changed protagonist never overlap unplaced portrai
   expect(hero.x).toBeLessThan(partner.x);
   expect(await page.evaluate(() => (window as any).savedLayout)).toBeUndefined();
 });
+
+test("portraits snap beside choices and follow their anchor after resize", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1500, height: 950 });
+  await page.goto("/tests/fixtures/characters.html?locale=en");
+  const card = page.locator("[data-deeprole-choices-host] section");
+  await card.scrollIntoViewIfNeeded();
+  const mira = page.locator('.dr-cast-widget[data-character-id="mira"]');
+  const hero = page.locator('.dr-cast-widget[data-character-id="hero"]');
+  await expect.poll(async () => (await mira.boundingBox())!.x).toBeGreaterThan((await card.boundingBox())!.x + (await card.boundingBox())!.width);
+  const target = (await card.boundingBox())!;
+  const handle = (await mira.locator(".dr-cast-move").boundingBox())!;
+  await page.mouse.move(handle.x + 20, handle.y + 20); await page.mouse.down();
+  await page.mouse.move(target.x - 40, target.y + 24, { steps: 8 }); await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => (window as any).savedLayout?.pose?.dock)).toBe("left");
+  const left = (await mira.boundingBox())!, first = (await hero.boundingBox())!;
+  expect(left.x + left.width).toBeLessThanOrEqual(target.x);
+  expect(first.y + first.height <= left.y || left.y + left.height <= first.y).toBe(true);
+  await page.screenshot({ path: info.outputPath("docked-wide.png") });
+  await page.setViewportSize({ width: 480, height: 950 }); await card.scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await mira.boundingBox())!.x).toBeGreaterThanOrEqual((await card.boundingBox())!.x);
+  const choices = await card.locator(".grid").boundingBox();
+  const narrow = (await mira.boundingBox())!;
+  await page.screenshot({ path: info.outputPath("docked-narrow.png") });
+  expect(narrow.y + narrow.height).toBeLessThanOrEqual(choices!.y);
+});

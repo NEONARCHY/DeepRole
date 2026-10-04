@@ -42,4 +42,17 @@ describe("DeepSeek composer controls", () => {
     stop.className = "ds-button--disabled";
     expect(adapter.isGenerating()).toBe(false);
   });
+
+  it("recognizes DeepSeek's unlabelled square stop button during thinking", () => {
+    document.body.innerHTML = `<form><textarea></textarea><button id="stop"><svg><rect x="3" y="3" width="10" height="10" /></svg></button></form>`;
+    const composer = document.querySelector("textarea")!;
+    const stop = document.querySelector<HTMLElement>("#stop")!;
+    setRect(composer, 100, 100, 500, 54); setRect(stop, 570, 110, 34, 34);
+    const adapter = new DeepSeekDomAdapter();
+    expect(adapter.isGenerating()).toBe(true);
+    stop.innerHTML = `<svg><path d="M2 8L14 8" /></svg>`;
+    expect(adapter.isGenerating()).toBe(false);
+    stop.innerHTML = `<svg><path d="M2 4.88C2 3.68009 2 3.08013 2.30557 2.65954Z" fill="currentColor" /></svg>`;
+    expect(adapter.isGenerating()).toBe(true);
+  });
 });

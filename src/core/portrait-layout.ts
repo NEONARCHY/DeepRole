@@ -4,7 +4,7 @@ const object = (value: unknown): value is Record<string, unknown> => !!value && 
 export const portraitKey = (value: string) => !!value && value.length <= 160 && !["__proto__", "prototype", "constructor"].includes(value);
 const finite = (value: unknown, min: number, max: number): value is number => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
 export function validPortraitPose(value: unknown): value is PortraitPose {
-  return object(value) && (value.space === undefined || value.space === "viewport") && finite(value.x, 0, 1)
+  return object(value) && (value.space === undefined || value.space === "viewport") && (value.dock === undefined || value.dock === "left" || value.dock === "right") && finite(value.x, 0, 1)
     && finite(value.y, 0, value.space === "viewport" ? 1 : 1200) && finite(value.width, 96, 360);
 }
 export function validPortraitLayout(value: unknown): value is PortraitLayout {
