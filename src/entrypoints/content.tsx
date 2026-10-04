@@ -4,9 +4,9 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
-import { nativeMessageIdentity } from "../adapters/deepseek-message-dom";
+import { nativeMessageIdentity, nativeMessageRows, isUserMessage } from "../adapters/deepseek-message-dom";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards } from "../adapters/deepseek-choices-dom";
-import { findServiceReplyRows, findServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, restoreServiceTurns } from "../adapters/deepseek-service-dom";
+import { findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { DEFAULT_SETTINGS } from "../core/defaults";
 import { startupDeadline } from "../core/startup";
@@ -918,6 +918,8 @@ class PageController {
       const reloadedError = guard();
       if (reloadedError) return { ok: false, error: reloadedError };
       request = { ...request, ...this.currentScene(), chatId: this.adapter.getChatId() ?? undefined, chatUrl: initialUrl, startedMessageCount: this.adapter.getMessageCount() };
+      const priorReply = nativeMessageRows(document).filter(row => !isUserMessage(row)).at(-1);
+      request.priorReplyIdentity = priorReply ? nativeMessageIdentity(priorReply) : undefined;
       delete request.replyIdentity;
       // Previous service results must not become suggestions in a different world.
       const book = this.books.find((item) => item.id === request.bookId);
@@ -979,6 +981,9 @@ class PageController {
     const request = this.pendingService;
     this.rememberServiceReply(request);
     const replyRows = findServiceReplyRows(request.id, document, request.type === "scene-choices" ? "<deeprole_choices>" : SERVICE_START, request.replyIdentity);
+    const virtualizedReply = request.type !== "scene-choices" && !replyRows.length
+      ? findVirtualizedServiceReply(request.id, request.priorReplyIdentity) : null;
+    if (virtualizedReply) replyRows.push(virtualizedReply);
     if (request.type === "scene-choices") {
       replyRows.forEach((row) => { row.dataset.deeproleSceneChoicesReply = "true"; });
       const completed = replyRows.some((row) => parseSceneChoices(row.textContent ?? ""));
@@ -994,7 +999,9 @@ class PageController {
       } else if (!completed) await this.handleUnusableServiceReply(request, replyRows);
       return;
     }
-    const candidates = findServiceResponseElements(request.id, document, request.replyIdentity);
+    const candidates = virtualizedReply
+      ? findVirtualizedServiceResponseElements(virtualizedReply)
+      : findServiceResponseElements(request.id, document, request.replyIdentity);
     if (request.type === "memory-analysis") this.updateMemoryPreloader(request);
     for (const element of candidates) {
       const parsed = parseServiceData(element.textContent || element.innerText || "");
@@ -1023,6 +1030,8 @@ class PageController {
           const snapshot = createSnapshot(parsed, request.chatId ?? "unknown", request.chatUrl ?? scope.url, request.bookId);
           snapshot.worldId = request.worldId ?? null; snapshot.focusIds = request.focusIds ?? [];
           await repository.put("snapshot", snapshot);
+          replaceServicePayloadWithSummary(element, assistantText(this.state.locale, "handoffSaved"));
+          this.showToast(assistantText(this.state.locale, "handoffSaved"));
           if (request.type === "continue-handoff") {
             this.scheduleHandoffNavigation(snapshot, scope);
           }

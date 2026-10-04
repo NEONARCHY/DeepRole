@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { findDeepestServiceElements, findSafeServiceContainer, findServiceReplyRows, findServiceResponseElements, presentMemoryAnalysis, serviceReplyText, replaceServicePayloadWithSummary, restoreServiceTurns } from "../src/adapters/deepseek-service-dom";
+import { findDeepestServiceElements, findSafeServiceContainer, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, presentMemoryAnalysis, serviceReplyText, replaceServicePayloadWithSummary, restoreServiceTurns } from "../src/adapters/deepseek-service-dom";
 import { SERVICE_PREFIX } from "../src/core/service-protocol";
 import { nativeMessageIdentity } from "../src/adapters/deepseek-message-dom";
 
@@ -28,6 +28,17 @@ describe("DeepSeek service message isolation", () => {
     expect(document.querySelectorAll('[data-deeprole-service-preloader]')).toHaveLength(0);
     expect(document.querySelectorAll('[data-deeprole-memory-card]')).toHaveLength(1);
     expect(document.querySelector('[data-deeprole-memory-card]')!.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it("recovers only a newer identified final reply after DeepSeek virtualizes the request", () => {
+    document.body.innerHTML = '<section><article data-message-id="old">Previous scene</article><article data-message-id="reply"><div class="ds-assistant-message-main-content"><p>&lt;deeprole_data&gt;</p><p>{"type":"handoff","title":"Gate","summary":"Mira has the map."}</p><p>&lt;/deeprole_data&gt;</p></div></article></section>';
+    const reply = findVirtualizedServiceReply("pending", JSON.stringify(["message", "old"]));
+    expect(reply?.dataset.messageId).toBe("reply");
+    expect(findVirtualizedServiceResponseElements(reply!)[0]?.textContent).toContain('"type":"handoff"');
+    expect(findVirtualizedServiceReply("pending", JSON.stringify(["message", "reply"]))).toBeNull();
+    const command = document.createElement("article"); command.textContent = "[DeepRole Service]\n[Request ID: pending]\nCreate state";
+    document.querySelector("section")!.insertBefore(command, reply!);
+    expect(findVirtualizedServiceReply("pending", JSON.stringify(["message", "old"]))).toBeNull();
   });
 
   it("moves the lone waiting card from the request to the empty response without modifying native content", () => {

@@ -33,11 +33,22 @@ function latestTurn(root: ParentNode): HTMLElement | undefined {
     .filter((element) => !element.closest(`deeprole-page-widget, ${HOST}, ${RECOVERY}, ${REASONING}, ${MEMORY_SERVICE}`)
       && !element.querySelector(".ds-message, [data-message-id], article, [data-message-role], [data-role='user'], [data-role='assistant']")
       && element.getClientRects().length > 0);
-  const last = turns.at(-1);
   // Some site versions put the assistant Markdown after an empty message-id row.
   const markdown = [...root.querySelectorAll<HTMLElement>(".ds-markdown")]
-    .filter((element) => !element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, ${MEMORY_SERVICE}`) && element.getClientRects().length > 0).at(-1);
-  return markdown && (!last || last.compareDocumentPosition(markdown) & Node.DOCUMENT_POSITION_FOLLOWING) ? markdown : last;
+    .filter((element) => !element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, ${MEMORY_SERVICE}`) && element.getClientRects().length > 0);
+  const candidates = [...turns, ...markdown].sort((a, b) => a === b ? 0 : a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+  return candidates.reverse().find(element => !isAuxiliaryServiceTurn(element));
+}
+
+function isAuxiliaryServiceTurn(element: HTMLElement): boolean {
+  const row = nativeMessageRow(element) ?? findSafeServiceContainer(element);
+  const text = (row.textContent ?? "").trim();
+  if (text.startsWith("[DeepRole Service]")) return true;
+  const previous = row.previousElementSibling;
+  const priorText = previous?.textContent?.trim() ?? "";
+  if (priorText.startsWith("[DeepRole Service]") && priorText.includes("[DeepRole Scene Choices]")) return false;
+  if (text.includes("<deeprole_data>") || row.dataset.deeproleServiceReply === "true" && row.dataset.deeproleSceneChoicesReply !== "true") return true;
+  return priorText.startsWith("[DeepRole Service]") && !priorText.includes("[DeepRole Scene Choices]");
 }
 
 /** Require an identifiable last assistant turn. Never offer a request under a user message. */

@@ -218,6 +218,17 @@ describe("history restoration and explicit recovery", () => {
     const command = answer("[DeepRole Service]\n[Request ID: memory]\nAnalyze"); command.dataset.role = "user";
     answer("No new facts.", "result"); sync(); expect(recovery()).toBeNull();
   });
+  it("restores the last story choices after a saved-state service turn and chat return", () => {
+    const scene = answer("Scene\n" + payload, "story");
+    sync(); expect(host()?.previousElementSibling).toBe(scene);
+    const command = answer("[DeepRole Service]\n[Request ID: handoff]\nSave state", "request"); command.dataset.role = "user";
+    answer('<deeprole_data>{"type":"handoff","title":"Gate","summary":"Mira has the map."}</deeprole_data>', "snapshot");
+    dismissSceneChoiceCards(document, false); sync();
+    expect(host()?.previousElementSibling).toBe(scene);
+    expect(recovery()).toBeNull();
+    const newer = answer("The next scene has changed.", "new-story"); sync();
+    expect(host()).toBeNull(); expect(recovery()?.previousElementSibling).toBe(newer);
+  });
   it("allows explicit retry after a failed options request", () => {
     answer("[DeepRole Service]\n[Request ID: choices]\n[DeepRole Scene Choices]");
     const row = answer("Sorry, I could not return the requested format.", "result"); row.dataset.deeproleServiceReply = "true";

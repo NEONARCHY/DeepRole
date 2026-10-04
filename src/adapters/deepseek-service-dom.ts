@@ -12,7 +12,29 @@ export function findDeepestServiceElements(marker: string, root: ParentNode = do
 
 /** Read only the reply belonging to this request, even after DOM replacement. */
 export function findServiceResponseElements(requestId: string, root: ParentNode = document, replyIdentity?: string): HTMLElement[] {
-  return findServiceReplyRows(requestId, root, SERVICE_START, replyIdentity)
+  return serviceResponseElements(findServiceReplyRows(requestId, root, SERVICE_START, replyIdentity));
+}
+
+/** DeepSeek can virtualize the command before its answer mounts. Only a new,
+ * identifiable final assistant turn may complete a request in that case. */
+export function findVirtualizedServiceReply(requestId: string, priorReplyIdentity: string | undefined, root: ParentNode = document): HTMLElement | null {
+  if (!priorReplyIdentity || findServiceReplyRows(requestId, root).length) return null;
+  const rows = nativeMessageRows(root);
+  const last = rows.at(-1);
+  const identity = last && nativeMessageIdentity(last);
+  if (!last || !identity || isUserMessage(last) || identity === priorReplyIdentity) return null;
+  if (rows.some(row => (row.textContent ?? "").trim().startsWith("[DeepRole Service]") && (row.textContent ?? "").includes(`[Request ID: ${requestId}]`))) return null;
+  const final = last.querySelector<HTMLElement>(".ds-assistant-message-main-content") ?? last;
+  if (!(final.textContent ?? "").includes(SERVICE_START)) return null;
+  return last;
+}
+
+export function findVirtualizedServiceResponseElements(row: HTMLElement): HTMLElement[] {
+  return serviceResponseElements([row]);
+}
+
+function serviceResponseElements(rows: HTMLElement[]): HTMLElement[] {
+  return rows
     .flatMap((row) => {
       // DeepSeek renders the opening marker, JSON and closing marker in separate
       // spans. The deepest match can be just the opening tag, not the payload.

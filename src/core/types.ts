@@ -270,6 +270,8 @@ export interface VaultConfig {
 export interface ServiceRequest {
   /** Observed native reply key, never an inferred id or model-provided selector. */
   replyIdentity?: string;
+  /** Last assistant key before submitting; prevents a virtualized old reply from being accepted. */
+  priorReplyIdentity?: string;
   id: string;
   chatUrl?: string;
   worldId?: string | null;

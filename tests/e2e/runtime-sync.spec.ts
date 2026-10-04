@@ -395,6 +395,22 @@ for (const type of ["memory-analysis", "handoff"] as const) test(`modern DeepSee
   } finally { await context.close(); }
 });
 
+test("handoff survives removal of its command from a virtualized long chat", async () => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => route.fulfill({ contentType: "application/json", body: "{}" }));
+    await enableServiceComposer(chat);
+    expect(await command(panel, { type: "DR_RUN_SERVICE", request: { id: "virtual-handoff", type: "handoff", bookId: null, createdAt: Date.now() } })).toEqual({ ok: true });
+    await chat.evaluate(() => {
+      document.querySelector("[data-message-id='service-user']")!.remove();
+      const reply = document.querySelector("[data-message-id='service-answer']")!;
+      reply.textContent = '<deeprole_data>{"type":"handoff","title":"Gate","summary":"Mira has the map."}</deeprole_data>';
+    });
+    await expect.poll(async () => (await databaseRecords(panel)).filter(row => row.kind === "snapshot").map(row => row.data.summary)).toEqual(["Mira has the map."]);
+    expect(await pendingService(panel)).toBeFalsy();
+  } finally { await context.close(); }
+});
+
 for (const navigation of ["direct", "SPA"] as const) test(`character sheets: empty roster initializes through the alternate DeepSeek chat URL (${navigation})`, async () => {
   const world = { id: "w", name: "Test world", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
