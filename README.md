@@ -33,7 +33,7 @@ The map and list are two views of the same records: people, places, rules and ev
 
 After an important scene, use **Update lore**. Review, edit and save only the suggestions you want.
 
-<img src="docs/images/readme/review-en.png" width="690" alt="Reviewing a proposed memory change">
+<img src="docs/images/readme/review-en.png" width="360" alt="Reviewing a proposed memory change">
 
 *These screenshots come from the current interface with fictional demo data, not a private conversation.*
 
