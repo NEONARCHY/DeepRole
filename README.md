@@ -19,7 +19,7 @@ DeepSeek can offer four ways to continue a scene. Clicking a choice only fills t
 
 ### Keep characters in view
 
-Character cards show who's present, their mood and saved stats. Add portraits for different emotions, or keep the default silhouettes. Portraits can be moved and resized.
+Character cards show who's present, their mood and saved stats. Add portraits for different emotions, or keep the default silhouettes. Portraits can be moved and resized. Use the small **eye button** beside the panel controls to hide or show all portraits without deleting images or resetting their positions; the same switch remains in character settings.
 
 <img src="docs/images/readme/portraits-en.png" width="900" alt="Current DeepRole portraits beside scene choices">
 
