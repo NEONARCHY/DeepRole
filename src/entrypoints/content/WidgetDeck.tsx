@@ -1,5 +1,5 @@
 import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent, type KeyboardEvent } from "react";
-import { GripHorizontal, Layers, Minus, RotateCcw } from "lucide-react";
+import { Eye, EyeOff, GripHorizontal, Layers, Minus, RotateCcw } from "lucide-react";
 import type { Locale } from "../../core/types";
 import { nearestWidgetSpace, WIDGET_GAP, type WidgetRect } from "../../core/widget-spacing";
 
@@ -22,14 +22,14 @@ export function parseWidgetLayout(value: unknown): WidgetLayout {
   return result;
 }
 const copy = {
-  ru: { move: "Переместить", all: "Переместить все панели", together: "Вместе", mode: "Перемещать панели вместе", minimize: "Свернуть", restore: "Развернуть", reset: "Сбросить расположение панелей", keys: "Перетаскивайте или используйте стрелки. Shift — шаг больше, Esc — отмена.", failed: "Не удалось сохранить расположение." },
-  en: { move: "Move", all: "Move all panels", together: "Together", mode: "Move panels together", minimize: "Minimize", restore: "Restore", reset: "Reset panel layout", keys: "Drag or use arrow keys. Shift for larger steps, Esc to cancel.", failed: "Couldn’t save the layout." },
+  ru: { move: "Переместить", all: "Переместить все панели", together: "Вместе", mode: "Перемещать панели вместе", portraitsOn: "Скрыть портреты персонажей", portraitsOff: "Показать портреты персонажей", minimize: "Свернуть", restore: "Развернуть", reset: "Сбросить расположение панелей", keys: "Перетаскивайте или используйте стрелки. Shift — шаг больше, Esc — отмена.", failed: "Не удалось сохранить расположение." },
+  en: { move: "Move", all: "Move all panels", together: "Together", mode: "Move panels together", portraitsOn: "Hide character portraits", portraitsOff: "Show character portraits", minimize: "Minimize", restore: "Restore", reset: "Reset panel layout", keys: "Drag or use arrow keys. Shift for larger steps, Esc to cancel.", failed: "Couldn’t save the layout." },
 };
 interface TileProps { id: Id; title: string; icon: ReactNode; children: ReactNode }
 export function WidgetTile({ children }: TileProps) { return <>{children}</>; }
 
 /** UI-only positioning. No world, portrait, or memory data is stored here. */
-export function WidgetDeck({ children, locale, saved, onSave, minimumLeft = WIDGET_GAP, minimumTop = WIDGET_GAP }: { children: ReactNode; locale: Locale; saved?: WidgetLayout; onSave?: (layout: WidgetLayout) => Promise<void>; minimumLeft?: number; minimumTop?: number }) {
+export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, onTogglePortraits, minimumLeft = WIDGET_GAP, minimumTop = WIDGET_GAP }: { children: ReactNode; locale: Locale; saved?: WidgetLayout; onSave?: (layout: WidgetLayout) => Promise<void>; portraitsVisible?: boolean; onTogglePortraits?: () => void | Promise<void>; minimumLeft?: number; minimumTop?: number }) {
   const t = copy[locale];
   const tiles = Children.toArray(children).filter(isValidElement<TileProps>).map(child => child.props);
   const [layout, setLayout] = useState(() => parseWidgetLayout(saved));
@@ -147,7 +147,7 @@ export function WidgetDeck({ children, locale, saved, onSave, minimumLeft = WIDG
   const handle = <button type="button" className="dr-widget-move" aria-label={t.all} title={`${t.all}. ${t.keys}`} onPointerDown={event => start("dock", event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove("dock", event)}><GripHorizontal size={14} /></button>;
   return <div className="dr-widget-deck" data-overflow={overflow || undefined} style={{ "--dr-min-left": `${minimumLeft}px`, "--dr-min-top": `${minimumTop}px` } as CSSProperties}>
     <div className="dr-widget-dock" ref={dock} style={style("dock")}>
-      <div className="dr-widget-deck-tools">{handle}<button type="button" title={t.mode} aria-label={t.mode} aria-pressed={layout.together} onClick={() => commit({ ...layout, together: !layout.together })}><Layers size={13} /><span>{t.together}</span></button><button type="button" title={t.reset} aria-label={t.reset} onClick={() => commit(empty())}><RotateCcw size={13} /></button></div>
+      <div className="dr-widget-deck-tools">{handle}<button type="button" title={t.mode} aria-label={t.mode} aria-pressed={layout.together} onClick={() => commit({ ...layout, together: !layout.together })}><Layers size={13} /><span>{t.together}</span></button>{onTogglePortraits && <button type="button" title={portraitsVisible ? t.portraitsOn : t.portraitsOff} aria-label={portraitsVisible ? t.portraitsOn : t.portraitsOff} aria-pressed={!!portraitsVisible} onClick={() => void onTogglePortraits()}>{portraitsVisible ? <Eye size={13} /> : <EyeOff size={13} />}</button>}<button type="button" title={t.reset} aria-label={t.reset} onClick={() => commit(empty())}><RotateCcw size={13} /></button></div>
       <div className="dr-widget-minimized">{tiles.filter(tile => layout.minimized.includes(tile.id)).map(tile => <button type="button" key={tile.id} data-restore-widget={tile.id} aria-expanded={false} title={`${t.restore}: ${tile.title}`} aria-label={`${t.restore}: ${tile.title}`} onClick={() => { commit({ ...layout, minimized: layout.minimized.filter(id => id !== tile.id) }); requestAnimationFrame(() => refs.current.get(tile.id)?.querySelector<HTMLButtonElement>("button")?.focus()); }}>{tile.icon}</button>)}</div>
       {error && <small role="alert">{t.failed}</small>}
     </div>

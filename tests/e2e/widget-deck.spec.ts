@@ -1,5 +1,23 @@
 import { test, expect } from "@playwright/test";
 
+for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`portrait visibility lives beside panel controls ${locale} ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 850 });
+  await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);
+  const dock = page.locator(".dr-widget-deck-tools");
+  const hide = dock.getByRole("button", { name: locale === "ru" ? "Скрыть портреты персонажей" : "Hide character portraits" });
+  await expect(hide).toBeVisible();
+  await expect(hide).toHaveAttribute("aria-pressed", "true");
+  await hide.click();
+  const show = dock.getByRole("button", { name: locale === "ru" ? "Показать портреты персонажей" : "Show character portraits" });
+  await expect(show).toHaveAttribute("aria-pressed", "false");
+  expect(await page.evaluate(() => (window as Window & { portraitsVisible?: boolean }).portraitsVisible)).toBe(false);
+  await show.click();
+  await expect(hide).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => (window as Window & { portraitsVisible?: boolean }).portraitsVisible)).toBe(true);
+  const box = (await dock.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(width);
+});
+
 test("legacy overlaps, pointer collisions and tiny viewport have safe spacing", async ({ page }, info) => {
   await page.setViewportSize({ width: 1100, height: 900 });
   await page.addInitScript(() => localStorage.setItem("deeprole.widgetLayout.v1", JSON.stringify({ minimized: [], together: false, positions: Object.fromEntries(["dock", "meter", "memory", "characters", "scene", "choices"].map(id => [id, { x: .1, y: .1 }])) })));

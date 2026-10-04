@@ -33,6 +33,7 @@ export interface WidgetState {
   sceneChoicesEnabled?: boolean;
   showChatContextMeter?: boolean;
   showMemoryContextIndicator?: boolean;
+  characterSpritesEnabled?: boolean;
   vaultLocked: boolean;
   proposals?: MemoryProposalBatch[];
   reviewProposalId?: string | null;
@@ -78,6 +79,7 @@ export function PageWidget(props: {
   menuUrl: string;
   onSceneChange?: (scene: SceneState) => void | Promise<boolean>;
   onSceneChoicesToggle?: () => void;
+  onTogglePortraits?: () => void;
   onResetEntry?: (id: string) => void;
   onQuickSave?: (text: string, mode: ActivationMode, title: string) => Promise<void>;
   onDraftLore?: (brief: string) => Promise<void>;
@@ -237,7 +239,7 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
       <div ref={contextAnchor} hidden={props.state.startupError} className={`dr-context-anchor ${contextPosition && contextPosition.x > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={props.state.startupError ? { display: "none" } : contextStyle}>
-      {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : <WidgetDeck locale={props.state.locale} saved={props.state.widgetLayout} onSave={props.onWidgetLayoutChange} minimumLeft={chatTitleMinimumLeft(290)} minimumTop={chatTitleMinimumTop()}>
+      {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : <WidgetDeck locale={props.state.locale} saved={props.state.widgetLayout} onSave={props.onWidgetLayoutChange} portraitsVisible={props.state.characterSpritesEnabled !== false} onTogglePortraits={props.onTogglePortraits} minimumLeft={chatTitleMinimumLeft(290)} minimumTop={chatTitleMinimumTop()}>
         {props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0 && <WidgetTile id="meter" title={x("chatMeterTitle")} icon={<Gauge size={16} />}><div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
           <div className="dr-chat-meter-heading"><span>{x("chatMeterTitle")}</span><strong>~{compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M</strong></div>
           <div className="dr-chat-meter-track" role="progressbar" aria-valuemin={0} aria-valuemax={DEEPSEEK_WEB_CONTEXT_LIMIT} aria-valuenow={Math.min(chatEstimate.estimatedTokens, DEEPSEEK_WEB_CONTEXT_LIMIT)} aria-valuetext={`~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / 1M`}><i style={{ width: `${chatEstimatePercent}%` }} /></div>

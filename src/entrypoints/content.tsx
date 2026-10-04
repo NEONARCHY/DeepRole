@@ -266,6 +266,7 @@ class PageController {
     this.state.locale = this.settings.locale;
     this.state.showChatContextMeter = this.settings.showChatContextMeter;
     this.state.showMemoryContextIndicator = this.settings.showMemoryContextIndicator;
+    this.state.characterSpritesEnabled = this.settings.characterSpritesEnabled;
     if (locked) {
       this.clearPrivateState();
       await this.updateContext();
@@ -634,6 +635,7 @@ class PageController {
       onWidgetLayoutChange={async layout => { await browser.storage.local.set({ [WIDGET_LAYOUT_KEY]: layout }); this.state.widgetLayout = layout; this.render(); }}
       onSceneChange={(scene) => this.setScene(scene).then(() => true, () => { this.showToast(sceneText(this.state.locale, "failed")); return false; })}
       onSceneChoicesToggle={() => void this.toggleSceneChoices()}
+      onTogglePortraits={() => void this.togglePortraits()}
       menuUrl={`${browser.runtime.getURL("/sidepanel.html")}?embedded=1`}
     />);
   }
@@ -804,6 +806,14 @@ class PageController {
       await this.reload();
       this.syncSceneChoices();
     } catch { this.showToast(sceneChoiceText(this.state.locale, "unavailable")); }
+  }
+
+  private async togglePortraits() {
+    try {
+      await updateSettings({ characterSpritesEnabled: this.settings.characterSpritesEnabled === false });
+      await this.reload();
+      this.syncSceneChoices();
+    } catch { this.showToast(this.state.locale === "ru" ? "Не удалось изменить видимость портретов." : "Couldn’t change portrait visibility."); }
   }
 
   private async pickSceneChoice(choice: SceneChoice, signature: string): Promise<boolean> {
