@@ -112,8 +112,16 @@ test("odd column counts and a changed protagonist never overlap unplaced portrai
 test("portraits snap beside choices and follow their anchor after resize", async ({ page }, info) => {
   await page.setViewportSize({ width: 1500, height: 950 });
   await page.goto("/tests/fixtures/characters.html?locale=en");
+  await page.evaluate(() => {
+    const conversation = document.querySelector("#conversation")!;
+    for (const place of ["before", "after"] as const) {
+      const spacer = document.createElement("div"); spacer.style.height = "1400px";
+      if (place === "before") conversation.before(spacer); else conversation.after(spacer);
+    }
+  });
   const card = page.locator("[data-deeprole-choices-host] section");
   await card.scrollIntoViewIfNeeded();
+  await card.evaluate(element => window.scrollTo(0, window.scrollY + element.getBoundingClientRect().top - 180));
   const mira = page.locator('.dr-cast-widget[data-character-id="mira"]');
   const hero = page.locator('.dr-cast-widget[data-character-id="hero"]');
   await expect.poll(async () => (await mira.boundingBox())!.x).toBeGreaterThan((await card.boundingBox())!.x + (await card.boundingBox())!.width);
@@ -126,6 +134,19 @@ test("portraits snap beside choices and follow their anchor after resize", async
   expect(left.x + left.width).toBeLessThanOrEqual(target.x);
   expect(first.y + first.height <= left.y || left.y + left.height <= first.y).toBe(true);
   await page.screenshot({ path: info.outputPath("docked-wide.png") });
+  const positions = await Promise.all([mira.boundingBox(), hero.boundingBox()]);
+  for (const destination of [0, "bottom"] as const) {
+    await page.evaluate(destination => window.scrollTo(0, destination === "bottom" ? document.documentElement.scrollHeight : 0), destination);
+    await expect.poll(() => page.evaluate(() => {
+      const rect = document.querySelector("[data-deeprole-choices-host]")!.getBoundingClientRect();
+      return rect.bottom < 0 || rect.top > innerHeight;
+    })).toBe(true);
+    for (const [index, portrait] of [mira, hero].entries()) {
+      await expect.poll(async () => (await portrait.boundingBox())!.x).toBeCloseTo(positions[index]!.x, 0);
+      await expect.poll(async () => (await portrait.boundingBox())!.y).toBeCloseTo(positions[index]!.y, 0);
+    }
+    await page.screenshot({ path: info.outputPath(`docked-scrolled-${destination}.png`) });
+  }
   await page.setViewportSize({ width: 480, height: 950 }); await card.scrollIntoViewIfNeeded();
   await expect.poll(async () => (await mira.boundingBox())!.x).toBeGreaterThanOrEqual((await card.boundingBox())!.x);
   const choices = await card.locator(".grid").boundingBox();

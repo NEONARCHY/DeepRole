@@ -11,8 +11,8 @@ export interface PortraitStageOptions {
   resetAt?: number;
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
-type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; statsKey?: string };
-type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; busy: boolean; dragging: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
+type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
+type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; busy: boolean; dragging: boolean; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
 let statsId = 0;
@@ -26,7 +26,15 @@ function arrange(stage: Stage) {
   if (!width || !height) return;
   const anchor = (stage.anchor.shadowRoot?.querySelector("section") ?? stage.anchor).getBoundingClientRect();
   const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
+  // Vertical scrolling must not continuously re-anchor fixed portraits.
+  // Reposition only after a real layout/viewport change or an active drag.
+  const placementKey = JSON.stringify([width, height, anchor.left, anchor.width]);
+  const placementChanged = stage.placementKey !== placementKey;
+  stage.placementKey = placementKey;
   const anchorVisible = anchor.bottom > 0 && anchor.top < height - 100;
+  if (placementChanged && !anchorVisible) stage.needsRedock = true;
+  const shouldRedock = placementChanged || (anchorVisible && stage.needsRedock);
+  if (anchorVisible) stage.needsRedock = false;
   const rows = Math.max(1, Math.ceil(stage.widgets.size / 2));
   const defaultWidth = clamp(Math.min(192, (height / Math.min(rows, 4) - 128) * .75, width < 600 ? 120 : 192), 96, 192);
   const rowHeight = defaultWidth * 4 / 3 + 160;
@@ -37,7 +45,7 @@ function arrange(stage: Stage) {
   const inlineWidth = Math.min(defaultWidth, Math.max(72, (anchor.width - 48) / 2));
   const estimatedLeft = [...stage.widgets.values()].filter((widget, index) => widget.pose?.dock === "left" || !widget.pose?.dock && index % 2 === 0).length;
   const estimatedRight = stage.widgets.size - estimatedLeft;
-  if (section) section.style.paddingTop = !anchorVisible || outsideFits ? "" : `${Math.ceil(Math.max(estimatedLeft, estimatedRight) * (inlineWidth * 4 / 3 + 112) + 12)}px`;
+  if (section) section.style.paddingTop = outsideFits ? "" : `${Math.ceil(Math.max(estimatedLeft, estimatedRight) * (inlineWidth * 4 / 3 + 112) + 12)}px`;
   const startY = clamp(anchor.top, 8, height - Math.min(rows, visibleRows) * rowHeight - 8);
   const dockStartY = clamp(anchor.top, 8, height - Math.min(Math.max(estimatedLeft, estimatedRight), visibleRows) * rowHeight - 8);
   let index = 0;
@@ -53,21 +61,29 @@ function arrange(stage: Stage) {
       : columns > 2 ? 8 + column * (width - defaultWidth - 16) / (columns - 1) : side === "left" ? anchor.left - defaultWidth - 16 : anchor.right + 16;
     const saved = widget.pose ? portraitBounds(widget.pose, width - 16, height - 16) : null;
     const collidesWithChoices = saved && saved.x < anchor.right && saved.x + saved.width > anchor.left && saved.y < anchor.bottom && saved.y + saved.width * 4 / 3 + 70 > anchor.top;
-    const dock = anchorVisible ? widget.pose?.dock ?? (collidesWithChoices ? side : widget.pose ? null : side) : null;
+    const keepResting = !stage.dragging && !shouldRedock && !!widget.restingPose;
+    const dock = !keepResting && anchorVisible ? widget.pose?.dock ?? (collidesWithChoices ? side : widget.pose ? null : side) : null;
     const dockRow = dock ? dockCounts[dock]++ : 0;
     const dockWidth = outsideFits ? defaultWidth : inlineWidth;
     const dockX = outsideFits ? dock === "left" ? anchor.left - (dockWidth + 12) * (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) + 1 : 1) : anchor.right + 12 + (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) : 0) * (dockWidth + 12)
       : dock === "left" ? anchor.left + 12 : anchor.right - dockWidth - 12;
     const dockY = outsideFits ? dockStartY + (dockRow % visibleRows) * rowHeight : anchor.top + 12 + dockRow * (inlineWidth * 4 / 3 + 112);
-    const bounds = dock ? { width: dockWidth, x: dockX, y: dockY } : saved ?? { width: defaultWidth, x: defaultX, y: startY + row * rowHeight };
+    // A dock is a placement gesture, not a tether to the scrolling answer.
+    // Once the choices leave the viewport, keep the last on-screen position.
+    const resting = (keepResting || !anchorVisible) && widget.restingPose ? portraitBounds(widget.restingPose, width - 16, height - 16) : null;
+    const bounds = dock ? { width: dockWidth, x: dockX, y: dockY } : resting ?? saved ?? { width: defaultWidth, x: defaultX, y: startY + row * rowHeight };
     // Legacy poses used chat coordinates. Convert for display only, without rewriting stored data.
     if (!dock && widget.pose && widget.pose.space !== "viewport") {
       const legacy = portraitBounds(widget.pose, anchor.width);
       bounds.x = anchor.left + legacy.x; bounds.y = anchor.top + legacy.y;
     }
+    const x = clamp(bounds.x, 8, width - bounds.width - 8);
+    const y = clamp(bounds.y, 8, height - widget.box.offsetHeight - 8);
     css(widget.box, "width", `${bounds.width}px`);
-    css(widget.box, "left", `${clamp(bounds.x, 8, width - bounds.width - 8)}px`);
-    css(widget.box, "top", `${clamp(bounds.y, 8, height - widget.box.offsetHeight - 8)}px`);
+    css(widget.box, "left", `${x}px`);
+    css(widget.box, "top", `${y}px`);
+    if (dock) widget.restingPose = portraitPose(x, y, bounds.width, width - 16, height - 16);
+    else if (stage.dragging && anchorVisible) widget.restingPose = undefined;
     css(widget.resize, "top", `${Math.max(0, widget.open.querySelector("img")!.offsetHeight - 44)}px`);
   }
 }
