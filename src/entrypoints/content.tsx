@@ -205,6 +205,13 @@ class PageController {
       if (location.href !== this.lastUrl) {
         this.navigate();
       }
+      // Run before the next paint when DeepSeek streams a transport marker;
+      // the normal 350 ms scan can otherwise expose raw JSON for a frame.
+      if (changes.some(change => [...change.addedNodes, change.type === "characterData" ? change.target : null]
+        .some(node => node?.textContent && /<deeprole_(?:characters|choices)/u.test(node.textContent)
+          && !(node instanceof Element && node.matches("[data-deeprole-choices-payload], [data-deeprole-choices-loading], [data-deeprole-choices-host]"))))) {
+        this.syncSceneChoices();
+      }
       const request = this.pendingService;
       if (request?.type === "memory-analysis" && request.chatId === this.adapter.getChatId()) {
         this.updateMemoryPreloader(request);
@@ -1081,7 +1088,7 @@ class PageController {
     this.setServiceResult(request, "error");
     this.malformedServiceReplies.delete(request.id);
     await this.updateContext(); this.syncSceneChoices(); this.render();
-    this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "invalidServiceResult"));
+    this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, /handoff/.test(request.type) ? "invalidHandoffResult" : "invalidServiceResult"));
   }
 
   private scheduleHandoffNavigation(snapshot: HandoffSnapshot, scope: PageScope) {

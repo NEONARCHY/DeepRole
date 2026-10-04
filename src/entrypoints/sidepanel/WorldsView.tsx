@@ -6,13 +6,14 @@ import { experienceText } from "../../core/experience-i18n";
 import { characterDescription, characterText } from "../../core/characters";
 import { BOOK_COLORS } from "../../core/defaults";
 import { createId } from "../../core/id";
+import { importFileTooLarge } from "../../core/import-limits";
 import { sceneText, type SceneKey } from "../../core/scene-i18n";
 import { buildLoreImport, parseLoreImport, type LoreImport } from "../../core/lore-import";
 import type { DataRecord, Locale, MemoryBook, MemoryEntry, SceneEntity, SceneState, StoryTemplate, WorldProfile } from "../../core/types";
 import { repository } from "../../storage/repository";
 import { saveEditorRecord } from "../../storage/editing";
 import { changeMapActivations, changeMapCategory, changeMapLink, confirmMapPerson, placeMapEntry, removeMapBranch, saveMapLayout } from "../../storage/lore-map";
-import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parseWorldPackage, removeEntity, removeWorld, type WorldPackage } from "../../storage/worlds";
+import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parseWorldPackageData, removeEntity, removeWorld, type WorldPackage } from "../../storage/worlds";
 import { HelpButton } from "../shared/Help";
 import { LoreMap } from "./LoreMap";
 import { MapWorkspace } from "./MapWorkspace";
@@ -302,12 +303,12 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     const current = () => mounted.current && generation === readGeneration.current;
     setBusy(true); setLore(null); setAcceptUnsupported(false); setPack(null); setWorldId(""); setError(""); setFileName(file.name);
     try {
-      if (file.size > 10_000_000) throw new Error();
+      if (importFileTooLarge(file.size, "world")) throw new Error("worldTooLarge");
       const text = await file.text(); if (!current()) return;
       const data = JSON.parse(text.replace(/^\uFEFF/, ""));
-      if (data?.format === "deeprole-world") { const value = parseWorldPackage(text); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
-      else { const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
-    } catch { if (current()) setError(t("fileInvalid")); }
+      if (data?.format === "deeprole-world") { const value = parseWorldPackageData(data, file.size); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
+      else { if (file.size > 10_000_000) throw new Error("fileInvalid"); const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
+    } catch (error) { if (current()) setError(t(error instanceof Error && error.message === "worldTooLarge" ? "worldTooLarge" : "fileInvalid")); }
     finally { if (current()) setBusy(false); }
   }
   async function importRecords(build: () => DataRecord[], attachToChat: boolean) {

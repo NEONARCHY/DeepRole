@@ -113,6 +113,14 @@ describe("DeepSeek service message isolation", () => {
     expect(document.getElementById("reasoning")?.style.display).toBe("");
   });
 
+  it("does not save a handoff emitted only in stopped reasoning", () => {
+    document.body.innerHTML = '<section><article id="request"></article><article id="answer"><div class="ds-think-content" id="reasoning"></div></article></section>';
+    document.getElementById("request")!.textContent = '[DeepRole Service]\n[Request ID: stopped-handoff]\nContinue in a new chat';
+    document.getElementById("reasoning")!.textContent = '<deeprole_data>{"type":"handoff","title":"Gate","summary":"Mira has the map."}</deeprole_data>';
+    expect(findServiceReplyRows("stopped-handoff")).toEqual([document.getElementById("answer")]);
+    expect(findServiceResponseElements("stopped-handoff")).toEqual([]);
+  });
+
   it("restores service turns hidden by an older extension version", () => {
     document.body.innerHTML = '<article data-message-id="old" data-deeprole-hidden-service="true" style="display:none!important">Old reply</article>';
     restoreServiceTurns();

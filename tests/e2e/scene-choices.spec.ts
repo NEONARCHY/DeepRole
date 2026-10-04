@@ -5,6 +5,32 @@ const options = ["positive", "neutral", "negative", "surprise"].map((kind, index
 const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
+for (const userScrollsAway of [false, true]) test(`streamed choices keep the bottom in view unless the reader scrolls up ${userScrollsAway}`, async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: userScrollsAway ? 500 : 380 });
+  await page.goto("/tests/fixtures/scene-choices.html?locale=ru");
+  await page.evaluate(() => { document.body.style.paddingBottom = "300px"; });
+  const story = Array.from({ length: 30 }, (_, i) => `<p>Сцена продолжается ${i}.</p>`).join("");
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-message-id="live" data-role="assistant"><div class="ds-markdown">${story}</div></article>`);
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: true }));
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  await page.locator(".ds-markdown").evaluate(body => { body.append(' <deeprole_choices>{"version":1,'); (window as any).choicesTest.sync(); });
+  const loader = page.locator("[data-deeprole-choices-loading]");
+  await expect(loader).toHaveCount(1);
+  await expect.poll(() => loader.evaluate(node => node.getBoundingClientRect().bottom)).toBeLessThan(userScrollsAway ? 450 : 330);
+  if (userScrollsAway) {
+    await page.mouse.wheel(0, -320);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight - 200));
+  }
+  const before = await page.evaluate(() => window.scrollY);
+  await page.locator(".ds-markdown").evaluate((body, remainder) => { body.append(remainder); (window as any).choicesTest.sync(); }, payload.slice('<deeprole_choices>{"version":1,'.length));
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
+  await expect(page.locator("[data-deeprole-choices-host]")).toHaveCount(1);
+  const after = await page.evaluate(() => window.scrollY);
+  if (userScrollsAway) expect(after).toBeLessThanOrEqual(before + 2);
+  else expect(await page.locator("[data-deeprole-choices-host]").evaluate(node => node.getBoundingClientRect().top)).toBeLessThanOrEqual(60);
+});
+
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
   test(`streaming choices hide transport and show one loader ${locale} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 700 });
@@ -20,6 +46,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
       await expect(page.locator(".ds-markdown")).toHaveText(scene, { useInnerText: true });
     }
     await page.screenshot({ path: info.outputPath("story-no-preloader.png") });
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html), '<article data-role="assistant" data-message-id="live"><div class="ds-markdown"><p>Mira holds the key.</p><p>&lt;deeprole_characters&gt;{"request":"</p></div></article>');
+    await expect(page.locator(".ds-markdown")).toHaveText("Mira holds the key.", { useInnerText: true });
+    await expect(loader).toHaveCount(1);
+    await expect(loader.getByRole("status")).toHaveText(locale === "ru" ? "Варианты ответов готовятся…" : "Preparing reply options…");
+    await page.screenshot({ path: info.outputPath("characters-preloader.png") });
     for (const size of [24, 50, 140, payload.length - 8]) {
       const partial = payload.slice(0, size);
       await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-role="assistant" data-message-id="live"><div class="ds-markdown"><p>Mira holds the key.</p><p>${partial.replaceAll("<", "&lt;")}</p></div></article>`);

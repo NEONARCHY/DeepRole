@@ -12,13 +12,66 @@ export interface PortraitStageOptions {
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
 type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
-type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; busy: boolean; dragging: boolean; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
+type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
 let statsId = 0;
 const text = (node: HTMLElement, value: string) => { if (node.textContent !== value) node.textContent = value; };
 const attr = (node: HTMLElement, key: string, value: string) => { if (node.getAttribute(key) !== value) node.setAttribute(key, value); };
 const css = (node: HTMLElement, key: string, value: string) => { if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value); };
+const PORTRAIT_CHOICE_GAP = 24;
+const PORTRAIT_PEER_GAP = 6;
+
+/** Default cast: protagonist left; speakers first on the right, then quieter bystanders. */
+function arrangeCastGroup(stage: Stage, anchor: DOMRect, width: number, height: number, preferredWidth: number): boolean {
+  const hero = stage.heroId ? stage.widgets.get(stage.heroId) : undefined;
+  const others = [...stage.widgets].filter(([id]) => id !== stage.heroId);
+  const leftRoom = anchor.left - PORTRAIT_CHOICE_GAP - 8;
+  const rightRoom = width - anchor.right - PORTRAIT_CHOICE_GAP - 8;
+  if (!hero || !others.length || leftRoom < 96 || rightRoom < 96) return false;
+  const ratios = others.map(([id]) => stage.partnerIds.has(id) ? 1 : .85);
+  const firstPair = ratios[0]! + (ratios[1] ?? 0);
+  const pairWidth = others.length > 1 ? (rightRoom - PORTRAIT_PEER_GAP) / firstPair : rightRoom / ratios[0]!;
+  const oneRowWidth = (rightRoom - (others.length - 1) * PORTRAIT_PEER_GAP) / ratios.reduce((sum, ratio) => sum + ratio, 0);
+  const fullWidth = Math.max(96, Math.min(preferredWidth, oneRowWidth >= 96 ? oneRowWidth : pairWidth));
+  const sized = others.map(([id, widget], index) => ({ id, widget, width: Math.round(fullWidth * ratios[index]!) }));
+  if (sized.some(item => item.width < 96 || item.width > rightRoom)) return false;
+  css(hero.box, "width", `${Math.min(preferredWidth, leftRoom)}px`);
+  for (const item of sized) css(item.widget.box, "width", `${item.width}px`);
+  const rows: typeof sized[] = [];
+  for (const item of sized) {
+    let row = rows.at(-1);
+    const used = row?.reduce((sum, entry) => sum + entry.width, 0) ?? 0;
+    if (!row || used + (row.length ? row.length * PORTRAIT_PEER_GAP : 0) + item.width > rightRoom) { row = []; rows.push(row); }
+    row.push(item);
+  }
+  const heights = rows.map((row, index) => Math.max(index === 0 ? hero.box.offsetHeight : 0, ...row.map(item => item.widget.box.offsetHeight)));
+  const totalHeight = heights.reduce((sum, value) => sum + value, 0) + (rows.length - 1) * PORTRAIT_PEER_GAP;
+  // In an extremely crowded viewport the older multi-column fallback keeps
+  // everyone reachable instead of pushing the last characters off-screen.
+  if (totalHeight > height - 16) return false;
+  const top = clamp(anchor.top, 8, height - totalHeight - 8);
+  let rowTop = top;
+  for (const [index, row] of rows.entries()) {
+    const baseline = rowTop + heights[index]!;
+    let x = anchor.right + PORTRAIT_CHOICE_GAP;
+    for (const item of row) {
+      const y = baseline - item.widget.box.offsetHeight;
+      css(item.widget.box, "left", `${x}px`); css(item.widget.box, "top", `${y}px`);
+      item.widget.restingPose = portraitPose(x, y, item.width, width - 16, height - 16);
+      css(item.widget.resize, "top", `${Math.max(0, item.widget.open.querySelector("img")!.offsetHeight - 44)}px`);
+      x += item.width + PORTRAIT_PEER_GAP;
+    }
+    rowTop = baseline + PORTRAIT_PEER_GAP;
+  }
+  const heroWidth = Math.min(preferredWidth, leftRoom);
+  const heroX = anchor.left - PORTRAIT_CHOICE_GAP - heroWidth;
+  const heroY = top + heights[0]! - hero.box.offsetHeight;
+  css(hero.box, "left", `${heroX}px`); css(hero.box, "top", `${heroY}px`);
+  hero.restingPose = portraitPose(heroX, heroY, heroWidth, width - 16, height - 16);
+  css(hero.resize, "top", `${Math.max(0, hero.open.querySelector("img")!.offsetHeight - 44)}px`);
+  return true;
+}
 
 function arrange(stage: Stage) {
   const width = stage.frame.clientWidth;
@@ -31,16 +84,25 @@ function arrange(stage: Stage) {
   const placementKey = JSON.stringify([width, height, anchor.left, anchor.width]);
   const placementChanged = stage.placementKey !== placementKey;
   stage.placementKey = placementKey;
+  const groupKey = JSON.stringify([stage.heroId, [...stage.widgets].map(([id, widget]) => [id, widget.box.offsetHeight]), [...stage.partnerIds]]);
+  const groupChanged = stage.groupKey !== groupKey; stage.groupKey = groupKey;
   const anchorVisible = anchor.bottom > 0 && anchor.top < height - 100;
-  if (placementChanged && !anchorVisible) stage.needsRedock = true;
-  const shouldRedock = placementChanged || (anchorVisible && stage.needsRedock);
+  if ((placementChanged || groupChanged) && !anchorVisible) stage.needsRedock = true;
+  const shouldRedock = placementChanged || groupChanged || (anchorVisible && stage.needsRedock);
   if (anchorVisible) stage.needsRedock = false;
   const rows = Math.max(1, Math.ceil(stage.widgets.size / 2));
   const defaultWidth = clamp(Math.min(192, (height / Math.min(rows, 4) - 128) * .75, width < 600 ? 120 : 192), 96, 192);
+  const allDefault = [...stage.widgets.values()].every(widget => !widget.pose);
+  if (stage.grouped && !anchorVisible && !stage.dragging) return;
+  if (allDefault && !stage.dragging && anchorVisible && (shouldRedock || !stage.grouped)) {
+    stage.grouped = arrangeCastGroup(stage, anchor, width, height, defaultWidth);
+    if (stage.grouped) { if (section) section.style.paddingTop = ""; return; }
+  } else if (stage.grouped && !shouldRedock && allDefault && !stage.dragging) return;
+  if (!allDefault || stage.dragging) stage.grouped = false;
   const rowHeight = defaultWidth * 4 / 3 + 160;
   const visibleRows = Math.max(1, Math.floor((height - 16) / rowHeight));
   const columns = Math.max(2, Math.ceil(stage.widgets.size / visibleRows));
-  const sideWidth = Math.ceil(columns / 2) * (defaultWidth + 16) + 8;
+  const sideWidth = Math.ceil(columns / 2) * (defaultWidth + PORTRAIT_CHOICE_GAP) + 8;
   const outsideFits = anchor.left >= sideWidth && width - anchor.right >= sideWidth;
   const inlineWidth = Math.min(defaultWidth, Math.max(72, (anchor.width - 48) / 2));
   const estimatedLeft = [...stage.widgets.values()].filter((widget, index) => widget.pose?.dock === "left" || !widget.pose?.dock && index % 2 === 0).length;
@@ -57,7 +119,7 @@ function arrange(stage: Stage) {
     const row = center ? index - pairedCapacity : Math.floor(index / 2) % visibleRows;
     const band = Math.floor(index++ / (visibleRows * 2));
     const column = center ? Math.floor(columns / 2) : side === "left" ? band : columns - 1 - band;
-    const defaultX = outsideFits ? side === "left" ? anchor.left - (band + 1) * (defaultWidth + 16) : anchor.right + 16 + band * (defaultWidth + 16)
+    const defaultX = outsideFits ? side === "left" ? anchor.left - (band + 1) * (defaultWidth + PORTRAIT_CHOICE_GAP) : anchor.right + PORTRAIT_CHOICE_GAP + band * (defaultWidth + PORTRAIT_CHOICE_GAP)
       : columns > 2 ? 8 + column * (width - defaultWidth - 16) / (columns - 1) : side === "left" ? anchor.left - defaultWidth - 16 : anchor.right + 16;
     const saved = widget.pose ? portraitBounds(widget.pose, width - 16, height - 16) : null;
     const collidesWithChoices = saved && saved.x < anchor.right && saved.x + saved.width > anchor.left && saved.y < anchor.bottom && saved.y + saved.width * 4 / 3 + 70 > anchor.top;
@@ -65,7 +127,7 @@ function arrange(stage: Stage) {
     const dock = !keepResting && anchorVisible ? widget.pose?.dock ?? (collidesWithChoices ? side : widget.pose ? null : side) : null;
     const dockRow = dock ? dockCounts[dock]++ : 0;
     const dockWidth = outsideFits ? defaultWidth : inlineWidth;
-    const dockX = outsideFits ? dock === "left" ? anchor.left - (dockWidth + 12) * (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) + 1 : 1) : anchor.right + 12 + (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) : 0) * (dockWidth + 12)
+    const dockX = outsideFits ? dock === "left" ? anchor.left - (dockWidth + PORTRAIT_CHOICE_GAP) * (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) + 1 : 1) : anchor.right + PORTRAIT_CHOICE_GAP + (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) : 0) * (dockWidth + PORTRAIT_CHOICE_GAP)
       : dock === "left" ? anchor.left + 12 : anchor.right - dockWidth - 12;
     const dockY = outsideFits ? dockStartY + (dockRow % visibleRows) * rowHeight : anchor.top + 12 + dockRow * (inlineWidth * 4 / 3 + 112);
     // A dock is a placement gesture, not a tether to the scrolling answer.
@@ -166,16 +228,29 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
 }
 
 export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], scene: CharacterScene | undefined, locale: Locale, onOpen: (id: string) => void, root: ParentNode = document, options?: PortraitStageOptions) {
-  for (const stage of activeStages) if (!stage.anchor.isConnected || !stage.anchor.shadowRoot?.querySelector("section")) dispose(stage);
-  for (const host of root.querySelectorAll<HTMLElement>("[data-deeprole-choices-host]")) {
+  const scope = options?.scope ?? "";
+  const people = enabled ? characterCast(entities, scene) : [];
+  for (const stage of activeStages) if (stage.scope !== scope || !people.length || !scope && !stage.anchor.isConnected) dispose(stage);
+  if (!people.length) return;
+  const hosts = [...root.querySelectorAll<HTMLElement>("[data-deeprole-choices-host]")];
+  // Choices disappear as soon as a new request starts. Keep the body-level
+  // portrait layer until the next reply, and reattach it to the next card.
+  const detached = [...activeStages].filter(stage => !stage.anchor.isConnected && stage.scope === scope).map(stage => stage.anchor);
+  for (const host of [...hosts, ...(!hosts.length ? detached : [])]) {
     const shadow = host.shadowRoot; const section = shadow?.querySelector("section");
     if (!shadow || !section) continue;
-    const people = enabled ? characterCast(entities, scene) : [];
+    if (!shadow.querySelector("[data-portrait-stage-style]")) { const style = host.ownerDocument.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
+    section.classList.add("dr-cast-content");
     let stage = stages.get(host);
-    const scope = options?.scope ?? "";
-    if (!people.length || stage && stage.scope !== scope) {
-      if (stage) { dispose(stage); stage = undefined; }
-      if (!people.length) continue;
+    if (!stage) {
+      stage = [...activeStages].find(candidate => !candidate.anchor.isConnected && candidate.scope === scope);
+      if (stage) {
+        stages.delete(stage.anchor);
+        stage.observer.disconnect(); stage.observer.observe(stage.frame);
+        stage.anchor = host; stage.toolbar.remove(); shadow.append(stage.toolbar);
+        stage.placementKey = undefined; stage.needsRedock = true;
+        stages.set(host, stage); stage.observer.observe(host);
+      }
     }
     if (!stage) {
       const doc = host.ownerDocument;
@@ -190,9 +265,13 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       const hint = doc.createElement("p"); const reset = doc.createElement("button"); reset.type = "button";
       const status = doc.createElement("p"); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite"); status.className = "dr-cast-layout-status";
       toolbar.append(hint, reset, status); shadow.append(toolbar);
-      const onResize = () => { const active = stages.get(host); if (active && !active.disposed) arrange(active); };
+      // The same layer can move to a new choices card after the next reply.
+      // Keep resize/scroll listeners bound to the layer, not its former host.
+      let currentStage: Stage | undefined;
+      const onResize = () => { if (currentStage && !currentStage.disposed) arrange(currentStage); };
       const observer = new ResizeObserver(onResize);
-      stage = { anchor: host, overlay, frame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, busy: false, dragging: false, observer, onResize, disposed: false };
+      stage = { anchor: host, overlay, frame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, partnerIds: new Set(), busy: false, dragging: false, observer, onResize, disposed: false };
+      currentStage = stage;
       stages.set(host, stage); activeStages.add(stage); observer.observe(host); observer.observe(frame);
       doc.defaultView?.addEventListener("resize", onResize);
       doc.defaultView?.addEventListener("scroll", onResize, true);
@@ -208,6 +287,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
     const partners = new Set(characterInterlocutors(entities, scene).map(person => person.id));
     const focused = stage.overlay.shadowRoot!.activeElement as HTMLElement | null;
     const hero = entities.find(entity => entity.characterSheet?.protagonist);
+    stage.heroId = hero?.id; stage.partnerIds = partners;
     const other = people.find(entity => entity.id !== hero?.id);
     for (const [id, widget] of stage.widgets) if (!people.some(person => person.id === id)) { widget.slot.remove(); stage.widgets.delete(id); }
     for (const entity of people) {

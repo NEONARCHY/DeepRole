@@ -2,6 +2,20 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { setEnglish } from "./helpers/settings";
 
+test("imports a DeepRole world larger than the old 10 MB limit", async ({ page }) => {
+  await page.goto("/tests/fixtures/sidepanel.html");
+  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  const world = { id: "portable-world", name: "Перенесённый мир", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const pack = { format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }] };
+  const buffer = Buffer.from(JSON.stringify(pack) + " ".repeat(10_100_000));
+  expect(buffer.byteLength).toBeGreaterThan(10_000_000);
+  await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "portable-world.json", mimeType: "application/json", buffer });
+  await expect(page.getByText("Распознан мир DeepRole", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Перенесённый мир", exact: true })).toBeVisible();
+});
+
 for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import window and previews dropped files (${locale})`, async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");

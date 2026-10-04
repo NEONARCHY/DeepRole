@@ -4,6 +4,7 @@ import { decryptJson, encryptJson } from "./crypto";
 import { repository, type DeepRoleRepository } from "./repository";
 import { getSettings, saveSettings } from "./settings";
 import { validDataRecord, parseBackupSettings } from "../core/record-validation";
+import { importFileTooLarge, MAX_BACKUP_CIPHERTEXT_BYTES } from "../core/import-limits";
 
 export async function createBackup(
   password?: string,
@@ -16,11 +17,13 @@ export async function createBackup(
     records: await repo.rawRecords(),
     settings: await getSettings(),
   };
+  const bytes = new Blob([JSON.stringify(payload)]).size;
+  if (importFileTooLarge(bytes, "backup") || password && bytes + 16 > MAX_BACKUP_CIPHERTEXT_BYTES) throw new Error("backupTooLarge");
   return password ? encryptJson(payload, password) : payload;
 }
 
 export async function parseBackup(text: string, password?: string): Promise<BackupPayload> {
-  if (new TextEncoder().encode(text).byteLength > 50_000_000) throw new Error("Invalid DeepRole backup");
+  if (importFileTooLarge(new Blob([text]).size, "backup")) throw new Error("backupTooLarge");
   const parsed = JSON.parse(text.replace(/^\uFEFF/, "")) as BackupPayload | EncryptedEnvelope;
   const payload = parsed.format === "deeprole-encrypted"
     ? await decryptJson<BackupPayload>(parsed, password ?? "")

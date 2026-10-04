@@ -17,6 +17,22 @@ test("sidebar keeps actual analysis progress and empty/error results visible", a
   await expect(page.getByText("DeepSeek ещё отвечает", { exact: true })).toBeVisible();
 });
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1280]) test(`handoff failure stays near the bottom without changing lore guidance ${locale} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto(`/tests/fixtures/page-widget.html?locale=${locale}`);
+  await page.evaluate(() => (window as any).setWidgetState({ activity: { phase: "error", type: "continue-handoff" } }));
+  const status = page.locator(".dr-context-anchor > .dr-service-state");
+  await expect(status).toContainText(locale === "ru" ? "Перенос не завершился" : "The handoff did not finish");
+  await expect(status).toContainText(locale === "ru" ? "Сохранённые состояния" : "Saved states");
+  await expect(status).not.toContainText(locale === "ru" ? "Обновить лор" : "Update lore");
+  const anchor = (await page.locator(".dr-context-anchor").boundingBox())!;
+  const box = (await status.boundingBox())!;
+  expect(box.x).toBeCloseTo(width === 320 ? 8 : anchor.x, 0);
+  expect(box.y + box.height).toBeCloseTo(width === 320 ? 796 : 888, 0);
+  expect(box.x + box.width).toBeLessThanOrEqual(width - 8);
+  await page.screenshot({ path: info.outputPath(`handoff-error-${locale}-${width}.png`) });
+});
+
 test("outgoing preview shows records and reasons, not a claim they were already sent", async ({ page }, info) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html?world=1");

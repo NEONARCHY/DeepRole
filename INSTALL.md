@@ -84,7 +84,7 @@
 - Для восстановления нажмите «Импорт» и выберите полную копию DeepRole. Сначала появится предпросмотр; файл ещё не записан.
 - «Добавить недостающее» оставит ваши записи и настройки прежними. Данные с уже существующими ID не заменяются.
 - «Полностью восстановить копию» заменит библиотеку и настройки после отдельного согласия. Режим сейфа не меняется.
-- «Отмена», крестик или Esc закрывают предпросмотр без изменений. Файл проверяется целиком до восстановления; поддерживаются прежние v1-копии, до 50 МБ и 20 000 сущностей.
+- «Отмена», крестик или Esc закрывают предпросмотр без изменений. Файл проверяется целиком до восстановления; поддерживаются прежние v1-копии, до 200 МБ и 20 000 сущностей. Импорт отдельного мира DeepRole — до 100 МБ; обычный BDS/JSON-лор — до 10 МБ.
 
 Перед удалением расширения обязательно создайте резервную копию: браузер может удалить локальную память вместе с расширением.
 
@@ -110,7 +110,7 @@ The menu has three sections: Play (current chat and selected memory), Lore (map/
 
 Create a backup before uninstalling the extension. Password-protected backups cannot be recovered without their password.
 
-Settings → Files & security → Import first validates and previews a full DeepRole backup. Add missing data keeps current records and settings, skipping existing IDs. Restore the full backup replaces library/settings only after explicit consent, without changing the vault mode. Cancel, X and Escape do not import anything. Older v1 backups are supported, up to 50 MB and 20,000 records. Import BDS or individual worlds in Lore → Import existing lore instead.
+Settings → Files & security → Import first validates and previews a full DeepRole backup. Add missing data keeps current records and settings, skipping existing IDs. Restore the full backup replaces library/settings only after explicit consent, without changing the vault mode. Cancel, X and Escape do not import anything. Older v1 backups are supported, up to 200 MB and 20,000 records. Import individual DeepRole worlds up to 100 MB or BDS/record-list JSON up to 10 MB in Lore → Import existing lore instead.
 
 Settings → Files & security → On-device protection → Enable local vault protects your library with a password. Memory stays unlocked for the browser session until you choose Lock vault. This locks every tab; save edits first, as unfinished DeepRole editors and Remember drafts are cleared. Saved lore stays intact. The menu still closes with X or Escape. DeepSeek's chat and draft remain accessible, but requests receive no new memory until you unlock. Locking does not remove previously sent DeepSeek context or encrypt downloaded plain JSON files. An unfinished export is cancelled if you lock the vault or leave its section before download.
 

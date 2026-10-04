@@ -154,3 +154,58 @@ test("portraits snap beside choices and follow their anchor after resize", async
   await page.screenshot({ path: info.outputPath("docked-narrow.png") });
   expect(narrow.y + narrow.height).toBeLessThanOrEqual(choices!.y);
 });
+
+for (const locale of ["ru", "en"] as const) test(`speaker group and portraits survive a missing choices card ${locale}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: 1600, height: 950 });
+  await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
+  await page.locator("#conversation").evaluate(node => { (node as HTMLElement).style.width = "690px"; });
+  await cast(page, 4);
+  await page.locator("[data-deeprole-choices-host] section").scrollIntoViewIfNeeded();
+  const layer = page.locator("[data-deeprole-portrait-layer]");
+  const portrait = (id: string) => layer.locator(`.dr-cast-widget[data-character-id="${id}"]`);
+  const box = async (id: string) => (await portrait(id).boundingBox())!;
+  const choices = (await page.locator("[data-deeprole-choices-host] section").boundingBox())!;
+  await expect.poll(async () => (await box("extra-1")).x).toBeGreaterThan((await box("extra-0")).x);
+  const hero = await box("hero"), mira = await box("mira"), leon = await box("extra-0"), visitor = await box("extra-1");
+  expect(hero.x + hero.width).toBeLessThanOrEqual(choices.x - 23);
+  expect(mira.x).toBeGreaterThanOrEqual(choices.x + choices.width + 23);
+  expect(leon.x - mira.x - mira.width).toBeCloseTo(6, 0);
+  expect(visitor.x - leon.x - leon.width).toBeCloseTo(6, 0);
+  expect(leon.width).toBeCloseTo(mira.width, 0);
+  expect(visitor.width / mira.width).toBeCloseTo(.85, 1);
+  for (const item of [hero, leon, visitor]) expect(item.y + item.height).toBeCloseTo(mira.y + mira.height, 0);
+  await page.screenshot({ path: info.outputPath(`speaker-group-${locale}.png`) });
+
+  await page.evaluate(() => {
+    const current = (window as any).getCast();
+    (window as any).setCast({ scene: { ...current.scene, partnerIds: ["extra-0"], partnerId: "extra-0" } });
+  });
+  await expect.poll(async () => (await box("extra-0")).x).toBeLessThan((await box("mira")).x);
+  expect((await box("mira")).width / (await box("extra-0")).width).toBeCloseTo(.85, 1);
+  const positions = await Promise.all(["hero", "mira", "extra-0", "extra-1"].map(box));
+  await page.locator("[data-deeprole-choices-host]").evaluate(node => { (node as HTMLElement).style.display = "none"; });
+  await page.evaluate(() => (window as any).syncPortraits());
+  for (const [index, id] of ["hero", "mira", "extra-0", "extra-1"].entries()) {
+    expect((await box(id)).x).toBeCloseTo(positions[index]!.x, 0);
+    expect((await box(id)).y).toBeCloseTo(positions[index]!.y, 0);
+  }
+  await page.evaluate(async () => {
+    (window as any).portraitLayer = document.querySelector("[data-deeprole-portrait-layer]");
+    document.querySelector("[data-deeprole-choices-host]")!.remove();
+    const modulePath = "/src/adapters/deepseek-characters-dom.ts";
+    const { syncChoicePortraits } = await import(modulePath);
+    const current = (window as any).getCast();
+    syncChoicePortraits(true, current.entities, current.scene, document.documentElement.lang as "ru" | "en", () => {}, document, { scope: JSON.stringify([current.worldId, current.chatId]), resetAt: 0, onSave: async () => {} });
+  });
+  await expect(layer).toHaveCount(1);
+  for (const [index, id] of ["hero", "mira", "extra-0", "extra-1"].entries()) {
+    expect((await box(id)).x).toBeCloseTo(positions[index]!.x, 0);
+    expect((await box(id)).y).toBeCloseTo(positions[index]!.y, 0);
+  }
+  await page.evaluate(() => (window as any).syncPortraits());
+  await expect(page.locator("[data-deeprole-choices-host]")).toHaveCount(1);
+  expect(await layer.evaluate(node => node === (window as any).portraitLayer)).toBe(true);
+  await expect(layer.locator(".dr-cast-widget")).toHaveCount(4);
+  await page.setViewportSize({ width: 1500, height: 950 });
+  await expect.poll(async () => (await box("hero")).x).toBeGreaterThan(0);
+});

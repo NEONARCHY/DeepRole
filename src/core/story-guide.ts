@@ -25,7 +25,8 @@ const guides = {
       ] },
       { title: "3. Продолжите в новом чате", lines: [
         "В этом же чате откройте Игра → Продолжение истории → «Продолжить в новом чате». DeepSeek подготовит пересказ; DeepRole сохранит его, затем попробует открыть новый чат и отправить начало продолжения.",
-        "Пересказ сохраняет важные события, отношения, текущую сцену и незавершённые линии, но не копирует каждую реплику. Полная переписка остаётся в старом чате. Проверьте, что важные для вас детали не потерялись."
+        "Пересказ сохраняет важные события, отношения, текущую сцену и незавершённые линии, но не копирует каждую реплику. Полная переписка остаётся в старом чате. Проверьте, что важные для вас детали не потерялись.",
+        "Если DeepSeek остановился на «Размышлении», даже видимый там служебный код не считается готовым пересказом. Проверьте «Сохранённые состояния»: если нового нет, повторите перенос в старом чате."
       ] },
       { title: "Если хотите продолжить позже или в другом чате", lines: [
         "«Сохранить состояние истории» создаёт только пересказ: чат не переключается.",
@@ -66,7 +67,8 @@ const guides = {
       ] },
       { title: "3. Continue in a new chat", lines: [
         "In the same chat, open Play → Continue your story → “Continue in a new chat”. DeepSeek will prepare a recap; DeepRole saves it, then tries to open a new chat and send the first continuation message.",
-        "The recap preserves key events, relationships, the current scene and loose ends, not every message. The full conversation stays in the old chat. Check that the details important to you were kept."
+        "The recap preserves key events, relationships, the current scene and loose ends, not every message. The full conversation stays in the old chat. Check that the details important to you were kept.",
+        "If DeepSeek stops in Thinking, technical text shown there is not a finished recap. Check Saved states; if no new state appears, retry from the old chat."
       ] },
       { title: "To continue later or in a different chat", lines: [
         "“Save story state” only creates a recap. It does not switch chats.",

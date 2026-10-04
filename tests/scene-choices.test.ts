@@ -51,7 +51,21 @@ describe("scene choice protocol", () => {
 });
 
 describe("history restoration and explicit recovery", () => {
-  it("waits for actual choices JSON, not story, thinking or character state", () => {
+  it("conceals streamed character JSON before choices and shows one loader below the story", () => {
+    const row = answer("Мира отвечает.\n<deeprole_characters>{\"request\":\"", "live");
+    sync("ru", true, true);
+    expect(row.firstChild?.textContent).toContain("Мира отвечает.");
+    expect(row.querySelector<HTMLElement>("[data-deeprole-choices-payload='characters']")?.style.display).toBe("none");
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
+    expect(row.nextElementSibling?.matches("[data-deeprole-choices-loading]")).toBe(true);
+    row.append(document.createTextNode("abc\"}</deeprole_characters>\n" + payload.slice(0, 70)));
+    sync("ru", true, true);
+    expect(row.querySelectorAll("[data-deeprole-choices-payload]")).toHaveLength(2);
+    expect(row.querySelector<HTMLElement>("[data-deeprole-choices-payload='characters']")?.textContent).toContain("</deeprole_characters>");
+    expect(row.querySelector<HTMLElement>("[data-deeprole-choices-payload='choices']")?.textContent).toBe(payload.slice(0, 70));
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
+  });
+  it("waits for transport JSON, not story or thinking", () => {
     const row = answer("", "live");
     const thought = document.createElement("div"); thought.className = "ds-think-content"; thought.textContent = payload;
     const body = document.createElement("div"); body.className = "ds-markdown"; body.textContent = "Mira opens the gate.";
@@ -59,10 +73,10 @@ describe("history restoration and explicit recovery", () => {
     sync("ru", true, true);
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0); expect(recovery()).toBeNull();
     body.append(" More story. <deeprole_characters>{}</deeprole_characters>"); sync("ru", true, true);
-    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0);
+    expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
     body.append(payload.slice(0, 55)); sync("ru", true, true); sync("ru", true, true);
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
-    expect(body.querySelector("[data-deeprole-choices-payload]")?.textContent).toBe(payload.slice(0, 55));
+    expect(body.querySelector("[data-deeprole-choices-payload='choices']")?.textContent).toBe(payload.slice(0, 55));
   });
   it("removes an earlier loader when a different story starts", () => {
     answer("Scene. " + payload.slice(0, 55)); sync("en", true, true);

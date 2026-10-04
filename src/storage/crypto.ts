@@ -1,9 +1,10 @@
 import type { EncryptedEnvelope } from "../core/types";
+import { MAX_BACKUP_CIPHERTEXT_BYTES } from "../core/import-limits";
 
 export const DEFAULT_KDF_ITERATIONS = 250_000;
 // v1 exports use 250k. Bound untrusted imports before WebCrypto starts work.
 export const MAX_KDF_ITERATIONS = 1_000_000;
-const MAX_CIPHERTEXT_BYTES = 50_000_000;
+const MAX_CIPHERTEXT_BYTES = MAX_BACKUP_CIPHERTEXT_BYTES;
 
 export class InvalidEncryptedPayloadError extends Error {
   constructor() { super("Invalid encrypted DeepRole payload"); this.name = "InvalidEncryptedPayloadError"; }

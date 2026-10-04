@@ -702,7 +702,7 @@ test("character cast: installed roster, preview, focus and outgoing mood stay sy
 const choicesWorld = { id: "choices-world", name: "Test observatory", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
 const choicesBinding = { id: "binding:a", chatId: "a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
 const choicesPayload = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map((kind) => ({ kind, label: "Move " + kind, text: "MY_MOVE_" + kind })) }) + '</deeprole_choices>';
-test("automatic choices loader waits for actual JSON, not story or thinking, in the installed extension", async ({}, info) => {
+test("automatic choices loader starts with hidden transport, not story or thinking, in the installed extension", async ({}, info) => {
   const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
   try {
     await chat.setViewportSize({ width: 1600, height: 800 }); await chat.addStyleTag({ content: "main { max-width:690px; margin:0 auto; }" });
@@ -721,7 +721,13 @@ test("automatic choices loader waits for actual JSON, not story or thinking, in 
     }, choicesPayload);
     await expect(request).toHaveCount(0); await expect(loader).toHaveCount(0);
     await chat.screenshot({ path: info.outputPath("story-no-loader.png") });
-    await chat.locator(".ds-markdown").evaluate((body, payload) => { body.append(" " + payload.slice(0, 75)); }, choicesPayload);
+    const firstPaint = await chat.locator(".ds-markdown").evaluate(async body => {
+      body.append(' <deeprole_characters>{"request":"');
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      return { text: (body as HTMLElement).innerText, loaders: document.querySelectorAll("[data-deeprole-choices-loading]").length };
+    });
+    expect(firstPaint).toEqual({ text: "Mira opens the gate.", loaders: 1 });
+    await chat.locator(".ds-markdown").evaluate((body, payload) => { body.append('abc"}</deeprole_characters> ' + payload.slice(0, 75)); }, choicesPayload);
     await expect(loader).toHaveCount(1); await expect(chat.locator(".ds-markdown")).toHaveText("Mira opens the gate.", { useInnerText: true });
     await chat.screenshot({ path: info.outputPath("json-loader.png") });
     await chat.locator(".ds-markdown").evaluate((body, payload) => { body.textContent = "Mira opens the gate. " + payload; }, choicesPayload);

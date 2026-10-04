@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell } from "lucide-react";
 import { WidgetDeck, WidgetTile, type WidgetLayout } from "./WidgetDeck";
 import { translate } from "../../core/i18n";
@@ -157,7 +157,7 @@ export function PageWidget(props: {
   const review = proposals.find((batch) => batch.id === reviewId);
   const assistantOpen = Boolean((quick && props.onQuickSave && props.onDraftLore) || (review && props.onReview && props.onDiscard));
   const contextStyle = contextPosition
-    ? { left: `${contextPosition.x}px`, top: `${contextPosition.y}px` }
+    ? { left: `${contextPosition.x}px`, top: `${contextPosition.y}px`, "--dr-status-x": `${contextPosition.x}px` } as CSSProperties
     : undefined;
   const startContextDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0 || !contextPosition) return;

@@ -5,6 +5,7 @@ import type { DataRecord, MemoryBook, MemoryEntry, SceneEntity, ChatBinding, Han
 import { repository, type DeepRoleRepository } from "./repository";
 import { emotionsFor } from "../core/characters";
 import { getSettings } from "./settings";
+import { importFileTooLarge } from "../core/import-limits";
 
 export interface WorldPackage { format: "deeprole-world"; version: 1; records: DataRecord[] }
 
@@ -20,7 +21,15 @@ export async function exportWorld(worldId: string, repo: DeepRoleRepository = re
 }
 
 export function parseWorldPackage(text: string): WorldPackage {
-  const value = JSON.parse(text.replace(/^\uFEFF/, "")) as WorldPackage;
+  const bytes = new Blob([text]).size;
+  if (importFileTooLarge(bytes, "world")) throw new Error("worldTooLarge");
+  return parseWorldPackageData(JSON.parse(text.replace(/^\uFEFF/, "")), bytes);
+}
+
+/** The file picker already parsed the format once; validate it without reparsing large image JSON. */
+export function parseWorldPackageData(input: unknown, bytes: number): WorldPackage {
+  if (importFileTooLarge(bytes, "world")) throw new Error("worldTooLarge");
+  const value = input as WorldPackage;
   if (value?.format !== "deeprole-world" || value.version !== 1 || !Array.isArray(value.records) || value.records.length > 20000) throw new Error("invalidBackup");
   if (value.records.some((r) => !validDataRecord(r))) throw new Error("invalidBackup");
   const worldRecords = value.records.filter((r) => r.kind === "world");

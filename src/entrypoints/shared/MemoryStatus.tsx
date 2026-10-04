@@ -10,11 +10,12 @@ export function ServiceProgress({ locale, activity }: { locale: Locale; activity
   if (!activity) return null;
   const t = (key: Parameters<typeof experienceText>[1]) => experienceText(locale, key);
   const busy = activity.phase === "preparing" || activity.phase === "waiting";
-  const key = activity.phase === "preparing" ? "preparing" : activity.phase === "error" ? "serviceError" : activity.phase === "empty" ? "emptyResult" : /handoff/.test(activity.type) ? "waitingRecap" : "waiting";
+  const handoff = /handoff/.test(activity.type);
+  const key = activity.phase === "preparing" ? "preparing" : activity.phase === "error" ? handoff ? "handoffError" : "serviceError" : activity.phase === "empty" ? "emptyResult" : handoff ? "waitingRecap" : "waiting";
   const choices = activity.type === "scene-choices";
   return <section className={`dr-service-state ${busy ? "is-busy" : ""} ${activity.phase === "error" ? "is-error" : ""}`} role="status" aria-live="polite">
     {busy ? <LoaderCircle aria-hidden="true" /> : activity.phase === "error" ? <CircleAlert aria-hidden="true" /> : <Check aria-hidden="true" />}
-    <div><strong>{choices ? sceneChoiceText(locale, activity.phase === "error" ? "failed" : "waiting") : t(key)}</strong><p>{choices ? sceneChoiceText(locale, activity.phase === "error" ? "failedHint" : "waitingHint") : t(activity.phase === "empty" ? "emptyResultHint" : activity.phase === "error" ? "serviceErrorHint" : /handoff/.test(activity.type) ? "waitingRecapHint" : "waitingHint")}</p></div>
+    <div><strong>{choices ? sceneChoiceText(locale, activity.phase === "error" ? "failed" : "waiting") : t(key)}</strong><p>{choices ? sceneChoiceText(locale, activity.phase === "error" ? "failedHint" : "waitingHint") : t(activity.phase === "empty" ? "emptyResultHint" : activity.phase === "error" ? handoff ? "handoffErrorHint" : "serviceErrorHint" : handoff ? "waitingRecapHint" : "waitingHint")}</p></div>
   </section>;
 }
 

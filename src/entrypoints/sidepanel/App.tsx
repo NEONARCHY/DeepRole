@@ -30,6 +30,7 @@ import {
 import { browser } from "wxt/browser";
 import { BOOK_COLORS, DEFAULT_SETTINGS } from "../../core/defaults";
 import { createId } from "../../core/id";
+import { importFileTooLarge } from "../../core/import-limits";
 import { translate, type MessageKey } from "../../core/i18n";
 import { buildTutorialPresetCopy, getTutorialPreset, repairLegacyTutorialCopy } from "../../core/tutorial-preset";
 import type { DeepRoleMessage } from "../../core/messages";
@@ -760,7 +761,7 @@ function SettingsView(props: {
     setBackupBusy(true);
     let encrypted = false;
     try {
-      if (file.size > 50_000_000) throw new Error("Invalid DeepRole backup");
+      if (importFileTooLarge(file.size, "backup")) throw new Error("backupTooLarge");
       const text = await file.text();
       const parsedHeader = JSON.parse(text.replace(/^\uFEFF/, "")) as { format?: string } | null;
       encrypted = parsedHeader?.format === "deeprole-encrypted";
@@ -770,7 +771,7 @@ function SettingsView(props: {
       if (!await canFinish()) return;
       setRestore({ fileName: file.name, payload });
     } catch (error) {
-      if (mounted.current) props.onToast(encrypted && !(error instanceof InvalidEncryptedPayloadError) ? props.t("wrongPassword") : props.t("invalidBackup"));
+      if (mounted.current) props.onToast(error instanceof Error && error.message === "backupTooLarge" ? props.t("backupTooLarge") : encrypted && !(error instanceof InvalidEncryptedPayloadError) ? props.t("wrongPassword") : props.t("invalidBackup"));
     } finally { setBackupBusy(false); }
   }
 

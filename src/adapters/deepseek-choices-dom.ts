@@ -5,6 +5,7 @@ import { nativeMessageRow, isUserMessage } from "./deepseek-message-dom";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
 
 const MARKER = "<deeprole_choices>";
+const STREAM_MARKERS = ["<deeprole_characters", "<deeprole_choices"] as const;
 const HOST = "[data-deeprole-choices-host]";
 const HIDDEN = "[data-deeprole-choices-payload]";
 const RECOVERY = "[data-deeprole-choices-recovery]";
@@ -17,8 +18,74 @@ const MEMORY_SERVICE = "[data-deeprole-memory-presentation], [data-deeprole-memo
 let dismissedChoice: string | null = null;
 type ChoiceHandler = (choice: SceneChoice, signature: string) => Promise<boolean>;
 const choiceHandlers = new WeakMap<HTMLElement, ChoiceHandler>();
+type ScrollFollow = { scroller: Element; lastTop: number; following: boolean; pointerDown: boolean; onScroll: () => void; onWheel: (event: WheelEvent) => void; onKeyDown: (event: KeyboardEvent) => void; onPointerDown: () => void; onPointerUp: () => void };
+const scrollFollowing = new WeakMap<ParentNode, ScrollFollow>();
+
+function stopFollowing(root: ParentNode): void {
+  const state = scrollFollowing.get(root);
+  if (!state) return;
+  const doc = state.scroller.ownerDocument;
+  (state.scroller === doc.scrollingElement ? doc.defaultView : state.scroller)?.removeEventListener("scroll", state.onScroll);
+  doc.removeEventListener("wheel", state.onWheel, true);
+  doc.removeEventListener("keydown", state.onKeyDown, true);
+  doc.removeEventListener("pointerdown", state.onPointerDown, true);
+  doc.removeEventListener("pointerup", state.onPointerUp, true);
+  scrollFollowing.delete(root);
+}
+
+function scrollContainer(row: HTMLElement): Element {
+  const doc = row.ownerDocument;
+  for (let node = row.parentElement; node && node !== doc.body; node = node.parentElement) {
+    const overflow = doc.defaultView?.getComputedStyle(node).overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
+  }
+  return doc.scrollingElement ?? doc.documentElement;
+}
+
+function beginFollowing(root: ParentNode, row: HTMLElement, wasNearBottom: boolean): void {
+  if (scrollFollowing.has(root)) return;
+  const scroller = scrollContainer(row);
+  const state: ScrollFollow = { scroller, lastTop: scroller.scrollTop, following: wasNearBottom, pointerDown: false, onScroll: () => {}, onWheel: () => {}, onKeyDown: () => {}, onPointerDown: () => {}, onPointerUp: () => {} };
+  state.onScroll = () => {
+    // Collapsing hidden JSON can itself decrease scrollTop. Only a drag in
+    // progress is evidence that this upward movement came from the reader.
+    if (state.pointerDown && scroller.scrollTop < state.lastTop - 2) state.following = false;
+    state.lastTop = scroller.scrollTop;
+  };
+  state.onWheel = event => { if (event.deltaY < 0) state.following = false; };
+  state.onKeyDown = event => { if (["ArrowUp", "PageUp", "Home"].includes(event.key)) state.following = false; };
+  state.onPointerDown = () => { state.pointerDown = true; };
+  state.onPointerUp = () => { state.pointerDown = false; };
+  const doc = scroller.ownerDocument;
+  (scroller === doc.scrollingElement ? doc.defaultView : scroller)?.addEventListener("scroll", state.onScroll);
+  doc.addEventListener("wheel", state.onWheel, true);
+  doc.addEventListener("keydown", state.onKeyDown, true);
+  doc.addEventListener("pointerdown", state.onPointerDown, true);
+  doc.addEventListener("pointerup", state.onPointerUp, true);
+  scrollFollowing.set(root, state);
+}
+
+function nearBottom(scroller: Element): boolean {
+  return scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 220;
+}
+
+function followTarget(root: ParentNode, target: HTMLElement): void {
+  const state = scrollFollowing.get(root);
+  if (!state?.following) return;
+  const doc = target.ownerDocument;
+  const viewport = state.scroller === doc.scrollingElement
+    ? { top: 0, bottom: doc.defaultView?.innerHeight ?? 0 }
+    : state.scroller.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  // On a short viewport, show the start of a tall options card instead of
+  // pushing its heading and first choices above the screen.
+  const tallCard = target.matches(HOST) && rect.height > viewport.bottom - viewport.top - 170;
+  const delta = tallCard ? rect.top - viewport.top - 40 : rect.bottom - viewport.bottom + 130;
+  if (delta > 0) { state.scroller.scrollTop += delta; state.lastTop = state.scroller.scrollTop; }
+}
 
 export function dismissSceneChoiceCards(root: ParentNode = document, remember = true): void {
+  stopFollowing(root);
   const state = settling.get(root); if (state?.timer) clearTimeout(state.timer); settling.delete(root);
   const host = [...root.querySelectorAll<HTMLElement>(HOST)].at(-1);
   if (!remember) dismissedChoice = null;
@@ -84,12 +151,15 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   const previous = settling.get(root);
   if (previous?.timer) clearTimeout(previous.timer);
   if (!enabled) {
+    stopFollowing(root);
     root.querySelectorAll<HTMLElement>(HOST).forEach((host) => host.remove());
     root.querySelectorAll<HTMLElement>(RECOVERY).forEach((host) => host.remove());
     root.querySelectorAll<HTMLElement>(LOADING).forEach((host) => host.remove());
     settling.delete(root);
     return;
   }
+  const beforeConceal = generating ? latestSceneChoiceTarget(root)?.row : null;
+  const wasNearBottom = beforeConceal ? nearBottom(scrollContainer(beforeConceal)) : false;
   concealChoicePayloads(root);
   const current = currentChoice(root);
   const signature = current?.signature ?? "";
@@ -114,6 +184,9 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   const loadingRow = !active && waiting && choicesStarted && recovery?.loading !== false && (recovery || current) ? scene?.row ?? current?.row : null;
   root.querySelectorAll<HTMLElement>(LOADING).forEach(host => { if (host.previousElementSibling !== loadingRow || host.lang !== locale) host.remove(); });
   if (loadingRow && !loadingRow.nextElementSibling?.matches(LOADING)) loadingRow.after(createLoading(locale, loadingRow.ownerDocument));
+  if (loadingRow && generating) beginFollowing(root, loadingRow, wasNearBottom);
+  const loader = loadingRow?.nextElementSibling;
+  if (loader instanceof HTMLElement && loader.matches(LOADING)) followTarget(root, loader);
   if (settlingReply && !generating && !recovery?.busy) state.timer = setTimeout(() => syncSceneChoiceCards(enabled, generating, locale, onPick, root, recovery), 1250 - (Date.now() - state.changedAt));
   root.querySelectorAll<HTMLElement>(RECOVERY).forEach((host) => {
     if (host.previousElementSibling !== target?.row || host.dataset.deeproleChoicesSignature !== target?.signature
@@ -122,7 +195,7 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   if (target && recovery && !target.row.nextElementSibling?.matches(RECOVERY)) {
     target.row.after(createRecoveryCard(locale, target.signature, recovery, target.row.ownerDocument));
   }
-  if (!active) return;
+  if (!active) { if (!generating && !waiting) stopFollowing(root); return; }
   const blockText = (active.element.textContent ?? "").slice(active.parsed.start, active.parsed.end);
   const alreadyHidden = [...active.element.querySelectorAll<HTMLElement>(HIDDEN)]
     .some((payload) => payload.textContent === blockText);
@@ -130,30 +203,38 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   const next = active.row.nextElementSibling;
   const existing = next instanceof HTMLElement && next.matches(HOST) ? next : null;
   if (existing?.dataset.deeproleChoicesSignature === signature && existing.dataset.deeproleChoicesLocale === locale
-    && existing.shadowRoot?.querySelectorAll(".grid button").length === 4) { choiceHandlers.set(existing, onPick); return; }
+    && existing.shadowRoot?.querySelectorAll(".grid button").length === 4) { choiceHandlers.set(existing, onPick); followTarget(root, existing); stopFollowing(root); return; }
   existing?.remove();
-  active.row.after(createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument, root));
+  const card = createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument, root);
+  active.row.after(card);
+  followTarget(root, card);
+  stopFollowing(root);
 }
 
 /** Hide unfinished transport too; retain its text for parsers and site updates. */
-function concealChoicePayloads(root: ParentNode): void {
+export function concealChoicePayloads(root: ParentNode): void {
   for (const element of root.querySelectorAll<HTMLElement>(".ds-markdown, [data-role='assistant'], [data-message-role='assistant'], article, [data-message-id]")) {
     if (element.closest(`${USER}, ${REASONING}, ${HOST}, ${RECOVERY}, ${LOADING}`) || isUserMessage(element)) continue;
     if (element.querySelector(`.ds-markdown, ${REASONING}`)) continue;
-    if (!(element.textContent ?? "").includes("<deeprole_choices")) continue;
-    // Frameworks may rewrite their original text node instead of replacing the
-    // Markdown container. Discard our previous wrapper only when a new opening
-    // marker appears outside it; ordinary appended stream chunks keep it.
-    const visible = element.cloneNode(true) as HTMLElement;
-    visible.querySelectorAll(HIDDEN).forEach(node => node.remove());
-    if (visible.textContent?.includes("<deeprole_choices")) element.querySelectorAll(HIDDEN).forEach(node => node.remove());
-    const text = element.textContent ?? "";
-    if (text.includes("<deeprole_choice_mode")) continue;
-    const start = text.indexOf("<deeprole_choices");
-    if (start < 0) continue;
-    const closing = text.indexOf("</deeprole_choices>", start);
-    const end = closing < 0 ? text.length : closing + "</deeprole_choices>".length;
-    hideBlock(element, start, end);
+    if ((element.textContent ?? "").includes("<deeprole_choice_mode")) continue;
+    for (const marker of STREAM_MARKERS) {
+      if (!(element.textContent ?? "").includes(marker)) continue;
+      // DeepSeek may replace or append Markdown nodes while streaming. Keep a
+      // current wrapper unless the marker reappears outside that wrapper.
+      const visible = element.cloneNode(true) as HTMLElement;
+      visible.querySelectorAll(HIDDEN).forEach(node => node.remove());
+      const kind = marker === STREAM_MARKERS[0] ? "characters" : "choices";
+      if (visible.textContent?.includes(marker)) [...element.querySelectorAll<HTMLElement>(HIDDEN)]
+        .filter(node => node.dataset.deeproleChoicesPayload === kind).forEach(node => node.remove());
+      const text = element.textContent ?? "";
+      const start = text.indexOf(marker);
+      if (start < 0) continue;
+      const closingTag = `</deeprole_${kind}>`;
+      const closing = text.indexOf(closingTag, start);
+      const end = closing < 0 ? text.length : closing + closingTag.length;
+      hideBlock(element, start, end, kind);
+      [...element.querySelectorAll<HTMLElement>(HIDDEN)].filter(node => !node.textContent).forEach(node => node.remove());
+    }
   }
   for (const row of root.querySelectorAll<HTMLElement>(".ds-message, article, [data-message-id]")) {
     const text = row.textContent?.trim() ?? "";
@@ -266,7 +347,7 @@ function findChoiceElements(root: ParentNode) {
   });
 }
 
-function hideBlock(element: HTMLElement, start: number, end: number): boolean {
+function hideBlock(element: HTMLElement, start: number, end: number, kind = "choices"): boolean {
   const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   const range = element.ownerDocument.createRange();
   let offset = 0; let foundStart = false; let foundEnd = false; let visible = false;
@@ -281,7 +362,7 @@ function hideBlock(element: HTMLElement, start: number, end: number): boolean {
   if (!visible) return true;
   if (range.cloneContents().querySelector(REASONING)) return false;
   const hidden = element.ownerDocument.createElement("span");
-  hidden.dataset.deeproleChoicesPayload = "true";
+  hidden.dataset.deeproleChoicesPayload = kind;
   hidden.setAttribute("aria-hidden", "true");
   hidden.style.setProperty("display", "none", "important");
   hidden.append(range.extractContents());
