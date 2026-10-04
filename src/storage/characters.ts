@@ -11,6 +11,8 @@ export interface CharacterEdit extends CharacterScope {
   entityId: string | null; name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean;
   original?: CharacterEditBaseline;
 }
+/** Exact committed snapshot for continued editing; never sent to the model. */
+export interface CharacterSaveResult { entityId: string; base: string; original: CharacterEditBaseline }
 function current(all: DataRecord[], scope: CharacterScope, checkRevision = true) {
   if ([scope.worldId, scope.chatId].some(id => !id || ["__proto__", "prototype", "constructor"].includes(id))) throw new Error("character-scope");
   const binding = all.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === scope.chatId)?.data as ChatBinding | undefined;
@@ -22,12 +24,12 @@ function current(all: DataRecord[], scope: CharacterScope, checkRevision = true)
 }
 const record = (kind: "entity" | "binding", data: SceneEntity | ChatBinding): DataRecord => ({ kind, id: data.id, data });
 
-export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository): Promise<void> {
+export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository): Promise<CharacterSaveResult> {
   if (!edit.name.trim() || edit.name.length > 80 || !validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
   if ((edit.interlocutor !== undefined && typeof edit.interlocutor !== "boolean") || (edit.interlocutor === true && (!edit.present || edit.sheet.protagonist))) throw new Error("character-invalid");
   const original = edit.original;
   if (original !== undefined && (!original || typeof original.name !== "string" || original.name.length > 80 || !validCharacterSheet(original.sheet) || !validCharacterStatus(original.state) || typeof original.present !== "boolean" || typeof original.interlocutor !== "boolean" || !Array.isArray(original.protagonists) || original.protagonists.length > 40 || !original.protagonists.every(id => typeof id === "string" && id.length <= 160))) throw new Error("character-invalid");
-  await repo.updateRecords(all => {
+  return repo.updateRecords(all => {
     const { binding, entities, scene } = current(all, edit, !original);
     const before = entities.find(e => e.id === edit.entityId);
     if (edit.entityId && !before || !before && entities.length >= 40) throw new Error("character-conflict");
@@ -60,7 +62,8 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
       return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? [])].reduce((n, s) => n + s.length, 0);
     }, 0);
     if (bytes > 25_000_000) throw new Error("character-images-full");
-    return { records: changes, removed: [], result: undefined };
+    const savedEntities = [...entities.filter(e => !replaced.has(e.id)), ...changes.filter(r => r.kind === "entity").map(r => r.data as SceneEntity)];
+    return { records: changes, removed: [], result: { entityId: entity.id, base: characterRevision(savedEntities, nextScene), original: characterEditBaseline(entity, savedEntities, nextScene) } };
   });
 }
 

@@ -4,7 +4,7 @@
 
 1. Подключите мир к открытому чату.
 2. Карточки включены по умолчанию. Если раньше отключали их, включите **Настройки → Приложение → Персонажи → Карточки персонажей**.
-3. Под индикаторами контекста появится компактный список имён, ролей и настроений, без изображений. В **«В сцене»** видны герой и присутствующие участники, в **«Все»** — весь список с поиском. Имя открывает анкету, **+** добавляет персонажа. Кнопка раскрытия рядом с **+** открывает по центру галерею всех персонажей с портретами; карандаш открывает редактор в этом же окне. После сохранения вы вернётесь в галерею, поиск останется прежним.
+3. Под индикаторами контекста появится компактный список имён, ролей и настроений, без изображений. В **«В сцене»** видны герой и присутствующие участники, в **«Все»** — весь список с поиском. Имя открывает анкету, **+** добавляет персонажа. Кнопка раскрытия рядом с **+** открывает по центру галерею всех персонажей с портретами; карандаш открывает редактор в этом же окне. Сохранение оставляет редактор открытым. Кнопка «К персонажам» возвращает в галерею, поиск остаётся прежним.
 4. В своей карточке отметьте **Мой главный герой**. Плавающие портреты по умолчанию располагаются по сторонам вариантов: герой слева, первый собеседник справа. Остальные участники тоже видны со своим настроением. Портреты можно вынести за колонку чата; в узком окне они уменьшаются. Они не занимают место между ответом и вариантами.
 5. Продолжайте обычный разговор. После ответа DeepSeek автоматически обновляет настроение, состояние, ближайшую цель, отношения и показатели, если прислал корректные изменения. Если обновления нет, сохраняются прежние значения — расширение не придумывает их самостоятельно.
 
@@ -23,6 +23,21 @@ BDS переносит названия, текст и режимы записе
 У каждого браузера своя локальная библиотека. Один и тот же чат DeepSeek в Brave и браузере Codex не означает общую память DeepRole. Повторный импорт файла создаёт отдельную копию мира: ответ для прежней копии не переносится в новую. Продолжите чат с выбранным миром, чтобы DeepSeek вернул обновление именно для него.
 
 В новых обычных репликах мир и чат определяет само расширение перед отправкой. DeepSeek возвращает метку этой реплики и имена персонажей, а не выбирает копию мира. Поэтому старые названия и служебные поля в истории не перенаправляют обновление в другую библиотеку. Если вы действительно сменили мир или вручную изменили карточки во время ответа, запоздалое обновление не применяется. Ответы, полученные до установки новой версии или отправленные другим браузером, автоматически не переносятся: нужна следующая обычная реплика из текущего браузера. Изображения между браузерами этим механизмом не переносятся.
+
+## Одна картинка для нескольких эмоций
+
+Названия встроенных эмоций переведены только для удобства: **Радость · happy** — одна и та же эмоция с ключом `happy`. В настройках видны ключи; DeepSeek выбирает их из разрешённого списка. Свои названия можно писать на русском или английском, но автоперевода и автоматического объединения синонимов нет. `смех` и `laughing` — разные ключи. `screaming/shouting/scarry` или названия через запятую считаются одной записью, а не списком синонимов.
+
+Чтобы несколько эмоций показывали одну картинку:
+
+1. Добавьте названия в настройки **по одному в строке**.
+2. Откройте **Библиотеку изображений** в карточке, выделите картинку или несколько вариаций.
+3. Выберите основную эмоцию, раскройте **«Ещё эмоции для этих картинок»** и отметьте остальные.
+4. Нажмите **«Назначить эмоции»**, затем **«Сохранить персонажа»**.
+
+Любая из выбранных эмоций получит те же изображения. Назначение добавляет их к существующим вариациям, не заменяет старые. Если в одном наборе станет больше 12, всё назначение отклонится без частичных изменений. Это не постоянная связь наборов: последующие добавления назначайте тем же эмоциям снова. У каждой эмоции свой цикл вариаций. Правильный выбор настроения зависит от ответа DeepSeek; расширение не распознаёт эмоции по картинке.
+
+После сохранения редактор остаётся открытым и показывает **«Сохранено»**. Можно сразу загрузить следующую картинку и сохранить ещё раз. Окно, выбранная эмоция и раскрытая библиотека не сбрасываются. **«Закрыть»** или **«К персонажам»** закрывают редактор отдельно. Неизменённые поля сохраняют свежие обновления сцены, а конкурирующие правки того же поля не перезаписываются молча.
 
 ## Что сохраняется
 
@@ -109,6 +124,14 @@ BDS переносит названия, текст и режимы записе
 
 ## English quick start
 
+### Shared images and emotion names
+
+Built-in labels are translated for display: **Happy · happy** always uses the key `happy`. Settings and the model use these exact keys. Custom names may be written in any language, but are not automatically translated or treated as synonyms. `смех` and `laughing` are separate keys. Commas and `/` do not create aliases.
+
+Add each emotion on its own line in settings. In a character’s **Image library**, select images, choose the main emotion, open **More emotions for these images**, and check additional names. Click **Assign to emotion**, then **Save character**. Each selected emotion receives the same images, added to its existing set. Exceeding 12 variations in any set rejects the whole assignment without partial changes. This is a shared assignment, not a permanent link: select the same emotions again for later additions. Each emotion has its own variation cycle. DeepSeek still has to choose an allowed emotion in its response.
+
+Saving keeps the editor open and shows **Saved**. You can add more portraits and save again without resetting the selected emotion or library. Use **Close** or **Back to characters** separately. Fields you did not edit retain newer scene updates; conflicting edits to the same field are not silently overwritten.
+
 ### Upload now, assign emotions later
 
 Open a character sheet → **Portraits and emotions → Image library → Upload to library**. Select multiple files at once. They appear under **Unassigned**, so you can organize them later.
@@ -135,7 +158,7 @@ Mood, condition, current goal, relationships and stats already update automatica
 
 **Export** now opens one dialog: **This world** includes lore, profiles, portraits and the world's emotion list; **Full backup** includes every world, settings and saved chat states. Imported world emotions are available automatically without replacing other worlds' settings. In **Settings → App → Characters**, changes apply to the connected world; with no world selected, they change the shared fallback list. Older world files remain compatible.
 
-Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. **In scene** shows your protagonist and current participants; **All** has the complete roster and name/alias search. The compact list below the context indicators contains names, roles and moods, not images. Select a name to edit. The expand button beside **+** opens a centered portrait gallery of every character; use the pencil to edit within the same window. Saving returns to the gallery without clearing its search. If participants aren’t known yet, everyone is shown with a short note. Filters affect the display only and reset when you switch chats or worlds. Mark **My protagonist** for the left floating portrait; the current interlocutor starts on the right.
+Sheets are enabled by default. Connect a world and continue chatting, or use **+** to create a sheet yourself. If previously disabled, enable **Settings → App → Characters → Character sheets**. **In scene** shows your protagonist and current participants; **All** has the complete roster and name/alias search. The compact list below the context indicators contains names, roles and moods, not images. Select a name to edit. The expand button beside **+** opens a centered portrait gallery of every character; use the pencil to edit within the same window. Saving keeps the editor open. Use Back to characters to return to the gallery without clearing its search. If participants aren’t known yet, everyone is shown with a short note. Filters affect the display only and reset when you switch chats or worlds. Mark **My protagonist** for the left floating portrait; the current interlocutor starts on the right.
 
 **In the scene** means physically present; their portrait stays visible even when they talk to someone else. **Talking to the protagonist** can be checked for several people at once. Save the sheet to apply the selection to this chat. Unchecking one speaker leaves the others unchanged and does not make them leave. The protagonist cannot be their own speaker. The next completed reply may change the list. Reopening an already consumed reply does not undo your edit.
 

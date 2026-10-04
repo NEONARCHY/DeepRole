@@ -17,7 +17,7 @@ import { sceneChoiceText } from "../../core/scene-choices";
 import { selectionReason, type ServiceActivity } from "../../core/memory-experience";
 import { CharacterPanel } from "../shared/CharacterSheets";
 import { MemoryGuide } from "../shared/MemoryGuide";
-import type { CharacterEdit } from "../../storage/characters";
+import type { CharacterEdit, CharacterSaveResult } from "../../storage/characters";
 import type { CharacterScene } from "../../core/types";
 import type { CharacterCopyKey } from "../../core/characters";
 
@@ -58,7 +58,7 @@ export interface WidgetState {
 
 export function PageWidget(props: {
   state: WidgetState;
-  onSaveCharacter?: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<void>;
+  onSaveCharacter?: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>;
   onRetryCharacters?: () => void;
   onCharacterOpened?: () => void;
   authenticationPage?: boolean;

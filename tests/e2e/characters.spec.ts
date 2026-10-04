@@ -1,3 +1,4 @@
+import { closeSavedCharacter } from "./character-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
 import { setEnglish } from "./helpers/settings";
@@ -70,7 +71,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character" });
     await save.focus(); await page.keyboard.press("Tab"); await expect(dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).first()).toBeFocused();
-    await save.click(); await expect(dialog).toHaveCount(0);
+    await save.click(); await closeSavedCharacter(dialog, locale); await expect(dialog).toHaveCount(0);
     expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ name: "Mira", sheet: { appearance: "Green coat" }, state: { goal: "Find the key" }, worldId: "w", chatId: "a", base: "v" });
     const avatars = page.locator(".dr-cast-portrait"); await expect(avatars).toHaveCount(2);
     const castImage = await avatars.first().locator("img").boundingBox();
@@ -110,7 +111,7 @@ test("upload fallback, failed save keeps draft, custom emotions validation", asy
   await page.evaluate(() => { (window as any).rejectSave = true; });
   await dialog.getByLabel("Name", { exact: true }).fill("Mira edited"); await dialog.getByRole("button", { name: "Save character" }).click();
   await expect(dialog.getByRole("alert")).toContainText("Couldn’t reach storage"); await expect(dialog.getByLabel("Name", { exact: true })).toHaveValue("Mira edited");
-  await page.evaluate(() => { (window as any).rejectSave = false; }); await dialog.getByRole("button", { name: "Save character" }).click();
+  await page.evaluate(() => { (window as any).rejectSave = false; }); await dialog.getByRole("button", { name: "Save character" }).click(); await closeSavedCharacter(dialog);
   await page.getByLabel("Portrait emotions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save emotions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep neutral");
   await page.getByLabel("Portrait emotions", { exact: true }).fill("neutral\nFocused"); await page.getByRole("button", { name: "Save emotions" }).click();
   expect(await page.evaluate(() => (window as any).settings.characterEmotions)).toEqual(["neutral", "Focused"]);

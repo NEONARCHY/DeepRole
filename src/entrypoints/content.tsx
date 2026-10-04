@@ -721,11 +721,13 @@ class PageController {
   private async saveCharacter(edit: Omit<CharacterEdit, "chatUrl">) {
     if (this.state.vaultLocked || !this.settings.characterSheetsEnabled || edit.chatId !== this.adapter.getChatId() || edit.worldId !== this.currentScene().worldId) throw new Error("character-scope");
     const url = location.href;
-    await repository.saveCharacter({ ...edit, chatUrl: url });
-    if (location.href !== url) return;
+    const saved = await repository.saveCharacter({ ...edit, chatUrl: url });
+    if (location.href !== url) return saved;
     this.characterStatus = "saved";
-    await this.reload();
+    // A failed refresh must not turn a committed save into a failed create/retry.
+    await this.reload().catch(() => this.publishContext(""));
     this.syncSceneChoices();
+    return saved;
   }
 
   private async scanCharacters() {

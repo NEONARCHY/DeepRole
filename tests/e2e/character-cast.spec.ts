@@ -1,3 +1,4 @@
+import { closeSavedCharacter } from "./character-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -45,7 +46,7 @@ for (const locale of ["ru", "en"] as const) {
     await dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).first().click();
     await expect(dialog).toBeVisible(); expect(confirmations).toBe(1);
     await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("sad");
-    await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+    await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale);
     await expect(dialog).toHaveCount(0);
     expect(await page.evaluate(() => (window as any).saved.state.emotion)).toBe("sad");
   });
@@ -94,7 +95,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     const dialog = page.getByRole("dialog"); const tile = page.locator(".dr-character-row").filter({ hasText: "Mira" });
     await tile.click(); const partner = dialog.getByRole("checkbox", { name: partnerName, exact: true });
     await expect(partner).toBeChecked(); await partner.uncheck();
-    await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+    await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale);
     expect(await page.evaluate(() => (window as any).saved.interlocutor)).toBe(false);
     await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: null, presentIds: ["hero"] } }); });
     await page.locator(".dr-characters").getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Все" : "All"}`) }).click();
@@ -111,7 +112,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await page.screenshot({ path: info.outputPath(`partner-draft-recovery-${locale}-${width}.png`) });
     expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await save.click(); await expect(dialog).toHaveCount(0);
+    await save.click(); await closeSavedCharacter(dialog, locale); await expect(dialog).toHaveCount(0);
     expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: true, present: true, state: { emotion: "happy" }, chatId: "a" });
     await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: "mira", presentIds: ["hero", "mira"] } }); });
     await page.locator(".dr-cast-portrait.right").click(); await expect(partner).toBeChecked(); await partner.scrollIntoViewIfNeeded();

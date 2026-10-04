@@ -1,3 +1,4 @@
+import { closeSavedCharacter } from "./character-helpers";
 import { test, expect } from "@playwright/test";
 
 for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multiple emotion images ${locale} ${width}`, async ({ page }, info) => {
@@ -11,7 +12,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multip
   await dialog.locator(".dr-portrait-variations [aria-pressed]").nth(1).click(); await expect(preview).not.toHaveAttribute("src", first!);
   await dialog.locator(".dr-portrait-variations [aria-pressed]").nth(2).click();
   await page.screenshot({ path: info.outputPath(`variations-${locale}-${width}.png`) });
-  await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+  await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale);
   expect(await page.evaluate(() => (window as any).saved.sheet.sprites.happy.length)).toBe(3);
   expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ sheet: { protagonist: true }, interlocutor: false, original: { sheet: { protagonist: false }, interlocutor: true } });
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
@@ -21,7 +22,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multip
   // One unreadable file makes the batch fail without deleting the existing portraits.
   await dialog.locator("input[type=file]").setInputFiles([{ name: "good.png", mimeType: "image/png", buffer: Buffer.from(images[0]!, "base64") }, { name: "bad.png", mimeType: "image/png", buffer: Buffer.from("broken") }]);
   await expect(dialog.getByRole("alert")).toBeVisible(); await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
-  await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+  await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale);
   expect(await page.evaluate(() => (window as any).saved.sheet.sprites.happy.length)).toBe(2);
   const widget = page.locator('.dr-cast-widget[data-character-id="mira"]');
   await page.mouse.move(width - 1, 0); await page.locator("h1").click();

@@ -1,9 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_CHARACTER, validCharacterSheet, characterInstruction } from "../src/core/characters";
-import { assignLibraryImages, libraryImages, unassignPortrait, validPortraitLibrary, withPortraitLibrary } from "../src/core/portrait-library";
+import { EMPTY_CHARACTER, EMPTY_STATUS, validCharacterSheet, characterInstruction, portraitSource, emotionOptionLabel, validEmotions } from "../src/core/characters";
+import { assignLibraryImages, assignLibraryEmotions, libraryImages, unassignPortrait, validPortraitLibrary, withPortraitLibrary } from "../src/core/portrait-library";
 const images = Array.from({ length: 257 }, (_, i) => `data:image/png;base64,${btoa(`image-${i}`)}`);
 
 describe("local portrait library", () => {
+  it("assigns one image to multiple exact emotion names atomically", () => {
+    const first = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 14));
+    const names = ["screaming", "shouting", "scarry", "смех"];
+    const next = assignLibraryEmotions(first, names, [images[0]!]);
+    for (const name of names) expect(next.sprites[name]).toEqual([images[0]]);
+    expect(next.portraitLibrary).toHaveLength(13); expect(first.sprites).toEqual({});
+    const full = assignLibraryImages(first, "shouting", images.slice(0, 12));
+    expect(() => assignLibraryEmotions(full, ["screaming", "shouting"], [images[13]!])).toThrow("portrait-variation-full");
+    expect(full.sprites.screaming).toBeUndefined();
+    expect(() => assignLibraryEmotions(first, ["screaming", "__proto__"], [images[0]!])).toThrow();
+    for (const emotion of names) expect(portraitSource({ id: "mira", worldId: "w", name: "Mira", kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: next }, { ...EMPTY_STATUS, emotion })).toBe(images[0]);
+  });
+  it("shows translated built-in labels alongside exact keys without translating custom names", () => {
+    expect(emotionOptionLabel("ru", "happy")).toBe("Радость · happy");
+    expect(emotionOptionLabel("en", "happy")).toBe("Happy · happy");
+    expect(emotionOptionLabel("en", "смех")).toBe("смех");
+    expect(emotionOptionLabel("ru", "screaming")).toBe("screaming");
+    expect(validEmotions(["neutral", "screaming/shouting"])).toBe(true); // one literal key, not aliases
+  });
   it("accepts an optional bounded collection and rejects unsafe, duplicate and oversized images", () => {
     expect(validCharacterSheet(EMPTY_CHARACTER)).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, portraitLibrary: images.slice(0, 256) })).toBe(true);

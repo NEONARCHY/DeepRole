@@ -35,3 +35,9 @@ export function unassignPortrait(sheet: CharacterSheet, emotion: string, index: 
   if (images.length) sprites[emotion] = images; else delete sprites[emotion];
   return withPortraitLibrary({ ...sheet, sprites }, library);
 }
+
+/** Validate the whole multi-emotion assignment before returning any changes. */
+export function assignLibraryEmotions(sheet: CharacterSheet, emotions: string[], images: string[]): CharacterSheet {
+  if (!emotions.length) throw new Error("character-invalid");
+  return [...new Set(emotions)].reduce((next, emotion) => assignLibraryImages(next, emotion, images), sheet);
+}

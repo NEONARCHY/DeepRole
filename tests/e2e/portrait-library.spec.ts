@@ -1,3 +1,4 @@
+import { closeSavedCharacter } from "./character-helpers";
 import { test, expect } from "@playwright/test";
 
 for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk portrait library ${locale} ${width}`, async ({ page }, info) => {
@@ -9,7 +10,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk p
   }));
   const open = async () => { await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); await page.getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Библиотека изображений" : "Image library"} ·`) }).click(); };
   const library = page.locator(".dr-portrait-library"), dialog = page.getByRole("dialog");
-  const save = async () => { await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await expect(dialog).toHaveCount(0); };
+  const save = async () => { await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale); await expect(dialog).toHaveCount(0); };
   await open();
   // Keep one decoder pending so edits during a slow batch are deterministic.
   await page.evaluate(() => {

@@ -69,7 +69,7 @@ export default defineBackground(() => {
               if ((settings.portraitLayoutResetAt ?? 0) !== message.edit.resetAt) throw new Error("character-conflict");
               await savePortraitLayout(message.edit);
             }
-            else if (message.operation === "saveCharacter") await saveCharacter(message.edit);
+            else if (message.operation === "saveCharacter") return { ok: true, data: await saveCharacter(message.edit) };
             else {
               const turn = parseCharacterTurn(`<deeprole_characters>${JSON.stringify(message.turn)}</deeprole_characters>`);
               if (!turn) throw new Error("character-invalid");

@@ -2,8 +2,8 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ImgHTMLAttrib
 import { createPortal } from "react-dom";
 import { Plus, X, Upload, Trash2, Expand, Pencil, ArrowLeft } from "lucide-react";
 import type { CharacterScene, CharacterSheet, CharacterStatus, DeepRoleSettings, Locale, SceneEntity } from "../../core/types";
-import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionsFor, validEmotions, syncPortraitImage, characterHighlights, characterInterlocutors, characterSaveError, MAX_ACTIVE_EMOTIONS } from "../../core/characters";
-import type { CharacterEdit } from "../../storage/characters";
+import { characterText, type CharacterCopyKey, EMPTY_CHARACTER, EMPTY_STATUS, emotionLabel, emotionOptionLabel, emotionsFor, validEmotions, syncPortraitImage, characterHighlights, characterInterlocutors, characterSaveError, MAX_ACTIVE_EMOTIONS } from "../../core/characters";
+import type { CharacterEdit, CharacterSaveResult } from "../../storage/characters";
 import { MAX_PORTRAIT_VARIATIONS, portraitVariations, scenePortraitIndex } from "../../core/portrait-variations";
 import { characterEditBaseline, type CharacterEditBaseline } from "../../core/character-edit";
 import { libraryImages, unassignPortrait, withPortraitLibrary } from "../../core/portrait-library";
@@ -36,18 +36,19 @@ export function CharacterSettings({ settings, onSettings, worldEmotions, onEmoti
       }}>{t("layoutResetAll")}</button>
       {layoutError && <p role="alert" className="error-text">{t("layoutFailed")}</p>}
       <label className="field-label" htmlFor={emotionsId}>{t("emotions")}</label><textarea id={emotionsId} rows={6} maxLength={MAX_ACTIVE_EMOTIONS * 33} value={draft} onChange={e => { setDraft(e.target.value); setError(false); }} aria-describedby="dr-emotions-help" />
-      <p id="dr-emotions-help" className="setting-copy">{t("emotionsHint")}</p>
+      <p id="dr-emotions-help" className="setting-copy">{t("emotionsHint")}</p><details className="dr-emotion-help"><summary>{t("emotionNames")}</summary><p className="setting-copy">{t("emotionKeys")}</p></details>
       {error && <p role="alert" className="error-text">{t(validEmotions(emotions) ? "failed" : "emotionError")}</p>}
       <button className="button secondary" disabled={busy} onClick={() => { if (!validEmotions(emotions)) { setError(true); return; } setBusy(true); void Promise.resolve(onEmotions ? onEmotions(emotions) : onSettings({ ...settings, characterEmotions: emotions })).catch(() => setError(true)).finally(() => setBusy(false)); }}>{t("saveEmotions")}</button>
     </>}
   </section>;
 }
 
-export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[]; scene?: CharacterScene; emotions: string[]; base: string; worldId: string; chatId: string; status: CharacterCopyKey; generating?: boolean; onSave: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<void>; onRetry: () => void; openId?: string | null; onOpened?: () => void }) {
+export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[]; scene?: CharacterScene; emotions: string[]; base: string; worldId: string; chatId: string; status: CharacterCopyKey; generating?: boolean; onSave: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>; onRetry: () => void; openId?: string | null; onOpened?: () => void }) {
   const panel = useRef<HTMLElement>(null);
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
-  const [edit, setEdit] = useState<{ entity: SceneEntity | null; scene?: CharacterScene; base: string; original: CharacterEditBaseline } | null>(null);
-  const openEdit = (entity: SceneEntity | null) => setEdit({ entity, scene: props.scene, base: props.base, original: characterEditBaseline(entity, props.entities, props.scene) });
+  const [edit, setEdit] = useState<{ entity: SceneEntity | null; entityId: string | null; session: number; scene?: CharacterScene; base: string; original: CharacterEditBaseline } | null>(null);
+  const editSession = useRef(0);
+  const openEdit = (entity: SceneEntity | null) => setEdit({ entity, entityId: entity?.id ?? null, session: ++editSession.current, scene: props.scene, base: props.base, original: characterEditBaseline(entity, props.entities, props.scene) });
   const [gallery, setGallery] = useState(false); const [galleryQuery, setGalleryQuery] = useState("");
   const galleryRef = useRef<HTMLDivElement>(null); const galleryOrigin = useRef<HTMLElement | null>(null); const editOrigin = useRef<HTMLElement | null>(null);
   const [castView, setCastView] = useState<"scene" | "all">("scene"); const [query, setQuery] = useState("");
@@ -69,7 +70,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
   const shown = (castView === "all" ? entities : cast).filter(entity => castView !== "all" || [entity.name, ...entity.aliases].some(name => name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
   const partners = new Set(characterInterlocutors(props.entities, props.scene).map(person => person.id));
   const role = (entity: SceneEntity) => t(entity.characterSheet?.protagonist ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : props.scene?.presentIds.includes(entity.id) ? "present" : "absent");
-  const editor = edit && <CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.entity?.id ?? "new"}`} embedded={gallery} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={edit.original.interlocutor} emotions={props.emotions} onClose={() => setEdit(null)} onExit={() => { setEdit(null); setGallery(false); }} onSave={async (value) => { await props.onSave({ ...value, entityId: edit.entity?.id ?? null, base: edit.base, original: edit.original, worldId: props.worldId, chatId: props.chatId }); setEdit(null); }} />;
+  const editor = edit && <CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.session}`} embedded={gallery} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={edit.original.interlocutor} emotions={props.emotions} onClose={() => setEdit(null)} onExit={() => { setEdit(null); setGallery(false); }} onSave={async (value) => { const saved = await props.onSave({ ...value, entityId: edit.entityId, base: edit.base, original: edit.original, worldId: props.worldId, chatId: props.chatId }); setEdit(current => current?.session === edit.session ? { ...current, entityId: saved.entityId, base: saved.base, original: saved.original } : current); return saved.original; }} />;
   return <section ref={panel} className="dr-characters" aria-label={t("title")}>
     <header><strong>{t("title")}</strong><div className="dr-character-header-actions"><button type="button" aria-label={t("openGallery")} title={t("openGallery")} onClick={event => { galleryOrigin.current = event.currentTarget; editOrigin.current = null; setGallery(true); }}><Expand size={16} /></button><button type="button" aria-label={t("add")} title={t("add")} disabled={entities.length >= 40} onClick={() => openEdit(null)}><Plus size={16} /></button></div></header>
     <p className="dr-character-status" role="status">{t(props.generating ? "waiting" : props.status)}</p>
@@ -111,7 +112,7 @@ export function CharacterPanel(props: { locale: Locale; entities: SceneEntity[];
 }
 
 
-export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; interlocutor?: boolean; emotions: string[]; embedded?: boolean; onClose: () => void; onExit?: () => void; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean }) => Promise<void> }) {
+export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; interlocutor?: boolean; emotions: string[]; embedded?: boolean; onClose: () => void; onExit?: () => void; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean }) => Promise<CharacterEditBaseline> }) {
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
   const [name, setName] = useState(props.entity?.name ?? "");
   const [sheet, setSheet] = useState<CharacterSheet>(() => structuredClone(props.entity?.characterSheet ?? EMPTY_CHARACTER));
@@ -125,7 +126,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
   const [libraryOpen, setLibraryOpen] = useState(false); const [libraryError, setLibraryError] = useState("");
   const variations = portraitVariations(sheet.sprites[emotion]);
   useEffect(() => setVariation(0), [emotion]);
-  const [error, setError] = useState<CharacterCopyKey | null>(null); const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState<CharacterCopyKey | null>(null); const [dirty, setDirty] = useState(false); const [saved, setSaved] = useState(false);
   const dialog = useRef<HTMLDivElement>(null); const input = useRef<HTMLInputElement>(null); const mounted = useRef(true);
   const close = () => { if (!busy && !uploading && (!dirty || window.confirm(t("discard")))) props.onClose(); };
   const exit = () => { if (!busy && !uploading && (!dirty || window.confirm(t("discard")))) (props.onExit ?? props.onClose)(); };
@@ -147,8 +148,8 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
       if (!e.shiftKey && active === items.at(-1)) { e.preventDefault(); items[0]?.focus(); }
     }
   }}><div ref={dialog} className={props.embedded ? "dr-character-editor" : "dr-character-dialog"} role={props.embedded ? undefined : "dialog"} aria-modal={props.embedded ? undefined : true} aria-labelledby={props.embedded ? undefined : "dr-character-editor-title"}>
-    <header>{props.embedded && <button type="button" aria-label={t("backGallery")} title={t("backGallery")} disabled={busy || uploading} onClick={close}><ArrowLeft size={18} /></button>}<h2 id="dr-character-editor-title">{props.entity?.name ?? t("add")}</h2><button type="button" aria-label={t("cancel")} disabled={busy || uploading} onClick={exit}><X size={20} /></button></header>
-    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setError(null); setLibraryError(""); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).catch(error => { if (mounted.current) setError(characterSaveError(error)); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
+    <header>{props.embedded && <button type="button" aria-label={t("backGallery")} title={t("backGallery")} disabled={busy || uploading} onClick={close}><ArrowLeft size={18} /></button>}<h2 id="dr-character-editor-title">{name || t("add")}</h2><button type="button" aria-label={t("cancel")} disabled={busy || uploading} onClick={exit}><X size={20} /></button></header>
+    <form onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; setBusy(true); setSaved(false); setError(null); setLibraryError(""); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).then(snapshot => { if (!mounted.current) return; setName(snapshot.name); setSheet(structuredClone(snapshot.sheet)); setState(structuredClone(snapshot.state)); setPresent(snapshot.present); setInterlocutor(snapshot.interlocutor); setDirty(false); setSaved(true); }).catch(error => { if (mounted.current) setError(characterSaveError(error)); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
       <div className="dr-character-editor-body">
         <p className="dr-character-hint">{t("scope")}</p>
         <fieldset disabled={busy}><legend>{t("profile")}</legend>
@@ -162,7 +163,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
           <label className="dr-character-check"><input type="checkbox" checked={present} onChange={e => { setPresent(e.target.checked); if (!e.target.checked && selectedPartner) setInterlocutor(false); }} />{t("present")}</label>
           <small className="dr-character-hint">{t("presentHint")}</small>
           {!sheet.protagonist && <div className="dr-character-partner-control"><label className="dr-character-check"><input type="checkbox" aria-describedby={partnerHelp} checked={selectedPartner} onChange={e => { setInterlocutor(e.target.checked); if (e.target.checked) setPresent(true); }} />{t("interlocutor")}</label><small id={partnerHelp} className="dr-character-hint">{t("interlocutorHint")}</small></div>}
-          <label>{t("emotion")}<select aria-label={t("emotion")} value={state.emotion} onChange={e => setState({ ...state, emotion: e.target.value })}>{options.map(value => <option key={value} value={value}>{emotionLabel(props.locale, value)}</option>)}</select></label>
+          <label>{t("emotion")}<select aria-label={t("emotion")} value={state.emotion} onChange={e => setState({ ...state, emotion: e.target.value })}>{options.map(value => <option key={value} value={value}>{emotionOptionLabel(props.locale, value)}</option>)}</select></label>
           {(["condition", "goal", "relationship"] as const).map(key => <label key={key}>{t(key)}<textarea aria-label={t(key)} rows={2} maxLength={240} value={state[key]} onChange={e => setState({ ...state, [key]: e.target.value })} /></label>)}
           <strong>{t("stats")}</strong>
           {state.stats.map((stat, i) => <div className="dr-character-stat" key={i}><input aria-label={`${t("statName")} ${i + 1}`} placeholder={t("statName")} required maxLength={40} value={stat.label} onChange={e => setState({ ...state, stats: state.stats.map((s, n) => n === i ? { ...s, label: e.target.value } : s) })} /><input aria-label={`${t("statValue")} ${i + 1}`} placeholder={t("statValue")} maxLength={80} value={stat.value} onChange={e => setState({ ...state, stats: state.stats.map((s, n) => n === i ? { ...s, value: e.target.value } : s) })} /><button type="button" aria-label={`${t("remove")} ${stat.label || i + 1}`} onClick={() => { setDirty(true); setState({ ...state, stats: state.stats.filter((_, n) => n !== i) }); }}><Trash2 size={16} /></button></div>)}
@@ -171,7 +172,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
         <fieldset disabled={busy || uploading}><legend>{t("portraits")}</legend><div className="dr-character-portrait-editor">
           <CharacterPortrait sheet={sheet} emotion={emotion} variation={variation} alt={name} width={176} height={235} />
           <div><label>{t("gender")}<select aria-label={t("gender")} value={sheet.gender} onChange={e => setSheet({ ...sheet, gender: e.target.value as CharacterSheet["gender"] })}>{(["neutral", "male", "female"] as const).map(value => <option key={value} value={value}>{t(value)}</option>)}</select></label>
-          <label>{t("portraitEmotion")}<select aria-label={t("portraitEmotion")} data-portrait-preview value={emotion} onChange={e => setEmotion(e.target.value)}>{portraitOptions.map(value => <option key={value} value={value}>{emotionLabel(props.locale, value)}{sheet.sprites[value] ? " ✓" : ""}</option>)}</select></label><small className="dr-character-hint">{t("previewOnly")}</small></div>
+          <label>{t("portraitEmotion")}<select aria-label={t("portraitEmotion")} data-portrait-preview value={emotion} onChange={e => setEmotion(e.target.value)}>{portraitOptions.map(value => <option key={value} value={value}>{emotionOptionLabel(props.locale, value)}{sheet.sprites[value] ? " ✓" : ""}</option>)}</select></label><small className="dr-character-hint">{t("previewOnly")}</small></div>
         </div><p className="dr-character-hint">{t("variationHint")}</p>
         <div className="dr-portrait-variations" role="group" aria-label={t("variations")}>{variations.map((src, index) => <div key={src}><button type="button" aria-label={`${t("variations")} ${index + 1}`} aria-pressed={index === variation} onClick={() => setVariation(index)}><img src={src} alt="" /><span>{index + 1}</span></button><button type="button" aria-label={`${t("remove")} ${t("variations")} ${index + 1}`} onClick={() => { try { setSheet(unassignPortrait(sheet, emotion, index)); setVariation(0); setDirty(true); setLibraryError(""); } catch { setLibraryError(portraitLibraryFull(props.locale)); } }}><Trash2 size={14} /></button></div>)}</div>
         <div className="dr-character-actions"><button type="button" disabled={variations.length >= MAX_PORTRAIT_VARIATIONS} onClick={() => input.current?.click()}><Upload size={16} />{t("addVariations")} · {variations.length}/{MAX_PORTRAIT_VARIATIONS}</button></div>
@@ -180,7 +181,7 @@ export function CharacterEditor(props: { locale: Locale; entity: SceneEntity | n
         {libraryOpen && <PortraitLibrary sheet={sheet} locale={props.locale} emotions={portraitOptions} emotion={emotion} onEmotion={setEmotion} onBusy={setUploading} onChange={next => { setSheet(previous => withPortraitLibrary({ ...previous, sprites: next.sprites }, next.portraitLibrary ?? [])); setDirty(true); setError(null); setLibraryError(""); setVariation(0); }} />}
         </fieldset>
       </div>
-      <footer>{(error || libraryError) && <p role="alert">{error ? t(error) : libraryError}</p>}<button type="button" disabled={busy || uploading} onClick={close}>{t(props.embedded ? "backGallery" : "cancel")}</button><button className="dr-character-primary" type="submit" disabled={busy || uploading || !name.trim()}>{t(busy ? "saving" : "save")}</button></footer>
+      <footer>{saved && !dirty && <small role="status">{t("saveDone")}</small>}{(error || libraryError) && <p role="alert">{error ? t(error) : libraryError}</p>}<button type="button" disabled={busy || uploading} onClick={close}>{t(props.embedded ? "backGallery" : "cancel")}</button><button className="dr-character-primary" type="submit" disabled={busy || uploading || !name.trim()}>{t(busy ? "saving" : "save")}</button></footer>
     </form>
   </div></div>;
 }

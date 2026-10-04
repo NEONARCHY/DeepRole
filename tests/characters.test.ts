@@ -26,6 +26,17 @@ const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base
 const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
 
+it("returns a fresh editing baseline for repeated saves, including new characters and intervening scene updates", async () => {
+  const repo = await setup();
+  const first = await saveCharacter({ ...scope(), entityId: null, original: characterEditBaseline(null, [entity]), name: "Leon", sheet: { ...EMPTY_CHARACTER, sprites: { happy: "data:image/png;base64,AAAA" } }, state: EMPTY_STATUS, present: true }, repo);
+  const second = await saveCharacter({ ...scope(), ...first.original, original: first.original, base: first.base, entityId: first.entityId, sheet: { ...first.original.sheet, sprites: { happy: "data:image/png;base64,BBBB" } } }, repo);
+  expect(second.entityId).toBe(first.entityId); expect(second.original.sheet.sprites.happy).toContain("BBBB");
+  expect((await repo.list<SceneEntity>("entity")).filter(e => e.name === "Leon")).toHaveLength(1);
+  await applyCharacterTurn({ ...scope(), base: second.base }, { ...turn(), base: second.base, present: ["mira", first.entityId], updates: [{ id: first.entityId, state: { ...EMPTY_STATUS, goal: "Find a key" } }] }, undefined, repo);
+  const third = await saveCharacter({ ...scope(), ...second.original, original: second.original, base: second.base, entityId: first.entityId, sheet: { ...second.original.sheet, appearance: "Green coat" } }, repo);
+  expect(third.original.state.goal).toBe("Find a key"); expect(third.original.sheet.appearance).toBe("Green coat");
+});
+
 it("persists an unassigned library through live updates, reopening, assignment and both exports", async () => {
   const repo = await setup(); const images = Array.from({ length: 20 }, (_, i) => `data:image/png;base64,${btoa(`image-${i}`)}`);
   const edit = { ...scope(), original: characterEditBaseline(entity, [entity]), entityId: entity.id, name: entity.name, sheet: withPortraitLibrary(entity.characterSheet!, images), state: EMPTY_STATUS, present: false };
@@ -107,7 +118,7 @@ describe("manual portrait edits alongside live updates", () => {
 
   it("accepts identical concurrent edits instead of reporting a conflict", async () => {
     const repo = await setup(); const edit = opened(); edit.sheet.sprites = images;
-    await saveCharacter(edit, repo); await expect(saveCharacter(edit, repo)).resolves.toBeUndefined();
+    await saveCharacter(edit, repo); await expect(saveCharacter(edit, repo)).resolves.toMatchObject({ entityId: "mira" });
   });
 
   it("does not restore a hero deselected elsewhere when saving only their portrait", async () => {
