@@ -29,21 +29,33 @@ export function QuickMemory(props: { locale: Locale; worldName?: string; onSave:
   </section>;
 }
 
-export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch; onSave: (items: MemoryCandidate[]) => Promise<void>; onDiscard: () => Promise<void>; onClose: () => void }) {
+type ProfileChoice = { description: string; appearance: string; personality: string; goals: string; background: string };
+const profileFields = ["description", "appearance", "personality", "goals", "background"] as const;
+const profileLabels = { ru: { description: "Описание", appearance: "Внешность", personality: "Характер", goals: "Цели", background: "О персонаже" }, en: { description: "Description", appearance: "Appearance", personality: "Personality", goals: "Goals", background: "Background" } } as const;
+
+export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch; onSave: (items: MemoryCandidate[], profileChoice?: ProfileChoice) => Promise<void>; onDiscard: () => Promise<void>; onClose: () => void }) {
   const t = (key: Parameters<typeof assistantText>[1]) => assistantText(props.locale, key);
   const [items, setItems] = useState(() => structuredClone(props.batch.items).map((item) => ({ ...item, selected: false })));
+  const [profileSelected, setProfileSelected] = useState(false);
+  const [profileValues, setProfileValues] = useState<ProfileChoice>({ description: props.batch.profileChange?.afterDescription ?? "", appearance: props.batch.profileChange?.afterAppearance ?? "", personality: props.batch.profileChange?.afterPersonality ?? "", goals: props.batch.profileChange?.afterGoals ?? "", background: props.batch.profileChange?.afterBackground ?? "" });
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const invalid = items.some((item) => item.selected && !item.issue && (!item.title.trim() || !item.content.trim()));
-  const selectedCount = items.filter((item) => item.selected && !item.issue).length;
-  const availableCount = items.filter((item) => !item.issue).length;
+  const selectedCount = items.filter((item) => item.selected && !item.issue).length + Number(profileSelected);
+  const availableCount = items.filter((item) => !item.issue).length + Number(!!props.batch.profileChange);
+  const changedProfileFields = props.batch.profileChange ? profileFields.filter((key) => props.batch.profileChange![`before${key[0]!.toUpperCase()}${key.slice(1)}` as "beforeAppearance"] !== props.batch.profileChange![`after${key[0]!.toUpperCase()}${key.slice(1)}` as "afterAppearance"]) : [];
   const patch = (id: string, values: Partial<MemoryCandidate>) => setItems((all) => all.map((item) => item.id === id ? { ...item, ...values } : item));
   async function act(task: () => Promise<void>) { if (busy) return; setBusy(true); setError(""); try { await task(); props.onClose(); } catch { setError(t("conflict")); } finally { setBusy(false); } }
   return <section className="dr-assistant dr-memory-review" aria-label={t("review")} aria-busy={busy}>
-    <header><div className="dr-review-heading"><strong>{t("review")}</strong><small>{t("reviewCount").replace("{selected}", String(selectedCount)).replace("{total}", String(items.length))}</small></div><button type="button" disabled={busy} aria-label={t("close")} onClick={props.onClose}><X aria-hidden="true" size={18} /></button></header>
-    <p className="dr-review-intro">{experienceText(props.locale, "reviewHint")}</p>
-    <div className="dr-review-selection"><button type="button" disabled={busy || !availableCount} onClick={() => setItems((all) => all.map((item) => ({ ...item, selected: !item.issue })))}>{experienceText(props.locale, "reviewAll")}</button><button type="button" disabled={busy || !selectedCount} onClick={() => setItems((all) => all.map((item) => ({ ...item, selected: false })))}>{experienceText(props.locale, "reviewNone")}</button></div>
+    <header><div className="dr-review-heading"><strong>{t("review")}</strong><small>{t("reviewCount").replace("{selected}", String(selectedCount)).replace("{total}", String(items.length + Number(!!props.batch.profileChange)))}</small></div><button type="button" disabled={busy} aria-label={t("close")} onClick={props.onClose}><X aria-hidden="true" size={18} /></button></header>
+    <p className="dr-review-intro">{props.batch.scanVersions ? props.locale === "ru" ? `DeepRole проверил все ${Object.keys(props.batch.scanVersions).length} записей этого мира. Сравните предложения DeepSeek: он может пропустить косвенное упоминание.` : `DeepRole checked all ${Object.keys(props.batch.scanVersions).length} records in this world. Review DeepSeek's suggestions: it may miss indirect mentions.` : experienceText(props.locale, "reviewHint")}</p>
+    <div className="dr-review-selection"><button type="button" disabled={busy || !availableCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: !item.issue }))); setProfileSelected(!!props.batch.profileChange); }}>{experienceText(props.locale, "reviewAll")}</button><button type="button" disabled={busy || !selectedCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: false }))); setProfileSelected(false); }}>{experienceText(props.locale, "reviewNone")}</button></div>
+    {props.batch.profileChange && <article className={`dr-proposal${profileSelected ? " is-selected" : ""}`}>
+      <div className="dr-proposal-top"><label className="dr-proposal-check"><input type="checkbox" checked={profileSelected} disabled={busy} aria-label={`${t("select")}: ${props.batch.profileChange.name}`} onChange={(event) => setProfileSelected(event.target.checked)} /></label><div className="dr-proposal-summary"><span className="dr-proposal-type">{props.locale === "ru" ? "Карточка персонажа" : "Character profile"}</span><strong>{props.batch.profileChange.name}</strong></div></div>
+      <div className="dr-proposal-body"><section className="dr-proposal-before"><span>{t("before")}</span>{changedProfileFields.map((key) => <p key={key}>{profileLabels[props.locale][key]}: {props.batch.profileChange![`before${key[0]!.toUpperCase()}${key.slice(1)}` as "beforeAppearance"] || "—"}</p>)}</section>
+        <div className="dr-proposal-after"><span>{t("after")}</span>{changedProfileFields.map((key) => <label key={key}>{profileLabels[props.locale][key]}<textarea rows={3} maxLength={key === "description" ? 30000 : 1200} disabled={busy} value={profileValues[key]} onChange={(event) => setProfileValues((old) => ({ ...old, [key]: event.target.value }))} /></label>)}</div></div>
+    </article>}
     <div className="dr-review-list">{items.map((item, index) => {
       const expanded = openId === item.id;
       const missing = item.selected && !item.issue && (!item.title.trim() || !item.content.trim());
@@ -58,7 +70,7 @@ export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch
             <ChevronDown aria-hidden="true" size={17} />
           </button>
         </div>
-        {item.issue && <div className="dr-proposal-issue" role="note"><AlertCircle aria-hidden="true" size={16} /><p>{t("issue")}</p><button type="button" disabled={busy} onClick={() => { patch(item.id, { targetEntryId: undefined, expectedEntry: undefined, issue: undefined, selected: true }); setOpenId(item.id); }}>{t("asNew")}</button></div>}
+        {item.issue && <div className="dr-proposal-issue" role="note"><AlertCircle aria-hidden="true" size={16} /><p>{t("issue")}</p>{!props.batch.scanVersions && <button type="button" disabled={busy} onClick={() => { patch(item.id, { targetEntryId: undefined, expectedEntry: undefined, issue: undefined, selected: true }); setOpenId(item.id); }}>{t("asNew")}</button>}</div>}
         {expanded && <div className="dr-proposal-body">
           {item.targetEntryId && item.expectedEntry && <section className="dr-proposal-before"><span>{t("before")}</span><strong>{item.expectedEntry.title}</strong><p>{item.expectedEntry.content}</p></section>}
           <div className="dr-proposal-after"><span>{item.targetEntryId ? t("after") : t("newEntry")}</span>
@@ -72,7 +84,7 @@ export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch
     })}</div>
     {invalid && <p role="alert">{experienceText(props.locale, "reviewRequired")}</p>}
     {error && <p role="alert">{error}</p>}
-    <div className="dr-assistant-actions dr-review-actions">{confirmDiscard ? <><p className="dr-review-confirm" role="alert">{t("reviewDiscardConfirm")}</p><div className="dr-review-confirm-actions"><button type="button" disabled={busy} onClick={() => setConfirmDiscard(false)}>{t("reviewCancel")}</button><button type="button" className="dr-review-discard-final" disabled={busy} onClick={() => void act(props.onDiscard)}>{t("reviewDiscardFinal")}</button></div></> : <><button className="dr-assistant-primary" disabled={busy || invalid || !selectedCount} onClick={() => void act(() => props.onSave(items))}>{t("saveChanges")} · {selectedCount}</button><button className="dr-review-discard" disabled={busy} onClick={() => setConfirmDiscard(true)}>{t("discard")}</button></>}</div>
+    <div className="dr-assistant-actions dr-review-actions">{confirmDiscard ? <><p className="dr-review-confirm" role="alert">{t("reviewDiscardConfirm")}</p><div className="dr-review-confirm-actions"><button type="button" disabled={busy} onClick={() => setConfirmDiscard(false)}>{t("reviewCancel")}</button><button type="button" className="dr-review-discard-final" disabled={busy} onClick={() => void act(props.onDiscard)}>{t("reviewDiscardFinal")}</button></div></> : <><button className="dr-assistant-primary" disabled={busy || invalid || !selectedCount} onClick={() => void act(() => profileSelected ? props.onSave(items, profileValues) : props.onSave(items))}>{t("saveChanges")} · {selectedCount}</button><button className="dr-review-discard" disabled={busy} onClick={() => setConfirmDiscard(true)}>{t("discard")}</button></>}</div>
   </section>;
 }
 

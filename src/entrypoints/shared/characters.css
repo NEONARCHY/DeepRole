@@ -71,6 +71,10 @@
 .dr-character-gallery-grid>p { grid-column:1/-1; margin:0; color:var(--dr-muted); }
 .dr-character-editor>header h2 { flex:1; }
 .dr-character-editor-body { overflow:auto; padding:0 20px 20px; overscroll-behavior:contain; }
+.dr-character-fact-request { display:grid; gap:10px; margin-top:20px; padding:12px; border:1px solid var(--dr-border); border-radius:10px; background:var(--dr-surface); }
+.dr-character-fact-request summary { cursor:pointer; font-size:13px; font-weight:650; }
+.dr-character-fact-request[open]>*:not(summary) { margin-top:10px; }
+.dr-character-fact-request p[role=alert] { color:var(--dr-danger); font-size:12px; }
 .dr-character-dialog fieldset { display:grid; gap:12px; margin:20px 0 0; padding:0; border:0; min-width:0; }
 .dr-character-dialog legend { font-size:14px; font-weight:650; padding:0 0 12px; }
 .dr-character-dialog label { display:grid; gap:6px; font-size:12px; }

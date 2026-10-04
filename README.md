@@ -61,6 +61,7 @@ Records that do not fit are **not deleted**. Later messages can select a differe
 ## Characters, portraits and choices
 
 - Characters can be added by you or created with a new DeepSeek reply. Mood, condition, goals, relationships and stats belong to a specific chat. If the model provides no valid update, DeepRole keeps the previous values.
+- To correct a lasting character fact, open the character sheet and choose **Correct a lasting fact**. DeepRole checks every lore record in the connected world and asks DeepSeek to suggest replacements in the records and character profile. Review each **before → after** change before saving. Existing chat messages are not rewritten; indirect mentions can still be missed by the model.
 - Each emotion can have several images, shown in a non-repeating cycle. One image can be assigned to several emotions. Custom emotion names are not translated automatically.
 - Scene choices appear below a completed reply. Technical choice data is hidden while it streams. **Suggest options** is a fallback if choices did not appear automatically.
 

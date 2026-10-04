@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Character fact review</title><style>body{margin:0;padding:16px;background:#181818;color:#f0f0f2;font:14px system-ui}#app{width:min(100%,420px);margin:auto}</style></head><body><div id="app"></div><script type="module">
+import React from "react";
+import {createRoot} from "react-dom/client";
+import {MemoryReview} from "/src/entrypoints/shared/MemoryAssistant.tsx";
+import "/src/entrypoints/shared/design-system.css";
+import "/src/entrypoints/shared/memory-assistant.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";
+document.documentElement.lang=locale;
+const old={id:"one",worldId:"w",bookId:null,title:"Mira's hair",content:"Mira has red hair and wears a blue coat.",keywords:[],activation:"always",priority:"high",enabled:true,source:{type:"manual"},createdAt:1,updatedAt:1};
+const batch={id:"batch",worldId:"w",bookId:null,chatId:"chat",focusIds:[],requestType:"memory-analysis",items:[{id:"candidate",worldId:"w",bookId:null,targetEntryId:"one",expectedEntry:old,title:old.title,content:"Mira has black hair and wears a blue coat.",keywords:[],activation:"always",priority:"high",selected:true}],scanVersions:{one:"a".repeat(64)},profileChange:{entityId:"mira",name:"Mira",beforeDescription:"Mira has red hair.",beforeAppearance:"Red hair, blue coat.",beforePersonality:"Careful",beforeGoals:"Find the gate",beforeBackground:"Lives in the tower",beforeUpdatedAt:1,hadCharacterSheet:true,afterDescription:"Mira has black hair.",afterAppearance:"Black hair, blue coat.",afterPersonality:"Careful",afterGoals:"Find the gate",afterBackground:"Lives in the tower"},createdAt:1,updatedAt:2};
+createRoot(document.querySelector("#app")).render(React.createElement(MemoryReview,{locale,batch,onSave:async(items,profileChoice)=>{window.saved={items,profileChoice};},onDiscard:async()=>{},onClose:()=>{window.reviewClosed=true;}}));
+</script></body></html>

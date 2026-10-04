@@ -281,6 +281,9 @@ export interface ServiceRequest {
   /** Opaque identity only: do not store the scene text in session metadata. */
   sceneSignature?: string;
   brief?: string;
+  /** Explicit user-selected character for a reviewed, permanent fact correction. */
+  targetEntityId?: string;
+  baseEntityVersion?: string;
   baseVersions?: Record<string, string>;
   startedMessageCount?: number;
   bookId: string | null;
@@ -297,6 +300,24 @@ export interface MemoryProposalBatch {
   focusIds: string[];
   requestType: "memory-analysis" | "lore-draft";
   items: MemoryCandidate[];
+  /** Full-world snapshot for targeted corrections; approval fails if it changed. */
+  scanVersions?: Record<string, string>;
+  profileChange?: {
+    entityId: string;
+    name: string;
+    beforeDescription: string;
+    beforeAppearance: string;
+    beforePersonality: string;
+    beforeGoals: string;
+    beforeBackground: string;
+    beforeUpdatedAt: number;
+    hadCharacterSheet: boolean;
+    afterDescription: string;
+    afterAppearance: string;
+    afterPersonality: string;
+    afterGoals: string;
+    afterBackground: string;
+  };
   createdAt: number;
   updatedAt: number;
 }
@@ -306,6 +327,22 @@ export interface LoreChange {
   worldId: string | null;
   proposalId: string;
   entries: { before: MemoryEntry | null; after: MemoryEntry }[];
+  profileChange?: {
+    entityId: string;
+    beforeDescription: string;
+    beforeAppearance: string;
+    beforePersonality: string;
+    beforeGoals: string;
+    beforeBackground: string;
+    beforeUpdatedAt: number;
+    hadCharacterSheet: boolean;
+    afterDescription: string;
+    afterAppearance: string;
+    afterPersonality: string;
+    afterGoals: string;
+    afterBackground: string;
+    afterUpdatedAt: number;
+  };
   createdAt: number;
   updatedAt: number;
   undoneAt?: number;

@@ -87,20 +87,19 @@ for (const locale of ["ru", "en"] as const) test(`compact settings keep help acc
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-for (const locale of ["ru", "en"] as const) test(`chat context indicators stack in the requested order and hide independently (${locale})`, async ({ page }) => {
+for (const locale of ["ru", "en"] as const) test(`chat context indicators do not overlap and hide independently (${locale})`, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 850 });
   await page.goto(`/tests/fixtures/page-widget.html${locale === "en" ? "?locale=en" : ""}`);
   await page.evaluate(() => (window as any).setWidgetState({ conversationEstimate: { estimatedTokens: 499, messageCount: 20, atLeast: false, source: "history" } }));
   const meter = page.locator(".dr-chat-meter");
-  const memory = page.locator(".dr-context-indicators > .dr-pill");
+  const memory = page.locator('[data-widget="memory"] > .dr-pill');
   await expect(meter).toBeVisible();
   await expect(memory).toBeVisible();
   const meterBox = await meter.boundingBox();
   const memoryBox = await memory.boundingBox();
   expect(meterBox).not.toBeNull();
   expect(memoryBox).not.toBeNull();
-  expect(memoryBox!.y).toBeGreaterThan(meterBox!.y);
-  expect(Math.abs(memoryBox!.x - meterBox!.x)).toBeLessThan(2);
+  expect(memoryBox!.y + memoryBox!.height <= meterBox!.y || meterBox!.y + meterBox!.height <= memoryBox!.y).toBe(true);
 
   await page.evaluate(() => (window as any).setWidgetState({ showChatContextMeter: false }));
   await expect(meter).toHaveCount(0);

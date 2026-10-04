@@ -9,6 +9,11 @@ export function validMemoryEntry(value: unknown): value is MemoryEntry {
 }
 export function validMemoryProposal(value: unknown): value is MemoryProposalBatch {
   if (!object(value) || typeof value.id !== "string" || !optionalId(value.worldId) || !optionalId(value.bookId) || !optionalId(value.chatId) || !strings(value.focusIds) || !["memory-analysis", "lore-draft"].includes(String(value.requestType)) || !Number.isFinite(value.createdAt) || !Number.isFinite(value.updatedAt) || !Array.isArray(value.items) || value.items.length > 100) return false;
+  if (value.scanVersions !== undefined && (!object(value.scanVersions) || Object.keys(value.scanVersions).length > 100 || !Object.entries(value.scanVersions).every(([id, hash]) => id.length > 0 && typeof hash === "string" && /^[a-f0-9]{64}$/.test(hash)))) return false;
+  if (value.profileChange !== undefined) {
+    const change = value.profileChange;
+    if (!object(change) || typeof change.entityId !== "string" || typeof change.name !== "string" || !["beforeDescription", "afterDescription"].every((key) => typeof change[key] === "string" && change[key].length <= 30000) || !["beforeAppearance", "afterAppearance", "beforePersonality", "afterPersonality", "beforeGoals", "afterGoals", "beforeBackground", "afterBackground"].every((key) => typeof change[key] === "string" && change[key].length <= 1200) || !Number.isFinite(change.beforeUpdatedAt) || typeof change.hadCharacterSheet !== "boolean") return false;
+  }
   const ids = new Set<string>();
   return value.items.every((item: unknown) => {
     if (!object(item) || typeof item.id !== "string" || ids.has(item.id)) return false;
@@ -17,5 +22,10 @@ export function validMemoryProposal(value: unknown): value is MemoryProposalBatc
   });
 }
 export function validLoreChange(value: unknown): value is LoreChange {
-  return object(value) && typeof value.id === "string" && optionalId(value.worldId) && typeof value.proposalId === "string" && Number.isFinite(value.createdAt) && Number.isFinite(value.updatedAt) && (value.undoneAt === undefined || Number.isFinite(value.undoneAt)) && Array.isArray(value.entries) && value.entries.length <= 100 && value.entries.every((pair: unknown) => object(pair) && validMemoryEntry(pair.after) && (pair.before === null || validMemoryEntry(pair.before) && pair.before.id === pair.after.id)) && new Set(value.entries.map((pair) => pair.after.id)).size === value.entries.length;
+  if (!object(value) || typeof value.id !== "string" || !optionalId(value.worldId) || typeof value.proposalId !== "string" || !Number.isFinite(value.createdAt) || !Number.isFinite(value.updatedAt) || (value.undoneAt !== undefined && !Number.isFinite(value.undoneAt)) || !Array.isArray(value.entries) || value.entries.length > 100 || !value.entries.every((pair: unknown) => object(pair) && validMemoryEntry(pair.after) && (pair.before === null || validMemoryEntry(pair.before) && pair.before.id === pair.after.id)) || new Set(value.entries.map((pair) => pair.after.id)).size !== value.entries.length) return false;
+  if (value.profileChange !== undefined) {
+    const change = value.profileChange;
+    if (!object(change) || typeof change.entityId !== "string" || !["beforeDescription", "afterDescription"].every((key) => typeof change[key] === "string" && change[key].length <= 30000) || !["beforeAppearance", "afterAppearance", "beforePersonality", "afterPersonality", "beforeGoals", "afterGoals", "beforeBackground", "afterBackground"].every((key) => typeof change[key] === "string" && change[key].length <= 1200) || !Number.isFinite(change.beforeUpdatedAt) || !Number.isFinite(change.afterUpdatedAt) || typeof change.hadCharacterSheet !== "boolean") return false;
+  }
+  return true;
 }

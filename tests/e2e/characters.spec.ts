@@ -12,6 +12,20 @@ async function expectPortraitRatio(image: Locator, placeholder = true) {
   }
 }
 
+for (const locale of ["ru", "en"] as const) test(`request a reviewed permanent character fact ${locale}`, async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
+  await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
+  const dialog = page.getByRole("dialog");
+  const section = dialog.getByText(locale === "ru" ? "Изменить постоянный факт" : "Correct a lasting fact");
+  await section.click();
+  const instruction = locale === "ru" ? "У Миры теперь чёрные волосы" : "Mira now has black hair";
+  await dialog.getByPlaceholder(locale === "ru" ? "Например: теперь у Элис чёрные волосы вместо рыжих" : "For example: Alice now has black hair instead of red hair").fill(instruction);
+  await dialog.getByRole("button", { name: locale === "ru" ? "Попросить DeepSeek" : "Ask DeepSeek" }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).factRequest)).toEqual({ entityId: "mira", brief: instruction });
+  await expect(dialog).toBeHidden();
+});
+
 for (const locale of ["ru", "en"] as const) test(`character settings in the real narrow sidebar ${locale}`, async ({ page }, info) => {
   await page.setViewportSize({ width: 360, height: 850 });
   await page.goto("/tests/fixtures/sidepanel.html?world=1");

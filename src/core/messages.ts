@@ -21,7 +21,7 @@ export type DeepRoleMessage =
   | { type: "DR_GET_PAGE_STATE" }
   | { type: "DR_PAGE_STATE"; chatId: string | null; chatUrl: string; messageCount: number; status: AdapterStatus; scene?: SceneState; selection?: ContextSelection; overrides?: MemoryOverrides; activity?: ServiceActivity | null; generating?: boolean; warning?: string; pendingHandoff?: string }
   | { type: "DR_MEMORY_OVERRIDE"; id: string; action: "include" | "exclude" | "reset" }
-  | { type: "DR_REVIEW_MEMORY"; operation: "apply"; batchId: string; items: MemoryCandidate[] }
+  | { type: "DR_REVIEW_MEMORY"; operation: "apply"; batchId: string; items: MemoryCandidate[]; profileChoice?: { description: string; appearance: string; personality: string; goals: string; background: string } }
   | { type: "DR_REVIEW_MEMORY"; operation: "discard" | "undo"; id: string }
   | { type: "DR_SET_SCENE"; scene: SceneState }
   | { type: "DR_GET_DRAFT_SCENE" }

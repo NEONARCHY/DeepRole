@@ -41,7 +41,7 @@ export default defineBackground(() => {
       if (sender.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith("https://chat.deepseek.com/")) return;
       return (async () => {
         try {
-          if (message.operation === "apply") return { ok: true, change: await applyMemoryProposals(message.batchId, message.items) };
+          if (message.operation === "apply") return { ok: true, change: await applyMemoryProposals(message.batchId, message.items, repository, message.profileChoice) };
           if (message.operation === "undo") await undoLoreChange(message.id);
           else await discardMemoryProposals(message.id);
           return { ok: true };

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { browser } from "wxt/browser";
-import { memoryFingerprint, prepareMemoryProposals } from "../src/core/memory-proposals";
-import { parseServiceData, loreDraftPrompt } from "../src/core/service-protocol";
+import { characterFactFingerprint, memoryFingerprint, prepareMemoryProposals } from "../src/core/memory-proposals";
+import { parseServiceData, loreDraftPrompt, characterFactPrompt } from "../src/core/service-protocol";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository, MemoryConflictError } from "../src/storage/repository";
 import { applyMemoryProposals, undoLoreChange } from "../src/storage/memory-proposals";
@@ -9,11 +9,12 @@ import { createBackup, parseBackup } from "../src/storage/backup";
 import { LIBRARY_CHANGE_KEY } from "../src/storage/changes";
 import { PENDING_SUGGESTIONS_KEY } from "../src/core/messages";
 import { migrateLegacyProposals } from "../src/storage/legacy-proposals";
-import type { MemoryCandidate, MemoryEntry, MemoryProposalBatch, ServiceRequest, WorldProfile } from "../src/core/types";
+import type { MemoryCandidate, MemoryEntry, MemoryProposalBatch, SceneEntity, ServiceRequest, WorldProfile } from "../src/core/types";
 
 const world: WorldProfile = { id: "w", name: "World", description: "", color: "blue", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
 const entry: MemoryEntry = { id: "one", worldId: "w", bookId: null, title: "Mira's oath", content: "Keep the old promise.", keywords: ["promise"], activation: "always", priority: "high", enabled: true, mapCategory: "world-rules", links: [{ targetId: "other", label: "possible", mode: "reference" }], source: { type: "import", originalTitle: "Mira's oath", originalImportance: "always" }, createdAt: 1, updatedAt: 1 };
 const candidate = (patch: Partial<MemoryCandidate> = {}): MemoryCandidate => ({ id: crypto.randomUUID(), title: entry.title, content: "Keep the old promise. The gate is now open.", keywords: [], activation: "smart", priority: "normal", bookId: null, selected: true, ...patch });
+const character: SceneEntity = { id: "mira", worldId: "w", kind: "character", name: "Mira", description: "Mira has red hair.", aliases: [], memberIds: [], characterSheet: { gender: "female", protagonist: false, appearance: "Red hair, blue coat.", personality: "Careful", goals: "Find the gate", background: "Lives in the tower", sprites: { neutral: "data:image/png;base64,AA==" } }, createdAt: 1, updatedAt: 1 };
 const request = async (patch: Partial<ServiceRequest> = {}): Promise<ServiceRequest> => ({ id: crypto.randomUUID(), type: "memory-analysis", worldId: "w", bookId: null, focusIds: [], chatId: "chat", createdAt: 2, baseVersions: { one: await memoryFingerprint(entry) }, ...patch });
 const databases: DeepRoleDatabase[] = [];
 afterEach(async () => { await Promise.all(databases.splice(0).map((db) => db.delete())); });
@@ -23,6 +24,63 @@ async function setup(items = [candidate({ targetEntryId: "one" }), candidate({ t
   const batch = await prepareMemoryProposals(items, [entry], await request()); await repo.put("proposal", batch); return { repo, db, batch };
 }
 describe("approved lore updates", () => {
+  it("reviews a whole-world character correction, applies profile and entries atomically, then undoes both", async () => {
+    const db = new DeepRoleDatabase(`character-fact-${crypto.randomUUID()}`); databases.push(db); const repo = new DeepRoleRepository(db);
+    const second = { ...entry, id: "two", title: "The tower", content: "At the tower, her red hair catches the light." };
+    await repo.mergeRecords([{ kind: "world", id: world.id, data: world }, { kind: "entity", id: character.id, data: character }, { kind: "entry", id: entry.id, data: entry }, { kind: "entry", id: second.id, data: second }]);
+    const targeted = await request({ targetEntityId: character.id, baseEntityVersion: await characterFactFingerprint(character), baseVersions: { one: await memoryFingerprint(entry), two: await memoryFingerprint(second) } });
+    const prompt = characterFactPrompt(character, "Her hair is now black, not red", [entry, second], "en");
+    expect(prompt).toContain('"id":"two"'); expect(prompt).toContain("nothing is saved automatically");
+    const profile = { description: "Mira has black hair.", appearance: "Black hair, blue coat.", personality: "Careful", goals: "Find the gate", background: "Lives in the tower" };
+    const batch = await prepareMemoryProposals([candidate({ targetEntryId: "two", title: second.title, content: "At the tower, her black hair catches the light." })], [entry, second], targeted, profile, character);
+    expect(batch.profileChange?.beforeAppearance).toBe("Red hair, blue coat."); expect(batch.scanVersions).toHaveProperty("two");
+    await repo.put("proposal", batch);
+    const change = await applyMemoryProposals(batch.id, batch.items, repo, profile);
+    expect((await repo.get<SceneEntity>("entity", character.id))?.characterSheet?.sprites).toEqual(character.characterSheet?.sprites);
+    expect((await repo.get<SceneEntity>("entity", character.id))?.characterSheet?.appearance).toBe("Black hair, blue coat.");
+    expect((await repo.get<MemoryEntry>("entry", "two"))?.content).toContain("black hair");
+    await undoLoreChange(change!.id, repo);
+    expect((await repo.get<SceneEntity>("entity", character.id))?.characterSheet?.appearance).toBe("Red hair, blue coat.");
+    expect((await repo.get<MemoryEntry>("entry", "two"))?.content).toContain("red hair");
+  });
+  it("blocks targeted corrections when a scanned record changes or the model invents a target", async () => {
+    const db = new DeepRoleDatabase(`character-fact-${crypto.randomUUID()}`); databases.push(db); const repo = new DeepRoleRepository(db);
+    await repo.mergeRecords([{ kind: "world", id: world.id, data: world }, { kind: "entity", id: character.id, data: character }, { kind: "entry", id: entry.id, data: entry }]);
+    const targeted = await request({ targetEntityId: character.id, baseEntityVersion: await characterFactFingerprint(character) });
+    const unchangedProfile = { description: character.description, appearance: character.characterSheet!.appearance, personality: character.characterSheet!.personality, goals: character.characterSheet!.goals, background: character.characterSheet!.background };
+    await expect(prepareMemoryProposals([candidate({ targetEntryId: "foreign" })], [entry], targeted, unchangedProfile, character)).rejects.toThrow("character-fact-target");
+    const batch = await prepareMemoryProposals([candidate({ targetEntryId: "one" })], [entry], targeted, unchangedProfile, character);
+    await repo.put("proposal", batch); await repo.put("entry", { ...entry, content: "Later user edit", updatedAt: 4 });
+    await expect(applyMemoryProposals(batch.id, batch.items, repo)).rejects.toBeInstanceOf(MemoryConflictError);
+    expect(await repo.get("proposal", batch.id)).toBeTruthy(); expect(await repo.list("change")).toEqual([]);
+  });
+  it("handles a profile-only correction without creating a duplicate memory record", async () => {
+    const db = new DeepRoleDatabase(`character-fact-${crypto.randomUUID()}`); databases.push(db); const repo = new DeepRoleRepository(db);
+    const withoutSheet = { ...character, id: "uncarded", characterSheet: undefined };
+    await repo.mergeRecords([{ kind: "world", id: world.id, data: world }, { kind: "entity", id: withoutSheet.id, data: withoutSheet }]);
+    const targeted = await request({ targetEntityId: withoutSheet.id, baseEntityVersion: await characterFactFingerprint(withoutSheet), baseVersions: {} });
+    const profile = { description: "Mira has black hair.", appearance: "Black hair", personality: "", goals: "", background: "" };
+    const batch = await prepareMemoryProposals([], [], targeted, profile, withoutSheet);
+    expect(batch.items).toEqual([]); expect(batch.profileChange?.hadCharacterSheet).toBe(false);
+    await repo.put("proposal", batch);
+    const change = await applyMemoryProposals(batch.id, [], repo, profile);
+    expect((await repo.get<SceneEntity>("entity", withoutSheet.id))?.characterSheet?.appearance).toBe("Black hair");
+    expect(await repo.list("entry")).toEqual([]);
+    await undoLoreChange(change!.id, repo);
+    expect((await repo.get<SceneEntity>("entity", withoutSheet.id))?.characterSheet).toBeUndefined();
+  });
+  it("rejects a later profile edit before approval without touching its records", async () => {
+    const db = new DeepRoleDatabase(`character-fact-${crypto.randomUUID()}`); databases.push(db); const repo = new DeepRoleRepository(db);
+    await repo.mergeRecords([{ kind: "world", id: world.id, data: world }, { kind: "entity", id: character.id, data: character }, { kind: "entry", id: entry.id, data: entry }]);
+    const targeted = await request({ targetEntityId: character.id, baseEntityVersion: await characterFactFingerprint(character) });
+    const profile = { description: "Mira has black hair.", appearance: "Black hair", personality: "Careful", goals: "Find the gate", background: "Lives in the tower" };
+    const batch = await prepareMemoryProposals([candidate({ targetEntryId: "one" })], [entry], targeted, profile, character);
+    await repo.put("proposal", batch);
+    await repo.put("entity", { ...character, characterSheet: { ...character.characterSheet!, appearance: "User's newer edit" }, updatedAt: 3 });
+    await expect(applyMemoryProposals(batch.id, batch.items, repo, profile)).rejects.toBeInstanceOf(MemoryConflictError);
+    expect((await repo.get<MemoryEntry>("entry", entry.id))?.content).toBe(entry.content);
+    expect(await repo.get("proposal", batch.id)).toBeTruthy();
+  });
   it("prepares updates, deduplicates repeats and keeps unchanged lore untouched", async () => {
     const batch = await prepareMemoryProposals([candidate(), candidate(), candidate({ title: "Bridge", content: "one" }), candidate({ title: "Bridge", content: "two" })], [entry], await request());
     expect(batch.items).toHaveLength(2); expect(batch.items[0]?.targetEntryId).toBe("one");
@@ -86,6 +144,8 @@ describe("approved lore updates", () => {
     await expect(parseBackup(JSON.stringify(backup))).rejects.toThrow();
     expect(parseServiceData('<deeprole_data>{"type":"handoff","title":{},"summary":"x"}</deeprole_data>')).toBeNull();
     expect(parseServiceData(`<deeprole_data>${JSON.stringify({ type: "memory-suggestions", items: Array(101).fill({ title: "a", content: "b" }) })}</deeprole_data>`)).toBeNull();
+    expect(parseServiceData(`<deeprole_data>${JSON.stringify({ type: "memory-suggestions", items: [], profile: { description: "", appearance: "Black hair", personality: "", goals: "", background: "" } })}</deeprole_data>`)).toMatchObject({ profile: { appearance: "Black hair" } });
+    expect(parseServiceData(`<deeprole_data>${JSON.stringify({ type: "memory-suggestions", items: [], profile: { description: "", appearance: "X".repeat(1201), personality: "", goals: "", background: "" } })}</deeprole_data>`)).toBeNull();
     expect(loreDraftPrompt("My rules", "en")).toContain("until the user approves");
   });
   it("upgrades old pending suggestions once, without approving facts or stale replacements", async () => {

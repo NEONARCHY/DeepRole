@@ -21,10 +21,11 @@ import {
   type TabSessionGuard,
 } from "../core/messages";
 import { changeMemoryOverride, compileMemoryWorkspace, EMPTY_OVERRIDES, libraryRecords, scopedMemories } from "../core/memory-workspace";
-import { memoryFingerprint, prepareMemoryProposals } from "../core/memory-proposals";
+import { characterFactFingerprint, memoryFingerprint, prepareMemoryProposals } from "../core/memory-proposals";
 import { assistantText } from "../core/assistant-i18n";
 import {
   createSnapshot,
+  characterFactPrompt,
   handoffPrompt,
   memoryAnalysisPrompt,
   loreDraftPrompt,
@@ -605,6 +606,7 @@ class PageController {
     this.root?.render(<PageWidget
       state={{ ...this.state, selection: this.selection }}
       onSaveCharacter={(edit) => this.saveCharacter(edit)}
+      onRequestCharacterFact={async (targetEntityId, brief) => { const result = await this.runService({ id: createId("service"), type: "memory-analysis", targetEntityId, brief, bookId: this.currentScene().bookId, createdAt: Date.now() }); if (!result.ok) throw new Error(result.error); }}
       onRetryCharacters={() => { this.characterScan = null; void this.scanCharacters(); }}
       onCharacterOpened={() => { if (this.state.characters) this.state.characters.openId = null; }}
       authenticationPage={this.adapter.isAuthenticationPage()}
@@ -618,7 +620,7 @@ class PageController {
       onResetEntry={(id) => void this.overrideMemory(id, "reset").catch(() => this.showToast(sceneText(this.state.locale, "failed")))}
       onQuickSave={(content, activation, title) => this.saveSelection(content, activation, title)}
       onDraftLore={async (brief) => { const result = await this.runService({ id: createId("service"), type: "lore-draft", brief, bookId: this.currentScene().bookId, createdAt: Date.now() }); if (!result.ok) throw new Error(result.error); }}
-      onReview={async (batch, items) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "apply", batchId: batch.id, items } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); const count = items.filter((item) => item.selected && !item.issue).length; this.showToast(assistantText(this.state.locale, "memoryUpdated").replace("{count}", String(count))); this.state.reviewProposalId = null; await this.reload(); }}
+      onReview={async (batch, items, profileChoice) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "apply", batchId: batch.id, items, profileChoice } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); const count = items.filter((item) => item.selected && !item.issue).length + Number(!!profileChoice); this.showToast(assistantText(this.state.locale, "memoryUpdated").replace("{count}", String(count))); this.state.reviewProposalId = null; await this.reload(); }}
       onDiscard={async (id) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "discard", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); this.state.reviewProposalId = null; await this.reload(); }}
       onReviewClose={() => { this.state.reviewProposalId = null; }}
       onUndo={async (id) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "undo", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); await this.reload(); }}
@@ -902,7 +904,8 @@ class PageController {
     };
     const initialError = guard();
     if (initialError) return { ok: false, error: initialError };
-    if (request.type === "lore-draft" && (!request.brief?.trim() || request.brief.length > 6000)) return { ok: false, error: "invalid-brief" };
+    if ((request.type === "lore-draft" || request.targetEntityId) && (!request.brief?.trim() || request.brief.length > 6000)) return { ok: false, error: "invalid-brief" };
+    if (request.targetEntityId && request.type !== "memory-analysis") return { ok: false, error: "invalid-brief" };
     this.preparingService = true;
     this.serviceFeedback = { phase: "preparing", type: request.type };
     this.render();
@@ -932,13 +935,19 @@ class PageController {
       const book = this.books.find((item) => item.id === request.bookId);
       // Bound the service request; omitted records must not be silently updated.
       const scope = scopedMemories(this.entries, this.books, request.worldId ?? null);
+      const target = request.targetEntityId ? this.entities.find((entity) => entity.id === request.targetEntityId && entity.worldId === request.worldId && entity.kind === "character") : undefined;
+      if (request.targetEntityId && !target) return { ok: false, error: "character-unavailable" };
       const selected = new Set(this.selection.entries.map((item) => item.entry.id));
       let characters = 0;
-      const existing = [...scope].sort((a, b) => Number(selected.has(b.id)) - Number(selected.has(a.id)) || b.updatedAt - a.updatedAt).filter((entry) => {
+      const existing = request.targetEntityId ? scope : [...scope].sort((a, b) => Number(selected.has(b.id)) - Number(selected.has(a.id)) || b.updatedAt - a.updatedAt).filter((entry) => {
         characters += entry.title.length + entry.content.length + 120; return characters <= 24000;
       }).slice(0, 80);
+      // A correction must inspect the complete world. Never claim a partial
+      // model prompt covered old mentions that were omitted by a size cap.
+      if (target && (existing.length > 100 || existing.reduce((sum, entry) => sum + entry.title.length + entry.content.length + 120, 0) > 60000)) return { ok: false, error: "character-world-too-large" };
       if (request.type !== "scene-choices") request.baseVersions = Object.fromEntries(await Promise.all(existing.map(async (entry) => [entry.id, await memoryFingerprint(entry)])));
-      const basePrompt = request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale) : handoffPrompt();
+      if (target) request.baseEntityVersion = await characterFactFingerprint(target);
+      const basePrompt = target ? characterFactPrompt(target, request.brief!, existing, this.state.locale) : request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale) : handoffPrompt();
       const prompt = basePrompt.replace("[DeepRole Service]\n", `[DeepRole Service]\n[Request ID: ${request.id}]\n`);
       // Keep only correlation metadata in session storage, not the user's lore brief.
       delete request.brief;
@@ -1016,22 +1025,25 @@ class PageController {
       if (this.pendingService?.id !== request.id) return;
       this.malformedServiceReplies.delete(request.id);
       if ((parsed.type === "memory-suggestions") !== ["memory-analysis", "lore-draft"].includes(request.type)) continue;
+      if (request.targetEntityId && parsed.type === "memory-suggestions" && !parsed.profile) continue;
       this.processingService = true;
       try {
         if (parsed.type === "memory-suggestions") {
           const records = await repository.rawRecords();
-          const batch = await prepareMemoryProposals(parsed.items, scopedMemories(libraryRecords<MemoryEntry>(records, "entry"), libraryRecords<MemoryBook>(records, "book"), request.worldId ?? null), request);
-          if (batch.items.length) await repository.put("proposal", batch);
+          const target = request.targetEntityId ? libraryRecords<SceneEntity>(records, "entity").find((entity) => entity.id === request.targetEntityId) : undefined;
+          const batch = await prepareMemoryProposals(parsed.items, scopedMemories(libraryRecords<MemoryEntry>(records, "entry"), libraryRecords<MemoryBook>(records, "book"), request.worldId ?? null), request, parsed.profile, target);
+          const changeCount = batch.items.length + Number(!!batch.profileChange);
+          if (changeCount) await repository.put("proposal", batch);
           // A stale reminder counter must not turn an already saved batch into a retry.
           if (request.type === "memory-analysis") await this.markAnalyzed(request).catch(() => undefined);
-          if (batch.items.length) this.state.reviewProposalId = batch.id;
-          this.setServiceResult(request, batch.items.length ? null : "empty");
-          this.showToast(batch.items.length ? this.t("suggestionsReady") : assistantText(this.state.locale, "noChanges"));
-          const summary = batch.items.length
+          if (changeCount) this.state.reviewProposalId = batch.id;
+          this.setServiceResult(request, changeCount ? null : "empty");
+          this.showToast(changeCount ? this.t("suggestionsReady") : assistantText(this.state.locale, "noChanges"));
+          const summary = changeCount
             ? experienceText(this.state.locale, "resultReview")
             : assistantText(this.state.locale, "analysisNoChanges");
           presentMemoryAnalysis(request.id, experienceText(this.state.locale, "memoryPreloader"), summary, document, request.replyIdentity);
-          if (!batch.items.length) void browser.runtime.sendMessage({ type: "DR_SERVICE_RESULT", outcome: "no-changes" } satisfies DeepRoleMessage).catch(() => undefined);
+          if (!changeCount) void browser.runtime.sendMessage({ type: "DR_SERVICE_RESULT", outcome: "no-changes" } satisfies DeepRoleMessage).catch(() => undefined);
         } else {
           const scope = this.pageScope();
           const snapshot = createSnapshot(parsed, request.chatId ?? "unknown", request.chatUrl ?? scope.url, request.bookId);
