@@ -90,7 +90,7 @@ BDS переносит названия, текст и режимы записе
 
 ### Перемещение и сворачивание панелей
 
-Панели контекста, выбора мира, персонажей и блок управления держат между собой зазор минимум 8 пикселей, включая кнопки при наведении. При перетаскивании панель занимает ближайшее свободное место. Старые перекрытия исправляются при показе; разворачивание панели и изменение размера окна тоже учитываются. Если экран слишком мал, панели собираются в прокручиваемую колонку; свободное перемещение возвращается, когда места достаточно. Плавающие портреты персонажей остаются независимыми.
+Панели контекста, выбора мира, персонажей и блок управления держат между собой зазор минимум 1 пиксель, включая кнопки при наведении. Скрытые кнопки занимают верхнюю строку своей панели, поэтому видимые карточки отделены также высотой этой строки. При перетаскивании панель занимает ближайшее свободное место. Старые перекрытия исправляются при показе; разворачивание панели и изменение размера окна тоже учитываются. Если экран слишком мал, панели собираются в прокручиваемую колонку; свободное перемещение возвращается, когда места достаточно. Плавающие портреты персонажей остаются независимыми.
 
 Список персонажей по умолчанию уже. У контекста чата, подключённой памяти, персонажей, переключателя вариантов и мира есть свои ручки перемещения и маленькая кнопка **−**. Они появляются при наведении только на свою панель или при фокусе с клавиатуры; на сенсорном экране доступны постоянно. Нажмите **Вместе**, чтобы любая ручка двигала группу, или используйте общую ручку над панелями. Выключите **Вместе** для независимого перемещения.
 
@@ -140,7 +140,7 @@ Select thumbnails, choose an emotion below, then click **Assign to emotion**. Sw
 
 Each character has a separate library. World exports and full backups include it; images are never sent to DeepSeek. Limits: 256 unassigned images per character, 12 variations per emotion, and 25 MB of processed image data across the extension. Removing an emotion variation keeps its image in the library. Use the library’s trash button to delete an unassigned image.
 
-Context, character, world and control panels keep at least an 8 px gap, including their hover controls. Dragging finds the nearest free space; old overlaps, restored panels and viewport changes are handled too. On very small screens they use a scrollable column until there is enough space for free positioning. Floating character portraits remain independent.
+Context, character, world and control panels keep at least a 1 px gap, including their hover controls. The hidden controls occupy a row above each panel, so the visible cards also have the height of that row between them. Dragging finds the nearest free space; old overlaps, restored panels and viewport changes are handled too. On very small screens they use a scrollable column until there is enough space for free positioning. Floating character portraits remain independent.
 
 You can select **My protagonist** and upload emotion portraits before pressing **Save character** once. If a scene update arrives while editing, portraits still save and fields you left untouched keep their latest values. Competing changes to the same field or the same emotion’s image set show a warning; unsaved edits remain in the open form.
 

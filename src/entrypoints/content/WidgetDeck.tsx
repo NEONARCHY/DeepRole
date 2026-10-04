@@ -1,7 +1,7 @@
 import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent } from "react";
 import { GripHorizontal, Layers, Minus, RotateCcw } from "lucide-react";
 import type { Locale } from "../../core/types";
-import { nearestWidgetSpace, type WidgetRect } from "../../core/widget-spacing";
+import { nearestWidgetSpace, WIDGET_GAP, type WidgetRect } from "../../core/widget-spacing";
 
 const ids = ["meter", "memory", "characters", "scene", "choices", "notices"] as const;
 type Id = typeof ids[number];
@@ -46,12 +46,12 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
   useLayoutEffect(() => {
     if (gesture.current || !dock.current) return;
     const nodes = [["dock", dock.current], ...tiles.filter(tile => !layout.minimized.includes(tile.id)).map(tile => [tile.id, refs.current.get(tile.id)] as const)] as const;
-    const placed: WidgetRect[] = []; const next = structuredClone(layout); let changed = false, stackY = 8;
+    const placed: WidgetRect[] = []; const next = structuredClone(layout); let changed = false, stackY = WIDGET_GAP;
     for (const [id, node] of nodes) {
       if (!node) continue;
       const rect = node.getBoundingClientRect(); const saved = layout.positions[id as Id | "dock"];
-      const wanted = { x: overflow ? saved ? saved.x * innerWidth : 8 : rect.x, y: overflow ? saved ? saved.y * innerHeight : stackY : rect.y, width: rect.width, height: rect.height };
-      stackY += rect.height + 8;
+      const wanted = { x: overflow ? saved ? saved.x * innerWidth : WIDGET_GAP : rect.x, y: overflow ? saved ? saved.y * innerHeight : stackY : rect.y, width: rect.width, height: rect.height };
+      stackY += rect.height + WIDGET_GAP;
       const safe = nearestWidgetSpace(wanted, placed, { width: innerWidth, height: innerHeight });
       if (!safe) { if (!overflow) setOverflow(true); return; }
       placed.push(safe);
@@ -80,7 +80,7 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     const point = layout.positions[id as Id];
     if (!point) return undefined;
     const node = id === "dock" ? dock.current : refs.current.get(id);
-    return { position: "fixed" as const, left: Math.max(8, Math.min(point.x * window.innerWidth, window.innerWidth - (node?.offsetWidth ?? 120) - 8)), top: Math.max(8, Math.min(point.y * window.innerHeight, window.innerHeight - (node?.offsetHeight ?? 40) - 8)) };
+    return { position: "fixed" as const, left: Math.max(WIDGET_GAP, Math.min(point.x * window.innerWidth, window.innerWidth - (node?.offsetWidth ?? 120) - WIDGET_GAP)), top: Math.max(WIDGET_GAP, Math.min(point.y * window.innerHeight, window.innerHeight - (node?.offsetHeight ?? 40) - WIDGET_GAP)) };
   };
   const snapshot = () => {
     const rects = new Map<string, DOMRect>();
@@ -94,8 +94,8 @@ export function WidgetDeck({ children, locale, saved, onSave }: { children: Reac
     if (overflow) return frozen;
     const moving = [...rects].filter(([key]) => all || key === id).map(([, rect]) => rect);
     if (!moving.length) return frozen;
-    dx = Math.max(8 - Math.min(...moving.map(r => r.left)), Math.min(dx, window.innerWidth - 8 - Math.max(...moving.map(r => r.right))));
-    dy = Math.max(8 - Math.min(...moving.map(r => r.top)), Math.min(dy, window.innerHeight - 8 - Math.max(...moving.map(r => r.bottom))));
+    dx = Math.max(WIDGET_GAP - Math.min(...moving.map(r => r.left)), Math.min(dx, window.innerWidth - WIDGET_GAP - Math.max(...moving.map(r => r.right))));
+    dy = Math.max(WIDGET_GAP - Math.min(...moving.map(r => r.top)), Math.min(dy, window.innerHeight - WIDGET_GAP - Math.max(...moving.map(r => r.bottom))));
     if (!all) {
       const source = rects.get(id)!;
       const safe = nearestWidgetSpace({ x: source.x + dx, y: source.y + dy, width: source.width, height: source.height }, [...rects].filter(([key]) => key !== id).map(([, r]) => ({ x: r.x, y: r.y, width: r.width, height: r.height })), { width: innerWidth, height: innerHeight });

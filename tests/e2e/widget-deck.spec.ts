@@ -6,7 +6,7 @@ test("legacy overlaps, pointer collisions and tiny viewport have safe spacing", 
   await page.goto("/tests/fixtures/page-widget.html?panels=1&locale=en");
   const overlaps = () => page.locator(".dr-widget-dock,.dr-widget-tile:not([hidden])").evaluateAll(nodes => {
     const rects = nodes.map(n => n.getBoundingClientRect());
-    return rects.flatMap((a, i) => rects.slice(i + 1).filter(b => a.left < b.right + 7.5 && a.right + 7.5 > b.left && a.top < b.bottom + 7.5 && a.bottom + 7.5 > b.top)).length;
+    return rects.flatMap((a, i) => rects.slice(i + 1).filter(b => a.left < b.right + .5 && a.right + .5 > b.left && a.top < b.bottom + .5 && a.bottom + .5 > b.top)).length;
   });
   await expect(page.locator(".dr-widget-tile")).toHaveCount(5); await expect.poll(overlaps).toBe(0);
   const panel = page.locator('[data-widget="characters"]'); await panel.hover();
@@ -27,6 +27,8 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
   await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);
   const tiles = page.locator(".dr-widget-tile"); await expect(tiles).toHaveCount(5);
   expect((await page.locator(".dr-characters").boundingBox())!.width).toBeLessThanOrEqual(288);
+  const dock = (await page.locator(".dr-widget-dock").boundingBox())!, firstTile = (await tiles.first().boundingBox())!;
+  expect(firstTile.y - dock.y - dock.height).toBeCloseTo(1, 0);
   await page.screenshot({ path: info.outputPath(`panels-${locale}-${width}.png`) });
   const memory = page.locator('[data-widget="memory"]'); const meter = page.locator('[data-widget="meter"]');
   const before = (await memory.boundingBox())!, meterBefore = (await meter.boundingBox())!;
