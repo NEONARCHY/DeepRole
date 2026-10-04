@@ -10,8 +10,8 @@ test("legacy overlaps, pointer collisions and tiny viewport have safe spacing", 
   });
   await expect(page.locator(".dr-widget-tile")).toHaveCount(5); await expect.poll(overlaps).toBe(0);
   const panel = page.locator('[data-widget="characters"]'); await panel.hover();
-  const grip = (await panel.locator(".dr-widget-move").boundingBox())!, target = (await page.locator('[data-widget="meter"]').boundingBox())!;
-  await page.mouse.move(grip.x + 5, grip.y + 5); await page.mouse.down(); await page.mouse.move(target.x + 8, target.y + 8, { steps: 8 }); await page.mouse.up();
+  const source = (await panel.boundingBox())!, target = (await page.locator('[data-widget="meter"]').boundingBox())!;
+  await page.mouse.move(source.x + 45, source.y + 12); await page.mouse.down(); await page.mouse.move(target.x + 8, target.y + 8, { steps: 8 }); await page.mouse.up();
   await expect.poll(overlaps).toBe(0);
   await panel.hover(); await panel.locator(".dr-widget-tools button").last().click(); await page.locator('[data-restore-widget="characters"]').click();
   await expect.poll(overlaps).toBe(0); await page.screenshot({ path: info.outputPath("safe-panels.png") });
@@ -32,14 +32,13 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
   await page.screenshot({ path: info.outputPath(`panels-${locale}-${width}.png`) });
   const memory = page.locator('[data-widget="memory"]'); const meter = page.locator('[data-widget="meter"]');
   const before = (await memory.boundingBox())!, meterBefore = (await meter.boundingBox())!;
-  const grip = memory.locator(".dr-widget-move");
-  await grip.focus(); await grip.press("ArrowRight");
+  await memory.focus(); await memory.press("ArrowRight");
   expect((await memory.boundingBox())!.x).toBeCloseTo(before.x + 8, 0);
   expect((await meter.boundingBox())!.x).toBeCloseTo(meterBefore.x, 0);
   await page.getByRole("button", { name: locale === "ru" ? "Перемещать панели вместе" : "Move panels together", exact: true }).click();
   // Vertical movement has room even on the 320px screen.
   const oldY = (await meter.boundingBox())!.y;
-  await grip.press("ArrowDown"); expect((await meter.boundingBox())!.y).toBeCloseTo(oldY + 8, 0);
+  await memory.press("ArrowDown"); expect((await meter.boundingBox())!.y).toBeCloseTo(oldY + 8, 0);
   for (const id of ["meter", "memory", "choices", "characters", "scene"]) {
     const tile = page.locator(`[data-widget="${id}"]`); await tile.hover(); await tile.locator(".dr-widget-tools button").last().click();
   }
@@ -57,17 +56,32 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
 
 test("panel pointer drag, cancel, failed persistence and viewport clamp", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 950 }); await page.goto("/tests/fixtures/page-widget.html?panels=1&locale=en");
-  const tile = page.locator('[data-widget="characters"]'), grip = tile.locator(".dr-widget-move");
-  const before = (await tile.boundingBox())!, handle = (await grip.boundingBox())!;
-  await page.mouse.move(handle.x + 10, handle.y + 10); await page.mouse.down(); await page.mouse.move(handle.x + 270, handle.y + 40, { steps: 8 }); await page.mouse.up();
+  const tile = page.locator('[data-widget="characters"]');
+  const before = (await tile.boundingBox())!, handle = (await tile.boundingBox())!;
+  await page.mouse.move(handle.x + 45, handle.y + 12); await page.mouse.down(); await page.mouse.move(handle.x + 305, handle.y + 42, { steps: 8 }); await page.mouse.up();
   await expect.poll(async () => (await tile.boundingBox())!.x).toBeCloseTo(before.x + 260, 0);
-  const moved = (await tile.boundingBox())!, nextHandle = (await grip.boundingBox())!;
-  await page.mouse.move(nextHandle.x + 10, nextHandle.y + 10); await page.mouse.down(); await page.mouse.move(nextHandle.x + 70, nextHandle.y + 60); await page.keyboard.press("Escape"); await page.mouse.up();
+  const moved = (await tile.boundingBox())!, nextHandle = (await tile.boundingBox())!;
+  await page.mouse.move(nextHandle.x + 45, nextHandle.y + 12); await page.mouse.down(); await page.mouse.move(nextHandle.x + 105, nextHandle.y + 62); await page.keyboard.press("Escape"); await page.mouse.up();
   expect((await tile.boundingBox())!.x).toBeCloseTo(moved.x, 0);
-  await page.evaluate(() => { (window as any).rejectLayout = true; }); await grip.press("ArrowRight");
+  await page.evaluate(() => { (window as any).rejectLayout = true; }); await tile.focus(); await tile.press("ArrowRight");
   await expect(page.getByRole("alert")).toContainText("Couldn’t save"); expect((await tile.boundingBox())!.x).toBeCloseTo(moved.x, 0);
   await page.setViewportSize({ width: 320, height: 600 });
   await expect.poll(async () => { const b = (await tile.boundingBox())!; return b.x + b.width; }).toBeLessThanOrEqual(320);
+});
+
+for (const locale of ["ru", "en"]) test(`panel button clicks still work and can also drag ${locale}`, async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 950 });
+  await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);
+  const panel = page.locator('[data-widget="memory"]'), button = panel.locator(".dr-pill");
+  await expect(panel.locator(".dr-widget-move")).toHaveCount(0);
+  await button.click(); await expect(button).toHaveAttribute("aria-expanded", "true");
+  await button.click(); await expect(button).toHaveAttribute("aria-expanded", "false");
+  const before = (await panel.boundingBox())!, source = (await button.boundingBox())!;
+  await page.mouse.move(source.x + 15, source.y + 15); await page.mouse.down();
+  await page.mouse.move(source.x + 215, source.y + 45, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await panel.boundingBox())!.x).toBeGreaterThan(before.x + 100);
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await button.click(); await expect(button).toHaveAttribute("aria-expanded", "true");
 });
 
 test("late initialization fits the panel stack back inside the viewport", async ({ page }) => {
@@ -107,12 +121,13 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`panel 
   await page.mouse.move(width - 1, 949);
   for (const toolbar of await tools.all()) { await expect(toolbar).toHaveCSS("opacity", "0"); await expect(toolbar).toHaveCSS("pointer-events", "none"); }
   const allGrip = page.locator(".dr-widget-deck-tools>.dr-widget-move");
-  await expect(allGrip).toHaveCSS("opacity", "0");
+  await expect(allGrip).toBeVisible(); await expect(allGrip).toHaveCSS("opacity", "1");
+  await expect(page.locator(".dr-widget-tile .dr-widget-move")).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`panels-idle-${locale}-${width}.png`) });
   for (let i = 0; i < 5; i++) {
     await tiles.nth(i).hover();
     for (let j = 0; j < 5; j++) await expect(tools.nth(j)).toHaveCSS("opacity", i === j ? "1" : "0");
-    await expect(allGrip).toHaveCSS("opacity", "0");
+    await expect(allGrip).toHaveCSS("opacity", "1");
   }
   expect(await rects()).toEqual(before);
   const panel = page.locator('[data-widget="characters"]'); await panel.hover();
@@ -124,9 +139,9 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`panel 
   // A mouse click can leave focus behind; that alone must not keep tools showing.
   await page.mouse.move(width - 1, 949); await expect(panel.locator(".dr-widget-tools")).toHaveCSS("opacity", "0");
   await page.locator(".dr-widget-dock").hover(); await expect(allGrip).toHaveCSS("opacity", "1");
-  await page.mouse.move(width - 1, 949); await expect(allGrip).toHaveCSS("opacity", "0");
-  await page.keyboard.press("Tab"); await panel.locator(".dr-widget-move").focus();
-  await expect(panel.locator(".dr-widget-tools")).toHaveCSS("opacity", "1");
+  await page.mouse.move(width - 1, 949); await expect(allGrip).toHaveCSS("opacity", "1");
+  await page.keyboard.press("Tab"); await panel.focus();
+  await expect(panel).toBeFocused();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(panel.locator(".dr-widget-tools")).toHaveCSS("transition-duration", "0s");
 });

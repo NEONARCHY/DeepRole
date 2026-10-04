@@ -57,6 +57,9 @@ button { font: inherit; }
 .dr-widget-deck[data-overflow=true]>.dr-widget-tile,.dr-widget-deck[data-overflow=true]>.dr-widget-dock{flex-shrink:0}
 .dr-widget-tile{position:relative;display:flex;align-items:flex-start;gap:1px;width:max-content;max-width:calc(100vw - var(--dr-min-left, 8px) - 8px);pointer-events:auto}
 .dr-widget-tile[hidden]{display:none}
+.dr-widget-tile:focus-visible{outline:2px solid var(--dr-primary);outline-offset:2px;border-radius:12px}
+.dr-widget-tile:not(:has(button:hover,input:hover,select:hover,textarea:hover)):hover{cursor:grab}
+.dr-widget-tile:active{cursor:grabbing}
 .dr-widget-tile>:not(.dr-widget-tools){min-width:0}
 .dr-widget-tile>.dr-characters{margin:0}
 .dr-widget-tools{position:relative;order:2;display:flex;gap:2px;height:24px;flex:none;z-index:1}
@@ -64,7 +67,7 @@ button { font: inherit; }
 .dr-widget-tools button:hover,.dr-widget-dock button:hover{background:var(--dr-raised);color:var(--dr-text)}
 .dr-widget-dock button[aria-pressed=true]{background:var(--dr-primary-soft);color:var(--dr-primary);border-color:var(--dr-primary)}
 .dr-widget-tools button:focus-visible,.dr-widget-dock button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:2px}
-.dr-widget-tools .dr-widget-move,.dr-widget-dock .dr-widget-move{cursor:grab;touch-action:none}
+.dr-widget-dock .dr-widget-move{cursor:grab;touch-action:none}
 .dr-widget-dock{pointer-events:auto;display:flex;align-items:center;gap:4px;min-height:32px;max-width:calc(100vw - var(--dr-min-left, 8px) - 8px);z-index:2}
 .dr-widget-deck-tools{display:flex;gap:4px;flex-shrink:0}
 .dr-widget-dock:has([data-restore-widget]) .dr-widget-deck-tools span{display:none}
@@ -72,12 +75,10 @@ button { font: inherit; }
 .dr-widget-minimized:empty{display:none}
 .dr-widget-minimized button{flex:none;min-width:32px;min-height:32px;border-radius:10px;color:var(--dr-text)}
 .dr-widget-dock small{max-width:220px;color:var(--dr-warning)}
-/* Keep touch controls available; mouse tools belong only to their own panel.
-   Opacity preserves geometry and keyboard focus, unlike display/visibility. */
+/* Only each panel's minimize control waits for hover; the all-panels grip is always visible. */
 @media (hover:hover) and (pointer:fine) {
-  .dr-widget-tools,.dr-widget-deck-tools>.dr-widget-move{opacity:0;pointer-events:none;transition:opacity .14s ease-out}
-  .dr-widget-tile:hover>.dr-widget-tools,.dr-widget-tools:has(:focus-visible),.dr-widget-tools:has(.dr-widget-move:active){opacity:1;pointer-events:auto}
-  .dr-widget-dock:hover .dr-widget-deck-tools>.dr-widget-move,.dr-widget-deck-tools>.dr-widget-move:is(:focus-visible,:active){opacity:1;pointer-events:auto}
+  .dr-widget-tools{opacity:0;pointer-events:none;transition:opacity .14s ease-out}
+  .dr-widget-tile:hover>.dr-widget-tools,.dr-widget-tools:has(:focus-visible){opacity:1;pointer-events:auto}
 }
 .dr-chat-meter-heading { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:10px; line-height:1.2; }
 .dr-chat-meter-heading>span { color:var(--dr-muted); }

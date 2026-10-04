@@ -1,4 +1,4 @@
-import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent } from "react";
+import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent, type KeyboardEvent } from "react";
 import { GripHorizontal, Layers, Minus, RotateCcw } from "lucide-react";
 import type { Locale } from "../../core/types";
 import { nearestWidgetSpace, WIDGET_GAP, type WidgetRect } from "../../core/widget-spacing";
@@ -39,7 +39,8 @@ export function WidgetDeck({ children, locale, saved, onSave, minimumLeft = WIDG
   const [, resized] = useState(0);
   const refs = useRef(new Map<string, HTMLDivElement>());
   const dock = useRef<HTMLDivElement>(null);
-  const gesture = useRef<{ id: string; pointer: number; x: number; y: number; before: WidgetLayout; frozen: WidgetLayout; rects: Map<string, DOMRect>; all: boolean; moved: boolean } | null>(null);
+  const gesture = useRef<{ id: string; pointer: number; x: number; y: number; before: WidgetLayout; frozen: WidgetLayout; rects: Map<string, DOMRect>; all: boolean; moved: boolean; captureTarget: HTMLElement } | null>(null);
+  const suppressClick = useRef(false);
   const saveId = useRef(0);
   // Repair legacy overlaps and size changes locally; a later user move persists
   // the repaired geometry. If no packing fits, use a scrollable, non-overlapping stack.
@@ -106,37 +107,52 @@ export function WidgetDeck({ children, locale, saved, onSave, minimumLeft = WIDG
     for (const [key, p] of Object.entries(next.positions)) if (all || key === id) next.positions[key as Id] = { x: Math.max(0, Math.min(1, p.x + dx / window.innerWidth)), y: Math.max(0, Math.min(1, p.y + dy / window.innerHeight)) };
     return next;
   };
-  const start = (id: string, event: PointerEvent<HTMLButtonElement>) => {
+  const start = (id: string, event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0 || !event.isPrimary || gesture.current) return;
-    gesture.current = { id, pointer: event.pointerId, x: event.clientX, y: event.clientY, before: current.current, ...snapshot(), all: id === "dock" || current.current.together, moved: false };
-    event.currentTarget.setPointerCapture(event.pointerId); event.currentTarget.focus(); event.preventDefault();
+    const target = event.target instanceof Element ? event.target : null;
+    if (id !== "dock" && target?.closest(".dr-widget-tools,input,select,textarea,[contenteditable=true],[data-no-widget-drag]")) return;
+    // Capture on the original button, not the panel: a stationary click still
+    // reaches its control, while moving that same button drags the panel.
+    const captureTarget = (target?.closest("button") ?? target?.closest<HTMLElement>("*") ?? event.currentTarget) as HTMLElement;
+    gesture.current = { id, pointer: event.pointerId, x: event.clientX, y: event.clientY, before: current.current, ...snapshot(), all: id === "dock" || current.current.together, moved: false, captureTarget };
+    captureTarget.setPointerCapture(event.pointerId);
+    if (id === "dock") { event.currentTarget.focus(); event.preventDefault(); }
   };
-  const finish = (event: PointerEvent<HTMLButtonElement>, cancel = false) => {
+  const move = (event: PointerEvent<HTMLElement>) => {
+    const active = gesture.current; if (!active || active.pointer !== event.pointerId) return;
+    const dx = event.clientX - active.x, dy = event.clientY - active.y;
+    if (!active.moved && Math.hypot(dx, dy) < 4) return;
+    active.moved = true; event.preventDefault();
+    const next = shift(active.frozen, active.rects, active.id, active.all, dx, dy); current.current = next; setLayout(next);
+  };
+  const finish = (event: PointerEvent<HTMLElement>, cancel = false) => {
     const active = gesture.current; if (!active || active.pointer !== event.pointerId) return;
     gesture.current = null;
     if (cancel) { setLayout(active.before); current.current = active.before; }
     else if (active.moved) commit(current.current, active.before);
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (active.moved) { suppressClick.current = true; window.setTimeout(() => { suppressClick.current = false; }, 0); }
+    if (active.captureTarget.hasPointerCapture(event.pointerId)) active.captureTarget.releasePointerCapture(event.pointerId);
   };
-  const handle = (id: string, title: string) => <button type="button" className="dr-widget-move" aria-label={title} title={`${title}. ${t.keys}`} onPointerDown={event => start(id, event)} onPointerMove={event => {
-    const active = gesture.current; if (!active || active.pointer !== event.pointerId) return;
-    const dx = event.clientX - active.x, dy = event.clientY - active.y;
-    if (!active.moved && Math.hypot(dx, dy) < 4) return;
-    active.moved = true; const next = shift(active.frozen, active.rects, active.id, active.all, dx, dy); current.current = next; setLayout(next);
-  }} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => {
-    if (event.key === "Escape" && gesture.current) { setLayout(gesture.current.before); current.current = gesture.current.before; gesture.current = null; event.preventDefault(); return; }
+  const keyMove = (id: string, event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape" && gesture.current) {
+      const active = gesture.current; gesture.current = null; setLayout(active.before); current.current = active.before;
+      if (active.captureTarget.hasPointerCapture(active.pointer)) active.captureTarget.releasePointerCapture(active.pointer);
+      event.preventDefault(); return;
+    }
+    if (id !== "dock" && event.target !== event.currentTarget) return;
     const directions: Record<string, Point> = { ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 }, ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 } };
     const delta = directions[event.key]; if (!delta) return; event.preventDefault(); const { frozen, rects } = snapshot(); const step = event.shiftKey ? 32 : 8;
     commit(shift(frozen, rects, id, id === "dock" || current.current.together, delta.x * step, delta.y * step));
-  }}><GripHorizontal size={14} /></button>;
+  };
+  const handle = <button type="button" className="dr-widget-move" aria-label={t.all} title={`${t.all}. ${t.keys}`} onPointerDown={event => start("dock", event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove("dock", event)}><GripHorizontal size={14} /></button>;
   return <div className="dr-widget-deck" data-overflow={overflow || undefined} style={{ "--dr-min-left": `${minimumLeft}px`, "--dr-min-top": `${minimumTop}px` } as CSSProperties}>
     <div className="dr-widget-dock" ref={dock} style={style("dock")}>
-      <div className="dr-widget-deck-tools">{handle("dock", t.all)}<button type="button" title={t.mode} aria-label={t.mode} aria-pressed={layout.together} onClick={() => commit({ ...layout, together: !layout.together })}><Layers size={13} /><span>{t.together}</span></button><button type="button" title={t.reset} aria-label={t.reset} onClick={() => commit(empty())}><RotateCcw size={13} /></button></div>
+      <div className="dr-widget-deck-tools">{handle}<button type="button" title={t.mode} aria-label={t.mode} aria-pressed={layout.together} onClick={() => commit({ ...layout, together: !layout.together })}><Layers size={13} /><span>{t.together}</span></button><button type="button" title={t.reset} aria-label={t.reset} onClick={() => commit(empty())}><RotateCcw size={13} /></button></div>
       <div className="dr-widget-minimized">{tiles.filter(tile => layout.minimized.includes(tile.id)).map(tile => <button type="button" key={tile.id} data-restore-widget={tile.id} aria-expanded={false} title={`${t.restore}: ${tile.title}`} aria-label={`${t.restore}: ${tile.title}`} onClick={() => { commit({ ...layout, minimized: layout.minimized.filter(id => id !== tile.id) }); requestAnimationFrame(() => refs.current.get(tile.id)?.querySelector<HTMLButtonElement>("button")?.focus()); }}>{tile.icon}</button>)}</div>
       {error && <small role="alert">{t.failed}</small>}
     </div>
-    {tiles.map(tile => <div key={tile.id} ref={node => { if (node) refs.current.set(tile.id, node); else refs.current.delete(tile.id); }} data-widget={tile.id} className="dr-widget-tile" hidden={layout.minimized.includes(tile.id)} style={style(tile.id)}>
-      <div className="dr-widget-tools">{handle(tile.id, `${t.move}: ${tile.title}`)}<button type="button" title={`${t.minimize}: ${tile.title}`} aria-label={`${t.minimize}: ${tile.title}`} onClick={() => { commit({ ...layout, minimized: [...layout.minimized, tile.id] }); requestAnimationFrame(() => dock.current?.querySelector<HTMLButtonElement>(`[data-restore-widget="${tile.id}"]`)?.focus()); }}><Minus size={14} /></button></div>
+    {tiles.map(tile => <div key={tile.id} ref={node => { if (node) refs.current.set(tile.id, node); else refs.current.delete(tile.id); }} data-widget={tile.id} className="dr-widget-tile" hidden={layout.minimized.includes(tile.id)} style={style(tile.id)} tabIndex={0} role="group" aria-label={`${t.move}: ${tile.title}. ${t.keys}`} onPointerDown={event => start(tile.id, event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove(tile.id, event)} onClickCapture={event => { if (suppressClick.current) { suppressClick.current = false; event.preventDefault(); event.stopPropagation(); } }}>
+      <div className="dr-widget-tools"><button type="button" title={`${t.minimize}: ${tile.title}`} aria-label={`${t.minimize}: ${tile.title}`} onClick={() => { commit({ ...layout, minimized: [...layout.minimized, tile.id] }); requestAnimationFrame(() => dock.current?.querySelector<HTMLButtonElement>(`[data-restore-widget="${tile.id}"]`)?.focus()); }}><Minus size={14} /></button></div>
       {tile.children}
     </div>)}
   </div>;
