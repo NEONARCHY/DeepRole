@@ -9,6 +9,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for 
     if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
     await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
     await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+    await expect(page.getByRole("link", { name: "Better Deepseek (BDS)", exact: true })).toHaveAttribute("href", "https://github.com/EdgeTypE/better-deepseek");
     const value = format === "entries" ? Array.from({ length: 45 }, (_, i) => ({ title: `Fact ${i}`, content: "Unchanged text.\n".repeat(120) })) : await page.evaluate(async () => {
       const { repository } = await import("/src/storage/repository.ts" as string);
       const { exportWorld } = await import("/src/storage/worlds.ts" as string);

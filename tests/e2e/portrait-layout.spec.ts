@@ -156,7 +156,8 @@ test("portraits snap beside choices and follow their anchor after resize", async
 });
 
 for (const locale of ["ru", "en"] as const) test(`speaker group and portraits survive a missing choices card ${locale}`, async ({ page }, info) => {
-  await page.setViewportSize({ width: 1600, height: 950 });
+  // Three portraits need room to sit to the right of a 690px choices card.
+  await page.setViewportSize({ width: 2100, height: 950 });
   await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   await page.locator("#conversation").evaluate(node => { (node as HTMLElement).style.width = "690px"; });
   await cast(page, 4);

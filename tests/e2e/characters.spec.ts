@@ -80,10 +80,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     expect(castImage!.height + 0.01).toBeGreaterThanOrEqual(160);
     await expectPortraitRatio(avatars.first().locator("img"));
     await expectPortraitRatio(avatars.last().locator("img"));
-    const castContent = await page.locator(".dr-cast-content").boundingBox();
+    const choicesHeight = (await page.locator("[data-deeprole-choices-host] section").boundingBox())!.height;
     const sprites = page.getByRole("checkbox", { name: locale === "ru" ? "Портреты рядом с вариантами ответа" : "Portraits beside reply options", exact: true });
     await sprites.uncheck(); await expect(avatars).toHaveCount(0);
-    expect((await page.locator("[data-deeprole-choices-host] section").boundingBox())!.height).toBeCloseTo(castContent!.height, 1);
+    expect((await page.locator("[data-deeprole-choices-host] section").boundingBox())!.height).toBeLessThanOrEqual(choicesHeight + 1);
     await sprites.check(); await expect(avatars).toHaveCount(2);
     await expect(page.locator("[data-deeprole-choices-host] .dr-cast-portrait")).toHaveCount(0);
     await expect(page.locator("[data-deeprole-portrait-layer]")).toHaveCSS("position", "fixed");

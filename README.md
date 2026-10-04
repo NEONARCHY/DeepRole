@@ -1,93 +1,93 @@
 <div align="center">
-  <img src="public/icons/icon-128.png" width="76" alt="Значок DeepRole">
+  <img src="public/icons/icon-128.png" width="76" alt="DeepRole icon">
   <h1>DeepRole</h1>
-  <p>Память и персонажи для ролевых историй в DeepSeek.</p>
-  <p><a href="downloads/README.md">Скачать</a> · <a href="INSTALL.md">Установить</a> · <a href="docs/README.en.md">English</a></p>
+  <p>Memory and characters for roleplay stories in DeepSeek.</p>
+  <p><a href="downloads/README.md">Download</a> · <a href="docs/INSTALL.en.md">Install</a> · <a href="docs/README.ru.md">Русский</a></p>
 </div>
 
-DeepRole помогает продолжать длинную историю, не теряя важные факты. Вы храните мир и персонажей у себя в браузере, а расширение добавляет подходящие записи к вашим сообщениям в [DeepSeek](https://chat.deepseek.com/). Изменения лора, предложенные моделью, попадают в память **только после вашей проверки**.
+DeepRole helps you keep a long story consistent. Your worlds and characters live in your browser; the extension adds selected records to the messages you send through [DeepSeek](https://chat.deepseek.com/). Changes suggested by the model become lore **only after you review and approve them**.
 
-> Это ранняя версия 0.1.0 и независимый проект, не связанный с DeepSeek. Перед удалением расширения или переносом на другой компьютер [сделайте резервную копию](#как-перенести-свои-данные).
+> Early version 0.1.0. DeepRole is an independent project, not affiliated with DeepSeek. [Back up your data](#moving-your-data) before uninstalling or moving to another computer.
 
-## Как это выглядит
+## See it in action
 
-### Выбор следующего хода
+### Pick your next move
 
-DeepSeek может предложить четыре продолжения сцены. Нажатие на вариант лишь подставляет текст в поле сообщения: его можно изменить или не отправлять.
+DeepSeek can offer four ways to continue a scene. Clicking a choice only fills the message box; you can edit the text or decide not to send it.
 
-<img src="docs/screenshots/qa-2026-10-03-import-colors/choices-ru.png" width="690" alt="Четыре варианта ответа в демонстрационной сцене">
+<img src="docs/images/readme/choices-en.png" width="690" alt="Four choices in a fictional demonstration scene">
 
-### Персонажи рядом со сценой
+### Keep characters in view
 
-Карточки показывают, кто находится в сцене, его настроение и сохранённые показатели. Загрузите свои портреты для разных эмоций или оставьте стандартные силуэты. Портреты можно передвинуть и изменить их размер.
+Character cards show who's present, their mood and saved stats. Add portraits for different emotions, or keep the default silhouettes. Portraits can be moved and resized.
 
-<img src="docs/screenshots/qa-2026-10-03-round7/portrait-stats.png" width="900" alt="Портреты героя и собеседника по сторонам вариантов ответа">
+<img src="docs/images/readme/portraits-en.png" width="900" alt="Current DeepRole portraits beside scene choices">
 
-### Лор на карте
+### Organize lore on a map
 
-На карте удобно видеть персонажей, места, правила и события. Список и карта работают с одними и теми же записями — копировать их не нужно.
+The map and list are two views of the same records: people, places, rules and events.
 
-<img src="docs/images/world-map.jpg" width="900" alt="Карта демонстрационного мира с карточками лора">
+<img src="docs/images/readme/map-en.png" width="900" alt="Current world map with a fictional sample world">
 
-### Память меняется с вашего согласия
+### Decide what becomes memory
 
-После важной сцены нажмите «Обновить лор». DeepSeek предложит, что запомнить; вы сможете посмотреть, исправить и сохранить только нужное.
+After an important scene, use **Update lore**. Review, edit and save only the suggestions you want.
 
-<img src="docs/images/memory-review.jpg" width="360" alt="Окно проверки предложенных изменений памяти">
+<img src="docs/images/readme/review-en.png" width="690" alt="Reviewing a proposed memory change">
 
-*На изображениях — вымышленный демонстрационный мир, не личная переписка.*
+*These screenshots come from the current interface with fictional demo data, not a private conversation.*
 
-## Начать играть
+## Get started
 
-1. [Скачайте сборку](downloads/README.md) для своего браузера и [установите расширение](INSTALL.md). Поддерживаются Chrome, Brave, Edge и Firefox; версия для Firefox пока устанавливается временно.
-2. Откройте [DeepSeek](https://chat.deepseek.com/) и меню **DeepRole → Лор**. Создайте пустой мир или импортируйте готовый. Можно начать и без заранее написанного лора.
-3. Нажмите **«Использовать в этом чате»**. Просто иметь мир в библиотеке недостаточно: его нужно подключить к разговору.
-4. Добавляйте важное через **«Запомнить»**, а после развития сюжета нажимайте **«Обновить лор»** и проверяйте предложения DeepSeek.
+1. [Download](downloads/README.md) and [install](docs/INSTALL.en.md) the extension. Chrome, Brave and Edge use the Chromium build. The Firefox build is currently a temporary add-on.
+2. Open [DeepSeek](https://chat.deepseek.com/) and go to **DeepRole → Lore**. Create an empty world or import an existing one.
+3. Choose **Use in this chat**. A world in your library is not automatically connected to a conversation.
+4. Use **Remember** for a fact you want to write yourself. After the story moves forward, use **Update lore** to review DeepSeek's suggestions.
 
-Уже далеко продвинулись в чате без мира? Создайте пустой мир, подключите его к этому чату и нажмите **«Обновить лор»**. Модель предложит первый набор записей по доступной истории. Проверьте его: она может что-то пропустить или понять неверно. **«Запомнить»** подходит для отдельного факта, который вы хотите записать сами.
+Already deep into a chat with no prepared world? Create an empty world, connect it to this chat, then choose **Update lore**. DeepSeek can propose the first records from the available chat history. Check them carefully; it may miss or misunderstand details.
 
-## Что важно знать о памяти
+## How memory works
 
-DeepSeek не видит всю библиотеку постоянно. При отправке сообщения DeepRole выбирает записи для этого запроса. Кнопка **«Контекст»** показывает, что подготовлено к отправке. Это не гарантия того, что модель учтёт каждую деталь.
+DeepSeek does not have permanent access to your whole library. DeepRole selects records for each outgoing message. **Context** shows what is prepared for the next send; it cannot prove the model will use every detail.
 
-| Режим записи | Как работает |
+| Mode | What it does |
 | --- | --- |
-| **Всегда** | Отправляется с каждым сообщением в своей области памяти. Подходит для коротких постоянных правил. |
-| **Автоподбор** | Подключается при совпадении слов, имён и контекста сцены, если хватает места. Это локальный подбор, не отдельный ИИ. |
-| **Вручную** | Попадает в запрос, только когда вы прикрепите запись к этому чату. |
+| **Always** | Included with each message in its scope. Keep essential rules short. |
+| **Automatic** | Selected locally from words, names and scene context when there is room. This is not a second AI search. |
+| **Manual** | Included only after you attach the record to this chat. |
 
-Если часть подходящих записей не поместилась, они **не удаляются** из библиотеки. В следующий раз подбор может измениться. Постоянные правила и ручные прикрепления занимают место отдельно от автоподбора; предупреждение о превышении лимита стоит проверить через «Контекст». [Как устроен подбор →](INSTALL.md#подбор-памяти-без-скрытых-меню)
+Records that do not fit are **not deleted**. Later messages can select a different set. Always-on and manually attached records take space separately from automatic matches. Check an over-budget warning in **Context**.
 
-## Персонажи, эмоции и варианты
+## Characters, portraits and choices
 
-- Персонажей можно создать вручную или получить с новым ответом DeepSeek. Их настроение, состояние, цели, отношения и показатели относятся к конкретному чату. Если корректного обновления от модели нет, остаются прежние значения — DeepRole не придумывает их сам.
-- Для каждой эмоции можно загрузить несколько изображений. DeepRole показывает их по циклу без повтора, пока не закончатся все варианты. Одно изображение можно назначить нескольким эмоциям. Свои названия эмоций пишите по одному в строке: автоматического перевода с русского на английский нет.
-- Варианты ответа появляются под готовой сценой. Служебный код во время их подготовки скрывается; кнопка **«Предложить варианты»** нужна, если варианты не появились автоматически.
+- Characters can be added by you or created with a new DeepSeek reply. Mood, condition, goals, relationships and stats belong to a specific chat. If the model provides no valid update, DeepRole keeps the previous values.
+- Each emotion can have several images, shown in a non-repeating cycle. One image can be assigned to several emotions. Custom emotion names are not translated automatically.
+- Scene choices appear below a completed reply. Technical choice data is hidden while it streams. **Suggest options** is a fallback if choices did not appear automatically.
 
-[Подробнее о персонажах и портретах](docs/CHARACTERS.md) · [Подробнее о вариантах ответа](docs/SCENE-CHOICES.md)
+[Character and portrait guide (Russian)](docs/CHARACTERS.md) · [Scene choices guide (Russian)](docs/SCENE-CHOICES.md)
 
-## Как перенести свои данные
+## Moving your data
 
-Есть два вида экспорта — они решают разные задачи:
-
-| Что выбрать | Что перенесётся |
+| Export | Includes |
 | --- | --- |
-| **Экспорт мира** | Один мир: записи, анкеты персонажей, портреты, библиотека изображений и настроенные эмоции. Удобно поделиться миром или перенести его отдельно. |
-| **Полная резервная копия** | Все миры, настройки, персонажи и сохранённые состояния чатов. Выбирайте для переезда на другой компьютер или перед переустановкой. |
+| **World export** | One world with lore records, character sheets, portraits, image library and emotion settings. |
+| **Full backup** | All worlds, settings, characters and saved chat states. Use this when moving computers or before reinstalling. |
 
-Экспорт мира не переносит настроение и расстановку портретов каждого чата. Обычный JSON из BDS переносит текстовую память, но не изображения. Файлы экспорта без пароля не зашифрованы; полную резервную копию можно защитить паролем в **Настройки → Файлы и защита**. Не публикуйте личный лор в GitHub.
+A world export does not include each chat's current mood or portrait positions. Ordinary JSON from [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) transfers text memory, not images. Better Deepseek is a separate open-source extension; DeepRole supports importing its memory format. Exports without a password are not encrypted; a full backup can be password-protected under **Settings → Files & protection**. Do not upload personal lore to GitHub.
 
-Изображения хранятся локально; DeepSeek получает текст о персонажах и эмоциях, а не сами картинки. Выбранная память и служебные запросы всё же отправляются в DeepSeek и остаются в истории чата. У DeepRole нет собственного сервера памяти или телеметрии. [Политика приватности →](PRIVACY.md)
+Images stay on your device: DeepSeek receives character and emotion text, not the image files. Selected memory and service requests are still sent to DeepSeek and remain in chat history. DeepRole has no memory server or telemetry. [Privacy policy →](PRIVACY.md)
 
-## Помощь и подробности
+DeepRole's importer acknowledges [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) and its creators for the original extension and memory format. DeepRole is a separate project.
 
-- [Установка и обновление](INSTALL.md) — включая действия, если браузер показывает старую версию.
-- [Персонажи и портреты](docs/CHARACTERS.md) — эмоции, несколько картинок, ручная расстановка.
-- [Варианты ответа](docs/SCENE-CHOICES.md) — когда появляются и что делать при ошибке.
-- [Сборки для скачивания](downloads/README.md) и [план разработки](ROADMAP.md).
-- [Пример JSON-лора](examples/observatory.json) для знакомства с форматом.
+## More information
 
-## Для разработчиков
+- [Installation and updates](docs/INSTALL.en.md)
+- [Characters and portraits (Russian)](docs/CHARACTERS.md)
+- [Scene choices (Russian)](docs/SCENE-CHOICES.md)
+- [Download builds](downloads/README.md), [development roadmap](ROADMAP.md) and [sample JSON lore](examples/observatory.json)
+- [Russian guide](docs/README.ru.md)
+
+## Development
 
 ```sh
 npm ci
@@ -97,4 +97,4 @@ npm run build
 npm run build:firefox
 ```
 
-Исходники находятся в этом репозитории. Готовые архивы — в папке [`downloads`](downloads/README.md). Автоматические тесты не заменяют проверку на живом аккаунте DeepSeek: если сайт изменит интерфейс, расширению может понадобиться обновление.
+The source and tests live in this repository. Automated tests do not replace a check against a live DeepSeek account; changes to the site may require an extension update.

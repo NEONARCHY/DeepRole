@@ -354,6 +354,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t("chooseFile")}</button>
       <input ref={inputRef} className="rp-import-input" aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readFile(file); }} />
     </div>
+    <p className="rp-hint">{props.locale === "ru" ? "Также поддерживается память из " : "You can also import memory from "}<a href="https://github.com/EdgeTypE/better-deepseek" target="_blank" rel="noopener noreferrer">Better Deepseek (BDS)</a>.</p>
     {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
     {props.canAttach && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label><p className="rp-hint">{menuText(props.locale, "attachHint")}</p></>}
     {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field></>}
