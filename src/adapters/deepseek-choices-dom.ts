@@ -18,7 +18,7 @@ const MEMORY_SERVICE = "[data-deeprole-memory-presentation], [data-deeprole-memo
 let dismissedChoice: string | null = null;
 type ChoiceHandler = (choice: SceneChoice, signature: string) => Promise<boolean>;
 const choiceHandlers = new WeakMap<HTMLElement, ChoiceHandler>();
-type ScrollFollow = { scroller: Element; lastTop: number; following: boolean; pointerDown: boolean; onScroll: () => void; onWheel: (event: WheelEvent) => void; onKeyDown: (event: KeyboardEvent) => void; onPointerDown: () => void; onPointerUp: () => void };
+type ScrollFollow = { scroller: Element; lastTop: number; following: boolean; pausedByUser: boolean; pointerDown: boolean; resumeRequested: boolean; onScroll: () => void; onWheel: (event: WheelEvent) => void; onKeyDown: (event: KeyboardEvent) => void; onPointerDown: () => void; onPointerUp: () => void };
 const scrollFollowing = new WeakMap<ParentNode, ScrollFollow>();
 
 function stopFollowing(root: ParentNode): void {
@@ -43,17 +43,30 @@ function scrollContainer(row: HTMLElement): Element {
 }
 
 function beginFollowing(root: ParentNode, row: HTMLElement, wasNearBottom: boolean): void {
-  if (scrollFollowing.has(root)) return;
   const scroller = scrollContainer(row);
-  const state: ScrollFollow = { scroller, lastTop: scroller.scrollTop, following: wasNearBottom, pointerDown: false, onScroll: () => {}, onWheel: () => {}, onKeyDown: () => {}, onPointerDown: () => {}, onPointerUp: () => {} };
+  const existing = scrollFollowing.get(root);
+  if (existing?.scroller === scroller) return;
+  if (existing) stopFollowing(root);
+  const state: ScrollFollow = { scroller, lastTop: scroller.scrollTop, following: wasNearBottom, pausedByUser: false, pointerDown: false, resumeRequested: false, onScroll: () => {}, onWheel: () => {}, onKeyDown: () => {}, onPointerDown: () => {}, onPointerUp: () => {} };
   state.onScroll = () => {
+    const delta = scroller.scrollTop - state.lastTop;
     // Collapsing hidden JSON can itself decrease scrollTop. Only a drag in
     // progress is evidence that this upward movement came from the reader.
-    if (state.pointerDown && scroller.scrollTop < state.lastTop - 2) state.following = false;
+    if (state.pointerDown && delta < -2) { state.following = false; state.pausedByUser = true; state.resumeRequested = false; }
+    else if (nearBottom(scroller) && (!state.pausedByUser || (state.pointerDown && delta > 2) || state.resumeRequested)) {
+      state.following = true; state.pausedByUser = false; state.resumeRequested = false;
+    }
     state.lastTop = scroller.scrollTop;
   };
-  state.onWheel = event => { if (event.deltaY < 0) state.following = false; };
-  state.onKeyDown = event => { if (["ArrowUp", "PageUp", "Home"].includes(event.key)) state.following = false; };
+  state.onWheel = event => {
+    if (event.deltaY < 0) { state.following = false; state.pausedByUser = true; state.resumeRequested = false; }
+    else if (event.deltaY > 0) { state.resumeRequested = true; if (nearBottom(scroller)) { state.following = true; state.pausedByUser = false; state.resumeRequested = false; } }
+  };
+  state.onKeyDown = event => {
+    if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])")) return;
+    if (["ArrowUp", "PageUp", "Home"].includes(event.key)) { state.following = false; state.pausedByUser = true; state.resumeRequested = false; }
+    else if (["ArrowDown", "PageDown", "End"].includes(event.key)) { state.resumeRequested = true; if (nearBottom(scroller)) { state.following = true; state.pausedByUser = false; state.resumeRequested = false; } }
+  };
   state.onPointerDown = () => { state.pointerDown = true; };
   state.onPointerUp = () => { state.pointerDown = false; };
   const doc = scroller.ownerDocument;
@@ -160,6 +173,10 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   }
   const beforeConceal = generating ? latestSceneChoiceTarget(root)?.row : null;
   const wasNearBottom = beforeConceal ? nearBottom(scrollContainer(beforeConceal)) : false;
+  // Remember the reader's position while the story is still streaming. By
+  // the time the first JSON chunk arrives it may have already grown the page
+  // enough that a fresh near-bottom check incorrectly says "not following".
+  if (beforeConceal) beginFollowing(root, beforeConceal, wasNearBottom);
   concealChoicePayloads(root);
   const current = currentChoice(root);
   const signature = current?.signature ?? "";

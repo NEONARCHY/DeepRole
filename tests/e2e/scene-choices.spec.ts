@@ -5,6 +5,38 @@ const options = ["positive", "neutral", "negative", "surprise"].map((kind, index
 const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
+test("follows the hidden JSON transition and resumes after the reader returns to the bottom", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 420 });
+  await page.goto("/tests/fixtures/scene-choices.html?locale=ru");
+  await page.evaluate(() => { document.body.style.paddingBottom = "300px"; document.documentElement.style.setProperty("overflow-anchor", "none"); document.body.style.setProperty("overflow-anchor", "none"); (window as any).choicesTest.update({ generating: true }); });
+  const story = Array.from({ length: 36 }, (_, i) => `<p>Сцена продолжается ${i}. Мира ждёт ответа.</p>`).join("");
+  await page.evaluate(html => (window as any).choicesTest.setHistory(`<article data-message-id="live" data-role="assistant"><div class="ds-markdown">${html}</div></article>`), story);
+  // Tracking may start before DeepSeek's own story autoscroll reaches the bottom.
+  await page.evaluate(() => { window.scrollTo(0, 0); (window as any).choicesTest.sync(); window.scrollTo(0, document.documentElement.scrollHeight); });
+  // DeepSeek follows the visible story. The first transport chunk then grows
+  // the page before DeepRole has a chance to hide it.
+  await page.evaluate(() => (window as any).choicesTest.sync());
+  await page.locator(".ds-markdown").evaluate(body => body.append(` <deeprole_choices>${"word ".repeat(500)}`));
+  expect(await page.evaluate(() => document.documentElement.scrollHeight - innerHeight - window.scrollY)).toBeGreaterThan(220);
+  await page.evaluate(() => (window as any).choicesTest.sync());
+  const loader = page.locator("[data-deeprole-choices-loading]");
+  await expect(loader).toHaveCount(1);
+  await expect.poll(() => loader.evaluate(node => node.getBoundingClientRect().bottom)).toBeLessThan(390);
+
+  await page.mouse.wheel(0, -650);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight - window.scrollY)).toBeGreaterThan(220);
+  await page.mouse.wheel(0, 3000);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight - window.scrollY)).toBeLessThan(220);
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-message-id="live" data-role="assistant"><div class="ds-markdown">${story}<p>&lt;deeprole_choices&gt;${"word ".repeat(800)}</p></div></article>`);
+  await expect(loader).toHaveCount(1);
+  await expect.poll(() => loader.evaluate(node => node.getBoundingClientRect().bottom)).toBeLessThan(390);
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-message-id="live" data-role="assistant"><div class="ds-markdown">${story}<pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`);
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
+  const card = page.locator("[data-deeprole-choices-host]");
+  await expect(card).toHaveCount(1);
+  await expect.poll(() => card.evaluate(node => node.getBoundingClientRect().top)).toBeLessThanOrEqual(60);
+});
+
 for (const userScrollsAway of [false, true]) test(`streamed choices keep the bottom in view unless the reader scrolls up ${userScrollsAway}`, async ({ page }) => {
   await page.setViewportSize({ width: 900, height: userScrollsAway ? 500 : 380 });
   await page.goto("/tests/fixtures/scene-choices.html?locale=ru");
