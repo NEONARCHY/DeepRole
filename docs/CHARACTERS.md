@@ -84,11 +84,11 @@
 
 Нажмите нужные миниатюры, выберите эмоцию внизу и нажмите **Назначить эмоции**. Для другой эмоции можно выбрать другие картинки или повторно использовать те же из вкладки **Все**. Чтобы оставить распределение на потом, просто нажмите **Сохранить персонажа**: неназначенные картинки тоже сохранятся. Без этой кнопки изменения остаются черновиком.
 
-Библиотека отдельная у каждого персонажа. Она переносится с экспортом мира и полной копией. Картинки не отправляются DeepSeek. До 256 неназначенных изображений на персонажа; до 12 вариаций на эмоцию. Общий лимит изображений расширения — 25 МБ после обработки. Удаление вариации из эмоции оставляет картинку в библиотеке; окончательно убрать неназначенную картинку можно корзиной в библиотеке.
+Библиотека отдельная у каждого персонажа. Она переносится с экспортом мира и полной копией. Картинки не отправляются DeepSeek. До 512 неназначенных изображений на персонажа; до 48 вариаций на эмоцию. Общий лимит сохранённых портретов расширения — около 50 МБ в кодированном виде после обработки. Удаление вариации из эмоции оставляет картинку в библиотеке; окончательно убрать неназначенную картинку можно корзиной в библиотеке.
 
 ### Несколько изображений для одной эмоции
 
-1. Выберите эмоцию в карточке персонажа и нажмите **Добавить изображения**. Можно выбрать сразу несколько файлов. До **12 разных изображений на одну эмоцию**, PNG/JPG/WebP до 5 МБ каждый.
+1. Выберите эмоцию в карточке персонажа и нажмите **Добавить изображения**. Можно выбрать сразу несколько файлов. До **48 разных изображений на одну эмоцию**, PNG/JPG/WebP до 10 МБ каждый.
 2. Миниатюра переключает предпросмотр, корзина под ней удаляет только эту вариацию. Повторная загрузка добавляет изображения, а не заменяет предыдущие. Нажмите **Сохранить персонажа**.
 3. После принятого обновления сцены DeepRole выбирает следующий портрет из перемешанного набора. Внутри круга повторов нет; после всех изображений начинается новый круг, без одинаковых картинок подряд на границе кругов. У каждой эмоции свой круг. Один портрет остаётся неизменным.
 
@@ -102,7 +102,7 @@
 
 Свёрнутые панели собираются в один ряд значков. Нажмите значок, чтобы вернуть панель. Стрелка сброса возвращает начальную расстановку и разворачивает всё. Позиции и сворачивание сохраняются в этом браузере; на лор и токены не влияют. Ручки перемещения и изменения размера **портретов** появляются при наведении или клавиатурном фокусе; на сенсорном экране доступны постоянно.
 
-В карточке откройте **Портреты и эмоции**, выберите **«Эмоцию портрета»** и загрузите PNG, JPG или WebP до 5 МБ. Для обычного состояния используйте **Спокойствие / neutral**. Редактор сначала показывает портрет для текущего настроения. Переключение предпросмотра не меняет настроение и не требует сохранения; само настроение меняется выше, в разделе «Сейчас в этом чате».
+В карточке откройте **Портреты и эмоции**, выберите **«Эмоцию портрета»** и загрузите PNG, JPG или WebP до 10 МБ. Для обычного состояния используйте **Спокойствие / neutral**. Редактор сначала показывает портрет для текущего настроения. Переключение предпросмотра не меняет настроение и не требует сохранения; само настроение меняется выше, в разделе «Сейчас в этом чате».
 
 Если нужной картинки нет или браузер не может её открыть, показывается обычный портрет, затем — выбранный мужской, женский или нейтральный силуэт. Сохранённые изображения при этом не удаляются; новое изображение можно загрузить в ту же эмоцию.
 
@@ -144,7 +144,7 @@ Open a character sheet → **Portraits and emotions → Image library → Upload
 
 Select thumbnails, choose an emotion below, then click **Assign to emotion**. Switch to **All** to reuse an already assigned image for another emotion. Click **Save character** to keep the library, even if you have not assigned any emotions yet. Until then, changes are only a draft.
 
-Each character has a separate library. World exports and full backups include it; images are never sent to DeepSeek. Limits: 256 unassigned images per character, 12 variations per emotion, and 25 MB of processed image data across the extension. Removing an emotion variation keeps its image in the library. Use the library’s trash button to delete an unassigned image.
+Each character has a separate library. World exports and full backups include it; images are never sent to DeepSeek. Limits: 512 unassigned images per character, 48 variations per emotion, and about 50 MB of encoded portrait data across the extension after processing. Removing an emotion variation keeps its image in the library. Use the library’s trash button to delete an unassigned image.
 
 Context, character, world and control panels keep at least a 1 px gap, including their hover controls. The controls sit beside each panel rather than in a separate row between cards. Dragging finds the nearest free space; old overlaps, restored panels and viewport changes are handled too. On very small screens they use a scrollable column until there is enough space for free positioning. Floating character portraits remain independent.
 
@@ -152,9 +152,9 @@ You can select **My protagonist** and upload emotion portraits before pressing *
 
 ### Multiple images per emotion
 
-In a character sheet, choose **Portrait emotion → Add images**, select one or several PNG/JPG/WebP files (up to 5 MB each), then **Save character**. Each emotion accepts up to **12 different images**. Thumbnails preview variations without changing the mood; each trash button removes just that image. Uploading again adds to the set instead of replacing it.
+In a character sheet, choose **Portrait emotion → Add images**, select one or several PNG/JPG/WebP files (up to 10 MB each), then **Save character**. Each emotion accepts up to **48 different images**. Thumbnails preview variations without changing the mood; each trash button removes just that image. Uploading again adds to the set instead of replacing it.
 
-Each accepted scene update advances a shuffled cycle without repeating an image until all have been used. A new round avoids repeating the last image immediately. Each emotion has its own cycle; missing emotion images use the neutral set. Opening the gallery, dragging, refreshing and rereading the same reply do not advance it. The saved cycle belongs to the chat, not to the shared world profile. World exports and full backups include every image; full backups also include the current chat cycle. Older single-image files still work. Total library image data is limited to about 25 MB.
+Each accepted scene update advances a shuffled cycle without repeating an image until all have been used. A new round avoids repeating the last image immediately. Each emotion has its own cycle; missing emotion images use the neutral set. Opening the gallery, dragging, refreshing and rereading the same reply do not advance it. The saved cycle belongs to the chat, not to the shared world profile. World exports and full backups include every image; full backups also include the current chat cycle. Older single-image files still work. Total encoded portrait data is limited to about 50 MB.
 
 ### Panel controls and automatic states
 

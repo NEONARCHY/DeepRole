@@ -1,9 +1,9 @@
 import type { CharacterScene, CharacterSheet, PortraitCycle, SceneEntity } from "./types";
 
-export const MAX_PORTRAIT_VARIATIONS = 12;
+export const MAX_PORTRAIT_VARIATIONS = 48;
 // Removed/renamed active emotions keep their local images and shuffle history.
 export const MAX_STORED_PORTRAIT_EMOTIONS = 64;
-export const validPortrait = (value: unknown): value is string => typeof value === "string" && value.length <= 180_000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+export const validPortrait = (value: unknown): value is string => typeof value === "string" && value.length <= 300_000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
 const variationCache = new WeakMap<object, { source: unknown[]; images: string[] }>();
 export const portraitVariations = (value: unknown): string[] => {
   if (!Array.isArray(value)) return validPortrait(value) ? [value] : [];

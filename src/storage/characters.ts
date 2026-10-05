@@ -61,7 +61,7 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
       const sheet = (r.data as SceneEntity).characterSheet;
       return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? [])].reduce((n, s) => n + s.length, 0);
     }, 0);
-    if (bytes > 25_000_000) throw new Error("character-images-full");
+    if (bytes > 50_000_000) throw new Error("character-images-full");
     const savedEntities = [...entities.filter(e => !replaced.has(e.id)), ...changes.filter(r => r.kind === "entity").map(r => r.data as SceneEntity)];
     return { records: changes, removed: [], result: { entityId: entity.id, base: characterRevision(savedEntities, nextScene), original: characterEditBaseline(entity, savedEntities, nextScene) } };
   });

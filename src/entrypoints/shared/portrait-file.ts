@@ -1,7 +1,7 @@
 import { validPortrait } from "../../core/portrait-variations";
 
 export async function readPortrait(file: File): Promise<string> {
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 5_000_000) throw new Error("image-invalid");
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 10_000_000) throw new Error("image-invalid");
   const url = URL.createObjectURL(file);
   try {
     const image = new Image(); image.src = url; await image.decode();

@@ -1,7 +1,7 @@
 import type { CharacterSheet } from "./types";
 import { MAX_PORTRAIT_VARIATIONS, MAX_STORED_PORTRAIT_EMOTIONS, portraitVariations, validPortrait } from "./portrait-variations";
 
-export const MAX_UNASSIGNED_PORTRAITS = 256;
+export const MAX_UNASSIGNED_PORTRAITS = 512;
 export const validPortraitLibrary = (value: unknown): value is string[] => Array.isArray(value) && value.length <= MAX_UNASSIGNED_PORTRAITS && value.every(validPortrait) && new Set(value).size === value.length;
 
 export function libraryImages(sheet: CharacterSheet): string[] {
