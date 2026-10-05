@@ -63,7 +63,7 @@ it("rejects conflicting library edits and over-budget libraries without partial 
   await expect(saveCharacter({ ...edit, sheet: { ...edit.sheet, portraitLibrary: ["data:image/png;base64,BBBB"] } }, repo)).rejects.toThrow("character-edit-conflict");
   expect(await repo.rawRecords()).toEqual(before);
   const person = (await repo.get<SceneEntity>("entity", entity.id))!;
-  const images = Array.from({ length: 140 }, (_, i) => "data:image/png;base64," + btoa(String(i).padStart(6, "0")) + "A".repeat(179000));
+  const images = Array.from({ length: 180 }, (_, i) => "data:image/png;base64," + btoa(String(i).padStart(6, "0")) + "A".repeat(290000));
   await expect(saveCharacter({ ...edit, original: characterEditBaseline(person, [person]), sheet: { ...edit.sheet, portraitLibrary: images } }, repo)).rejects.toThrow("character-images-full");
   expect(await repo.rawRecords()).toEqual(before);
 });

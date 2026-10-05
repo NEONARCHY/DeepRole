@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles } from "../src/core/portrait-variations";
+import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles, MAX_PORTRAIT_VARIATIONS } from "../src/core/portrait-variations";
 import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes, validEmotions } from "../src/core/characters";
 import { parseWidgetLayout } from "../src/entrypoints/content/WidgetDeck";
 import type { CharacterScene, PortraitCycle, SceneEntity } from "../src/core/types";
@@ -25,7 +25,7 @@ describe("portrait variation cycles", () => {
   it("accepts legacy portraits and bounded image arrays, rejects unsafe or duplicate images", () => {
     expect(validCharacterSheet(person.characterSheet)).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: images[0] } })).toBe(true);
-    for (const v of [[], [images[0], images[0]], [...images, "https://tracker/image"], Array.from({ length: 13 }, (_, i) => `data:image/png;base64,AAA${String.fromCharCode(65 + i)}`)]) expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: v } })).toBe(false);
+    for (const v of [[], [images[0], images[0]], [...images, "https://tracker/image"], Array.from({ length: MAX_PORTRAIT_VARIATIONS + 1 }, (_, i) => `data:image/png;base64,${btoa(String(i).padStart(4, "0"))}`)]) expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: v } })).toBe(false);
     expect(portraitVariations(images[0])).toEqual([images[0]]);
   });
   it("consumes every variation once per cycle and avoids repeats across the boundary", () => {
