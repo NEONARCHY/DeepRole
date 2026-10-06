@@ -12,6 +12,7 @@ import { bindCharacterTurn, emotionsFor, parseCharacterTurn, relationshipTurnEna
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { TabSessionStore } from "../storage/tab-session";
 import { captureContinuation, completeContinuation } from "../storage/story-continuation";
+import { saveRecoveredReply } from "../storage/recovered-replies";
 
 export default defineBackground(() => {
   const tabSessions = new TabSessionStore(browser.storage.session);
@@ -55,6 +56,13 @@ export default defineBackground(() => {
         try {
           if (message.operation === "isLocked") return { ok: true, data: await repository.isLocked() };
           if (await repository.isLocked()) throw new Error("vault-locked");
+          if (message.operation === "saveRecoveredReply") {
+            const tab = await browser.tabs.get(sender.tab!.id!);
+            if (!tab.url || !isSameDeepSeekChat(message.edit.chatUrl, tab.url, message.edit.chatId)) throw new Error("reply-scope");
+            if ((await getSettings()).replyRecoveryEnabled === false) throw new Error("reply-disabled");
+            await saveRecoveredReply(message.edit);
+            return { ok: true };
+          }
           if (message.operation === "completeContinuation") {
             const tabId = sender.tab!.id!, tab = await browser.tabs.get(tabId);
             if (!tab.url || !(isSameDeepSeekChat(`https://chat.deepseek.com/a/chat/s/${message.targetChatId}`, tab.url, message.targetChatId) || new URL(tab.url).origin === "https://chat.deepseek.com" && new URL(tab.url).pathname === "/")) throw new Error("handoff-scope");

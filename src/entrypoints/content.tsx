@@ -4,6 +4,8 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
+import { DeepSeekReplyRecovery } from "../adapters/deepseek-reply-recovery";
+import { replyRecoveryText } from "../core/reply-recovery";
 import { nativeMessageIdentity, nativeMessageRows, isUserMessage } from "../adapters/deepseek-message-dom";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
 import { findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
@@ -117,6 +119,10 @@ class PageController {
   private characterScanTask: Promise<void> | null = null;
   private characterStatus: CharacterCopyKey = "idle";
   private readonly adapter = new DeepSeekDomAdapter();
+  private readonly replyRecovery = new DeepSeekReplyRecovery(async edit => {
+    if (this.state.vaultLocked || this.settings.replyRecoveryEnabled === false || this.adapter.getChatId() !== edit.chatId) throw new Error("reply-scope");
+    await repository.saveRecoveredReply(edit);
+  }, () => this.showToast(replyRecoveryText(this.state.locale).saveFailed));
   private root: Root | null = null;
   private settings: DeepRoleSettings = { ...DEFAULT_SETTINGS };
   private entries: MemoryEntry[] = [];
@@ -187,6 +193,7 @@ class PageController {
 
   async start() {
     window.addEventListener("message", (event) => this.handleBridgeMessage(event));
+    this.observePage();
     try {
       this.settings = await startupDeadline(getSettings());
       this.state.locale = this.settings.locale;
@@ -214,28 +221,6 @@ class PageController {
     window.addEventListener("scroll", this.scheduleAnchorRender, true);
     window.addEventListener("resize", this.scheduleAnchorRender);
     window.addEventListener("deeprole-native-layout", this.scheduleAnchorRender);
-    const observer = new MutationObserver((changes) => {
-      if (location.href !== this.lastUrl) {
-        this.navigate();
-      }
-      // Run before the next paint when DeepSeek streams a transport marker;
-      // the normal 350 ms scan can otherwise expose raw JSON for a frame.
-      if (changes.some(change => [...change.addedNodes, change.type === "characterData" ? change.target : null]
-        .some(node => node?.textContent && /<deeprole_(?:characters|choices)/u.test(node.textContent)
-          && !(node instanceof Element && node.matches("[data-deeprole-choices-payload], [data-deeprole-choices-loading], [data-deeprole-choices-host]"))))) {
-        this.syncSceneChoices();
-      }
-      const request = this.pendingService;
-      if (request?.type === "memory-analysis" && request.chatId === this.adapter.getChatId()) {
-        this.updateMemoryPreloader(request);
-      } else if (!request && changes.some((change) =>
-        [...change.addedNodes].some((node) => node.textContent?.includes(SERVICE_START))
-        || change.type === "characterData" && change.target.parentElement?.textContent?.includes(SERVICE_START))) {
-        this.cleanArchivedMemoryPayloads();
-      }
-      this.scheduleScan();
-    });
-    observer.observe(document.documentElement, { childList: true, characterData: true, subtree: true });
     browser.runtime.onMessage.addListener((message: DeepRoleMessage) => this.handleRuntimeMessage(message));
     browser.storage.onChanged.addListener((changes) => {
       if (WIDGET_LAYOUT_KEY in changes) { this.state.widgetLayout = parseWidgetLayout(changes[WIDGET_LAYOUT_KEY]?.newValue); this.render(); }
@@ -251,6 +236,24 @@ class PageController {
     this.state.pageReady = true;
     this.render();
     this.scheduleScan();
+  }
+
+  private observePage() {
+    const observer = new MutationObserver((changes) => {
+      if (location.href !== this.lastUrl) this.navigate();
+      this.replyRecovery.process(changes);
+      // Run before the next paint when DeepSeek streams a transport marker;
+      // the normal 350 ms scan can otherwise expose raw JSON for a frame.
+      if (changes.some(change => [...change.addedNodes, change.type === "characterData" ? change.target : null]
+        .some(node => node?.textContent && /<deeprole_(?:characters|choices)/u.test(node.textContent)
+          && !(node instanceof Element && node.matches("[data-deeprole-choices-payload], [data-deeprole-choices-loading], [data-deeprole-choices-host]"))))) this.syncSceneChoices();
+      const request = this.pendingService;
+      if (request?.type === "memory-analysis" && request.chatId === this.adapter.getChatId()) this.updateMemoryPreloader(request);
+      else if (!request && changes.some(change => [...change.addedNodes].some(node => node.textContent?.includes(SERVICE_START))
+        || change.type === "characterData" && change.target.parentElement?.textContent?.includes(SERVICE_START))) this.cleanArchivedMemoryPayloads();
+      this.scheduleScan();
+    });
+    observer.observe(document.documentElement, { childList: true, characterData: true, characterDataOldValue: true, subtree: true });
   }
 
   mountWidget(mount: HTMLElement) {
@@ -308,6 +311,7 @@ class PageController {
     this.state.vaultLocked = false;
     this.entries = libraryRecords<MemoryEntry>(records, "entry"); this.books = libraryRecords<MemoryBook>(records, "book");
     this.bindings = libraryRecords<ChatBinding>(records, "binding"); this.snapshots = libraryRecords<HandoffSnapshot>(records, "snapshot");
+    this.replyRecovery.configure(this.adapter.getChatId(), location.href, this.settings.replyRecoveryEnabled !== false && !this.adapter.isAuthenticationPage(), this.state.locale, this.currentBinding()?.recoveredReplies);
     this.worlds = libraryRecords<WorldProfile>(records, "world"); this.entities = libraryRecords<SceneEntity>(records, "entity");
     this.proposals = libraryRecords<MemoryProposalBatch>(records, "proposal"); this.changes = libraryRecords<LoreChange>(records, "change");
     this.draftOverrides = pending?.overrides ?? this.draftOverrides;
@@ -338,6 +342,7 @@ class PageController {
   }
 
   private clearPrivateState() {
+    this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
     this.storyRead?.resolve(null); this.storyRead = null;
     window.clearTimeout(this.historyRefreshTimer);
@@ -708,6 +713,7 @@ class PageController {
     if (this.scanTimer) return;
     this.scanTimer = window.setTimeout(() => {
       this.scanTimer = 0;
+      this.replyRecovery.scan();
       void this.scanServiceResponses();
       const generating = this.adapter.isGenerating();
       if (generating) this.historyWasGenerating = true;
@@ -1323,6 +1329,7 @@ class PageController {
   }
 
   private navigate() {
+    this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
     this.pickedSceneChoice = null;
     dismissSceneChoiceCards(document, false);

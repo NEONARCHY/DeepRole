@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><title>Reply recovery demo</title>
+<style>
+  :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#141414;color:#e8e8e8;font:15px/1.65 system-ui,sans-serif}main{max-width:760px;margin:32px auto;padding:0 20px}article{margin:24px 0}.ds-think-content{color:#a5a5a5;font-size:13px;border-left:1px solid #555;padding-left:14px;margin-bottom:20px}.ds-markdown p{margin:0 0 12px}.ds-markdown pre{overflow:auto;padding:16px;background:#202020;border-radius:12px;font:13px/1.5 monospace}textarea{width:100%;padding:16px;border:1px solid #444;border-radius:16px;background:#292929;color:inherit}.ds-markdown a{color:#8ec5ec}
+</style></head><body><main><h1>Observatory</h1><section id="story"></section><form><textarea aria-label="Message"></textarea></form></main>
+<script type="module">
+  import { DeepSeekReplyRecovery } from "/src/adapters/deepseek-reply-recovery.ts";
+  const locale = new URLSearchParams(location.search).get("locale") === "ru" ? "ru" : "en";
+  document.documentElement.lang = locale;
+  let chatId = "demo";
+  const refusal = "Sorry, that's beyond my current scope. Let's talk about something else.";
+  const stored = () => JSON.parse(localStorage.getItem("reply-demo") ?? "{}")[chatId] ?? [];
+  const recovery = new DeepSeekReplyRecovery(async edit => {
+    const all = JSON.parse(localStorage.getItem("reply-demo") ?? "{}");
+    all[edit.chatId] = [...(all[edit.chatId] ?? []).filter(r => r.messageKey !== edit.reply.messageKey), edit.reply];
+    localStorage.setItem("reply-demo", JSON.stringify(all));
+  }, () => { document.body.dataset.saveFailed = "true"; });
+  const mount = text => {
+    document.querySelector("#story").innerHTML = '<article data-message-id="demo-answer" data-role="assistant"><div class="ds-think-content">Thinking stays separate from the recovered answer.</div><div class="ds-assistant-message-main-content"><div class="ds-markdown" id="reply"></div></div></article>';
+    document.querySelector("#reply").textContent = text;
+  };
+  mount(stored().length ? refusal : "");
+  const configure = enabled => recovery.configure(chatId, `https://chat.deepseek.com/chat/s/${chatId}`, enabled, locale, stored());
+  configure(true);
+  const observer = new MutationObserver(changes => recovery.process(changes));
+  observer.observe(document.body, { childList:true, characterData:true, characterDataOldValue:true, subtree:true });
+  window.replyTest = { refusal, write: html => { document.querySelector("#reply").innerHTML = html; }, replace: () => { document.querySelector("#reply").textContent = refusal; }, remount: () => mount(refusal), switchChat: id => { chatId=id; configure(true); mount(refusal); }, setEnabled: configure, archive: stored };
+  document.querySelector("form").addEventListener("submit", event => event.preventDefault());
+</script></body></html>

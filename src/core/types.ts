@@ -147,6 +147,8 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  /** Local visible fragments of assistant replies replaced by DeepSeek's refusal. */
+  recoveredReplies?: RecoveredReply[];
   /** Checkpoint that started this branch, not a mutable link to another chat. */
   continuationSnapshotId?: string;
   portraitLayouts?: Record<string, PortraitLayout>;
@@ -161,6 +163,13 @@ export interface ChatBinding {
   messageCountAtAnalysis: number;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface RecoveredReply {
+  messageKey: string;
+  html: string;
+  capturedAt: number;
+  recoveredAt: number;
 }
 
 export interface HandoffSnapshot {
@@ -181,6 +190,7 @@ export interface HandoffSnapshot {
 }
 
 export interface DeepRoleSettings {
+  replyRecoveryEnabled?: boolean;
   contextWarningsEnabled?: boolean;
   /** User-adjustable estimate, not a guaranteed DeepSeek server limit. */
   chatContextCapacity?: number;

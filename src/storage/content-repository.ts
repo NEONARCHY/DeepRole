@@ -5,8 +5,10 @@ import type { CharacterTurn } from "../core/characters";
 import type { PortraitLayoutEdit } from "./portrait-layout";
 import type { ContinuationCapture } from "./story-continuation";
 import type { HandoffSnapshot } from "../core/types";
+import type { RecoveredReplyEdit } from "./recovered-replies";
 
 export type RepositoryRequest =
+  | { type: "DR_REPOSITORY"; operation: "saveRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "completeContinuation"; snapshot: HandoffSnapshot; token: string | null; targetChatId: string }
   | { type: "DR_REPOSITORY"; operation: "captureContinuation"; input: ContinuationCapture }
   | { type: "DR_REPOSITORY"; operation: "addCharacterEmotion"; scope: CharacterScope; name: string }
@@ -29,6 +31,7 @@ async function call<T>(message: RepositoryRequest): Promise<T> {
 // IndexedDB in a content script belongs to the website, not the extension.
 // All content access is routed to the extension-owned background repository.
 export const contentRepository = {
+  saveRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveRecoveredReply", edit }),
   completeContinuation: (snapshot: HandoffSnapshot, token: string | null, targetChatId: string) => call<boolean>({ type: "DR_REPOSITORY", operation: "completeContinuation", snapshot, token, targetChatId }),
   captureContinuation: (input: ContinuationCapture) => call<HandoffSnapshot>({ type: "DR_REPOSITORY", operation: "captureContinuation", input }),
   addCharacterEmotion: (scope: CharacterScope, name: string) => call<string[]>({ type: "DR_REPOSITORY", operation: "addCharacterEmotion", scope, name }),

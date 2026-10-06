@@ -48,6 +48,12 @@ While the story reply continues, your portraits stay visible. Hidden service JSO
 
 </details>
 
+## Restore a hidden reply
+
+When DeepSeek replaces a visible reply with “Sorry, that's beyond my current scope. Let's talk about something else.”, DeepRole automatically shows the last captured fragment with a small **Restored** label. Local copies belong to that chat and remain visible after a reload. This is enabled by default; the switch is in **Settings → App → Reply recovery**.
+
+The fragment may be incomplete. A reply the extension never saw cannot be recovered. DeepSeek's server history is unchanged. Recovered copies are included in a full DeepRole backup and protected by the vault when enabled; locking the vault hides them.
+
 ## Characters, images and emotions
 
 The editor has four tabs: **Profile**, **In scene**, **Relationships** and **Images**. The profile belongs to the world; current moods, goals and played progress belong to the chat. Switching tabs keeps your draft, and saving leaves the editor open.

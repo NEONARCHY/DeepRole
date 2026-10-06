@@ -1,6 +1,7 @@
 import type { DeepRoleSettings } from "./types";
 
 export const DEFAULT_SETTINGS: DeepRoleSettings = {
+  replyRecoveryEnabled: true,
   contextWarningsEnabled: true,
   chatContextCapacity: 1_000_000,
   locale:

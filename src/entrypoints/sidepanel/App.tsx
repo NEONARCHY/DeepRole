@@ -36,6 +36,7 @@ import { browser } from "wxt/browser";
 import { continuationText } from "../../core/continuation-i18n";
 import { chatCapacity } from "../../core/context-capacity";
 import { BOOK_COLORS, DEFAULT_SETTINGS } from "../../core/defaults";
+import { replyRecoveryText } from "../../core/reply-recovery";
 import { createId } from "../../core/id";
 import { importFileTooLarge } from "../../core/import-limits";
 import { translate, type MessageKey } from "../../core/i18n";
@@ -839,6 +840,10 @@ function SettingsView(props: {
         <p className="setting-copy">{props.settings.locale === "ru" ? "Эти настройки действуют во всех чатах. Перетаскивание портретов остаётся доступным, когда закрепление выключено." : "These settings apply across chats. You can still drag portraits when pinning is off."}</p>
         <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinChoices")}</span><input type="checkbox" checked={!!props.settings.pinSceneChoices} onChange={event => void props.onSettings({ ...props.settings, pinSceneChoices: event.target.checked })} /></label>
         <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinPortraits")}</span><input type="checkbox" checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={event => void props.onSettings({ ...props.settings, pinPortraitLeft: event.target.checked, pinPortraitRight: event.target.checked })} /></label>
+      </SettingsCard>
+      <SettingsCard icon={<ShieldCheck />} title={replyRecoveryText(props.settings.locale).title}>
+        <label className="toggle-row"><span>{replyRecoveryText(props.settings.locale).toggle}</span><input type="checkbox" checked={props.settings.replyRecoveryEnabled !== false} onChange={event => void props.onSettings({ ...props.settings, replyRecoveryEnabled: event.target.checked })} /></label>
+        <p className="setting-copy">{replyRecoveryText(props.settings.locale).hint}</p>
       </SettingsCard>
       <SettingsCard icon={<Languages />} title={props.t("language")}>
         <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
