@@ -25,8 +25,9 @@ function choiceCards(root: ParentNode): HTMLElement[] {
 function removeChoiceCard(host: HTMLElement): void {
   unbindInlineChoices(host); bindPinnedChoices(host, false); inlineAnchors.get(host)?.remove(); inlineAnchors.delete(host); host.remove();
 }
-function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal = false): void {
+function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal?: boolean): void {
   sourceRows.set(host, row);
+  const hadAnchor = !!inlineAnchors.get(host)?.isConnected;
   if (host.dataset.deeproleChoicesPinned === "true") {
     unbindInlineChoices(host);
     let anchor = inlineAnchors.get(host);
@@ -34,13 +35,12 @@ function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal = false): v
     if (host.parentElement !== row.ownerDocument.body) row.ownerDocument.body.append(host);
   } else {
     const anchor = inlineAnchors.get(host);
-    reveal ||= !!anchor?.isConnected;
     if (anchor?.isConnected) anchor.replaceWith(host);
     else if (row.nextElementSibling !== host) row.after(host);
     inlineAnchors.delete(host);
   }
   bindPinnedChoices(host, host.dataset.deeproleChoicesPinned === "true");
-  if (host.dataset.deeproleChoicesPinned !== "true") bindInlineChoices(host, reveal);
+  if (host.dataset.deeproleChoicesPinned !== "true") bindInlineChoices(host, reveal ?? hadAnchor);
 }
 type SettlingState = { signature: string; changedAt: number; row?: HTMLElement; observedGeneration: boolean; busy?: boolean; requestSource?: string; timer?: ReturnType<typeof setTimeout> };
 const settling = new WeakMap<ParentNode, SettlingState>();
@@ -423,9 +423,11 @@ function hideBlock(element: HTMLElement, start: number, end: number, kind = "cho
 function applyChoicePresentation(host: HTMLElement, presentation?: ChoicePresentation): void {
   if (!presentation) return;
   choicePresentations.set(host, presentation);
+  const wasPinned = host.dataset.deeproleChoicesPinned === "true";
   host.dataset.deeproleChoicesPinned = String(presentation.pinSceneChoices);
   host.dataset.deeproleAdaptive = String(!!presentation.adaptiveLayout);
-  const row = sourceRows.get(host); if (row) placeChoiceCard(host, row);
+  const row = sourceRows.get(host);
+  if (row) placeChoiceCard(host, row, wasPinned && !presentation.pinSceneChoices ? false : undefined);
   fitAdaptiveChoices(host);
   if (!host.isConnected) queueMicrotask(() => { if (host.isConnected) fitAdaptiveChoices(host); });
   for (const key of ["pinPortraits", "pinSceneChoices"] as const) {
