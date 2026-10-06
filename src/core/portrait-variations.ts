@@ -1,4 +1,5 @@
 import type { CharacterScene, CharacterSheet, PortraitCycle, SceneEntity } from "./types";
+import { resolveCharacterEmotion } from "./character-emotions";
 
 export const MAX_PORTRAIT_VARIATIONS = 48;
 // Removed/renamed active emotions keep their local images and shuffle history.
@@ -46,6 +47,7 @@ export function nextPortraitCycle(images: string[], previous?: PortraitCycle, ra
 }
 
 function bucket(sheet: CharacterSheet | undefined, emotion: string): string {
+  emotion = resolveCharacterEmotion(sheet, emotion);
   return portraitVariations(sheet?.sprites[emotion]).length ? emotion : "neutral";
 }
 export function scenePortraitIndex(entity: SceneEntity, scene?: CharacterScene): number {

@@ -1,16 +1,25 @@
 import type { DeepRoleSettings } from "./types";
 
 export const DEFAULT_SETTINGS: DeepRoleSettings = {
+  contextWarningsEnabled: true,
+  chatContextCapacity: 1_000_000,
   locale:
     typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ru")
       ? "ru"
       : "en",
   onboardingComplete: false,
   characterSheetsEnabled: true,
+  relationshipsEnabled: true,
+  relationshipDisplay: "both",
   characterSpritesEnabled: true,
   portraitLayoutResetAt: 0,
   characterEmotions: ["neutral", "happy", "sad", "angry", "surprised", "worried"],
   sceneChoicesEnabled: true,
+  pinSceneChoices: false,
+  pinPortraitLeft: false,
+  pinPortraitRight: false,
+  adaptiveLayout: true,
+  floatingPanelWidth: 224,
   showChatContextMeter: true,
   showMemoryContextIndicator: true,
   contextBudget: 2000,

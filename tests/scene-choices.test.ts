@@ -18,10 +18,11 @@ const host = () => document.querySelector<HTMLElement>("[data-deeprole-choices-h
 const recovery = () => document.querySelector<HTMLElement>("[data-deeprole-choices-recovery]");
 
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
   dismissSceneChoiceCards(document, false); pick.mockClear(); request.mockClear();
 });
-afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); });
+afterEach(() => { dismissSceneChoiceCards(document, false); document.body.replaceChildren(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("scene choice protocol", () => {
   it("normalizes four options and accepts only a complete block", () => {

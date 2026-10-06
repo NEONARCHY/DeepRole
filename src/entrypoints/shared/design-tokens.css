@@ -1,16 +1,27 @@
 /* Shared palette and spacing, including small isolated cards inside DeepSeek. */
 :root, :host {
   --dr-space-1: 4px; --dr-space-2: 8px; --dr-space-3: 12px; --dr-space-4: 16px; --dr-space-6: 24px;
-  --dr-text: #f0f0f2; --dr-muted: #b3b3ba; --dr-border: #414146; --dr-surface: #2b2b2e;
-  --dr-bg: #181818; --dr-panel: #212122; --dr-raised: #353538;
-  --dr-primary: #9aaeff; --dr-action: #4663ed; --dr-action-hover: #4d69ef; --dr-on-action: #fff;
-  --dr-selected: #3b3d46; --dr-border-strong: #5d5d65; --dr-primary-soft: #292f44;
-  --dr-success: #9bbfaa; --dr-warning: #e3b57b; --dr-danger: #efa0a0;
-  --dr-danger-soft: #352628; --dr-warning-soft: #332c24;
+  /* AXIS-2: graphite planes, cool daylight accents, depth rather than bright strokes. */
+  --dr-text: #eef3f7; --dr-muted: #afbcc9; --dr-border: #ffffff0d; --dr-surface: #2b343e;
+  --dr-bg: #151a20; --dr-panel: #1d242b; --dr-raised: #35424e;
+  --dr-primary: #bfdfeb; --dr-action: #bfdfeb; --dr-action-hover: #d9f1f8; --dr-on-action: #18303b;
+  --dr-selected: #344b55; --dr-border-strong: #ffffff28; --dr-primary-soft: #304752;
+  --dr-success: #a5d6ba; --dr-warning: #eac08c; --dr-danger: #f4a7ac;
+  --dr-danger-soft: #392933; --dr-warning-soft: #3b3340;
   /* Low-chroma pastels share a lightness; labels also identify each choice. */
   --dr-choice-positive: oklch(82% 0.065 160);
   --dr-choice-neutral: oklch(82% 0.060 245);
   --dr-choice-negative: oklch(82% 0.070 15);
   --dr-choice-surprise: oklch(82% 0.070 305);
+  /* Static depth; only the small accent overlay fades on interaction. */
+  --dr-surface-light: linear-gradient(180deg, #ffffff06, #ffffff00 96px);
+  --dr-action-light: linear-gradient(180deg, #ffffff24, #ffffff00);
+  --dr-depth-card: inset 0 1px 0 #ffffff08, 0 3px 8px #0002, 0 10px 24px #0003;
+  --dr-depth-panel: inset 0 1px 0 #ffffff0d, 0 6px 16px #0003, 0 18px 40px #0004;
+  --dr-depth-dialog: inset 0 1px 0 #ffffff10, 0 12px 28px #0004, 0 28px 64px #0006;
+  --dr-action-depth: inset 0 1px 0 #ffffff66, 0 3px 8px #0003, 0 0 18px #a6dcf02b;
+  --dr-action-glow: 0 0 0 1px #d9f1f833, 0 0 22px #a6dcf047, 0 6px 18px #a6dcf01f;
+  --dr-motion-fast: 160ms;
+  --dr-ease-out: cubic-bezier(.16, 1, .3, 1);
   --dr-radius: 12px;
 }

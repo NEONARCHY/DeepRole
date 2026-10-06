@@ -67,6 +67,7 @@ it("keeps filled field names separate from their saved values and the compact li
   expect(view.container.querySelectorAll(".dr-character-row img")).toHaveLength(0);
   fireEvent.click(view.getByRole("button", { name: /Mira/ }));
   expect(view.getByRole("textbox", { name: "Appearance and clothing" })).toHaveValue("Blue coat");
+  fireEvent.click(view.getByRole("tab", { name: "In scene" }));
   expect(view.getByRole("textbox", { name: "Condition" })).toHaveValue("Safe");
   expect(view.getByRole("textbox", { name: "Current goal" })).toHaveValue("Find a key");
   expect(view.getByRole("textbox", { name: "Relationships" })).toHaveValue("Trusted");

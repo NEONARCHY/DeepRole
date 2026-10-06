@@ -22,7 +22,11 @@ test("installed extension shares its private library with chat and remembers wor
     await panel.getByRole("button", { name: "Лор", exact: true }).click();
     await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
     await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Runtime World.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Runtime rule": { value: "Only this world", importance: "always" }, "Promise": { value: "A unique promise", importance: "called" } })) });
-    await panel.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+    const confirmImport = panel.getByRole("button", { name: "Подтвердить импорт", exact: true });
+    await expect(confirmImport).not.toHaveCSS("box-shadow", "none");
+    expect(await confirmImport.evaluate(node => getComputedStyle(node).backgroundImage)).toContain("linear-gradient");
+    expect(await confirmImport.evaluate(node => getComputedStyle(node, "::before").pointerEvents)).toBe("none");
+    await confirmImport.click();
     await expect(panel.getByRole("heading", { name: "Runtime World", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Мир и профили", exact: true }).click();
     await panel.getByRole("button", { name: "Добавить профиль", exact: true }).click();
@@ -49,7 +53,11 @@ test("installed extension shares its private library with chat and remembers wor
     await chat.goto("https://chat.deepseek.com/");
     const world = chat.getByRole("combobox", { name: "Мир", exact: true });
     await expect(world).toBeVisible();
-    await world.selectOption({ label: "Runtime World" });
+    // Exercise the actual branded popup in WXT's isolated content-script root.
+    await world.click();
+    const worldMenu = chat.locator(".dr-select-menu");
+    await expect(worldMenu).toBeVisible();
+    await worldMenu.getByRole("option", { name: "Runtime World", exact: true }).click();
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /Only this world/);
     await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /unique promise/);
     await chat.getByRole("button", { name: /^Сцена/ }).click();
@@ -73,6 +81,25 @@ test("installed extension shares its private library with chat and remembers wor
     await chat.reload();
     await expect(world.locator("option:checked")).toHaveText("Runtime World");
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /Only this world/);
+    // Exercise the new additive emotion request through the real background,
+    // not just a React fixture. This profile contains only synthetic data.
+    await chat.locator(".dr-character-row").filter({ hasText: "Мира" }).click();
+    const character = chat.getByRole("dialog");
+    await character.getByRole("tab", { name: "Изображения", exact: true }).click();
+    await character.locator("summary").filter({ hasText: /^Добавить эмоцию$/ }).click();
+    await character.getByLabel("Название новой эмоции", { exact: true }).fill("Focused");
+    await character.getByRole("button", { name: "Добавить эмоцию", exact: true }).click();
+    await expect(character.getByLabel("Эмоция портрета", { exact: true })).toHaveValue("Focused");
+    await character.getByRole("button", { name: "Закрыть", exact: true }).first().click();
+    await chat.reload();
+    await chat.locator(".dr-character-row").filter({ hasText: "Мира" }).click();
+    await character.getByRole("tab", { name: "Изображения", exact: true }).click();
+    await expect(character.getByLabel("Эмоция портрета", { exact: true }).locator('option[value="Focused"]')).toHaveCount(1);
+    await character.getByRole("button", { name: "Закрыть", exact: true }).first().click();
+    await chat.getByRole("button", { name: "Ширина всех панелей", exact: true }).click();
+    await chat.getByRole("slider", { name: "Ширина всех панелей", exact: true }).press("End");
+    await expect.poll(async () => panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.floatingPanelWidth)).toBe(360);
+    await chat.getByRole("slider").press("Escape");
     await world.selectOption("");
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", "");
     await chat.getByRole("button", { name: "Открыть меню DeepRole", exact: true }).click();
@@ -121,5 +148,68 @@ test("installed extension shares its private library with chat and remembers wor
     await menu.getByRole("button", { name: "Закрыть", exact: true }).click();
     await chat.getByRole("button", { name: /^Сцена/ }).click();
     await expect(chat.getByRole("checkbox", { name: "Рин", exact: true })).toBeVisible();
+  } finally { await context.close(); }
+});
+
+test("installed pinned options follow the native message panel without changing its draft", async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "Chrome extension runtime scenario");
+  test.setTimeout(60000);
+  const profile = await mkdtemp(path.join(tmpdir(), "deeprole-pinned-runtime-"));
+  const extension = path.resolve(".output/chrome-mv3");
+  const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, viewport: { width: 1500, height: 850 }, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] });
+  try {
+    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker", { timeout: 15000 });
+    const extensionId = new URL(worker.url()).host;
+    const panel = await context.newPage();
+    await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+    await panel.evaluate(async () => { await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "en", onboardingComplete: true, adaptiveLayout: true } }); });
+    const options = ["positive", "neutral", "negative", "surprise"].map((kind, i) => ({ kind, label: `Move ${i}`, text: `I choose move ${i}.` }));
+    const html = `<!doctype html><html><head><title>Mock DeepSeek</title><style>body{margin:0;background:#181818;color:#eee;font:15px system-ui}aside{position:fixed;inset:0 auto 0 0;width:264px;background:#242424;transition:transform .3s ease}header h1{position:fixed;left:280px;top:20px;margin:0;font-size:16px;transition:left .3s ease}.sidebar-closed aside{transform:translateX(-264px)}.sidebar-closed header h1{left:194px}main{max-width:680px;margin:100px auto;min-height:2000px}form{position:fixed;left:330px;bottom:20px;width:680px;padding:12px;border-radius:20px;background:#303030;box-sizing:border-box}textarea{width:100%;height:80px;box-sizing:border-box}form>button{margin-top:8px}</style></head><body><aside><a href="/chat/s/pinned-runtime">Test chat</a></aside><main><header><h1>Test chat</h1></header><article data-message-id="scene" data-role="assistant"><div class="ds-markdown">Mira waits.&lt;deeprole_choices&gt;${JSON.stringify({ version: 1, options })}&lt;/deeprole_choices&gt;</div></article></main><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></body></html>`;
+    await context.route("https://chat.deepseek.com/**", route => route.fulfill({ contentType: "text/html", body: html }));
+    const chat = await context.newPage();
+    await chat.goto("https://chat.deepseek.com/chat/s/pinned-runtime");
+    const host = chat.locator("[data-deeprole-choices-host]");
+    await expect(host).toBeVisible();
+    await host.getByRole("button", { name: "Pin options on screen", exact: true }).click();
+    await expect.poll(async () => panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.pinSceneChoices)).toBe(true);
+    const aligned = async () => {
+      const geometry = await host.evaluate(node => {
+        const card = node.shadowRoot!.querySelector("section")!.getBoundingClientRect(), form = document.querySelector("form")!.getBoundingClientRect();
+        return { center: card.left + card.width / 2, formCenter: form.left + form.width / 2, gap: form.top - card.bottom, inBody: node.parentElement === document.body };
+      });
+      expect(geometry.inBody).toBe(true);
+      expect(geometry.center).toBeCloseTo(geometry.formCenter, 0);
+      expect(geometry.gap).toBeCloseTo(12, 0);
+    };
+    await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
+    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("My personal draft remains untouched.");
+    const dock = chat.locator(".dr-widget-dock");
+    await expect.poll(async () => (await dock.boundingBox())!.x).toBeCloseTo(272, 0);
+    const layoutBefore = await panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole.widgetLayout.v1"))["deeprole.widgetLayout.v1"] ?? null);
+    await chat.evaluate(() => document.body.classList.add("sidebar-closed"));
+    await expect.poll(async () => (await dock.boundingBox())!.x).toBeCloseTo(8, 0);
+    expect(await panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole.widgetLayout.v1"))["deeprole.widgetLayout.v1"] ?? null)).toEqual(layoutBefore);
+    await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
+    await chat.evaluate(() => { window.scrollTo(0, 900); (document.querySelector("textarea") as HTMLElement).style.height = "200px"; });
+    await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
+    await chat.setViewportSize({ width: 640, height: 760 });
+    await chat.evaluate(() => Object.assign(document.querySelector("form")!.style, { left: "20px", width: "calc(100% - 40px)" }));
+    await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("My personal draft remains untouched.");
+    await chat.screenshot({ path: testInfo.outputPath("installed-pinned-above-composer.png") });
+    await chat.evaluate(() => Object.assign(document.querySelector("main")!.style, { minHeight: "0", paddingTop: "1000px" }));
+    await host.getByRole("button", { name: "Unpin options", exact: true }).click();
+    await expect.poll(async () => panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.pinSceneChoices)).toBe(false);
+    await expect.poll(() => host.evaluate(node => {
+      const card = node.shadowRoot!.querySelector("section")!.getBoundingClientRect(), form = document.querySelector("form")!.getBoundingClientRect();
+      return node.parentElement !== document.body && form.top - card.bottom >= 11 && Math.abs(card.left + card.width / 2 - form.left - form.width / 2) < 1;
+    })).toBe(true);
+    const inlineY = (await host.boundingBox())!.y;
+    await chat.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(async () => (await host.boundingBox())!.y).toBeGreaterThan(inlineY + 200);
+    await chat.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(() => host.evaluate(node => document.querySelector("form")!.getBoundingClientRect().top - node.shadowRoot!.querySelector("section")!.getBoundingClientRect().bottom)).toBeGreaterThanOrEqual(11);
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("My personal draft remains untouched.");
+    await chat.screenshot({ path: testInfo.outputPath("installed-inline-above-composer.png") });
   } finally { await context.close(); }
 });

@@ -4,6 +4,7 @@ import type { DataRecord, DeepRoleSettings } from "./types";
 import { DEFAULT_SETTINGS } from "./defaults";
 import { validCharacterSheet, validCharacterScenes, validEmotions } from "./characters";
 import { validPortraitLayouts } from "./portrait-layout";
+import { validStoryContinuation } from "./story-continuation";
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const id = (value: unknown): value is string => typeof value === "string" && value.length > 0;
@@ -19,9 +20,13 @@ export function validDataRecord(value: unknown): value is DataRecord {
   if (!time(d.createdAt) || !optionalId(d.worldId)) return false;
   if (value.kind !== "snapshot" && !time(d.updatedAt)) return false;
   if (d.focusIds !== undefined && !strings(d.focusIds)) return false;
+  if (d.continuationSnapshotId !== undefined && !id(d.continuationSnapshotId)) return false;
+  if (value.kind === "snapshot" && d.continuation !== undefined && !validStoryContinuation(d.continuation)) return false;
+  if (value.kind === "snapshot" && d.memoryOverrides !== undefined && (!object(d.memoryOverrides) || !strings(d.memoryOverrides.includedIds) || !strings(d.memoryOverrides.excludedIds))) return false;
   if (["world", "entity"].includes(String(value.kind)) && d.useDescriptionInContext !== undefined && typeof d.useDescriptionInContext !== "boolean") return false;
   switch (value.kind) {
     case "world":
+      if (d.relationshipsEnabled !== undefined && typeof d.relationshipsEnabled !== "boolean") return false;
       if (d.characterEmotions !== undefined && !validEmotions(d.characterEmotions)) return false;
       if (typeof d.name !== "string" || typeof d.description !== "string" || typeof d.color !== "string" || !integer(d.contextBudget, 500, 16000) || typeof d.relevanceThreshold !== "number" || ![4, 6, 8, 9].includes(d.relevanceThreshold)) return false;
       try { if (d.mapLayout !== undefined) validateLoreMapLayout(d.mapLayout); } catch { return false; }
@@ -38,7 +43,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
     case "binding":
       return id(d.chatId) && typeof d.chatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && integer(d.messageCountAtAnalysis, 0, Number.MAX_SAFE_INTEGER) &&
         (d.memoryOverrides === undefined || object(d.memoryOverrides) && strings(d.memoryOverrides.includedIds) && strings(d.memoryOverrides.excludedIds)) && (d.characterScenes === undefined || validCharacterScenes(d.characterScenes)) && (d.portraitLayouts === undefined || validPortraitLayouts(d.portraitLayouts));
-    case "snapshot": return typeof d.title === "string" && typeof d.summary === "string" && typeof d.sourceChatId === "string" && typeof d.sourceChatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && (d.appliedAt === undefined || time(d.appliedAt));
+    case "snapshot": return typeof d.title === "string" && typeof d.summary === "string" && typeof d.sourceChatId === "string" && typeof d.sourceChatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && (d.appliedAt === undefined || time(d.appliedAt)) && (d.characterScene === undefined || validCharacterScenes({ snapshot: d.characterScene }));
     case "proposal": return validMemoryProposal(d) && d.items.every((item) => !item.expectedEntry || validDataRecord({ kind: "entry", id: item.expectedEntry.id, data: item.expectedEntry }));
     case "change": return validLoreChange(d) && d.entries.every((pair) => validDataRecord({ kind: "entry", id: pair.after.id, data: pair.after }) && (!pair.before || validDataRecord({ kind: "entry", id: pair.before.id, data: pair.before })));
     default: return false;
@@ -53,6 +58,9 @@ export function parseBackupSettings(value: unknown): DeepRoleSettings {
     if (value[key] === undefined) continue;
     const setting = value[key];
     const valid = key === "portraitLayoutResetAt" ? time(setting) && (setting as number) <= Number.MAX_SAFE_INTEGER : key === "characterEmotions" ? validEmotions(setting) : key === "locale" ? setting === "ru" || setting === "en" :
+      key === "floatingPanelWidth" ? integer(setting, 200, 360) :
+      key === "chatContextCapacity" ? integer(setting, 8000, 2000000) :
+      key === "relationshipDisplay" ? ["both", "numbers", "stages"].includes(String(setting)) :
       key === "contextBudget" ? integer(setting, 1, 16000) :
       key === "relevanceThreshold" ? integer(setting, 1, 100) :
       key === "recentMessageCount" ? integer(setting, 0, 500) :

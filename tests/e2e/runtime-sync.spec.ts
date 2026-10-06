@@ -1,6 +1,8 @@
 import { chromium, expect, test, type Page, type Worker } from "@playwright/test";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
+import { EMPTY_CHARACTER, EMPTY_STATUS } from "../../src/core/characters";
+import { DEFAULT_RELATIONSHIP, relationshipState } from "../../src/core/relationships";
 
 const fixture = `<!doctype html><html><head><title>Mock DeepSeek</title></head><body><main><header><h1>Roleplay</h1></header><div id="conversation"></div><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main></body></html>`;
 async function setup(records: Array<[string, any]>) {
@@ -77,6 +79,135 @@ function entry(id: string) { return { id, worldId: null, bookId: null, title: id
 function snapshot(id: string) { return { id, worldId: null, bookId: null, title: id, summary: `HANDOFF_${id}`, sourceChatId: "previous", sourceChatUrl: "https://chat.deepseek.com/chat/s/previous", createdAt: 1 }; }
 
 test.beforeEach(({}, info) => { test.skip(info.project.name !== "chromium", "Installed MV3 bridge; shared adapter/UI tested in Firefox separately"); });
+
+test("one-click local continuation preserves exact progress before consuming an accepted retry", async () => {
+  test.setTimeout(75000);
+  const world = { id: "world", name: "Harbor", description: "Harbor canon", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Leon is 25", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, adultConfirmed: true }, createdAt: 1, updatedAt: 1 };
+  const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, adultConfirmed: true, relationships: structuredClone(DEFAULT_RELATIONSHIP) } };
+  const progress = { revision: "played", lastReply: "old-reply", presentIds: ["hero", "mira"], partnerIds: ["mira"], states: {
+    hero: { ...EMPTY_STATUS, attributes: { values: { energy: 41 }, locked: ["energy"], history: [] } },
+    mira: { ...EMPTY_STATUS, emotion: "happy", condition: "At the harbor", bonds: { hero: { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 87, affinity: 68, locked: true, completed: ["oath"] } } },
+  }, updatedAt: 2 };
+  const sourceBinding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "world", focusIds: ["hero", "mira"], bookId: null, memoryOverrides: { includedIds: ["promise"], excludedIds: [] }, characterScenes: { world: progress }, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 2 };
+  const promise = { ...entry("promise"), worldId: "world", activation: "manual", content: "The oath must be honored." };
+  const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["entity", mira], ["binding", sourceBinding], ["entry", promise]]);
+  try {
+    let posts = 0; const sent: string[] = [];
+    await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: { biz_data: { chat_messages: [
+      { role: "user", content: "I promised to return." }, { role: "assistant", fragments: [{ type: "THINK", content: "NEVER_FORWARD_REASONING" }, { type: "RESPONSE", content: "Mira waits at the harbor." }] },
+    ] } } }) }));
+    await context.route("**/api/v0/chat/completion", route => { posts++; sent.push(route.request().postDataJSON().prompt); return route.fulfill({ status: posts === 1 ? 503 : 200, contentType: "application/json", body: "{}" }); });
+    await context.addInitScript(() => window.addEventListener("DOMContentLoaded", () => {
+      if (location.pathname !== "/") return;
+      document.querySelector<HTMLFormElement>("form")!.style.cssText = "position:fixed;bottom:20px;left:380px;width:550px;height:80px;";
+      document.querySelector("form")!.addEventListener("submit", event => {
+        event.preventDefault(); const textarea = document.querySelector("textarea")!, prompt = textarea.value; textarea.value = "";
+        void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, chat_session_id: "b" }) }).then(response => {
+          if (!response.ok) { textarea.value = prompt; return; }
+          history.pushState({}, "", "/chat/s/b");
+          document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="first">Continue from the harbor.</article>';
+        });
+      });
+    }, { once: true }));
+    await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="1">I promised to return.</article><article data-role="assistant" data-message-id="2">Mira waits at the harbor.</article>'; });
+    await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
+    await chat.getByRole("button", { name: "Continue in a new chat", exact: true }).click();
+    await expect(chat).toHaveURL("https://chat.deepseek.com/");
+    await expect.poll(() => posts).toBe(1);
+    expect(sent[0]).toContain("Mira waits at the harbor."); expect(sent[0]).toContain("The oath must be honored."); expect(sent[0]).toContain('"trust":87');
+    expect(sent[0]).not.toContain("NEVER_FORWARD_REASONING");
+    let records = await databaseRecords(panel), checkpoint = records.find(r => r.kind === "snapshot").data;
+    expect(checkpoint.appliedAt).toBeUndefined(); expect(checkpoint.characterScene).toEqual(progress);
+    expect(records.find(r => r.kind === "binding" && r.data.chatId === "a").data).toEqual(sourceBinding);
+    expect(records.find(r => r.kind === "binding" && r.data.chatId === "b")).toBeUndefined();
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).not.toHaveValue("");
+    await chat.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/b");
+    await expect.poll(async () => (await databaseRecords(panel)).find(r => r.kind === "snapshot").data.appliedAt).toBeTruthy();
+    records = await databaseRecords(panel); const branch = records.find(r => r.kind === "binding" && r.data.chatId === "b").data;
+    expect(branch.characterScenes.world.states).toEqual(progress.states); expect(branch.characterScenes.world.lastReply).toBeUndefined();
+    expect(branch.memoryOverrides).toEqual(sourceBinding.memoryOverrides); expect(branch.continuationSnapshotId).toBe(checkpoint.id);
+    await chat.reload(); await expect(chat.getByRole("combobox", { name: "World", exact: true }).locator("option:checked")).toHaveText("Harbor");
+    expect((await databaseRecords(panel)).find(r => r.kind === "binding" && r.data.chatId === "b").data.characterScenes.world.states).toEqual(progress.states);
+    expect(sent).toHaveLength(2); expect(sent[1]).toContain("Mira waits at the harbor.");
+  } finally { await context.close(); }
+});
+
+test("local continuation protects a draft typed while the explicit history read is pending", async () => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    let release!: () => void, reading = false; const gate = new Promise<void>(resolve => { release = resolve; });
+    await context.route("**/api/v0/chat/history_messages?**", async route => { reading = true; await gate; await route.fulfill({ contentType: "application/json", body: JSON.stringify({ messages: [{ role: "assistant", content: "The door opened." }] }) }); });
+    await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="1">The door opened.</article>'; });
+    await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
+    await startCommand(panel, { type: "DR_CONTINUE_STORY" }); await expect.poll(() => reading).toBe(true);
+    expect(await command(panel, { type: "DR_CONTINUE_STORY" })).toEqual({ ok: false, error: "busy" });
+    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("MY UNSENT DRAFT"); release();
+    await expect.poll(() => panel.evaluate(() => (window as any).pendingCommand)).toEqual({ ok: false, error: "draft-not-empty" });
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/a"); await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY UNSENT DRAFT");
+    expect((await databaseRecords(panel)).filter(r => r.kind === "snapshot")).toEqual([]);
+  } finally { await context.close(); }
+});
+
+test("local continuation waits for the latest validated relationship update and falls back if history is unavailable", async () => {
+  test.setTimeout(60000);
+  const world = { id: "world", name: "Harbor", description: "An unchanged world", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Leon is 25", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, adultConfirmed: true }, createdAt: 1, updatedAt: 1 };
+  const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, adultConfirmed: true, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), initial: { trust: 30, affinity: 30 } } } };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "world", focusIds: ["hero", "mira"], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["entity", mira], ["binding", binding]]);
+  try {
+    let prompt = "";
+    await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
+    await context.route("**/api/v0/chat/completion", route => { prompt = route.request().postDataJSON().prompt; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await context.addInitScript(() => window.addEventListener("DOMContentLoaded", () => {
+      if (location.pathname !== "/") return;
+      document.querySelector("form")!.addEventListener("submit", event => { event.preventDefault(); }); // Keep the new checkpoint ready; no second model call.
+    }, { once: true }));
+    await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="old">Mira waits.</article>'; });
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, I kept the promise.", chat_session_id: "a" }) }));
+    await expect.poll(() => prompt).toContain("\nSchema: ");
+    const schema = JSON.parse(prompt.match(/\nSchema: (.+)\nRoster:/)![1]!);
+    const quote = "Mira thanked Leon for keeping his promise.";
+    const turn = { request: schema.request, present: ["Leon", "Mira"], partners: ["Mira"], updates: [{ id: "Mira", name: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }], bonds: [{ id: "Mira", hero: "Leon", trust: 3, affinity: 2, reason: "A kept promise", quote }] };
+    await chat.evaluate(({ quote, turn }) => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="1">Mira, I kept the promise.</article><article data-role="assistant" data-message-id="2"><div class="ds-markdown"></div></article>'; document.querySelector(".ds-markdown")!.textContent = quote + "\n<deeprole_characters>" + JSON.stringify(turn) + "</deeprole_characters>"; }, { quote, turn });
+    await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
+    await chat.getByRole("button", { name: "Continue in a new chat", exact: true }).click();
+    await expect(chat).toHaveURL("https://chat.deepseek.com/");
+    const checkpoint = (await databaseRecords(panel)).find(r => r.kind === "snapshot").data;
+    expect(checkpoint.characterScene.states.mira.bonds.hero).toMatchObject({ trust: 33, affinity: 32 });
+    expect(checkpoint.continuation).toMatchObject({ source: "page", partial: true });
+    expect(checkpoint.continuation.turns.at(-1).text).toBe(quote);
+    expect(checkpoint.appliedAt).toBeUndefined();
+    await panel.reload(); await panel.locator(".play-continuation > summary").click();
+    await expect(panel.locator(".snapshot-card")).toContainText("Some messages did not fit.");
+    await expect(panel.getByRole("link", { name: "Open original chat", exact: true })).toHaveAttribute("href", "https://chat.deepseek.com/chat/s/a");
+  } finally { await context.close(); }
+});
+
+test("capacity warnings are nonblocking, snoozed at each level and can be disabled", async () => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ messages: [{ role: "assistant", content: "x".repeat(29_200) }] }) }));
+    let sent = 0; await context.route("**/api/v0/chat/completion", route => { sent++; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+    await panel.evaluate(async () => { const api = (globalThis as any).chrome; await api.storage.local.set({ deeprole_settings: { locale: "en", onboardingComplete: true, chatContextCapacity: 8000 } }); });
+    await chat.reload(); await expect(chat.locator(".dr-chat-meter")).toContainText("From chat history");
+    const send = () => chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Keep going" }) }));
+    await send(); await expect(chat.getByRole("dialog")).toContainText("This chat is nearly full"); expect(sent).toBe(1);
+    await chat.getByRole("button", { name: "Stay in this chat", exact: true }).click();
+    await send(); await expect(chat.getByRole("dialog")).toHaveCount(0); expect(sent).toBe(2);
+    await chat.reload(); await expect(chat.locator(".dr-chat-meter")).toContainText("From chat history");
+    await send(); await expect(chat.getByRole("dialog")).toHaveCount(0);
+    await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ messages: [{ role: "assistant", content: "x".repeat(40_000) }] }) }));
+    await chat.reload(); await expect(chat.locator(".dr-chat-meter")).toContainText("10K");
+    await send(); await expect(chat.getByRole("dialog")).toContainText("Very little room left");
+    await chat.getByRole("button", { name: "Turn off warnings", exact: true }).click();
+    await expect(chat.getByRole("dialog")).toHaveCount(0);
+    expect(await panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.contextWarningsEnabled)).toBe(false);
+    await send(); await expect(chat.getByRole("dialog")).toHaveCount(0); expect(sent).toBe(5);
+  } finally { await context.close(); }
+});
 
 test("simultaneous outgoing drafts each receive their own context", async () => {
   const { context, chat } = await setup([["entry", entry("alpha")], ["entry", entry("beta")]]);

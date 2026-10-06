@@ -1,9 +1,11 @@
+import { Select } from "../shared/Select";
 import { useEffect, useId, useRef, useState, type DragEvent as ReactDragEvent, type ReactNode } from "react";
 import { Check, ChevronDown, Plus, Upload, X } from "lucide-react";
 import { formatRecordCount, menuText } from "../../core/menu-i18n";
 import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
-import { characterDescription, characterText } from "../../core/characters";
+import { characterDescription, characterText, EMPTY_CHARACTER, EMPTY_STATUS, emotionsFor } from "../../core/characters";
+import { EmotionAvailability } from "../shared/EmotionAvailability";
 import { BOOK_COLORS } from "../../core/defaults";
 import { createId } from "../../core/id";
 import { importFileTooLarge } from "../../core/import-limits";
@@ -22,9 +24,14 @@ import "./lore-import.css";
 import { SceneControls } from "../shared/SceneControls";
 import type { LoreNode } from "../../core/lore-map";
 import type { ContextSelection, MemoryOverrides, ActivationMode } from "../../core/types";
+import { relationshipCastRecords } from "../../core/relationship-setup";
+import { RelationshipEditor } from "../shared/Relationships";
+import { AttributeEditor } from "../shared/Attributes";
+import { progressText } from "../../core/progress-i18n";
+import { relationshipText } from "../../core/relationship-i18n";
 
 type T = (key: SceneKey, vars?: Record<string, string | number>) => string;
-export function WorldsView(props: { onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
+export function WorldsView(props: { defaultEmotions?: string[]; onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
   const mt = (key: Parameters<typeof menuText>[1]) => menuText(props.locale, key);
   const x = (key: Parameters<typeof experienceText>[1]) => experienceText(props.locale, key);
@@ -79,7 +86,7 @@ export function WorldsView(props: { onExport: (worldId: string | null) => void; 
     {message && <p className="rp-status" role="status">{message}</p>}
     <WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("createNewWorld")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} />
     {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onClose={() => setImporter(false)} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
-    {editor?.kind === "world" && <WorldEditor key={editor.id ?? "new-world"} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
+    {editor?.kind === "world" && <WorldEditor locale={props.locale} key={editor.id ?? "new-world"} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
     {world && <section className={worldConnected ? "lore-connection is-attached" : "lore-connection"} aria-label={mt("useWorld")}>
       <strong>{worldConnected ? mt("attached") : mt("libraryOnly")}</strong>
       <p>{x(worldConnected ? "connectedHint" : "libraryHint")}</p>
@@ -96,8 +103,10 @@ export function WorldsView(props: { onExport: (worldId: string | null) => void; 
     {view === "map" && !world && props.memoryList}
     {(world || createWorldInMap) && <>
       {mapOpen && <MapWorkspace key={createWorldInMap ? "create-new-world" : "selected-world"} locale={props.locale} worlds={props.worlds} initialWorldId={createWorldInMap ? null : world?.id ?? null} startInCreate={createWorldInMap} activeWorldId={props.connected ? props.activeWorldId : null} onSelect={props.onWorld} onClose={closeMap} onCreate={async (draft) => {
-        const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...draft, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
-        await repository.putIfUnchanged("world", created, null); await props.onChanged(); return created;
+        const { relationshipCast, ...profileDraft } = draft;
+        const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...profileDraft, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
+        const cast = relationshipCastRecords(created.id, relationshipCast, props.locale, now);
+        await repository.commitChecked([{ kind: "world", id: created.id, data: created }, ...cast], [], [{ kind: "world", id: created.id, data: null }, ...cast.map(record => ({ kind: record.kind, id: record.id, data: null }))]); await props.onChanged(); return created;
       }} render={(world, pane) => <LoreMap embedded activePane={pane.active} onRegister={pane.onRegister} locale={props.locale} world={world} books={props.books.filter((b) => b.worldId === world.id)} entries={props.entries.filter((e) => e.bookId ? props.books.find((b) => b.id === e.bookId)?.worldId === world.id : e.worldId === world.id)} entities={props.entities.filter((e) => e.worldId === world.id)} templates={props.templates.filter((v) => v.worldId === world.id)} selection={props.activeWorldId === world.id ? props.selection : undefined} overrides={props.activeWorldId === world.id ? props.overrides : undefined} onMemoryUse={props.connected && props.activeWorldId === world.id ? props.onMemoryUse : undefined} onActivation={async (entry, activation: ActivationMode, history) => { await changeMapActivations(world.id, [entry], activation, repository, history); await props.onChanged(); }} onBranchActivation={async (entries, activation, history, branchId) => { await changeMapActivations(world.id, entries, activation, repository, history, branchId); await props.onChanged(); }} confirmDeletions={props.confirmDeletions} onClose={pane.onClose} onEdit={(node) => pane.onExit(() => editNode(node, world.id))}
         sceneControls={props.connected && props.scene.worldId === world.id ? <fieldset className="lm-scene-controls" disabled={sceneBusy}><SceneControls worldLocked compact overlay locale={props.locale} worlds={props.worlds} entities={props.entities} books={props.books} scene={props.scene} onChange={async (next) => { setSceneBusy(true); try { return await props.onScene(next); } finally { setSceneBusy(false); } }} /></fieldset> : undefined}
         connectedToChat={props.connected && props.activeWorldId === world.id} canConnect={props.connected && !sceneBusy} onConnect={async () => { setSceneBusy(true); try { return await props.onUseWorld(world.id); } finally { setSceneBusy(false); } }}
@@ -118,10 +127,10 @@ export function WorldsView(props: { onExport: (worldId: string | null) => void; 
       <section className="rp-card"><header><h2>{t("books")}</h2></header>
         <p className="rp-hint">{uiText(props.locale, "booksHint")}</p>
         {props.books.filter((b) => b.worldId === world.id).map((book) => <label className="rp-check" key={book.id}><input type="checkbox" checked={book.active} disabled={busy} onChange={() => void act(() => repository.putIfUnchanged("book", { ...book, active: !book.active, updatedAt: Date.now() }, book))} />{book.name}</label>)}
-        <details><summary>{t("advanced")}</summary><label className="field-label">{t("moveBook")}<select aria-label={t("moveBook")} value="" disabled={busy} onChange={(e) => { const book = props.books.find((b) => b.id === e.target.value); if (book) void act(() => assignBookWorld(book, world.id)); }}><option value="">{t("chooseBook")}</option>{props.books.filter((b) => !b.worldId).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label></details>
+        <details><summary>{t("advanced")}</summary><label className="field-label">{t("moveBook")}<Select aria-label={t("moveBook")} value="" disabled={busy} onChange={(e) => { const book = props.books.find((b) => b.id === e.target.value); if (book) void act(() => assignBookWorld(book, world.id)); }}><option value="">{t("chooseBook")}</option>{props.books.filter((b) => !b.worldId).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label></details>
       </section>
       <section className="rp-card"><header><h2>{t("entities")}</h2></header><HelpButton className="button primary small" onClick={() => setEditor({ kind: "entity" })}>{t("newEntity")}</HelpButton>
-        {editor?.kind === "entity" && <EntityEditor locale={props.locale} key={editor.id ?? "new-entity"} worldId={world.id} entity={entities.find((e) => e.id === editor.id)} entities={entities} entries={entries} t={t} busy={busy} onSave={saveEntity} onCancel={() => setEditor(null)} />}
+        {editor?.kind === "entity" && <EntityEditor emotions={emotionsFor(world.characterEmotions ?? props.defaultEmotions)} locale={props.locale} key={editor.id ?? "new-entity"} worldId={world.id} entity={entities.find((e) => e.id === editor.id)} entities={entities} entries={entries} t={t} busy={busy} onSave={saveEntity} onCancel={() => setEditor(null)} />}
         {entities.map((entity) => <article key={entity.id} className="rp-item"><small>{t(entity.kind)}</small><h3>{entity.name}</h3><p>{characterDescription(entity, props.locale)}</p><small>{t("linkedMemory")}: {entries.filter((e) => e.entityIds?.includes(entity.id)).length}</small><div className="button-row">
           <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "entity", id: entity.id })}>{t("edit")}</HelpButton>
           <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(() => duplicateEntity(entity, t("copyName", { name: entity.name })))}>{t("duplicate")}</HelpButton>
@@ -198,7 +207,7 @@ function WorldLibraryPicker(props: { label: string; worlds: WorldProfile[]; sele
 function Field(props: { name: string; help?: string; children: ReactNode }) { return <div className="field-label"><span className="help-field-title">{props.name}</span>{props.children}{props.help && <small className="rp-hint">{props.help}</small>}</div>; }
 function Actions(props: { t: T; onCancel: () => void; busy: boolean; disabled?: boolean }) { return <div className="button-row"><HelpButton type="submit" className="button primary" disabled={props.busy || props.disabled}>{props.t("save")}</HelpButton><HelpButton type="button" className="button secondary" onClick={props.onCancel}>{props.t("cancel")}</HelpButton></div>; }
 
-function WorldEditor(props: { world?: WorldProfile; t: T; busy: boolean; onSave: (w: WorldProfile, expected: WorldProfile | null) => Promise<void>; onCancel: () => void }) {
+function WorldEditor(props: { locale: Locale; world?: WorldProfile; t: T; busy: boolean; onSave: (w: WorldProfile, expected: WorldProfile | null) => Promise<void>; onCancel: () => void }) {
   const [base] = useState(props.world ?? null);
   const [useDescription, setUseDescription] = useState(props.world?.useDescriptionInContext ?? !props.world);
   const [name, setName] = useState(props.world?.name ?? "");
@@ -206,19 +215,21 @@ function WorldEditor(props: { world?: WorldProfile; t: T; busy: boolean; onSave:
   const [color, setColor] = useState(props.world?.color ?? BOOK_COLORS[0]!);
   const [budget, setBudget] = useState(props.world?.contextBudget ?? 2000);
   const [threshold, setThreshold] = useState(props.world?.relevanceThreshold ?? 6);
+  const [relationshipsEnabled, setRelationshipsEnabled] = useState(props.world?.relationshipsEnabled !== false);
   const t = props.t;
-  return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, id: base?.id ?? createId("world"), name: name.trim(), description, useDescriptionInContext: useDescription, color, contextBudget: budget, relevanceThreshold: threshold, createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, base); }}>
+  return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, id: base?.id ?? createId("world"), name: name.trim(), description, useDescriptionInContext: useDescription, color, contextBudget: budget, relevanceThreshold: threshold, relationshipsEnabled, createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, base); }}>
     <Field name={t("name")} help={t("worldHint")}><input aria-label={t("name")} className="input" required value={name} onChange={(e) => setName(e.target.value)} autoFocus /></Field>
     <Field name={t("description")}><textarea aria-label={t("description")} className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
     <label className="rp-check"><input type="checkbox" aria-label={t("useDescription")} checked={useDescription} onChange={(e) => setUseDescription(e.target.checked)} />{t("useDescription")}</label>
+    <label className="dr-bond-toggle"><span>{progressText(props.locale, "worldTracking")}</span><input type="checkbox" role="switch" checked={relationshipsEnabled} onChange={event => setRelationshipsEnabled(event.target.checked)} /></label>
     <div className="color-picker">{BOOK_COLORS.map((c) => <button type="button" key={c} aria-label={c} aria-pressed={c === color} style={{ background: c }} onClick={() => setColor(c)} />)}</div>
     <details><summary>{t("advanced")}</summary><Field name={t("budget")} help={t("settingsHint")}><input aria-label={t("budget")} type="number" className="input" required min={500} max={16000} step={250} value={budget} onChange={(e) => setBudget(Number(e.target.value))} /></Field>
-    <Field name={t("sensitivity")}><select aria-label={t("sensitivity")} value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>{[4,6,9].map((v, i) => <option value={v} key={v}>{t((["sensitivityWide", "sensitivityBalanced", "sensitivityPrecise"] as const)[i]!)}</option>)}{threshold === 8 && <option value={8}>{t("sensitivityPrecise")}</option>}</select></Field>
+    <Field name={t("sensitivity")}><Select aria-label={t("sensitivity")} value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>{[4,6,9].map((v, i) => <option value={v} key={v}>{t((["sensitivityWide", "sensitivityBalanced", "sensitivityPrecise"] as const)[i]!)}</option>)}{threshold === 8 && <option value={8}>{t("sensitivityPrecise")}</option>}</Select></Field>
     </details><Actions t={t} busy={props.busy} onCancel={props.onCancel} disabled={!name.trim()} />
   </form>;
 }
 
-function EntityEditor(props: { locale: Locale; worldId: string; entity?: SceneEntity; entities: SceneEntity[]; entries: MemoryEntry[]; t: T; busy: boolean; onSave: (v: SceneEntity, links: string[], expected: SceneEntity | null, baseEntries: MemoryEntry[]) => Promise<void>; onCancel: () => void }) {
+function EntityEditor(props: { locale: Locale; emotions: string[]; worldId: string; entity?: SceneEntity; entities: SceneEntity[]; entries: MemoryEntry[]; t: T; busy: boolean; onSave: (v: SceneEntity, links: string[], expected: SceneEntity | null, baseEntries: MemoryEntry[]) => Promise<void>; onCancel: () => void }) {
   const [sheet, setSheet] = useState(props.entity?.characterSheet);
   const [base] = useState(props.entity ?? null); const [baseEntries] = useState(props.entries);
   const [useDescription, setUseDescription] = useState(props.entity?.useDescriptionInContext ?? !props.entity);
@@ -232,9 +243,12 @@ function EntityEditor(props: { locale: Locale; worldId: string; entity?: SceneEn
   const t = props.t;
   return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, characterSheet: sheet, id: base?.id ?? createId("entity"), worldId: props.worldId, name: name.trim(), description, useDescriptionInContext: useDescription, kind, aliases: aliases.split(",").map((s) => s.trim()).filter(Boolean), memberIds: kind === "group" ? members : [], createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, links, base, baseEntries); }}>
     <Field name={t("name")} help={t("entityHint")}><input className="input" aria-label={t("name")} required value={name} onChange={(e) => setName(e.target.value)} autoFocus /></Field>
-    <select aria-label={t("entities")} value={kind} onChange={(e) => setKind(e.target.value as SceneEntity["kind"])}>{(["character","location","group"] as const).map((v) => <option key={v} value={v}>{t(v)}</option>)}</select>
+    <Select aria-label={t("entities")} value={kind} onChange={(e) => setKind(e.target.value as SceneEntity["kind"])}>{(["character","location","group"] as const).map((v) => <option key={v} value={v}>{t(v)}</option>)}</Select>
     <Field name={t("description")} help={t("entityHint")}><textarea className="textarea" aria-label={t("description")} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
     {sheet && kind === "character" && (["appearance", "personality", "goals", "background"] as const).map(key => <Field key={key} name={characterText(props.locale, key)}><textarea className="textarea" aria-label={characterText(props.locale, key)} maxLength={1200} value={sheet[key]} onChange={e => setSheet({ ...sheet, [key]: e.target.value })} /></Field>)}
+    {kind === "character" && <EmotionAvailability locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} emotions={props.emotions} disabled={props.busy} onChange={setSheet} />}
+    {kind === "character" && <details className="dr-bond-history"><summary>{relationshipText(props.locale, "title")}</summary><RelationshipEditor profileOnly locale={props.locale} entity={props.entity ?? null} sheet={sheet ?? EMPTY_CHARACTER} state={EMPTY_STATUS} disabled={props.busy} onSheet={setSheet} onState={() => undefined} /></details>}
+    {kind === "character" && <details className="dr-bond-history" onInvalidCapture={event => { event.currentTarget.open = true; }}><summary>{progressText(props.locale, "title")}</summary><AttributeEditor profileOnly locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} state={EMPTY_STATUS} disabled={props.busy} onSheet={setSheet} onState={() => undefined} /></details>}
     <label className="rp-check"><input type="checkbox" aria-label={t("useDescription")} checked={useDescription} onChange={(e) => setUseDescription(e.target.checked)} />{t("useDescription")}</label>
     <Field name={t("aliases")} help={t("aliasesHint")}><input className="input" aria-label={t("aliases")} value={aliases} onChange={(e) => setAliases(e.target.value)} /></Field>
     {kind === "group" && <Field name={t("members")} help={t("sceneHint")}>{props.entities.filter((v) => v.id !== props.entity?.id && v.kind !== "group").map((v) => <label className="rp-check" key={v.id}><input type="checkbox" checked={members.includes(v.id)} onChange={(e) => setMembers(toggle(members, v.id, e.target.checked))} />{v.name}</label>)}</Field>}
@@ -364,8 +378,8 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       <p className="rp-hint rp-import-character-hint">{t("jsonPreservation")} {t("loreCardsHint")}</p>
       {!!lore?.unsupportedFields.length && <div className="rp-status" role="note"><p>{t("unsupportedImport", { fields: lore.unsupportedFields.join(", ") })}</p><label className="rp-check"><input type="checkbox" checked={acceptUnsupported} onChange={(e) => setAcceptUnsupported(e.target.checked)} />{t("acceptUnsupported")}</label></div>}
       <Field name={t("name")}><input aria-label={t("name")} className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-      <details><summary>{t("advanced")}</summary><Field name={t("destination")} help={t("worldHint")}><select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
-      {lore?.format === "bds" && <><p>{t("alwaysMapping")}</p><Field name={t("mapping")} help={t("mappingHint")}><select aria-label={t("mapping")} value={mode} onChange={(e) => setMode(e.target.value as "smart" | "manual")}><option value="smart">{t("smart")}</option><option value="manual">{t("manual")}</option></select></Field></>}</details>
+      <details><summary>{t("advanced")}</summary><Field name={t("destination")} help={t("worldHint")}><Select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</Select></Field>
+      {lore?.format === "bds" && <><p>{t("alwaysMapping")}</p><Field name={t("mapping")} help={t("mappingHint")}><Select aria-label={t("mapping")} value={mode} onChange={(e) => setMode(e.target.value as "smart" | "manual")}><option value="smart">{t("smart")}</option><option value="manual">{t("manual")}</option></Select></Field></>}</details>
       <LoreImportPreview locale={props.locale} items={items} />
     </>}
     {error && <p role="alert">{error}</p>}

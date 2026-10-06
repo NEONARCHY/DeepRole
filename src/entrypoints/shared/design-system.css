@@ -2,6 +2,29 @@
 @import "./memory-guide.css";
 @import "./experience.css";
 @import "./design-tokens.css";
+@import "./select.css";
+@import "./design-effects.css";
+/* Scoped to DeepRole only, including content-script shadow roots and dialogs. */
+:is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu), :is(.app-shell,.dr-root,.dr-loremap) * {
+  scrollbar-width:thin; scrollbar-color:var(--dr-raised) transparent; color-scheme:dark;
+}
+:is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu)::-webkit-scrollbar,
+:is(.app-shell,.dr-root,.dr-loremap) *::-webkit-scrollbar { width:6px; height:6px; }
+:is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu)::-webkit-scrollbar-track,
+:is(.app-shell,.dr-root,.dr-loremap) *::-webkit-scrollbar-track { background:transparent; }
+:is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu)::-webkit-scrollbar-thumb,
+:is(.app-shell,.dr-root,.dr-loremap) *::-webkit-scrollbar-thumb { background:var(--dr-raised); border-radius:999px; }
+:is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu)::-webkit-scrollbar-button,
+:is(.app-shell,.dr-root,.dr-loremap) *::-webkit-scrollbar-button { display:none; }
+.dr-panel-width-control{display:grid;gap:10px;min-width:0}
+.dr-panel-width-control>label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:600}
+.dr-panel-width-control output{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--dr-muted)}
+.dr-panel-width-control input[type=range]{width:100%;min-width:0;accent-color:var(--dr-primary);cursor:ew-resize;margin:0;min-height:32px;padding:0;background:transparent}
+.dr-panel-width-control>button{justify-self:start}
+.dr-panel-width-control>p{margin:0;color:var(--dr-muted);font-size:11px;line-height:1.5}
+.dr-panel-width-control>p[role=alert]{color:var(--dr-danger)}
+.app-shell .dr-settings-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dr-settings-nav>button{flex:1 1 42%;min-width:0}
 /* Shared by extension pages and the isolated DeepSeek widget. Map geometry is separate. */
 .app-shell .app-main { padding: var(--dr-space-6) var(--dr-space-4); }
 .app-shell .view-stack { gap: var(--dr-space-4); }
@@ -12,10 +35,12 @@
 .app-shell .settings-card, .app-shell .memory-card, .app-shell .rp-card, .app-shell .books-block,
 .app-shell .snapshot-card, .app-shell .tutorial-card { border-radius: var(--dr-radius); padding: var(--dr-space-4); background: var(--dr-surface); }
 .app-shell .button-row, .app-shell .button-grid, .app-shell .quick-actions { gap: var(--dr-space-2); }
-.app-shell .button, .dr-loremap .button { min-height: 40px; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.35; gap: 8px; white-space: normal; }
-.app-shell .button.primary, .dr-loremap .button.primary { background: var(--dr-action); border: 1px solid var(--dr-action); color: var(--dr-on-action); box-shadow: none; }
-.app-shell .button.primary:hover:not(:disabled), .dr-loremap .button.primary:hover:not(:disabled) { background: var(--dr-action-hover); border-color: var(--dr-action-hover); }
-.app-shell .button.secondary, .dr-loremap .button.secondary { background: var(--dr-raised); border: 1px solid var(--dr-border); color: var(--dr-text); box-shadow: none; }
+.app-shell .button, .dr-loremap .button, .dr-root .button { min-height: 40px; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.35; gap: 8px; white-space: normal; }
+.dr-root .button { display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+.dr-root .button:disabled { opacity:.5; cursor:default; }
+.app-shell .button.primary, .dr-loremap .button.primary, .dr-root .button.primary { background: var(--dr-action); border: 1px solid var(--dr-action); color: var(--dr-on-action); box-shadow: none; }
+.app-shell .button.primary:hover:not(:disabled), .dr-loremap .button.primary:hover:not(:disabled), .dr-root .button.primary:hover:not(:disabled) { background: var(--dr-action-hover); border-color: var(--dr-action-hover); }
+.app-shell .button.secondary, .dr-loremap .button.secondary, .dr-root .button.secondary { background: var(--dr-raised); border: 1px solid var(--dr-border); color: var(--dr-text); box-shadow: none; }
 .app-shell .button.danger-button, .app-shell .button.danger, .dr-loremap .button.danger { background: var(--dr-panel); border: 1px solid var(--dr-danger); color: var(--dr-danger); box-shadow: none; }
 .app-shell .icon-button, .dr-loremap .lm-tools > button { min-width: 36px; min-height: 36px; border-radius: 10px; flex-shrink: 0; }
 .app-shell .icon-button.accent { background: var(--dr-action); border-color: var(--dr-action); color: var(--dr-on-action); }
@@ -77,6 +102,16 @@
 .app-shell .toggle-row { gap: 12px; font-size: 13px; }
 .app-shell :is(button, input, select, textarea):focus-visible, .dr-root :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 3px; }
 .app-shell .dr-memory-use, .dr-loremap .dr-memory-use { padding-top: 12px; margin-top: 12px; }
+/* One quiet switch language throughout DeepRole; native checkbox semantics stay intact. */
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"] { appearance:none; position:relative; flex:none; box-sizing:border-box; width:38px; height:22px; min-width:38px; margin:0; padding:0; border:1px solid var(--dr-border-strong); border-radius:999px; background:var(--dr-raised); cursor:pointer; vertical-align:middle; transition:background-color .18s ease,border-color .18s ease; }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]::before { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--dr-text); box-shadow:0 1px 4px rgba(0,0,0,.34); transition:transform .18s ease; }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked { border-color:var(--dr-action-hover); background:var(--dr-action-hover); }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked::before { transform:translateX(16px); }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked::before { background:var(--dr-on-action); }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:disabled { opacity:.5; cursor:not-allowed; }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
+.app-shell .lm-person-entries input[type="checkbox"] { width:38px; height:22px; padding:0; }
+@media (prefers-reduced-motion:reduce) { :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"], :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]::before { transition:none; } }
 .dr-memory-use .dr-use-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; font-size: 12px; }
 .dr-memory-use .dr-chat-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 .dr-memory-use .dr-chat-choices button { min-height: 36px; padding: 8px 4px; background: var(--dr-panel); color: var(--dr-muted); border: 1px solid var(--dr-border); border-radius: 8px; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; cursor: pointer; }

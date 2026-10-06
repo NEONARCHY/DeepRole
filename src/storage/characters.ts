@@ -1,12 +1,17 @@
 import { createId } from "../core/id";
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { characterRevision, characterTurnKey, characterInterlocutors, DEFAULT_EMOTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
-import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity } from "../core/types";
+import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity, WorldProfile } from "../core/types";
+import { emotionsFor, validEmotions } from "../core/characters";
 import { repository, type DeepRoleRepository } from "./repository";
 import { advancePortraitCycles, portraitVariations } from "../core/portrait-variations";
 import { characterEditBaseline, mergeCharacterEdit, type CharacterEditBaseline } from "../core/character-edit";
+import { advanceRelationship, recordManualBonds, relationshipNarrative, relationshipState, validRelationshipPatches } from "../core/relationships";
+import { EMPTY_STATUS, narrativeCharacterStatus } from "../core/characters";
+import { advanceAttributes, attributeState, recordManualAttributes, validAttributePatches } from "../core/attributes";
+import { characterStatusForSheet, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
 
-export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string }
+export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string }
 export interface CharacterEdit extends CharacterScope {
   entityId: string | null; name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean;
   original?: CharacterEditBaseline;
@@ -24,6 +29,20 @@ function current(all: DataRecord[], scope: CharacterScope, checkRevision = true)
 }
 const record = (kind: "entity" | "binding", data: SceneEntity | ChatBinding): DataRecord => ({ kind, id: data.id, data });
 
+/** Additive and atomic: never rewrite existing emotion keys or portrait assignments. */
+export async function addCharacterEmotion(scope: CharacterScope, name: string, fallback: string[] = DEFAULT_EMOTIONS, repo: DeepRoleRepository = repository): Promise<string[]> {
+  if (typeof name !== "string" || name !== name.trim()) throw new Error("character-invalid");
+  return repo.updateRecords(all => {
+    current(all, scope, false);
+    const world = all.find(row => row.kind === "world" && row.id === scope.worldId)!.data as WorldProfile;
+    const existing = emotionsFor(world.characterEmotions ?? fallback);
+    if (existing.includes(name)) return { records: [], removed: [], result: existing };
+    const next = [...existing, name];
+    if (!validEmotions(next)) throw new Error("character-invalid");
+    return { records: [{ kind: "world", id: world.id, data: { ...world, characterEmotions: next, updatedAt: Date.now() } }], removed: [], result: next };
+  });
+}
+
 export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository): Promise<CharacterSaveResult> {
   if (!edit.name.trim() || edit.name.length > 80 || !validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
   if ((edit.interlocutor !== undefined && typeof edit.interlocutor !== "boolean") || (edit.interlocutor === true && (!edit.present || edit.sheet.protagonist))) throw new Error("character-invalid");
@@ -37,7 +56,10 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     // snapshot to merge disjoint fields atomically under the same library lock.
     if (original) edit = { ...edit, ...mergeCharacterEdit(original, edit, characterEditBaseline(before ?? null, entities, scene)) };
     if (!validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
+    edit = { ...edit, state: characterStatusForSheet(edit.sheet, edit.state) };
     const now = Date.now();
+    edit = { ...edit, state: { ...edit.state, attributes: recordManualAttributes(edit.sheet.attributes ?? [], scene?.states[before?.id ?? ""]?.attributes, edit.state.attributes, now) } };
+    edit = { ...edit, state: { ...edit.state, ...(edit.state.bonds || scene?.states[before?.id ?? ""]?.bonds ? { bonds: recordManualBonds(scene?.states[before?.id ?? ""]?.bonds, edit.state.bonds, now, before?.characterSheet?.relationships?.initial ?? edit.sheet.relationships?.initial) } : {}) } };
     const entity: SceneEntity = { ...(before ?? { id: createId("entity"), kind: "character", worldId: edit.worldId, description: "", aliases: [], memberIds: [], createdAt: now }), name: edit.name.trim(), characterSheet: structuredClone(edit.sheet), updatedAt: Math.max(now, (before?.updatedAt ?? 0) + 1) };
     const changes: DataRecord[] = [record("entity", entity)];
     // Only one protagonist per world. Do not touch any original description.
@@ -67,11 +89,11 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
   });
 }
 
-export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, emotions: string[] = DEFAULT_EMOTIONS, repo: DeepRoleRepository = repository, namedIds = false): Promise<void> {
+export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, emotions: string[] = DEFAULT_EMOTIONS, repo: DeepRoleRepository = repository, namedIds = false, relationshipsEnabled = false): Promise<void> {
   if (turn.world !== scope.worldId || turn.chat !== scope.chatId || turn.base !== scope.base) throw new Error("character-scope");
   await repo.updateRecords(all => {
     const { binding, entities, scene } = current(all, scope);
-    const now = Date.now(); const changes: DataRecord[] = []; const mapping = new Map(entities.map(e => [e.id, e.id]));
+    const now = Date.now(); const revision = createId("rev"); const changes: DataRecord[] = []; const mapping = new Map(entities.map(e => [e.id, e.id]));
     const names = new Map<string, string | null>();
     for (const entity of entities) for (const name of [entity.name, ...entity.aliases]) {
       const key = name.trim().toLocaleLowerCase();
@@ -87,7 +109,7 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
     const updatedIds = new Set<string>();
     const states = { ...scene?.states };
     for (const update of turn.updates) {
-      if (!validCharacterStatus(update.state) || !emotions.includes(update.state.emotion)) throw new Error("character-invalid");
+      if (!validCharacterStatus(update.state)) throw new Error("character-invalid");
       let id = resolve(update.id);
       if (namedIds && !id && update.name) id = resolveName(update.name);
       const newName = update.id.startsWith("new:") ? (update.name ?? update.id.slice(4)).trim() : "";
@@ -108,7 +130,10 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
       if (updatedIds.has(id)) throw new Error("character-unknown");
       updatedIds.add(id);
       mapping.set(update.id, id);
-      states[id] = structuredClone(update.state);
+      const sheet = entities.find(person => person.id === id)?.characterSheet ?? (changes.find(row => row.id === id)?.data as SceneEntity | undefined)?.characterSheet;
+      if (!emotions.includes(update.state.emotion) && isCharacterEmotionAllowed(sheet, update.state.emotion)) throw new Error("character-invalid");
+      // Model output may never assign local numeric states or overwrite their history.
+      states[id] = { ...structuredClone(narrativeCharacterStatus(update.state)), emotion: resolveCharacterEmotion(sheet, update.state.emotion, states[id]?.emotion, emotions), ...(states[id]?.bonds ? { bonds: structuredClone(states[id]!.bonds) } : {}), ...(states[id]?.attributes ? { attributes: structuredClone(states[id]!.attributes) } : {}) };
     }
     const presentIds = turn.present.map(resolve);
     if (presentIds.some(id => !id) || new Set(presentIds).size !== presentIds.length) throw new Error("character-unknown");
@@ -116,8 +141,47 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
     if (turn.partner && (!partnerId || !presentIds.includes(partnerId))) throw new Error("character-unknown");
     const partnerIds = turn.partners?.map(resolve);
     const allPeople = [...entities, ...changes.map(r => r.data as SceneEntity)];
+    let relationshipNotice: "unverified" | "limited" | undefined;
+    let rejected = 0; let changed = false;
+    const hero = allPeople.find(e => e.characterSheet?.protagonist);
+    const world = all.find(r => r.kind === "world" && r.id === scope.worldId)?.data as WorldProfile | undefined;
+    if (relationshipsEnabled && world?.relationshipsEnabled !== false && turn.bonds?.length) {
+      const narrative = typeof scope.replyText === "string" && scope.replyText.length <= 250_000 ? relationshipNarrative(scope.replyText) : "";
+      const patchesValid = validRelationshipPatches(turn.bonds);
+      const touched = new Set<string>();
+      for (const patch of patchesValid ? turn.bonds : []) {
+        const id = resolve(patch.id); const heroId = resolve(patch.hero);
+        const person = allPeople.find(e => e.id === id); const policy = person?.characterSheet?.relationships;
+        if (!id || !hero || heroId !== hero.id || id === hero.id || !policy?.enabled || touched.has(id)
+          || ![...presentIds, ...(scene?.presentIds ?? [])].includes(id)) { relationshipNotice = "limited"; rejected++; continue; }
+        touched.add(id);
+        const previous = relationshipState(policy, states[id]?.bonds?.[hero.id]);
+        const next = advanceRelationship(policy, previous, patch, narrative, now, revision);
+        if (!next) { relationshipNotice = "unverified"; rejected++; continue; }
+        if (next === previous) continue;
+        states[id] = { ...(states[id] ?? EMPTY_STATUS), bonds: { ...states[id]?.bonds, [hero.id]: next } };
+        changed = true;
+      }
+      if (!patchesValid) { relationshipNotice = "unverified"; rejected++; }
+    }
+    if (relationshipsEnabled && world?.relationshipsEnabled !== false && turn.attributes?.length) {
+      const narrative = typeof scope.replyText === "string" && scope.replyText.length <= 250_000 ? relationshipNarrative(scope.replyText) : "";
+      const valid = validAttributePatches(turn.attributes); const touched = new Set<string>();
+      for (const patch of valid ? turn.attributes : []) {
+        const id = resolve(patch.id); const person = allPeople.find(e => e.id === id); const definitions = person?.characterSheet?.attributes;
+        if (!id || !definitions?.length || touched.has(id) || ![...presentIds, ...(scene?.presentIds ?? [])].includes(id)) { relationshipNotice = "limited"; rejected++; continue; }
+        touched.add(id);
+        const previous = attributeState(definitions, states[id]?.attributes);
+        const next = advanceAttributes(definitions, previous, patch, narrative, now, revision);
+        if (!next) { relationshipNotice = "unverified"; rejected++; continue; }
+        if (next === previous) continue;
+        states[id] = { ...(states[id] ?? EMPTY_STATUS), attributes: next }; changed = true;
+      }
+      if (!valid) { relationshipNotice = "unverified"; rejected++; }
+    }
     if (partnerIds && (partnerIds.some(id => !id || !presentIds.includes(id) || allPeople.find(e => e.id === id)?.characterSheet?.protagonist) || new Set(partnerIds).size !== partnerIds.length)) throw new Error("character-unknown");
-    const nextScene = { revision: createId("rev"), lastReply: characterTurnKey(turn), partnerId: partnerIds ? partnerIds[0] ?? null : partnerId, ...(partnerIds ? { partnerIds: partnerIds as string[] } : {}), presentIds: presentIds as string[], states, updatedAt: now };
+    const tracking = relationshipsEnabled && world?.relationshipsEnabled !== false && allPeople.some(e => (e.characterSheet?.attributes?.length || hero && e.id !== hero.id && e.characterSheet?.relationships?.enabled) && [...presentIds, ...(scene?.presentIds ?? [])].includes(e.id));
+    const nextScene = { revision, lastReply: characterTurnKey(turn), relationshipNotice, ...(tracking ? { progress: { status: rejected ? "partial" as const : changed ? "changed" as const : "unchanged" as const, rejected, turn: revision } } : {}), partnerId: partnerIds ? partnerIds[0] ?? null : partnerId, ...(partnerIds ? { partnerIds: partnerIds as string[] } : {}), presentIds: presentIds as string[], states, updatedAt: now };
     changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { ...nextScene, portraitCycles: advancePortraitCycles(allPeople, nextScene, scene) } }, updatedAt: now }));
     return { records: changes, removed: [], result: undefined };
   });

@@ -1,0 +1,40 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { immersionText } from "../../src/core/immersion-i18n";
+import { relationshipText } from "../../src/core/relationship-i18n";
+import { progressText } from "../../src/core/progress-i18n";
+
+for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) test(`stage behavior, achievements and current meaning ${locale} ${width}`, async ({ page }, info) => {
+  const t = (key: Parameters<typeof immersionText>[1]) => immersionText(locale, key); const r = (key: Parameters<typeof relationshipText>[1]) => relationshipText(locale, key);
+  await page.setViewportSize({ width, height: 900 }); await page.goto(`/tests/fixtures/relationships.html?locale=${locale}`);
+  await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog"); const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }); const close = dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).last();
+  await dialog.getByRole("tab", { name: locale === "ru" ? "Отношения" : "Relationships", exact: true }).click(); await dialog.locator(".dr-stage-behavior summary").click();
+  await dialog.getByLabel(`${t("behavior")} · ${r("trusting")}`, { exact: true }).fill("Shares plans without accepting pressure."); await dialog.getByLabel(`${t("behavior")} · ${r("close")}`, { exact: true }).fill("Trusts Leon with private concerns.");
+  await dialog.getByRole("switch", { name: r("romance"), exact: true }).check(); await dialog.getByRole("button", { name: r("addEvent"), exact: true }).click(); await dialog.getByLabel(`${r("eventLabel")} 1`, { exact: true }).fill("Keep a promise"); await dialog.getByRole("switch", { name: t("required"), exact: true }).first().check();
+  await dialog.getByRole("button", { name: r("addEvent"), exact: true }).click(); await dialog.getByLabel(`${r("eventLabel")} 2`, { exact: true }).fill("Visit the harbor"); await expect(dialog.getByRole("switch", { name: t("required"), exact: true }).last()).not.toBeChecked(); await dialog.getByRole("switch", { name: r("completed"), exact: true }).last().check(); await expect(dialog).toHaveJSProperty("scrollWidth", await dialog.evaluate(el => el.clientWidth)); expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]); await page.screenshot({ path: info.outputPath(`behavior-editor-${locale}-${width}.png`) }); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible(); await close.click();
+  const outlook = page.locator(".dr-progress-outlook"); await outlook.locator("summary").first().click(); await expect(outlook).toContainText("Shares plans without accepting pressure."); await expect(outlook).toContainText(t("trustMissing")); await expect(outlook).toContainText(t("affinityMissing")); await expect(outlook).toContainText(`${t("eventsMissing")}: Keep a promise`); await expect(outlook).toContainText("✓ Visit the harbor");
+  const eventId = await page.evaluate(async () => (await (window as any).records()).find((row: any) => row.id === "mira").data.characterSheet.relationships.milestones[0].id);
+  await page.evaluate(id => (window as any).playEvent({ milestones: [id] }), eventId); await expect(outlook).toContainText("✓ Keep a promise"); await expect(outlook).not.toContainText(t("eventsMissing"));
+  await page.locator(".dr-character-row").filter({ hasText: "Leon" }).click(); await dialog.getByRole("tab", { name: locale === "ru" ? "В сцене" : "In scene", exact: true }).click(); await dialog.getByRole("button", { name: progressText(locale, "starter"), exact: true }).click();
+  const attributes = dialog.locator(".dr-attribute-editor"); const label = locale === "ru" ? "Энергия" : "Energy";
+  await attributes.locator(".dr-attribute-bounds summary").first().click(); await attributes.getByLabel(`${t("highAt")} · ${label}`, { exact: true }).fill("74"); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible(); await close.click();
+  await page.evaluate(() => (window as any).playProgressEvent()); const energy = outlook.locator(".dr-outlook-attributes li").filter({ hasText: label }); await expect(energy).toContainText(`73 · ${t("middle")}`);
+  await page.evaluate(() => (window as any).playProgressEvent("Leon slept through the night and woke rested at the harbor.")); await expect(energy).toContainText(`76 · ${t("high")}`);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+  expect((await new AxeBuilder({ page }).include(".dr-characters").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]); await page.screenshot({ path: info.outputPath(`current-state-${locale}-${width}.png`) });
+  const pack = await page.evaluate(() => (window as any).exportWorld()); expect(pack.records.find((row: any) => row.id === "hero").data.characterSheet.attributes[0].highAt).toBe(74); expect(pack.records.find((row: any) => row.id === "mira").data.characterSheet.relationships.milestones[1].required).toBe(false);
+});
+
+for (const locale of ["ru", "en"] as const) test(`invalid boundaries reveal the field and preserve the draft ${locale}`, async ({ page }) => {
+  const t = (key: Parameters<typeof immersionText>[1]) => immersionText(locale, key); await page.setViewportSize({ width: 360, height: 900 }); await page.goto(`/tests/fixtures/relationships.html?locale=${locale}`);
+  await page.locator(".dr-character-row").filter({ hasText: "Leon" }).click(); const dialog = page.getByRole("dialog"); await dialog.getByRole("tab", { name: locale === "ru" ? "В сцене" : "In scene", exact: true }).click(); await dialog.getByRole("button", { name: progressText(locale, "starter"), exact: true }).click();
+  await dialog.locator(".dr-attribute-bounds summary").first().click(); const label = locale === "ru" ? "Энергия" : "Energy"; await dialog.getByLabel(`${t("lowAt")} · ${label}`, { exact: true }).fill("80"); await expect(dialog.getByRole("alert")).toContainText(t("boundsInvalid"));
+  await dialog.getByRole("tab", { name: locale === "ru" ? "Анкета" : "Profile", exact: true }).click(); await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await expect(dialog.getByLabel(`${t("lowAt")} · ${label}`, { exact: true })).toBeFocused(); await expect(dialog.getByLabel(`${t("lowAt")} · ${label}`, { exact: true })).toHaveValue("80");
+  await dialog.getByLabel(`${t("highAt")} · ${label}`, { exact: true }).fill("90"); await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await expect(dialog.locator("footer [role=status]")).toBeVisible();
+});
+
+test("an open draft can change resolve while the answer updates energy", async ({ page }) => {
+  await page.goto("/tests/fixtures/relationships.html?locale=en"); const hero = page.locator(".dr-character-row").filter({ hasText: "Leon" }); await hero.click(); const dialog = page.getByRole("dialog"); await dialog.getByRole("tab", { name: "In scene", exact: true }).click(); await dialog.getByRole("button", { name: "Add energy and resolve", exact: true }).click(); const save = dialog.getByRole("button", { name: "Save character", exact: true }); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible();
+  await dialog.getByLabel("Now in this chat · Resolve", { exact: true }).fill("90"); await page.evaluate(() => (window as any).playProgressEvent()); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible();
+  const state = await page.evaluate(async () => (await (window as any).records()).find((row: any) => row.kind === "binding").data.characterScenes.world.states.hero.attributes); expect(state.values).toEqual({ energy: 73, resolve: 90 }); expect(state.history.map((h: any) => h.source)).toEqual(["manual", "scene"]);
+});

@@ -11,22 +11,24 @@
     <script>
       const storageListeners = new Set();
       const runtimeListeners = new Set();
-      const makeArea = (initial = {}) => {
-        const values = new Map(Object.entries(initial));
+      const persistSettings = new URLSearchParams(location.search).has("persist");
+      const makeArea = (initial = {}, persistentKey) => {
+        const saved = persistSettings && persistentKey ? localStorage.getItem(persistentKey) : null;
+        const values = new Map(Object.entries(saved ? JSON.parse(saved) : initial));
         return {
           get: async (keys) => {
             if (!keys) return Object.fromEntries(values);
             const list = Array.isArray(keys) ? keys : [keys];
             return Object.fromEntries(list.filter((key) => values.has(key)).map((key) => [key, values.get(key)]));
           },
-          set: async (next) => { Object.entries(next).forEach(([key, value]) => values.set(key, value)); storageListeners.forEach((listener) => listener()); },
+          set: async (next) => { Object.entries(next).forEach(([key, value]) => values.set(key, value)); if (persistSettings && persistentKey) localStorage.setItem(persistentKey, JSON.stringify(Object.fromEntries(values))); storageListeners.forEach((listener) => listener()); },
           remove: async (keys) => { (Array.isArray(keys) ? keys : [keys]).forEach((key) => values.delete(key)); },
         };
       };
       window.chrome = {
         runtime: { id: "preview", sendMessage: async () => undefined, onMessage: { addListener(listener) { runtimeListeners.add(listener); }, removeListener(listener) { runtimeListeners.delete(listener); } } },
         storage: {
-          local: makeArea({ deeprole_settings: { locale: "ru", onboardingComplete: true, contextBudget: 2000, relevanceThreshold: 6, suggestionInterval: 20, suggestionsEnabled: true, recentMessageCount: 4, animationsEnabled: true, confirmDeletions: true } }),
+          local: makeArea({ deeprole_settings: { locale: "ru", onboardingComplete: true, contextBudget: 2000, relevanceThreshold: 6, suggestionInterval: 20, suggestionsEnabled: true, recentMessageCount: 4, animationsEnabled: true, confirmDeletions: true } }, "dr-preview-settings"),
           session: makeArea(),
           onChanged: { addListener(listener) { storageListeners.add(listener); }, removeListener(listener) { storageListeners.delete(listener); } },
         },

@@ -48,7 +48,7 @@
 .dr-root .dr-memory-review .dr-proposal.has-issue,.app-shell .dr-memory-review .dr-proposal.has-issue { border-color: var(--dr-warning); box-shadow: inset 3px 0 0 var(--dr-warning); }
 .dr-root .dr-memory-review .dr-proposal.is-invalid,.app-shell .dr-memory-review .dr-proposal.is-invalid { border-color: var(--dr-danger); }
 .dr-proposal.is-invalid .dr-proposal-type { color: var(--dr-warning); }
-.dr-proposal-top { display: grid; grid-template-columns: 24px minmax(0,1fr); gap: 9px; align-items: start; padding: 12px; }
+.dr-proposal-top { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 9px; align-items: start; padding: 12px; }
 .dr-memory-review .dr-proposal-check { display: grid; place-items: center; width: 24px; height: 24px; margin: 1px 0 0; }
 .dr-memory-review .dr-proposal-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--dr-primary); cursor: pointer; }
 .dr-assistant .dr-proposal-summary { position: relative; display: grid; gap: 3px; width: 100%; min-height: 48px; padding: 0 22px 0 0; text-align: start; border: 0; background: transparent; color: var(--dr-text); }

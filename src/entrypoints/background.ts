@@ -6,11 +6,12 @@ import { validMemoryProposal, validMemoryEntry } from "../core/proposal-validati
 import { migrateLegacyProposals } from "../storage/legacy-proposals";
 import { announceLibraryChange } from "../storage/changes";
 import { storageKeys, getSettings } from "../storage/settings";
-import { saveCharacter, applyCharacterTurn } from "../storage/characters";
+import { saveCharacter, applyCharacterTurn, addCharacterEmotion } from "../storage/characters";
 import { savePortraitLayout } from "../storage/portrait-layout";
-import { bindCharacterTurn, emotionsFor, parseCharacterTurn } from "../core/characters";
+import { bindCharacterTurn, emotionsFor, parseCharacterTurn, relationshipTurnEnabled } from "../core/characters";
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { TabSessionStore } from "../storage/tab-session";
+import { captureContinuation, completeContinuation } from "../storage/story-continuation";
 
 export default defineBackground(() => {
   const tabSessions = new TabSessionStore(browser.storage.session);
@@ -54,8 +55,19 @@ export default defineBackground(() => {
         try {
           if (message.operation === "isLocked") return { ok: true, data: await repository.isLocked() };
           if (await repository.isLocked()) throw new Error("vault-locked");
-          if (message.operation === "saveCharacter" || message.operation === "applyCharacterTurn" || message.operation === "savePortraitLayout") {
-            const scope = message.operation === "applyCharacterTurn" ? message.scope : message.edit;
+          if (message.operation === "completeContinuation") {
+            const tabId = sender.tab!.id!, tab = await browser.tabs.get(tabId);
+            if (!tab.url || !(isSameDeepSeekChat(`https://chat.deepseek.com/a/chat/s/${message.targetChatId}`, tab.url, message.targetChatId) || new URL(tab.url).origin === "https://chat.deepseek.com" && new URL(tab.url).pathname === "/")) throw new Error("handoff-scope");
+            const ok = await tabSessions.completeSnapshot(tabId, message.snapshot.id, message.token, () => completeContinuation(message.snapshot, message.targetChatId));
+            return { ok: true, data: ok };
+          }
+          if (message.operation === "captureContinuation") {
+            const tab = await browser.tabs.get(sender.tab!.id!);
+            if (!tab.url || !isSameDeepSeekChat(message.input.chatUrl, tab.url, message.input.chatId)) throw new Error("handoff-scope");
+            return { ok: true, data: await captureContinuation(message.input) };
+          }
+          if (message.operation === "saveCharacter" || message.operation === "applyCharacterTurn" || message.operation === "savePortraitLayout" || message.operation === "addCharacterEmotion") {
+            const scope = message.operation === "applyCharacterTurn" || message.operation === "addCharacterEmotion" ? message.scope : message.edit;
             // A SPA can change chats without replacing the document that sent
             // the message. Validate against the current top-level tab URL,
             // rather than the document URL captured by the sender.
@@ -65,6 +77,7 @@ export default defineBackground(() => {
             if (!currentTab.url || !isSameDeepSeekChat(scope.chatUrl, currentTab.url, scope.chatId)) throw new Error("character-scope");
             const settings = await getSettings();
             if (!settings.characterSheetsEnabled) throw new Error("character-disabled");
+            if (message.operation === "addCharacterEmotion") return { ok: true, data: await addCharacterEmotion(message.scope, message.name, emotionsFor(settings.characterEmotions)) };
             if (message.operation === "savePortraitLayout") {
               if ((settings.portraitLayoutResetAt ?? 0) !== message.edit.resetAt) throw new Error("character-conflict");
               await savePortraitLayout(message.edit);
@@ -73,10 +86,11 @@ export default defineBackground(() => {
             else {
               const turn = parseCharacterTurn(`<deeprole_characters>${JSON.stringify(message.turn)}</deeprole_characters>`);
               if (!turn) throw new Error("character-invalid");
-              const bound = turn.request ? bindCharacterTurn(turn, (await tabSessions.get(tabId)).characterRequest, message.scope) : turn;
+              const receipt = (await tabSessions.get(tabId)).characterRequest;
+              const bound = turn.request ? bindCharacterTurn(turn, receipt, message.scope) : turn;
               if (!bound) throw new Error("character-conflict");
               const characterWorld = await repository.get<import("../core/types").WorldProfile>("world", message.scope.worldId);
-              await applyCharacterTurn(message.scope, bound, emotionsFor(characterWorld?.characterEmotions ?? settings.characterEmotions), repository, !!turn.request);
+              await applyCharacterTurn(message.scope, bound, emotionsFor(characterWorld?.characterEmotions ?? settings.characterEmotions), repository, !!turn.request, relationshipTurnEnabled(turn, receipt, message.scope, settings.relationshipsEnabled !== false));
             }
             return { ok: true };
           }

@@ -1,0 +1,63 @@
+/* AXIS-inspired accents, not a new theme. Shared with standalone chat shadow roots. */
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary),
+button.dr-accent-action {
+  position:relative;
+  isolation:isolate;
+  background-color:var(--dr-action);
+  background-image:var(--dr-action-light);
+  border-color:var(--dr-action);
+  color:var(--dr-on-action);
+  box-shadow:var(--dr-action-depth);
+  transition:background-color var(--dr-motion-fast) var(--dr-ease-out),border-color var(--dr-motion-fast) var(--dr-ease-out),color var(--dr-motion-fast) var(--dr-ease-out);
+}
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary)::before,
+button.dr-accent-action::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:inherit;
+  pointer-events:none;
+  box-shadow:var(--dr-action-glow);
+  opacity:0;
+  transition:opacity var(--dr-motion-fast) var(--dr-ease-out);
+}
+@media (hover:hover) and (pointer:fine) {
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary):hover:not(:disabled):not([aria-disabled=true]),
+  button.dr-accent-action:hover:not(:disabled):not([aria-disabled=true]) { background-color:var(--dr-action-hover); border-color:var(--dr-action-hover); }
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary):hover:not(:disabled):not([aria-disabled=true])::before,
+  button.dr-accent-action:hover:not(:disabled):not([aria-disabled=true])::before { opacity:1; }
+}
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary):focus-visible:not(:disabled)::before,
+button.dr-accent-action:focus-visible:not(:disabled)::before { opacity:1; }
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary):active:not(:disabled):not([aria-disabled=true]),
+button.dr-accent-action:active:not(:disabled):not([aria-disabled=true]) { background-color:var(--dr-action); background-image:none; box-shadow:inset 0 2px 4px #18303b33; }
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary):is(:disabled,[aria-disabled=true]),
+button.dr-accent-action:is(:disabled,[aria-disabled=true]) { background-image:none; box-shadow:none; }
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary):is(:disabled,[aria-disabled=true])::before,
+button.dr-accent-action:is(:disabled,[aria-disabled=true])::before { opacity:0; }
+
+/* Small highlights explain depth without blur layers, movement or glowing every card. */
+.app-shell .action-card.primary { border-color:var(--dr-primary); box-shadow:var(--dr-depth-card),inset 0 0 0 1px #bfdfeb18; }
+.app-shell .action-card.primary > svg { color:var(--dr-primary); }
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) :is(input,textarea) { caret-color:var(--dr-primary); }
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) ::selection { color:var(--dr-text); background:var(--dr-selected); }
+.dr-root :is(.dr-panel,.dr-alert,.dr-chat-meter,.dr-characters),
+.dr-root .scene-controls { background-image:var(--dr-surface-light); box-shadow:var(--dr-depth-card); }
+:is(.app-shell,.dr-root) .dr-character-dialog,
+.dr-root .dr-capacity-dialog { background-image:var(--dr-surface-light); box-shadow:var(--dr-depth-dialog); }
+.dr-root .dr-panel { box-shadow:var(--dr-depth-panel); }
+
+.app-shell[data-motion=off] button::before { transition:none!important; }
+@media (prefers-reduced-motion:reduce) {
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary),
+  button.dr-accent-action,
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary)::before,
+  button.dr-accent-action::before { transition:none; }
+}
+@media (forced-colors:active) {
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary),
+  button.dr-accent-action { background-image:none; box-shadow:none; }
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary)::before,
+  button.dr-accent-action::before { display:none; }
+}

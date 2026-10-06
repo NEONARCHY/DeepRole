@@ -5,6 +5,32 @@ const options = ["positive", "neutral", "negative", "surprise"].map((kind, index
 const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test(`pinned options appear in view even after scrolling away ${locale} ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 620 });
+  await page.goto(`/tests/fixtures/scene-choices.html?pins&locale=${locale}`);
+  const story = `<p>${"Mira waits for a reply. ".repeat(500)}</p>`;
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown">${story}<pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`);
+  const card = page.locator("[data-deeprole-choices-host]");
+  const pin = card.getByRole("button", { name: locale === "ru" ? "Закрепить варианты на экране" : "Pin options on screen" });
+  await pin.click();
+  await expect(card).toHaveAttribute("data-deeprole-choices-pinned", "true");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  const bounds = (await card.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+  expect(bounds.y).toBeGreaterThanOrEqual(0); expect(bounds.y + bounds.height).toBeLessThan(620);
+  await expect(card.getByRole("button", { name: locale === "ru" ? "Открепить варианты" : "Unpin options" })).toHaveAttribute("aria-pressed", "true");
+
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: true }));
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-message-id="new" data-role="assistant"><div class="ds-markdown">${story}</div></article>`);
+  await expect(card).toHaveCount(0);
+  await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-message-id="new" data-role="assistant"><div class="ds-markdown">${story}<pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`);
+  await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
+  await expect(card).toHaveAttribute("data-deeprole-choices-pinned", "true");
+  await expect.poll(() => card.evaluate(node => node.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test("follows the hidden JSON transition and resumes after the reader returns to the bottom", async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 420 });
   await page.goto("/tests/fixtures/scene-choices.html?locale=ru");
@@ -150,8 +176,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     const rest = await colors(); assertReadable(rest); expect(rest.every(sample => sample.pressed === "false")).toBe(true);
     await card.screenshot({ path: info.outputPath(`pastel-rest-${locale}-${width}.png`) });
     for (let i = 0; i < 4; i++) {
-      await buttons.nth(i).hover(); const hovered = await colors(); assertReadable(hovered); expect(hovered[i]!.background).not.toBe(rest[i]!.background);
+      await buttons.nth(i).hover();
+      await buttons.nth(i).evaluate(button => Promise.all(button.getAnimations().map(animation => animation.finished.catch(() => undefined))));
+      const hovered = await colors(); assertReadable(hovered); expect(hovered[i]!.background).not.toBe(rest[i]!.background);
       await page.getByRole("textbox", { name: "Message", exact: true }).fill(""); await buttons.nth(i).click();
+      await buttons.nth(i).evaluate(button => Promise.all(button.getAnimations().map(animation => animation.finished.catch(() => undefined))));
       const selected = await colors(); assertReadable(selected); expect(selected.filter(sample => sample.pressed === "true")).toHaveLength(1);
       expect(selected[i]!.pressed).toBe("true"); expect(selected[i]!.background).not.toBe(rest[i]!.background);
       await expect(buttons.nth(i)).toHaveAttribute("data-choice-kind", options[i]!.kind);

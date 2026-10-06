@@ -305,9 +305,10 @@
   --lm-border: var(--dr-border);
   --lm-text: var(--dr-text);
   --lm-muted: var(--dr-muted);
-  background: var(--lm-bg);
+  background: var(--dr-bg);
   color: var(--lm-text);
 }
+.lm-details.lm-popover,.lm-floating-form { background:var(--dr-panel); box-shadow:0 9px 24px #0003; }
 .lm-workspace-header { background: var(--dr-panel); border-bottom-color: var(--lm-border); }
 .lm-workspace-header>button[aria-pressed=true] { color: var(--dr-text)!important; background: var(--dr-raised)!important; border-color: var(--dr-primary)!important; }
 .lm-workspace-pane { border-color: var(--lm-border); }
@@ -467,6 +468,8 @@
 .lm-create-field { display: grid; gap: 7px; color: var(--dr-text); font-size: 12px; font-weight: 600; }
 .lm-create-field small { display: inline; color: var(--dr-muted); font-size: 11px; font-weight: 400; }
 .lm-create-field input,.lm-create-field textarea {
+  box-sizing: border-box;
+  min-width: 0;
   width: 100%;
   min-height: 40px;
   padding: 10px 12px;

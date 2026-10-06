@@ -6,6 +6,7 @@ import { MemoryModeControl } from "./MemoryModeControl";
 import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
 import { TooltipButton } from "./TooltipButton";
+import { relationshipText } from "../../core/relationship-i18n";
 
 export function QuickMemory(props: { locale: Locale; worldName?: string; onSave: (text: string, mode: ActivationMode, title: string) => Promise<void>; onDraft: (brief: string) => Promise<void>; onClose: () => void }) {
   const t = (key: Parameters<typeof assistantText>[1]) => assistantText(props.locale, key);
@@ -24,7 +25,7 @@ export function QuickMemory(props: { locale: Locale; worldName?: string; onSave:
     <label>{t("title")}<input disabled={busy} maxLength={240} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
     <MemoryModeControl locale={props.locale} value={mode} onChange={setMode} disabled={busy} />
     <button className="dr-assistant-primary" disabled={busy || !text.trim()} onClick={() => void act(() => props.onSave(text, mode, title))}>{t("save")}</button>
-    <details><summary>{t("draft")}</summary><p>{t("draftHelp")}</p><label>{t("brief")}<textarea disabled={busy} rows={3} maxLength={6000} value={brief} onChange={(e) => setBrief(e.target.value)} /></label><button disabled={busy || !brief.trim()} onClick={() => void act(() => props.onDraft(brief))}>{t("draft")}</button></details>
+    <details><summary>{t("draft")}</summary><p>{t("draftHelp")}</p><p>{relationshipText(props.locale, "loreHelp")}</p><label>{t("brief")}<textarea disabled={busy} rows={3} maxLength={6000} value={brief} onChange={(e) => setBrief(e.target.value)} /></label><button type="button" disabled={busy || brief.length + relationshipText(props.locale, "loreSample").length > 6000} onClick={() => setBrief(value => value + relationshipText(props.locale, "loreSample"))}>{relationshipText(props.locale, "loreExample")}</button><button disabled={busy || !brief.trim()} onClick={() => void act(() => props.onDraft(brief))}>{t("draft")}</button></details>
     {error && <p role="alert">{error}</p>}
   </section>;
 }

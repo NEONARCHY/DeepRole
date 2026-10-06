@@ -3,7 +3,7 @@ import type { Locale } from "./types";
 const guides = {
   ru: {
     title: "Как обновить и перенести историю", close: "Закрыть памятку", current: "",
-    intro: "Лор хранит факты о мире. Состояние истории — пересказ для продолжения. Чтобы перенести актуальный сюжет, сначала обновите лор, затем сделайте пересказ.",
+    intro: "Лор хранит факты о мире. «Продолжить в новом чате» сохраняет доступную историю и точный прогресс одним нажатием. Обновление лора и подготовка пересказа — дополнительные шаги для особенно длинной истории, а не обязательное условие.",
     sections: [
       { title: "История уже идёт, а мира ещё нет?", lines: [
         "Готовый JSON не нужен. В «Лор → Создать свой мир» создайте пустой мир и дайте ему название. Затем подключите его к текущему чату через «Игра → Мир».",
@@ -21,12 +21,12 @@ const guides = {
       { title: "«Запомнить» или «Обновить лор»?", lines: [
         "«Запомнить» — сохранить конкретный факт, который вы написали или выделили. DeepSeek не анализирует всю историю по этой кнопке.",
         "«Обновить лор» — попросить DeepSeek найти важные факты и изменения в разговоре. Они сохранятся только после вашего подтверждения.",
-        "Это память о фактах, не копия всей переписки. Проверьте важные детали: модель может что-то пропустить. Для продолжения текущей сцены отдельно используйте «Сохранить состояние истории»."
+        "Это память о фактах, не копия всей переписки. Проверьте важные детали: модель может что-то пропустить. Текущую сцену и прогресс переносит кнопка «Продолжить в новом чате»."
       ] },
       { title: "3. Продолжите в новом чате", lines: [
-        "В этом же чате откройте Игра → Продолжение истории → «Продолжить в новом чате». DeepSeek подготовит пересказ; DeepRole сохранит его, затем попробует открыть новый чат и отправить начало продолжения.",
-        "Пересказ сохраняет важные события, отношения, текущую сцену и незавершённые линии, но не копирует каждую реплику. Полная переписка остаётся в старом чате. Проверьте, что важные для вас детали не потерялись.",
-        "Если DeepSeek остановился на «Размышлении», даже видимый там служебный код не считается готовым пересказом. Проверьте «Сохранённые состояния»: если нового нет, повторите перенос в старом чате."
+        "В этом же чате нажмите «Продолжить в новом чате» на индикаторе контекста или в Игра → Продолжение истории. DeepRole локально сохранит состояние, откроет пустой чат и один раз отправит продолжение — без обязательного ответа DeepSeek в старом чате.",
+        "Мир, портреты, ручной выбор памяти, точные отношения, характеристики и их журналы сохраняются. Новый чат получает прежний пересказ и доступную переписку до последнего события. Исходный чат не удаляется.",
+        "Частичная история помечается в сохранениях: так бывает, если она очень длинная, сервер не отдаёт её полностью или доступны только сообщения со страницы. Для общего обзора есть «Подготовить пересказ с DeepSeek». Числа при этом берутся из базы, а не из пересказа."
       ] },
       { title: "Если хотите продолжить позже или в другом чате", lines: [
         "«Сохранить состояние истории» создаёт только пересказ: чат не переключается.",
@@ -45,7 +45,7 @@ const guides = {
   },
   en: {
     title: "How to update and continue your story", close: "Close guide", current: "",
-    intro: "Lore stores world facts. A saved story state is a recap for continuing. To move your latest story, update the lore first, then create a recap.",
+    intro: "Lore stores world facts. “Continue in a new chat” saves available history and exact progress in one click. Updating lore and preparing a recap are optional steps for especially long stories, not required for a transfer.",
     sections: [
       { title: "Already playing, but no world yet?", lines: [
         "You do not need a ready-made JSON file. In “Lore → Create your world”, create an empty world and give it a name. Then connect it to the current chat through “Play → World”.",
@@ -63,12 +63,12 @@ const guides = {
       { title: "“Remember” or “Update lore”?", lines: [
         "“Remember” saves a specific fact you wrote or selected. It does not ask DeepSeek to analyze the whole story.",
         "“Update lore” asks DeepSeek to find important facts and changes in the conversation. They are saved only after you approve them.",
-        "This is factual memory, not a copy of the full conversation. Check important details: the model may miss something. To continue the current scene, also use “Save story state”."
+        "This is factual memory, not a copy of the full conversation. Check important details: the model may miss something. “Continue in a new chat” carries the current scene and progress."
       ] },
       { title: "3. Continue in a new chat", lines: [
-        "In the same chat, open Play → Continue your story → “Continue in a new chat”. DeepSeek will prepare a recap; DeepRole saves it, then tries to open a new chat and send the first continuation message.",
-        "The recap preserves key events, relationships, the current scene and loose ends, not every message. The full conversation stays in the old chat. Check that the details important to you were kept.",
-        "If DeepSeek stops in Thinking, technical text shown there is not a finished recap. Check Saved states; if no new state appears, retry from the old chat."
+        "In the same chat, click “Continue in a new chat” on the context meter or under Play → Continue your story. DeepRole saves a local checkpoint, opens an empty chat and sends the continuation once — no answer from DeepSeek in the old chat is required.",
+        "The world, portraits, memory selections, exact relationships, attributes and their histories are preserved. The new chat receives the earlier recap and available conversation through the latest event. Your original chat is not deleted.",
+        "Partial history is labelled in saved states: the conversation may be too long, the server may return only part of it, or only page messages may be available. “Prepare a recap with DeepSeek” provides a compact overview. Scores come from the local database, never from the recap."
       ] },
       { title: "To continue later or in a different chat", lines: [
         "“Save story state” only creates a recap. It does not switch chats.",

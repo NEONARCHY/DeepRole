@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Context capacity warning</title></head>
+<body style="margin:0;background:#10161c;color:#eef5f7">
+  <main><h1>Story chat</h1><button id="composer">Return to chat</button></main>
+  <div id="root"></div>
+  <script type="module">
+    import React from "react";
+    import { createRoot } from "react-dom/client";
+    import { ContextCapacityWarning } from "/src/entrypoints/shared/ContextCapacityWarning.tsx";
+    import "/src/entrypoints/content/page-widget.css";
+    let open=true, busy=false;
+    const locale=new URLSearchParams(location.search).get("locale")==="ru"?"ru":"en";
+    document.documentElement.lang=locale;
+    document.querySelector("#composer").focus();
+    const root=createRoot(document.querySelector("#root"));
+    const render=()=>root.render(React.createElement("div",{className:"dr-root"},open&&React.createElement(ContextCapacityWarning,{
+      locale,level:1,percent:92,busy,onContinue:()=>{window.continued=true;},
+      onClose:()=>{open=false;render();},onDisable:()=>{window.disabled=true;open=false;render();}
+    })));
+    window.setBusy=value=>{busy=value;render();};
+    render();
+  </script>
+</body>
+</html>

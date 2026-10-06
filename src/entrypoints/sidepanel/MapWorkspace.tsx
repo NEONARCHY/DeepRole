@@ -1,3 +1,4 @@
+import { Select } from "../shared/Select";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Columns2, Maximize2, Minimize2, Plus, X } from "lucide-react";
 import type { Locale, WorldProfile } from "../../core/types";
@@ -6,10 +7,13 @@ import { mapText } from "../../core/map-i18n";
 import { sceneText } from "../../core/scene-i18n";
 import { TooltipButton } from "../shared/TooltipButton";
 import type { MapPaneController } from "./LoreMap";
+import { RelationshipSetup } from "../shared/RelationshipSetup";
+import { EMPTY_RELATIONSHIP_CAST, type RelationshipCastDraft } from "../../core/relationship-setup";
+import { relationshipText } from "../../core/relationship-i18n";
 
 interface Props {
   locale: Locale; worlds: WorldProfile[]; initialWorldId: string | null; startInCreate?: boolean; activeWorldId: string | null;
-  onSelect: (id: string) => void; onClose: () => void; onCreate: (draft: { name: string; description: string; useDescriptionInContext: boolean; color: string }) => Promise<WorldProfile>;
+  onSelect: (id: string) => void; onClose: () => void; onCreate: (draft: { name: string; description: string; useDescriptionInContext: boolean; color: string; relationshipCast?: RelationshipCastDraft }) => Promise<WorldProfile>;
   render: (world: WorldProfile, pane: { active: boolean; onRegister: (controller: MapPaneController | null) => void; onClose: () => void; onExit: (task: () => void) => void }) => ReactNode;
 }
 
@@ -25,6 +29,8 @@ export function MapWorkspace(props: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [useDescriptionInContext, setUseDescriptionInContext] = useState(true);
+  const [relationshipCast, setRelationshipCast] = useState<RelationshipCastDraft>(() => structuredClone(EMPTY_RELATIONSHIP_CAST));
+  const [castError, setCastError] = useState(false);
   const [color, setColor] = useState<string>(BOOK_COLORS[props.worlds.length % BOOK_COLORS.length]!);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -36,7 +42,7 @@ export function MapWorkspace(props: Props) {
   const lastFocus = useRef(document.activeElement as HTMLElement | null);
   const setLayout = (next: string) => { if (window.parent !== window) window.parent.postMessage({ source: "deeprole-menu", type: "MAP_LAYOUT", mode: next }, "*"); };
   useEffect(() => { mounted.current = true; setLayout("compact"); return () => { mounted.current = false; setLayout("closed"); lastFocus.current?.focus({ preventScroll: true }); }; }, []);
-  function openCreate(pane: number) { setCreating(pane); setName(""); setDescription(""); setUseDescriptionInContext(true); setColor(BOOK_COLORS[props.worlds.length % BOOK_COLORS.length]!); }
+  function openCreate(pane: number) { setCreating(pane); setName(""); setDescription(""); setRelationshipCast(structuredClone(EMPTY_RELATIONSHIP_CAST)); setCastError(false); setUseDescriptionInContext(true); setColor(BOOK_COLORS[props.worlds.length % BOOK_COLORS.length]!); }
   async function withLeave(panes: number[], task: () => void | Promise<void>) {
     if (operation.current) return;
     operation.current = true; setBusy(true); setError(false);
@@ -72,8 +78,11 @@ export function MapWorkspace(props: Props) {
   }
   async function create(event: React.FormEvent) {
     event.preventDefault(); if (!name.trim() || creating === null) return;
+    const castNames = [relationshipCast.hero, ...relationshipCast.people.map(person => person.name)].map(value => value.trim().toLocaleLowerCase());
+    if (new Set(castNames).size !== castNames.length) { setCastError(true); root.current?.querySelector<HTMLDetailsElement>(".dr-bond-setup")?.setAttribute("open", ""); return; }
+    setCastError(false);
     const pane = creating; const title = name.trim();
-    await withLeave([pane], async () => { const world = await props.onCreate({ name: title, description: description.trim(), useDescriptionInContext: useDescriptionInContext && Boolean(description.trim()), color }); if (!mounted.current) return; setIds((old) => old.map((value, index) => index === pane ? world.id : value)); setActive(pane); props.onSelect(world.id); setCreating(null); setName(""); setDescription(""); });
+    await withLeave([pane], async () => { const world = await props.onCreate({ name: title, description: description.trim(), useDescriptionInContext: useDescriptionInContext && Boolean(description.trim()), color, ...(relationshipCast.hero.trim() || relationshipCast.people.length ? { relationshipCast } : {}) }); if (!mounted.current) return; setIds((old) => old.map((value, index) => index === pane ? world.id : value)); setActive(pane); props.onSelect(world.id); setCreating(null); setName(""); setDescription(""); setRelationshipCast(structuredClone(EMPTY_RELATIONSHIP_CAST)); });
   }
   function toggleSize() {
     const next = mode === "compact" ? "full" : "compact";
@@ -90,21 +99,23 @@ export function MapWorkspace(props: Props) {
         <TooltipButton aria-label={t("mapClose")} onClick={() => closeAction.current()} disabled={busy}><X size={16} /></TooltipButton>
       </div>
     </header>
-    {creating !== null && <div className="lm-create-backdrop"><form className="lm-create-dialog" role="dialog" aria-modal="true" aria-label={m("createWorldTitle")} onSubmit={(event) => void create(event)}>
+    {creating !== null && <div className="lm-create-backdrop"><form className="lm-create-dialog" role="dialog" aria-modal="true" aria-label={m("createWorldTitle")} onSubmit={(event) => void create(event)} onInvalidCapture={event => { const details = (event.target as HTMLElement).closest("details"); if (details) details.open = true; }}>
       <div className="lm-create-heading"><span>{m("createWorldEyebrow")}</span><h2>{m("createWorldTitle")}</h2><p>{m("createWorldHint")}</p></div>
       <label className="lm-create-field">{t("name")}<input autoFocus required maxLength={100} aria-label={t("name")} placeholder={m("worldNamePlaceholder")} value={name} disabled={busy} onChange={(event) => setName(event.target.value)} /></label>
       <label className="lm-create-field">{t("description")} <small>{m("optional")}</small><textarea rows={3} maxLength={500} placeholder={m("worldDescriptionPlaceholder")} value={description} disabled={busy} onChange={(event) => setDescription(event.target.value)} /></label>
       <label className="lm-create-check"><input type="checkbox" checked={useDescriptionInContext} disabled={busy} onChange={(event) => setUseDescriptionInContext(event.target.checked)} /><span>{m("useDescriptionInChat")}</span></label>
       <fieldset className="lm-create-colors"><legend>{m("worldColor")}</legend>{BOOK_COLORS.map((option, index) => <label key={option} className={color === option ? "is-selected" : ""} title={`${m("worldColor")} ${index + 1}`}><input type="radio" name="world-color" value={option} aria-label={`${m("worldColor")} ${index + 1}`} checked={color === option} disabled={busy} onChange={() => setColor(option)} /><span style={{ background: option }} /></label>)}</fieldset>
-      <p className="lm-create-note">{m("emptyWorldHint")}</p>
-      <div className="lm-create-actions"><button className="button secondary" type="button" disabled={busy} onClick={() => setCreating(null)}>{m("cancel")}</button><button className="button primary" disabled={busy || !name.trim()} type="submit">{m("createEmpty")}</button></div>
+      {!relationshipCast.hero.trim() && <p className="lm-create-note">{m("emptyWorldHint")}</p>}
+      <RelationshipSetup locale={props.locale} value={relationshipCast} onChange={value => { setRelationshipCast(value); setCastError(false); }} disabled={busy} />
+      {castError && <p className="lm-history-error" role="alert">{relationshipText(props.locale, "duplicateNames")}</p>}
+      <div className="lm-create-actions"><button className="button secondary" type="button" disabled={busy} onClick={() => setCreating(null)}>{m("cancel")}</button><button className="button primary" disabled={busy || !name.trim()} type="submit">{relationshipCast.hero.trim() ? relationshipText(props.locale, "createWorld") : m("createEmpty")}</button></div>
     </form></div>}
     {error && <p role="alert" className="lm-history-error">{m("workspaceFailed")}</p>}
     <div className={"lm-workspace-panes" + (split ? " is-split" : "")}>
       {(split ? [0, 1] : [0]).map((pane) => {
         const world = props.worlds.find((world) => world.id === ids[pane]);
         return <div className={"lm-workspace-pane" + (active === pane ? " is-active-pane" : "") + (world?.id === props.activeWorldId ? " is-chat-pane" : "")} key={pane} data-map-pane={pane} onFocusCapture={() => setActive(pane)} onPointerDownCapture={() => setActive(pane)}>
-          <label className="lm-world-picker"><span>{m("editingWorld")}</span><select aria-label={m("editingWorld")} value={world?.id ?? ""} disabled={busy || Boolean(props.startInCreate && pane === 0 && !ids[pane])} onChange={(event) => switchWorld(pane, event.target.value)}><option value="" disabled>{m("chooseWorld")}</option>{props.worlds.map((candidate) => <option key={candidate.id} value={candidate.id} disabled={candidate.id === ids[1 - pane]}>{candidate.name}</option>)}</select>{world?.id === props.activeWorldId && <small className="lm-chat-world" title={m("splitHint")}>{m("chatWorld")}</small>}</label>
+          <label className="lm-world-picker"><span>{m("editingWorld")}</span><Select aria-label={m("editingWorld")} value={world?.id ?? ""} disabled={busy || Boolean(props.startInCreate && pane === 0 && !ids[pane])} onChange={(event) => switchWorld(pane, event.target.value)}><option value="" disabled>{m("chooseWorld")}</option>{props.worlds.map((candidate) => <option key={candidate.id} value={candidate.id} disabled={candidate.id === ids[1 - pane]}>{candidate.name}</option>)}</Select>{world?.id === props.activeWorldId && <small className="lm-chat-world" onClick={event => event.preventDefault()} title={m("splitHint")}>{m("chatWorld")}</small>}</label>
           <div className="lm-pane-content" inert={busy || creating !== null}>{world ? <div className="lm-pane-inner" key={world.id}>{props.render(world, { active: active === pane, onRegister: (controller) => { controllers.current[pane] = controller; }, onClose: () => closeAction.current(), onExit: (task) => { void withLeave(split ? [pane, 1 - pane] : [0], task); } })}</div> : props.startInCreate && pane === 0 ? <div className="lm-pane-empty lm-pane-empty-create"><strong>{m("newWorldEmptyTitle")}</strong><p>{m("newWorldEmptyText")}</p>{creating === null && <button className="button primary" onClick={() => openCreate(pane)}>{m("emptyWorld")}</button>}</div> : <div className="lm-pane-empty"><p>{m("chooseSecondWorld")}</p><button className="button primary" onClick={() => openCreate(pane)}>{m("emptyWorld")}</button></div>}</div>
         </div>;
       })}

@@ -33,6 +33,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1600]) tes
   await save.click(); await expect(dialog.getByRole("alert")).toBeVisible(); await expect(name).toHaveValue("Mira revised");
   await page.evaluate(() => { (window as any).rejectSave = false; }); await save.click();
   await expect(dialog).toHaveCount(1); expect(await dialog.evaluate(node => node === (window as any).galleryDialog)).toBe(true);
+  await expect(dialog.getByRole("status")).toContainText(locale === "ru" ? "Сохранено" : "Saved");
+  await dialog.getByRole("button", { name: locale === "ru" ? "К персонажам" : "Back to characters" }).last().click();
   await expect(card).toContainText("Mira revised"); await expect(card.getByRole("button")).toBeFocused();
   await expect(dialog.getByRole("searchbox")).toHaveValue("Mira");
   expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ name: "Mira revised", entityId: "mira", worldId: "w", chatId: "a" });

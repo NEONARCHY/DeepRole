@@ -1,101 +1,215 @@
 <div align="center">
   <img src="public/icons/icon-128.png" width="76" alt="DeepRole icon">
   <h1>DeepRole</h1>
-  <p>Memory and characters for roleplay stories in DeepSeek.</p>
+  <p>Keep your world, characters and story progress together in DeepSeek.</p>
   <p><a href="downloads/README.md">Download</a> · <a href="docs/INSTALL.en.md">Install</a> · <a href="docs/README.ru.md">Русский</a></p>
 </div>
 
-DeepRole helps you keep a long story consistent. Your worlds and characters live in your browser; the extension adds selected records to the messages you send through [DeepSeek](https://chat.deepseek.com/). Changes suggested by the model become lore **only after you review and approve them**.
+DeepRole is a browser extension for long-running roleplay stories in [DeepSeek](https://chat.deepseek.com/). Keep lore in a local library, give characters portraits and relationships, and choose your next move without losing track of what happened.
 
-> Early version 0.1.0. DeepRole is an independent project, not affiliated with DeepSeek. [Back up your data](#moving-your-data) before uninstalling or moving to another computer.
+You decide what becomes lasting memory. DeepSeek can suggest lore changes, but **they are saved only after you review and approve them**. Scene moods and configured progress update separately after story replies.
 
-## See it in action
+> Early version 0.1.0. Independent project, not affiliated with DeepSeek. Make a [full backup](#backups-and-moving-to-another-computer) before uninstalling, replacing your data or moving to another computer.
 
-### Pick your next move
+The current build adds relationship stages, numeric characteristics, visible consequences, personal emotion rules, one-click story continuation and a cleaner, adaptive interface. The examples below show the current UI in English; the [Russian page](docs/README.ru.md) has its own Russian screenshots. All examples use fictional demo data and built-in silhouettes, not a player's private lore.
 
-DeepSeek can offer four ways to continue a scene. Clicking a choice only fills the message box; you can edit the text or decide not to send it.
+## Start a story
 
-<img src="docs/images/readme/choices-en.png" width="690" alt="Four choices in a fictional demonstration scene">
+1. [Install DeepRole](docs/INSTALL.en.md) and open a DeepSeek chat.
+2. Open **DeepRole → Lore**. Create a world or import one you already have.
+3. Connect that world to the chat. Keep important rules in **Always** memory; let other records appear when relevant.
+4. Start playing. Open a character card to add portraits, set starting relationships or adjust their current state.
 
-### Keep characters in view
+You do not need to configure everything first. When creating a world, you can optionally add your protagonist, other characters and their starting relationships. Starter energy and resolve scales are also optional. **Ask DeepSeek to propose lore** helps develop the setting; review its suggestions before saving them.
 
-Character cards show who's present, their mood and saved stats. Add portraits for different emotions, or keep the default silhouettes. Portraits can be moved and resized. Use the small **eye button** beside the panel controls to hide or show all portraits without deleting images or resetting their positions; the same switch remains in character settings.
+For an existing story, create an empty world, connect it to that chat and use **Update lore** to collect important facts. DeepRole does not invent numeric starting values from old prose: set those in the character sheets.
 
-<img src="docs/images/readme/portraits-en.png" width="900" alt="Current DeepRole portraits beside scene choices">
+<details>
+<summary>Example: create a world with a starting cast</summary>
 
-### Organize lore on a map
+<p><img src="docs/images/readme/new-world-en.png" width="360" alt="New world form with optional protagonist and starting character relationships"></p>
 
-The map and list are two views of the same records: people, places, rules and events.
+</details>
 
-<img src="docs/images/readme/map-en.png" width="900" alt="Current world map with a fictional sample world">
+## Choose your next move
 
-### Decide what becomes memory
+DeepSeek can offer four ways to continue a scene. Clicking a choice fills the message box — **you can edit it, and you decide when to send it**. Use the arrow keys to move between choices and 1–4 to pick one.
 
-After an important scene, use **Update lore**. Review, edit and save only the suggestions you want.
+Options receive the selected world memory and a reminder to follow its rules, including writing style. Keep must-follow rules, such as ending dialogue with an emoji, in **Always** memory. DeepRole does not strip emojis, but the external model can still miss an instruction.
 
-<img src="docs/images/readme/review-en.png" width="360" alt="Reviewing a proposed memory change">
+<img src="docs/images/readme/portraits-en.png" width="900" alt="Four scene choices with the protagonist's portrait on the left and the conversation partner on the right">
 
-*These screenshots come from the current interface with fictional demo data, not a private conversation.*
+While the story reply continues, your portraits stay visible. Hidden service JSON is replaced with a preparation message. Auto-follow continues through option preparation; scrolling up pauses it, and returning to the bottom resumes it while generation is still running. **Suggest options** is available when a finished reply has no choices. Returning to a chat restores readable saved choices when available.
 
-## Get started
+<details>
+<summary>A closer look at the reply options</summary>
 
-1. [Download](downloads/README.md) and [install](docs/INSTALL.en.md) the extension. Chrome, Brave and Edge use the Chromium build. The Firefox build is currently a temporary add-on.
-2. Open [DeepSeek](https://chat.deepseek.com/) and go to **DeepRole → Lore**. Create an empty world or import an existing one.
-3. Choose **Use in this chat**. A world in your library is not automatically connected to a conversation.
-4. Use **Remember** for a fact you want to write yourself. After the story moves forward, use **Update lore** to review DeepSeek's suggestions.
+<p><img src="docs/images/readme/choices-en.png" width="690" alt="The current four-choice card with portrait pinning, option pinning and full-text controls"></p>
 
-Already deep into a chat with no prepared world? Create an empty world, connect it to this chat, then choose **Update lore**. DeepSeek can propose the first records from the available chat history. Check them carefully; it may miss or misunderstand details.
+</details>
 
-## How memory works
+## Characters, images and emotions
 
-DeepSeek does not have permanent access to your whole library. DeepRole selects records for each outgoing message. **Context** shows what is prepared for the next send; it cannot prove the model will use every detail.
+The editor has four tabs: **Profile**, **In scene**, **Relationships** and **Images**. The profile belongs to the world; current moods, goals and played progress belong to the chat. Switching tabs keeps your draft, and saving leaves the editor open.
 
-| Mode | What it does |
+Upload a batch to the **Image library**, then select pictures and assign emotions without reopening the file picker each time. You can assign the same picture to several emotions, or give one emotion several portraits. Portraits cycle without repeating until the set has been shown.
+
+<img src="docs/images/readme/images-en.png" width="420" alt="Character image library with three selected sample images and assignment to multiple emotions">
+
+- Add a custom emotion directly in **Images**, or manage the world's list in **Settings → Characters**. Up to 32 emotions, 48 images per emotion and 512 unassigned images per character; PNG, JPG or WebP up to 10 MB per file.
+- Built-in emotions show both their label and key, such as **Happy · happy**. Custom names are not automatically translated. Use the extra-emotion switches to share an image across names; commas and slashes in a name are not a shortcut for separate emotions.
+- **Available emotions** lets you turn off specific moods for one character. All world emotions are allowed by default, and Calm remains available. DeepSeek receives the personal list. If it returns a forbidden mood, DeepRole keeps a valid previous mood or uses Calm; other valid changes still apply.
+- Turning off an emotion does **not** delete its images. A missing portrait alone is not an emotion ban: the character can still feel sad while showing their default portrait. Local mood checks cannot guarantee what DeepSeek writes in the story text.
+- Drag portraits near either edge of the options to snap them into place, or move and resize them freely. Scrolling away from the options keeps their last screen position. Conversation partners use the main size; other present characters sit to their right, about 15% smaller and bottom-aligned. Multiple speaking partners use the same main size.
+- The small **eye button** beside the panel controls hides or shows all portraits without deleting images or resetting positions. The same setting remains in **Settings → Characters**.
+
+<details>
+<summary>Example: a character's personal emotion list</summary>
+
+<p><img src="docs/images/readme/emotions-en.png" width="480" alt="Searchable personal emotion list with Angry turned off and Calm always available"></p>
+
+</details>
+
+## Relationships and consequences that persist
+
+Track **Trust** and **Affinity** separately, from 0 to 100. Display numbers, a stage — **Guarded → Acquaintance → Trust → Closeness** — or both. Someone can like the protagonist without trusting them yet.
+
+Set each character's starting values, personality, boundaries and pace of change. Important events can be required for closeness or kept as separate achievements. You can also describe how that character behaves at different stages; there is no universal “kind answer = +5” rule.
+
+<img src="docs/images/readme/progress-en.png" width="320" alt="Saved consequences of a played scene, including trust and affinity changes, their reason and a supporting story quote">
+
+- After a played scene, DeepSeek proposes small changes with a reason and a quote. DeepRole checks the reply, scope, pace and repeated evidence before saving. Showing options or preparing lore does not award points.
+- **Turn consequences** shows what actually changed and why. **Current state** explains scores and unmet conditions, so progress is not just a number.
+- Edit current values, mark events manually or lock progress for this chat. The last 20 changes are kept in a journal. Undoing the latest model change opens a correction in the editor; review and save it yourself.
+- Add up to six **Characteristics**, such as energy, resolve or courage. Each has its own 0–100 scale, starting value, low/high meanings, change limit and lock. Existing text stats are not silently converted.
+- Starting settings belong to the world; played values belong to this chat and protagonist. Ordinary new chats start from their configured defaults. **Continue in a new chat** carries the actual progress forward instead.
+
+The system is **on by default** and can be disabled in **Settings → Characters** without deleting scores or history. Older characters without configured scores keep their existing lore.
+
+Romance is optional and off until configured for a character. Adult confirmation, individual conditions, willingness and boundaries still matter: **high scores are not consent**. These rules guide DeepSeek; they are not a guarantee of its response, and the extension does not rewrite ages in your lore.
+
+<details>
+<summary>Examples: relationship settings and a characteristic</summary>
+
+<p>Choose starting relationships separately from the current chat's scores.</p>
+<p><img src="docs/images/readme/relationships-en.png" width="420" alt="Relationship editor showing separate starting and current scores, pace and a manual lock"></p>
+<p>Define what a characteristic means, not just its name.</p>
+<p><img src="docs/images/readme/characteristics-en.png" width="420" alt="Energy characteristic with starting and current values, low and high meanings and a per-turn limit"></p>
+
+</details>
+
+[Relationship and characteristic guide →](docs/RELATIONSHIPS.md)
+
+## Keep lore organized — and control changes
+
+Worlds keep their own lore, profiles and memories. Use the list for direct editing or the **World map** to arrange branches, categories and links. Both views edit the same records. Search, drag nodes, open a full-screen map, compare two worlds side by side, or undo layout changes.
+
+<img src="docs/images/readme/map-en.png" width="900" alt="The current full-screen world map with fictional observatory memories arranged around the world">
+
+**Update lore** asks DeepSeek to suggest what is worth keeping after a scene. Review **Before → After**, edit the text and save only selected changes. Suggestions stay outside the saved lore until approved.
+
+For a lasting correction, open a character and choose **Correct a lasting fact** — for example, change their hair color. DeepRole scans all memory records in the connected world and asks for proposed replacements in the lore and profile. You approve the changes; old chat messages are not rewritten, and the model may miss indirect references.
+
+<img src="docs/images/readme/review-en.png" width="360" alt="Memory review with the old fact, editable replacement and an explicit save action">
+
+### What gets sent with a message?
+
+Open **Context** to inspect the memory selected for the next message, attach a missing record or leave one out.
+
+| Memory mode | When it is included |
 | --- | --- |
-| **Always** | Included with each message in its scope. Keep essential rules short. |
-| **Automatic** | Selected locally from words, names and scene context when there is room. This is not a second AI search. |
-| **Manual** | Included only after you attach the record to this chat. |
+| **Always** | With each message in its memory scope. Best for short, essential rules. |
+| **Automatic** | When names, keywords and scene context match, within the automatic-selection budget. Selection runs locally, not through another AI. |
+| **Manual** | Only when you attach it to this chat. |
 
-Records that do not fit are **not deleted**. Later messages can select a different set. Always-on and manually attached records take space separately from automatic matches. Check an over-budget warning in **Context**.
+Records that do not fit are **not deleted**. Different records may be selected for the next scene. Always records and manual attachments can go beyond the automatic budget, so check the size warning before attaching a large amount.
 
-## Characters, portraits and choices
+The **chat context meter** estimates the conversation's size; the **Context** badge estimates the attached memory. These are different measurements, not a bill from DeepSeek.
 
-- Characters can be added by you or created with a new DeepSeek reply. Mood, condition, goals, relationships and stats belong to a specific chat. If the model provides no valid update, DeepRole keeps the previous values.
-- To correct a lasting character fact, open the character sheet and choose **Correct a lasting fact**. DeepRole checks every lore record in the connected world and asks DeepSeek to suggest replacements in the records and character profile. Review each **before → after** change before saving. Existing chat messages are not rewritten; indirect mentions can still be missed by the model.
-- Each emotion can have several images, shown in a non-repeating cycle. One image can be assigned to several emotions. Custom emotion names are not translated automatically.
-- Scene choices appear below a completed reply. Technical choice data is hidden while it streams. **Suggest options** is a fallback if choices did not appear automatically.
+<details>
+<summary>Example: inspect selected memory</summary>
 
-[Character and portrait guide (Russian)](docs/CHARACTERS.md) · [Scene choices guide (Russian)](docs/SCENE-CHOICES.md)
+<p><img src="docs/images/readme/memory-en.png" width="260" alt="Selected-memory panel showing rules, automatically matched memories and a manually attached key"></p>
 
-## Moving your data
+</details>
 
-| Export | Includes |
+## A calmer, adaptable interface
+
+Graphite surfaces, pale-blue accents, soft glow on important actions, iOS-style switches, matching dropdowns and thin dark scrollbars. Secondary actions stay quieter; animation can be turned off, and reduced-motion preferences are respected.
+
+The floating panels below the chat title share one width: **224 px by default**, adjustable together from **200 to 360 px** using the toolbar or **Settings → App → Panels and scene**. Panels keep a 1 px gap. Drag a panel by its non-interactive area, or use the always-visible group handle to move the set. Reset returns it below the current chat title; closing DeepSeek's sidebar moves it smoothly into the freed space.
+
+**Adaptive sizing is on by default.** Narrow windows use compact panel buttons and a portrait row instead of forcing large cards over each other. Your manual sizes are kept.
+
+Two separate mini-buttons on the option card pin **both portraits together** or **the options themselves**. Pinned options stay centered above the message box, even when you scroll, resize the browser or grow your draft. If options finish while you are reading higher up, the pinned card appears on screen. Long cards scroll inside. Without pinning, they scroll with the story and stay clear of the composer at the bottom.
+
+<details>
+<summary>Example: shared width, adaptive sizing and pinning</summary>
+
+<p><img src="docs/images/readme/settings-en.png" width="440" alt="Panel settings with a shared width slider, adaptive sizing and separate option and portrait pinning switches"></p>
+
+</details>
+
+## Continue in a new chat
+
+Click **Continue in a new chat** to save a local checkpoint, open a new chat and send the continuation. You keep the same world, portraits, selected memory, latest saved character state, relationship scores, characteristics and progress journals. **The old chat is not deleted.** There is no need to wait for a new recap from DeepSeek in the old chat first.
+
+<img src="docs/images/readme/continuation-en.png" width="440" alt="One-click story continuation with an optional DeepSeek recap kept in a separate expandable section">
+
+The new chat receives the earlier recap and available conversation through the latest event. If history cannot be read fully, only available messages are used; very long transfers can also be partial. The saved state says so and links back to the original chat. A full conversation of any size is not guaranteed.
+
+Unsaved drafts and active generation are protected. If automatic sending is unavailable, send the prepared continuation yourself. If sending fails, it stays ready for retry. **Prepare a recap with DeepSeek** remains an optional separate action.
+
+Near the configured chat capacity, an optional warning appears at about **90% and 97%**. It never blocks messages and can be disabled in **Settings → App**. This is a local estimate — not a prediction that DeepSeek will stop in exactly two messages. Estimated chat capacity is separate from the attached-memory budget.
+
+<details>
+<summary>Example: an early context warning</summary>
+
+<p><img src="docs/images/readme/warning-en.png" width="480" alt="Estimated chat-capacity warning offering to stay, turn warnings off or continue in a new chat"></p>
+
+</details>
+
+## Backups and moving to another computer
+
+| What to save | What it carries |
 | --- | --- |
-| **World export** | One world with lore records, character sheets, portraits, image library and emotion settings. |
-| **Full backup** | All worlds, settings, characters and saved chat states. Use this when moving computers or before reinstalling. |
+| **Export world** | That world's lore, character profiles, images, emotions, personal emotion rules, relationship settings and starting characteristic values. Not the played progress of individual chats. |
+| **Full backup** | All worlds, records, settings, saved chat states and played character progress. Use this when moving to another computer. |
 
-A world export does not include each chat's current mood or portrait positions. Ordinary JSON from [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) transfers text memory, not images. Better Deepseek is a separate open-source extension; DeepRole supports importing its memory format. Exports without a password are not encrypted; a full backup can be password-protected under **Settings → Files & protection**. Do not upload personal lore to GitHub.
+Choose **Settings → Files & security → Export → Full backup**, keep the downloaded file somewhere safe, then import it into DeepRole on the other computer. Backups can be password-protected. Restoration lets you add missing records or replace the library explicitly.
 
-Images stay on your device: DeepSeek receives character and emotion text, not the image files. Selected memory and service requests are still sent to DeepSeek and remain in chat history. DeepRole has no memory server or telemetry. [Privacy policy →](PRIVACY.md)
+**Do not uninstall just to update.** Back up first, replace the files in the folder your browser loaded, reload DeepRole on the extensions page and refresh DeepSeek. A local rebuild does not update a separately unpacked folder automatically.
 
-DeepRole's importer acknowledges [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) and its creators for the original extension and memory format. DeepRole is a separate project.
+You can also import memory records from [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek). That import does not include DeepRole's portraits or played character progress. GitHub downloads contain the extension, not your private worlds.
 
-## More information
+## Privacy and credits
 
-- [Installation and updates](docs/INSTALL.en.md)
-- [Characters and portraits (Russian)](docs/CHARACTERS.md)
-- [Scene choices (Russian)](docs/SCENE-CHOICES.md)
-- [Download builds](downloads/README.md), [development roadmap](ROADMAP.md) and [sample JSON lore](examples/observatory.json)
-- [Russian guide](docs/README.ru.md)
+Lore, portraits and progress are stored in your browser. The selected text and service requests you choose to send go to DeepSeek; **portrait images are never sent to the model**. DeepRole has no separate memory server or telemetry.
+
+The optional vault protects local extension data. It does not encrypt messages already sent to DeepSeek or ordinary backup files created earlier. Browser data can be cleared or lost, so keep your own backups. [Privacy details →](PRIVACY.md)
+
+Respect and thanks to [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek), the independent open-source extension whose memory format DeepRole can import. DeepRole is not its official version or a DeepSeek product.
+
+## More help
+
+- [Download current packages](downloads/README.md)
+- [Install and update](docs/INSTALL.en.md)
+- [Relationships and characteristics](docs/RELATIONSHIPS.md)
+- [Character and portrait details — Russian](docs/CHARACTERS.md)
+- [Scene-choice details — Russian](docs/SCENE-CHOICES.md)
+- [Roadmap and verification notes — Russian](ROADMAP.md)
 
 ## Development
+
+Requires Node.js and npm.
 
 ```sh
 npm ci
 npm run typecheck
 npm test
+npm run test:e2e
 npm run build
 npm run build:firefox
 ```
 
-The source and tests live in this repository. Automated tests do not replace a check against a live DeepSeek account; changes to the site may require an extension update.
+The source and tests are in this repository; ready-to-install archives are in [downloads](downloads/README.md). Automated tests use synthetic scenes. They do not replace checking a live DeepSeek account: changes to the site's interface may require an extension update.

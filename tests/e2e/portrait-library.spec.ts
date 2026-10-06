@@ -1,4 +1,4 @@
-import { closeSavedCharacter } from "./character-helpers";
+import { closeSavedCharacter, characterTab } from "./character-helpers";
 import { test, expect } from "@playwright/test";
 
 for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk portrait library ${locale} ${width}`, async ({ page }, info) => {
@@ -8,7 +8,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk p
     ctx.fillStyle = `hsl(${i * 17},45%,45%)`; ctx.fillRect(0, 0, 120, 160); ctx.fillStyle = "white"; ctx.fillRect(i + 10, 30, 30, 50);
     return c.toDataURL("image/png").split(",")[1]!;
   }));
-  const open = async () => { await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); await page.getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Библиотека изображений" : "Image library"} ·`) }).click(); };
+  const open = async () => { await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); await characterTab(page.getByRole("dialog"), "images", locale); };
   const library = page.locator(".dr-portrait-library"), dialog = page.getByRole("dialog");
   const save = async () => { await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale); await expect(dialog).toHaveCount(0); };
   await open();
@@ -19,8 +19,10 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk p
   });
   await library.locator("input[type=file]").setInputFiles(images.map((image, i) => ({ name: `library-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") })));
   await expect(library).toHaveAttribute("aria-busy", "true");
+  await characterTab(dialog, "profile", locale);
   await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Green coat edited during upload");
   await page.waitForFunction(() => typeof (window as any).finishLibraryDecode === "function"); await page.evaluate(() => (window as any).finishLibraryDecode());
+  await characterTab(dialog, "images", locale);
   await expect(library.locator(".dr-library-image")).toHaveCount(49);
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(0);
   await save(); expect(await page.evaluate(() => (window as any).saved.sheet.portraitLibrary.length)).toBe(49);

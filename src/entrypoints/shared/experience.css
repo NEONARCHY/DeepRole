@@ -37,7 +37,7 @@
 .dr-service-state.is-busy > svg { animation: dr-service-spin 1.5s linear infinite; }
 .dr-root .dr-context-anchor > .dr-service-state { position: fixed; left: max(8px,min(var(--dr-status-x,208px),calc(100vw - 328px))); bottom: max(12px,env(safe-area-inset-bottom)); width: min(320px,calc(100vw - 24px)); margin: 0; pointer-events: none; }
 @media (max-width: 720px) { .dr-root .dr-context-anchor > .dr-service-state { bottom: max(104px,env(safe-area-inset-bottom)); } }
-.dr-root .dr-entry { grid-template-columns: 20px minmax(0,1fr); }
+.dr-root .dr-entry { grid-template-columns: 42px minmax(0,1fr); }
 .dr-root .dr-entry em { grid-column: 2; font-size: 11px; }
 .dr-root .dr-attach-search { position: sticky; top: 0; min-width: 0; width: 100%; padding: 10px; background: var(--dr-panel); color: var(--dr-text); border: 1px solid var(--dr-border); border-radius: 8px; font: inherit; }
 .dr-root .dr-composer-action[aria-disabled=true] { opacity: .6; cursor: default; }

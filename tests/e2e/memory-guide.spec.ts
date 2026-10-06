@@ -13,7 +13,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for 
       if (locale === "en") await setEnglish(page);
     } else {
       await page.goto(`/tests/fixtures/page-widget.html?locale=${locale}`);
-      await page.locator(".dr-context-anchor .dr-context-indicators .dr-pill").click();
+      await page.locator('[data-widget="memory"] > .dr-pill').click();
     }
     const help = page.getByRole("button", { name: title, exact: true });
     await expect(help).toHaveText("?");

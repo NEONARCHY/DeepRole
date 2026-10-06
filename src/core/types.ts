@@ -4,6 +4,7 @@ export type MemoryPriority = "low" | "normal" | "high";
 export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change";
 
 export interface WorldProfile {
+  relationshipsEnabled?: boolean;
   characterEmotions?: string[];
   useDescriptionInContext?: boolean;
   mapLayout?: LoreMapLayout;
@@ -39,6 +40,12 @@ export interface SceneEntity {
 }
 
 export interface CharacterSheet {
+  /** Player-edited world-wide exclusions. New world emotions are allowed by default. */
+  blockedEmotions?: string[];
+  attributes?: CharacterAttribute[];
+  /** Explicitly set by the player. Never inferred or modified by model output. */
+  adultConfirmed?: boolean;
+  relationships?: RelationshipProfile;
   gender: "male" | "female" | "neutral";
   protagonist: boolean;
   appearance: string;
@@ -52,6 +59,9 @@ export interface CharacterSheet {
 }
 
 export interface CharacterStatus {
+  attributes?: AttributeState;
+  /** This character's attitude to each protagonist, scoped to the current chat. */
+  bonds?: Record<string, RelationshipState>;
   emotion: string;
   condition: string;
   goal: string;
@@ -60,6 +70,8 @@ export interface CharacterStatus {
 }
 
 export interface CharacterScene {
+  progress?: { status: "changed" | "unchanged" | "partial"; rejected: number; turn?: string };
+  relationshipNotice?: "unverified" | "limited";
   /** Local display state, never sent to the model. */
   portraitCycles?: Record<string, Record<string, PortraitCycle>>;
   lastReply?: string;
@@ -135,6 +147,8 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  /** Checkpoint that started this branch, not a mutable link to another chat. */
+  continuationSnapshotId?: string;
   portraitLayouts?: Record<string, PortraitLayout>;
   characterScenes?: Record<string, CharacterScene>;
   memoryOverrides?: MemoryOverrides;
@@ -150,6 +164,10 @@ export interface ChatBinding {
 }
 
 export interface HandoffSnapshot {
+  continuation?: StoryContinuation;
+  memoryOverrides?: MemoryOverrides;
+  /** Local structured state; the model's recap never controls these values. */
+  characterScene?: CharacterScene;
   id: string;
   worldId?: string | null;
   focusIds?: string[];
@@ -163,6 +181,11 @@ export interface HandoffSnapshot {
 }
 
 export interface DeepRoleSettings {
+  contextWarningsEnabled?: boolean;
+  /** User-adjustable estimate, not a guaranteed DeepSeek server limit. */
+  chatContextCapacity?: number;
+  relationshipsEnabled?: boolean;
+  relationshipDisplay?: "both" | "numbers" | "stages";
   portraitLayoutResetAt?: number;
   characterSheetsEnabled?: boolean;
   characterSpritesEnabled?: boolean;
@@ -170,6 +193,13 @@ export interface DeepRoleSettings {
   locale: Locale;
   onboardingComplete: boolean;
   sceneChoicesEnabled?: boolean;
+  pinSceneChoices?: boolean;
+  /** Legacy backup fields: the interface now reads/writes both sides together. */
+  pinPortraitLeft?: boolean;
+  pinPortraitRight?: boolean;
+  adaptiveLayout?: boolean;
+  /** Shared preferred HUD width; viewport adaptation never changes this preference. */
+  floatingPanelWidth?: number;
   showChatContextMeter: boolean;
   showMemoryContextIndicator: boolean;
   contextBudget: number;
@@ -179,6 +209,81 @@ export interface DeepRoleSettings {
   recentMessageCount: number;
   animationsEnabled: boolean;
   confirmDeletions: boolean;
+}
+
+export interface RelationshipProfile {
+  /** Optional player-authored behavior; no inferred personality or automatic rewards. */
+  stageBehavior?: Partial<Record<RelationshipStage, string>>;
+  /** Player-authored reactions; never a universal reward formula. */
+  reactions?: string;
+  enabled: boolean;
+  initial: { trust: number; affinity: number };
+  pace: "slow" | "balanced" | "open";
+  romance: boolean;
+  thresholds: { trust: number; affinity: number };
+  boundaries: string;
+  /** Legacy events are required. Explicit false makes a standalone achievement. */
+  milestones: { id: string; label: string; required?: boolean }[];
+}
+export type RelationshipStage = "guarded" | "acquaintance" | "trusting" | "close";
+export interface RelationshipState {
+  trust: number;
+  affinity: number;
+  locked: boolean;
+  completed: string[];
+  history: RelationshipChange[];
+}
+export interface RelationshipChange {
+  turn?: string;
+  at: number;
+  source: "scene" | "manual";
+  before: { trust: number; affinity: number };
+  after: { trust: number; affinity: number };
+  reason: string;
+  quote: string;
+  milestones: string[];
+}
+export interface RelationshipPatch {
+  id: string;
+  hero: string;
+  /** Signed changes, not absolute scores. */
+  trust: number;
+  affinity: number;
+  reason: string;
+  quote: string;
+  milestones?: string[];
+}
+
+export interface CharacterAttribute {
+  /** Inclusive boundaries; omitted legacy values use 30 and 70. */
+  lowAt?: number;
+  highAt?: number;
+  id: string;
+  label: string;
+  initial: number;
+  low: string;
+  high: string;
+  cap: number;
+}
+export interface AttributeChange {
+  turn?: string;
+  at: number;
+  source: "scene" | "manual";
+  before: Record<string, number>;
+  after: Record<string, number>;
+  reason: string;
+  quote: string;
+}
+export interface AttributeState {
+  values: Record<string, number>;
+  locked: string[];
+  history: AttributeChange[];
+}
+export interface AttributePatch {
+  id: string;
+  changes: { key: string; delta: number }[];
+  reason: string;
+  quote: string;
 }
 
 export interface MemoryCandidate {
@@ -225,6 +330,15 @@ export interface ConversationEstimate {
   messageCount: number;
   atLeast: boolean;
   source?: "history" | "page";
+}
+
+export interface StoryTurn { role: "user" | "assistant"; text: string }
+export interface StoryContinuation {
+  version: 1;
+  turns: StoryTurn[];
+  source: "history" | "page";
+  partial: boolean;
+  omittedTurns: number;
 }
 
 export interface DeepSeekAdapter {

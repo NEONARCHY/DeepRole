@@ -1,5 +1,5 @@
 import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId } from "../core/request-injection";
-import { estimateChatHistory } from "../core/chat-history";
+import { estimateChatHistory, readStoryHistory } from "../core/chat-history";
 
 export default defineUnlistedScript(() => {
   const originalFetch = window.fetch.bind(window);
@@ -7,24 +7,24 @@ export default defineUnlistedScript(() => {
   const pending = new Map<string, (value: string | null) => void>();
   window.addEventListener("message", (event) => {
     if (event.source !== window || event.data?.source !== "deeprole-extension") return;
-    if (event.data.type === "CHAT_HISTORY_ESTIMATE_REQUEST") {
+    if (event.data.type === "CHAT_HISTORY_ESTIMATE_REQUEST" || event.data.type === "STORY_HISTORY_REQUEST") {
       const { requestId, chatId } = event.data;
       if (typeof requestId === "string" && requestId.length <= 120 && typeof chatId === "string" && /^[\w-]{1,120}$/u.test(chatId)) {
-        void readChatHistoryEstimate(requestId, chatId);
+        void readChatHistoryEstimate(requestId, chatId, event.data.type === "STORY_HISTORY_REQUEST", typeof event.data.latestId === "string" ? event.data.latestId.slice(0, 120) : undefined);
       }
       return;
     }
     if (event.data.type !== "CONTEXT_READY") return;
     pending.get(event.data.id)?.(event.data.ok && typeof event.data.context === "string" ? event.data.context : null);
   });
-  async function readChatHistoryEstimate(requestId: string, chatId: string): Promise<void> {
+  async function readChatHistoryEstimate(requestId: string, chatId: string, story = false, latestId?: string): Promise<void> {
     let estimate = null;
     const currentId = location.pathname.match(/\/chat\/s\/([^/?#]+)/i)?.[1] ?? location.pathname.match(/\/chat\/([^/?#]+)/i)?.[1];
     if (currentId !== chatId) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 15_000);
+    const timer = window.setTimeout(() => controller.abort(), story ? 5000 : 15_000);
     try {
-      // The token stays in the page. Only aggregate counts cross into the extension.
+      // The token stays in the page. Text is read only for an explicit transfer.
       let token = localStorage.getItem("userToken") ?? "";
       if (token.startsWith("{")) {
         const parsed: unknown = JSON.parse(token);
@@ -38,11 +38,11 @@ export default defineUnlistedScript(() => {
       if (!response.ok || Number(response.headers.get("content-length") ?? 0) > 30_000_000) throw new Error("history-unavailable");
       const payload = await response.text();
       if (payload.length > 30_000_000) throw new Error("history-too-large");
-      estimate = estimateChatHistory(JSON.parse(payload));
+      estimate = story ? readStoryHistory(JSON.parse(payload), latestId) : estimateChatHistory(JSON.parse(payload));
     } catch { /* The page-only estimate remains available. */ }
     finally { window.clearTimeout(timer); }
     if (currentId === (location.pathname.match(/\/chat\/s\/([^/?#]+)/i)?.[1] ?? location.pathname.match(/\/chat\/([^/?#]+)/i)?.[1])) {
-      window.postMessage({ source: SOURCE, type: "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
+      window.postMessage({ source: SOURCE, type: story ? "STORY_HISTORY_RESULT" : "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
     }
   }
   function freshContext(id: string, draft: string, chatId: string | null): Promise<string | null> {

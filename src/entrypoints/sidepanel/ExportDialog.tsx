@@ -1,3 +1,4 @@
+import { Select } from "../shared/Select";
 import { useEffect, useId, useRef, useState } from "react";
 import { exportText } from "../../core/export-i18n";
 import type { Locale, WorldProfile } from "../../core/types";
@@ -47,7 +48,7 @@ export function ExportDialog(props: { locale: Locale; worlds: WorldProfile[]; wo
       <fieldset disabled={busy} className="dr-export-options">
         <label className={`dr-export-choice${scope === "world" ? " is-selected" : ""}`}><input type="radio" name={id} checked={scope === "world"} disabled={!props.worlds.length} onChange={() => setScope("world")} /><span><strong>{t("world")}</strong><small>{t("worldHint")}</small></span></label>
         <label className={`dr-export-choice${scope === "backup" ? " is-selected" : ""}`}><input type="radio" name={id} checked={scope === "backup"} onChange={() => setScope("backup")} /><span><strong>{t("backup")}</strong><small>{t("backupHint")}</small></span></label>
-        {scope === "world" && <label className="field-label">{t("choose")}<select className="input" value={worldId} onChange={e => setWorldId(e.target.value)}>{props.worlds.map(world => <option key={world.id} value={world.id}>{world.name}</option>)}</select></label>}
+        {scope === "world" && <label className="field-label">{t("choose")}<Select className="input" value={worldId} onChange={e => setWorldId(e.target.value)}>{props.worlds.map(world => <option key={world.id} value={world.id}>{world.name}</option>)}</Select></label>}
         {scope === "backup" && <><label className="rp-check"><input type="checkbox" checked={protectedFile} onChange={e => setProtectedFile(e.target.checked)} />{t("password")}</label>{protectedFile && <label className="field-label">{t("passwordLabel")}<input className="input" type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></label>}</>}
       </fieldset>
       {error && <p role="alert">{t(error)}</p>}

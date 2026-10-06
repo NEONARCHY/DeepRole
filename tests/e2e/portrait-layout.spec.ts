@@ -17,6 +17,44 @@ async function drag(page: Page, handle: Locator, dx: number, dy: number) {
 }
 async function ratio(image: Locator) { const box = (await image.boundingBox())!; expect(box.width / box.height).toBeCloseTo(.75, 3); }
 
+for (const width of [320, 1600]) test(`pinned scene keeps portraits with the options at ${width}px`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 800 });
+  await page.goto("/tests/fixtures/characters.html?locale=en&pins");
+  await page.evaluate(() => {
+    const conversation = document.querySelector("#conversation")!;
+    for (const place of ["before", "after"] as const) {
+      const spacer = document.createElement("div"); spacer.style.height = "1200px";
+      if (place === "before") conversation.before(spacer); else conversation.after(spacer);
+    }
+  });
+  const card = page.locator("[data-deeprole-choices-host]");
+  await card.scrollIntoViewIfNeeded();
+  await card.getByRole("button", { name: "Pin both portraits" }).click();
+  await card.getByRole("button", { name: "Pin options on screen" }).click();
+  await expect(card).toHaveAttribute("data-deeprole-choices-pinned", "true");
+  const hero = page.locator('.dr-cast-widget[data-character-id="hero"]');
+  const mira = page.locator('.dr-cast-widget[data-character-id="mira"]');
+  const before = await Promise.all([card.boundingBox(), hero.boundingBox(), mira.boundingBox()]);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  const after = await Promise.all([card.boundingBox(), hero.boundingBox(), mira.boundingBox()]);
+  for (let index = 0; index < before.length; index++) {
+    expect(after[index]!.x).toBeCloseTo(before[index]!.x, 0);
+    expect(after[index]!.y).toBeCloseTo(before[index]!.y, 0);
+  }
+  expect(after[0]!.y).toBeGreaterThanOrEqual(0);
+  expect(after[0]!.y + after[0]!.height).toBeLessThanOrEqual(800);
+  if (width >= 700) {
+    expect(after[1]!.x + after[1]!.width).toBeLessThanOrEqual(after[0]!.x);
+    expect(after[2]!.x).toBeGreaterThanOrEqual(after[0]!.x + after[0]!.width);
+  } else {
+    expect(after[1]!.y + after[1]!.height).toBeLessThanOrEqual(after[0]!.y);
+    expect(after[2]!.y + after[2]!.height).toBeLessThanOrEqual(after[0]!.y);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.screenshot({ path: info.outputPath(`pinned-scene-${width}.png`) });
+});
+
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) test(`independent multi-character portraits and constructor ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 950 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`); await cast(page);
   const host = page.locator("[data-deeprole-choices-host]"); const floating = page.locator("[data-deeprole-portrait-layer]"); const widgets = floating.locator(".dr-cast-widget");

@@ -31,9 +31,10 @@ The extension will show every proposed change for the user to approve; nothing i
 [World entries: scan EVERY entry for this fact, even without the character name]\n${JSON.stringify(existing.map(({ id, title, content }) => ({ id, title, content })))}`;
 }
 
-export function loreDraftPrompt(brief: string, locale: Locale): string {
+export function loreDraftPrompt(brief: string, locale: Locale, relationshipBlueprint = ""): string {
   return `${SERVICE_PREFIX}
 Help the user draft roleplay lore and rules from the brief below. This is brainstorming: nothing becomes established lore until the user approves the proposals. Follow the requested scope, do not claim that proposed events have happened, and do not invent real user facts. Prefer a small set of useful, concise entries, not a full novel. Use ${locale === "ru" ? "Russian" : "English"} unless another language is requested.
+${relationshipBlueprint ? `${relationshipBlueprint}\nDevelop distinct personalities, boundaries and relationship-building events consistent with this starting cast. Do not replace their numeric settings. New levels are suggestions for manual setup, not completed scenes. No universal kindness rewards; romance is optional and must respect adult status and consent.` : ""}
 First write one brief, user-facing summary in ${locale === "ru" ? "Russian" : "English"}: say how many proposals you prepared and remind the user that nothing is saved until they approve it. Do not include step-by-step analysis.
 Return valid JSON only between ${SERVICE_START} and ${SERVICE_END}, without Markdown fences.
 Schema: {"type":"memory-suggestions","items":[{"title":"short name","content":"proposed rule or world fact","keywords":["keyword"],"activation":"always|smart|manual","priority":"low|normal|high"}]}

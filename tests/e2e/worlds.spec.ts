@@ -30,7 +30,8 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
   await expect(importDialog).toBeVisible();
   await expect(page.locator(".lore-import-backdrop")).toHaveCSS("animation-name", "none");
   await expect(importDialog).toHaveCSS("opacity", "1");
-  await expect(importDialog).toHaveCSS("background-color", "rgb(33, 33, 34)");
+  const panelColor = await importDialog.evaluate(node => getComputedStyle(node).getPropertyValue("--dr-panel").trim());
+  await expect(importDialog).toHaveCSS("background-color", await importDialog.evaluate((node, color) => { const probe = document.createElement("span"); probe.style.color = color; node.append(probe); const result = getComputedStyle(probe).color; probe.remove(); return result; }, panelColor));
   const dialogBox = await importDialog.boundingBox(); const viewport = page.viewportSize()!;
   expect(Math.abs(dialogBox!.x + dialogBox!.width / 2 - viewport.width / 2)).toBeLessThan(2);
   expect(Math.abs(dialogBox!.y + dialogBox!.height / 2 - viewport.height / 2)).toBeLessThan(2);
@@ -107,7 +108,7 @@ test("world tree edits entry relationships without changing lore", async ({ page
   await page.getByRole("button", { name: "Лор", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Древо.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Башня": { value: "Исходный текст башни", importance: "always" }, "Дверь": { value: "Исходный текст двери", importance: "called" } })) });
-  await expect(page.getByText("Распознана память BDS", { exact: true })).toBeVisible();
+  await expect(page.getByText("Распознана память Better Deepseek (BDS)", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   const tower = page.locator(".memory-card").filter({ has: page.getByRole("heading", { name: "Башня", exact: true }) });

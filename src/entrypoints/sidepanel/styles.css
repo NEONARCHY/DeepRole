@@ -167,6 +167,27 @@ select:focus, .input:focus, .textarea:focus, .field-label input:focus { border-c
 .app-shell .bottom-nav button.active { color:var(--dr-primary); background:var(--dr-raised); }
 .app-shell .handoff-hero { border-color:var(--dr-border); background:var(--dr-surface); }
 
+/* AXIS-2's surface-led hierarchy: graphite, restrained depth, one pale accent. */
+body { background:var(--dr-bg); }
+.app-shell .app-header,.app-shell .bottom-nav { background:#15191e; backdrop-filter:none; border-color:transparent; box-shadow:0 4px 24px #0002; }
+.app-shell :is(.settings-card,.panel-card,.books-block,.memory-card,.snapshot-card,.hero-card,.rp-card,.tutorial-card,.action-card,.modal) { border-color:transparent; background:var(--dr-surface); background-image:var(--dr-surface-light); box-shadow:var(--dr-depth-card); backdrop-filter:none; }
+.app-shell :is(.settings-card,.panel-card,.books-block,.memory-card,.snapshot-card,.rp-card,.action-card):hover { border-color:var(--dr-border-strong); }
+.app-shell :is(.button.secondary,.icon-button,.filter-chip,.segmented button,.rp-view-switch button) { transition:background-color .16s ease,border-color .16s ease,color .16s ease; }
+.app-shell :is(.button.secondary,.icon-button,.filter-chip):hover:not(:disabled) { border-color:var(--dr-border-strong); background:var(--dr-raised); }
+.app-shell :is(.input,.textarea,select,.field-label input,.search-field) { background:#17212b; border-color:transparent; box-shadow:inset 0 1px 0 #ffffff08; }
+.app-shell .modal-backdrop { background:#0d1013b0; backdrop-filter:blur(6px); }
+.app-shell .modal { background:var(--dr-panel); background-image:var(--dr-surface-light); box-shadow:var(--dr-depth-dialog); }
+.app-shell .hero-card::after { background:none; }
+.app-shell .brand-mark { background:#304752; }
+.app-shell .suggestion-check input[type="checkbox"] { position:absolute; width:38px; height:22px; opacity:0; }
+.app-shell .suggestion-check input[type="checkbox"]::before { display:none; }
+.app-shell .suggestion-check span { position:relative; width:38px; height:22px; border-radius:999px; background:var(--dr-raised); }
+.app-shell .suggestion-check span::before { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--dr-text); transition:transform .18s ease; }
+.app-shell .suggestion-check input:checked + span { background:var(--dr-action-hover); }
+.app-shell .suggestion-check input:checked + span::before { transform:translateX(16px); }
+.app-shell .suggestion-check input:checked + span::before { background:var(--dr-on-action); }
+@media (prefers-reduced-motion:reduce) { .app-shell :is(.button.secondary,.icon-button,.filter-chip,.segmented button,.rp-view-switch button) { transition:none; } }
+
 /* The host sizes the iframe to the floating map, so the page remains clickable around it. */
 html:has(.app-shell[data-embedded-menu="true"] .dr-map-workspace),
 body:has(.app-shell[data-embedded-menu="true"] .dr-map-workspace) { background: transparent; }

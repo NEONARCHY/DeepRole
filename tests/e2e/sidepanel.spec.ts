@@ -47,11 +47,33 @@ test("compact settings expose tuning without opening any disclosure", async ({ p
   await expect(page.getByText("Включить локальный сейф").first()).toBeVisible();
 });
 
+test("scene pins use persistent switches in compact settings", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/tests/fixtures/sidepanel.html");
+  await page.getByRole("button", { name: "Настройки", exact: true }).click();
+  await page.getByRole("button", { name: "Приложение", exact: true }).click();
+  for (const label of ["Закрепить варианты на экране", "Закрепить оба портрета"]) {
+    const control = page.getByRole("checkbox", { name: label });
+    await expect(control).not.toBeChecked();
+    const box = (await control.boundingBox())!;
+    expect(box.width).toBe(38); expect(box.height).toBe(22);
+    await control.check();
+    await expect(control).toBeChecked();
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("scene-pins-ru-360.png"), fullPage: true, animations: "disabled" });
+  await expect.poll(() => page.evaluate(async () => {
+    const saved = (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings;
+    return [saved.pinSceneChoices, saved.pinPortraitLeft, saved.pinPortraitRight];
+  })).toEqual([true, true, true]);
+});
+
 test("does not run analysis or handoff from an empty chat", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
   await expect(page.getByText("Сначала отправьте реплику в чат").first()).toBeVisible();
   await page.locator(".play-continuation > summary").click();
+  await page.locator(".play-continuation .memory-detail > summary").click();
   await expect(page.getByRole("button", { name: "Сохранить состояние истории", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Продолжить в новом чате", exact: true })).toBeDisabled();
 });

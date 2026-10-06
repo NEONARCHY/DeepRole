@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Select interaction fixture</title><style>body{margin:0;min-height:1500px;background:#151a20}</style></head><body><main id="fixture"></main><script type="module">
+import React,{useState} from "react";import{createRoot}from"react-dom/client";import{Select}from"/src/entrypoints/shared/Select.tsx";
+import styles from "/src/entrypoints/shared/design-system.css?inline";
+const host=document.querySelector("#fixture");const shadow=host.attachShadow({mode:"open"});const css=document.createElement("style");css.textContent=styles+".dr-root{position:fixed;inset:auto 16px 16px 16px;max-width:300px;color:var(--dr-text);font:13px system-ui}label{display:grid;gap:8px}select{box-sizing:border-box;width:100%;min-height:40px;color:var(--dr-text);background:var(--dr-panel);border:1px solid var(--dr-border);border-radius:8px;padding:10px}button{margin-top:12px;background:var(--dr-panel);color:var(--dr-text);border:0;padding:10px}";shadow.append(css);const root=document.createElement("div");shadow.append(root);
+const locale=new URLSearchParams(location.search).get("locale")||"en";document.documentElement.lang=locale;
+function Fixture(){
+  const[value,setValue]=useState("0");const[disabled,setDisabled]=useState(false);
+  const options=Array.from({length:100},(_,i)=>React.createElement("option",{key:i,value:String(i),disabled:i===1},(locale==="ru"?"Эмоция ":"Emotion ")+String(i).padStart(2,"0")+(i===50?" — "+"long_unbroken_name_".repeat(8):"")));
+  const picker=React.createElement(Select,{"aria-label":locale==="ru"?"Эмоция":"Emotion",value,disabled,onChange:e=>{setValue(e.target.value);window.picked=e.target.value}},options);
+  return React.createElement("div",{className:"dr-root"},React.createElement("label",null,locale==="ru"?"Эмоция":"Emotion",picker),React.createElement("button",{onClick:()=>setDisabled(!disabled)},locale==="ru"?"Выключить":"Disable"));
+}
+createRoot(root).render(React.createElement(Fixture));
+</script></body></html>

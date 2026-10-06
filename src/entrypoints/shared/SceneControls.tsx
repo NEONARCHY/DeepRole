@@ -1,3 +1,4 @@
+import { Select } from "./Select";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Locale, MemoryBook, SceneEntity, SceneState, WorldProfile } from "../../core/types";
 import { sceneText } from "../../core/scene-i18n";
@@ -36,7 +37,7 @@ export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; e
     if (props.overlay && expanded && event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setExpanded(false); toggle.current?.focus(); }
   }}>
     <div className="scene-controls-line">
-      {!props.worldLocked && <label className="scene-world"><span>{t("world")}</span><select aria-label={t("world")} value={props.scene.worldId ?? ""} onChange={(e) => props.onChange({ worldId: e.target.value || null, focusIds: [], bookId: null })}><option value="">{t("unassigned")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}
+      {!props.worldLocked && <label className="scene-world"><span>{t("world")}</span><Select aria-label={t("world")} value={props.scene.worldId ?? ""} onChange={(e) => props.onChange({ worldId: e.target.value || null, focusIds: [], bookId: null })}><option value="">{t("unassigned")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</Select></label>}
       
       <button ref={toggle} id={`${panelId}-toggle`} type="button" className="scene-focus-toggle" aria-expanded={expanded} aria-controls={expanded ? panelId : undefined} onClick={() => setExpanded(!expanded)}>{t("scene")} · {focus.length ? focus.map((e) => e.name).join(", ") : t("automatic")}</button>
       
@@ -44,7 +45,7 @@ export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; e
     {expanded && <div id={panelId} role="region" aria-labelledby={`${panelId}-toggle`} className="scene-focus-panel">
       {props.overlay && <strong className="scene-scope">{t("sceneScope")}</strong>}
       <SectionGuide locale={props.locale} text={t("sceneHint")} />
-      <label>{t("books")} <select aria-label={t("books")} value={props.scene.bookId ?? ""} onChange={(e) => props.onChange({ ...props.scene, bookId: e.target.value || null })}><option value="">{props.scene.worldId ? t("allBooks") : t("unassigned")}</option>{books.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+      <label>{t("books")} <Select aria-label={t("books")} value={props.scene.bookId ?? ""} onChange={(e) => props.onChange({ ...props.scene, bookId: e.target.value || null })}><option value="">{props.scene.worldId ? t("allBooks") : t("unassigned")}</option>{books.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label>
       {!entities.length && <p>{t("noEntities")}</p>}
       {(["character", "location", "group"] as const).map((kind) => <div key={kind} className="scene-focus-group">{entities.some((e) => e.kind === kind) && <small>{t(kind)}</small>}{entities.filter((e) => e.kind === kind).map((entity) => <label className="scene-chip" key={entity.id}><input type="checkbox" checked={props.scene.focusIds.includes(entity.id)} onChange={(e) => props.onChange({ ...props.scene, focusIds: e.target.checked ? [...props.scene.focusIds, entity.id] : props.scene.focusIds.filter((id) => id !== entity.id) })} />{entity.name}</label>)}</div>)}
       {focus.length > 0 && <button type="button" className="scene-clear" onClick={() => props.onChange({ ...props.scene, focusIds: [] })}>{t("clearFocus")}</button>}

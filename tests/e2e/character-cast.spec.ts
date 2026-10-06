@@ -1,4 +1,4 @@
-import { closeSavedCharacter } from "./character-helpers";
+import { closeSavedCharacter, characterTab } from "./character-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -34,14 +34,17 @@ for (const locale of ["ru", "en"] as const) {
     await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
     const dialog = page.getByRole("dialog");
     const preview = dialog.getByLabel(locale === "ru" ? "Эмоция портрета" : "Portrait emotion", { exact: true });
+    await characterTab(dialog, "images", locale);
     await expect(preview).toHaveValue("happy");
     let confirmations = 0;
     page.on("dialog", async event => { confirmations++; await event.dismiss(); });
     await preview.selectOption("angry");
+    await characterTab(dialog, "scene", locale);
     await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("happy");
     await dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).first().click();
     await expect(dialog).toHaveCount(0); expect(confirmations).toBe(0);
     await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
+    await characterTab(dialog, "scene", locale);
     await dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true }).selectOption("sad");
     await dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).first().click();
     await expect(dialog).toBeVisible(); expect(confirmations).toBe(1);
@@ -93,13 +96,13 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     const partnerName = locale === "ru" ? "Собеседник героя" : "Talking to the protagonist";
     const presentName = locale === "ru" ? "В сцене" : "In the scene";
     const dialog = page.getByRole("dialog"); const tile = page.locator(".dr-character-row").filter({ hasText: "Mira" });
-    await tile.click(); const partner = dialog.getByRole("checkbox", { name: partnerName, exact: true });
+    await tile.click(); await characterTab(dialog, "scene", locale); const partner = dialog.getByRole("checkbox", { name: partnerName, exact: true });
     await expect(partner).toBeChecked(); await partner.uncheck();
     await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale);
     expect(await page.evaluate(() => (window as any).saved.interlocutor)).toBe(false);
     await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: null, presentIds: ["hero"] } }); });
     await page.locator(".dr-characters").getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Все" : "All"}`) }).click();
-    await tile.click(); await expect(partner).not.toBeChecked(); const present = dialog.getByRole("checkbox", { name: presentName, exact: true });
+    await tile.click(); await characterTab(dialog, "scene", locale); await expect(partner).not.toBeChecked(); const present = dialog.getByRole("checkbox", { name: presentName, exact: true });
     await expect(present).not.toBeChecked(); await partner.focus(); await partner.press("Space");
     await expect(partner).toBeChecked(); await expect(present).toBeChecked(); await expect(partner).toBeFocused();
     await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("happy");
@@ -115,12 +118,14 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await save.click(); await closeSavedCharacter(dialog, locale); await expect(dialog).toHaveCount(0);
     expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: true, present: true, state: { emotion: "happy" }, chatId: "a" });
     await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: "mira", presentIds: ["hero", "mira"] } }); });
-    await page.locator(".dr-cast-portrait.right").click(); await expect(partner).toBeChecked(); await partner.scrollIntoViewIfNeeded();
+    await page.locator(".dr-cast-portrait.right").click(); await characterTab(dialog, "scene", locale); await expect(partner).toBeChecked(); await partner.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath(`manual-partner-${locale}-${width}.png`) });
     await page.keyboard.press("Escape");
     await page.locator(".dr-character-row").filter({ hasText: "Noah" }).click(); await expect(partner).toHaveCount(0);
     await dialog.getByRole("checkbox", { name: locale === "ru" ? "Мой главный герой" : "My protagonist", exact: true }).uncheck();
+    await characterTab(dialog, "scene", locale);
     await expect(partner).toBeVisible(); await partner.check();
+    await characterTab(dialog, "profile", locale);
     await dialog.getByRole("checkbox", { name: locale === "ru" ? "Мой главный герой" : "My protagonist", exact: true }).check();
     await expect(partner).toHaveCount(0); await save.click();
     expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: false, sheet: { protagonist: true } });
@@ -159,6 +164,7 @@ test("live emotion changes preserve portrait focus and recover corrupt local ima
   await expect(right).toBeFocused(); await expect(right.locator("img")).toHaveAttribute("src", neutral);
   await expect(tile.locator("img")).toHaveCount(0);
   await right.press("Enter");
+  await characterTab(page.getByRole("dialog"), "images");
   const editorImage = page.getByRole("dialog").locator(".dr-character-portrait-editor img"); await editorImage.scrollIntoViewIfNeeded(); await expect(editorImage).toHaveAttribute("src", neutral);
   await page.keyboard.press("Escape"); await expect(page.getByRole("dialog")).toHaveCount(0); await expect(right).toBeFocused();
   await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ entities: cast.entities.map((e: any) => e.id === "mira" ? { ...e, updatedAt: 3, characterSheet: { ...e.characterSheet, sprites: { worried: "data:image/png;base64,AAAA", neutral: "data:image/png;base64,BBBB" } } } : e) }); });

@@ -12,6 +12,33 @@ function store() {
 }
 
 describe("per-tab session patches", () => {
+  it("holds the snapshot guard while the destination commit is in flight", async () => {
+    const { state } = store();
+    await state.patch(1, { snapshotId: "A", snapshotToken: "one" });
+    let release!: () => void, started!: () => void, applied = false;
+    const ready = new Promise<void>(resolve => { started = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
+    const commit = state.completeSnapshot(1, "A", "one", async () => { started(); await gate; applied = true; });
+    await ready;
+    const newer = state.patch(1, { snapshotId: "B", snapshotToken: "two" });
+    release(); expect(await commit).toBe(true); await newer;
+    expect(applied).toBe(true); expect(await state.get(1)).toMatchObject({ snapshotId: "B", snapshotToken: "two" });
+  });
+  it("never runs an older checkpoint commit and retains a failed commit for retry", async () => {
+    const { state } = store(); let applied = false;
+    await state.patch(1, { snapshotId: "B", snapshotToken: "two" });
+    expect(await state.completeSnapshot(1, "A", "one", async () => { applied = true; })).toBe(false); expect(applied).toBe(false);
+    await expect(state.completeSnapshot(1, "B", "two", async () => { throw new Error("write failed"); })).rejects.toThrow("write failed");
+    expect(await state.get(1)).toMatchObject({ snapshotId: "B", snapshotToken: "two" });
+  });
+  it("does not resurrect session state if the tab closes during a destination commit", async () => {
+    const { state, values } = store();
+    await state.patch(1, { snapshotId: "A", snapshotToken: "one" });
+    let release!: () => void, started!: () => void;
+    const ready = new Promise<void>(resolve => { started = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
+    const commit = state.completeSnapshot(1, "A", "one", async () => { started(); await gate; });
+    await ready; const closed = state.remove(1); release(); await commit; await closed;
+    expect(values).toEqual({});
+  });
   it("acknowledges character sends despite browser key reordering, never an older send", async () => {
     const { state, values } = store();
     const receipt = { id: "request-123456", worldId: "w", chatId: "a", base: "version", accepted: false, createdAt: 1 };

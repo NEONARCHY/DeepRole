@@ -8,10 +8,11 @@
       import { dismissSceneChoiceCards, syncSceneChoiceCards } from "/src/adapters/deepseek-choices-dom.ts";
       import { DeepSeekDomAdapter } from "/src/adapters/deepseek-dom.ts";
       const adapter = new DeepSeekDomAdapter();
-      let state = { enabled: true, generating: false, busy: false, locale: new URL(location.href).searchParams.get("locale") ?? "en" };
+      const pinControls = new URL(location.href).searchParams.has("pins");
+      let state = { enabled: true, generating: false, busy: false, pinSceneChoices: false, pinPortraits: false, locale: new URL(location.href).searchParams.get("locale") ?? "en" };
       window.requests = 0; window.sent = 0;
       document.documentElement.lang = state.locale;
-      const sync = () => syncSceneChoiceCards(state.enabled, state.generating, state.locale, async (choice) => { if (adapter.getDraft().trim()) return false; return adapter.setDraft(choice.text); }, document, { busy: state.busy, onRequest: async () => { window.requests++; state.busy = true; sync(); return true; } });
+      const sync = () => syncSceneChoiceCards(state.enabled, state.generating, state.locale, async (choice) => { if (adapter.getDraft().trim()) return false; return adapter.setDraft(choice.text); }, document, { busy: state.busy, onRequest: async () => { window.requests++; state.busy = true; sync(); return true; } }, pinControls ? { adaptiveLayout: state.adaptiveLayout, pinSceneChoices: state.pinSceneChoices, pinPortraits: state.pinPortraits, onToggle: key => { state[key] = !state[key]; sync(); } } : undefined);
       const restore = () => { document.querySelector("#conversation").innerHTML = sessionStorage.getItem("history") ?? '<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope. What will you do?</p></div></article>'; sync(); };
       window.choicesTest = { sync, update: (next) => { Object.assign(state, next); sync(); }, setHistory: (html) => { sessionStorage.setItem("history", html); restore(); }, navigate: (html) => { dismissSceneChoiceCards(document, false); document.querySelector("#conversation").innerHTML = html; sync(); } };
       document.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); window.sent++; });

@@ -1,18 +1,27 @@
 import { characterCast, characterHighlights, characterInterlocutors, characterText, emotionLabel, syncPortraitImage } from "../core/characters";
+import { resolveCharacterEmotion } from "../core/character-emotions";
 import { clamp, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
 import { scenePortraitIndex } from "../core/portrait-variations";
+import { fitScene } from "../core/adaptive-layout";
+import { sceneAvailableLeft, widgetDeck, widgetRects } from "./adaptive-layout";
+import { nearestWidgetSpace } from "../core/widget-spacing";
+import { composerBounds, fitPinnedChoices, pinnedSceneFit, inlineSceneFit } from "./pinned-choices";
 
 export interface PortraitStageOptions {
   scope: string;
   layout?: PortraitLayout;
   resetAt?: number;
+  pinSceneChoices?: boolean;
+  pinLeft?: boolean;
+  pinRight?: boolean;
+  adaptiveLayout?: boolean;
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
 type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
-type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
+type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
 let statsId = 0;
@@ -21,6 +30,107 @@ const attr = (node: HTMLElement, key: string, value: string) => { if (node.getAt
 const css = (node: HTMLElement, key: string, value: string) => { if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value); };
 const PORTRAIT_CHOICE_GAP = 24;
 const PORTRAIT_PEER_GAP = 6;
+
+function clearAdaptive(stage: Stage) {
+  if (!stage.anchor.hasAttribute("data-adaptive-portraits")) return;
+  stage.anchor.removeAttribute("data-adaptive-portraits");
+  stage.anchor.removeAttribute("data-pinned-portrait-reserve");
+  stage.anchor.removeAttribute("data-pinned-portrait-count");
+  for (const key of ["width", "left", "margin-left", "padding-top"]) css(stage.anchor, key, "");
+  const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
+  if (section) css(section, "max-height", "");
+  stage.frame.removeAttribute("data-adaptive-compact");
+  for (const key of ["left", "top", "width", "height"]) css(stage.frame, key, "");
+}
+
+/** A shared lane fits the options and portraits; constrained lanes use a scrollable portrait strip. */
+function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
+  if (!stage.options?.adaptiveLayout) return false;
+  if (stage.dragging) {
+    const widget = stage.widgets.get(stage.draggingId ?? "");
+    if (widget?.pose) {
+      const bounds = portraitBounds(widget.pose, width - 16, height - 16);
+      css(widget.box, "width", `${bounds.width}px`);
+      css(widget.box, "left", `${clamp(bounds.x, 8, width - bounds.width - 8)}px`);
+      css(widget.box, "top", `${clamp(bounds.y, 8, height - widget.box.offsetHeight - 8)}px`);
+    }
+    stage.placementKey = undefined;
+    return true;
+  }
+  if (!stage.anchor.isConnected) return true;
+  const host = stage.anchor;
+  const section = host.shadowRoot!.querySelector<HTMLElement>("section")!;
+  const parent = host.parentElement!.getBoundingClientRect();
+  const parentStyle = host.ownerDocument.defaultView!.getComputedStyle(host.parentElement!);
+  const contentLeft = parent.left + (parseFloat(parentStyle.paddingLeft) || 0) + (parseFloat(parentStyle.borderLeftWidth) || 0);
+  const left = sceneAvailableLeft(host.ownerDocument);
+  const center = stage.options.pinSceneChoices ? (left + width - 8) / 2 : parent.left + parent.width / 2;
+  const fitted = stage.options.pinSceneChoices ? pinnedSceneFit(host.ownerDocument, stage.widgets.size)
+    : composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, stage.widgets.size) : fitScene(width, left, center, stage.widgets.size);
+  const trayHeight = height < 560 ? 70 : 104;
+  const dock = widgetDeck(host.ownerDocument)?.querySelector<HTMLElement>(".dr-widget-dock")?.getBoundingClientRect();
+  const laneKey = JSON.stringify([width, height, left, parent.left, parent.width, fitted.compact, fitted.x, fitted.choices, fitted.portrait, stage.heroId, [...stage.partnerIds], [...stage.widgets].map(([id, widget]) => [id, widget.pose, widget.statsKey]), stage.options.pinSceneChoices, stage.options.pinLeft, stage.options.pinRight, stage.options.pinSceneChoices ? host.style.bottom : null]);
+  const changed = stage.placementKey !== laneKey;
+  stage.placementKey = laneKey;
+  host.dataset.adaptivePortraits = "true";
+  host.dataset.pinnedPortraitCount = String(stage.widgets.size);
+  css(host, "width", `${fitted.choices}px`);
+  css(host, "left", stage.options.pinSceneChoices ? `${fitted.x + fitted.choices / 2}px` : "");
+  css(host, "margin-left", stage.options.pinSceneChoices ? "0px" : `${fitted.x - contentLeft}px`);
+  css(host, "padding-top", fitted.compact && !stage.options.pinSceneChoices ? `${trayHeight + 8}px` : "");
+  css(section, "padding-top", "");
+  host.dataset.pinnedPortraitReserve = String(fitted.compact ? trayHeight + 8 + Math.max(0, (dock?.bottom ?? 0) - 60) : 0);
+  css(section, "max-height", "");
+  fitPinnedChoices(host);
+  const anchor = section.getBoundingClientRect();
+  stage.frame.removeAttribute("data-pinned-compact");
+  if (fitted.compact) {
+    stage.frame.dataset.adaptiveCompact = "true";
+    attr(stage.frame, "data-short", String(height < 560));
+    if (changed || stage.options.pinSceneChoices || !stage.frame.style.top) {
+      let top = clamp(anchor.top - trayHeight - 8, 8, height - trayHeight - 8);
+      if (dock && dock.left < fitted.x + fitted.choices && dock.right > fitted.x && top < dock.bottom && top + trayHeight > dock.top) top = Math.min(height - trayHeight - 8, dock.bottom + 8);
+      css(stage.frame, "left", `${fitted.x}px`); css(stage.frame, "top", `${top}px`);
+    }
+    css(stage.frame, "width", `${fitted.choices}px`); css(stage.frame, "height", `${trayHeight}px`);
+    for (const [id, widget] of stage.widgets) {
+      const ratio = id === stage.heroId || stage.partnerIds.has(id) ? 1 : .85;
+      css(widget.box, "width", `${Math.round(fitted.portrait * ratio)}px`);
+    }
+    stage.grouped = false;
+    return true;
+  }
+  stage.frame.removeAttribute("data-adaptive-compact");
+  for (const key of ["left", "top", "width", "height"]) css(stage.frame, key, "");
+  if (!changed && stage.grouped) return true;
+  // Height is measured after widths change, so silent characters share the baseline.
+  const widgets = [...stage.widgets.entries()];
+  const heroId = stage.heroId ?? widgets[0]?.[0];
+  for (const [id, widget] of widgets) css(widget.box, "width", `${Math.round(fitted.portrait * (id === heroId || stage.partnerIds.has(id) ? 1 : .85))}px`);
+  const tallest = Math.max(...widgets.map(([, widget]) => widget.box.offsetHeight));
+  const availableBottom = stage.options.pinSceneChoices ? (composerBounds(host.ownerDocument)?.top ?? height) - 12 : height - 8;
+  const baseline = clamp(anchor.top, 8, availableBottom - tallest) + tallest;
+  let rightX = anchor.right + PORTRAIT_CHOICE_GAP;
+  for (const [id, widget] of widgets) {
+    const x = id === heroId ? anchor.left - PORTRAIT_CHOICE_GAP - widget.box.offsetWidth : rightX;
+    const y = baseline - widget.box.offsetHeight;
+    css(widget.box, "left", `${x}px`); css(widget.box, "top", `${y}px`);
+    css(widget.resize, "top", `${Math.max(0, widget.open.querySelector("img")!.offsetHeight - 44)}px`);
+    widget.restingPose = portraitPose(x, y, widget.box.offsetWidth, width - 16, height - 16);
+    if (id !== heroId) rightX += widget.box.offsetWidth + PORTRAIT_PEER_GAP;
+  }
+  // Honor manual poses where they fit, while keeping other cards and controls clear.
+  for (const [id, widget] of widgets) {
+    const pinned = stage.options.pinSceneChoices || (id === heroId ? stage.options.pinLeft : stage.options.pinRight);
+    if (!widget.pose || pinned) continue;
+    const saved = portraitBounds(widget.pose, width - 16, height - 16);
+    const obstacles = [anchor, ...widgetRects(host.ownerDocument), ...widgets.filter(([otherId]) => otherId !== id).map(([, other]) => other.box.getBoundingClientRect())].map(r => ({ x: r.x, y: r.y, width: r.width, height: r.height }));
+    const safe = nearestWidgetSpace({ x: saved.x, y: saved.y, width: widget.box.offsetWidth, height: widget.box.offsetHeight }, obstacles, { width, height }, 8, 8);
+    if (safe) { css(widget.box, "left", `${safe.x}px`); css(widget.box, "top", `${safe.y}px`); }
+  }
+  stage.grouped = true;
+  return true;
+}
 
 /** Default cast: protagonist left; speakers first on the right, then quieter bystanders. */
 function arrangeCastGroup(stage: Stage, anchor: DOMRect, width: number, height: number, preferredWidth: number): boolean {
@@ -73,15 +183,40 @@ function arrangeCastGroup(stage: Stage, anchor: DOMRect, width: number, height: 
   return true;
 }
 
+function arrangeCompactPinned(stage: Stage, anchor: DOMRect, width: number, height: number): boolean {
+  if (!stage.options?.pinSceneChoices || width >= 700 || stage.widgets.size > 4 || !stage.widgets.size) return false;
+  const widgets = [...stage.widgets.values()];
+  const gap = 6;
+  const itemWidth = Math.min(76, Math.floor((width - 16 - gap * (widgets.length - 1)) / widgets.length));
+  if (itemWidth < 52) return false;
+  stage.frame.dataset.pinnedCompact = "true";
+  const startX = Math.round((width - itemWidth * widgets.length - gap * (widgets.length - 1)) / 2);
+  for (const widget of widgets) css(widget.box, "width", `${itemWidth}px`);
+  const top = clamp(anchor.top - Math.max(...widgets.map(widget => widget.box.offsetHeight)) - 8, 8, height - 80);
+  widgets.forEach((widget, index) => {
+    const x = startX + index * (itemWidth + gap);
+    css(widget.box, "left", `${x}px`); css(widget.box, "top", `${top}px`);
+    widget.restingPose = portraitPose(x, top, itemWidth, width - 16, height - 16);
+    css(widget.resize, "top", "2px");
+  });
+  stage.grouped = false;
+  return true;
+}
+
 function arrange(stage: Stage) {
-  const width = stage.frame.clientWidth;
-  const height = stage.frame.clientHeight;
+  const width = stage.overlay.clientWidth;
+  const height = stage.overlay.clientHeight;
   if (!width || !height) return;
+  if (arrangeAdaptive(stage, width, height)) return;
+  clearAdaptive(stage);
+  fitPinnedChoices(stage.anchor);
   const anchor = (stage.anchor.shadowRoot?.querySelector("section") ?? stage.anchor).getBoundingClientRect();
   const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
+  if (!stage.dragging && arrangeCompactPinned(stage, anchor, width, height)) { if (section) section.style.paddingTop = ""; return; }
+  stage.frame.removeAttribute("data-pinned-compact");
   // Vertical scrolling must not continuously re-anchor fixed portraits.
   // Reposition only after a real layout/viewport change or an active drag.
-  const placementKey = JSON.stringify([width, height, anchor.left, anchor.width]);
+  const placementKey = JSON.stringify([width, height, anchor.left, anchor.width, stage.options?.pinSceneChoices ? anchor.top : null, stage.options?.pinSceneChoices, stage.options?.pinLeft, stage.options?.pinRight]);
   const placementChanged = stage.placementKey !== placementKey;
   stage.placementKey = placementKey;
   const groupKey = JSON.stringify([stage.heroId, [...stage.widgets].map(([id, widget]) => [id, widget.box.offsetHeight]), [...stage.partnerIds]]);
@@ -94,11 +229,11 @@ function arrange(stage: Stage) {
   const defaultWidth = clamp(Math.min(192, (height / Math.min(rows, 4) - 128) * .75, width < 600 ? 120 : 192), 96, 192);
   const allDefault = [...stage.widgets.values()].every(widget => !widget.pose);
   if (stage.grouped && !anchorVisible && !stage.dragging) return;
-  if (allDefault && !stage.dragging && anchorVisible && (shouldRedock || !stage.grouped)) {
+  if ((allDefault || stage.options?.pinSceneChoices) && !stage.dragging && anchorVisible && (shouldRedock || !stage.grouped)) {
     stage.grouped = arrangeCastGroup(stage, anchor, width, height, defaultWidth);
     if (stage.grouped) { if (section) section.style.paddingTop = ""; return; }
-  } else if (stage.grouped && !shouldRedock && allDefault && !stage.dragging) return;
-  if (!allDefault || stage.dragging) stage.grouped = false;
+  } else if (stage.grouped && !shouldRedock && (allDefault || stage.options?.pinSceneChoices) && !stage.dragging) return;
+  if ((!allDefault && !stage.options?.pinSceneChoices) || stage.dragging) stage.grouped = false;
   const rowHeight = defaultWidth * 4 / 3 + 160;
   const visibleRows = Math.max(1, Math.floor((height - 16) / rowHeight));
   const columns = Math.max(2, Math.ceil(stage.widgets.size / visibleRows));
@@ -124,7 +259,8 @@ function arrange(stage: Stage) {
     const saved = widget.pose ? portraitBounds(widget.pose, width - 16, height - 16) : null;
     const collidesWithChoices = saved && saved.x < anchor.right && saved.x + saved.width > anchor.left && saved.y < anchor.bottom && saved.y + saved.width * 4 / 3 + 70 > anchor.top;
     const keepResting = !stage.dragging && !shouldRedock && !!widget.restingPose;
-    const dock = !keepResting && anchorVisible ? widget.pose?.dock ?? (collidesWithChoices ? side : widget.pose ? null : side) : null;
+    const pinnedSide = widget === stage.widgets.get(stage.heroId ?? "") ? stage.options?.pinLeft : stage.options?.pinRight;
+    const dock = !keepResting && anchorVisible ? pinnedSide || stage.options?.pinSceneChoices ? side : widget.pose?.dock ?? (collidesWithChoices ? side : widget.pose ? null : side) : null;
     const dockRow = dock ? dockCounts[dock]++ : 0;
     const dockWidth = outsideFits ? defaultWidth : inlineWidth;
     const dockX = outsideFits ? dock === "left" ? anchor.left - (dockWidth + PORTRAIT_CHOICE_GAP) * (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) + 1 : 1) : anchor.right + PORTRAIT_CHOICE_GAP + (dockRow >= visibleRows ? Math.floor(dockRow / visibleRows) : 0) * (dockWidth + PORTRAIT_CHOICE_GAP)
@@ -163,6 +299,10 @@ function dispose(stage: Stage) {
   stage.disposed = true; stage.observer.disconnect();
   stage.anchor.ownerDocument.defaultView?.removeEventListener("resize", stage.onResize);
   stage.anchor.ownerDocument.defaultView?.removeEventListener("scroll", stage.onResize, true);
+  stage.anchor.ownerDocument.defaultView?.removeEventListener("deeprole-layout-change", stage.onResize);
+  stage.anchor.ownerDocument.defaultView?.removeEventListener("deeprole-pinned-layout", stage.onResize);
+  stage.anchor.ownerDocument.defaultView?.removeEventListener("deeprole-inline-layout", stage.onResize);
+  clearAdaptive(stage);
   stage.overlay.remove(); stage.toolbar.remove();
   const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
   section?.classList.remove("dr-cast-content"); if (section) section.style.paddingTop = "";
@@ -186,7 +326,7 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
   let gesture: { pointer: number; x: number; y: number; startX: number; startY: number; width: number; previous?: PortraitPose; changed: boolean } | undefined;
   const finish = (cancel: boolean) => {
     if (!gesture) return;
-    const completed = gesture; gesture = undefined; stage.dragging = false;
+    const completed = gesture; gesture = undefined; stage.dragging = false; stage.draggingId = undefined;
     control.classList.remove("is-dragging");
     if (control.hasPointerCapture(completed.pointer)) control.releasePointerCapture(completed.pointer);
     if (cancel) { widget.pose = completed.previous; arrange(stage); return; }
@@ -197,7 +337,7 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     if (event.button !== 0 || !event.isPrimary || gesture || stage.busy || stage.dragging) return;
     const rect = widget.box.getBoundingClientRect();
     gesture = { pointer: event.pointerId, x: event.clientX, y: event.clientY, startX: rect.left, startY: rect.top, width: rect.width, previous: widget.pose ? { ...widget.pose } : undefined, changed: false };
-    stage.dragging = true; control.setPointerCapture(event.pointerId); control.classList.add("is-dragging"); control.focus(); event.preventDefault();
+    stage.dragging = true; stage.draggingId = id; control.setPointerCapture(event.pointerId); control.classList.add("is-dragging"); control.focus(); event.preventDefault();
   });
   control.addEventListener("pointermove", event => {
     if (!gesture || event.pointerId !== gesture.pointer) return;
@@ -205,7 +345,7 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     if (Math.abs(dx) + Math.abs(dy) < 4 && !gesture.changed) return;
     gesture.changed = true;
     const width = resize ? clamp(gesture.width + (Math.abs(dx) >= Math.abs(dy * .75) ? dx : dy * .75), 96, 360) : gesture.width;
-    widget.pose = portraitPose(gesture.startX + (resize ? 0 : dx), gesture.startY + (resize ? 0 : dy), width, stage.frame.clientWidth - 16, stage.frame.clientHeight - 16);
+    widget.pose = portraitPose(gesture.startX + (resize ? 0 : dx), gesture.startY + (resize ? 0 : dy), width, stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16);
     if (!resize) widget.pose.dock = nearbyDock(stage, gesture.startX + dx, gesture.startY + dy, width);
     else if (gesture.previous?.dock) widget.pose.dock = gesture.previous.dock;
     arrange(stage); event.preventDefault();
@@ -220,7 +360,7 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     const step = event.shiftKey ? 24 : 8;
     const dx = event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0;
     const dy = event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0;
-    widget.pose = portraitPose(rect.left + (resize ? 0 : dx), rect.top + (resize ? 0 : dy), rect.width + (resize ? dx || dy : 0), stage.frame.clientWidth - 16, stage.frame.clientHeight - 16);
+    widget.pose = portraitPose(rect.left + (resize ? 0 : dx), rect.top + (resize ? 0 : dy), rect.width + (resize ? dx || dy : 0), stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16);
     if (resize && previous?.dock) widget.pose.dock = previous.dock;
     arrange(stage); event.preventDefault(); event.stopPropagation();
     void persist(stage, id, { ...widget.pose }, () => { widget.pose = previous; });
@@ -268,13 +408,21 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       // The same layer can move to a new choices card after the next reply.
       // Keep resize/scroll listeners bound to the layer, not its former host.
       let currentStage: Stage | undefined;
-      const onResize = () => { if (currentStage && !currentStage.disposed) arrange(currentStage); };
+      let framePending = false;
+      const onResize = () => {
+        if (framePending) return;
+        framePending = true;
+        doc.defaultView?.requestAnimationFrame(() => { framePending = false; if (currentStage && !currentStage.disposed) arrange(currentStage); });
+      };
       const observer = new ResizeObserver(onResize);
       stage = { anchor: host, overlay, frame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, partnerIds: new Set(), busy: false, dragging: false, observer, onResize, disposed: false };
       currentStage = stage;
       stages.set(host, stage); activeStages.add(stage); observer.observe(host); observer.observe(frame);
       doc.defaultView?.addEventListener("resize", onResize);
       doc.defaultView?.addEventListener("scroll", onResize, true);
+      doc.defaultView?.addEventListener("deeprole-layout-change", onResize);
+      doc.defaultView?.addEventListener("deeprole-pinned-layout", onResize);
+      doc.defaultView?.addEventListener("deeprole-inline-layout", onResize);
       reset.addEventListener("click", () => {
         if (stage!.busy || stage!.dragging) return;
         const previous = new Map([...stage!.widgets].map(([id, widget]) => [id, widget.pose]));
@@ -316,7 +464,8 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       attr(widget.open, "aria-label", `${characterText(locale, "edit")}: ${entity.name}`);
       const state = scene?.states[entity.id]; syncPortraitImage(widget.open.querySelector("img")!, entity.characterSheet, state?.emotion, scenePortraitIndex(entity, scene));
       const name = widget.open.querySelector(".dr-cast-name")!; if (name.textContent !== entity.name) name.textContent = entity.name;
-      const label = state ? emotionLabel(locale, state.emotion) : characterText(locale, "noState"); const mood = widget.open.querySelector("small")!; if (mood.textContent !== label) mood.textContent = label;
+      const label = state ? emotionLabel(locale, resolveCharacterEmotion(entity.characterSheet, state.emotion)) : characterText(locale, "noState"); const mood = widget.open.querySelector("small")!; if (mood.textContent !== label) mood.textContent = label;
+      attr(widget.open, "title", `${entity.name} · ${label}`);
       const role = widget.open.querySelector<HTMLElement>(".dr-cast-role")!; const roleText = characterText(locale, entity.id === hero?.id ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : "portraitPresent"); if (role.textContent !== roleText) role.textContent = roleText;
       attr(widget.box, "data-talking", String(partners.has(entity.id)));
       const stats = characterHighlights(state); const key = JSON.stringify(stats);

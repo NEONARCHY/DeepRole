@@ -1,5 +1,6 @@
 import type { AdapterStatus, DeepSeekAdapter } from "../core/types";
 import { estimateTokens } from "../core/text";
+import { nativeSidebarLeft } from "./chat-layout";
 
 const COMPOSER_SELECTORS = [
   "textarea:not([disabled])",
@@ -16,6 +17,7 @@ const MESSAGE_SELECTORS = [
 const ATTACHMENT_LABEL = /attach(?:ment)?|paperclip|upload(?:\s+(?:a\s+)?(?:file|image))?|add\s+(?:a\s+)?(?:file|image)|select\s+file|прикреп|вложен|загрузить\s+файл|добавить\s+файл|выбрать\s+файл|附件|上传文件/i;
 
 export class DeepSeekDomAdapter implements DeepSeekAdapter {
+  private chatTitle: HTMLElement | null = null;
   getChatId(): string | null {
     const match = location.pathname.match(/\/chat\/s\/([^/?#]+)/i)
       ?? location.pathname.match(/\/chat\/([^/?#]+)/i);
@@ -140,19 +142,24 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
   }
 
   getChatTitleAnchor(): { x: number; y: number } | null {
+    const sidebarLeft = nativeSidebarLeft(document);
     const composer = this.findComposer();
     const composerRect = composer?.getBoundingClientRect();
-    if (!composerRect) return null;
+    if (!composerRect) return sidebarLeft === null ? null : { x: sidebarLeft, y: this.chatTitle?.isConnected ? Math.max(48, this.chatTitle.getBoundingClientRect().bottom + 8) : 52 };
 
-    const minimumLeft = Math.max(56, composerRect.left * 0.15);
+    const minimumLeft = sidebarLeft ?? Math.max(56, composerRect.left * 0.15);
     const matchesTitle = (element: HTMLElement) => {
-        if (element.closest("deeprole-page-widget") || !isVisible(element)) return false;
+        if (element.closest("deeprole-page-widget, .dr-root") || !isVisible(element)) return false;
         const rect = element.getBoundingClientRect();
         const text = (element.innerText || element.textContent || "").trim();
         if (!text || text.includes("\n") || text.length > 80) return false;
         if (/deepseek|новый чат|new chat|умный поиск|глубокое мышление/i.test(text)) return false;
-        return rect.top >= 4 && rect.top < 92 && rect.left >= minimumLeft && rect.left < composerRect.left && rect.height <= 48 && rect.width <= 520;
+        return rect.top >= 4 && rect.top < 92 && rect.left >= minimumLeft - 8 && (sidebarLeft !== null || rect.left < composerRect.left) && rect.height <= 48 && rect.width <= 520;
     };
+    if (this.chatTitle?.isConnected && matchesTitle(this.chatTitle)) {
+      const rect = this.chatTitle.getBoundingClientRect();
+      return { x: sidebarLeft ?? Math.max(10, rect.left), y: Math.max(48, rect.bottom + 8) };
+    }
     let candidates = [...document.body.querySelectorAll<HTMLElement>("h1, h2, h3, header span, header div, [data-testid*='title'], [class*='title']")]
       .filter(matchesTitle);
     if (candidates.length === 0) {
@@ -162,10 +169,11 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
     candidates.sort((a, b) => titleCandidateScore(a, minimumLeft) - titleCandidateScore(b, minimumLeft));
 
     const title = candidates[0];
-    if (!title) return null;
+    this.chatTitle = title ?? null;
+    if (!title) return sidebarLeft === null ? null : { x: sidebarLeft, y: 52 };
     const rect = title.getBoundingClientRect();
     return {
-      x: Math.max(10, Math.round(rect.left)),
+      x: sidebarLeft ?? Math.max(10, Math.round(rect.left)),
       y: Math.max(48, Math.round(rect.bottom + 8)),
     };
   }

@@ -1,4 +1,4 @@
-import { closeSavedCharacter } from "./character-helpers";
+import { closeSavedCharacter, characterTab } from "./character-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
 import { setEnglish } from "./helpers/settings";
@@ -31,15 +31,16 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   await page.goto("/tests/fixtures/sidepanel.html?world=1");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   if (locale === "en") await setEnglish(page);
-  await page.getByRole("button", { name: locale === "ru" ? "Приложение" : "App", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
   const enable = page.getByRole("checkbox", { name: locale === "ru" ? "Карточки персонажей" : "Character sheets", exact: true });
   await expect(enable).toBeChecked(); await enable.uncheck(); await enable.check();
   const settings = page.locator(".dr-character-settings");
-  await expect(settings.getByRole("textbox")).toBeVisible();
+  await settings.getByText(locale === "ru" ? "Редактировать списком" : "Edit as a list", { exact: true }).click();
+  await expect(settings.locator("textarea")).toBeVisible();
   await expect(settings.getByRole("checkbox")).toHaveCount(2);
   const emotions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `emotion-${i}`)];
   const saveEmotions = settings.getByRole("button", { name: locale === "ru" ? "Сохранить эмоции" : "Save emotions", exact: true });
-  await settings.getByRole("textbox").fill(emotions.join("\n")); await saveEmotions.click();
+  await settings.locator("textarea").fill(emotions.join("\n")); await saveEmotions.click();
   await expect(settings.getByRole("alert")).toHaveCount(0);
   // This preview intentionally reseeds storage on reload; verify persistence
   // directly and remount the settings section. MV3 tests cover browser reload.
@@ -48,11 +49,11 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
     return (await repository.get("world", "world-a"))?.characterEmotions;
   })).toEqual(emotions);
   await page.getByRole("button", { name: locale === "ru" ? "Память" : "Memory", exact: true }).click();
-  await page.getByRole("button", { name: locale === "ru" ? "Приложение" : "App", exact: true }).click();
-  await expect(settings.getByRole("textbox")).toHaveValue(emotions.join("\n"));
-  await settings.getByRole("textbox").fill([...emotions, "extra"].join("\n")); await saveEmotions.click();
+  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+  await expect(settings.locator("textarea")).toHaveValue(emotions.join("\n"));
+  await settings.locator("textarea").fill([...emotions, "extra"].join("\n")); await saveEmotions.click();
   await expect(settings.getByRole("alert")).toContainText("32");
-  await settings.getByRole("textbox").fill(emotions.join("\n")); await saveEmotions.click();
+  await settings.locator("textarea").fill(emotions.join("\n")); await saveEmotions.click();
   expect((await new AxeBuilder({ page }).include(".dr-character-settings").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await settings.screenshot({ path: info.outputPath(`character-settings-${locale}.png`) });
@@ -75,11 +76,13 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     const bounds = await dialog.boundingBox(); expect(bounds!.x).toBeGreaterThan(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width); expect(bounds!.height).toBeLessThan(850);
     await expect(dialog.getByLabel(locale === "ru" ? "Имя" : "Name", { exact: true })).toBeFocused();
     await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing").fill("Green coat");
+    await characterTab(dialog, "scene", locale);
     await dialog.getByLabel(locale === "ru" ? "Ближайшая цель" : "Current goal").fill("Find the key");
+    await characterTab(dialog, "images", locale);
     const preview = dialog.locator(".dr-character-portrait-editor img");
     await preview.scrollIntoViewIfNeeded();
     const previewBounds = await preview.boundingBox();
-    expect(previewBounds!.width).toBeGreaterThanOrEqual(176); expect(previewBounds!.height).toBeGreaterThanOrEqual(220);
+    expect(previewBounds!.width).toBeGreaterThanOrEqual(100); expect(previewBounds!.height).toBeGreaterThanOrEqual(133);
     await expectPortraitRatio(preview);
     await page.screenshot({ path: info.outputPath(`sheet-${locale}-${width}.png`) });
     expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
@@ -116,16 +119,19 @@ test("upload fallback, failed save keeps draft, custom emotions validation", asy
   await page.goto("/tests/fixtures/characters.html?locale=en");
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.locator("input[type=file]").setInputFiles({ name: "test.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });
+  await characterTab(dialog, "images");
+  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "test.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });
   await expect(dialog.getByRole("alert")).toContainText("Couldn’t open");
   const png = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 8; canvas.height = 8; canvas.getContext("2d")!.fillRect(0, 0, 8, 8); return canvas.toDataURL("image/png").split(",")[1]!; });
-  await dialog.locator("input[type=file]").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
   await expect(dialog.locator(".dr-character-portrait-editor img")).toHaveAttribute("src", /^data:image\/(webp|png);base64,/);
   await expectPortraitRatio(dialog.locator(".dr-character-portrait-editor img"), false);
   await page.evaluate(() => { (window as any).rejectSave = true; });
+  await characterTab(dialog, "profile");
   await dialog.getByLabel("Name", { exact: true }).fill("Mira edited"); await dialog.getByRole("button", { name: "Save character" }).click();
   await expect(dialog.getByRole("alert")).toContainText("Couldn’t reach storage"); await expect(dialog.getByLabel("Name", { exact: true })).toHaveValue("Mira edited");
   await page.evaluate(() => { (window as any).rejectSave = false; }); await dialog.getByRole("button", { name: "Save character" }).click(); await closeSavedCharacter(dialog);
+  await page.getByText("Edit as a list", { exact: true }).click();
   await page.getByLabel("Portrait emotions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save emotions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep neutral");
   await page.getByLabel("Portrait emotions", { exact: true }).fill("neutral\nFocused"); await page.getByRole("button", { name: "Save emotions" }).click();
   expect(await page.evaluate(() => (window as any).settings.characterEmotions)).toEqual(["neutral", "Focused"]);

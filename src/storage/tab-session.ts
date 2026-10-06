@@ -32,6 +32,20 @@ export class TabSessionStore {
     this.closed.add(tabId);
     return this.enqueue(tabId, () => this.area.remove([`deeprole_draft_scene_${tabId}`, `deeprole_tab_state_${tabId}`]));
   }
+  /** Keep the token guard held while committing the destination library state.
+   * A later snapshot cannot slip between a checked read and the branch write.
+   */
+  completeSnapshot(tabId: number, snapshotId: string, token: string | null, commit: () => Promise<void>): Promise<boolean> {
+    return this.enqueue(tabId, async () => {
+      if (this.closed.has(tabId)) return false;
+      const previous = await this.read(tabId);
+      if (previous.snapshotId !== snapshotId || (previous.snapshotToken ?? null) !== token || this.closed.has(tabId)) return false;
+      await commit();
+      if (this.closed.has(tabId)) return true;
+      await this.area.set({ [`deeprole_tab_state_${tabId}`]: { ...previous, snapshotId: null, snapshotToken: null, continueOnFreshChat: false, continueUntil: null } });
+      return true;
+    });
+  }
   private enqueue<T>(tabId: number, operation: () => Promise<T>): Promise<T> {
     const task = (this.tails.get(tabId) ?? Promise.resolve()).catch(() => undefined).then(operation);
     this.tails.set(tabId, task);

@@ -10,6 +10,8 @@ export interface TabSessionState {
   snapshotToken?: string | null;
   continueOnFreshChat?: boolean;
   continueUntil?: number | null;
+  contextWarning?: { chatId: string; capacity: number; level: number } | null;
+  contextWarnings?: { chatId: string; capacity: number; level: number }[];
   overrides?: MemoryOverrides;
 }
 export type TabSessionGuard = Partial<TabSessionState> & { serviceId?: string | null; characterRequestId?: string | null };
@@ -31,6 +33,7 @@ export type DeepRoleMessage =
   | { type: "DR_APPLY_TEMPLATE"; templateId: string }
   | { type: "DR_RUN_SERVICE"; request: ServiceRequest }
   | { type: "DR_APPLY_SNAPSHOT"; snapshotId: string }
+  | { type: "DR_CONTINUE_STORY" }
   | { type: "DR_DATA_CHANGED" }
   | { type: "DR_CONTEXT_CHANGED"; selection?: ContextSelection }
   | { type: "DR_ADAPTER_WARNING"; context: string }

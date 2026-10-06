@@ -57,6 +57,8 @@ export function parseSceneChoices(text: string): { choices: SceneChoices; start:
 const copy = {
   ru: {
     title: "Ваш ход", hint: "Выбор попадёт в поле сообщения. Отправляете вы.",
+    pinPortraits: "Закрепить оба портрета", unpinPortraits: "Открепить оба портрета",
+    pinChoices: "Закрепить варианты на экране", unpinChoices: "Открепить варианты",
     expand: "Текст целиком", collapse: "Свернуть текст",
     navigation: "На вариантах: стрелки — переход, 1–4 — выбор.", selected: "Вставлено в поле сообщения: «{label}». Можно изменить перед отправкой.",
     notInserted: "Вариант не вставлен. Ваш текст не заменён — проверьте поле сообщения.",
@@ -70,6 +72,8 @@ const copy = {
   },
   en: {
     title: "Your move", hint: "A choice fills the message box. You decide when to send.",
+    pinPortraits: "Pin both portraits", unpinPortraits: "Unpin both portraits",
+    pinChoices: "Pin options on screen", unpinChoices: "Unpin options",
     expand: "Full text", collapse: "Collapse text",
     navigation: "On the options: arrows to move, 1–4 to choose.", selected: "Inserted into the message box: “{label}”. You can edit it before sending.",
     notInserted: "The option was not inserted. Your text was left unchanged — check the message box.",

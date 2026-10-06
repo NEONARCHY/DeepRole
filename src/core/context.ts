@@ -1,4 +1,5 @@
 import type { ContextSelection, HandoffSnapshot } from "./types";
+import { continuationContext } from "./story-continuation";
 
 export function formatMemoryContext(selection: ContextSelection, snapshot?: HandoffSnapshot | null): string {
   if (selection.entries.length === 0 && !snapshot) return "";
@@ -9,6 +10,7 @@ export function formatMemoryContext(selection: ContextSelection, snapshot?: Hand
   ];
   if (snapshot) {
     lines.push("", "[Story handoff]", snapshot.summary);
+    if (snapshot.continuation) lines.push("", continuationContext(snapshot.continuation));
   }
   if (selection.entries.length > 0) {
     lines.push("", "[Memory]");
