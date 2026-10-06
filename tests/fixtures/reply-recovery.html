@@ -24,6 +24,11 @@
   configure(true);
   const observer = new MutationObserver(changes => recovery.process(changes));
   observer.observe(document.body, { childList:true, characterData:true, characterDataOldValue:true, subtree:true });
-  window.replyTest = { refusal, write: html => { document.querySelector("#reply").innerHTML = html; }, replace: () => { document.querySelector("#reply").textContent = refusal; }, remount: () => mount(refusal), switchChat: id => { chatId=id; configure(true); mount(refusal); }, setEnabled: configure, archive: stored };
+  const markSent = () => {
+    const all = JSON.parse(localStorage.getItem("reply-demo") ?? "{}");
+    all[chatId] = stored().map(reply => ({ ...reply, contextSentAt: Date.now() }));
+    localStorage.setItem("reply-demo", JSON.stringify(all)); configure(true);
+  };
+  window.replyTest = { refusal, write: html => { document.querySelector("#reply").innerHTML = html; }, replace: () => { document.querySelector("#reply").textContent = refusal; }, remount: () => mount(refusal), switchChat: id => { chatId=id; configure(true); mount(refusal); }, setEnabled: configure, markSent, archive: stored };
   document.querySelector("form").addEventListener("submit", event => event.preventDefault());
 </script></body></html>

@@ -1,6 +1,6 @@
 # Политика приватности DeepRole
 
-Дата обновления: 2 октября 2026 года.
+Дата обновления: 6 октября 2026 года.
 
 DeepRole хранит записи памяти, книги, миры, профили персонажей/мест, заготовки, настройки, связи и ручной выбор памяти в чатах, слепки сюжета, неподтверждённые предложения и журнал отмены изменений локально в хранилище расширения в профиле браузера пользователя.
 
@@ -18,6 +18,8 @@ DeepRole:
 
 Если включены «Выборы в сценах» и к чату подключён мир, DeepRole добавляет к исходящему сообщению инструкцию о четырёх вариантах. Сами кнопки не отправляют сообщения; выбранный текст попадает в DeepSeek только после ручной отправки пользователем.
 
+При включённом «Восстановлении ответов» DeepRole сохраняет локальную копию последнего видимого фрагмента, заменённого точной заглушкой DeepSeek. Копия относится к своему чату, входит в полную резервную копию и шифруется сейфом. Последний подходящий восстановленный фрагмент автоматически добавляется к следующему обычному сообщению пользователя в этом чате как цитата ответа; для длинного текста передаются последние 64 000 символов без изменения полной копии. После успешного сетевого ответа отметка передачи сохраняется, чтобы не дублировать фрагмент при дальнейших отправках и перезагрузке. Служебные запросы его не расходуют. Выключение функции или закрытие сейфа прекращает передачу; исходная серверная реплика не переписывается. Это не отдельный запрос к модели.
+
 Отдельно, только по явной команде пользователя, DeepRole отправляет служебную инструкцию через открытый чат DeepSeek, чтобы предложить записи, изменения существующей памяти или сжатый перенос сюжета. При анализе передаётся ограниченный набор существующих записей с ID; при создании лора — введённое описание. Анализ не запускается автоматически. Предложения сохраняются как память только после подтверждения пользователя. Служебный запрос и ответ видны в чате. После обработки технический блок данных заменяется коротким сообщением; исходная реплика остаётся в истории на стороне DeepSeek.
 
 Импорт памяти [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) обрабатывается локально. Исходный файл не изменяется; вместе с импортированными записями сохраняются исходные названия и значения важности. Экспорт мира, профиля или заготовки — обычный незашифрованный JSON; защищённый экспорт всей библиотеки доступен в настройках.
@@ -34,7 +36,7 @@ DeepRole:
 
 # DeepRole Privacy Policy
 
-Last updated: October 2, 2026.
+Last updated: October 6, 2026.
 
 DeepRole stores memories, worlds, character/location profiles, story starters, settings, books, chat bindings, and handoff snapshots locally in extension-owned browser storage. It has no server, analytics or telemetry. It does not sell data or send it to the developer.
 
@@ -45,6 +47,8 @@ When you send a message, selected memory, approved world and relevant profile de
 For the approximate context indicator, DeepRole reads only the open chat's history through an internal `chat.deepseek.com` route. The sign-in token is used only within the page for this read request; it is not stored by the extension or logged. DeepRole does not store the history text. Only aggregate message and token estimates pass from the page to the extension. When the route is unavailable, the indicator uses a partial estimate from loaded messages.
 
 With Scene choices enabled and a world connected, DeepRole includes an instruction to offer four options in outgoing requests. Choice buttons do not send messages; selected text reaches DeepSeek only when you send it yourself.
+
+With Reply recovery enabled, DeepRole saves a local copy of the last visible fragment replaced by DeepSeek's exact refusal. Copies are chat-scoped, included in full backups and encrypted by the vault. The latest applicable recovery automatically accompanies your next ordinary message in the same chat as quoted assistant history; long text sends its final 64,000 characters without modifying the full local copy. A successful network response records delivery so subsequent sends and reloads do not repeat it. Service requests do not consume it. Disabling the feature or locking the vault stops transmission; the original server reply is not rewritten. No separate model request is made.
 
 [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) imports are processed locally without changing the source file. Original titles and importance values are retained. World/profile/starter exports are unencrypted JSON; encrypted full-library backups are available in Settings.
 

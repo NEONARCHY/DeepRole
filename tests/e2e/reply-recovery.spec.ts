@@ -18,6 +18,10 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1280]) test(`automa
   await page.screenshot({ path: info.outputPath("restored-reply.png") });
   await page.reload(); await expect(host).toBeVisible(); await expect(host).toContainText("observatory garden");
   await page.evaluate(() => (window as any).replyTest.remount()); await expect(host).toHaveCount(1); await expect(host).toBeVisible();
+  await page.evaluate(() => (window as any).replyTest.markSent());
+  await expect(host.locator("[data-deeprole-recovery-label]")).toHaveText(locale === "ru" ? "Восстановлено · контекст передан" : "Restored · context sent");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath("recovered-context-sent.png") });
   await page.evaluate(() => (window as any).replyTest.setEnabled(false)); await expect(host).toHaveCount(0); await expect(page.locator("#reply")).toBeVisible();
   await page.evaluate(() => (window as any).replyTest.setEnabled(true)); await expect(host).toBeVisible();
   await page.evaluate(() => (window as any).replyTest.switchChat("other")); await expect(host).toHaveCount(0); await expect(page.locator("#reply")).toContainText("beyond my current scope");

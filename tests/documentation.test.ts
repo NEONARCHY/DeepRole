@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const topics = ["choices", "portraits", "images", "emotions", "relationships", "new-world", "characteristics", "progress", "map", "memory", "review", "settings", "continuation", "warning"];
+const topics = ["choices", "portraits", "images", "emotions", "relationships", "new-world", "characteristics", "progress", "map", "memory", "review", "settings", "continuation", "warning", "recovery"];
 const pages = [{ locale: "en", file: "README.md" }, { locale: "ru", file: "docs/README.ru.md" }] as const;
 
 describe("published bilingual feature pages", () => {
@@ -54,5 +54,10 @@ describe("published bilingual feature pages", () => {
     }
     expect(readFileSync("README.md", "utf8")).toContain("saved only after you review and approve");
     expect(readFileSync("docs/README.ru.md", "utf8")).toContain("после вашей проверки и подтверждения");
+  });
+  it("describes automatic recovery delivery, its transfer limit and the distinction from rewriting old turns", () => {
+    const en = readFileSync("README.md", "utf8"), ru = readFileSync("docs/README.ru.md", "utf8");
+    expect(en).toContain("Restored · context sent"); expect(en).toContain("64,000 characters"); expect(en).toContain("original server reply is not rewritten");
+    expect(ru).toContain("Восстановлено · контекст передан"); expect(ru).toContain("64 000 символов"); expect(ru).toContain("Исходный ответ на сервере не переписывается");
   });
 });

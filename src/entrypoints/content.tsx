@@ -4,8 +4,9 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
-import { DeepSeekReplyRecovery } from "../adapters/deepseek-reply-recovery";
-import { replyRecoveryText } from "../core/reply-recovery";
+import { DeepSeekReplyRecovery, recoveredReplyContext } from "../adapters/deepseek-reply-recovery";
+import { pendingRecoveredReply, replyRecoveryText } from "../core/reply-recovery";
+import type { RecoveredReplyEdit } from "../storage/recovered-replies";
 import { nativeMessageIdentity, nativeMessageRows, isUserMessage } from "../adapters/deepseek-message-dom";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
 import { findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
@@ -99,6 +100,7 @@ export default defineContentScript({
 
 interface PageScope { url: string; chatId: string | null }
 interface ContextDelivery {
+  recoveredReply?: RecoveredReplyEdit;
   targetChatId?: string;
   characterRequest?: CharacterRequestReceipt;
   scope: PageScope;
@@ -114,6 +116,7 @@ class PageController {
   private seenContextWarnings: NonNullable<TabSessionState["contextWarnings"]> = [];
   private characterReceipt: CharacterRequestReceipt | null = null;
   private characterReceiptTask: Promise<unknown> = Promise.resolve();
+  private recoveryReceiptTask: Promise<unknown> = Promise.resolve();
   private characterScan: { scope: string; key: string; since: number; done: boolean } | null = null;
   private characterSaving = false;
   private characterScanTask: Promise<void> | null = null;
@@ -1381,11 +1384,14 @@ class PageController {
       dismissSceneChoiceCards();
       const { id, draft } = event.data; const url = location.href;
       const requestChatId = typeof event.data.chatId === "string" && /^[\w-]{1,120}$/u.test(event.data.chatId) ? event.data.chatId : undefined;
+      const parentMessageId = typeof event.data.parentMessageId === "string" && /^[\w-]{1,120}$/u.test(event.data.parentMessageId) ? event.data.parentMessageId : undefined;
       void (async () => {
         try {
           if (this.adapter.getChatId() !== this.previousChatId) this.navigate();
           await this.navigationTask;
           await this.sceneQueue.catch(() => undefined);
+          await this.replyRecovery.flush();
+          await this.recoveryReceiptTask;
           let task = this.reload();
           let loaded = await task;
           // Follow the newest in-flight snapshot instead of starting competing reads.
@@ -1408,7 +1414,12 @@ class PageController {
           };
           // Capture this request's result, not the shared preview which another
           // draft can replace while the final vault check is awaiting storage.
-          const context = await this.updateContext(draft, id, characterChatId);
+          const normalContext = await this.updateContext(draft, id, characterChatId);
+          const reply = this.settings.replyRecoveryEnabled !== false && !this.adapter.isAuthenticationPage() && currentChatId && requestChatId === currentChatId
+            ? pendingRecoveredReply(this.currentBinding()?.recoveredReplies ?? [], parentMessageId) : undefined;
+          const recoveryContext = reply ? recoveredReplyContext(reply) : "";
+          const context = [normalContext, recoveryContext].filter(Boolean).join("\n\n");
+          if (reply && recoveryContext) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
           if (await repository.isLocked()) { this.publishContext(""); throw new Error("vault-locked"); }
           this.assertScope(delivery.scope);
           if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
@@ -1432,6 +1443,11 @@ class PageController {
     const delivery = this.deliveries.get(event.data.id);
     this.deliveries.delete(event.data.id);
     if (event.data.ok && delivery) {
+      if (delivery.recoveredReply) {
+        const edit = delivery.recoveredReply;
+        this.recoveryReceiptTask = this.recoveryReceiptTask.then(() => repository.acknowledgeRecoveredReply(edit))
+          .then(async () => { if (delivery.scope.url === location.href) await this.reload(); }).catch(() => undefined);
+      }
       if (delivery.characterRequest) {
         const receipt = { ...delivery.characterRequest, accepted: true };
         this.characterReceiptTask = this.saveTabState({ characterRequest: receipt }, { characterRequestId: delivery.characterRequest.id }).then(ok => { if (ok) { this.characterReceipt = receipt; this.characterScan = null; this.scheduleScan(); } }).catch(() => undefined);

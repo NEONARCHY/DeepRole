@@ -166,6 +166,8 @@ export interface ChatBinding {
 }
 
 export interface RecoveredReply {
+  /** Acknowledged delivery with a subsequent user request; not a rewritten server turn. */
+  contextSentAt?: number;
   messageKey: string;
   html: string;
   capturedAt: number;

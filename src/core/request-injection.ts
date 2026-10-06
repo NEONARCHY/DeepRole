@@ -13,6 +13,15 @@ export function outgoingChatId(body: string): string | null {
   } catch { return null; }
 }
 
+export function outgoingParentMessageId(body: string): string | undefined {
+  try {
+    const id: unknown = JSON.parse(body)?.parent_message_id;
+    if (typeof id === "number" && Number.isSafeInteger(id) && id >= 0) return String(id);
+    if (typeof id === "string" && /^[\w-]{1,120}$/u.test(id)) return id;
+  } catch { /* Unknown history shape uses the latest recovery in the same chat. */ }
+  return undefined;
+}
+
 /** Read the exact outgoing draft even if the website already cleared its composer. */
 export function outgoingUserText(body: string): string | null {
   try {
@@ -31,7 +40,7 @@ export function outgoingUserText(body: string): string | null {
 export function injectIntoJsonBody(body: string, memoryContext: string): InjectionResult {
   const payload = JSON.parse(body) as Record<string, unknown>;
   if (typeof payload.prompt === "string") {
-    if (payload.prompt.includes("<deeprole_context") || payload.prompt.includes("<deeprole_choice_mode") || payload.prompt.includes("<deeprole_character_mode")) return { changed: false, body };
+    if (payload.prompt.includes("<deeprole_context") || payload.prompt.includes("<deeprole_choice_mode") || payload.prompt.includes("<deeprole_character_mode") || payload.prompt.includes("<deeprole_recovered_reply")) return { changed: false, body };
     payload.prompt = `${memoryContext}\n\n[User message]\n${payload.prompt}`;
     return { changed: true, body: JSON.stringify(payload) };
   }
@@ -41,7 +50,7 @@ export function injectIntoJsonBody(body: string, memoryContext: string): Injecti
       const message = messages[index] as Record<string, unknown> | undefined;
       if (message?.role !== "user") continue;
       // Never move backwards into an older user turn on retries/unsupported content.
-      if (typeof message.content === "string" && !message.content.includes("<deeprole_context") && !message.content.includes("<deeprole_choice_mode") && !message.content.includes("<deeprole_character_mode")) {
+      if (typeof message.content === "string" && !message.content.includes("<deeprole_context") && !message.content.includes("<deeprole_choice_mode") && !message.content.includes("<deeprole_character_mode") && !message.content.includes("<deeprole_recovered_reply")) {
         message.content = `${memoryContext}\n\n[User message]\n${message.content}`;
         return { changed: true, body: JSON.stringify(payload) };
       }

@@ -7,6 +7,8 @@
 
 DeepRole is a browser extension for long-running roleplay stories in [DeepSeek](https://chat.deepseek.com/). Keep lore in a local library, give characters portraits and relationships, and choose your next move without losing track of what happened.
 
+**New: automatic reply recovery with conversation continuity.** A captured reply replaced by DeepSeek's refusal reappears with a **Restored** label. Send your next message: DeepRole includes the recovered fragment automatically, with no extra recovery button. [How it works ↓](#restore-a-hidden-reply-and-continue-the-scene)
+
 You decide what becomes lasting memory. DeepSeek can suggest lore changes, but **they are saved only after you review and approve them**. Scene moods and configured progress update separately after story replies.
 
 > Early version 0.1.0. Independent project, not affiliated with DeepSeek. Make a [full backup](#backups-and-moving-to-another-computer) before uninstalling, replacing your data or moving to another computer.
@@ -48,11 +50,24 @@ While the story reply continues, your portraits stay visible. Hidden service JSO
 
 </details>
 
-## Restore a hidden reply
+## Restore a hidden reply and continue the scene
 
 When DeepSeek replaces a visible reply with “Sorry, that's beyond my current scope. Let's talk about something else.”, DeepRole automatically shows the last captured fragment with a small **Restored** label. Local copies belong to that chat and remain visible after a reload. This is enabled by default; the switch is in **Settings → App → Reply recovery**.
 
-The fragment may be incomplete. A reply the extension never saw cannot be recovered. DeepSeek's server history is unchanged. Recovered copies are included in a full DeepRole backup and protected by the vault when enabled; locking the vault hides them.
+**Recovery also returns the fragment to the conversation context.** Your next ordinary message in the same chat carries the recovered story excerpt alongside your draft and current world memory. No manual restore-and-send step or separate model request is needed. This also works without a connected world.
+
+| Step | DeepRole does |
+| --- | --- |
+| A visible reply is replaced | Restores the last captured text and saves a local copy. |
+| You send your next message | Includes the recovered fragment as quoted assistant history. Explicit parent message IDs keep different branches separate. |
+| The network request succeeds | Changes the label to **Restored · context sent** and records delivery. |
+| You reload or keep playing | The readable copy stays; a delivered fragment is not repeatedly attached. A network failure before acceptance leaves it pending for your next send. |
+
+<img src="docs/images/readme/recovery-en.png" width="700" alt="Fictional recovered reply about a compass, marked Restored · context sent after an automated delivery check">
+
+The fragment may be incomplete. A reply the extension never saw cannot be recovered. Only the latest applicable recovery is sent; very long text contributes its final **64,000 characters**, while the full local copy stays intact. Lore analysis and other service requests do not consume the pending fragment. Turning off Reply recovery or locking the vault also stops transmission.
+
+The original server reply is not rewritten: the excerpt is added to your new request. This gives DeepSeek the text to reference, but does not guarantee its interpretation or prevent another refusal. Recovered copies and delivery markers are included in a full DeepRole backup and protected by the vault when enabled. The example above uses a fictional scene in an automated browser check, not a live DeepSeek account.
 
 ## Characters, images and emotions
 

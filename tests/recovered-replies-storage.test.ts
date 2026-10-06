@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
-import { saveRecoveredReply } from "../src/storage/recovered-replies";
+import { acknowledgeRecoveredReply, saveRecoveredReply } from "../src/storage/recovered-replies";
 import type { ChatBinding } from "../src/core/types";
 
 const edit = { chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", reply: { messageKey: JSON.stringify(["message", "reply"]), html: "<p>The exact original fragment.</p>", capturedAt: 1, recoveredAt: 2 } };
@@ -36,5 +36,35 @@ describe("durable reply recovery archive", () => {
     const rows = await db.records.toArray(); expect(JSON.stringify(rows)).not.toContain("exact original fragment"); expect(rows[0]?.encrypted).toBeDefined();
     await repo.lockVault(); await expect(saveRecoveredReply({ ...edit, reply: { ...edit.reply, html: "New private text" } }, repo)).rejects.toThrow();
     await repo.unlockVault("test-only-password"); expect((await repo.get<ChatBinding>("binding", "binding:a"))!.recoveredReplies).toEqual([edit.reply]);
+  });
+  it("persists delivery across reload without deleting text or overwriting concurrent scene edits", async () => {
+    const { repo, db } = await setup(); await saveRecoveredReply(edit, repo);
+    const binding = (await repo.get<ChatBinding>("binding", "binding:a"))!;
+    await repo.put("binding", { ...binding, worldId: "w", focusIds: ["mira"] });
+    await acknowledgeRecoveredReply(edit, repo);
+    const stored = (await new DeepRoleRepository(db).get<ChatBinding>("binding", "binding:a"))!;
+    expect(stored.recoveredReplies![0]).toMatchObject(edit.reply); expect(stored.recoveredReplies![0]!.contextSentAt).toEqual(expect.any(Number));
+    expect(stored.worldId).toBe("w"); expect(stored.focusIds).toEqual(["mira"]);
+    await acknowledgeRecoveredReply(edit, repo); expect((await repo.get<ChatBinding>("binding", "binding:a"))!.recoveredReplies).toEqual(stored.recoveredReplies);
+  });
+  it("does not consume a newer capture with a late receipt, even if timestamps collide", async () => {
+    const { repo } = await setup(); await saveRecoveredReply(edit, repo);
+    const newer = { ...edit, reply: { ...edit.reply, html: "<p>A regenerated scene</p>" } };
+    await saveRecoveredReply(newer, repo); await acknowledgeRecoveredReply(edit, repo);
+    expect((await repo.get<ChatBinding>("binding", "binding:a"))!.recoveredReplies).toEqual([newer.reply]);
+    await acknowledgeRecoveredReply(newer, repo); expect((await repo.get<ChatBinding>("binding", "binding:a"))!.recoveredReplies![0]!.contextSentAt).toBeDefined();
+  });
+  it("rejects cross-chat and vault-locked receipts", async () => {
+    const { repo } = await setup(); await saveRecoveredReply(edit, repo);
+    await expect(acknowledgeRecoveredReply({ ...edit, chatUrl: "https://chat.deepseek.com/chat/s/b" }, repo)).rejects.toThrow();
+    await repo.enableVault("test-only-password"); await repo.lockVault(); await expect(acknowledgeRecoveredReply(edit, repo)).rejects.toThrow();
+  });
+  it("queues a new generation again even when it has exactly the same text", async () => {
+    const { repo } = await setup(); await saveRecoveredReply(edit, repo); await acknowledgeRecoveredReply(edit, repo);
+    const regenerated = { ...edit, reply: { ...edit.reply, capturedAt: 3, recoveredAt: 4 } };
+    await saveRecoveredReply(regenerated, repo);
+    expect((await repo.get<ChatBinding>("binding", "binding:a"))!.recoveredReplies).toEqual([regenerated.reply]);
+    await acknowledgeRecoveredReply(edit, repo);
+    expect((await repo.get<ChatBinding>("binding", "binding:a"))!.recoveredReplies![0]!.contextSentAt).toBeUndefined();
   });
 });

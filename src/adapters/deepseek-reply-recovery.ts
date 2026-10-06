@@ -1,4 +1,4 @@
-import { isRefusalFragment, isReplacedReply, MAX_RECOVERED_REPLY_HTML, replyRecoveryText, validRecoveredReply } from "../core/reply-recovery";
+import { formatRecoveredReplyContext, isRefusalFragment, isReplacedReply, MAX_RECOVERED_REPLY_HTML, replyRecoveryText, validRecoveredReply } from "../core/reply-recovery";
 import type { Locale, RecoveredReply } from "../core/types";
 import type { RecoveredReplyEdit } from "../storage/recovered-replies";
 import { isUserMessage, nativeMessageIdentity, nativeMessageRow, nativeMessageRows, REASONING } from "./deepseek-message-dom";
@@ -68,6 +68,25 @@ function snapshot(source: Node, key: string): Candidate | null {
   return validRecoveredReply(result) ? result : null;
 }
 
+/** Inert conversion of saved HTML into story text; exclude UI and technical payloads. */
+export function recoveredReplyContext(reply: RecoveredReply, doc: Document = document): string {
+  if (!validRecoveredReply(reply)) return "";
+  const template = doc.createElement("template"); template.innerHTML = reply.html;
+  for (const payload of template.content.querySelectorAll("deeprole_choices, deeprole_characters, deeprole_data")) payload.remove();
+  const box = doc.createElement("div"); box.append(safeNodes(template.content, doc));
+  const hidden = "[data-deeprole-choices-payload], [data-deeprole-character-payload], [data-deeprole-memory-payload], [data-deeprole-characters-result]";
+  const blocks = /^(?:DIV|P|PRE|LI|BLOCKQUOTE|H[1-6]|TR|BR|HR)$/u;
+  const read = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+    if (node instanceof Element && node.matches(hidden)) return "";
+    const children = [...node.childNodes].map(read).join("");
+    if (node instanceof Element && /^(?:TD|TH)$/u.test(node.tagName)) return `${children}\t`;
+    return node instanceof Element && blocks.test(node.tagName) ? `\n${children}\n` : children;
+  };
+  const text = read(box).replace(/<deeprole_(choices|characters|data)>[\s\S]*?(?:<\/deeprole_\1>|$)/gu, "").trim();
+  return formatRecoveredReplyContext(text);
+}
+
 export class DeepSeekReplyRecovery {
   private chatId: string | null = null;
   private chatUrl = "";
@@ -77,7 +96,7 @@ export class DeepSeekReplyRecovery {
   private archived = new Map<string, RecoveredReply>();
   private readonly presentations = new Map<HTMLElement, Presentation>();
   private readonly rowScopes = new WeakMap<HTMLElement, { chatId: string; key: string }>();
-  private readonly saving = new Set<string>();
+  private readonly saving = new Map<string, Promise<void>>();
   private readonly failed = new Map<string, string>();
   private generation = 0;
 
@@ -96,6 +115,9 @@ export class DeepSeekReplyRecovery {
     this.candidates.clear(); this.archived.clear(); this.failed.clear(); this.saving.clear();
     this.chatId = null; this.enabled = false;
   }
+
+  /** A send immediately following a DOM replacement must await its archive write. */
+  async flush() { while (this.saving.size) await Promise.all(this.saving.values()); }
 
   /** Called in the mutation microtask, before DeepSeek's replacement reaches the next paint. */
   process(changes: MutationRecord[]) {
@@ -155,10 +177,10 @@ export class DeepSeekReplyRecovery {
         continue;
       }
       const archived = this.archived.get(key), candidate = this.candidates.get(key);
-      const reply = candidate && (!archived || candidate.capturedAt >= archived.capturedAt) ? candidate : archived;
+      const reply = candidate && (!archived || candidate.capturedAt > archived.capturedAt) ? candidate : archived;
       if (!reply) continue;
       this.present(source, reply);
-      if (reply === candidate && archived?.html !== reply.html) this.persist(reply);
+      if (reply === candidate && (!archived || archived.capturedAt < reply.capturedAt || archived.html !== reply.html)) this.persist(reply);
     }
   }
 
@@ -177,13 +199,13 @@ export class DeepSeekReplyRecovery {
     const chatId = this.chatId!, chatUrl = this.chatUrl, key = reply.messageKey, generation = this.generation;
     const active = () => this.generation === generation && this.chatId === chatId && this.enabled;
     if (this.saving.has(key) || this.failed.get(key) === reply.html) return;
-    this.saving.add(key);
     const stored = { messageKey: key, html: reply.html, capturedAt: reply.capturedAt, recoveredAt: Date.now() };
-    void this.save({ chatId, chatUrl, reply: stored }).then(() => {
+    const task = this.save({ chatId, chatUrl, reply: stored }).then(() => {
       if (active()) { this.archived.set(key, stored); this.failed.delete(key); }
     }).catch(() => {
       if (active()) { this.failed.set(key, reply.html); this.onFailure(); }
     }).finally(() => { if (active()) { this.saving.delete(key); this.scan(); } });
+    this.saving.set(key, task);
   }
 
   private present(source: HTMLElement, reply: RecoveredReply) {
@@ -208,9 +230,10 @@ export class DeepSeekReplyRecovery {
       source.after(host);
     }
     const badge = presentation.host.querySelector<HTMLElement>("[data-deeprole-recovery-label]")!;
-    const label = this.failed.get(reply.messageKey) === reply.html ? copy.unsaved : copy.restored;
+    const label = this.failed.get(reply.messageKey) === reply.html ? copy.unsaved : reply.contextSentAt !== undefined ? copy.sent : copy.restored;
     if (badge.textContent !== label) badge.textContent = label;
-    if (badge.title !== copy.detail) badge.title = copy.detail;
+    const detail = reply.contextSentAt !== undefined ? copy.sentDetail : copy.detail;
+    if (badge.title !== detail) badge.title = detail;
   }
 
   private removePresentation(source: HTMLElement) {

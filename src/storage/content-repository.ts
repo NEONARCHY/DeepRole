@@ -8,6 +8,7 @@ import type { HandoffSnapshot } from "../core/types";
 import type { RecoveredReplyEdit } from "./recovered-replies";
 
 export type RepositoryRequest =
+  | { type: "DR_REPOSITORY"; operation: "acknowledgeRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "saveRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "completeContinuation"; snapshot: HandoffSnapshot; token: string | null; targetChatId: string }
   | { type: "DR_REPOSITORY"; operation: "captureContinuation"; input: ContinuationCapture }
@@ -31,6 +32,7 @@ async function call<T>(message: RepositoryRequest): Promise<T> {
 // IndexedDB in a content script belongs to the website, not the extension.
 // All content access is routed to the extension-owned background repository.
 export const contentRepository = {
+  acknowledgeRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "acknowledgeRecoveredReply", edit }),
   saveRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveRecoveredReply", edit }),
   completeContinuation: (snapshot: HandoffSnapshot, token: string | null, targetChatId: string) => call<boolean>({ type: "DR_REPOSITORY", operation: "completeContinuation", snapshot, token, targetChatId }),
   captureContinuation: (input: ContinuationCapture) => call<HandoffSnapshot>({ type: "DR_REPOSITORY", operation: "captureContinuation", input }),

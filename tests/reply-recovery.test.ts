@@ -114,6 +114,18 @@ describe("automatic local reply recovery", () => {
     body.textContent = refusal; await flush(); recovery.reset();
     complete(); await flush(); await flush(); expect(document.querySelector("[data-deeprole-recovered-reply]")).toBeNull();
   });
+  it("waits for an archive write when a user sends immediately after restoration", async () => {
+    const body = mount(); let complete!: () => void;
+    const pending = new Promise<void>(resolve => { complete = resolve; });
+    const { recovery } = setup([], "ru", vi.fn(() => pending));
+    body.textContent = refusal; await flush(); let done = false;
+    const waiting = recovery.flush().then(() => { done = true; }); await flush(); expect(done).toBe(false);
+    complete(); await waiting; expect(done).toBe(true);
+  });
+  it.each(["ru", "en"] as const)("shows the persisted context-delivery label in %s", locale => {
+    mount(refusal); setup([{ ...archived, contextSentAt: 3 }], locale);
+    expect(document.querySelector("[data-deeprole-recovery-label]")).toHaveTextContent(locale === "ru" ? "Восстановлено · контекст передан" : "Restored · context sent");
+  });
 
   it("marks storage failures without deleting native text or endlessly retrying", async () => {
     const body = mount(), { recovery, save, failed } = setup([], "ru", vi.fn(async () => { throw new Error("quota"); }));

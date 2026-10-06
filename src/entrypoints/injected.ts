@@ -1,4 +1,4 @@
-import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId } from "../core/request-injection";
+import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId, outgoingParentMessageId } from "../core/request-injection";
 import { estimateChatHistory, readStoryHistory } from "../core/chat-history";
 
 export default defineUnlistedScript(() => {
@@ -45,7 +45,7 @@ export default defineUnlistedScript(() => {
       window.postMessage({ source: SOURCE, type: story ? "STORY_HISTORY_RESULT" : "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
     }
   }
-  function freshContext(id: string, draft: string, chatId: string | null): Promise<string | null> {
+  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string): Promise<string | null> {
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {
         pending.delete(id);
@@ -54,7 +54,7 @@ export default defineUnlistedScript(() => {
       // request-specific snapshot, with a hard bound; never retry the message.
       }, 5000);
       pending.set(id, (context) => { window.clearTimeout(timer); pending.delete(id); resolve(context); });
-      window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId }, "*");
+      window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId }, "*");
     });
   }
   function status(ok: boolean, id?: string, url = location.href) { window.postMessage({ source: SOURCE, type: "INJECTION_STATUS", ok, id, url }, "*"); }
@@ -66,7 +66,7 @@ export default defineUnlistedScript(() => {
     const draft = outgoingUserText(body);
     if (draft === null) { if (document.documentElement.dataset.deeproleContext) status(false); return unchanged; }
     const id = crypto.randomUUID(); const url = location.href;
-    const context = await freshContext(id, draft, outgoingChatId(body));
+    const context = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body));
     if (context === null || location.href !== url) { status(false, id, url); return unchanged; }
     if (!context) return unchanged;
     try {
