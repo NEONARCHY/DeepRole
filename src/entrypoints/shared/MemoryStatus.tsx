@@ -1,3 +1,4 @@
+import { characterDraftCopy } from "../../core/character-text";
 import { useState } from "react";
 import { Check, ChevronDown, ChevronUp, CircleAlert, LoaderCircle, Send, Sparkles } from "lucide-react";
 import type { ContextSelection, Locale } from "../../core/types";
@@ -12,6 +13,7 @@ export function ServiceProgress({ locale, activity }: { locale: Locale; activity
   const busy = activity.phase === "preparing" || activity.phase === "waiting";
   const handoff = /handoff/.test(activity.type);
   const key = activity.phase === "preparing" ? "preparing" : activity.phase === "error" ? handoff ? "handoffError" : "serviceError" : activity.phase === "empty" ? "emptyResult" : handoff ? "waitingRecap" : "waiting";
+  if (activity.type === "character-text") { const t = characterDraftCopy(locale); return <section className="dr-service-state is-busy" role="status"><LoaderCircle aria-hidden="true" /><div><strong>{activity.phase === "error" ? t.failed : t.waiting}</strong><p>{locale === "ru" ? "Текст появится в выбранном поле персонажа." : "The text will appear in the selected character field."}</p></div></section>; }
   const choices = activity.type === "scene-choices";
   return <section className={`dr-service-state ${busy ? "is-busy" : ""} ${activity.phase === "error" ? "is-error" : ""}`} role="status" aria-live="polite">
     {busy ? <LoaderCircle aria-hidden="true" /> : activity.phase === "error" ? <CircleAlert aria-hidden="true" /> : <Check aria-hidden="true" />}

@@ -40,11 +40,11 @@ export interface SceneEntity {
 }
 
 export interface CharacterSheet {
+  /** Local photo collections. Only their names and context rules reach the model. */
+  selfieCategories?: SelfieCategory[];
   /** Player-edited world-wide exclusions. New world emotions are allowed by default. */
   blockedEmotions?: string[];
   attributes?: CharacterAttribute[];
-  /** Explicitly set by the player. Never inferred or modified by model output. */
-  adultConfirmed?: boolean;
   relationships?: RelationshipProfile;
   gender: "male" | "female" | "neutral";
   protagonist: boolean;
@@ -56,6 +56,25 @@ export interface CharacterSheet {
   sprites: Record<string, string | string[]>;
   /** Unassigned local images. Assigned images are reused from sprites. */
   portraitLibrary?: string[];
+}
+
+export interface SelfieCategory {
+  default?: boolean;
+  id: string;
+  name: string;
+  description: string;
+  minTrust: number;
+  minAffinity: number;
+  images: string[];
+}
+export interface ScenePhoto {
+  worldId: string;
+  entityId: string;
+  messageKey: string;
+  turnKey: string;
+  categoryId: string;
+  imageKey: string;
+  createdAt: number;
 }
 
 export interface CharacterStatus {
@@ -147,6 +166,8 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  /** Local references to photos attached to specific native replies. */
+  scenePhotos?: ScenePhoto[];
   /** Local visible fragments of assistant replies replaced by DeepSeek's refusal. */
   recoveredReplies?: RecoveredReply[];
   /** Checkpoint that started this branch, not a mutable link to another chat. */
@@ -394,6 +415,9 @@ export interface VaultConfig {
 }
 
 export interface ServiceRequest {
+  characterText?: import("./character-text").CharacterTextRequest;
+  characterTextLimit?: number;
+  continuationId?: string;
   /** Observed native reply key, never an inferred id or model-provided selector. */
   replyIdentity?: string;
   /** Last assistant key before submitting; prevents a virtualized old reply from being accepted. */
@@ -403,7 +427,7 @@ export interface ServiceRequest {
   worldId?: string | null;
   focusIds?: string[];
   chatId?: string;
-  type: "memory-analysis" | "lore-draft" | "handoff" | "continue-handoff" | "scene-choices";
+  type: "memory-analysis" | "lore-draft" | "handoff" | "continue-handoff" | "scene-choices" | "character-text";
   /** Opaque identity only: do not store the scene text in session metadata. */
   sceneSignature?: string;
   brief?: string;

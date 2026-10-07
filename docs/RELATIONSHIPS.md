@@ -26,13 +26,13 @@ Expand **Current state** in the character panel to see what saved values mean, c
 
 ## Individual conditions for closeness
 
-Romantic closeness is off for each character until you explicitly configure it. You must also confirm both characters are adults in the lore. This flag does not change their written age.
+Romantic closeness is off for each character until you explicitly configure it. Its conditions use trust, affinity and required events; there is no separate age-confirmation flag. Written ages in the lore are preserved.
 
 For a configured character, set required trust and affinity. Add important events as achievements, and enable **Required for closeness** only for actual prerequisites. Older events remain required. For example, keeping a promise may be essential for Mira, while visiting a harbor can remain a standalone achievement. Completion is remembered for this chat; optional achievements never block closeness.
 
 Renaming an event creates a new condition. Its previous completion is not reused in this or another chat; mark the new event manually if it has already happened.
 
-Meeting the conditions is not consent, a guaranteed outcome, or permission to override someone's personality. The instructions require unrelated adults, willingness and respected boundaries. DeepRole supplies this context to DeepSeek; it cannot override the model's own limits or enforce every narrative decision.
+Meeting the conditions is not consent, a guaranteed outcome, or permission to override someone's personality. The instructions respect established lore, willingness and personal boundaries; romantic partners must be unrelated. DeepRole supplies this context to DeepSeek; it cannot override the model's own limits or enforce every narrative decision.
 
 ## What updates automatically
 

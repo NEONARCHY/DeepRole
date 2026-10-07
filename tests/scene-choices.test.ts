@@ -329,11 +329,26 @@ describe("history restoration and explicit recovery", () => {
   it.each(["ru", "en"] as const)("expands full option text locally and preserves it across idle scans (%s)", locale => {
     answer("Scene\n" + payload); sync(locale);
     const card = host()!; const toggle = card.shadowRoot!.querySelector<HTMLButtonElement>(".choice-expand")!;
+    expect(toggle.textContent).toBe(""); expect(toggle.querySelector("svg")).not.toBeNull();
+    expect(toggle.getAttribute("aria-label")).toBe(locale === "ru" ? "Текст целиком" : "Full text");
     toggle.focus(); toggle.click(); sync(locale);
+    expect(toggle.getAttribute("aria-label")).toBe(locale === "ru" ? "Свернуть текст" : "Collapse text");
     expect(host()).toBe(card); expect(toggle.getAttribute("aria-expanded")).toBe("true");
     expect(card.shadowRoot!.querySelector(".grid")?.getAttribute("data-expanded")).toBe("true");
     expect(card.shadowRoot!.activeElement).toBe(toggle); expect(pick).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
     toggle.click(); expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+  it.each(["ru", "en"] as const)("keeps successful selections quiet and retains accessible navigation (%s)", async locale => {
+    answer("Scene\n" + payload); sync(locale);
+    const card = host()!; const root = card.shadowRoot!;
+    const status = root.querySelector<HTMLParagraphElement>(".choice-status")!;
+    expect(status.hidden).toBe(true); expect(status.textContent).toBe("");
+    expect(root.querySelector(".grid")?.getAttribute("aria-describedby")).toBe(root.querySelector(".choice-navigation")?.id);
+    expect(root.querySelector(".choice-navigation")?.textContent).toContain("1–4");
+    expect(root.textContent).not.toContain(locale === "ru" ? "Выбор попадёт в поле сообщения" : "A choice fills the message box");
+    root.querySelector<HTMLButtonElement>(".grid button")!.click(); await Promise.resolve(); await Promise.resolve();
+    expect(pick).toHaveBeenCalledOnce(); expect(status.hidden).toBe(true); expect(status.textContent).toBe("");
+    expect(root.querySelector(".grid button")?.getAttribute("aria-pressed")).toBe("true");
   });
   it("settles a synchronously throwing handler without leaving options busy", () => {
     answer("Scene\n" + payload); syncSceneChoiceCards(true, false, "ru", () => { throw new Error("broken composer"); });

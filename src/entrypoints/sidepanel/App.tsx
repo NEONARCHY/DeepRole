@@ -349,10 +349,11 @@ export function App() {
       }
       if (result?.error === "draft-not-empty") { setToast(st("draftProtected")); return; }
       if (result?.error === "busy") { setToast(at("busy")); return; }
+      if (result?.error === "continuation-world-too-large") { setToast(continuationText(settings.locale, "tooLarge")); return; }
       if (result?.error === "scene-changed") { setToast(at("sceneChanged")); return; }
       if (!result?.ok) { setToast(type === "continue-handoff" ? continuationText(settings.locale, "failed") : at("serviceFailed")); return; }
       await refreshPage();
-      setToast(type === "continue-handoff" ? continuationText(settings.locale, "creating") : t("serviceQueued"));
+      setToast(type === "continue-handoff" ? continuationText(settings.locale, "analysis") : t("serviceQueued"));
     } catch {
       setToast(t("notOnDeepSeek"));
     }

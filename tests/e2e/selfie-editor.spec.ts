@@ -1,0 +1,39 @@
+import { expect, test } from "@playwright/test";
+import { characterTab, closeSavedCharacter } from "./character-helpers";
+
+for (const locale of ["ru", "en"] as const) test("selfie collections persist in the character editor and all avatars open, " + locale, async ({ page }, info) => {
+  await page.setViewportSize({ width: 360, height: 850 }); await page.goto("/tests/fixtures/characters.html?locale=" + locale);
+  await page.evaluate(() => {
+    const canvas = document.createElement("canvas"); canvas.width = 300; canvas.height = 400;
+    const paint = canvas.getContext("2d")!; paint.fillStyle = "#95bbca"; paint.fillRect(0, 0, 300, 400); const src = canvas.toDataURL("image/png");
+    const cast = (window as any).getCast(); (window as any).setCast({ entities: cast.entities.map((e: any) => e.id === "mira" ? { ...e, characterSheet: { ...e.characterSheet, sprites: { neutral: src, happy: src } } } : e) });
+  });
+  const imageTitle = locale === "ru" ? "Открыть изображение: Mira" : "Open image: Mira";
+  const viewer = page.locator("[data-deeprole-photo-viewer] dialog");
+  await page.locator(".dr-cast-widget[data-character-id=mira] img").click();
+  await expect(viewer).toBeVisible(); await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: locale === "ru" ? "Открыть галерею персонажей" : "Open character gallery" }).click();
+  await page.locator(".dr-character-gallery-card img[alt=Mira]").click();
+  await expect(viewer).toBeVisible(); await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog").first()).toBeVisible(); await page.keyboard.press("Escape");
+  await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const editor = page.locator(".dr-character-dialog");
+  await characterTab(editor, "images", locale);
+  await editor.getByRole("button", { name: imageTitle, exact: true }).click();
+  await expect(viewer).toBeVisible(); await page.keyboard.press("Escape");
+  await expect(editor).toBeVisible(); const categories = editor.locator(".dr-selfie-categories");
+  await categories.getByRole("button", { name: locale === "ru" ? "Добавить категорию" : "Add category", exact: true }).click();
+  await categories.getByRole("textbox", { name: locale === "ru" ? "Когда подходит 1" : "When it fits 1", exact: true }).fill("Casual portrait at home");
+  await categories.getByRole("button", { name: new RegExp("^" + (locale === "ru" ? "Добавить фото" : "Add photos")) }).click();
+  const source = await editor.locator(".dr-character-portrait-editor img").getAttribute("src");
+  await categories.locator("input[type=file]").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(source!.split(",")[1]!, "base64") });
+  await expect(categories.locator("img")).toHaveCount(1);
+  const bounds = await categories.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(360);
+  await categories.getByRole("textbox", { name: locale === "ru" ? "Название 1" : "Name 1", exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath("selfie-editor-" + locale + ".png") });
+  await editor.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+  await closeSavedCharacter(editor, locale);
+  await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); await characterTab(editor, "images", locale);
+  await expect(editor.locator(".dr-selfie-categories img")).toHaveCount(1);
+  expect(await page.evaluate(() => (window as any).getCast().entities.find((e: any) => e.id === "mira").description)).toBe("Original profile");
+});

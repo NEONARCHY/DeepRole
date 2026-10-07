@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TabSessionStore } from "../src/storage/tab-session";
+import { continuationKey, type ContinuationFlow } from "../src/core/continuation-flow";
 
 function store() {
   const values: Record<string, any> = {};
@@ -12,6 +13,18 @@ function store() {
 }
 
 describe("per-tab session patches", () => {
+  it("guards continuation phases across reordered browser metadata and newer transfers", async () => {
+    const { state, values } = store();
+    const flow: ContinuationFlow = { id: "f", chatId: "a", chatUrl: "url", scene: { worldId: "w", bookId: null, focusIds: [] }, phase: "review", requestId: "r", proposalId: "p", createdAt: 1 };
+    await state.patch(1, { continuation: flow });
+    values.deeprole_tab_state_1.continuation = Object.fromEntries(Object.entries(flow).reverse());
+    const approved = { ...flow, phase: "approved" as const };
+    expect(await state.patch(1, { continuation: approved }, { continuationKey: continuationKey(flow) })).toEqual({ ok: true });
+    expect(await state.patch(1, { continuation: null }, { continuationKey: continuationKey(flow) })).toEqual({ ok: false });
+    await state.patch(1, { continuation: { ...approved, id: "newer" } });
+    expect(await state.patch(1, { continuation: null }, { continuationKey: continuationKey(approved) })).toEqual({ ok: false });
+    expect((await state.get(2)).continuation).toBeUndefined();
+  });
   it("holds the snapshot guard while the destination commit is in flight", async () => {
     const { state } = store();
     await state.patch(1, { snapshotId: "A", snapshotToken: "one" });

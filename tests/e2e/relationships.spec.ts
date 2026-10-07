@@ -38,6 +38,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
   const create = page.locator(".lm-create-dialog"); await create.getByLabel(locale === "ru" ? "Название" : "Name", { exact: true }).fill("Quiet harbor");
   await create.locator("summary").filter({ hasText: t("setupTitle") }).click(); await create.getByLabel(t("heroName"), { exact: true }).fill("Leon"); await create.getByRole("button", { name: t("addPerson"), exact: true }).click();
   await create.getByLabel(`${t("personName")} 1`, { exact: true }).fill("Mira"); await create.getByLabel(t("preset"), { exact: true }).selectOption("attracted");
+  await expect(create.getByRole("switch", { name: /18|adult|совершеннолет/i })).toHaveCount(0);
   await expect(create.getByLabel(t("trust"), { exact: true })).toHaveValue("25"); await expect(create.getByLabel(t("affinity"), { exact: true })).toHaveValue("80");
   const overflow = await create.evaluate(root => [...root.querySelectorAll<HTMLElement>("*")].filter(el => el.getBoundingClientRect().right > root.getBoundingClientRect().right + 1).map(el => ({ tag: el.tagName, class: el.className, text: el.textContent?.slice(0, 50) })));
   expect(overflow).toEqual([]);
@@ -46,7 +47,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
   await page.screenshot({ path: info.outputPath(`relationship-world-${locale}-${width}.png`) }); await create.getByRole("button", { name: t("createWorld"), exact: true }).click(); await expect(create).toHaveCount(0);
   const created = await page.evaluate(async () => { const world = (window as any).createdWorld; return (await (window as any).records()).filter((r: any) => r.data.worldId === world.id); });
   expect(created.find((r: any) => r.kind === "entity" && r.data.name === "Leon").data.characterSheet.protagonist).toBe(true);
-  expect(created.find((r: any) => r.kind === "entity" && r.data.name === "Mira").data.characterSheet).toMatchObject({ adultConfirmed: false, relationships: { initial: { trust: 25, affinity: 80 }, romance: false } });
+  expect(created.find((r: any) => r.kind === "entity" && r.data.name === "Mira").data.characterSheet).toMatchObject({ relationships: { initial: { trust: 25, affinity: 80 }, romance: false } });
   expect(created.find((r: any) => r.kind === "entry").data.activation).toBe("always");
 });
 

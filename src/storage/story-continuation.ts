@@ -10,13 +10,15 @@ export interface ContinuationCapture {
   chatUrl: string;
   scene: SceneState;
   story: StoryContinuation;
+  recap?: { title: string; summary: string };
   overrides: MemoryOverrides;
 }
 /** Latest structured progress is captured under the same lock as character edits.
  * Saving a checkpoint never mutates lore, images or the source branch.
  */
 export async function captureContinuation(input: ContinuationCapture, repo: DeepRoleRepository = repository): Promise<HandoffSnapshot> {
-  if (!input.chatId || !validStoryContinuation(input.story) || !input.story.turns.length) throw new Error("handoff-invalid");
+  if (!input.chatId || !validStoryContinuation(input.story) || (!input.story.turns.length && !input.recap)) throw new Error("handoff-invalid");
+  if (input.recap && (!input.recap.title.trim() || input.recap.title.length > 240 || !input.recap.summary.trim() || input.recap.summary.length > 30000)) throw new Error("handoff-invalid");
   return repo.updateRecords(records => {
     const bindings = records.filter(r => r.kind === "binding").map(r => r.data as ChatBinding);
     const books = records.filter(r => r.kind === "book").map(r => r.data as MemoryBook);
@@ -32,11 +34,11 @@ export async function captureContinuation(input: ContinuationCapture, repo: Deep
     const story = boundStory([...(earlier?.turns ?? []), ...input.story.turns], input.story.source,
       input.story.partial || !!earlier?.partial, input.story.omittedTurns + (earlier?.omittedTurns ?? 0));
     const snapshot: HandoffSnapshot = {
-      id: createId("snapshot"), title: world?.name ?? recap?.title ?? "Story continuation",
-      summary: recap?.summary ?? "Continue the established story using the approved world memory and previous conversation below. Do not invent missing past events.",
+      id: createId("snapshot"), title: input.recap?.title ?? world?.name ?? recap?.title ?? "Story continuation",
+      summary: input.recap?.summary ?? recap?.summary ?? "Continue the established story using the approved world memory and previous conversation below. Do not invent missing past events.",
       sourceChatId: input.chatId, sourceChatUrl: input.chatUrl, worldId,
       bookId: input.scene.bookId, focusIds: [...input.scene.focusIds], createdAt: Date.now(),
-      continuation: story, memoryOverrides: structuredClone(binding?.memoryOverrides ?? input.overrides),
+      ...(!input.recap ? { continuation: story } : {}), memoryOverrides: structuredClone(binding?.memoryOverrides ?? input.overrides),
       ...(worldId && binding?.characterScenes?.[worldId] ? { characterScene: structuredClone(binding.characterScenes[worldId]) } : {}),
     };
     return { records: [{ kind: "snapshot", id: snapshot.id, data: snapshot }], removed: [], result: snapshot };

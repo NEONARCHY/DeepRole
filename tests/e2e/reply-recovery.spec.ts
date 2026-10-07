@@ -24,5 +24,5 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1280]) test(`automa
   await page.screenshot({ path: info.outputPath("recovered-context-sent.png") });
   await page.evaluate(() => (window as any).replyTest.setEnabled(false)); await expect(host).toHaveCount(0); await expect(page.locator("#reply")).toBeVisible();
   await page.evaluate(() => (window as any).replyTest.setEnabled(true)); await expect(host).toBeVisible();
-  await page.evaluate(() => (window as any).replyTest.switchChat("other")); await expect(host).toHaveCount(0); await expect(page.locator("#reply")).toContainText("beyond my current scope");
+  await page.evaluate(() => (window as any).replyTest.switchChat("other")); await expect(host).toHaveCount(0); await expect(page.locator("#reply")).toContainText(locale === "ru" ? "за рамки моих текущих возможностей" : "beyond my current scope");
 });

@@ -33,6 +33,16 @@ describe("atomic continuation capture", () => {
     expect(destination.characterScenes!.w!.lastReply).toBeUndefined();
     expect(destination.memoryOverrides).toEqual(binding.memoryOverrides); expect(destination.continuationSnapshotId).toBe(snapshot.id);
   });
+  it("saves a compact model recap with exact local state and no duplicated transcript", async () => {
+    const { repo } = await setup(), before = await repo.rawRecords();
+    const recap = { title: "Final moment", summary: "Mira waits at the harbor. Her question is unanswered." };
+    const snapshot = await captureContinuation({ ...input, recap }, repo);
+    expect(snapshot.summary).toBe(recap.summary); expect(snapshot.title).toBe(recap.title);
+    expect(snapshot.continuation).toBeUndefined(); expect(snapshot.characterScene).toEqual(binding.characterScenes!.w);
+    expect(snapshot.memoryOverrides).toEqual(binding.memoryOverrides);
+    expect((await repo.rawRecords()).filter(r => r.kind !== "snapshot")).toEqual(before);
+    await expect(captureContinuation({ ...input, recap: { ...recap, summary: "" } }, repo)).rejects.toThrow("handoff-invalid");
+  });
   it("captures the latest committed character edit rather than an old UI baseline", async () => {
     const { repo } = await setup();
     const live = structuredClone(binding); live.characterScenes!.w!.states.mira!.bonds!.hero!.trust = 91;

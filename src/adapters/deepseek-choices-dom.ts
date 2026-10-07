@@ -448,36 +448,38 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
   style.textContent = `${designTokens}
-    :host{display:block;container-type:inline-size;margin:var(--dr-space-4) 0;font:14px/1.5 system-ui,sans-serif;color:var(--dr-text)}
+    :host{--choice-gap:var(--dr-space-2);display:block;container-type:inline-size;margin:var(--dr-space-4) 0;font:14px/1.5 system-ui,sans-serif;color:var(--dr-text)}
     :host([data-deeprole-choices-pinned=true]){position:fixed;left:50%;bottom:24px;z-index:2147481900;width:min(720px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
     :host([data-deeprole-choices-pinned=true]) section{max-height:var(--dr-pinned-max-height,calc(100dvh - 84px));overflow:auto;overscroll-behavior:contain;box-shadow:var(--dr-depth-panel)}
     :host([data-deeprole-choices-inline=true]) section{max-height:var(--dr-inline-max-height);overflow:auto;overscroll-behavior:contain}
-    section{box-sizing:border-box;max-width:1000px;padding:var(--dr-space-4);border:0;border-radius:16px;background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
-    .choice-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--dr-space-2);margin-bottom:var(--dr-space-1)}h3{margin:0;min-width:0;font-size:17px;font-weight:650}.choice-tools{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.choice-pin{display:grid;place-items:center;min-width:32px;min-height:32px;padding:4px;border:1px solid var(--dr-border);border-radius:9px;background:var(--dr-surface);color:var(--dr-muted);cursor:pointer}.choice-pin:hover{background:var(--dr-raised);color:var(--dr-text)}.choice-pin[aria-pressed=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}.choice-pin svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.choice-pin span{font-size:14px;line-height:1}
-    .choice-expand{flex-shrink:0;min-height:44px;max-width:55%;padding:var(--dr-space-2) var(--dr-space-3);border:1px solid var(--dr-border);border-radius:8px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:600 12px/1.4 system-ui,sans-serif}.choice-expand:hover{background:var(--dr-raised)}
-    .grid{display:grid;grid-template-columns:1fr;gap:var(--dr-space-2)}
-    .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid color-mix(in oklab,var(--choice-tint) 40%,var(--dr-surface));border-inline-start:3px solid var(--choice-tint);border-radius:10px;background:color-mix(in oklab,var(--choice-tint) 5%,var(--dr-surface));color:var(--dr-text);cursor:pointer;font:inherit;box-shadow:inset 0 1px 0 #ffffff08;transition:background-color var(--dr-motion-fast) var(--dr-ease-out),border-color var(--dr-motion-fast) var(--dr-ease-out)}
+    section{box-sizing:border-box;max-width:1000px;padding:var(--choice-gap);border:0;border-radius:16px;background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
+    .choice-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--dr-space-2);margin-bottom:var(--choice-gap)}h3{margin:0;min-width:0;font-size:17px;font-weight:650}.choice-tools{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.choice-pin{display:grid;place-items:center;min-width:32px;min-height:32px;padding:4px;border:1px solid var(--dr-border);border-radius:9px;background:var(--dr-surface);color:var(--dr-muted);cursor:pointer}.choice-pin:hover{background:var(--dr-raised);color:var(--dr-text)}.choice-pin[aria-pressed=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}.choice-pin svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.choice-pin span{font-size:14px;line-height:1}
+    .choice-expand[aria-expanded=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}
+    .grid{display:grid;grid-template-columns:1fr;gap:var(--choice-gap)}
+    .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border-strong);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit;box-shadow:inset 0 1px 0 #ffffff08;transition:border-color 280ms var(--dr-ease-out)}
+    .grid button::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,color-mix(in oklab,var(--choice-tint) 14%,transparent),color-mix(in oklab,var(--choice-tint) 7%,transparent) 58%,transparent);opacity:0;transform:scaleX(0);transform-origin:left center;transition:transform 280ms cubic-bezier(.2,.75,.25,1),opacity 180ms ease-out}
     .grid button[data-choice-kind=positive]{--choice-tint:var(--dr-choice-positive)}
     .grid button[data-choice-kind=negative]{--choice-tint:var(--dr-choice-negative)}
     .grid button[data-choice-kind=surprise]{--choice-tint:var(--dr-choice-surprise)}
-    .grid button:hover{border-color:var(--choice-tint);background:color-mix(in oklab,var(--choice-tint) 9%,var(--dr-surface))}
-    .grid button:active{background:color-mix(in oklab,var(--choice-tint) 12%,var(--dr-surface));box-shadow:inset 0 2px 4px #0003}
+    .grid button:is(:hover,:focus-visible,:active,[aria-pressed=true]){border-color:color-mix(in oklab,var(--choice-tint) 65%,var(--dr-surface))}
+    .grid button:is(:hover,:focus-visible,:active,[aria-pressed=true])::before{opacity:1;transform:scaleX(1)}
+    .grid button:active{box-shadow:inset 0 2px 4px #0003}
     .choice-pin,.choice-expand{transition:background-color var(--dr-motion-fast) var(--dr-ease-out),border-color var(--dr-motion-fast) var(--dr-ease-out),color var(--dr-motion-fast) var(--dr-ease-out)}
     input,textarea{caret-color:var(--dr-primary)}::selection{color:var(--dr-text);background:var(--dr-selected)}
-    @media(prefers-reduced-motion:reduce){button{transition:none!important}}
+    @media(prefers-reduced-motion:reduce){button,button::before,.number,.grid small{transition:none!important}}
     button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}
-    .grid button[aria-pressed=true]{border-color:var(--choice-tint);background:color-mix(in oklab,var(--choice-tint) 12%,var(--dr-surface));box-shadow:inset 0 0 0 1px var(--choice-tint)}
+    .grid button[aria-pressed=true]{border-color:var(--choice-tint);box-shadow:inset 0 0 0 1px var(--choice-tint)}
     .grid button[aria-pressed=true] .preview{color:var(--dr-text)}
     button:disabled,button[aria-disabled=true]{opacity:.65;cursor:wait}small{display:block;margin-bottom:var(--dr-space-1);color:var(--dr-muted);font-size:11px}
-    .number{position:absolute;inset-inline-end:10px;top:10px;min-width:20px;text-align:center;border:1px solid color-mix(in oklab,var(--choice-tint) 45%,var(--dr-surface));border-radius:5px;color:var(--choice-tint);font:12px/20px system-ui}
+    .number{position:absolute;inset-inline-end:10px;top:10px;min-width:20px;text-align:center;border:1px solid var(--dr-border-strong);border-radius:5px;color:var(--dr-muted);font:12px/20px system-ui;transition:color 280ms var(--dr-ease-out),border-color 280ms var(--dr-ease-out),background-color 280ms var(--dr-ease-out)}
+    .grid button:is(:hover,:focus-visible,:active,[aria-pressed=true]) .number{color:var(--choice-tint);border-color:color-mix(in oklab,var(--choice-tint) 45%,var(--dr-surface))}
     .grid button[aria-pressed=true] .number{background:var(--choice-tint);color:var(--dr-bg);border-color:var(--choice-tint)}
     .grid button[aria-pressed=true] .number::before{content:'✓';margin-inline-end:3px}
-    .grid small{padding-inline-end:40px;color:var(--choice-tint)}strong{display:block;font-size:14px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
+    .grid small{padding-inline-end:40px;color:var(--dr-muted);transition:color 280ms var(--dr-ease-out)}.grid button:is(:hover,:focus-visible,:active,[aria-pressed=true]) small{color:var(--choice-tint)}strong{display:block;font-size:14px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
     .preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--dr-space-1);color:var(--dr-muted);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}.grid[data-expanded=true] .preview{display:block;-webkit-line-clamp:unset}
-    .choice-status{min-height:18px;margin:var(--dr-space-3) 0 0;overflow-wrap:anywhere}.choice-status[data-selected=true]{color:var(--dr-primary)}
+    .choice-status{margin:var(--choice-gap) 0 0;color:var(--dr-warning);overflow-wrap:anywhere}.choice-status[hidden]{display:none}.choice-navigation{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
     @container(min-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    :host([data-deeprole-adaptive=true]) section{padding:clamp(10px,2vw,16px)}
-    :host([data-deeprole-adaptive=true]) .grid{gap:6px}
+    :host([data-deeprole-adaptive=true]){--choice-gap:calc(var(--dr-space-3) / 2)}
     :host([data-deeprole-adaptive=true]) .grid button{padding:10px;min-height:72px}
     @container(min-width:430px){:host([data-deeprole-adaptive=true]) .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   `;
@@ -485,14 +487,16 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   section.setAttribute("aria-label", sceneChoiceText(locale, "title"));
   const title = doc.createElement("h3"); title.textContent = sceneChoiceText(locale, "title");
   const heading = doc.createElement("div"); heading.className = "choice-heading";
-  const expand = doc.createElement("button"); expand.type = "button"; expand.className = "choice-expand"; expand.textContent = sceneChoiceText(locale, "expand"); expand.setAttribute("aria-expanded", "false"); expand.setAttribute("aria-controls", "scene-choice-options");
-  const hint = doc.createElement("p"); hint.textContent = sceneChoiceText(locale, "hint");
+  const expand = doc.createElement("button"); expand.type = "button"; expand.className = "choice-pin choice-expand"; expand.setAttribute("aria-label", sceneChoiceText(locale, "expand")); expand.title = sceneChoiceText(locale, "expand"); expand.setAttribute("aria-expanded", "false"); expand.setAttribute("aria-controls", "scene-choice-options");
+  const expandIcon = doc.createElementNS("http://www.w3.org/2000/svg", "svg"); expandIcon.setAttribute("viewBox", "0 0 24 24"); expandIcon.setAttribute("aria-hidden", "true");
+  const expandPath = doc.createElementNS("http://www.w3.org/2000/svg", "path"); expandPath.setAttribute("d", "M4 4h16M4 9h16M4 14h10M4 19h10m3-2 3 3 3-3"); expandIcon.append(expandPath); expand.append(expandIcon);
   const grid = doc.createElement("div"); grid.className = "grid"; grid.setAttribute("role", "group"); grid.setAttribute("aria-label", sceneChoiceText(locale, "title"));
   grid.id = "scene-choice-options";
   expand.addEventListener("click", () => {
     const expanded = expand.getAttribute("aria-expanded") !== "true";
     expand.setAttribute("aria-expanded", String(expanded)); grid.dataset.expanded = String(expanded);
-    expand.textContent = sceneChoiceText(locale, expanded ? "collapse" : "expand");
+    const label = sceneChoiceText(locale, expanded ? "collapse" : "expand"); expand.setAttribute("aria-label", label); expand.title = label;
+    expandPath.setAttribute("d", expanded ? "M4 4h16M4 9h16M4 14h10M4 19h10m3 1 3-3 3 3" : "M4 4h16M4 9h16M4 14h10M4 19h10m3-2 3 3 3-3");
   });
   const tools = doc.createElement("div"); tools.className = "choice-tools";
   if (presentation) for (const key of ["pinPortraits", "pinSceneChoices"] as const) {
@@ -505,8 +509,9 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   }
   tools.append(expand); heading.append(title, tools);
   grid.title = sceneChoiceText(locale, "navigation");
-  const status = doc.createElement("p"); status.className = "choice-status"; status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
-  status.textContent = sceneChoiceText(locale, "navigation");
+  const navigation = doc.createElement("p"); navigation.className = "choice-navigation"; navigation.id = "scene-choice-navigation"; navigation.textContent = sceneChoiceText(locale, "navigation"); grid.setAttribute("aria-describedby", navigation.id);
+  const status = doc.createElement("p"); status.className = "choice-status"; status.hidden = true; status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
+  const showError = (key: "changed" | "notInserted" | "unavailable") => { status.textContent = sceneChoiceText(locale, key); status.dataset.selected = "false"; status.hidden = false; };
   let picking = false;
   for (const [index, choice] of options.entries()) {
     const button = doc.createElement("button"); button.type = "button"; button.setAttribute("aria-pressed", "false");
@@ -520,7 +525,7 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     button.addEventListener("click", () => {
       if (picking || !host.isConnected) return;
       const current = currentChoice(root);
-      if (current?.signature !== signature || current.row !== sourceRows.get(host)) { status.textContent = sceneChoiceText(locale, "changed"); status.dataset.selected = "false"; return; }
+      if (current?.signature !== signature || current.row !== sourceRows.get(host)) { showError("changed"); return; }
       picking = true;
       const buttons = grid.querySelectorAll<HTMLButtonElement>("button");
       grid.setAttribute("aria-busy", "true"); buttons.forEach(item => item.setAttribute("aria-disabled", "true"));
@@ -528,10 +533,10 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
         try {
           const ok = await choiceHandlers.get(host)!(choice, signature);
           if (!host.isConnected) return;
-          if (!ok) { status.textContent = sceneChoiceText(locale, "notInserted"); status.dataset.selected = "false"; return; }
+          if (!ok) { showError("notInserted"); return; }
           buttons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
-          status.textContent = sceneChoiceText(locale, "selected").replace("{label}", choice.label); status.dataset.selected = "true";
-        } catch { if (host.isConnected) { status.textContent = sceneChoiceText(locale, "unavailable"); status.dataset.selected = "false"; } }
+          status.textContent = ""; status.hidden = true; status.dataset.selected = "true";
+        } catch { if (host.isConnected) showError("unavailable"); }
         finally { picking = false; grid.setAttribute("aria-busy", "false"); buttons.forEach(item => item.setAttribute("aria-disabled", "false")); }
       })();
     });
@@ -548,7 +553,7 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     const offset = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" ? columns : event.key === "ArrowUp" ? -columns : 0;
     if (offset) { event.preventDefault(); buttons[(current + offset + buttons.length) % buttons.length]?.focus(); }
   });
-  section.append(heading, hint, grid, status); shadow.append(style, section);
+  section.append(heading, grid, navigation, status); shadow.append(style, section);
   applyChoicePresentation(host, presentation);
   return host;
 }

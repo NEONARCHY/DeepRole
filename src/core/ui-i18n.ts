@@ -27,7 +27,7 @@ const copy = {
     organize: "Ключевые слова и размещение", profiles: "Персонажи и места", recordActions: "Действия с записью",
     firstWorld: "Создайте мир или загрузите свой лор. Затем добавьте записи и подключите мир к чату.",
     booksHint: "Выключенная книга не участвует в чате, даже если её запись выбрана вручную.",
-    handoffHint: "DeepRole сожмёт историю, откроет новый чат и отправит первое сообщение продолжения. Полная переписка останется в старом чате.",
+    handoffHint: "Сначала DeepSeek сверит историю с памятью DeepRole. Подтвердите изменения — затем скрытая сжимка последних сцен отправится с продолжением в новом чате. Старый чат остаётся доступен.",
     worldTools: "Копия, экспорт и удаление", moveBook: "Добавить книгу без мира", emptyResults: "Ничего не найдено. Попробуйте другое слово или снимите фильтр.",
   },
   en: {
@@ -56,7 +56,7 @@ const copy = {
     organize: "Keywords and organization", profiles: "Characters and places", recordActions: "Record actions",
     firstWorld: "Create a world or import your lore. Then add records and connect the world to a chat.",
     booksHint: "Disabled books are not used in chat, even if you manually select one of their records.",
-    handoffHint: "DeepRole will make a short recap, open a new chat and send the first continuation message. The full conversation stays in the old chat.",
+    handoffHint: "DeepSeek first compares the story with DeepRole memory. Approve the changes, then a hidden scene summary is prepared and sent with the continuation in a new chat. The old chat stays available.",
     worldTools: "Copy, export and delete", moveBook: "Add an unassigned book", emptyResults: "No matches. Try another word or clear the filter.",
   },
 } as const;

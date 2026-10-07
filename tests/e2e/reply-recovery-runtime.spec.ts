@@ -8,7 +8,7 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
   const profile = await mkdtemp(path.join(tmpdir(), "deeprole-reply-runtime-"));
   const extension = path.resolve(".output/chrome-mv3");
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] }); context.setDefaultTimeout(10000);
-  const refusal = "Sorry, that's beyond my current scope. Let's talk about something else.";
+  const refusal = locale === "ru" ? "Извините, это выходит за рамки моих текущих возможностей. Давайте поговорим о чём-то другом." : "Sorry, that's beyond my current scope. Let's talk about something else.";
   const compass = locale === "ru" ? "Мира держит компас." : "Mira has the compass.";
   const garden = locale === "ru" ? "Дверь в сад открыта." : "The garden door is open.";
   const regenerated = locale === "ru" ? "Мира вернула компас на полку." : "Mira returned the compass to the shelf.";
@@ -16,7 +16,7 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
     const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
     const id = new URL(worker.url()).host;
     await worker.evaluate(locale => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true, replyRecoveryEnabled: true } }), locale);
-    await context.route("https://chat.deepseek.com/**", route => route.fulfill({ contentType:"text/html", body:`<!doctype html><html><head><title>Recovery demo</title></head><body><main><header><h1>Recovery demo</h1></header><section><article data-message-id="answer" data-role="assistant"><div class="ds-think-content">Never archive this reasoning.</div><div class="ds-assistant-message-main-content"><div class="ds-markdown" id="answer">${refusal}</div></div></article></section><form><textarea aria-label="Message"></textarea></form></main></body></html>` }));
+    await context.route("https://chat.deepseek.com/**", route => route.fulfill({ contentType:"text/html", body:`<!doctype html><html><head><meta charset="UTF-8"><title>Recovery demo</title></head><body><main><header><h1>Recovery demo</h1></header><section><article data-message-id="answer" data-role="assistant"><div class="ds-think-content">Never archive this reasoning.</div><div class="ds-assistant-message-main-content"><div class="ds-markdown" id="answer">${refusal}</div></div></article></section><form><textarea aria-label="Message"></textarea></form></main></body></html>` }));
     const requests: any[] = []; let responseStatus = 200;
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
       requests.push(route.request().postDataJSON());
@@ -57,7 +57,7 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
     await expect.poll(async () => (await archive())[0].contextSentAt).toEqual(expect.any(Number));
     await expect(host.locator("[data-deeprole-recovery-label]")).toHaveText(locale === "ru" ? "Восстановлено · контекст передан" : "Restored · context sent");
     await chat.addStyleTag({ content: "body{background:#17191c;color:#e6e9ef;font:15px/1.7 system-ui,sans-serif;margin:32px}main{max-width:700px;margin:auto}[data-deeprole-recovered-reply]{padding:20px 24px;border:1px solid #363d47;border-radius:16px;background:#21262d}.ds-markdown{font:15px/1.7 system-ui,sans-serif}.ds-markdown p{margin:8px 0}" });
-    await host.screenshot({ path: `docs/images/readme/recovery-${locale}.png` });
+    await host.screenshot({ path: info.outputPath("recovered-reply-sent.png") });
     await chat.reload(); await expect(host).toBeVisible();
     await send(); expect(requests.at(-1).prompt).not.toContain("deeprole_recovered_reply");
     await chat.locator("#answer").evaluate((node, text) => { const p = document.createElement("p"); p.textContent = text; node.replaceChildren(p); }, regenerated);

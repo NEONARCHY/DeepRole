@@ -149,11 +149,12 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
 }
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
-  test(`pastel choice types stay distinct at rest, hover and selection ${locale} ${width}`, async ({ page }, info) => {
+  test(`neutral choices use equal spacing and softly fill on hover or selection ${locale} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 850 });
     await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
     const labels = locale === "ru" ? ["Поблагодарить Миру", "Спросить о письме", "Отказаться от конверта", "Предложить обмен"] : options.map(option => option.label);
     const scene = locale === "ru" ? "Мира держит запечатанный конверт. Что вы сделаете?" : "Mira holds a sealed envelope. What will you do?";
+    await page.goto(`/tests/fixtures/scene-choices.html?pins&locale=${locale}`);
     const coloredHistory = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>${scene}</p><pre>${`<deeprole_choices>${JSON.stringify({version: 1, options: options.map((option, i) => ({...option, label: labels[i], text: locale === "ru" ? ["«Спасибо, Мира. Давай вместе разберёмся, что это за письмо».", "«Откуда у тебя этот конверт?» Не касаюсь печати и жду ответа.", "«Я не буду его открывать, пока не узнаю, откуда он».", "«Покажи печать — я покажу ключ. Попробуем найти связь?»"][i] : option.text}))})}</deeprole_choices>`.replaceAll("<", "&lt;")}</pre></div></article>`;
     await page.evaluate(html => (window as any).choicesTest.setHistory(html), coloredHistory);
     const card = page.locator("[data-deeprole-choices-host]"); const buttons = card.locator(".grid button");
@@ -164,30 +165,58 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
       const luminance = (color: number[]) => color.map(n => n / 255).map(n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4).reduce((sum, n, i) => sum + n * [.2126, .7152, .0722][i]!, 0);
       const contrast = (a: string, b: string) => { const first = luminance(rgb(a)); const second = luminance(rgb(b)); return (Math.max(first, second) + .05) / (Math.min(first, second) + .05); };
       return elements.map(button => {
-        const style = getComputedStyle(button); const background = style.backgroundColor;
+        const style = getComputedStyle(button); const overlay = getComputedStyle(button, "::before");
+        const probe = document.createElement("span"); probe.style.backgroundColor = "var(--choice-tint)"; button.append(probe);
+        const tint = rgb(getComputedStyle(probe).backgroundColor); probe.remove();
+        const opacity = Number(overlay.opacity); const base = rgb(style.backgroundColor);
+        // Check readability at the strongest (left) end of the translucent gradient.
+        const background = `rgb(${base.map((value, i) => Math.round(value * (1 - .14 * opacity) + tint[i]! * .14 * opacity)).join(",")})`;
         const numberStyle = getComputedStyle(button.querySelector(".number")!);
-        return { kind: (button as HTMLElement).dataset.choiceKind, background: rgb(background).join(","), pressed: button.getAttribute("aria-pressed"), contrasts: [contrast(style.color, background), contrast(getComputedStyle(button.querySelector(".preview")!).color, background), contrast(getComputedStyle(button.querySelector("small")!).color, background), contrast(numberStyle.color, button.getAttribute("aria-pressed") === "true" ? numberStyle.backgroundColor : background)], edgeContrast: contrast(style.borderInlineStartColor, background) };
+        return { kind: (button as HTMLElement).dataset.choiceKind, background: rgb(background).join(","), category: getComputedStyle(button.querySelector("small")!).color, border: style.borderColor, opacity, gradient: overlay.backgroundImage, origin: overlay.transformOrigin, duration: overlay.transitionDuration, pressed: button.getAttribute("aria-pressed"), contrasts: [contrast(style.color, background), contrast(getComputedStyle(button.querySelector(".preview")!).color, background), contrast(getComputedStyle(button.querySelector("small")!).color, background), contrast(numberStyle.color, button.getAttribute("aria-pressed") === "true" ? numberStyle.backgroundColor : background)] };
       });
     });
     const assertReadable = (samples: Awaited<ReturnType<typeof colors>>) => {
-      expect(new Set(samples.map(sample => sample.background)).size).toBe(4);
-      for (const sample of samples) { for (const value of sample.contrasts) expect(value, `${sample.kind} text contrast`).toBeGreaterThanOrEqual(4.5); expect(sample.edgeContrast).toBeGreaterThanOrEqual(3); }
+      for (const sample of samples) for (const value of sample.contrasts) expect(value, `${sample.kind} text contrast`).toBeGreaterThanOrEqual(4.5);
     };
-    const rest = await colors(); assertReadable(rest); expect(rest.every(sample => sample.pressed === "false")).toBe(true);
+    for (const adaptiveLayout of [false, true]) {
+      await page.evaluate(adaptiveLayout => (window as any).choicesTest.update({ adaptiveLayout }), adaptiveLayout);
+      const spacing = await card.evaluate(host => {
+        const root = host.shadowRoot!; const section = root.querySelector("section")!; const grid = root.querySelector(".grid")!; const heading = root.querySelector(".choice-heading")!;
+        const box = section.getBoundingClientRect(); const tiles = grid.getBoundingClientRect(); const header = heading.getBoundingClientRect();
+        return { gap: parseFloat(getComputedStyle(grid).gap), offsets: [tiles.left - box.left, box.right - tiles.right, box.bottom - tiles.bottom, header.top - box.top, tiles.top - header.bottom], tools: [...root.querySelectorAll(".choice-tools button")].map(button => { const rect = button.getBoundingClientRect(); return [rect.width, rect.height]; }) };
+      });
+      expect(spacing.gap).toBe(adaptiveLayout ? 6 : 8);
+      for (const offset of spacing.offsets) expect(offset).toBeCloseTo(spacing.gap, 1);
+      expect(spacing.tools).toEqual([[32, 32], [32, 32], [32, 32]]);
+    }
+    const expand = card.getByRole("button", { name: locale === "ru" ? "Текст целиком" : "Full text", exact: true });
+    await expect(expand.locator("svg")).toHaveCount(1); expect(await expand.textContent()).toBe("");
+    await expect(card.locator(".choice-status")).toBeHidden();
+    await expect(card).not.toContainText(locale === "ru" ? "Выбор попадёт" : "A choice fills");
+    const rest = await colors(); assertReadable(rest); expect(rest.every(sample => sample.pressed === "false" && sample.opacity === 0)).toBe(true);
+    for (const key of ["background", "category", "border"] as const) expect(new Set(rest.map(sample => sample[key])).size).toBe(1);
+    for (const sample of rest) { expect(sample.gradient).toContain("linear-gradient(90deg"); expect(sample.origin).toMatch(/^0px /); expect(sample.duration).toContain("0.28s"); }
     await card.screenshot({ path: info.outputPath(`pastel-rest-${locale}-${width}.png`) });
     for (let i = 0; i < 4; i++) {
       await buttons.nth(i).hover();
       await buttons.nth(i).evaluate(button => Promise.all(button.getAnimations().map(animation => animation.finished.catch(() => undefined))));
-      const hovered = await colors(); assertReadable(hovered); expect(hovered[i]!.background).not.toBe(rest[i]!.background);
+      const hovered = await colors(); assertReadable(hovered); expect(hovered[i]!.opacity).toBe(1); expect(hovered[i]!.background).not.toBe(rest[i]!.background);
+      if (i === 0) await card.screenshot({ path: info.outputPath(`choice-hover-${locale}-${width}.png`) });
       await page.getByRole("textbox", { name: "Message", exact: true }).fill(""); await buttons.nth(i).click();
       await buttons.nth(i).evaluate(button => Promise.all(button.getAnimations().map(animation => animation.finished.catch(() => undefined))));
       const selected = await colors(); assertReadable(selected); expect(selected.filter(sample => sample.pressed === "true")).toHaveLength(1);
-      expect(selected[i]!.pressed).toBe("true"); expect(selected[i]!.background).not.toBe(rest[i]!.background);
+      expect(selected[i]!.pressed).toBe("true"); expect(selected[i]!.opacity).toBe(1); expect(selected[i]!.background).not.toBe(rest[i]!.background);
+      await expect(card.locator(".choice-status")).toBeHidden(); await expect(card.locator(".choice-status")).toHaveText("");
       await expect(buttons.nth(i)).toHaveAttribute("data-choice-kind", options[i]!.kind);
       expect(await buttons.nth(i).locator(".number").evaluate(number => getComputedStyle(number, "::before").content)).toContain("✓");
     }
     expect((await new AxeBuilder({ page }).include("[data-deeprole-choices-host]").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+    await page.mouse.move(0, 0);
     await card.screenshot({ path: info.outputPath(`pastel-selected-${locale}-${width}.png`) });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await buttons.first().hover();
+    expect(await buttons.first().evaluate(button => getComputedStyle(button, "::before").transitionDuration)).toBe("0s");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await buttons.first().focus(); await page.keyboard.press("ArrowRight");
     await expect(buttons.nth(1)).toBeFocused(); expect(await buttons.nth(1).evaluate(button => getComputedStyle(button).outlineStyle)).toBe("solid");
     await page.reload(); await expect(buttons).toHaveCount(4); assertReadable(await colors());
@@ -242,7 +271,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.getByRole("button", { name: /Thank Mira/ }).click();
     await expect(page.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("I choose positive.");
     expect(await page.evaluate(() => (window as any).sent)).toBe(0);
-    await expect(page.getByRole("status")).toContainText(locale === "ru" ? "Вставлено в поле сообщения" : "Inserted into the message box");
+    await expect(page.locator(".choice-status")).toBeHidden(); await expect(page.locator(".choice-status")).toHaveText("");
     await expect(page.getByRole("button", { name: /Thank Mira/ })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("textbox", { name: "Message", exact: true }).fill("MY OWN DRAFT");
     await page.getByRole("button", { name: /Ask about the letter/ }).click();

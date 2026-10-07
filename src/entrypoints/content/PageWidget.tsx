@@ -27,7 +27,12 @@ import { chatCapacity } from "../../core/context-capacity";
 import { continuationText } from "../../core/continuation-i18n";
 import { ContextCapacityWarning } from "../shared/ContextCapacityWarning";
 
+import type { ContinuationFlow } from "../../core/continuation-flow";
+
+import type { CharacterTextRequest } from "../../core/character-text";
+
 export interface WidgetState {
+  continuation?: ContinuationFlow | null;
   chatContextCapacity?: number;
   contextCapacityWarning?: { level: number; percent: number } | null;
   transferring?: boolean;
@@ -70,12 +75,15 @@ export interface WidgetState {
 
 export function PageWidget(props: {
   onContinueStory?: () => void;
+  onCancelContinuation?: () => void;
+  onKeepContinuationMemory?: () => Promise<void>;
   onDismissCapacityWarning?: () => void;
   onDisableCapacityWarnings?: () => void;
   state: WidgetState;
   onAddCharacterEmotion?: (worldId: string, name: string) => Promise<string[]>;
   onPanelWidthChange?: (width: number) => Promise<void>;
   onSaveCharacter?: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>;
+  onGenerateCharacterText?: (request: CharacterTextRequest) => Promise<string>;
   onRequestCharacterFact?: (entityId: string, brief: string) => Promise<void>;
   onRetryCharacters?: () => void;
   onCharacterOpened?: () => void;
@@ -280,6 +288,11 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisBlocked ? x(serviceBusy ? "waiting" : "generating") : x("requestsVisible")} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={props.menuUrl} title="DeepRole" /></aside></div>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
+    {!props.state.vaultLocked && props.state.continuation && (!review || review.id !== props.state.continuation.proposalId) && <section className="dr-continuation-progress" aria-label={continuationText(props.state.locale, "title")}>
+      <strong role="status">{continuationText(props.state.locale, props.state.continuation.phase === "analysis" ? "analysis" : props.state.continuation.phase === "review" ? "review" : props.state.continuation.phase === "ready" ? "readyToSummarize" : props.state.continuation.phase === "opening" ? "summaryDone" : "summary")}</strong>
+      {["review", "ready"].includes(props.state.continuation.phase) && <button className="dr-meter-transfer" disabled={!!props.state.transferring || !!props.state.generating} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation.phase === "review" ? "reviewAction" : "startSummary")}</button>}
+      <button onClick={props.onCancelContinuation}>{continuationText(props.state.locale, "cancel")}</button>
+    </section>}
     {!props.state.vaultLocked && props.state.contextCapacityWarning && props.onContinueStory && props.onDismissCapacityWarning && <ContextCapacityWarning
       locale={props.state.locale} {...props.state.contextCapacityWarning}
       busy={!!props.state.generating || serviceBusy || !!props.state.transferring}
@@ -295,7 +308,7 @@ export function PageWidget(props: {
           <div className="dr-chat-meter-track" role="progressbar" aria-valuemin={0} aria-valuemax={capacity} aria-valuenow={Math.min(chatEstimate.estimatedTokens, capacity)} aria-valuetext={`~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / ${capacityLabel}`}><i style={{ width: `${chatEstimatePercent}%` }} /></div>
           <div className="dr-chat-meter-foot"><strong>{x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}</strong><small>{x(chatEstimate.source === "history" ? "chatMeterHistory" : "chatMeterPageOnly")}</small></div>
           {chatEstimate.atLeast && <small className="dr-chat-meter-note">{x("chatMeterAtLeast")}</small>}
-          {props.onContinueStory && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.transferring ? "creating" : "continue")}</button>}
+          {props.onContinueStory && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring || !!props.state.continuation && !["review", "ready"].includes(props.state.continuation.phase)} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation?.phase === "review" ? "reviewAction" : props.state.continuation?.phase === "ready" ? "startSummary" : props.state.transferring ? "creating" : "continue")}</button>}
         </div></WidgetTile>}
         {props.state.showMemoryContextIndicator !== false && <WidgetTile id="memory" title={t("context")} icon={<BrainCircuit size={16} />}><button className="dr-pill" onClick={() => setOpen(!open)} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{count}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button></WidgetTile>}
         {props.state.scene?.worldId && props.onSceneChoicesToggle && <WidgetTile id="choices" title={sceneChoiceText(props.state.locale, "toggleOn")} icon={<ListChecks size={16} />}><button className="dr-pill dr-scene-choice-toggle" type="button" title={sceneChoiceText(props.state.locale, "toggleHelp")} aria-pressed={Boolean(props.state.sceneChoicesEnabled)} onClick={props.onSceneChoicesToggle}>{sceneChoiceText(props.state.locale, props.state.sceneChoicesEnabled ? "toggleOn" : "toggleOff")}</button></WidgetTile>}
@@ -303,7 +316,7 @@ export function PageWidget(props: {
           {proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length + Number(!!batch.profileChange), 0)}</button>}
           {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
         </WidgetTile>}
-        {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAddEmotion={props.onAddCharacterEmotion} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
+        {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAddEmotion={props.onAddCharacterEmotion} onGenerateText={props.onGenerateCharacterText} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
         {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} /></WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
@@ -313,7 +326,7 @@ export function PageWidget(props: {
         <div className="dr-play-tools">{props.onQuickSave && <button onClick={() => { setQuick(!quick); setReviewId(null); }}>{at("remember")}</button>}<button disabled={analysisBlocked} onClick={props.onAnalyze}>{at("analyze")}</button>{props.state.analysisSuggested && <button onClick={props.onDismissSuggestion}>{t("later")}</button>}</div>
         {analysisBlocked && <p className="dr-inline-note">{x(serviceBusy ? "waiting" : props.state.generating ? "generating" : "startChat")}</p>}
         </>}
-      {quick && props.onQuickSave && props.onDraftLore ? <QuickMemory worldName={props.state.worlds?.find((world) => world.id === props.state.scene?.worldId)?.name} locale={props.state.locale} onSave={props.onQuickSave} onDraft={props.onDraftLore} onClose={() => setQuick(false)} /> : review && props.onReview && props.onDiscard ? <MemoryReview key={review.id} locale={props.state.locale} batch={review} onSave={(items, profileChoice) => props.onReview!(review, items, profileChoice)} onDiscard={() => props.onDiscard!(review.id)} onClose={() => { setReviewId(null); props.onReviewClose?.(); }} /> : <>
+      {quick && props.onQuickSave && props.onDraftLore ? <QuickMemory worldName={props.state.worlds?.find((world) => world.id === props.state.scene?.worldId)?.name} locale={props.state.locale} onSave={props.onQuickSave} onDraft={props.onDraftLore} onClose={() => setQuick(false)} /> : review && props.onReview && props.onDiscard ? <MemoryReview key={review.id} locale={props.state.locale} batch={review} onKeepMemory={props.state.continuation?.proposalId === review.id ? props.onKeepContinuationMemory : undefined} keepLabel={continuationText(props.state.locale, "keepMemory")} introduction={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "reviewHint") : undefined} saveLabel={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "saveContinue") : undefined} onSave={(items, profileChoice) => props.onReview!(review, items, profileChoice)} onDiscard={() => props.onDiscard!(review.id)} onClose={() => { setReviewId(null); props.onReviewClose?.(); }} /> : <>
         {(props.state.selection.overBudgetTokens ?? 0) > 0 && <p className="dr-budget-note">{at("overflow")}</p>}{props.state.selection.omittedCount > 0 && <p className="dr-budget-note">{at("omitted")} ({props.state.selection.omittedCount})</p>}
         {count === 0 ? <div className="dr-empty">{t("contextEmpty")}</div> : props.state.selection.entries.map((item) => <div key={item.entry.id}><label className="dr-entry"><input type="checkbox" checked onChange={(event) => props.onToggleEntry(item.entry, event.target.checked)} /><div><strong>{item.entry.title}</strong><small>{item.entry.content}</small></div><em>{x(selectionReason(item))}</em></label>{props.state.overrides?.includedIds.includes(item.entry.id) && <button className="dr-reset" onClick={() => props.onResetEntry?.(item.entry.id)}>{at("reset")}</button>}</div>)}{props.state.availableEntries.length > 0 && <div className="dr-add"><button onClick={() => setAdding(!adding)}>＋ {t("attachManually")}</button>{adding && <div className="dr-add-list"><input className="dr-attach-search" aria-label={x("searchAttach")} placeholder={x("searchAttach")} value={attachQuery} onChange={(event) => setAttachQuery(event.target.value)} />{props.state.availableEntries.filter((entry) => `${entry.title} ${entry.content}`.toLocaleLowerCase().includes(attachQuery.trim().toLocaleLowerCase())).map((entry) => <div key={entry.id}><button onClick={() => props.onAttachEntry(entry)}><strong>{entry.title}</strong><small>{entry.content}</small></button>{props.state.overrides?.excludedIds.includes(entry.id) && <button onClick={() => props.onResetEntry?.(entry.id)}>{at("reset")}</button>}</div>)}</div>}</div>}
         {proposals.map((batch) => <button className="dr-reset" key={batch.id} onClick={() => { setQuick(false); setReviewId(batch.id); }}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}

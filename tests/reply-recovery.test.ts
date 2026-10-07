@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DeepSeekReplyRecovery } from "../src/adapters/deepseek-reply-recovery";
 import { foldCharacterPayload } from "../src/adapters/deepseek-characters-dom";
-import { isReplacedReply, MAX_RECOVERED_REPLY_HTML, validRecoveredReplies } from "../src/core/reply-recovery";
+import { isRefusalFragment, isReplacedReply, MAX_RECOVERED_REPLY_HTML, validRecoveredReplies } from "../src/core/reply-recovery";
 import { validDataRecord, parseBackupSettings } from "../src/core/record-validation";
 import type { Locale, RecoveredReply } from "../src/core/types";
 import type { RecoveredReplyEdit } from "../src/storage/recovered-replies";
 
 const refusal = "Sorry, that's beyond my current scope. Let's talk about something else.";
+const refusalRu = "Извините, это выходит за рамки моих текущих возможностей. Давайте поговорим о чём-то другом.";
 const key = JSON.stringify(["message", "answer"]);
 const archived: RecoveredReply = { messageKey: key, html: "<p>Mira found the compass.</p>", capturedAt: 1, recoveredAt: 2 };
 const active: { recovery: DeepSeekReplyRecovery; observer: MutationObserver }[] = [];
@@ -28,6 +29,50 @@ function setup(replies: RecoveredReply[] = [], locale: Locale = "ru", save = vi.
 afterEach(() => { for (const { recovery, observer } of active) { observer.disconnect(); recovery.reset(); } active.length = 0; document.body.innerHTML = ""; vi.restoreAllMocks(); });
 
 describe("automatic local reply recovery", () => {
+  it.each([refusal, refusalRu])("recognizes only the complete known refusal: %s", text => {
+    expect(isReplacedReply(text)).toBe(true);
+    expect(isReplacedReply(text.toUpperCase().replaceAll("Ё", "Е").replaceAll(" ", "\n  "))).toBe(true);
+    expect(isRefusalFragment(text.slice(0, 20))).toBe(true);
+    expect(isRefusalFragment(text)).toBe(true);
+    expect(isRefusalFragment("")).toBe(false);
+    expect(isReplacedReply(`A character says: ${text}`)).toBe(false);
+    expect(isReplacedReply(`${text} Mira opens the gate.`)).toBe(false);
+    expect(isRefusalFragment(`${text} Mira opens the gate.`)).toBe(false);
+  });
+
+  it.each(["ru", "en"] as const)("restores the Russian refusal with current DeepSeek virtual markup in %s", async locale => {
+    document.body.innerHTML = '<main><div data-virtual-list-item-key="42"><div class="ds-message"><div class="ds-think-content">Private reasoning.</div><div class="ds-markdown ds-assistant-message-main-content" id="reply"><p>Мира нашла компас.</p></div></div></div></main>';
+    const body = document.getElementById("reply")!, { save } = setup([], locale);
+    body.textContent = refusalRu.slice(0, 20); await flush(); expect(save).not.toHaveBeenCalled();
+    body.textContent = refusalRu; await flush(); await flush();
+    const host = document.querySelector("[data-deeprole-recovered-reply]")!;
+    expect(host).toHaveTextContent("Мира нашла компас.");
+    expect(host).not.toHaveTextContent("Private reasoning");
+    expect(host).not.toHaveTextContent("Извините");
+    expect(host.querySelector("[data-deeprole-recovery-label]")).toHaveTextContent(locale === "ru" ? "Восстановлено" : "Restored");
+    expect(body).toHaveStyle({ display: "none" });
+    expect(save).toHaveBeenCalledOnce();
+    const saved = save.mock.calls[0]![0].reply;
+    expect(saved.messageKey).toBe(JSON.stringify(["virtual", "42"]));
+    active[active.length - 1]!.recovery.reset();
+    setup([saved], locale);
+    expect(document.querySelector("[data-deeprole-recovered-reply]")).toHaveTextContent("Мира нашла компас.");
+  });
+
+  it("captures the Russian replacement within the same mutation batch", async () => {
+    const body = mount(""), { save } = setup();
+    body.innerHTML = "<p>Мира вошла в сад.</p>";
+    body.textContent = refusalRu; await flush(); await flush();
+    expect(document.querySelector("[data-deeprole-recovered-reply]")).toHaveTextContent("Мира вошла в сад.");
+    expect(save).toHaveBeenCalledOnce();
+  });
+
+  it("does not invent a reply when only the Russian refusal was received", async () => {
+    mount(refusalRu); const { save } = setup(); await flush();
+    expect(document.querySelector("[data-deeprole-recovered-reply]")).toBeNull();
+    expect(save).not.toHaveBeenCalled();
+  });
+
   it("restores the last streamed fragment automatically with a single quiet label", async () => {
     const body = mount(), { recovery, save } = setup();
     body.innerHTML = '<p>Mira found <strong>the compass</strong>.</p><pre><code>The gate opens.\nNext scene</code></pre>'; await flush();

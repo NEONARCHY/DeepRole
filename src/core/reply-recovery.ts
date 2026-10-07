@@ -4,13 +4,16 @@ export const MAX_RECOVERED_REPLY_HTML = 1_000_000;
 export const MAX_RECOVERED_REPLIES = 200;
 export const MAX_CHAT_RECOVERY_HTML = 8_000_000;
 export const MAX_RECOVERED_CONTEXT_CHARS = 64_000;
-const refusal = "Sorry, that's beyond my current scope. Let's talk about something else.";
-const normalize = (text: string) => text.replace(/[’‘]/gu, "'").replace(/\s+/gu, " ").trim().toLowerCase();
-export const isReplacedReply = (text: string) => normalize(text) === normalize(refusal);
+const normalize = (text: string) => text.replace(/[’‘]/gu, "'").replace(/\s+/gu, " ").trim().toLowerCase().replaceAll("ё", "е");
+const refusals = [
+  "Sorry, that's beyond my current scope. Let's talk about something else.",
+  "Извините, это выходит за рамки моих текущих возможностей. Давайте поговорим о чём-то другом.",
+].map(normalize);
+export const isReplacedReply = (text: string) => refusals.includes(normalize(text));
 /** Ignore the refusal while it is itself streaming; it must not replace the candidate. */
 export const isRefusalFragment = (text: string) => {
   const value = normalize(text);
-  return value.length >= 8 && normalize(refusal).startsWith(value);
+  return value.length >= 8 && refusals.some(refusal => refusal.startsWith(value));
 };
 
 export function validRecoveredReply(value: unknown): value is RecoveredReply {

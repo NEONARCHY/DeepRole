@@ -11,7 +11,9 @@ import { EMPTY_STATUS, narrativeCharacterStatus } from "../core/characters";
 import { advanceAttributes, attributeState, recordManualAttributes, validAttributePatches } from "../core/attributes";
 import { characterStatusForSheet, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
 
-export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string }
+import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents } from "../core/selfies";
+
+export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string; replyIdentity?: string; replyCompletedAt?: number }
 export interface CharacterEdit extends CharacterScope {
   entityId: string | null; name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean;
   original?: CharacterEditBaseline;
@@ -81,7 +83,7 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     const replaced = new Set(changes.map(r => r.id));
     const bytes = [...all.filter(r => r.kind === "entity" && !replaced.has(r.id)), ...changes.filter(r => r.kind === "entity")].reduce((sum, r) => {
       const sheet = (r.data as SceneEntity).characterSheet;
-      return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? [])].reduce((n, s) => n + s.length, 0);
+      return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? []), ...(sheet?.selfieCategories ?? []).flatMap(c => c.images)].reduce((n, s) => n + s.length, 0);
     }, 0);
     if (bytes > 50_000_000) throw new Error("character-images-full");
     const savedEntities = [...entities.filter(e => !replaced.has(e.id)), ...changes.filter(r => r.kind === "entity").map(r => r.data as SceneEntity)];
@@ -182,7 +184,27 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
     if (partnerIds && (partnerIds.some(id => !id || !presentIds.includes(id) || allPeople.find(e => e.id === id)?.characterSheet?.protagonist) || new Set(partnerIds).size !== partnerIds.length)) throw new Error("character-unknown");
     const tracking = relationshipsEnabled && world?.relationshipsEnabled !== false && allPeople.some(e => (e.characterSheet?.attributes?.length || hero && e.id !== hero.id && e.characterSheet?.relationships?.enabled) && [...presentIds, ...(scene?.presentIds ?? [])].includes(e.id));
     const nextScene = { revision, lastReply: characterTurnKey(turn), relationshipNotice, ...(tracking ? { progress: { status: rejected ? "partial" as const : changed ? "changed" as const : "unchanged" as const, rejected, turn: revision } } : {}), partnerId: partnerIds ? partnerIds[0] ?? null : partnerId, ...(partnerIds ? { partnerIds: partnerIds as string[] } : {}), presentIds: presentIds as string[], states, updatedAt: now };
-    changes.push(record("binding", { ...binding, characterScenes: { ...binding.characterScenes, [scope.worldId]: { ...nextScene, portraitCycles: advancePortraitCycles(allPeople, nextScene, scene) } }, updatedAt: now }));
+    // Photo events never grant access by increasing scores in this same response.
+    const scenePhotos = [...(binding.scenePhotos ?? [])];
+    if (scope.replyIdentity && scope.replyIdentity.length <= 1000 && validSelfieEvents(turn.selfies)) {
+      const narrative = relationshipNarrative(scope.replyText ?? "");
+      for (const event of turn.selfies) {
+        const person = allPeople.find(e => e.id === resolve(event.id));
+        const categories = selfieCategories(person?.characterSheet);
+        const selected = categories.find(c => c.id === event.category);
+        const category = selected?.images.length ? selected : categories.find(c => c.default && c.images.length);
+        if (!person || !category?.images.length || !narrative.includes(event.quote.trim())
+          || /(?:\b(?:won't|will not|refus\w*|later|tomorrow)\b|не\s+(?:отправ|пришл|пошл|согла)|отказ|потом|завтра)/iu.test(event.quote)) continue;
+        const gate = selfieGate(person, category, hero, scene, relationshipsEnabled && world?.relationshipsEnabled !== false);
+        if (!["allowed", "story"].includes(gate) || scenePhotos.some(p => p.worldId === scope.worldId && p.entityId === person.id && p.turnKey === nextScene.lastReply)) continue;
+        const previous = scenePhotos.filter(p => p.entityId === person.id && p.categoryId === category.id).at(-1);
+        const pool = category.images.filter(image => category.images.length === 1 || selfieImageKey(image) !== previous?.imageKey);
+        const image = pool[Math.floor(Math.random() * pool.length)]!;
+        scenePhotos.push({ worldId: scope.worldId, entityId: person.id, categoryId: category.id, imageKey: selfieImageKey(image),
+          messageKey: scope.replyIdentity, turnKey: nextScene.lastReply, createdAt: typeof scope.replyCompletedAt === "number" && Number.isFinite(scope.replyCompletedAt) ? Math.max(0, Math.min(now, scope.replyCompletedAt)) : now });
+      }
+    }
+    changes.push(record("binding", { ...binding, ...(scenePhotos.length ? { scenePhotos } : {}), characterScenes: { ...binding.characterScenes, [scope.worldId]: { ...nextScene, portraitCycles: advancePortraitCycles(allPeople, nextScene, scene) } }, updatedAt: now }));
     return { records: changes, removed: [], result: undefined };
   });
 }

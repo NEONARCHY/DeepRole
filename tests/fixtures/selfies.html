@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Local selfies fixture</title><style>body{margin:0;background:#151a20;color:#eef3f7;font:14px system-ui}#app,main{max-width:660px;margin:20px auto;padding:16px;box-sizing:border-box}.avatar{width:96px;height:128px;object-fit:contain;cursor:zoom-in}article{margin-top:20px}</style></head><body><main><button id="avatar" aria-label="Mira portrait"><img class="avatar" alt="Mira"></button><article data-role="assistant" data-message-id="photo-answer">Mira sends the photo.</article></main><div class="dr-root" id="app"></div><script type="module">
+import React,{useState} from "react";import{createRoot}from"react-dom/client";
+import{SelfieCategories}from"/src/entrypoints/shared/SelfieCategories.tsx";
+import{ScenePhotosPresenter}from"/src/adapters/scene-photos-dom.ts";
+import{selfieImageKey}from"/src/core/selfies.ts";
+import{openPortraitViewer}from"/src/adapters/portrait-viewer.ts";
+import"/src/entrypoints/shared/design-system.css";import"/src/entrypoints/shared/characters.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";
+const canvas=document.createElement("canvas");canvas.width=600;canvas.height=900;const ctx=canvas.getContext("2d");ctx.fillStyle="#485d67";ctx.fillRect(0,0,600,900);ctx.fillStyle="#bedeea";ctx.fillRect(80,80,440,620);ctx.fillStyle="#485d67";ctx.font="40px system-ui";ctx.fillText("PHOTO FIXTURE",130,430);const image=canvas.toDataURL("image/png");
+document.querySelector(".avatar").src=image;document.querySelector("#avatar").onclick=()=>openPortraitViewer(document,image,"Mira",locale);
+const binding={id:"binding:a",chatId:"a",chatUrl:"https://chat.deepseek.com/chat/s/a",worldId:"w",bookId:null,messageCountAtAnalysis:0,createdAt:1,updatedAt:1};
+const entity={id:"mira",worldId:"w",name:"Mira",kind:"character",characterSheet:{sprites:{},selfieCategories:[{id:"regular",name:"Regular",description:"",minTrust:40,minAffinity:30,default:true,images:[image]}]}};
+const presenter=new ScenePhotosPresenter();
+window.sendPhoto=()=>{binding.scenePhotos=[{worldId:"w",entityId:"mira",messageKey:'["message","photo-answer"]',turnKey:"fixture",categoryId:"regular",imageKey:selfieImageKey(image),createdAt:Date.now()}];localStorage.setItem("fixture-photo",JSON.stringify(binding.scenePhotos));presenter.sync(binding,"w",[entity],locale,true);};
+window.syncPhotos=(enabled=true,world="w")=>presenter.sync(binding,world,[entity],locale,enabled);
+const stored=localStorage.getItem("fixture-photo");if(stored){binding.scenePhotos=JSON.parse(stored);window.syncPhotos();}
+function App(){const[value,setValue]=useState([]);const[busy,setBusy]=useState(false);window.categories=value;return React.createElement(SelfieCategories,{value,locale,disabled:busy,onBusy:setBusy,onChange:setValue});}
+createRoot(document.querySelector("#app")).render(React.createElement(App));
+</script></body></html>

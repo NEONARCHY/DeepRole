@@ -56,11 +56,11 @@ export function parseSceneChoices(text: string): { choices: SceneChoices; start:
 
 const copy = {
   ru: {
-    title: "Ваш ход", hint: "Выбор попадёт в поле сообщения. Отправляете вы.",
+    title: "Ваш ход",
     pinPortraits: "Закрепить оба портрета", unpinPortraits: "Открепить оба портрета",
     pinChoices: "Закрепить варианты на экране", unpinChoices: "Открепить варианты",
     expand: "Текст целиком", collapse: "Свернуть текст",
-    navigation: "На вариантах: стрелки — переход, 1–4 — выбор.", selected: "Вставлено в поле сообщения: «{label}». Можно изменить перед отправкой.",
+    navigation: "На вариантах: стрелки — переход, 1–4 — выбор.",
     notInserted: "Вариант не вставлен. Ваш текст не заменён — проверьте поле сообщения.",
     positive: "Доброжелательно", neutral: "Нейтрально", negative: "Жёстко", surprise: "Неожиданный ход",
     toggleOn: "Выборы в сценах · вкл", toggleOff: "Выборы в сценах · выкл", toggleHelp: "Четыре варианта в ролевых сценах всех чатов с подключённым миром.",
@@ -71,11 +71,11 @@ const copy = {
     changed: "Сцена уже изменилась. Запросите варианты под новым ответом.", busy: "Дождитесь завершения текущего ответа или запроса.",
   },
   en: {
-    title: "Your move", hint: "A choice fills the message box. You decide when to send.",
+    title: "Your move",
     pinPortraits: "Pin both portraits", unpinPortraits: "Unpin both portraits",
     pinChoices: "Pin options on screen", unpinChoices: "Unpin options",
     expand: "Full text", collapse: "Collapse text",
-    navigation: "On the options: arrows to move, 1–4 to choose.", selected: "Inserted into the message box: “{label}”. You can edit it before sending.",
+    navigation: "On the options: arrows to move, 1–4 to choose.",
     notInserted: "The option was not inserted. Your text was left unchanged — check the message box.",
     positive: "Warm", neutral: "Neutral", negative: "Confrontational", surprise: "Unexpected move",
     toggleOn: "Scene choices · on", toggleOff: "Scene choices · off", toggleHelp: "Four options in roleplay scenes across chats with a connected world.",

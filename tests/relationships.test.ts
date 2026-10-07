@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { advanceRelationship, bondFor, DEFAULT_RELATIONSHIP, relationshipGate, relationshipInstruction, relationshipNarrative, relationshipStage, relationshipState, validBonds, validRelationshipPatches, validRelationshipProfile } from "../src/core/relationships";
+import { relationshipRequirements, advanceRelationship, bondFor, DEFAULT_RELATIONSHIP, relationshipGate, relationshipInstruction, relationshipNarrative, relationshipStage, relationshipState, validBonds, validRelationshipPatches, validRelationshipProfile } from "../src/core/relationships";
 import { bindCharacterTurn, characterInstruction, characterRevision, characterTurnKey, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, relationshipTurnEnabled, validCharacterScenes } from "../src/core/characters";
 import { parseBackupSettings, validDataRecord } from "../src/core/record-validation";
 import { characterEditBaseline } from "../src/core/character-edit";
@@ -11,11 +11,12 @@ import { applyCharacterTurn, saveCharacter } from "../src/storage/characters";
 import { exportWorld, parseWorldPackage, cloneWorldPackage } from "../src/storage/worlds";
 import { createBackup, parseBackup } from "../src/storage/backup";
 import { loreDraftPrompt } from "../src/core/service-protocol";
+import { characterTextRequest } from "../src/core/character-text";
 import type { CharacterScene, ChatBinding, HandoffSnapshot, RelationshipPatch, SceneEntity, WorldProfile } from "../src/core/types";
 
 const world: WorldProfile = { id: "world", name: "Test world", description: "KEEP THIS LORE", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
-const hero: SceneEntity = { id: "hero", name: "Leon", kind: "character", worldId: world.id, description: "Original protagonist", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, adultConfirmed: true }, createdAt: 1, updatedAt: 1 };
-const mira: SceneEntity = { ...hero, id: "mira", name: "Mira", description: "Original NPC", characterSheet: { ...EMPTY_CHARACTER, adultConfirmed: true, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), romance: true } } };
+const hero: SceneEntity = { id: "hero", name: "Leon", kind: "character", worldId: world.id, description: "Original protagonist", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true }, createdAt: 1, updatedAt: 1 };
+const mira: SceneEntity = { ...hero, id: "mira", name: "Mira", description: "Original NPC", characterSheet: { ...EMPTY_CHARACTER, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), romance: true } } };
 const binding: ChatBinding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: world.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
 const quote = "Mira thanked Leon for keeping his promise.";
 const patch: RelationshipPatch = { id: "Mira", hero: "Leon", trust: 3, affinity: 2, reason: "She values promises", quote };
@@ -39,15 +40,29 @@ describe("relationship mechanics", () => {
   });
   it("requires explicit configuration; never guesses from relationships text or age", () => {
     expect(bondFor({ ...mira, characterSheet: EMPTY_CHARACTER }, hero, { ...EMPTY_STATUS, relationship: "Madly in love, 22" })).toBeUndefined();
-    expect(relationshipGate({ ...mira, characterSheet: { ...mira.characterSheet!, adultConfirmed: false } }, hero, { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 100, affinity: 100 })).toBe("adults");
-    expect(relationshipGate(mira, { ...hero, characterSheet: EMPTY_CHARACTER }, { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 100, affinity: 100 })).toBe("adults");
+    expect(relationshipGate(mira, { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 100, affinity: 100 })).toBe("eligible");
+    expect(relationshipGate({ ...mira, characterSheet: EMPTY_CHARACTER }, { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 100, affinity: 100 })).toBe("off");
+  });
+  it.each([false, true])("ignores legacy age-confirmation metadata (%s) without rewriting lore", legacy => {
+    const old = { ...mira, description: "Mira is 24. Her original biography is unchanged.", characterSheet: { ...mira.characterSheet!, adultConfirmed: legacy } };
+    const state = { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 100, affinity: 100 };
+    expect(validDataRecord({ kind: "entity", id: old.id, data: old })).toBe(true);
+    expect(relationshipGate(old, state)).toBe("eligible");
+    expect(relationshipRequirements(old, state)).toEqual({ trust: 0, affinity: 0, events: [] });
+    const reference = characterTextRequest({ key: "personality", label: "Personality", maxLength: 1200, scope: "profile" }, "", old.name, old, old.characterSheet, EMPTY_STATUS);
+    expect(JSON.stringify(reference)).not.toContain("adultConfirmed");
+    expect(relationshipLoreBrief([hero, old])).not.toContain("adultConfirmed");
+    const prompt = relationshipInstruction([hero, old], [old], { revision: "legacy", presentIds: [hero.id, old.id], states: { mira: { ...EMPTY_STATUS, bonds: { hero: state } } }, updatedAt: 1 });
+    expect(prompt).toContain('"romance":"eligible"'); expect(prompt).not.toContain("adulthood");
+    expect(old.description).toBe("Mira is 24. Her original biography is unchanged.");
+    expect(old.characterSheet.adultConfirmed).toBe(legacy);
   });
   it("checks individual thresholds and every event without assuming consent", () => {
     const person = { ...mira, characterSheet: { ...mira.characterSheet!, relationships: { ...DEFAULT_RELATIONSHIP, romance: true, milestones: [{ id: "promise", label: "Kept a promise" }] } } };
     const state = { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 80, affinity: 80 };
-    expect(relationshipGate(person, hero, state)).toBe("milestonesNeeded"); expect(relationshipGate(person, hero, { ...state, completed: ["promise"] })).toBe("eligible");
-    expect(relationshipGate(person, hero, { ...state, trust: 69 })).toBe("trustNeeded"); expect(relationshipGate(person, hero, { ...state, affinity: 64 })).toBe("affinityNeeded");
-    expect(relationshipGate({ ...person, characterSheet: { ...person.characterSheet, relationships: { ...person.characterSheet.relationships, romance: false } } }, hero, state)).toBe("off");
+    expect(relationshipGate(person, state)).toBe("milestonesNeeded"); expect(relationshipGate(person, { ...state, completed: ["promise"] })).toBe("eligible");
+    expect(relationshipGate(person, { ...state, trust: 69 })).toBe("trustNeeded"); expect(relationshipGate(person, { ...state, affinity: 64 })).toBe("affinityNeeded");
+    expect(relationshipGate({ ...person, characterSheet: { ...person.characterSheet, relationships: { ...person.characterSheet.relationships, romance: false } } }, state)).toBe("off");
   });
   it("accepts actual narrative, caps progress, supports decreases and bounds 0–100", () => {
     const before = relationshipState(DEFAULT_RELATIONSHIP); expect(advanceRelationship(DEFAULT_RELATIONSHIP, before, patch, quote, 10)).toMatchObject({ trust: 23, affinity: 22, history: [{ source: "scene", reason: patch.reason, quote }] });
@@ -137,15 +152,16 @@ describe("atomic sync and persistence", () => {
 
 describe("new players and handoff", () => {
   it("creates player-authored starting cast and an editable always rule without inventing age", () => {
-    const records = relationshipCastRecords(world.id, { hero: "Leon", heroAdult: true, people: [{ name: "Mira", trust: 25, affinity: 80, adult: false, romance: false }] }, "en", 1);
+    const records = relationshipCastRecords(world.id, { hero: "Leon", people: [{ name: "Mira", trust: 25, affinity: 80, romance: false }] }, "en", 1);
     expect(records).toHaveLength(3); expect(records.every(validDataRecord)).toBe(true);
-    const npc = records[1]!.data as SceneEntity; expect(npc.characterSheet).toMatchObject({ adultConfirmed: false, relationships: { initial: { trust: 25, affinity: 80 } } });
+    expect(records.filter(r => r.kind === "entity").every(r => !Object.hasOwn((r.data as SceneEntity).characterSheet!, "adultConfirmed"))).toBe(true);
+    const npc = records[1]!.data as SceneEntity; expect(npc.characterSheet).toMatchObject({ relationships: { initial: { trust: 25, affinity: 80 } } });
     expect(records[2]!.data).toMatchObject({ activation: "always", priority: "high" });
     const brief = relationshipLoreBrief(records.filter(r => r.kind === "entity").map(r => r.data as SceneEntity)); expect(loreDraftPrompt("A calm mystery", "en", brief)).toContain("Do not replace their numeric settings");
   });
   it("rejects duplicate names and incomplete setup atomically instead of silently dropping people", () => {
-    expect(() => relationshipCastRecords(world.id, { hero: "Leon", heroAdult: false, people: [{ name: "leon", trust: 20, affinity: 20, adult: false, romance: false }] }, "ru", 1)).toThrow();
-    expect(() => relationshipCastRecords(world.id, { hero: "", heroAdult: false, people: [{ name: "Mira", trust: 20, affinity: 20, adult: false, romance: false }] }, "ru", 1)).toThrow();
+    expect(() => relationshipCastRecords(world.id, { hero: "Leon", people: [{ name: "leon", trust: 20, affinity: 20, romance: false }] }, "ru", 1)).toThrow();
+    expect(() => relationshipCastRecords(world.id, { hero: "", people: [{ name: "Mira", trust: 20, affinity: 20, romance: false }] }, "ru", 1)).toThrow();
     expect(relationshipCastRecords(world.id, undefined, "ru", 1)).toEqual([]);
   });
   it("carries structured progress only into an empty matching branch, never replaces played state", () => {

@@ -17,8 +17,8 @@ import "/src/entrypoints/shared/design-tokens.css";import "/src/entrypoints/shar
 const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;
 const repo=new DeepRoleRepository(new DeepRoleDatabase("relationships-fixture-"+crypto.randomUUID()));
 const world={id:"world",name:"Harbor mystery",description:"Original world",color:"#123456",contextBudget:2000,relevanceThreshold:6,characterEmotions:["neutral","happy"],createdAt:1,updatedAt:1};
-const hero={id:"hero",worldId:world.id,kind:"character",name:"Leon",description:"Original hero",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,protagonist:true,adultConfirmed:true},createdAt:1,updatedAt:1};
-const mira={...hero,id:"mira",name:"Mira",description:"Original NPC",characterSheet:{...EMPTY_CHARACTER,adultConfirmed:true,relationships:{...structuredClone(DEFAULT_RELATIONSHIP),initial:{trust:65,affinity:55}}}};
+const hero={id:"hero",worldId:world.id,kind:"character",name:"Leon",description:"Original hero",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,protagonist:true},createdAt:1,updatedAt:1};
+const mira={...hero,id:"mira",name:"Mira",description:"Original NPC",characterSheet:{...EMPTY_CHARACTER,relationships:{...structuredClone(DEFAULT_RELATIONSHIP),initial:{trust:65,affinity:55}}}};
 const binding={id:"binding:a",chatId:"a",chatUrl:"https://chat.deepseek.com/chat/s/a",worldId:world.id,bookId:null,focusIds:[],messageCountAtAnalysis:0,createdAt:1,updatedAt:1,characterScenes:{world:{revision:"start",presentIds:["hero","mira"],partnerIds:["mira"],states:{mira:{...EMPTY_STATUS,relationship:"Friends"}},updatedAt:1}}};
 await repo.mergeRecords([{kind:"world",id:world.id,data:world},{kind:"entity",id:hero.id,data:hero},{kind:"entity",id:mira.id,data:mira},{kind:"binding",id:binding.id,data:binding}]);
 window.records=()=>repo.rawRecords();window.exportWorld=()=>exportWorld(world.id,repo);window.settings={...DEFAULT_SETTINGS,locale};

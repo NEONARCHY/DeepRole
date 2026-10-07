@@ -3,7 +3,11 @@ import type { RepositoryRequest } from "../storage/content-repository";
 import type { ServiceActivity } from "./memory-experience";
 import type { CharacterRequestReceipt } from "./characters";
 
+import type { ContinuationFlow } from "./continuation-flow";
+
 export interface TabSessionState {
+  characterTextTurns?: { requestId: string; chatId: string; replyIdentity: string }[];
+  continuation?: ContinuationFlow | null;
   characterRequest?: CharacterRequestReceipt | null;
   service?: ServiceRequest | null;
   snapshotId?: string | null;
@@ -14,7 +18,7 @@ export interface TabSessionState {
   contextWarnings?: { chatId: string; capacity: number; level: number }[];
   overrides?: MemoryOverrides;
 }
-export type TabSessionGuard = Partial<TabSessionState> & { serviceId?: string | null; characterRequestId?: string | null };
+export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage =
   | { type: "DR_PING" }

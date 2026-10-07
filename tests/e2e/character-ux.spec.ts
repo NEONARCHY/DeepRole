@@ -6,7 +6,7 @@ import { setEnglish } from "./helpers/settings";
 for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) test(`clear character image workflow ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 900 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");
-  await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing").fill("Green coat");
+  await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Green coat");
   const profile = dialog.getByRole("tab", { name: locale === "ru" ? "Анкета" : "Profile", exact: true });
   await profile.focus(); await profile.press("ArrowRight"); await expect(dialog.getByRole("tab", { selected: true })).toHaveText(locale === "ru" ? "В сцене" : "In scene");
   await dialog.getByLabel(locale === "ru" ? "Ближайшая цель" : "Current goal", { exact: true }).fill("Find the blue key");
@@ -30,7 +30,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
   const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }); await save.click();
   await expect(dialog.locator("footer [role=status]")).toHaveText(locale === "ru" ? "Сохранено" : "Saved"); await expect(dialog).toBeVisible();
   expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ sheet: { appearance: "Green coat", sprites: { Focused: expect.anything() } }, state: { goal: "Find the blue key", emotion: "happy" } });
-  await characterTab(dialog, "profile", locale); await expect(dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing")).toHaveValue("Green coat");
+  await characterTab(dialog, "profile", locale); await expect(dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true })).toHaveValue("Green coat");
   await characterTab(dialog, "images", locale);
   await expect(dialog).toHaveJSProperty("scrollWidth", await dialog.evaluate(el => el.clientWidth));
   expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
@@ -39,7 +39,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
 
 test("saving reveals an invalid field in another tab without losing the draft", async ({ page }) => {
   await page.goto("/tests/fixtures/characters.html?locale=en"); await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Appearance and clothing").fill("Red coat"); await characterTab(dialog, "scene"); await dialog.getByRole("button", { name: "Add stat", exact: true }).click();
+  await dialog.getByLabel("Appearance and clothing", { exact: true }).fill("Red coat"); await characterTab(dialog, "scene"); await dialog.getByRole("button", { name: "Add stat", exact: true }).click();
   await characterTab(dialog, "images"); await dialog.getByRole("button", { name: "Save character" }).click();
   await expect(dialog.getByRole("tab", { name: "In scene" })).toHaveAttribute("aria-selected", "true"); await expect(dialog.getByLabel("Label 2", { exact: true })).toBeFocused();
   await dialog.getByLabel("Label 2", { exact: true }).fill("Focus"); await dialog.getByRole("button", { name: "Save character" }).click();

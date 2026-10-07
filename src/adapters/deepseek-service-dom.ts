@@ -1,6 +1,38 @@
 import { parseServiceData, SERVICE_END, SERVICE_START } from "../core/service-protocol";
 import { nativeMessageRow, nativeMessageRows, nativeMessageIdentity, isUserMessage, REASONING } from "./deepseek-message-dom";
 
+/** Hide field-generation turns without changing DeepSeek's stored message text. */
+export function hideCharacterTextServices(root: ParentNode = document, saved: { requestId: string; replyIdentity: string }[] = []): { requestId: string; replyIdentity: string }[] {
+  const wanted = new Map<HTMLElement, string>(), found: { requestId: string; replyIdentity: string }[] = [];
+  for (const turn of serviceTurns(root)) {
+    if (!turn.requestId || !/^\[DeepRole Service\]\s*\[Request ID: [\w-]{1,120}\]\s*\[DeepRole Character Text\]/u.test((turn.request.textContent ?? "").trim())) continue;
+    wanted.set(turn.request, turn.requestId);
+    if (turn.response) {
+      wanted.set(turn.response, turn.requestId);
+      const identity = nativeMessageIdentity(turn.response);
+      if (identity) found.push({ requestId: turn.requestId, replyIdentity: identity });
+    }
+  }
+  for (const row of nativeMessageRows(root)) {
+    const match = saved.find(item => item.replyIdentity === nativeMessageIdentity(row));
+    if (match && !isUserMessage(row)) wanted.set(row, match.requestId);
+  }
+  for (const row of root.querySelectorAll<HTMLElement>("[data-deeprole-character-text-hidden]")) {
+    if (wanted.has(row)) continue;
+    const display = row.dataset.deeproleCharacterTextDisplay ?? "", priority = row.dataset.deeproleCharacterTextPriority ?? "";
+    if (display) row.style.setProperty("display", display, priority); else row.style.removeProperty("display");
+    if (row.dataset.deeproleServiceReplyId === row.dataset.deeproleCharacterTextHidden) { delete row.dataset.deeproleServiceReply; delete row.dataset.deeproleServiceReplyId; }
+    delete row.dataset.deeproleCharacterTextHidden; delete row.dataset.deeproleCharacterTextDisplay; delete row.dataset.deeproleCharacterTextPriority;
+  }
+  for (const [row, requestId] of wanted) {
+    if (!row.hasAttribute("data-deeprole-character-text-hidden")) { row.dataset.deeproleCharacterTextDisplay = row.style.getPropertyValue("display"); row.dataset.deeproleCharacterTextPriority = row.style.getPropertyPriority("display"); }
+    row.dataset.deeproleCharacterTextHidden = requestId;
+    if (row.style.getPropertyValue("display") !== "none") row.style.setProperty("display", "none", "important");
+    if (!isUserMessage(row)) markServiceReplyRow(row, requestId);
+  }
+  return found;
+}
+
 export function findDeepestServiceElements(marker: string, root: ParentNode = document): HTMLElement[] {
   const selector = "article, [data-message-id], [data-testid*='message'], div, p, pre, code, span";
   const elements = [...root.querySelectorAll<HTMLElement>(selector)];
@@ -65,10 +97,11 @@ export function findServiceReplyRows(requestId: string, root: ParentNode = docum
 }
 
 /** A reload restores DeepSeek's saved reply; suppress completed technical blocks again. */
-export function replaceArchivedMemoryPayloads(summary: string, pendingId?: string): void {
+export function replaceArchivedMemoryPayloads(summary: string, pendingId?: string, handoffSummary = summary): void {
   for (const turn of serviceTurns(document)) {
     if (!turn.requestId || turn.requestId === pendingId || !turn.response) continue;
     if (turn.response.querySelector('[data-deeprole-memory-card][data-deeprole-result]')) continue;
+    if (turn.request.textContent?.includes("[DeepRole Scene Handoff]")) { presentMemoryAnalysis(turn.requestId, handoffSummary, handoffSummary); continue; }
     for (const payload of findServiceResponseElements(turn.requestId)) {
       if (parseServiceData(payload.textContent || "")?.type === "memory-suggestions") presentMemoryAnalysis(turn.requestId, summary, summary);
     }
@@ -169,6 +202,16 @@ export function presentMemoryAnalysis(requestId: string, label: string, summary?
 }
 
 /** Ignore all extension feedback when assessing whether the native reply stopped changing. */
+/** Plain final prose, preserving paragraph breaks and excluding reasoning/controls. */
+export function plainCharacterReplyText(row: HTMLElement): string {
+  const scope = row.querySelector(".ds-assistant-message-main-content") ?? row.querySelector(".ds-markdown") ?? row;
+  const copy = scope.cloneNode(true) as HTMLElement;
+  copy.querySelectorAll(`${REASONING},button,[role=button],[data-deeprole-memory-card],[data-deeprole-result],[data-deeprole-scene-photos]`).forEach(node => node.remove());
+  copy.querySelectorAll("br").forEach(node => node.replaceWith("\n"));
+  copy.querySelectorAll("p,li").forEach(node => node.append("\n"));
+  return (copy.textContent ?? "").replace(/\n{3,}/gu, "\n\n").trim();
+}
+
 export function serviceReplyText(row: HTMLElement): string {
   const walker = row.ownerDocument.createTreeWalker(row, NodeFilter.SHOW_TEXT, {
     acceptNode: node => node.parentElement?.closest(`${REASONING}, [data-deeprole-memory-card], [data-deeprole-service-preloader], [data-deeprole-result]`) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,

@@ -22,11 +22,15 @@ test("installed tracking uses the accepted send, persists progress and honors an
     const panel = await context.newPage(); await panel.goto(`chrome-extension://${id}/sidepanel.html`);
     await panel.evaluate(async () => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru", onboardingComplete: true } })); await panel.reload();
     const world = { id: "world", name: "Harbor", description: "Preserve this fictional world", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
-    const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Original protagonist", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, adultConfirmed: true, attributes: starterAttributes("en") }, createdAt: 1, updatedAt: 1 };
-    const npc = { ...hero, id: "mira", name: "Mira", description: "Original friend", characterSheet: { ...EMPTY_CHARACTER, adultConfirmed: true, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), initial: { trust: 30, affinity: 30 } } } };
+    const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Original protagonist", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, attributes: starterAttributes("en") }, createdAt: 1, updatedAt: 1 };
+    const npc = { ...hero, id: "mira", name: "Mira", description: "Original friend", characterSheet: { ...EMPTY_CHARACTER, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), initial: { trust: 30, affinity: 30 } } } };
     const pack = { format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }, { kind: "entity", id: hero.id, data: hero }, { kind: "entity", id: npc.id, data: npc }] };
     await panel.getByRole("button", { name: "Лор", exact: true }).click(); await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click(); await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Harbor.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(pack)) }); await panel.getByRole("button", { name: "Подтвердить импорт", exact: true }).click(); await expect(panel.getByRole("heading", { name: "Harbor", exact: true })).toBeVisible();
     const chat = await context.newPage(); await chat.goto("https://chat.deepseek.com/chat/s/relationship-runtime"); await chat.getByRole("combobox", { name: "Мир", exact: true }).selectOption({ label: "Harbor" }); await expect(chat.locator(".dr-character-row").filter({ hasText: "Mira" })).toBeVisible();
+    await chat.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
+    const editor = chat.getByRole("dialog"); await editor.getByRole("tab", { name: "Отношения", exact: true }).click();
+    await expect(editor.getByRole("switch", { name: /18|adult|совершеннолет/i })).toHaveCount(0);
+    await editor.getByRole("button", { name: "Закрыть", exact: true }).last().click();
     let prompt = ""; await context.route("https://chat.deepseek.com/api/v0/chat/completion", async route => { prompt = route.request().postDataJSON().prompt; await route.fulfill({ contentType: "application/json", body: "{}" }); });
     async function send() {
       prompt = "";
@@ -54,7 +58,7 @@ test("installed tracking uses the accepted send, persists progress and honors an
       await chat.evaluate(({ quote, turn }) => { const story = document.querySelector("#story")!; const user = document.createElement("article"); user.dataset.role = "user"; user.dataset.messageId = crypto.randomUUID(); user.textContent = "Mira, I return your book."; const assistant = document.createElement("article"); assistant.dataset.role = "assistant"; assistant.dataset.messageId = crypto.randomUUID(); const body = document.createElement("div"); body.className = "ds-markdown"; body.textContent = quote + `\n<deeprole_characters>${JSON.stringify(turn)}</deeprole_characters>`; assistant.append(body); story.append(user, assistant); }, { quote, turn });
       await expect(chat.locator("[data-deeprole-characters-summary]").last()).toContainText("Обновлено после ответа");
     }
-    const first = await send(); expect(prompt).toContain("Relationship tracking is enabled"); expect(prompt).toContain('"trust":30');
+    const first = await send(); expect(prompt).toContain("Relationship tracking is enabled"); expect(prompt).toContain('"trust":30'); expect(prompt).not.toContain("adultConfirmed"); expect(prompt).not.toContain('"romance":"adults"');
     await expect.poll(async () => (await receipt())?.relationshipsEnabled).toBe(true); await expect.poll(async () => (await receipt())?.accepted).toBe(true); await reply(first);
     await expect.poll(bond).toMatchObject({ trust: 33, affinity: 32 }); expect((await bond()).history).toHaveLength(1); await expect.poll(attributes).toMatchObject({ values: { energy: 73, resolve: 50 } }); await expect(chat.locator(".dr-turn-feedback")).toContainText("Energy +3 · 73"); expect(prompt).toContain("Configured ordinary characteristics");
     await chat.reload(); await expect(chat.locator(".dr-character-row").filter({ hasText: "Mira" })).toContainText("33"); expect((await bond()).history).toHaveLength(1);

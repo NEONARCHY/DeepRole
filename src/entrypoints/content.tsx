@@ -1,3 +1,4 @@
+import { characterFieldPrompt, characterFieldResult, validCharacterTextRequest, type CharacterTextRequest } from "../core/character-text";
 import { createRoot, type Root } from "react-dom/client";
 import { WIDGET_LAYOUT_KEY, parseWidgetLayout } from "./content/WidgetDeck";
 import { browser } from "wxt/browser";
@@ -9,11 +10,17 @@ import { pendingRecoveredReply, replyRecoveryText } from "../core/reply-recovery
 import type { RecoveredReplyEdit } from "../storage/recovered-replies";
 import { nativeMessageIdentity, nativeMessageRows, isUserMessage } from "../adapters/deepseek-message-dom";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
-import { findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
+import { hideCharacterTextServices, plainCharacterReplyText, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { DEFAULT_SETTINGS } from "../core/defaults";
 import { validStoryContinuation, withLatestVisibleStory } from "../core/story-continuation";
 import { visibleStoryHistory } from "../adapters/story-history-dom";
+import { clearSelfieImageCache } from "../core/selfies";
+import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
+import { closePortraitViewer } from "../adapters/portrait-viewer";
+import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
+import { continuationKey, continuationScopeMatches, recentSceneReference, type ContinuationFlow } from "../core/continuation-flow";
+import { boundStory } from "../core/story-continuation";
 import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
 import type { StoryContinuation } from "../core/types";
@@ -35,6 +42,7 @@ import {
   createSnapshot,
   characterFactPrompt,
   handoffPrompt,
+  sceneHandoffPrompt,
   memoryAnalysisPrompt,
   loreDraftPrompt,
   parseServiceData,
@@ -112,6 +120,7 @@ interface ContextDelivery {
 
 class PageController {
   private transferring = false;
+  private handoffNavigationQueued: string | null = null;
   private storyRead: { id: string; chatId: string; resolve: (story: StoryContinuation | null) => void } | null = null;
   private seenContextWarnings: NonNullable<TabSessionState["contextWarnings"]> = [];
   private characterReceipt: CharacterRequestReceipt | null = null;
@@ -159,6 +168,8 @@ class PageController {
   private historyRetryAt = 0;
   private historyRefreshTimer = 0;
   private historyWasGenerating = false;
+  private characterTextTurns: { requestId: string; chatId: string; replyIdentity: string }[] = [];
+  private characterTextWaiter: { id: string; url: string; worldId: string | null; resolve: (text: string) => void; reject: (error: Error) => void; timer: number } | null = null;
   private pendingService: ServiceRequest | null = null;
   private preparingService = false;
   private autoContinuePending = false;
@@ -244,14 +255,17 @@ class PageController {
   private observePage() {
     const observer = new MutationObserver((changes) => {
       if (location.href !== this.lastUrl) this.navigate();
+      if (this.pendingService?.type === "character-text" || this.characterTextTurns.length) this.syncCharacterTextServices();
       this.replyRecovery.process(changes);
+      presentHiddenHandoffs();
+      this.syncScenePhotos();
       // Run before the next paint when DeepSeek streams a transport marker;
       // the normal 350 ms scan can otherwise expose raw JSON for a frame.
       if (changes.some(change => [...change.addedNodes, change.type === "characterData" ? change.target : null]
         .some(node => node?.textContent && /<deeprole_(?:characters|choices)/u.test(node.textContent)
           && !(node instanceof Element && node.matches("[data-deeprole-choices-payload], [data-deeprole-choices-loading], [data-deeprole-choices-host]"))))) this.syncSceneChoices();
       const request = this.pendingService;
-      if (request?.type === "memory-analysis" && request.chatId === this.adapter.getChatId()) this.updateMemoryPreloader(request);
+      if (request && ["memory-analysis", "continue-handoff"].includes(request.type) && request.chatId === this.adapter.getChatId()) this.updateMemoryPreloader(request);
       else if (!request && changes.some(change => [...change.addedNodes].some(node => node.textContent?.includes(SERVICE_START))
         || change.type === "characterData" && change.target.parentElement?.textContent?.includes(SERVICE_START))) this.cleanArchivedMemoryPayloads();
       this.scheduleScan();
@@ -319,6 +333,9 @@ class PageController {
     this.proposals = libraryRecords<MemoryProposalBatch>(records, "proposal"); this.changes = libraryRecords<LoreChange>(records, "change");
     this.draftOverrides = pending?.overrides ?? this.draftOverrides;
     this.pendingService = pending?.service ?? null;
+    this.characterTextTurns = pending?.characterTextTurns ?? this.characterTextTurns;
+    this.state.continuation = pending?.continuation ?? null;
+    if (this.state.continuation?.phase === "review") this.state.reviewProposalId = this.state.continuation.proposalId ?? null;
     if (this.pendingService && this.failedServiceIds.has(this.pendingService.id)) this.pendingService = null;
     const pendingSnapshotId = pending?.snapshotId;
     this.appliedSnapshot = pendingSnapshotId ? this.snapshots.find((item) => item.id === pendingSnapshotId) ?? null : null;
@@ -344,7 +361,13 @@ class PageController {
     return true;
   }
 
+  private readonly scenePhotos = new ScenePhotosPresenter();
+  private syncScenePhotos() {
+    this.scenePhotos.sync(this.currentBinding(), this.currentScene().worldId, this.entities, this.state.locale, !this.state.vaultLocked && this.settings.characterSheetsEnabled === true);
+  }
   private clearPrivateState() {
+    if (this.characterTextWaiter) this.settleCharacterText(this.characterTextWaiter.id, undefined, "vault-locked");
+    this.scenePhotos.clear(); closePortraitViewer(); clearSelfieImageCache();
     this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
     this.storyRead?.resolve(null); this.storyRead = null;
@@ -601,7 +624,7 @@ class PageController {
     }
     if (this.adapter.isGenerating()) { this.queueAutoContinue(); return; }
     if (this.adapter.getDraft().trim()) { await this.disarmAutoContinue(false); return; }
-    const prompt = "Continue the roleplay from the carried-over story context. Use the same language and writing style as the previous conversation. Do not repeat the recap; begin with the next natural scene beat.";
+    const prompt = continuationText(this.state.locale, "continuePrompt");
     if (!this.adapter.setDraft(prompt)) { this.queueAutoContinue(); return; }
     this.autoContinuePending = false;
     this.autoContinueAttempted = true;
@@ -642,7 +665,7 @@ class PageController {
     this.state.contextPosition = this.resolveContextIndicatorPosition();
     this.root?.render(<PageWidget
       state={{ ...this.state, selection: this.selection }}
-      onContinueStory={() => void this.continueStory().then(result => { if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : result.error === "busy" ? "waiting" : "failed")); })}
+      onContinueStory={() => void this.continueStory().then(result => { if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : result.error === "busy" ? "waiting" : result.error === "continuation-world-too-large" ? "tooLarge" : "failed")); })}
       onDismissCapacityWarning={() => void this.dismissCapacityWarning()}
       onDisableCapacityWarnings={() => void updateSettings({ contextWarningsEnabled: false }).then(() => this.reload())}
       onPanelWidthChange={async width => { await updateSettings({ floatingPanelWidth: width }); await this.reload(); }}
@@ -653,6 +676,7 @@ class PageController {
         await this.reload(); return next;
       }}
       onSaveCharacter={(edit) => this.saveCharacter(edit)}
+      onGenerateCharacterText={draft => this.generateCharacterText(draft)}
       onRequestCharacterFact={async (targetEntityId, brief) => { const result = await this.runService({ id: createId("service"), type: "memory-analysis", targetEntityId, brief, bookId: this.currentScene().bookId, createdAt: Date.now() }); if (!result.ok) throw new Error(result.error); }}
       onRetryCharacters={() => { this.characterScan = null; void this.scanCharacters(); }}
       onCharacterOpened={() => { if (this.state.characters) this.state.characters.openId = null; }}
@@ -668,7 +692,7 @@ class PageController {
       onQuickSave={(content, activation, title) => this.saveSelection(content, activation, title)}
       onDraftLore={async (brief) => { const result = await this.runService({ id: createId("service"), type: "lore-draft", brief, bookId: this.currentScene().bookId, createdAt: Date.now() }); if (!result.ok) throw new Error(result.error); }}
       onReview={async (batch, items, profileChoice) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "apply", batchId: batch.id, items, profileChoice } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); const count = items.filter((item) => item.selected && !item.issue).length + Number(!!profileChoice); this.showToast(assistantText(this.state.locale, "memoryUpdated").replace("{count}", String(count))); this.state.reviewProposalId = null; await this.reload(); }}
-      onDiscard={async (id) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "discard", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); this.state.reviewProposalId = null; await this.reload(); }}
+      onDiscard={async (id) => { if (this.state.continuation?.proposalId === id) await this.cancelContinuation(); const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "discard", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); this.state.reviewProposalId = null; await this.reload(); }}
       onReviewClose={() => { this.state.reviewProposalId = null; }}
       onUndo={async (id) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "undo", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); await this.reload(); }}
       onCopyContext={() => { void navigator.clipboard.writeText(this.state.contextText); this.showToast(this.t("contextCopied")); }}
@@ -677,6 +701,8 @@ class PageController {
       onSaveSelection={() => void this.saveSelection(this.state.selectionText)}
       onApplyHandoff={() => { const snapshot = this.state.handoffOffer; if (snapshot) void this.applySnapshot(snapshot.id).catch(() => this.showToast(sceneText(this.state.locale, "failed"))); }}
       onDismissHandoff={() => { this.state.handoffOffer = null; this.render(); }}
+      onKeepContinuationMemory={() => this.keepContinuationMemory()}
+      onCancelContinuation={() => void this.cancelContinuation().catch(() => this.showToast(continuationText(this.state.locale, "failed")))}
       onContextPositionChange={(position) => void this.saveContextIndicatorPosition(position)}
       onWidgetLayoutChange={async layout => { await browser.storage.local.set({ [WIDGET_LAYOUT_KEY]: layout }); this.state.widgetLayout = layout; this.render(); }}
       onToggleAdaptiveLayout={() => { void this.toggleAdaptiveLayout(); }}
@@ -717,6 +743,9 @@ class PageController {
     this.scanTimer = window.setTimeout(() => {
       this.scanTimer = 0;
       this.replyRecovery.scan();
+      presentHiddenHandoffs();
+      this.syncScenePhotos();
+      void this.syncContinuation();
       void this.scanServiceResponses();
       const generating = this.adapter.isGenerating();
       if (generating) this.historyWasGenerating = true;
@@ -824,7 +853,7 @@ class PageController {
         const url = location.href;
         this.characterSaving = true;
         try {
-          await repository.applyCharacterTurn({ worldId: characters.worldId, chatId: characters.chatId, base: characters.base, chatUrl: url, replyText: response.text }, turn);
+          await repository.applyCharacterTurn({ worldId: characters.worldId, chatId: characters.chatId, base: characters.base, chatUrl: url, replyText: response.text, replyIdentity: nativeMessageIdentity(response.row) ?? "turn:" + key, replyCompletedAt: this.characterScan.since }, turn);
           if (location.href !== url || this.currentScene().worldId !== characters.worldId) return;
           status = "updated";
           await this.reload();
@@ -900,8 +929,8 @@ class PageController {
   }
 
   private updateMemoryPreloader(request: ServiceRequest) {
-    if (request.type !== "memory-analysis") return;
-    const label = experienceText(this.state.locale, "memoryPreloader");
+    if (!["memory-analysis", "continue-handoff"].includes(request.type)) return;
+    const label = request.type === "continue-handoff" ? continuationText(this.state.locale, "summary") : experienceText(this.state.locale, "memoryPreloader");
     this.rememberServiceReply(request);
     presentMemoryAnalysis(request.id, label, undefined, document, request.replyIdentity);
   }
@@ -913,11 +942,13 @@ class PageController {
     if (!identity || identity === request.replyIdentity) return;
     request.replyIdentity = identity;
     // The guard prevents this late metadata write resurrecting a completed request.
-    void this.saveTabState({ service: { ...request } }, { serviceId: request.id }).catch(() => undefined);
+    if (request.type === "character-text" && request.chatId) this.characterTextTurns = [...this.characterTextTurns.filter(item => item.requestId !== request.id), { requestId: request.id, chatId: request.chatId, replyIdentity: identity }];
+    void this.saveTabState({ service: { ...request }, ...(request.type === "character-text" ? { characterTextTurns: this.characterTextTurns } : {}) }, { serviceId: request.id }).catch(() => undefined);
   }
 
   private cleanArchivedMemoryPayloads() {
-    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"), this.pendingService?.id);
+    this.syncCharacterTextServices();
+    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"), this.pendingService?.id, continuationText(this.state.locale, "summaryArchived"));
   }
 
   private readSelection() {
@@ -963,6 +994,54 @@ class PageController {
     void browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
   }
 
+  private settleCharacterText(id: string, text?: string, error?: string) {
+    const waiter = this.characterTextWaiter; if (!waiter || waiter.id !== id) return;
+    window.clearTimeout(waiter.timer); this.characterTextWaiter = null;
+    if (error) waiter.reject(new Error(error)); else waiter.resolve(text ?? "");
+  }
+  private generateCharacterText(draft: CharacterTextRequest): Promise<string> {
+    if (!validCharacterTextRequest(draft)) return Promise.reject(new Error("invalid-brief"));
+    if (this.characterTextWaiter) return Promise.reject(new Error("busy"));
+    const request: ServiceRequest = { id: createId("service"), type: "character-text", characterText: draft, bookId: this.currentScene().bookId, createdAt: Date.now() };
+    const url = location.href, worldId = this.currentScene().worldId;
+    const promise = new Promise<string>((resolve, reject) => {
+      const timer = window.setTimeout(() => { this.settleCharacterText(request.id, undefined, "service-failed"); if (this.pendingService?.id === request.id) void this.endUnusableService(this.pendingService); }, SERVICE_TIMEOUT_MS + 1000);
+      this.characterTextWaiter = { id: request.id, url, worldId, resolve, reject, timer };
+    });
+    void this.runService(request).then(result => { if (!result.ok) this.settleCharacterText(request.id, undefined, result.error ?? "service-failed"); }).catch(() => this.settleCharacterText(request.id, undefined, "service-failed"));
+    return promise;
+  }
+  private syncCharacterTextServices() {
+    return hideCharacterTextServices(document, this.characterTextTurns.filter(item => item.chatId === this.adapter.getChatId()));
+  }
+  private async scanCharacterTextService(request: ServiceRequest, rows: HTMLElement[]) {
+    this.syncCharacterTextServices();
+    if (this.adapter.isGenerating()) return;
+    const raw = rows.map(row => plainCharacterReplyText(row)).join("\n").trim();
+    const previous = this.malformedServiceReplies.get(request.id), now = Date.now();
+    const stableSince = previous?.text === raw ? previous.stableSince : now;
+    this.malformedServiceReplies.set(request.id, { text: raw, stableSince });
+    if (!raw) { await this.handleUnusableServiceReply(request, rows); this.scheduleServiceRetryScan(); return; }
+    if (now - stableSince < 1200) { this.scheduleServiceRetryScan(); return; }
+    this.processingService = true;
+    try {
+      let result: string | undefined, error: string | undefined;
+      try { result = characterFieldResult(raw, request.characterTextLimit ?? 1200); } catch (cause) { error = cause instanceof Error ? cause.message : "invalid-result"; }
+      const found = this.syncCharacterTextServices().map(item => ({ ...item, chatId: request.chatId! }));
+      const turns = [...this.characterTextTurns.filter(old => !found.some(item => item.requestId === old.requestId)), ...found];
+      if (!await this.saveTabState({ service: null, characterTextTurns: turns }, { serviceId: request.id })) return;
+      this.characterTextTurns = turns;
+      if (this.pendingService?.id === request.id) this.pendingService = null;
+      this.malformedServiceReplies.delete(request.id); this.setServiceResult(request, null);
+      const waiter = this.characterTextWaiter;
+      if (await repository.isLocked()) error = "vault-locked";
+      else if (waiter && (location.href !== waiter.url || this.currentScene().worldId !== waiter.worldId)) error = "scene-changed";
+      this.settleCharacterText(request.id, result, error);
+      await this.reload();
+    } catch { this.settleCharacterText(request.id, undefined, "service-failed"); await this.endUnusableService(request).catch(() => undefined); }
+    finally { this.processingService = false; }
+  }
+
   private async runService(request: ServiceRequest): Promise<{ ok: boolean; error?: string }> {
     // Reject at the time of the click, rather than queueing a command behind I/O.
     if (this.preparingService) return { ok: false, error: "busy" };
@@ -971,6 +1050,7 @@ class PageController {
     const initialScene = sceneKey();
     const guard = (ownRequest = false): string | undefined => {
       if (location.href !== initialUrl || sceneKey() !== initialScene) return "scene-changed";
+      if (request.continuationId && (this.state.continuation?.id !== request.continuationId || !this.flowInScope(this.state.continuation))) return "scene-changed";
       if (request.type === "scene-choices" && (!this.state.sceneChoicesEnabled || !request.sceneSignature || latestSceneChoiceTarget()?.signature !== request.sceneSignature)) return "scene-changed";
       if (this.adapter.isGenerating() || (this.pendingService && this.pendingService.chatId === this.adapter.getChatId() && (!ownRequest || this.pendingService.id !== request.id) && Date.now() - this.pendingService.createdAt < 10 * 60 * 1000)) return "busy";
       if (this.adapter.getDraft().trim()) return "draft-not-empty";
@@ -979,6 +1059,7 @@ class PageController {
     };
     const initialError = guard();
     if (initialError) return { ok: false, error: initialError };
+    if (request.type === "character-text" && !validCharacterTextRequest(request.characterText)) return { ok: false, error: "invalid-brief" };
     if ((request.type === "lore-draft" || request.targetEntityId) && (!request.brief?.trim() || request.brief.length > 6000)) return { ok: false, error: "invalid-brief" };
     if (request.targetEntityId && request.type !== "memory-analysis") return { ok: false, error: "invalid-brief" };
     this.preparingService = true;
@@ -1014,15 +1095,16 @@ class PageController {
       if (request.targetEntityId && !target) return { ok: false, error: "character-unavailable" };
       const selected = new Set(this.selection.entries.map((item) => item.entry.id));
       let characters = 0;
-      const existing = request.targetEntityId ? scope : [...scope].sort((a, b) => Number(selected.has(b.id)) - Number(selected.has(a.id)) || b.updatedAt - a.updatedAt).filter((entry) => {
+      const existing = request.targetEntityId || request.continuationId ? scope : [...scope].sort((a, b) => Number(selected.has(b.id)) - Number(selected.has(a.id)) || b.updatedAt - a.updatedAt).filter((entry) => {
         characters += entry.title.length + entry.content.length + 120; return characters <= 24000;
       }).slice(0, 80);
       // A correction must inspect the complete world. Never claim a partial
       // model prompt covered old mentions that were omitted by a size cap.
       if (target && (existing.length > 100 || existing.reduce((sum, entry) => sum + entry.title.length + entry.content.length + 120, 0) > 60000)) return { ok: false, error: "character-world-too-large" };
+      if (request.continuationId && (scope.length > 1000 || scope.reduce((sum, entry) => sum + entry.title.length + entry.content.length + 120, 0) > 220000)) return { ok: false, error: "continuation-world-too-large" };
       if (request.type !== "scene-choices") request.baseVersions = Object.fromEntries(await Promise.all(existing.map(async (entry) => [entry.id, await memoryFingerprint(entry)])));
       if (target) request.baseEntityVersion = await characterFactFingerprint(target);
-      const basePrompt = target ? characterFactPrompt(target, request.brief!, existing, this.state.locale) : request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale, this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === request.worldId)?.relationshipsEnabled !== false ? relationshipLoreBrief(this.entities.filter(e => e.worldId === request.worldId)) : "") : handoffPrompt();
+      const basePrompt = request.type === "character-text" ? characterFieldPrompt(request.characterText!, existing, this.state.locale) : target ? characterFactPrompt(target, request.brief!, existing, this.state.locale) : request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale, this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === request.worldId)?.relationshipsEnabled !== false ? relationshipLoreBrief(this.entities.filter(e => e.worldId === request.worldId)) : "") : request.type === "continue-handoff" && request.continuationId ? sceneHandoffPrompt(request.brief ?? "{}", existing, this.state.locale) : handoffPrompt();
       // Service bodies deliberately bypass the injection bridge. Attach bounded,
       // read-only reference here; never create a character-update receipt for them.
       const serviceWorld = this.worlds.find(w => w.id === request.worldId);
@@ -1033,6 +1115,8 @@ class PageController {
       const prompt = [basePrompt.replace("[DeepRole Service]\n", `[DeepRole Service]\n[Request ID: ${request.id}]\n`), reference, selectedMemory].filter(Boolean).join("\n\n");
       // Keep only correlation metadata in session storage, not the user's lore brief.
       delete request.brief;
+      if (request.type === "character-text") request.characterTextLimit = request.characterText!.field.maxLength;
+      delete request.characterText;
       const preparedError = guard();
       if (preparedError) return { ok: false, error: preparedError };
       this.state.warning = "";
@@ -1051,7 +1135,7 @@ class PageController {
         return await cancel("composer-not-found");
       }
       this.state.analysisSuggested = false;
-      if (request.type !== "scene-choices") this.showToast(this.t("deepseekAnalyzing"));
+      if (!["scene-choices", "character-text"].includes(request.type)) this.showToast(this.t("deepseekAnalyzing"));
       return { ok: true };
     } catch {
       await cancel("service-failed").catch(() => undefined);
@@ -1082,6 +1166,7 @@ class PageController {
     const virtualizedReply = request.type !== "scene-choices" && !replyRows.length
       ? findVirtualizedServiceReply(request.id, request.priorReplyIdentity) : null;
     if (virtualizedReply) replyRows.push(virtualizedReply);
+    if (request.type === "character-text") { await this.scanCharacterTextService(request, replyRows); return; }
     if (request.type === "scene-choices") {
       replyRows.forEach((row) => { row.dataset.deeproleSceneChoicesReply = "true"; });
       const completed = replyRows.some((row) => parseSceneChoices(row.textContent ?? ""));
@@ -1100,11 +1185,13 @@ class PageController {
     const candidates = virtualizedReply
       ? findVirtualizedServiceResponseElements(virtualizedReply)
       : findServiceResponseElements(request.id, document, request.replyIdentity);
-    if (request.type === "memory-analysis") this.updateMemoryPreloader(request);
+    if (["memory-analysis", "continue-handoff"].includes(request.type)) this.updateMemoryPreloader(request);
     for (const element of candidates) {
       const parsed = parseServiceData(element.textContent || element.innerText || "");
       if (!parsed) continue;
       if (this.pendingService?.id !== request.id) return;
+      if (request.continuationId && (this.state.continuation?.id !== request.continuationId || !this.flowInScope(this.state.continuation))) { await this.cancelContinuation(); return; }
+      if (request.continuationId && this.adapter.isGenerating()) return;
       this.malformedServiceReplies.delete(request.id);
       if ((parsed.type === "memory-suggestions") !== ["memory-analysis", "lore-draft"].includes(request.type)) continue;
       if (request.targetEntityId && parsed.type === "memory-suggestions" && !parsed.profile) continue;
@@ -1119,6 +1206,7 @@ class PageController {
           // A stale reminder counter must not turn an already saved batch into a retry.
           if (request.type === "memory-analysis") await this.markAnalyzed(request).catch(() => undefined);
           if (changeCount) this.state.reviewProposalId = batch.id;
+          if (request.continuationId && this.state.continuation?.id === request.continuationId) await this.setContinuation({ ...this.state.continuation, phase: changeCount ? "review" : "ready", ...(changeCount ? { proposalId: batch.id } : {}) });
           this.setServiceResult(request, changeCount ? null : "empty");
           this.showToast(changeCount ? this.t("suggestionsReady") : assistantText(this.state.locale, "noChanges"));
           const summary = changeCount
@@ -1128,15 +1216,21 @@ class PageController {
           if (!changeCount) void browser.runtime.sendMessage({ type: "DR_SERVICE_RESULT", outcome: "no-changes" } satisfies DeepRoleMessage).catch(() => undefined);
         } else {
           const scope = this.pageScope();
-          const snapshot = createSnapshot(parsed, request.chatId ?? "unknown", request.chatUrl ?? scope.url, request.bookId);
-          snapshot.worldId = request.worldId ?? null; snapshot.focusIds = request.focusIds ?? [];
-          const sourceScene = request.worldId && this.currentBinding()?.characterScenes?.[request.worldId];
-          if (sourceScene) snapshot.characterScene = structuredClone(sourceScene);
-          await repository.put("snapshot", snapshot);
-          replaceServicePayloadWithSummary(element, assistantText(this.state.locale, "handoffSaved"));
+          const snapshot = request.continuationId
+            ? await repository.captureContinuation({ chatId: request.chatId!, chatUrl: request.chatUrl!, scene: { worldId: request.worldId ?? null, focusIds: request.focusIds ?? [], bookId: request.bookId }, story: boundStory([], "history"), recap: parsed, overrides: this.overrides() })
+            : createSnapshot(parsed, request.chatId ?? "unknown", request.chatUrl ?? scope.url, request.bookId);
+          if (!request.continuationId) {
+            snapshot.worldId = request.worldId ?? null; snapshot.focusIds = request.focusIds ?? [];
+            const sourceScene = request.worldId && this.currentBinding()?.characterScenes?.[request.worldId];
+            if (sourceScene) snapshot.characterScene = structuredClone(sourceScene);
+            await repository.put("snapshot", snapshot);
+          }
+          if (request.continuationId) presentMemoryAnalysis(request.id, continuationText(this.state.locale, "summary"), continuationText(this.state.locale, "summaryDone"), document, request.replyIdentity);
+          else replaceServicePayloadWithSummary(element, assistantText(this.state.locale, "handoffSaved"));
           this.showToast(assistantText(this.state.locale, "handoffSaved"));
           if (request.type === "continue-handoff") {
-            this.scheduleHandoffNavigation(snapshot, scope);
+            if (request.continuationId && this.state.continuation?.id === request.continuationId) await this.setContinuation({ ...this.state.continuation, phase: "opening", snapshotId: snapshot.id });
+            this.scheduleHandoffNavigation(snapshot, scope, request.continuationId);
           }
         }
         if (this.pendingService?.id === request.id) this.pendingService = null;
@@ -1176,9 +1270,12 @@ class PageController {
       // Even an unavailable background/session store must not keep the page
       // spinning. A newer request is never cleared without its guarded write.
     }
+    this.settleCharacterText(request.id, undefined, "service-failed");
     this.failedServiceIds.add(request.id);
+    if (request.continuationId && this.state.continuation?.id === request.continuationId) await this.setContinuation(null);
     if (request.type === "memory-analysis") presentMemoryAnalysis(request.id,
       experienceText(this.state.locale, "memoryPreloader"), experienceText(this.state.locale, "memoryAnalysisFailed"), document, request.replyIdentity);
+    else if (request.type === "continue-handoff") presentMemoryAnalysis(request.id, continuationText(this.state.locale, "summary"), continuationText(this.state.locale, "summaryFailed"), document, request.replyIdentity);
     else removeServicePreloader(request.id, findServiceReplyRows(request.id));
     if (this.pendingService?.id === request.id) this.pendingService = null;
     this.setServiceResult(request, "error");
@@ -1187,21 +1284,24 @@ class PageController {
     this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, /handoff/.test(request.type) ? "invalidHandoffResult" : "invalidServiceResult"));
   }
 
-  private scheduleHandoffNavigation(snapshot: HandoffSnapshot, scope: PageScope) {
+  private scheduleHandoffNavigation(snapshot: HandoffSnapshot, scope: PageScope, continuationId?: string) {
+    if (this.handoffNavigationQueued === snapshot.id) return;
+    this.handoffNavigationQueued = snapshot.id;
     this.autoContinueAttempted = false;
     const sceneKey = JSON.stringify(this.currentScene());
-    const safeToLeave = (ownToken?: string) => location.href === scope.url && this.adapter.getChatId() === scope.chatId && JSON.stringify(this.currentScene()) === sceneKey && !this.adapter.getDraft().trim() && !this.adapter.isGenerating() && (!this.appliedSnapshot || this.appliedSnapshot.id === snapshot.id && this.snapshotToken === ownToken);
+    const safeToLeave = (ownToken?: string) => (!continuationId || this.state.continuation?.id === continuationId && this.flowInScope(this.state.continuation)) && location.href === scope.url && this.adapter.getChatId() === scope.chatId && JSON.stringify(this.currentScene()) === sceneKey && !this.adapter.getDraft().trim() && !this.adapter.isGenerating() && (!this.appliedSnapshot || this.appliedSnapshot.id === snapshot.id && this.snapshotToken === ownToken);
     window.setTimeout(() => {
       void (async () => {
-        if (!safeToLeave()) { this.showToast(assistantText(this.state.locale, "handoffSaved")); return; }
-        const token = createId("handoff");
-        if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, continueOnFreshChat: true, continueUntil: Date.now() + 90_000 }, { snapshotId: null })) return;
+        if (!safeToLeave(this.snapshotToken ?? undefined)) { if (continuationId && this.state.continuation?.id === continuationId) await this.setContinuation(null); this.showToast(assistantText(this.state.locale, "handoffSaved")); return; }
+        const token = this.appliedSnapshot?.id === snapshot.id && this.snapshotToken || createId("handoff");
+        if (this.appliedSnapshot?.id !== snapshot.id && !await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, continueOnFreshChat: true, continueUntil: Date.now() + 90_000 }, { snapshotId: null, ...(continuationId ? { continuationKey: continuationKey(this.state.continuation) } : {}) })) { if (continuationId && this.state.continuation?.id === continuationId) await this.setContinuation(null); return; }
         if (!safeToLeave(token)) {
           await this.saveTabState({ snapshotId: null, snapshotToken: null }, { snapshotId: snapshot.id, snapshotToken: token });
           this.showToast(assistantText(this.state.locale, "handoffSaved")); return;
         }
+        if (continuationId) await this.setContinuation(null);
         location.href = "https://chat.deepseek.com/";
-      })().catch(() => this.showToast(assistantText(this.state.locale, "handoffSaved")));
+      })().catch(() => this.showToast(assistantText(this.state.locale, "handoffSaved"))).finally(() => { this.handoffNavigationQueued = null; });
     }, 650);
   }
 
@@ -1221,52 +1321,131 @@ class PageController {
     });
   }
 
+  private flowInScope(flow: ContinuationFlow): boolean {
+    return !this.state.vaultLocked && continuationScopeMatches(flow, this.adapter.getChatId(), location.href, this.currentScene());
+  }
+
+  private async setContinuation(next: ContinuationFlow | null): Promise<void> {
+    const previous = this.state.continuation ?? null;
+    if (!await this.saveTabState({ continuation: next }, { continuationKey: continuationKey(previous) })) throw new Error("continuation-conflict");
+    this.state.continuation = next; this.render();
+  }
+
+  private async cancelContinuation(): Promise<void> {
+    const flow = this.state.continuation;
+    if (!flow) return;
+    await this.setContinuation(null);
+    if (flow.snapshotId) {
+      const pending = await browser.runtime.sendMessage({ type: "DR_GET_TAB_STATE" } satisfies DeepRoleMessage) as TabSessionState;
+      if (pending.snapshotId === flow.snapshotId) {
+        await this.saveTabState({ snapshotId: null, snapshotToken: null, continueOnFreshChat: false, continueUntil: null }, { snapshotId: flow.snapshotId, snapshotToken: pending.snapshotToken });
+        if (this.appliedSnapshot?.id === flow.snapshotId) { this.appliedSnapshot = null; this.snapshotToken = null; await this.updateContext(); }
+      }
+    }
+    const request = this.pendingService;
+    if (request?.continuationId === flow.id) {
+      await this.saveTabState({ service: null }, { serviceId: request.id });
+      if (this.pendingService?.id === request.id) this.pendingService = null;
+      presentMemoryAnalysis(request.id, continuationText(this.state.locale, "summary"), continuationText(this.state.locale, "cancelled"), document, request.replyIdentity);
+      await this.updateContext();
+    }
+    if (this.state.reviewProposalId === flow.proposalId) this.state.reviewProposalId = null;
+    this.render();
+  }
+
+  private async keepContinuationMemory(): Promise<void> {
+    const flow = this.state.continuation;
+    if (!flow || flow.phase !== "review" || !flow.proposalId || !this.flowInScope(flow)) throw new Error("scene-changed");
+    this.transferring = true;
+    try {
+      // Explicit approval to carry unchanged memory, including rejected suggestions.
+      await this.setContinuation({ ...flow, phase: "approved" });
+      const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "discard", id: flow.proposalId } satisfies DeepRoleMessage);
+      if (!result?.ok) { await this.setContinuation(flow); throw new Error("memory-conflict"); }
+      this.state.reviewProposalId = null; await this.reload();
+    } finally { this.transferring = false; this.scheduleScan(); }
+  }
+
+  private async syncContinuation(): Promise<void> {
+    const flow = this.state.continuation;
+    if (!flow || this.transferring || this.preparingService || this.processingService) return;
+    try {
+      if (!this.flowInScope(flow)) { await this.cancelContinuation(); return; }
+      if (flow.phase === "review" && !this.proposals.some(p => p.id === flow.proposalId)) {
+        if (this.changes.some(change => change.proposalId === flow.proposalId && !change.undoneAt)) {
+          await this.setContinuation({ ...flow, phase: "approved" });
+          this.scheduleScan();
+        } else await this.cancelContinuation();
+      } else if (flow.phase === "approved" && !this.adapter.isGenerating() && !this.pendingService) {
+        const result = await this.advanceContinuation();
+        if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : "failed"));
+      } else if (flow.phase === "opening") {
+        const snapshot = this.snapshots.find(item => item.id === flow.snapshotId && item.sourceChatId === flow.chatId);
+        if (snapshot) this.scheduleHandoffNavigation(snapshot, { chatId: flow.chatId, url: flow.chatUrl }, flow.id);
+        else await this.cancelContinuation();
+      } else if (["analysis", "summary"].includes(flow.phase) && !this.pendingService) {
+        await this.cancelContinuation();
+      }
+    } catch { this.showToast(continuationText(this.state.locale, "failed")); }
+  }
+
   private async continueStory(): Promise<{ ok: boolean; error?: string }> {
+    const flow = this.state.continuation;
+    if (flow && this.flowInScope(flow) && flow.phase === "review") {
+      this.state.reviewProposalId = flow.proposalId ?? null; this.render(); return { ok: true };
+    }
+    if (flow && this.flowInScope(flow) && ["ready", "approved"].includes(flow.phase)) return this.advanceContinuation();
+    if (this.transferring || this.adapter.isGenerating() || this.pendingService || this.preparingService || flow) return { ok: false, error: "busy" };
+    if (this.adapter.getDraft().trim()) return { ok: false, error: "draft-not-empty" };
+    const scope = this.pageScope();
+    if (!scope.chatId || !this.adapter.getMessageCount()) return { ok: false, error: "empty-chat" };
+    this.transferring = true; this.state.transferring = true; this.render();
+    let id: string | undefined;
+    try {
+      await this.sceneQueue.catch(() => undefined); await this.reload(); this.assertScope(scope);
+      if (await repository.isLocked()) throw new Error("vault-locked");
+      const requestId = createId("service"); id = createId("continuation");
+      await this.setContinuation({ id, chatId: scope.chatId, chatUrl: scope.url, scene: structuredClone(this.currentScene()), phase: "analysis", requestId, createdAt: Date.now() });
+      const result = await this.runService({ id: requestId, continuationId: id, type: "memory-analysis", bookId: this.currentScene().bookId, createdAt: Date.now() });
+      if (!result.ok && this.state.continuation?.id === id) await this.cancelContinuation();
+      return result;
+    } catch (error) {
+      if (id && this.state.continuation?.id === id) await this.cancelContinuation().catch(() => undefined);
+      return { ok: false, error: error instanceof Error ? error.message : "handoff-failed" };
+    } finally { this.transferring = false; this.state.transferring = false; this.render(); }
+  }
+
+  private async advanceContinuation(): Promise<{ ok: boolean; error?: string }> {
+    const flow = this.state.continuation;
+    if (!flow || !this.flowInScope(flow)) return { ok: false, error: "scene-changed" };
     if (this.transferring || this.adapter.isGenerating() || this.pendingService || this.preparingService) return { ok: false, error: "busy" };
     if (this.adapter.getDraft().trim()) return { ok: false, error: "draft-not-empty" };
-    const scope = this.pageScope(), sceneKey = JSON.stringify(this.currentScene());
-    if (!scope.chatId || !(this.adapter.getMessageCount() || nativeMessageRows(document).length || this.state.conversationEstimate?.messageCount)) return { ok: false, error: "empty-chat" };
     this.transferring = true; this.state.transferring = true; this.render();
     const guard = () => {
-      this.assertScope(scope);
-      if (JSON.stringify(this.currentScene()) !== sceneKey) throw new Error("scene-changed");
+      if (this.state.continuation?.id !== flow.id || !this.flowInScope(flow)) throw new Error("scene-changed");
       if (this.adapter.getDraft().trim()) throw new Error("draft-not-empty");
       if (this.adapter.isGenerating() || this.pendingService) throw new Error("busy");
     };
     try {
-      await this.sceneQueue.catch(() => undefined);
-      await this.characterReceiptTask;
-      await this.scanCharacters();
-      await this.reload();
-      guard();
-      const history = await this.readStory(scope);
-      guard();
-      // A just-finished reply has a short stability window before its validated
-      // numeric updates are committed. Join it rather than snapshotting old scores.
+      await this.characterReceiptTask; await this.scanCharacters(); await this.reload(); guard();
+      const history = await this.readStory({ chatId: flow.chatId, url: flow.chatUrl }); guard();
       await this.scanCharacters();
       if (this.characterScan && !this.characterScan.done) {
         await new Promise<void>(resolve => window.setTimeout(resolve, Math.max(0, 1250 - (Date.now() - this.characterScan!.since))));
         guard(); await this.scanCharacters();
       }
-      guard();
       const story = withLatestVisibleStory(history, visibleStoryHistory());
       if (!story.turns.length) throw new Error("history-unavailable");
-      const snapshot = await repository.captureContinuation({ chatId: scope.chatId!, chatUrl: scope.url, scene: this.currentScene(), story, overrides: this.overrides() });
       guard();
-      if (await repository.isLocked()) throw new Error("vault-locked");
-      guard();
-      const token = createId("handoff");
-      if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, continueOnFreshChat: true, continueUntil: Date.now() + 120_000 }, { snapshotId: null })) throw new Error("handoff-pending");
-      try { guard(); }
-      catch (error) {
-        await this.saveTabState({ snapshotId: null, snapshotToken: null, continueOnFreshChat: false, continueUntil: null }, { snapshotId: snapshot.id, snapshotToken: token });
-        throw error;
-      }
-      this.state.contextCapacityWarning = null;
-      location.href = "https://chat.deepseek.com/";
-      return { ok: true };
-    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "handoff-failed" }; }
-    finally { this.transferring = false; this.state.transferring = false; this.render(); }
+      const requestId = createId("service");
+      await this.setContinuation({ ...flow, phase: "summary", requestId });
+      const result = await this.runService({ id: requestId, continuationId: flow.id, type: "continue-handoff", bookId: flow.scene.bookId, brief: recentSceneReference(story), createdAt: Date.now() });
+      if (!result.ok && this.state.continuation?.id === flow.id) await this.setContinuation({ ...flow, phase: "ready" });
+      return result;
+    } catch (error) {
+      if (this.state.continuation?.id === flow.id && this.flowInScope(flow)) await this.setContinuation({ ...flow, phase: "ready" }).catch(() => undefined);
+      return { ok: false, error: error instanceof Error ? error.message : "handoff-failed" };
+    } finally { this.transferring = false; this.state.transferring = false; this.render(); }
   }
 
   private maybeWarnContext() {
@@ -1332,6 +1511,8 @@ class PageController {
   }
 
   private navigate() {
+    if (this.characterTextWaiter) this.settleCharacterText(this.characterTextWaiter.id, undefined, "scene-changed");
+    this.scenePhotos.clear(); closePortraitViewer();
     this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
     this.pickedSceneChoice = null;

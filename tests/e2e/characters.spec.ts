@@ -21,7 +21,7 @@ for (const locale of ["ru", "en"] as const) test(`request a reviewed permanent c
   await section.click();
   const instruction = locale === "ru" ? "У Миры теперь чёрные волосы" : "Mira now has black hair";
   await dialog.getByPlaceholder(locale === "ru" ? "Например: теперь у Элис чёрные волосы вместо рыжих" : "For example: Alice now has black hair instead of red hair").fill(instruction);
-  await dialog.getByRole("button", { name: locale === "ru" ? "Попросить DeepSeek" : "Ask DeepSeek" }).click();
+  await dialog.getByRole("button", { name: locale === "ru" ? "Попросить DeepSeek" : "Ask DeepSeek", exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).factRequest)).toEqual({ entityId: "mira", brief: instruction });
   await expect(dialog).toBeHidden();
 });
@@ -75,9 +75,9 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     const dialog = page.getByRole("dialog"); await expect(dialog).toBeVisible();
     const bounds = await dialog.boundingBox(); expect(bounds!.x).toBeGreaterThan(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width); expect(bounds!.height).toBeLessThan(850);
     await expect(dialog.getByLabel(locale === "ru" ? "Имя" : "Name", { exact: true })).toBeFocused();
-    await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing").fill("Green coat");
+    await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Green coat");
     await characterTab(dialog, "scene", locale);
-    await dialog.getByLabel(locale === "ru" ? "Ближайшая цель" : "Current goal").fill("Find the key");
+    await dialog.getByLabel(locale === "ru" ? "Ближайшая цель" : "Current goal", { exact: true }).fill("Find the key");
     await characterTab(dialog, "images", locale);
     const preview = dialog.locator(".dr-character-portrait-editor img");
     await preview.scrollIntoViewIfNeeded();

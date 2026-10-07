@@ -9,7 +9,7 @@ export function latestCharacterResponse(root: ParentNode = document) {
   if (!target) return null;
   if (target.row.matches("[data-deeprole-service-reply='true']")) return null;
   const clone = target.row.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll(`${REASONING}, [data-deeprole-characters-summary]`).forEach(e => e.remove());
+  clone.querySelectorAll(`${REASONING}, [data-deeprole-characters-summary], [data-deeprole-scene-photos]`).forEach(e => e.remove());
   const text = clone.textContent ?? "";
   if (text.includes("<deeprole_character_mode>")) return null;
   return { ...target, text, turn: parseCharacterTurn(text) };

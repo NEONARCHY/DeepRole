@@ -4,6 +4,8 @@ import { clamp, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
+import { openPortraitViewer, photoCopy } from "./portrait-viewer";
+import { validPortrait } from "../core/portrait-variations";
 import { scenePortraitIndex } from "../core/portrait-variations";
 import { fitScene } from "../core/adaptive-layout";
 import { sceneAvailableLeft, widgetDeck, widgetRects } from "./adaptive-layout";
@@ -20,7 +22,7 @@ export interface PortraitStageOptions {
   adaptiveLayout?: boolean;
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
-type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
+type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; zoom: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
 type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
@@ -450,8 +452,9 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         const mood = doc.createElement("small"); const role = doc.createElement("span"); role.className = "dr-cast-role";
         open.append(image, name, mood, role);
         const resize = doc.createElement("button"); resize.type = "button"; resize.className = "dr-cast-resize"; resize.textContent = "⤡";
-        box.append(move, open, resize); slot.append(box);
-        widget = { slot, box, move, open, resize }; stage.widgets.set(entity.id, widget);
+        const zoom = doc.createElement("button"); zoom.type = "button"; zoom.className = "dr-cast-zoom"; zoom.textContent = "⤢";
+        box.append(move, open, zoom, resize); slot.append(box);
+        widget = { slot, box, move, open, zoom, resize }; stage.widgets.set(entity.id, widget);
         manipulate(stage, widget, entity.id, move, false); manipulate(stage, widget, entity.id, resize, true);
       }
       attr(widget.slot, "class", `dr-cast-slot ${side}`);
@@ -477,7 +480,10 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         if (stats.length) widget.open.setAttribute("aria-describedby", highlights.id); else widget.open.removeAttribute("aria-describedby");
         widget.statsKey = key;
       }
-      widget.open.onclick = () => onOpen(entity.id);
+      const image = widget.open.querySelector("img")!;
+      const view = () => openPortraitViewer(host.ownerDocument, image.getAttribute("src") ?? "", entity.name, locale);
+      const noImage = !validPortrait(image.getAttribute("src")); if (widget.zoom.hidden !== noImage) widget.zoom.hidden = noImage; attr(widget.zoom, "aria-label", `${photoCopy(locale).open}: ${entity.name}`); widget.zoom.onclick = view;
+      widget.open.onclick = event => { if (event.target === image && view()) return; onOpen(entity.id); };
     }
     // Scene order may change when the hero or interlocutors change. Keep existing
     // nodes and saved poses, but use the current cast order for unplaced defaults.

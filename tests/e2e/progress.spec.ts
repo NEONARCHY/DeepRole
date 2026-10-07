@@ -10,7 +10,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
   await dialog.getByRole("tab", { name: locale === "ru" ? "В сцене" : "In scene", exact: true }).click(); await dialog.getByRole("button", { name: t("starter"), exact: true }).click();
   const attributes = dialog.locator(".dr-attribute-editor");
   await attributes.getByLabel(`${t("name")} 1`, { exact: true }).fill(locale === "ru" ? "Силы" : "Stamina"); const label = locale === "ru" ? "Силы" : "Stamina";
-  await attributes.getByLabel(`${t("low")}`, { exact: true }).first().fill("Tired; rest is needed.");
+  await attributes.getByLabel(`${t("low")} · ${label}`, { exact: true }).fill("Tired; rest is needed.");
   const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }); const close = dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).last();
   await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible(); await close.click(); await expect(hero).toContainText(`${label} 70`);
   await page.evaluate(() => (window as any).playProgressEvent()); const feedback = page.locator(".dr-turn-feedback"); await expect(feedback).toContainText(`${label} +3 · 73`); await expect(feedback).toContainText("Rest helped him recover"); await expect(hero).toContainText(`${label} 73`); await feedback.getByText(t("evidence"), { exact: true }).click(); await expect(feedback.locator("blockquote")).toContainText("Leon rested by the fire");
@@ -30,7 +30,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
 for (const locale of ["ru", "en"] as const) test(`new world characteristic opt-in ${locale}`, async ({ page }) => {
   const t = (key: Parameters<typeof progressText>[1]) => progressText(locale, key); await page.setViewportSize({ width: 360, height: 900 }); await page.goto(`/tests/fixtures/relationships.html?locale=${locale}`); await page.getByRole("button", { name: locale === "ru" ? "Новый мир" : "New world", exact: true }).click(); const form = page.locator(".lm-create-dialog"); await form.getByLabel(locale === "ru" ? "Название" : "Name", { exact: true }).fill("Adventure"); await form.getByText(relationshipText(locale, "setupTitle"), { exact: true }).click();
   await expect(form.getByRole("switch", { name: t("setup"), exact: true })).toBeDisabled(); await form.getByLabel(relationshipText(locale, "heroName"), { exact: true }).fill("Leon"); await form.getByRole("switch", { name: t("setup"), exact: true }).check(); await form.getByRole("button", { name: relationshipText(locale, "createWorld"), exact: true }).click(); await expect(form).toHaveCount(0);
-  const created = await page.evaluate(async () => (await (window as any).records()).find((r: any) => r.kind === "entity" && r.data.worldId === (window as any).createdWorld.id && r.data.characterSheet.protagonist).data); expect(created.characterSheet.attributes.map((a: any) => a.initial)).toEqual([70, 50]); expect(created.characterSheet.adultConfirmed).toBe(false);
+  const created = await page.evaluate(async () => (await (window as any).records()).find((r: any) => r.kind === "entity" && r.data.worldId === (window as any).createdWorld.id && r.data.characterSheet.protagonist).data); expect(created.characterSheet.attributes.map((a: any) => a.initial)).toEqual([70, 50]);
 });
 
 test("duplicate attribute names reveal the invalid field, not a generic save failure", async ({ page }) => {

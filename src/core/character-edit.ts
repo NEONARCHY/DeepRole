@@ -42,7 +42,7 @@ export function mergeCharacterEdit(original: CharacterEditBaseline, draft: Omit<
   sheet.protagonist = mergeField(original.sheet.protagonist, draft.sheet.protagonist, current.sheet.protagonist);
   // Selecting a new hero must not silently replace someone selected in another editor.
   if (sheet.protagonist && !current.sheet.protagonist && !same(original.protagonists, current.protagonists)) throw new Error("character-edit-conflict");
-  for (const key of ["gender", "appearance", "personality", "goals", "background", "adultConfirmed", "relationships", "attributes"] as const) {
+  for (const key of ["gender", "appearance", "personality", "goals", "background", "relationships", "attributes", "selfieCategories"] as const) {
     Object.assign(sheet, { [key]: mergeField(original.sheet[key], draft.sheet[key], current.sheet[key]) });
   }
   for (const key of new Set([...Object.keys(original.sheet.sprites), ...Object.keys(draft.sheet.sprites)])) {

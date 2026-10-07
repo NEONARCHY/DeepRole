@@ -84,6 +84,16 @@ Upload a batch to the **Image library**, then select pictures and assign emotion
 - Drag portraits near either edge of the options to snap them into place, or move and resize them freely. Scrolling away from the options keeps their last screen position. Conversation partners use the main size; other present characters sit to their right, about 15% smaller and bottom-aligned. Multiple speaking partners use the same main size.
 - The small **eye button** beside the panel controls hides or shows all portraits without deleting images or resetting positions. The same setting remains in **Settings → Characters**.
 
+### Local selfies and full image view
+
+In **Character → Images → Selfies**, create collections with a name, context description and photos. Mark one as **Default collection**. DeepSeek chooses a category for the played scene; if none matches, it uses ordinary selfies. Images stay local: only collection names, context rules and availability are supplied to the model.
+
+Each category has minimum trust and closeness (the affinity score), initially **40 / 30**. With relationship tracking set up for the protagonist, low saved scores block the attachment; high scores still do not guarantee consent. The character can refuse or defer according to personality, boundaries and the scene. Without numeric tracking, willingness is decided in the story. A refused, deferred or merely suggested action does not attach a photo.
+
+After a completed reply with a valid photo event, the local image appears in that reply after about **1.5 seconds**. It is saved against that reply and restored after reload in the same browser and library. Removing the source image leaves a missing-photo notice. Up to 32 collections and 48 photos per collection, within the existing shared image budget. Older **Selfie / Селфи** emotion assignments are supported.
+
+Click an avatar or selfie to open the image viewer, switch to **100% zoom**, or close with Escape. On floating portraits, the name still opens the character sheet.
+
 <details>
 <summary>Example: a character's personal emotion list</summary>
 
@@ -173,11 +183,11 @@ Two separate mini-buttons on the option card pin **both portraits together** or 
 
 ## Continue in a new chat
 
-Click **Continue in a new chat** to save a local checkpoint, open a new chat and send the continuation. You keep the same world, portraits, selected memory, latest saved character state, relationship scores, characteristics and progress journals. **The old chat is not deleted.** There is no need to wait for a new recap from DeepSeek in the old chat first.
+Click **Continue in a new chat**: DeepSeek first compares the conversation with DeepRole memory and proposes updates. Review and save the changes you want, or explicitly continue with unchanged memory. DeepSeek then prepares a hidden summary of recent scenes; only after it is ready does a new chat open and receive the summary with a request to continue from the same moment. **The old chat is not deleted.** World, portraits, selected memory and exact saved character/relationship progress carry over.
 
 <img src="docs/images/readme/continuation-en.png" width="440" alt="One-click story continuation with an optional DeepSeek recap kept in a separate expandable section">
 
-The new chat receives the earlier recap and available conversation through the latest event. If history cannot be read fully, only available messages are used; very long transfers can also be partial. The saved state says so and links back to the original chat. A full conversation of any size is not guaranteed.
+The summary is sent in the first request context; DeepRole displays only the continuation request in the chat, including after reload. The full transcript is not duplicated in the new chat. Missing history is not invented, and an AI summary may omit details; keep important facts in approved world memory. The saved checkpoint links back to the source chat.
 
 Unsaved drafts and active generation are protected. If automatic sending is unavailable, send the prepared continuation yourself. If sending fails, it stays ready for retry. **Prepare a recap with DeepSeek** remains an optional separate action.
 

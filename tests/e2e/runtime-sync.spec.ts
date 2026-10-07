@@ -75,16 +75,42 @@ async function enableServiceComposer(chat: Page) {
     });
   });
 }
+async function enableContinuationComposer(chat: Page, options: { changes?: boolean; manualSummary?: boolean } = {}) {
+  await chat.evaluate(options => {
+    (window as any).continuationPrompts = [];
+    (window as any).finishSummary = () => {
+      const row = document.querySelector<HTMLElement>('[data-message-id="transfer-summary-answer"]');
+      if (row) row.textContent = '<deeprole_data>' + JSON.stringify({ type: "handoff", title: "Harbor scene", summary: "Mira waits at the harbor. The gate opened. The promise has been kept. Continue from this exact moment; the next reply is still pending." }) + '</deeprole_data>';
+    };
+    document.querySelector("form")!.addEventListener("submit", event => {
+      event.preventDefault(); const composer = document.querySelector("textarea")!, prompt = composer.value; composer.value = "";
+      (window as any).continuationPrompts.push(prompt);
+      const summary = prompt.includes("[DeepRole Scene Handoff]");
+      const user = document.createElement("article"); user.dataset.role = "user"; user.dataset.messageId = summary ? "transfer-summary-user" : "transfer-analysis-user"; user.textContent = prompt;
+      const answer = document.createElement("article"); answer.dataset.role = "assistant"; answer.dataset.messageId = summary ? "transfer-summary-answer" : "transfer-analysis-answer";
+      document.querySelector("#conversation")!.append(user, answer);
+      void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, chat_session_id: "a" }) }).then(() => {
+        if (summary) { if (!options.manualSummary) (window as any).finishSummary(); }
+        else answer.textContent = '<deeprole_data>' + JSON.stringify({ type: "memory-suggestions", items: options.changes ? [{ title: "Mira's promise", content: "Mira confirmed the promise was kept.", keywords: ["Mira"], activation: "smart", priority: "normal" }] : [] }) + '</deeprole_data>';
+      });
+    });
+  }, options);
+}
+async function finishNoChangeReview(chat: Page) {
+  const progress = chat.getByRole("region", { name: "Continue your story", exact: true });
+  await expect(progress).toContainText("Memory is up to date");
+  await progress.getByRole("button", { name: "Prepare summary and continue", exact: true }).click();
+}
 function entry(id: string) { return { id, worldId: null, bookId: null, title: id, content: `CANON_${id}`, keywords: [`${id} signal`], activation: "smart", priority: "normal", enabled: true, source: { type: "manual" }, createdAt: 1, updatedAt: 1 }; }
 function snapshot(id: string) { return { id, worldId: null, bookId: null, title: id, summary: `HANDOFF_${id}`, sourceChatId: "previous", sourceChatUrl: "https://chat.deepseek.com/chat/s/previous", createdAt: 1 }; }
 
 test.beforeEach(({}, info) => { test.skip(info.project.name !== "chromium", "Installed MV3 bridge; shared adapter/UI tested in Firefox separately"); });
 
-test("one-click local continuation preserves exact progress before consuming an accepted retry", async () => {
+test("reviewed continuation preserves exact progress before consuming an accepted retry", async () => {
   test.setTimeout(75000);
   const world = { id: "world", name: "Harbor", description: "Harbor canon", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
-  const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Leon is 25", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, adultConfirmed: true }, createdAt: 1, updatedAt: 1 };
-  const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, adultConfirmed: true, relationships: structuredClone(DEFAULT_RELATIONSHIP) } };
+  const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Leon is 25", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true }, createdAt: 1, updatedAt: 1 };
+  const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, relationships: structuredClone(DEFAULT_RELATIONSHIP) } };
   const progress = { revision: "played", lastReply: "old-reply", presentIds: ["hero", "mira"], partnerIds: ["mira"], states: {
     hero: { ...EMPTY_STATUS, attributes: { values: { energy: 41 }, locked: ["energy"], history: [] } },
     mira: { ...EMPTY_STATUS, emotion: "happy", condition: "At the harbor", bonds: { hero: { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 87, affinity: 68, locked: true, completed: ["oath"] } } },
@@ -97,7 +123,7 @@ test("one-click local continuation preserves exact progress before consuming an 
     await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: { biz_data: { chat_messages: [
       { role: "user", content: "I promised to return." }, { role: "assistant", fragments: [{ type: "THINK", content: "NEVER_FORWARD_REASONING" }, { type: "RESPONSE", content: "Mira waits at the harbor." }] },
     ] } } }) }));
-    await context.route("**/api/v0/chat/completion", route => { posts++; sent.push(route.request().postDataJSON().prompt); return route.fulfill({ status: posts === 1 ? 503 : 200, contentType: "application/json", body: "{}" }); });
+    await context.route("**/api/v0/chat/completion", route => { if (route.request().postDataJSON().prompt.startsWith("[DeepRole Service]")) return route.fulfill({ contentType: "application/json", body: "{}" }); posts++; sent.push(route.request().postDataJSON().prompt); return route.fulfill({ status: posts === 1 ? 503 : 200, contentType: "application/json", body: "{}" }); });
     await context.addInitScript(() => window.addEventListener("DOMContentLoaded", () => {
       if (location.pathname !== "/") return;
       document.querySelector<HTMLFormElement>("form")!.style.cssText = "position:fixed;bottom:20px;left:380px;width:550px;height:80px;";
@@ -110,16 +136,19 @@ test("one-click local continuation preserves exact progress before consuming an 
         });
       });
     }, { once: true }));
+    await enableContinuationComposer(chat);
     await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="1">I promised to return.</article><article data-role="assistant" data-message-id="2">Mira waits at the harbor.</article>'; });
     await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
     await chat.getByRole("button", { name: "Continue in a new chat", exact: true }).click();
+    await finishNoChangeReview(chat);
     await expect(chat).toHaveURL("https://chat.deepseek.com/");
     await expect.poll(() => posts).toBe(1);
     expect(sent[0]).toContain("Mira waits at the harbor."); expect(sent[0]).toContain("The oath must be honored."); expect(sent[0]).toContain('"trust":87');
     expect(sent[0]).not.toContain("NEVER_FORWARD_REASONING");
     let records = await databaseRecords(panel), checkpoint = records.find(r => r.kind === "snapshot").data;
     expect(checkpoint.appliedAt).toBeUndefined(); expect(checkpoint.characterScene).toEqual(progress);
-    expect(records.find(r => r.kind === "binding" && r.data.chatId === "a").data).toEqual(sourceBinding);
+    expect(records.find(r => r.kind === "binding" && r.data.chatId === "a").data.characterScenes).toEqual(sourceBinding.characterScenes);
+    expect(checkpoint.continuation).toBeUndefined();
     expect(records.find(r => r.kind === "binding" && r.data.chatId === "b")).toBeUndefined();
     await expect(chat.getByRole("textbox", { name: "Message", exact: true })).not.toHaveValue("");
     await chat.getByRole("button", { name: "Send", exact: true }).click();
@@ -134,13 +163,17 @@ test("one-click local continuation preserves exact progress before consuming an 
   } finally { await context.close(); }
 });
 
-test("local continuation protects a draft typed while the explicit history read is pending", async () => {
+test("reviewed continuation protects a draft typed while the explicit history read is pending", async () => {
   const { context, panel, chat } = await setup([]);
   try {
     let release!: () => void, reading = false; const gate = new Promise<void>(resolve => { release = resolve; });
     await context.route("**/api/v0/chat/history_messages?**", async route => { reading = true; await gate; await route.fulfill({ contentType: "application/json", body: JSON.stringify({ messages: [{ role: "assistant", content: "The door opened." }] }) }); });
+    await context.route("**/api/v0/chat/completion", route => route.fulfill({ contentType: "application/json", body: "{}" }));
+    await enableContinuationComposer(chat);
     await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="1">The door opened.</article>'; });
     await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
+    expect(await command(panel, { type: "DR_CONTINUE_STORY" })).toEqual({ ok: true });
+    await expect(chat.getByRole("region", { name: "Continue your story" })).toContainText("Memory is up to date");
     await startCommand(panel, { type: "DR_CONTINUE_STORY" }); await expect.poll(() => reading).toBe(true);
     expect(await command(panel, { type: "DR_CONTINUE_STORY" })).toEqual({ ok: false, error: "busy" });
     await chat.getByRole("textbox", { name: "Message", exact: true }).fill("MY UNSENT DRAFT"); release();
@@ -150,11 +183,11 @@ test("local continuation protects a draft typed while the explicit history read 
   } finally { await context.close(); }
 });
 
-test("local continuation waits for the latest validated relationship update and falls back if history is unavailable", async () => {
+test("reviewed continuation waits for the latest validated relationship update and falls back if history is unavailable", async () => {
   test.setTimeout(60000);
   const world = { id: "world", name: "Harbor", description: "An unchanged world", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
-  const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Leon is 25", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true, adultConfirmed: true }, createdAt: 1, updatedAt: 1 };
-  const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, adultConfirmed: true, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), initial: { trust: 30, affinity: 30 } } } };
+  const hero = { id: "hero", worldId: "world", kind: "character", name: "Leon", description: "Leon is 25", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true }, createdAt: 1, updatedAt: 1 };
+  const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), initial: { trust: 30, affinity: 30 } } } };
   const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "world", focusIds: ["hero", "mira"], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
   const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["entity", mira], ["binding", binding]]);
   try {
@@ -173,18 +206,180 @@ test("local continuation waits for the latest validated relationship update and 
     const turn = { request: schema.request, present: ["Leon", "Mira"], partners: ["Mira"], updates: [{ id: "Mira", name: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }], bonds: [{ id: "Mira", hero: "Leon", trust: 3, affinity: 2, reason: "A kept promise", quote }] };
     await chat.evaluate(({ quote, turn }) => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="1">Mira, I kept the promise.</article><article data-role="assistant" data-message-id="2"><div class="ds-markdown"></div></article>'; document.querySelector(".ds-markdown")!.textContent = quote + "\n<deeprole_characters>" + JSON.stringify(turn) + "</deeprole_characters>"; }, { quote, turn });
     await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
+    await enableContinuationComposer(chat);
     await chat.getByRole("button", { name: "Continue in a new chat", exact: true }).click();
+    await finishNoChangeReview(chat);
     await expect(chat).toHaveURL("https://chat.deepseek.com/");
     const checkpoint = (await databaseRecords(panel)).find(r => r.kind === "snapshot").data;
     expect(checkpoint.characterScene.states.mira.bonds.hero).toMatchObject({ trust: 33, affinity: 32 });
-    expect(checkpoint.continuation).toMatchObject({ source: "page", partial: true });
-    expect(checkpoint.continuation.turns.at(-1).text).toBe(quote);
+    expect(checkpoint.continuation).toBeUndefined();
+    expect(checkpoint.summary).toContain("promise has been kept");
     expect(checkpoint.appliedAt).toBeUndefined();
     await panel.reload(); await panel.locator(".play-continuation > summary").click();
-    await expect(panel.locator(".snapshot-card")).toContainText("Some messages did not fit.");
     await expect(panel.getByRole("link", { name: "Open original chat", exact: true })).toHaveAttribute("href", "https://chat.deepseek.com/chat/s/a");
   } finally { await context.close(); }
 });
+
+test("reviewed continuation waits for explicit approval, uses updated memory, and can cancel the hidden summary", async () => {
+  test.setTimeout(60000);
+  const { context, panel, chat } = await setup([["entry", entry("canon")]]);
+  try {
+    await context.route("**/api/v0/chat/completion", route => route.fulfill({ contentType: "application/json", body: "{}" }));
+    await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ messages: [{ role: "assistant", content: "Mira confirmed the promise was kept." }] }) }));
+    await enableContinuationComposer(chat, { changes: true, manualSummary: true });
+    await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="1">Mira confirmed the promise was kept.</article>'; });
+    expect(await command(panel, { type: "DR_CONTINUE_STORY" })).toEqual({ ok: true });
+    const review = chat.locator(".dr-memory-review");
+    await expect(review).toBeVisible();
+    expect((await databaseRecords(panel)).filter(r => r.kind === "entry")).toHaveLength(1);
+    expect((await databaseRecords(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+    expect(await chat.evaluate(() => (window as any).continuationPrompts)).toHaveLength(1);
+    await review.getByRole("button", { name: "Select all", exact: true }).click();
+    await review.getByRole("button", { name: /^Save and continue/ }).click();
+    await expect.poll(() => chat.evaluate(() => (window as any).continuationPrompts.length)).toBe(2);
+    const prompts = await chat.evaluate(() => (window as any).continuationPrompts as string[]);
+    expect(prompts[0]).toContain("CANON_canon");
+    expect(prompts[1]).toContain("[Approved memory"); expect(prompts[1]).toContain("Mira confirmed the promise was kept.");
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/a");
+    const loader = chat.locator('[data-message-id="transfer-summary-answer"] [data-deeprole-memory-card]');
+    await expect(loader).toContainText("Summarizing recent scenes");
+    await chat.getByRole("button", { name: "Cancel transfer", exact: true }).click();
+    await chat.evaluate(() => (window as any).finishSummary());
+    await expect(chat.getByRole("region", { name: "Continue your story", exact: true })).toHaveCount(0);
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/a");
+    expect((await databaseRecords(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+    expect((await databaseRecords(panel)).filter(r => r.kind === "entry")).toHaveLength(2);
+  } finally { await context.close(); }
+});
+
+test("reviewed continuation resumes its review after reload and discard prevents a new chat", async () => {
+  const { context, panel, chat } = await setup([]);
+  try {
+    await context.route("**/api/v0/chat/completion", route => route.fulfill({ contentType: "application/json", body: "{}" }));
+    await enableContinuationComposer(chat, { changes: true });
+    await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="1">Mira waits.</article>'; });
+    expect(await command(panel, { type: "DR_CONTINUE_STORY" })).toEqual({ ok: true });
+    await expect(chat.locator(".dr-memory-review")).toBeVisible();
+    await chat.reload();
+    const review = chat.locator(".dr-memory-review"); await expect(review).toBeVisible();
+    await review.getByRole("button", { name: "Discard these proposals", exact: true }).click();
+    await review.getByRole("button", { name: "Discard all", exact: true }).click();
+    await expect(review).toHaveCount(0);
+    expect((await databaseRecords(panel)).filter(r => ["entry", "snapshot"].includes(r.kind))).toHaveLength(0);
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/a");
+    await expect(chat.getByRole("region", { name: "Continue your story", exact: true })).toHaveCount(0);
+  } finally { await context.close(); }
+});
+
+test("reviewed continuation rejects a malformed scene summary without opening a new chat", async () => {
+  test.setTimeout(45000);
+  const { context, panel, chat } = await setup([]);
+  try {
+    await context.route("**/api/v0/chat/completion", route => route.fulfill({ contentType: "application/json", body: "{}" }));
+    await context.route("**/api/v0/chat/history_messages?**", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ messages: [{ role: "assistant", content: "Mira waits." }] }) }));
+    await enableContinuationComposer(chat, { manualSummary: true });
+    await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="1">Mira waits.</article>'; });
+    expect(await command(panel, { type: "DR_CONTINUE_STORY" })).toEqual({ ok: true });
+    await finishNoChangeReview(chat);
+    await expect(chat.locator('[data-message-id="transfer-summary-answer"]')).toBeAttached();
+    await chat.evaluate(() => { document.querySelector('[data-message-id="transfer-summary-answer"]')!.textContent = "No valid checkpoint"; });
+    await expect(chat.getByRole("region", { name: "Continue your story", exact: true })).toHaveCount(0, { timeout: 18000 });
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/a");
+    expect((await databaseRecords(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+  } finally { await context.close(); }
+});
+
+for (const scenario of [{ name: "allowed", trust: 65, refusal: false }, { name: "low trust", trust: 20, refusal: false }, { name: "refused", trust: 65, refusal: true }]) {
+  test("local selfie runtime " + scenario.name + ": request binding, gates and reload", async () => {
+    test.setTimeout(50000);
+    const image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    const world = { id: "world", name: "Harbor", description: "Unchanged world", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+    const hero = { id: "hero", worldId: "world", name: "Leon", kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: true } };
+    const mira = { ...hero, id: "mira", name: "Mira", description: "ORIGINAL LORE", characterSheet: { ...EMPTY_CHARACTER, sprites: { neutral: image }, relationships: { ...structuredClone(DEFAULT_RELATIONSHIP), initial: { trust: scenario.trust, affinity: 90 } }, selfieCategories: [{ id: "regular", name: "Ordinary", default: true, description: "Casual photo", minTrust: 40, minAffinity: 30, images: [image] }, { id: "home", name: "At home", description: "At home in the evening", minTrust: 40, minAffinity: 30, images: [image] }] } };
+    const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "world", bookId: null, focusIds: [hero.id, mira.id], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+    const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["entity", mira], ["binding", binding]]);
+    try {
+      let prompt = ""; await context.route("**/api/v0/chat/completion", route => { prompt = route.request().postDataJSON().prompt; return route.fulfill({ contentType: "application/json", body: "{}" }); });
+      await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="old">Mira waits at home.</article>'; });
+      await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, could you send a selfie?", chat_session_id: "a" }) }));
+      await expect.poll(() => prompt).toContain("Local selfie collections:");
+      expect(prompt).toContain("At home in the evening"); expect(prompt).not.toContain("data:image"); expect(prompt).toContain('"default":true');
+      const schema = JSON.parse(prompt.match(/\nSchema: (.+)\nRoster:/)![1]!);
+      const quote = scenario.refusal ? "Mira will not send Leon a selfie tonight." : "Mira smiles and sends Leon a selfie from home.";
+      const turn = { request: schema.request, present: ["Leon", "Mira"], partners: ["Mira"], updates: [], selfies: [{ id: "Mira", category: "home", quote }] };
+      const text = quote + "\n<deeprole_characters>" + JSON.stringify(turn) + "</deeprole_characters>";
+      const render = (value: string) => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="photo-user">Mira, could you send a selfie?</article><article data-role="assistant" data-message-id="photo-answer"><div class="ds-markdown"></div></article>'; document.querySelector(".ds-markdown")!.textContent = value; };
+      await chat.evaluate(render, text);
+      await expect.poll(async () => (await databaseRecords(panel)).find(r => r.kind === "binding").data.characterScenes?.world?.lastReply).toBeTruthy();
+      await chat.addStyleTag({ content: "#conversation{max-width:640px;margin:160px auto 0}" });
+      const photo = chat.locator("[data-deeprole-scene-photos]");
+      if (scenario.name === "allowed") {
+        await expect(photo.locator("img")).toBeVisible(); await expect(photo.locator("img")).toHaveAttribute("src", image);
+        const records = await databaseRecords(panel); const saved = records.find(r => r.kind === "binding").data.scenePhotos;
+        expect(saved).toHaveLength(1); expect(saved[0]).toMatchObject({ entityId: "mira", categoryId: "home", messageKey: '["message","photo-answer"]' });
+        await photo.getByRole("button").click(); await expect(chat.getByRole("dialog", { name: "Mira · Selfie" })).toBeVisible(); await chat.keyboard.press("Escape");
+        await context.addInitScript(value => window.addEventListener("DOMContentLoaded", () => { document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="photo-answer"><div class="ds-markdown"></div></article>'; document.querySelector(".ds-markdown")!.textContent = value; }, { once: true }), text);
+        await chat.reload(); await expect(photo.locator("img")).toHaveAttribute("src", image);
+        expect((await databaseRecords(panel)).find(r => r.kind === "binding").data.scenePhotos).toEqual(saved);
+      } else {
+        expect((await databaseRecords(panel)).find(r => r.kind === "binding").data.scenePhotos).toBeUndefined();
+        await expect(photo).toHaveCount(0);
+      }
+      expect((await databaseRecords(panel)).find(r => r.kind === "entity" && r.id === "mira").data.description).toBe("ORIGINAL LORE");
+    } finally { await context.close(); }
+  });
+}
+
+for (const refused of [false, true]) {
+  test("background character text runtime " + (refused ? "refusal" : "insertion and reload"), async () => {
+    test.setTimeout(50000);
+    const world = { id: "world", name: "Harbor", description: "Original world", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+    const hero = { id: "hero", worldId: "world", name: "Leon", kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: true } };
+    const mira = { ...hero, id: "mira", name: "Mira", description: "UNCHANGED LORE", characterSheet: { ...EMPTY_CHARACTER, personality: "Old profile." } };
+    const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "world", bookId: null, focusIds: ["hero", "mira"], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+    const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["entity", mira], ["binding", binding]]);
+    try {
+      const prompts: string[] = [];
+      await context.route("**/api/v0/chat/completion", route => { prompts.push(route.request().postDataJSON().prompt); return route.fulfill({ contentType: "application/json", body: "{}" }); });
+      await chat.evaluate(refused => {
+        document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="old-user">Hello, Mira.</article><article data-role="assistant" data-message-id="old-answer">Mira waits at the harbor.</article>';
+        document.querySelector("form")!.addEventListener("submit", event => {
+          event.preventDefault(); const composer = document.querySelector("form textarea") as HTMLTextAreaElement, prompt = composer.value; composer.value = "";
+          const user = document.createElement("article"); user.dataset.role = "user"; user.dataset.messageId = "field-user"; user.id = "field-user"; user.textContent = prompt;
+          const reply = document.createElement("article"); reply.dataset.role = "assistant"; reply.dataset.messageId = "field-answer"; reply.id = "field-answer";
+          document.querySelector("#conversation")!.append(user, reply);
+          void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, chat_session_id: "a" }) }).then(() => {
+            reply.innerHTML = '<div class="ds-think-content">Reasoning must not be inserted.</div><div class="ds-assistant-message-main-content"><p></p><button>Copy</button></div>';
+            reply.querySelector("p")!.textContent = refused ? "Sorry, that's beyond my current scope. Let's talk about something else." : "Calm, observant and considerate.";
+          });
+        });
+      }, refused);
+      await chat.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
+      const editor = chat.locator(".dr-character-dialog"), area = editor.locator('[data-character-text-field=personality]');
+      const field = area.getByRole("textbox", { name: "Personality", exact: true }), wand = area.getByRole("button", { name: "Ask DeepSeek to generate: Personality", exact: true });
+      const composer = chat.getByRole("textbox", { name: "Message", exact: true }); await composer.fill("UNSENT DRAFT");
+      await wand.click(); await expect(area.getByRole("alert")).toContainText("draft");
+      await expect(composer).toHaveValue("UNSENT DRAFT"); expect(prompts).toHaveLength(0);
+      await composer.fill(""); await wand.click();
+      await expect.poll(() => prompts.length).toBe(1);
+      expect(prompts[0]).toContain("[DeepRole Character Text]"); expect(prompts[0]).toContain("Plain text only"); expect(prompts[0]).not.toContain("data:image");
+      await expect(chat.locator("#field-user")).toBeHidden(); await expect(chat.locator("#field-answer")).toBeHidden();
+      if (refused) { await expect(area.getByRole("alert")).toContainText("Could not get the text"); await expect(field).toHaveValue("Old profile."); }
+      else { await expect(field).toHaveValue("Calm, observant and considerate."); await expect(editor).toContainText("Text inserted."); }
+      const records = await databaseRecords(panel); expect(records.find(r => r.kind === "entity" && r.id === "mira").data.characterSheet.personality).toBe("Old profile.");
+      expect(records.find(r => r.kind === "entity" && r.id === "mira").data.description).toBe("UNCHANGED LORE"); expect(records.filter(r => r.kind === "proposal")).toHaveLength(0);
+      await expect.poll(() => panel.evaluate(async () => { const values = await (globalThis as any).chrome.storage.session.get(null); return Object.entries(values).find(([key]) => key.startsWith("deeprole_tab_state_"))?.[1]; })).toMatchObject({ service: null, characterTextTurns: [{ chatId: "a" }] });
+      if (!refused) {
+        await editor.getByRole("button", { name: "Save character", exact: true }).click();
+        await expect.poll(async () => (await databaseRecords(panel)).find(r => r.kind === "entity" && r.id === "mira").data.characterSheet.personality).toBe("Calm, observant and considerate.");
+      }
+      await context.addInitScript(() => window.addEventListener("DOMContentLoaded", () => { document.querySelector("#conversation")!.innerHTML = '<article id="field-answer" data-role="assistant" data-message-id="field-answer"><div class="ds-markdown">Calm, observant and considerate.</div></article>'; }, { once: true }));
+      await chat.reload(); await expect(chat.getByRole("button", { name: /^Context/ })).toBeVisible(); await expect(chat.locator("#field-answer")).toBeHidden();
+      await chat.evaluate(() => { const row = document.querySelector<HTMLElement>("#field-answer")!; row.dataset.messageId = "ordinary-new"; row.textContent = "Ordinary scene."; });
+      await expect(chat.locator("#field-answer")).toBeVisible();
+    } finally { await context.close(); }
+  });
+}
 
 test("capacity warnings are nonblocking, snoozed at each level and can be disabled", async () => {
   const { context, panel, chat } = await setup([]);
@@ -954,12 +1149,18 @@ test("scene choices: full text, keyboard, expired turns and return use the insta
     const buttons = card.locator(".grid button");
     const composer = chat.getByRole("textbox", { name: "Message", exact: true });
     await expect(buttons).toHaveCount(4);
-    await card.getByRole("button", { name: "Full text", exact: true }).click();
+    const expand = card.getByRole("button", { name: "Full text", exact: true });
+    await expect(expand.locator("svg")).toHaveCount(1); expect(await expand.textContent()).toBe("");
+    expect(await expand.evaluate(button => [button.getBoundingClientRect().width, button.getBoundingClientRect().height])).toEqual([32, 32]);
+    await expect(card.locator(".choice-status")).toBeHidden();
+    await expect(card).not.toContainText("A choice fills the message box");
+    await expand.click();
     await expect(card.locator(".preview").nth(1)).toHaveText(longText);
     await expect(composer).toHaveValue(""); expect(sent).toBe(0);
     await buttons.first().focus(); await chat.keyboard.press("ArrowDown"); await expect(buttons.nth(2)).toBeFocused();
     await chat.keyboard.press("4"); await expect(composer).toHaveValue("MY_MOVE_surprise"); await expect(composer).toBeFocused();
     await buttons.nth(1).click(); await expect(composer).toHaveValue(longText);
+    await expect(card.locator(".choice-status")).toBeHidden(); await expect(card.locator(".choice-status")).toHaveText("");
     await composer.fill("MY EDITED MOVE"); await buttons.first().focus(); await chat.keyboard.press("Enter");
     await expect(card.locator(".choice-status")).toContainText("The option was not inserted"); await expect(buttons.first()).toBeFocused();
     const savedHistory = await chat.locator("#conversation").evaluate(row => row.innerHTML);

@@ -8,7 +8,7 @@ const copy = {
     lowAt: "Низкое до", highAt: "Высокое от", boundsInvalid: "Граница низкого значения должна быть меньше границы высокого.",
     low: "Низкое", middle: "Среднее", high: "Высокое",
     outlook: "Текущее состояние", outlookHint: "Сохранённые значения и их смысл передаются DeepSeek. Это ориентиры для истории, не обещание исхода и не награда за будущий выбор.",
-    conditions: "Условия сближения", trustMissing: "Не хватает доверия", affinityMissing: "Не хватает симпатии", eventsMissing: "Нужны события", adultsMissing: "Совершеннолетие обоих персонажей не подтверждено", ready: "Настроенные условия выполнены. Желание, границы и обстоятельства всё ещё важны.",
+    conditions: "Условия сближения", trustMissing: "Не хватает доверия", affinityMissing: "Не хватает симпатии", eventsMissing: "Нужны события", ready: "Настроенные условия выполнены. Желание, границы и обстоятельства всё ещё важны.",
     events: "Важные события", done: "Выполнено", pending: "Ещё не произошло", optional: "Достижение", mandatory: "Условие", paused: "Автоматические отношения и характеристики выключены. Ручное редактирование доступно; данные сохраняются.",
   },
   en: {
@@ -19,7 +19,7 @@ const copy = {
     lowAt: "Low up to", highAt: "High from", boundsInvalid: "The low boundary must be below the high boundary.",
     low: "Low", middle: "Middle", high: "High",
     outlook: "Current state", outlookHint: "Saved values and their meanings are shared with DeepSeek. Guidance for the story, not a promised outcome or a reward for a future choice.",
-    conditions: "Conditions for closeness", trustMissing: "More trust needed", affinityMissing: "More affinity needed", eventsMissing: "Events still needed", adultsMissing: "Both characters are not confirmed adults", ready: "Configured conditions are met. Willingness, boundaries and circumstances still matter.",
+    conditions: "Conditions for closeness", trustMissing: "More trust needed", affinityMissing: "More affinity needed", eventsMissing: "Events still needed", ready: "Configured conditions are met. Willingness, boundaries and circumstances still matter.",
     events: "Important events", done: "Completed", pending: "Has not happened yet", optional: "Achievement", mandatory: "Condition", paused: "Automatic relationships and characteristics are off. Manual editing remains available; data is kept.",
   },
 } as const;
