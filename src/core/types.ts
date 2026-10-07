@@ -1,7 +1,7 @@
 export type Locale = "ru" | "en";
 export type ActivationMode = "always" | "smart" | "manual";
 export type MemoryPriority = "low" | "normal" | "high";
-export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change";
+export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration";
 
 export interface WorldProfile {
   relationshipsEnabled?: boolean;
@@ -40,6 +40,7 @@ export interface SceneEntity {
 }
 
 export interface CharacterSheet {
+  imageGeneration?: import("./image-generation").CharacterImagePrompt;
   /** Local photo collections. Only their names and context rules reach the model. */
   selfieCategories?: SelfieCategory[];
   /** Player-edited world-wide exclusions. New world emotions are allowed by default. */
@@ -125,7 +126,7 @@ export interface StoryTemplate {
   updatedAt: number;
 }
 
-export type RecordValue = MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot | WorldProfile | SceneEntity | StoryTemplate | MemoryProposalBatch | LoreChange;
+export type RecordValue = MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot | WorldProfile | SceneEntity | StoryTemplate | MemoryProposalBatch | LoreChange | import("./image-generation").Illustration;
 export type DataRecord = { kind: RecordKind; id: string; data: RecordValue };
 
 export interface MemoryBook {

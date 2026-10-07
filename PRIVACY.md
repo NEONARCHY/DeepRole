@@ -1,6 +1,6 @@
 # Политика приватности DeepRole
 
-Дата обновления: 6 октября 2026 года.
+Дата обновления: 8 октября 2026 года.
 
 DeepRole хранит записи памяти, книги, миры, профили персонажей/мест, заготовки, настройки, связи и ручной выбор памяти в чатах, слепки сюжета, неподтверждённые предложения и журнал отмены изменений локально в хранилище расширения в профиле браузера пользователя.
 
@@ -9,8 +9,8 @@ DeepRole:
 - не имеет собственного сервера;
 - не собирает аналитику и телеметрию;
 - не отправляет данные разработчику;
-- не продаёт данные и не отправляет их сторонним сервисам, кроме описанной ниже передачи контекста в DeepSeek;
-- запрашивает доступ только к `chat.deepseek.com` и локальному хранилищу браузера.
+- не продаёт данные; передаёт выбранный контекст в DeepSeek и, только при отдельном включении генерации и нажатии пользователя, описание/референсы своему провайдеру изображений;
+- постоянно работает с `chat.deepseek.com` и локальным хранилищем; дополнительные адреса API и загрузки результата разрешаются отдельно по нажатию.
 
 При отправке сообщения выбранная память текущего мира, его подтверждённое описание, описания подходящих профилей, описания связей между выбранными записями и явно применённое состояние истории добавляются к запросу в DeepSeek. Скрытие технического текста в интерфейсе не скрывает его от DeepSeek: сервис получает этот контекст и обрабатывает по своей политике приватности. Подсказки связей по упоминаниям названий вычисляются локально и не сохраняются без подтверждения.
 
@@ -30,13 +30,17 @@ DeepRole:
 
 Описания мира и профилей отправляются только при включённом переключателе «Использовать описание в чате». Ранее сохранённые приватные заметки не включаются без явного согласия.
 
+Генерация изображений по умолчанию выключена. Включение само по себе не запускает запрос: по нажатию провайдер получает выбранную модель, окончательное описание, дополнительные параметры и выбранные референсы. Запрос выполняется фоновой частью расширения с ключом пользователя. Весь чат и база мира туда не передаются. Если отдельно попросить DeepSeek описать сцену, служебный запрос включает текст сцены, внешность и обычный подключённый контекст; изображения и ключ API в него не входят. Провайдер обрабатывает данные по своим условиям и может взимать плату. Автоматических повторов нет.
+
+Ключи API и подключения хранятся отдельно в `storage.local`, не шифруются сейфом и не входят в экспорт мира или полную копию. На странице DeepSeek ключи недоступны нашему контент-скрипту; в интерфейсе показываются лишь последние четыре символа. Готовые иллюстрации, их описания и три диагностических заголовка сохраняются в библиотеке, защищаются сейфом и входят в экспорт. Для отдельного разрешения домена готового файла временная ссылка с привязкой хранится в сессии до 15 минут; при включённом сейфе эта запись зашифрована, после блокировки она недоступна. Загрузка готового файла не передаёт ключ API на его домен. [Подробнее об изображениях](docs/IMAGE-GENERATION.ru.md).
+
 Удаление расширения или сброс профиля браузера может удалить локальные данные. Перед этим следует создать резервную копию.
 
 ---
 
 # DeepRole Privacy Policy
 
-Last updated: October 6, 2026.
+Last updated: October 8, 2026.
 
 DeepRole stores memories, worlds, character/location profiles, story starters, settings, books, chat bindings, and handoff snapshots locally in extension-owned browser storage. It has no server, analytics or telemetry. It does not sell data or send it to the developer.
 
@@ -57,5 +61,9 @@ Regular extension storage is not encrypted. The optional local vault and passwor
 The vault key stays in extension session storage, never in the DeepSeek page. Lock vault clears that key, local context and temporary DeepRole editors across tabs; save unfinished edits first. DeepSeek's ordinary draft and history are unchanged. Locking does not remove previously transmitted DeepSeek data or encrypt previously downloaded JSON files.
 
 World/profile descriptions are included only with Use description in chat enabled. Previously saved private notes are not sent until you explicitly enable that setting.
+
+Image generation is off by default and starts only on your click. Your chosen provider receives the model, final description, extra parameters and selected references, not the entire chat or world database. Only the extension background sends API requests with your key. A separate request asking DeepSeek to describe the scene includes scene text, appearance and the usual connected context, but no image bytes or API key. Your provider's terms, privacy policy and charges apply. There are no automatic retries. Additional API and finished-image hosts require separate optional access; static host permissions were not broadened.
+
+API keys and connection settings live separately in `storage.local`, are not encrypted by the vault and are excluded from world exports and full backups. Our DeepSeek content script cannot read the keys; the UI shows only the last four characters. Finished illustrations, descriptions and three diagnostic response headers are library records, covered by the vault and exports. A finished-file link and its association can remain in session storage for up to 15 minutes to grant download permission; this ticket is encrypted when the vault is enabled and unavailable while locked. Downloading the file never sends the API key to its host. [Image-generation details](docs/IMAGE-GENERATION.en.md).
 
 Uninstalling the extension or resetting the browser profile may remove local data. Create a backup first.

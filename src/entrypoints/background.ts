@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+import { handleImageMessage } from "../adapters/image/background-handler";
 import type { DeepRoleMessage } from "../core/messages";
 import { repository } from "../storage/repository";
 import { applyMemoryProposals, discardMemoryProposals, undoLoreChange } from "../storage/memory-proposals";
@@ -31,6 +32,7 @@ export default defineBackground(() => {
   });
 
   browser.runtime.onMessage.addListener((message: DeepRoleMessage, sender) => {
+    if (message.type.startsWith("DR_IMAGE_")) return handleImageMessage(message as import("../core/image-messages").ImageMessage, sender);
     if (message.type === "DR_PING") {
       if (sender.id !== browser.runtime.id) return;
       return Promise.resolve({ ok: true, build: import.meta.env.VITE_BUILD_TIME });

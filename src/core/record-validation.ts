@@ -7,6 +7,7 @@ import { validPortraitLayouts } from "./portrait-layout";
 import { validStoryContinuation } from "./story-continuation";
 import { validScenePhotos } from "./selfies";
 import { validRecoveredReplies } from "./reply-recovery";
+import { validIllustration } from "./image-generation";
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const id = (value: unknown): value is string => typeof value === "string" && value.length > 0;
@@ -27,6 +28,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
   if (value.kind === "snapshot" && d.memoryOverrides !== undefined && (!object(d.memoryOverrides) || !strings(d.memoryOverrides.includedIds) || !strings(d.memoryOverrides.excludedIds))) return false;
   if (["world", "entity"].includes(String(value.kind)) && d.useDescriptionInContext !== undefined && typeof d.useDescriptionInContext !== "boolean") return false;
   switch (value.kind) {
+    case "illustration": return validIllustration(d);
     case "world":
       if (d.relationshipsEnabled !== undefined && typeof d.relationshipsEnabled !== "boolean") return false;
       if (d.characterEmotions !== undefined && !validEmotions(d.characterEmotions)) return false;

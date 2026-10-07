@@ -21,6 +21,7 @@ export interface TabSessionState {
 export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage =
+  | import("./image-messages").ImageMessage
   | { type: "DR_PING" }
   | RepositoryRequest
   | { type: "DR_MIGRATE_LEGACY" }

@@ -84,6 +84,12 @@ Upload a batch to the **Image library**, then select pictures and assign emotion
 - Drag portraits near either edge of the options to snap them into place, or move and resize them freely. Scrolling away from the options keeps their last screen position. Conversation partners use the main size; other present characters sit to their right, about 15% smaller and bottom-aligned. Multiple speaking partners use the same main size.
 - The small **eye button** beside the panel controls hides or shows all portraits without deleting images or resetting positions. The same setting remains in **Settings → Characters**.
 
+### Optional image generation
+
+Connect your own image API in **Settings → Images**, grant access and load its current model list. DeepRole includes no preset provider, model inventory or prices. Ordinary illustrations and non-explicit romance use separate connection presets; generation is off by default and only runs when you click.
+
+Use **Create illustration** below a completed story reply. Stable appearance, the current scene, style and seed are separate; any uploaded character image can be a reference. Preview the exact description before sending it. Results stay with that reply, survive reload and can be viewed or deleted. There are no automatic paid retries. Keys stay separate and are not exported; illustrations are included in backups and world packages. [Setup, formats, limits and privacy →](docs/IMAGE-GENERATION.en.md)
+
 ### Local selfies and full image view
 
 In **Character → Images → Selfies**, create collections with a name, context description and photos. Mark one as **Default collection**. DeepSeek chooses a category for the played scene; if none matches, it uses ordinary selfies. Images stay local: only collection names, context rules and availability are supplied to the model.
@@ -215,7 +221,7 @@ You can also import memory records from [Better Deepseek (BDS)](https://github.c
 
 ## Privacy and credits
 
-Lore, portraits and progress are stored in your browser. The selected text and service requests you choose to send go to DeepSeek; **portrait images are never sent to the model**. DeepRole has no separate memory server or telemetry.
+Lore, portraits and progress are stored in your browser. Selected text and service requests go to DeepSeek; portrait bytes do not. If you separately enable image generation, your chosen image provider receives the final description and selected references only on your click. DeepRole has no separate memory server or telemetry.
 
 The optional vault protects local extension data. It does not encrypt messages already sent to DeepSeek or ordinary backup files created earlier. Browser data can be cleared or lost, so keep your own backups. [Privacy details →](PRIVACY.md)
 

@@ -7,7 +7,7 @@ test("installed extension shares its private library with chat and remembers wor
   test.skip(testInfo.project.name !== "chromium", "Chrome extension runtime scenario");
   test.setTimeout(90000);
   const profile = await mkdtemp(path.join(tmpdir(), "deeprole-extension-test-"));
-  const extension = path.resolve(".output/chrome-mv3");
+  const extension = path.resolve(process.env.DEEPROLE_TEST_BUILD ?? ".output/chrome-mv3");
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] });
   context.setDefaultTimeout(10000);
   try {
@@ -155,7 +155,7 @@ test("installed pinned options follow the native message panel without changing 
   test.skip(testInfo.project.name !== "chromium", "Chrome extension runtime scenario");
   test.setTimeout(60000);
   const profile = await mkdtemp(path.join(tmpdir(), "deeprole-pinned-runtime-"));
-  const extension = path.resolve(".output/chrome-mv3");
+  const extension = path.resolve(process.env.DEEPROLE_TEST_BUILD ?? ".output/chrome-mv3");
   const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, viewport: { width: 1500, height: 850 }, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] });
   try {
     const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker", { timeout: 15000 });

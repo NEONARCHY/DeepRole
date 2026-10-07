@@ -7,6 +7,7 @@ import { attributeInstruction, validAttributes, validAttributeState, validAttrib
 import { validBlockedEmotions, characterEmotionInstruction, characterStatusForSheet, resolveCharacterEmotion } from "./character-emotions";
 
 import { validSelfieCategories, validSelfieEvents, selfieInstruction, type SelfieEvent } from "./selfies";
+import { validCharacterImagePrompt } from "./image-generation";
 
 export const CHARACTER_MARKER = "<deeprole_characters>";
 export const EMPTY_CHARACTER: CharacterSheet = { gender: "neutral", protagonist: false, appearance: "", personality: "", goals: "", background: "", sprites: {} };
@@ -22,6 +23,7 @@ export const emotionsFor = (v: unknown) => validEmotions(v) ? v : DEFAULT_EMOTIO
 export const validSprite = validPortrait;
 export function validCharacterSheet(v: unknown): v is CharacterSheet {
   return object(v) && ["male", "female", "neutral"].includes(String(v.gender)) && typeof v.protagonist === "boolean"
+    && (v.imageGeneration === undefined || validCharacterImagePrompt(v.imageGeneration))
     && (v.blockedEmotions === undefined || validBlockedEmotions(v.blockedEmotions))
     && (v.attributes === undefined || validAttributes(v.attributes))
     && (v.relationships === undefined || validRelationshipProfile(v.relationships))

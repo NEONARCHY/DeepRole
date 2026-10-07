@@ -5,6 +5,7 @@ import { repository, type DeepRoleRepository } from "./repository";
 import { getSettings, saveSettings } from "./settings";
 import { validDataRecord, parseBackupSettings } from "../core/record-validation";
 import { importFileTooLarge, MAX_BACKUP_CIPHERTEXT_BYTES } from "../core/import-limits";
+import { validateWorldImageBudgets } from "./illustrations";
 
 export async function createBackup(
   password?: string,
@@ -41,7 +42,9 @@ export async function restoreBackup(
   if (mode === "replace") await repo.replaceRecords(payload.records, () => saveSettings(parseBackupSettings(payload.settings)));
   else await repo.updateRecords((existing) => {
     const keys = new Set(existing.map((r) => `${r.kind}:${r.id}`));
-    return { records: payload.records.filter((r) => !keys.has(`${r.kind}:${r.id}`)), removed: [], result: undefined };
+    const incoming = payload.records.filter((r) => !keys.has(`${r.kind}:${r.id}`));
+    if ([...existing, ...incoming].some(r => r.kind === "illustration") && !validateWorldImageBudgets([...existing, ...incoming])) throw new Error("image-full");
+    return { records: incoming, removed: [], result: undefined };
   });
 }
 
@@ -67,4 +70,5 @@ function validateBackup(value: BackupPayload): void {
     if (keys.has(key)) throw new Error("Invalid DeepRole backup");
     keys.add(key);
   }
+  if (value.records.some(r => r.kind === "illustration") && !validateWorldImageBudgets(value.records)) throw new Error("image-full");
 }

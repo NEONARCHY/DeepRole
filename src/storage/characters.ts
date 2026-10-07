@@ -12,6 +12,7 @@ import { advanceAttributes, attributeState, recordManualAttributes, validAttribu
 import { characterStatusForSheet, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
 
 import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents } from "../core/selfies";
+import { validateWorldImageBudgets } from "./illustrations";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string; replyIdentity?: string; replyCompletedAt?: number }
 export interface CharacterEdit extends CharacterScope {
@@ -85,7 +86,7 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
       const sheet = (r.data as SceneEntity).characterSheet;
       return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? []), ...(sheet?.selfieCategories ?? []).flatMap(c => c.images)].reduce((n, s) => n + s.length, 0);
     }, 0);
-    if (bytes > 50_000_000) throw new Error("character-images-full");
+    if (bytes > 50_000_000 || !validateWorldImageBudgets([...all.filter(r => !changes.some(change => change.kind === r.kind && change.id === r.id)), ...changes])) throw new Error("character-images-full");
     const savedEntities = [...entities.filter(e => !replaced.has(e.id)), ...changes.filter(r => r.kind === "entity").map(r => r.data as SceneEntity)];
     return { records: changes, removed: [], result: { entityId: entity.id, base: characterRevision(savedEntities, nextScene), original: characterEditBaseline(entity, savedEntities, nextScene) } };
   });

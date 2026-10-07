@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Image generation fixture</title><style>body{margin:0;background:#151a20;color:#eef3f7;font:14px system-ui}main,#app{max-width:660px;margin:auto;padding:16px;box-sizing:border-box}h1{font-size:20px}article{margin:24px 0}#app input,#app textarea{box-sizing:border-box}#app{padding-bottom:40px}</style></head><body><main><h1>Observatory story</h1><article data-role="user" data-message-id="user-1">We enter the observatory.</article><article data-role="assistant" data-message-id="reply-1">Mira opens the observatory door at dusk. Copper hair catches the last light.</article><article data-role="assistant" data-message-id="reply-2">Mira studies the telescope.</article></main><div class="app-shell" id="app"></div><script>
+const stores={local:new Map(),session:new Map()};const area=(name)=>({get:async keys=>{const names=keys?Array.isArray(keys)?keys:[keys]:[...stores[name].keys()];return Object.fromEntries(names.filter(k=>stores[name].has(k)).map(k=>[k,stores[name].get(k)]));},set:async values=>{Object.entries(values).forEach(([k,v])=>stores[name].set(k,v));},remove:async key=>stores[name].delete(key)});
+window.chrome={runtime:{id:"fixture",sendMessage:async()=>{},onMessage:{addListener(){},removeListener(){}}},storage:{local:area("local"),session:area("session"),onChanged:{addListener(){},removeListener(){}}},tabs:{query:async()=>[],sendMessage:async()=>{}},permissions:{contains:async()=>true,request:async()=>true}};
+</script><script type="module">
+import React from "react";import{createRoot}from"react-dom/client";
+import{ImageSettings}from"/src/entrypoints/sidepanel/ImageSettings.tsx";
+import{IllustrationsPresenter}from"/src/adapters/illustrations-dom.tsx";
+import{ImageJobs}from"/src/storage/image-jobs.ts";
+import{repository}from"/src/storage/repository.ts";
+import{getImageSettings,saveImageSettings}from"/src/storage/image-settings.ts";
+import{saveProviderKey}from"/src/storage/image-keys.ts";
+import{DEFAULT_IMAGE_SETTINGS}from"/src/core/image-generation.ts";
+import{imageDeltaInstruction}from"/src/core/image-prompt.ts";
+import"/src/entrypoints/sidepanel/styles.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;
+const canvas=document.createElement("canvas");canvas.width=512;canvas.height=768;const ctx=canvas.getContext("2d");ctx.fillStyle="#485d67";ctx.fillRect(0,0,512,768);ctx.fillStyle="#bfdfeb";ctx.fillRect(80,100,352,500);const reference=canvas.toDataURL("image/png");window.reference=reference;
+const profile={id:"11111111-1111-4111-8111-111111111111",label:"Synthetic connection",kind:"openai-images",baseUrl:"https://images.example.test/v1",modelId:"synthetic-image-model",maxReferences:2,enabled:true,extraParams:{future_parameter:{value:[true,null,"literal"]}}};
+await saveProviderKey(profile.id,"SYNTHETIC-TEST-KEY-NOT-A-REAL-SECRET");await saveImageSettings({...DEFAULT_IMAGE_SETTINGS,enabled:true,profiles:[profile],profileByLevel:{off:profile.id}});
+const world={id:"image-world",name:"Observatory",description:"Keep this lore unchanged.",color:"blue",contextBudget:2000,relevanceThreshold:6,createdAt:1,updatedAt:1};
+if(!await repository.get("world",world.id)){await repository.put("world",world);await repository.put("entity",{id:"mira",worldId:world.id,kind:"character",name:"Mira",description:"",aliases:[],memberIds:[],characterSheet:{gender:"female",protagonist:false,appearance:"Copper hair. Brown eyes.",personality:"Curious",goals:"Explore",background:"",sprites:{neutral:reference}},createdAt:1,updatedAt:1});}
+const jobs=new ImageJobs(repository,async()=>true),presenter=new IllustrationsPresenter();
+window.requests=[];window.jobs=jobs;window.repo=repository;window.failCode=null;
+async function sync(){const settings=await getImageSettings();presenter.sync({enabled:settings.enabled,generating:false,worldId:world.id,chatId:"image-chat",chatUrl:"https://chat.deepseek.com/chat/s/image-chat",records:await repository.list("illustration"),entities:await repository.list("entity"),settings,locale,actions:{onGenerate:async input=>{window.requests.push(input);if(window.failCode)throw{code:window.failCode};const result=await jobs.run(input);await sync();return result;},onRemove:async(target,id)=>{await jobs.remove(target,id);await sync();},onSaveProfile:async(id,value,expected)=>{await jobs.saveProfile({worldId:world.id,chatId:"image-chat",chatUrl:"https://chat.deepseek.com/chat/s/image-chat",messageKey:"profile"},id,value,expected);},onDelta:async(canonical,scene)=>{window.deltaPrompt=imageDeltaInstruction(canonical,scene);return"At the observatory at dusk, standing by the telescope in a coat.";}}});}
+window.syncImages=sync;await sync();
+createRoot(document.querySelector("#app")).render(React.createElement(ImageSettings,{locale,onPermission:async()=>true,onModels:async config=>jobs.models(config)}));
+</script></body></html>

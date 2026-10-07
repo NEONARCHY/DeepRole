@@ -6,13 +6,15 @@ import { repository, type DeepRoleRepository } from "./repository";
 import { emotionsFor } from "../core/characters";
 import { getSettings } from "./settings";
 import { importFileTooLarge } from "../core/import-limits";
+import { validateWorldImageBudgets } from "./illustrations";
+import type { Illustration } from "../core/image-generation";
 
 export interface WorldPackage { format: "deeprole-world"; version: 1; records: DataRecord[] }
 
 export async function exportWorld(worldId: string, repo: DeepRoleRepository = repository): Promise<WorldPackage> {
   const all = await repo.rawRecords();
   const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
-  const records = all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
+  const records = all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
   if (!records.some((r) => r.kind === "world")) throw new Error("invalidBackup");
   const entryIds = new Set(records.filter((r) => r.kind === "entry").map((r) => r.id));
   const world = records.find(r => r.kind === "world")!.data as WorldProfile;
@@ -40,12 +42,14 @@ export function parseWorldPackageData(input: unknown, bytes: number): WorldPacka
     if (!r || typeof r.id !== "string" || !r.id || ids.has(r.id) || !r.data || r.data.id !== r.id) throw new Error("invalidBackup");
     ids.add(r.id);
     const d = r.data as unknown as Record<string, unknown>;
-    if (!["world", "book", "entry", "entity", "template"].includes(r.kind)) throw new Error("invalidBackup");
+    if (!["world", "book", "entry", "entity", "template", "illustration"].includes(r.kind)) throw new Error("invalidBackup");
     if (r.kind !== "world" && d.worldId !== worldId) throw new Error("invalidBackup");
   }
   const byId = new Map(value.records.map((r) => [r.id, r.kind]));
+  if (!validateWorldImageBudgets(value.records)) throw new Error("worldTooLarge");
   for (const r of value.records) {
     const d = r.data;
+    if (r.kind === "illustration" && (d as Illustration).entityId && byId.get((d as Illustration).entityId!) !== "entity") throw new Error("invalidBackup");
     if (r.kind === "entry") for (const link of (d as MemoryEntry).links ?? []) if (link.targetId === r.id || byId.get(link.targetId) !== "entry") throw new Error("invalidBackup");
     if ("bookId" in d && d.bookId && byId.get(d.bookId) !== "book") throw new Error("invalidBackup");
     for (const id of ("entityIds" in d ? d.entityIds : "focusIds" in d ? d.focusIds : "memberIds" in d ? d.memberIds : []) ?? []) {
@@ -70,6 +74,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
     if ("links" in data) data.links = data.links?.flatMap((link) => ids.has(link.targetId) ? [{ ...link, targetId: ids.get(link.targetId)! }] : []);
     if (r.kind === "world" && name) (data as WorldProfile).name = name;
     if ("worldId" in data) data.worldId = ids.get(data.worldId!)!;
+    if (r.kind === "illustration" && (data as Illustration).entityId) (data as Illustration).entityId = ids.get((data as Illustration).entityId!);
     if ("bookId" in data && data.bookId) data.bookId = ids.get(data.bookId) ?? null;
     if ("entityIds" in data) data.entityIds = (data.entityIds ?? []).flatMap((id) => ids.has(id) ? [ids.get(id)!] : []);
     if ("memberIds" in data) data.memberIds = data.memberIds.flatMap((id) => ids.has(id) ? [ids.get(id)!] : []);
@@ -84,7 +89,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
 export async function removeWorld(worldId: string, repo: DeepRoleRepository = repository) {
   await repo.updateRecords((all) => {
     const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
-    const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : ["entity","template", "proposal", "change"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
+    const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : ["entity","template", "proposal", "change", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
     const changed = all.filter((r) => !removed.includes(r) && (r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : "worldId" in r.data && r.data.worldId === worldId)).map((r) => ({ ...r, data: { ...(r.data as MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot), worldId: null, entityIds: [], focusIds: [], updatedAt: Date.now() } }));
     for (const r of all.filter(r => r.kind === "binding")) {
       const binding = r.data as ChatBinding;
@@ -105,6 +110,7 @@ export async function removeEntity(id: string, repo: DeepRoleRepository = reposi
     const changed = all.filter((r) => r.id !== id).flatMap((r): DataRecord[] => {
       const data = { ...r.data };
       let dirty = false;
+      if (r.kind === "illustration" && (data as Illustration).entityId === id) { delete (data as Illustration).entityId; dirty = true; }
       if (r.kind === "binding") {
         const binding = data as ChatBinding;
         if (binding.characterScenes) {

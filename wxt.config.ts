@@ -2,6 +2,9 @@ import { defineConfig } from "wxt";
 
 export default defineConfig({
   srcDir: "src",
+  // WXT defaults Firefox to MV2, which drops optional_host_permissions.
+  // Both targets use MV3; Firefox's minimum remains 128 for optional host access.
+  manifestVersion: 3,
   modules: ["@wxt-dev/module-react"],
   vite: () => ({ define: { "import.meta.env.VITE_BUILD_TIME": JSON.stringify(new Date().toISOString()) } }),
   zip: {
@@ -25,6 +28,8 @@ export default defineConfig({
       ...(browser === "chrome" ? ["sidePanel"] : []),
     ],
     host_permissions: ["https://chat.deepseek.com/*"],
+    // Firefox 128+ supports MV3 optional_host_permissions. No static API hosts.
+    optional_host_permissions: ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
     action: {
       default_title: "Open DeepRole",
       default_icon: {

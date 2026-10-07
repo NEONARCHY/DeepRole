@@ -1,4 +1,7 @@
 import { Select } from "../shared/Select";
+import { ImageSettings } from "./ImageSettings";
+import { imageText } from "../../core/image-i18n";
+import { requestImagePermission } from "../../storage/image-permissions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelWidthControl } from "../shared/PanelWidthControl";
 import { CharacterSettings } from "../shared/CharacterSheets";
@@ -750,7 +753,7 @@ function SettingsView(props: {
   onRefresh: () => void;
   onToast: (message: string) => void;
 }) {
-  const [section, setSection] = useState<"memory" | "data" | "characters" | "app">("memory");
+  const [section, setSection] = useState<"memory" | "data" | "characters" | "app" | "images">("memory");
   const [capacityDraft, setCapacityDraft] = useState(String(chatCapacity(props.settings.chatContextCapacity)));
   useEffect(() => setCapacityDraft(String(chatCapacity(props.settings.chatContextCapacity))), [props.settings.chatContextCapacity]);
   const [reminderDraft, setReminderDraft] = useState(String(props.settings.suggestionInterval));
@@ -815,7 +818,8 @@ function SettingsView(props: {
   return (
     <div className="view-stack">
       <div className="view-title"><div><small>DeepRole</small><h1>{props.t("settings")}</h1></div></div>
-      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "characters" ? characterText(props.settings.locale, "title") : x(id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
+      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "images", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "images" ? imageText(props.settings.locale, "title") : id === "characters" ? characterText(props.settings.locale, "title") : x(id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
+      <div className="dr-settings-page" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw new Error(result?.error ?? "failed"); return result.models; }} /></div>
       <div className="dr-settings-page" hidden={section !== "memory"}>
       <SettingsCard icon={<BrainCircuit />} title={u("memorySettings")}>
         <MemorySelectionSettings key={props.world?.id ?? "global"} locale={props.settings.locale} world={props.world} settings={props.settings} onSave={async (values, expected) => {

@@ -17,6 +17,10 @@ import { validStoryContinuation, withLatestVisibleStory } from "../core/story-co
 import { visibleStoryHistory } from "../adapters/story-history-dom";
 import { clearSelfieImageCache } from "../core/selfies";
 import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
+import { IllustrationsPresenter } from "../adapters/illustrations-dom";
+import { getImageSettings, IMAGE_SETTINGS_KEY } from "../storage/image-settings";
+import { DEFAULT_IMAGE_SETTINGS, type Illustration, type ImageSettings } from "../core/image-generation";
+import { imageText } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
 import { continuationKey, continuationScopeMatches, recentSceneReference, type ContinuationFlow } from "../core/continuation-flow";
@@ -136,6 +140,8 @@ class PageController {
     await repository.saveRecoveredReply(edit);
   }, () => this.showToast(replyRecoveryText(this.state.locale).saveFailed));
   private root: Root | null = null;
+  private illustrations: Illustration[] = [];
+  private imageSettings: ImageSettings = structuredClone(DEFAULT_IMAGE_SETTINGS);
   private settings: DeepRoleSettings = { ...DEFAULT_SETTINGS };
   private entries: MemoryEntry[] = [];
   private books: MemoryBook[] = [];
@@ -238,7 +244,7 @@ class PageController {
     browser.runtime.onMessage.addListener((message: DeepRoleMessage) => this.handleRuntimeMessage(message));
     browser.storage.onChanged.addListener((changes) => {
       if (WIDGET_LAYOUT_KEY in changes) { this.state.widgetLayout = parseWidgetLayout(changes[WIDGET_LAYOUT_KEY]?.newValue); this.render(); }
-      if ([LIBRARY_CHANGE_KEY, ...Object.values(storageKeys)].some((key) => key in changes)) void this.reload().catch(() => { this.publishContext(""); });
+      if ([LIBRARY_CHANGE_KEY, IMAGE_SETTINGS_KEY, ...Object.values(storageKeys)].some((key) => key in changes)) void this.reload().catch(() => { this.publishContext(""); });
     });
     window.setInterval(() => {
       if (location.href !== this.lastUrl) {
@@ -291,6 +297,7 @@ class PageController {
 
   private async load(generation: number): Promise<boolean> {
     const settings = await getSettings();
+    this.imageSettings = await getImageSettings().catch(() => structuredClone(DEFAULT_IMAGE_SETTINGS));
     const locked = await repository.isLocked();
     if (generation !== this.reloadGeneration) return false;
     this.state.startupError = false;
@@ -319,6 +326,7 @@ class PageController {
     if (generation !== this.reloadGeneration) return false;
     if (!loaded) { this.clearPrivateState(); await this.updateContext(); return true; }
     const [records, pending] = loaded;
+    this.illustrations = libraryRecords<Illustration>(records, "illustration");
     for (const record of pending?.contextWarnings ?? (pending?.contextWarning ? [pending.contextWarning] : [])) {
       const seen = this.seenContextWarnings.find(v => v.chatId === record.chatId && v.capacity === record.capacity);
       if (!seen) this.seenContextWarnings.push(record); else seen.level = Math.max(seen.level, record.level);
@@ -362,12 +370,23 @@ class PageController {
   }
 
   private readonly scenePhotos = new ScenePhotosPresenter();
+  private readonly imagePresenter = new IllustrationsPresenter();
+  private syncIllustrations() {
+    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw Object.assign(new Error("image-request-failed"), { code: result?.error ?? "failed", headers: result?.headers, ticketId: result?.ticketId }); return result; };
+    this.imagePresenter.sync({ enabled: this.imageSettings.enabled && !this.state.vaultLocked, generating: this.adapter.isGenerating(), worldId: this.currentScene().worldId, chatId: this.adapter.getChatId(), chatUrl: location.href, records: this.illustrations, entities: this.entities, settings: this.imageSettings, locale: this.state.locale, actions: {
+      onGenerate: async input => (await call({ type: "DR_IMAGE_GENERATE", input })).illustration,
+      onRemove: async (target, id) => { await call({ type: "DR_IMAGE_REMOVE", target, id }); },
+      onDownload: async ticketId => { await call({ type: "DR_IMAGE_OPEN_DOWNLOAD", ticketId }); },
+      onSaveProfile: async (entityId, profile, expected) => { const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId; if (!chatId || !worldId) throw new Error("scene-changed"); await call({ type: "DR_IMAGE_PROFILE", target: { worldId, chatId, chatUrl: location.href, messageKey: "profile" }, entityId, profile, expected }); },
+      onDelta: async (canonical, scene, name) => this.generateCharacterText({ field: { key: "image-scene", label: imageText(this.state.locale, "delta"), scope: "scene", maxLength: 1200 }, currentText: "", reference: { name, appearance: canonical, completedScene: scene } }),
+    } });
+  }
   private syncScenePhotos() {
     this.scenePhotos.sync(this.currentBinding(), this.currentScene().worldId, this.entities, this.state.locale, !this.state.vaultLocked && this.settings.characterSheetsEnabled === true);
   }
   private clearPrivateState() {
     if (this.characterTextWaiter) this.settleCharacterText(this.characterTextWaiter.id, undefined, "vault-locked");
-    this.scenePhotos.clear(); closePortraitViewer(); clearSelfieImageCache();
+    this.scenePhotos.clear(); this.imagePresenter.clear(); this.illustrations = []; closePortraitViewer(); clearSelfieImageCache();
     this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
     this.storyRead?.resolve(null); this.storyRead = null;
@@ -745,6 +764,7 @@ class PageController {
       this.replyRecovery.scan();
       presentHiddenHandoffs();
       this.syncScenePhotos();
+      this.syncIllustrations();
       void this.syncContinuation();
       void this.scanServiceResponses();
       const generating = this.adapter.isGenerating();
@@ -1512,7 +1532,7 @@ class PageController {
 
   private navigate() {
     if (this.characterTextWaiter) this.settleCharacterText(this.characterTextWaiter.id, undefined, "scene-changed");
-    this.scenePhotos.clear(); closePortraitViewer();
+    this.scenePhotos.clear(); this.imagePresenter.clear(); closePortraitViewer();
     this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
     this.pickedSceneChoice = null;
