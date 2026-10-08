@@ -64,6 +64,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
   return value.records.map((r) => {
     const data = structuredClone(r.data);
     data.id = ids.get(r.id)!;
+    if (r.kind === "world") (data as WorldProfile).autoPrepareCharacters = false;
     if (r.kind === "world" && (data as WorldProfile).mapLayout) {
       const layout = (data as WorldProfile).mapLayout!;
       const remap = (key: string) => key.split(":").map((part) => ids.get(part) ?? part).join(":");
@@ -74,7 +75,16 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
     if ("links" in data) data.links = data.links?.flatMap((link) => ids.has(link.targetId) ? [{ ...link, targetId: ids.get(link.targetId)! }] : []);
     if (r.kind === "world" && name) (data as WorldProfile).name = name;
     if ("worldId" in data) data.worldId = ids.get(data.worldId!)!;
-    if (r.kind === "illustration" && (data as Illustration).entityId) (data as Illustration).entityId = ids.get((data as Illustration).entityId!);
+    if (r.kind === "illustration") {
+      const image = data as Illustration;
+      if (image.entityId) image.entityId = ids.get(image.entityId);
+      if (image.request) {
+        const input = image.request.input; input.worldId = image.worldId;
+        if (input.entityId) input.entityId = ids.get(input.entityId);
+        if (input.entityIds) input.entityIds = input.entityIds.map(id => ids.get(id) ?? id);
+        if (input.references) input.references = input.references.map(r => ({ ...r, entityId: ids.get(r.entityId) ?? r.entityId }));
+      }
+    }
     if ("bookId" in data && data.bookId) data.bookId = ids.get(data.bookId) ?? null;
     if ("entityIds" in data) data.entityIds = (data.entityIds ?? []).flatMap((id) => ids.has(id) ? [ids.get(id)!] : []);
     if ("memberIds" in data) data.memberIds = data.memberIds.flatMap((id) => ids.has(id) ? [ids.get(id)!] : []);
@@ -89,16 +99,18 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
 export async function removeWorld(worldId: string, repo: DeepRoleRepository = repository) {
   await repo.updateRecords((all) => {
     const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
-    const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : ["entity","template", "proposal", "change", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
+    const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : ["entity","template", "proposal", "change", "illustration", "cast"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
     const changed = all.filter((r) => !removed.includes(r) && (r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : "worldId" in r.data && r.data.worldId === worldId)).map((r) => ({ ...r, data: { ...(r.data as MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot), worldId: null, entityIds: [], focusIds: [], updatedAt: Date.now() } }));
     for (const r of all.filter(r => r.kind === "binding")) {
       const binding = r.data as ChatBinding;
-      if (!binding.characterScenes?.[worldId] && !binding.portraitLayouts?.[worldId]) continue;
+      if (!binding.characterScenes?.[worldId] && !binding.portraitLayouts?.[worldId] && !binding.illustrationAttempts?.some(a => a.worldId === worldId) && !binding.scenePhotos?.some(p => p.worldId === worldId)) continue;
       const target = changed.find(c => c.id === r.id) ?? { ...r, data: { ...binding } };
       const scenes = { ...binding.characterScenes }; delete scenes[worldId];
       (target.data as ChatBinding).characterScenes = scenes;
       const layouts = { ...binding.portraitLayouts }; delete layouts[worldId];
       (target.data as ChatBinding).portraitLayouts = layouts;
+      if (binding.illustrationAttempts) (target.data as ChatBinding).illustrationAttempts = binding.illustrationAttempts.filter(a => a.worldId !== worldId);
+      if (binding.scenePhotos) (target.data as ChatBinding).scenePhotos = binding.scenePhotos.filter(p => p.worldId !== worldId);
       if (!changed.some(c => c.id === r.id)) changed.push(target as typeof changed[number]);
     }
     return { records: changed, removed, result: undefined };

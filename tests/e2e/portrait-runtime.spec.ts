@@ -1,4 +1,4 @@
-import { closeSavedCharacter } from "./character-helpers";
+import { characterTab, closeSavedCharacter } from "./character-helpers";
 import { chromium, expect, test } from "@playwright/test";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
@@ -18,9 +18,10 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     const variations = await panel.evaluate(() => ["#486db0", "#84b79c"].map(color => { const canvas = document.createElement("canvas"); canvas.width = 12; canvas.height = 16; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 12, 16); return canvas.toDataURL("image/png"); }));
     const state = { emotion: "neutral", condition: "Safe", goal: "Find the key", relationship: "", stats: [{ label: "Energy", value: "Rested" }] };
     const people = ["Noah", "Mira", "Leon", "Guard"].map((name, index) => ({ id: name.toLowerCase(), worldId: "w", name, kind: "character", description: "ORIGINAL", aliases: [], memberIds: [], characterSheet: { gender: "neutral", protagonist: index === 0, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
+    people[0]!.characterSheet.sprites = { neutral: variations[0]!, "Разговаривает": variations[1]! };
     people[1]!.characterSheet.sprites = { neutral: variations };
     people[2]!.characterSheet.sprites = Object.fromEntries(["neutral", "retired-mood", ...Array.from({ length: 10 }, (_, i) => `mood-${i}`)].map(name => [name, variations]));
-    const emotions = ["neutral", "happy", "worried", ...Array.from({ length: 29 }, (_, i) => `emotion-${i}`)];
+    const emotions = ["neutral", "happy", "worried", "Разговаривает", ...Array.from({ length: 28 }, (_, i) => `emotion-${i}`)];
     const initial = { revision: "v", presentIds: people.map(p => p.id), partnerIds: ["mira", "leon"], partnerId: "mira", states: Object.fromEntries(people.map(p => [p.id, state])), updatedAt: 1 };
     const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", bookId: null, focusIds: [], messageCountAtAnalysis: 0, characterScenes: { w: initial }, createdAt: 1, updatedAt: 1 };
     await panel.evaluate(async rows => {
@@ -40,16 +41,20 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.reload(); await append(); await expect(mira).toHaveCSS("position", "absolute");
     let schema: any; const prompts: string[] = [];
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { const prompt = route.request().postDataJSON().prompt; prompts.push(prompt); schema = JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)[1]); return route.fulfill({ contentType: "application/json", body: "{}" }); });
-    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon addresses Noah. Mira stays beside the guard." }) }));
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: 'Noah says: "I found the key." Leon addresses Noah. Mira stays beside the guard.' }) }));
     expect(schema.partners).toEqual([]); expect(prompts[0]).toContain("A change of addressee is not a departure"); expect(prompts[0]).not.toContain("portraitLayouts");
-    const payload = { request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: "worried" } }] };
+    expect(schema.updates[0]).toEqual({ id: "Noah", name: "Noah", state });
+    expect(JSON.parse(prompts[0]!.match(/Player avatar: (.+)\n/)![1]!)).toEqual({ id: "Noah", portraitEmotions: ["neutral", "Разговаривает"] });
+    const payload = { request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Noah", name: "Noah", state: { ...state, emotion: "Разговаривает" } }, { id: "Leon", name: "Leon", state: { ...state, emotion: "worried" } }] };
     await append(payload); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);
+    const protagonist = chat.locator('.dr-cast-widget[data-character-id="noah"]');
+    await expect(protagonist.locator("img")).toHaveAttribute("src", variations[1]!); await expect(protagonist.locator("small")).toHaveText("Разговаривает"); await expect(protagonist).toHaveAttribute("data-talking", "false");
     expect(prompts[0]).not.toContain("base64"); expect(prompts[0]).not.toContain("portraitCycles");
     await expect(chat.locator(".dr-cast-widget")).toHaveCount(4); await expect(chat.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(1); await expect(chat.locator('.dr-cast-widget[data-character-id="leon"] small')).toHaveText("Worried");
     expect((await records()).find(r => r.id === binding.id).data.portraitLayouts.w.positions.mira).toEqual(savedPose);
     await mira.locator(".dr-cast-portrait").focus(); await mira.locator(".dr-cast-portrait").press("Enter"); const dialog = chat.getByRole("dialog"); const partner = dialog.getByRole("checkbox", { name: "Talking to the protagonist", exact: true });
-    await expect(partner).not.toBeChecked(); await partner.check(); await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
+    await characterTab(dialog, "scene"); await expect(partner).not.toBeChecked(); await partner.check(); await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
     await expect(chat.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(2);
     const saved = await records(); let current = saved.find(r => r.id === binding.id).data;
     expect(current.characterScenes.w.partnerIds).toEqual(["mira", "leon"]); expect(current.characterScenes.w.presentIds).toHaveLength(4);
@@ -62,6 +67,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await expect(gallery).toHaveCount(1); expect(await gallery.evaluate(node => node === (window as any).galleryNode)).toBe(true);
     await chat.screenshot({ path: info.outputPath("installed-gallery-editor.png") });
     await expect(gallery.getByLabel("Name", { exact: true })).toHaveValue("Leon");
+    await characterTab(gallery, "scene");
     await gallery.getByLabel("Condition", { exact: true }).fill("At the telescope.");
     await gallery.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(gallery, "en", true);
     await expect(gallery.locator(".dr-character-gallery-view")).toBeVisible();
@@ -76,17 +82,20 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.goto(binding.chatUrl); await append(payload); await expect(mira).toHaveCSS("position", "absolute"); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     expect((await records()).find(r => r.id === binding.id).data.characterScenes.w).toEqual(current.characterScenes.w); expect(prompts).toHaveLength(1);
     await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);
+    await expect(protagonist.locator("img")).toHaveAttribute("src", variations[1]!); await expect(protagonist.locator("small")).toHaveText("Разговаривает");
     await chat.locator('[data-widget="characters"]').hover();
     await chat.getByRole("button", { name: "Minimize: Characters", exact: true }).click();
     await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
     await chat.reload(); await expect(chat.locator('[data-restore-widget="characters"]')).toBeVisible();
     await expect(chat.locator(".dr-characters")).toBeHidden();
     await chat.locator('[data-restore-widget="characters"]').click(); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
+    await append(); await expect(protagonist.locator("img")).toHaveAttribute("src", variations[1]!); await expect(protagonist.locator("small")).toHaveText("Разговаривает");
     // A new protagonist must accept emotion images in the same save, and again after reopening.
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await dialog.getByRole("checkbox", { name: "My protagonist", exact: true }).check();
+    await characterTab(dialog, "images");
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
-    await dialog.locator('input[type=file]').setInputFiles({ name: "hero.png", mimeType: "image/png", buffer: Buffer.from(variations[0]!.split(",")[1]!, "base64") });
+    await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero.png", mimeType: "image/png", buffer: Buffer.from(variations[0]!.split(",")[1]!, "base64") });
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);
     // A reply can finish while the portrait picker/editor is open.
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon notices the telescope is unlocked." }) }));
@@ -101,8 +110,9 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     expect(hero.characterSheet.sprites["retired-mood"]).toEqual(variations);
     expect((await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Open the telescope");
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
+    await characterTab(dialog, "images");
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
-    await dialog.locator('input[type=file]').setInputFiles({ name: "hero2.png", mimeType: "image/png", buffer: Buffer.from(variations[1]!.split(",")[1]!, "base64") });
+    await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero2.png", mimeType: "image/png", buffer: Buffer.from(variations[1]!.split(",")[1]!, "base64") });
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
     await chat.screenshot({ path: info.outputPath("protagonist-emotion-portraits.png") });
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
@@ -114,6 +124,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await expect(chat.locator('.dr-cast-widget[data-character-id="leon"] img')).toHaveAttribute("src", new RegExp("^data:image/"));
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await expect(dialog.getByRole("checkbox", { name: "My protagonist", exact: true })).toBeChecked();
+    await characterTab(dialog, "images");
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
     await expect(dialog.getByLabel("Current goal", { exact: true })).toHaveValue("Open the telescope");
@@ -132,14 +143,16 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
       ctx.fillStyle = color; ctx.fillRect(0, 0, 90, 120); return canvas.toDataURL("image/png").split(",")[1]!;
     }));
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
-    await dialog.getByRole("button", { name: /^Image library ·/ }).click();
+    await characterTab(dialog, "images");
+    await expect(dialog.locator(".dr-portrait-library")).toBeVisible();
     const library = dialog.locator(".dr-portrait-library");
     await library.locator('input[type=file]').setInputFiles(inbox.map((image, i) => ({ name: `inbox-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") })));
     await expect(library.locator(".dr-library-image")).toHaveCount(3);
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog); await expect(dialog).toHaveCount(0);
     expect((await records()).find(r => r.id === "leon").data.characterSheet.portraitLibrary).toHaveLength(3);
     await chat.reload(); await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
-    await dialog.getByRole("button", { name: /^Image library ·/ }).click();
+    await characterTab(dialog, "images");
+    await expect(dialog.locator(".dr-portrait-library")).toBeVisible();
     await library.getByRole("button", { name: /^Unassigned ·/ }).click(); await expect(library.locator(".dr-library-image")).toHaveCount(3);
     for (let i = 0; i < 3; i++) await library.locator(".dr-library-image").nth(i).click();
     await library.locator("select").selectOption(emotions[31]!);
@@ -153,6 +166,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon smiles at the stars." }) }));
     await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: emotions[29], goal: "Map the stars" } }] });
     await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Map the stars");
+    await characterTab(dialog, "profile");
     await dialog.getByLabel("Appearance and clothing", { exact: true }).fill("Grey coat");
     await dialog.getByRole("button", { name: "Save character", exact: true }).click();
     await expect(dialog.locator("footer [role=status]")).toHaveText("Saved");

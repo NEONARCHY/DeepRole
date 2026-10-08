@@ -1,0 +1,142 @@
+import { browser } from "wxt/browser";
+import { repository, type DeepRoleRepository } from "../storage/repository";
+import { createCastJob, mutateCastJob, acceptCastReply, applyCastDraft } from "../storage/cast-initialization";
+import { castParts, castPrompt, type CastDraft, type CastJob } from "../core/cast-initialization";
+import type { Locale, WorldProfile } from "../core/types";
+import { getSettings } from "../storage/settings";
+import { isReplacedReply } from "../core/reply-recovery";
+
+export type CastMessage =
+ | { type: "DR_CAST"; action: "start"; worldId: string; locale: Locale; retry?: boolean }
+ | { type: "DR_CAST"; action: "status"; worldId: string }
+ | { type: "DR_CAST"; action: "apply"; id: string; draft: CastDraft; selected: string[]; hero: string }
+ | { type: "DR_CAST"; action: "cancel" | "cleanup"; id: string }
+ | { type: "DR_CAST_WORKER"; action: "claim"; id?: string }
+ | { type: "DR_CAST_WORKER"; action: "sent"; id: string; step: number }
+ | { type: "DR_CAST_WORKER"; action: "bound"; id: string; chatId: string }
+ | { type: "DR_CAST_WORKER"; action: "reply"; id: string; step: number; chatId: string; raw: string }
+ | { type: "DR_CAST_WORKER"; action: "error"; id: string; error: string; chatId?: string }
+ | { type: "DR_CAST_WORKER"; action: "cleaned"; id: string; chatId?: string; ok: boolean }
+ | { type: "DR_CAST_RETRY_CLEANUP" };
+export type CastView = Omit<CastJob, "sources" | "signature"> & { sourceCount: number; partCount: number; titles: Record<string,string> };
+interface Ownership { id: string; tabId: number; chatId?: string }
+const OWNERS = "deeprole_cast_owners";
+const active = (job: CastJob) => ["opening", "reading", "analyzing"].includes(job.phase);
+export function castView(job: CastJob): CastView {
+  const { sources, signature: _signature, ...rest } = job;
+  return { ...rest, sourceCount: sources.length, partCount: sources.length ? castParts(sources).length : 0, titles: Object.fromEntries(sources.map(s => [s.id, s.title])) };
+}
+export class CastCoordinator {
+  private starts: Promise<unknown> = Promise.resolve();
+  private ownershipWrites: Promise<unknown> = Promise.resolve();
+  constructor(private repo: DeepRoleRepository = repository, private api = browser) {}
+  private async owners(): Promise<Ownership[]> { return ((await this.api.storage.session.get(OWNERS))[OWNERS] as Ownership[] | undefined) ?? []; }
+  private async owner(id: string, tabId?: number) { return (await this.owners()).find(o => o.id === id && (tabId === undefined || o.tabId === tabId)); }
+  private changeOwners(change: (owners: Ownership[]) => Ownership[]) {
+    const write = async () => this.api.storage.session.set({ [OWNERS]: change(await this.owners()) });
+    const next = this.ownershipWrites.then(write, write); this.ownershipWrites = next.catch(() => undefined); return next;
+  }
+  private async setOwner(owner: Ownership) { await this.changeOwners(owners => [...owners.filter(o => o.id !== owner.id), owner]); }
+  async removed(tabId: number) {
+    const owner = (await this.owners()).find(o => o.tabId === tabId);
+    if (!owner) return;
+    await this.changeOwners(owners => owners.filter(o => o.tabId !== tabId));
+    await mutateCastJob(owner.id, j => active(j) ? { ...j, phase: "error", error: "tab-closed", cleanup: j.chatId ? "failed" : "none" } : j, this.repo).catch(() => undefined);
+  }
+  private async trusted(message: CastMessage, sender: { id?: string; url?: string; tab?: { id?: number } }) {
+    if (sender.id !== this.api.runtime.id) throw new Error("untrusted");
+    if (message.type === "DR_CAST_WORKER") {
+      const owners = await this.owners(), own = owners.find(o => o.tabId === sender.tab?.id && (!("id" in message) || !message.id || o.id === message.id));
+      if (!own || !sender.url?.startsWith("https://chat.deepseek.com/")) throw new Error("unowned-tab");
+      const tab = await this.api.tabs.get(own.tabId);
+      if (!tab.url?.startsWith("https://chat.deepseek.com/")) throw new Error("unowned-tab");
+      return own;
+    }
+    if (!sender.url?.startsWith(this.api.runtime.getURL("")) && !sender.url?.startsWith("https://chat.deepseek.com/")) throw new Error("untrusted");
+    return undefined;
+  }
+  async handle(message: CastMessage, sender: { id?: string; url?: string; tab?: { id?: number } }): Promise<unknown> {
+    try {
+      const own = await this.trusted(message, sender);
+      if (await this.repo.isLocked()) throw new Error("vault-locked");
+      if (message.type === "DR_CAST_WORKER" && own) {
+        const job = await this.repo.get<CastJob>("cast", own.id);
+        const tab = await this.api.tabs.get(own.tabId);
+        const currentId = tab.url?.match(/\/chat\/(?:s\/)?([^/?#]+)/u)?.[1];
+        if (own.chatId && currentId !== own.chatId && !(message.action === "cleaned" && !currentId)) throw new Error("chat-changed");
+        if (!job) {
+          if (message.action === "cleaned" && message.ok && !currentId && (!message.chatId || message.chatId === own.chatId)) { await this.api.tabs.remove(own.tabId); return { ok: true }; }
+          throw new Error("job-missing");
+        }
+        if (message.action === "claim") return { ok: true, id: job.id, phase: job.phase, step: job.step, awaiting: job.awaiting, prompt: active(job) ? castPrompt(job) : "", chatId: own.chatId, repair: job.repair };
+        if (message.action === "bound") {
+          if (!job.awaiting || !message.chatId || currentId !== message.chatId || own.chatId && own.chatId !== message.chatId) throw new Error("chat-changed");
+          await this.setOwner({ ...own, chatId: message.chatId });
+          await mutateCastJob(job.id, j => ({ ...j, chatId: message.chatId }), this.repo);
+        } else if (message.action === "sent") {
+          if (job.step !== message.step || job.awaiting || !active(job)) throw new Error("stale-step");
+          await mutateCastJob(job.id, j => ({ ...j, phase: j.step < castParts(j.sources).length ? "reading" : "analyzing", awaiting: true }), this.repo);
+        } else if (message.action === "reply") {
+          if (!/^[\w-]{1,120}$/u.test(message.chatId) || currentId !== message.chatId || own.chatId && own.chatId !== message.chatId) throw new Error("chat-changed");
+          if (typeof message.raw !== "string" || !message.raw.trim() || message.raw.length > 180000 || isReplacedReply(message.raw)) throw new Error("model-refusal");
+          await this.setOwner({ ...own, chatId: message.chatId });
+          await mutateCastJob(job.id, j => ({ ...j, chatId: message.chatId }), this.repo);
+          await acceptCastReply(job.id, message.step, message.raw, this.repo);
+        } else if (message.action === "error") {
+          if (message.chatId && currentId === message.chatId && job.awaiting && (!own.chatId || own.chatId === message.chatId)) {
+            await this.setOwner({ ...own, chatId: message.chatId });
+            await mutateCastJob(job.id, j => ({ ...j, chatId: message.chatId }), this.repo);
+          }
+          await mutateCastJob(job.id, j => active(j) ? { ...j, phase: "error", error: message.error.slice(0,80), awaiting: false } : j, this.repo);
+        } else if (message.action === "cleaned") {
+          if (message.chatId && message.chatId !== own.chatId) throw new Error("chat-changed");
+          await mutateCastJob(job.id, j => ({ ...j, cleanup: message.ok ? "done" : "failed" }), this.repo);
+          if (message.ok) await this.api.tabs.remove(own.tabId);
+        }
+        return { ok: true };
+      }
+      if (message.type !== "DR_CAST") return { ok: false };
+      if (message.action === "start") {
+        const start = () => this.start(message.worldId, message.locale, !!message.retry);
+        const result = this.starts.then(start, start); this.starts = result.catch(() => undefined);
+        return { ok: true, job: await result };
+      }
+      if (message.action === "status") {
+        let job = (await this.repo.list<CastJob>("cast")).filter(j => j.worldId === message.worldId).sort((a,b) => b.createdAt - a.createdAt)[0];
+        if (job && active(job) && Date.now() - job.updatedAt > 30000 && !await this.owner(job.id)) job = await mutateCastJob(job.id, j => ({ ...j, phase: "error", error: "interrupted", cleanup: j.chatId ? "failed" : "none" }), this.repo);
+        return { ok: true, job: job ? castView(job) : null };
+      }
+      if (message.action === "apply") return { ok: true, count: await applyCastDraft(message.id, message.draft, message.selected, message.hero, this.repo) };
+      if (message.action === "cancel") await mutateCastJob(message.id, j => ({ ...j, phase: "cancelled", awaiting: false }), this.repo);
+      const owner = await this.owner(message.id);
+      if (owner) await this.api.tabs.sendMessage(owner.tabId, { type: "DR_CAST_RETRY_CLEANUP" });
+      else if (message.action === "cleanup") throw new Error("cleanup-unavailable");
+      return { ok: true };
+    } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "preparation-failed" }; }
+  }
+  private async start(worldId: string, locale: Locale, retry: boolean): Promise<CastView> {
+    if (!["ru", "en"].includes(locale) || !worldId) throw new Error("invalid-request");
+    const jobs = await this.repo.list<CastJob>("cast");
+    if (jobs.some(j => j.worldId !== worldId && active(j))) throw new Error("busy");
+    const job = await createCastJob(worldId, locale, retry, this.repo);
+    if (!active(job) || await this.owner(job.id)) return castView(job);
+    let tabId: number | undefined;
+    try {
+      const tab = await this.api.tabs.create({ url: "about:blank", active: false }); tabId = tab.id;
+      if (tabId === undefined) throw new Error("tab-unavailable");
+      await this.setOwner({ id: job.id, tabId });
+      await this.api.tabs.update(tabId, { url: "https://chat.deepseek.com/?deeprole_cast_job=" + encodeURIComponent(job.id) });
+    } catch {
+      await mutateCastJob(job.id, j => ({ ...j, phase: "error", error: "tab-unavailable", cleanup: "none" }), this.repo);
+      if (tabId !== undefined) await this.api.tabs.remove(tabId).catch(() => undefined);
+      throw new Error("tab-unavailable");
+    }
+    return castView(job);
+  }
+  async auto() {
+    if (await this.repo.isLocked()) return;
+    for (const w of await this.repo.list<WorldProfile>("world")) if (w.autoPrepareCharacters) {
+      try { const locale = (await getSettings()).locale; const work = () => this.start(w.id, locale, false); const next = this.starts.then(work, work); this.starts = next.catch(() => undefined); await next; } catch { /* Empty lore waits for its first saved records; UI can show other errors. */ }
+    }
+  }
+}

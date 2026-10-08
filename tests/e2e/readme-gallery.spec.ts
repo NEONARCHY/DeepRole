@@ -52,8 +52,11 @@ for (const locale of ["en", "ru"] as const) {
     const sceneBox = await page.locator("[data-deeprole-choices-host] section, [data-deeprole-portrait-layer] .dr-cast-widget").evaluateAll(nodes => {
       const boxes = nodes.map(node => node.getBoundingClientRect());
       const x = Math.min(...boxes.map(box => box.left)) - 12, y = Math.min(...boxes.map(box => box.top)) - 12;
-      return { x, y, width: Math.max(...boxes.map(box => box.right)) - x + 12, height: Math.max(...boxes.map(box => box.bottom)) - y + 12 };
+      const bottom = Math.max(...boxes.map(box => box.bottom));
+      // Keep the actual scene inside the viewport; only crop decorative padding.
+      return { x, y, width: Math.min(innerWidth, Math.max(...boxes.map(box => box.right)) + 12) - x, height: Math.min(innerHeight, bottom + 12) - y, bottom };
     });
+    expect(sceneBox.bottom).toBeLessThanOrEqual(820);
     expect(sceneBox.y + sceneBox.height).toBeLessThanOrEqual(820);
     await page.screenshot({ path: info.outputPath(`portraits-${locale}.png`), clip: sceneBox, animations: "disabled" });
   });

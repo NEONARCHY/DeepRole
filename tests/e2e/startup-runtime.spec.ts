@@ -1,9 +1,11 @@
 import { chromium, expect, test } from "@playwright/test";
 import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { existsSync } from "node:fs";
 
 for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled", "rejected", "library-rejected", "library-stalled", "normal", "normal-ru", "no-worker"] as const) test(`installed ${browser} menu survives ${mode} startup`, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Chrome MV3 installed build");
+  test.skip(browser === "brave" && !existsSync("C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"), "Brave is not installed; no browser coverage claimed");
   const dir = path.join(info.project.outputDir, "profiles");
   await mkdir(dir, { recursive: true });
   const profile = await mkdtemp(path.join(dir, "startup-"));

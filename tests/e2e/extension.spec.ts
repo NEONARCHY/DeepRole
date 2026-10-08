@@ -198,8 +198,14 @@ test("installed pinned options follow the native message panel without changing 
     await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("My personal draft remains untouched.");
     await chat.screenshot({ path: testInfo.outputPath("installed-pinned-above-composer.png") });
     await chat.evaluate(() => Object.assign(document.querySelector("main")!.style, { minHeight: "0", paddingTop: "1000px" }));
+    const beforeUnpin = await chat.evaluate(() => window.scrollY);
     await host.getByRole("button", { name: "Unpin options", exact: true }).click();
     await expect.poll(async () => panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.pinSceneChoices)).toBe(false);
+    await expect.poll(() => host.evaluate(node => node.parentElement !== document.body)).toBe(true);
+    await expect.poll(() => chat.evaluate(() => window.scrollY)).toBeCloseTo(beforeUnpin, 0);
+    // Wait for the actual unpin before simulating the reader's next scroll.
+    await chat.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+
     await expect.poll(() => host.evaluate(node => {
       const card = node.shadowRoot!.querySelector("section")!.getBoundingClientRect(), form = document.querySelector("form")!.getBoundingClientRect();
       return node.parentElement !== document.body && form.top - card.bottom >= 11 && Math.abs(card.left + card.width / 2 - form.left - form.width / 2) < 1;

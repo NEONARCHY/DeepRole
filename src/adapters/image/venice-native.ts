@@ -43,7 +43,7 @@ export class VeniceNativeProvider implements ImageProvider {
         supportsEdit: type === "inpaint", constraints } satisfies ImageModelInfo;
     });
   }
-  async generate(input: GenerateInput) { return this.transport.image(await this.transport.request("/image/generate", requestBody(this.config, input)), json => Array.isArray(json.images) ? json.images[0] : undefined); }
+  async generate(input: GenerateInput) { return this.transport.image(await this.transport.request("/image/generate", requestBody(this.config, input)), json => Array.isArray(json.images) ? json.images[0] : undefined, input.aspectRatio); }
   async edit(input: EditInput) {
     if (!input.images.length || input.images.length > this.config.maxReferences) throw new ImageApiError("invalid");
     // Multi-edit explicitly documents JSON data URLs; single edit documents raw base64.
@@ -52,6 +52,6 @@ export class VeniceNativeProvider implements ImageProvider {
     const body = requestBody(this.config, input, input.images.length === 1 ? { model, image: input.images[0]!.split(",")[1] } : { modelId: model, images: input.images });
     if (input.images.length > 1) delete body.model;
     const response = await this.transport.request(input.images.length === 1 ? "/image/edit" : "/image/multi-edit", body);
-    return this.transport.image(response, () => undefined); // edit returns raw image bytes, not JSON.
+    return this.transport.image(response, () => undefined, input.aspectRatio); // edit returns raw image bytes, not JSON.
   }
 }

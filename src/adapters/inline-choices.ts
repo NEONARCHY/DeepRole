@@ -41,7 +41,9 @@ export function bindInlineChoices(host: HTMLElement, reveal = false): void {
   if (existing) { if (reveal) existing.reveal(); return; }
   if (!host.isConnected) return;
   const doc = host.ownerDocument, win = doc.defaultView!;
-  let scroller = choiceScrollContainer(host), following = reveal, disposed = false;
+  let scroller = choiceScrollContainer(host), disposed = false;
+  // Capture the native bottom before reserving space, including a short chat.
+  let following = reveal || scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 48;
   const spacer = doc.createElement("div");
   spacer.dataset.deeproleChoicesSpacer = "true"; spacer.setAttribute("aria-hidden", "true");
   spacer.style.cssText = "height:0;min-height:0;margin:0;padding:0;border:0;flex:none;pointer-events:none;overflow-anchor:none";

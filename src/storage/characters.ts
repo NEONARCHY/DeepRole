@@ -11,7 +11,7 @@ import { EMPTY_STATUS, narrativeCharacterStatus } from "../core/characters";
 import { advanceAttributes, attributeState, recordManualAttributes, validAttributePatches } from "../core/attributes";
 import { characterStatusForSheet, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
 
-import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents } from "../core/selfies";
+import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents, GENERATED_SELFIE, generatedSelfieCategory, selfieWasSent } from "../core/selfies";
 import { validateWorldImageBudgets } from "./illustrations";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string; replyIdentity?: string; replyCompletedAt?: number }
@@ -92,7 +92,7 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
   });
 }
 
-export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, emotions: string[] = DEFAULT_EMOTIONS, repo: DeepRoleRepository = repository, namedIds = false, relationshipsEnabled = false): Promise<void> {
+export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, emotions: string[] = DEFAULT_EMOTIONS, repo: DeepRoleRepository = repository, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false): Promise<void> {
   if (turn.world !== scope.worldId || turn.chat !== scope.chatId || turn.base !== scope.base) throw new Error("character-scope");
   await repo.updateRecords(all => {
     const { binding, entities, scene } = current(all, scope);
@@ -191,7 +191,16 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
       const narrative = relationshipNarrative(scope.replyText ?? "");
       for (const event of turn.selfies) {
         const person = allPeople.find(e => e.id === resolve(event.id));
-        const categories = selfieCategories(person?.characterSheet);
+        if (!person || !narrative.includes(event.quote.trim()) || !selfieWasSent(event.quote)) continue;
+        if (event.category === GENERATED_SELFIE) {
+          if (!generatedSelfiesEnabled || !event.scene?.trim() || scenePhotos.some(p => p.worldId === scope.worldId && p.entityId === person.id && p.turnKey === nextScene.lastReply)) continue;
+          const gate = selfieGate(person, generatedSelfieCategory(person.characterSheet), hero, scene, relationshipsEnabled && world?.relationshipsEnabled !== false);
+          if (!["allowed", "story"].includes(gate)) continue;
+          scenePhotos.push({ worldId: scope.worldId, entityId: person.id, categoryId: GENERATED_SELFIE, imageKey: selfieImageKey(nextScene.lastReply + ":" + person.id), messageKey: scope.replyIdentity, turnKey: nextScene.lastReply, createdAt: now,
+            generation: { ...(event.reference ? { reference: event.reference } : {}), scene: event.scene.trim(), ...(event.appearance ? { appearance: event.appearance } : {}), status: "queued", updatedAt: now } });
+          continue;
+        }
+        const categories = selfieCategories(person.characterSheet);
         const selected = categories.find(c => c.id === event.category);
         const category = selected?.images.length ? selected : categories.find(c => c.default && c.images.length);
         if (!person || !category?.images.length || !narrative.includes(event.quote.trim())

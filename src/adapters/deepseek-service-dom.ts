@@ -5,7 +5,7 @@ import { nativeMessageRow, nativeMessageRows, nativeMessageIdentity, isUserMessa
 export function hideCharacterTextServices(root: ParentNode = document, saved: { requestId: string; replyIdentity: string }[] = []): { requestId: string; replyIdentity: string }[] {
   const wanted = new Map<HTMLElement, string>(), found: { requestId: string; replyIdentity: string }[] = [];
   for (const turn of serviceTurns(root)) {
-    if (!turn.requestId || !/^\[DeepRole Service\]\s*\[Request ID: [\w-]{1,120}\]\s*\[DeepRole Character Text\]/u.test((turn.request.textContent ?? "").trim())) continue;
+    if (!turn.requestId || !/^\[DeepRole Service\]\s*\[Request ID: [\w-]{1,120}\]\s*\[DeepRole (?:Character Text|Image Plan)\]/u.test((turn.request.textContent ?? "").trim())) continue;
     wanted.set(turn.request, turn.requestId);
     if (turn.response) {
       wanted.set(turn.response, turn.requestId);

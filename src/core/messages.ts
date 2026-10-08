@@ -20,7 +20,7 @@ export interface TabSessionState {
 }
 export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
-export type DeepRoleMessage =
+export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | import("./image-messages").ImageMessage
   | { type: "DR_PING" }
   | RepositoryRequest

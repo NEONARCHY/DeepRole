@@ -1,4 +1,5 @@
 import type { CharacterSheet, CharacterStatus, SceneEntity } from "./types";
+import { portraitVariations } from "./portrait-variations";
 
 // Retain restrictions on retired world keys so re-adding a key cannot bypass them.
 export const MAX_BLOCKED_EMOTIONS = 128;
@@ -25,6 +26,15 @@ export function resolveCharacterEmotion(sheet: CharacterSheet | undefined, reque
 export function characterStatusForSheet(sheet: CharacterSheet | undefined, state: CharacterStatus): CharacterStatus {
   const emotion = resolveCharacterEmotion(sheet, state.emotion);
   return emotion === state.emotion ? state : { ...state, emotion };
+}
+
+/** The player speaks through user messages; they are never an NPC interlocutor. */
+export function playerAvatarInstruction(roster: SceneEntity[], emotions: string[], byName: boolean): string {
+  const hero = roster.find(person => person.characterSheet?.protagonist);
+  if (!hero) return "";
+  const sheet = hero.characterSheet;
+  const portraits = allowedCharacterEmotions(sheet, emotions).filter(key => portraitVariations(sheet?.sprites[key]).length > 0);
+  return `Player avatar: ${JSON.stringify({ id: byName ? hero.name : hero.id, portraitEmotions: portraits })}\nThe player:true character is the user\'s protagonist. Include their state update in EVERY story reply, keeping unchanged fields. Read first-person speech/actions in the latest user message as theirs, then consider the completed scene; do not invent their dialogue or actions. For actual in-character speech prefer an allowed speaking/talking pose when available. Distinguish dialogue from actions, thoughts, out-of-character requests, past quotations and unsent choices: not every message means speaking. Use exact configured emotion keys, including custom names. Never leave the player permanently neutral merely because their speech is in a user message. The player is never a partners entry.\n`;
 }
 
 export function characterEmotionInstruction(roster: SceneEntity[], emotions: string[], byName: boolean): string {

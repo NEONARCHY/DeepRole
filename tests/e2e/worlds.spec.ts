@@ -36,7 +36,7 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
   expect(Math.abs(dialogBox!.x + dialogBox!.width / 2 - viewport.width / 2)).toBeLessThan(2);
   expect(Math.abs(dialogBox!.y + dialogBox!.height / 2 - viewport.height / 2)).toBeLessThan(2);
   const dropzone = page.locator(".rp-import-dropzone");
-  await expect(dropzone).toContainText(l("Перетащите сюда файл лора", "Drop your lore file here"));
+  await expect(dropzone).toContainText(l("Перетащите сюда JSON-файл", "Drop a JSON file here"));
   const transfer = await page.evaluateHandle((json) => { const value = new DataTransfer(); value.items.add(new File([json], "Тестовый мир.json", { type: "application/json" })); return value; }, JSON.stringify({ name: "Тестовый мир", entries: [{ title: "Правило", content: "Сохранить", activation: "always" }] }));
   await dropzone.dispatchEvent("dragenter", { dataTransfer: transfer });
   await expect(dropzone).toHaveClass(/is-dragging/);
@@ -144,7 +144,7 @@ test("same importer recognizes a DeepRole world and refuses unrelated JSON", asy
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   const input = page.getByLabel("Выбрать JSON", { exact: true });
   await input.setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from('{"format":"deeprole-backup"}') });
-  await expect(page.getByRole("alert")).toContainText("Ничего не импортировано");
+  await expect(page.getByRole("alert")).toHaveText("Не удалось прочитать резервную копию");
   await expect(page.getByRole("button", { name: "Подтвердить импорт", exact: true })).toHaveCount(0);
   const world = { id: "world", name: "Из DeepRole", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   await input.setInputFiles({ name: "world.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }] })) });

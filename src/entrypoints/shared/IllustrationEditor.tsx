@@ -31,12 +31,12 @@ export function IllustrationEditor(props: IllustrationEditorProps) {
   const base = person?.characterSheet?.imageGeneration;
   const initial = (): CharacterImagePrompt => base ? structuredClone(base) : { canonical: person?.characterSheet?.appearance ?? "", sceneDelta: "", prefix: "", suffix: "", format: "prose" };
   const [profile, setProfile] = useState(initial); const [savedBaseline, setSavedBaseline] = useState<CharacterImagePrompt | null>(base ?? null);
-  const [referenceKeys, setReferenceKeys] = useState<string[]>([]); const [providerId, setProviderId] = useState(props.settings.profileByLevel[props.settings.contentLevel] ?? "");
+  const [referenceKeys, setReferenceKeys] = useState<string[]>(base?.referenceKey ? [base.referenceKey] : []); const [providerId, setProviderId] = useState(props.settings.profileByLevel[props.settings.contentLevel] ?? "");
   const config = props.settings.profiles.find(p => p.id === providerId), references = imageReferences(person?.characterSheet);
   const prompt = buildImagePrompt(profile, props.settings); const [saved, setSaved] = useState(false);
   useLayoutEffect(() => { dialog.current?.showModal(); dialog.current?.querySelector<HTMLSelectElement>("select")?.focus(); return () => dialog.current?.close(); }, []);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  useEffect(() => { setProfile(initial()); setReferenceKeys([]); setSaved(false); setSavedBaseline(base ?? null); }, [entityId]);
+  useEffect(() => { setProfile(initial()); setReferenceKeys(base?.referenceKey ? [base.referenceKey] : []); setSaved(false); setSavedBaseline(base ?? null); }, [entityId]);
   async function act(task: () => Promise<void>) {
     if (pending.current) return; pending.current = true; setBusy(true); setError(null); setHeaders(undefined);
     try { await task(); } catch (cause) { if (alive.current) { const e = cause as { headers?: ImageResponseHeaders; ticketId?: string }; setError(imageErrorKey(cause)); setHeaders(e?.headers); setDownloadTicket(e?.ticketId); } }
@@ -47,7 +47,7 @@ export function IllustrationEditor(props: IllustrationEditorProps) {
     <div className="dr-illustration-editor">
       <p>{t("disclosure")}</p>
       <fieldset disabled={busy} className="dr-illustration-editor">
-        <label className="field-label"><span>{t("selected")}</span><Select value={providerId} onChange={event => { setProviderId(event.target.value); setReferenceKeys([]); }}><option value="">{t("choose")}</option>{props.settings.profiles.filter(p => p.enabled).map(p => <option key={p.id} value={p.id}>{p.label} · {p.modelId}</option>)}</Select></label>
+        <label className="field-label"><span>{t("selected")}</span><Select value={providerId} onChange={event => { setProviderId(event.target.value); setReferenceKeys(base?.referenceKey ? [base.referenceKey] : []); }}><option value="">{t("choose")}</option>{props.settings.profiles.filter(p => p.enabled).map(p => <option key={p.id} value={p.id}>{p.label} · {p.modelId}</option>)}</Select></label>
         <label className="field-label"><span>{t("person")}</span><Select value={entityId} onChange={event => setEntityId(event.target.value)}><option value="">{t("none")}</option>{props.entities.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</Select></label>
         <label className="field-label"><span>{t("canonical")}</span><textarea rows={3} maxLength={1200} value={profile.canonical} onChange={event => { setProfile({ ...profile, canonical: event.target.value }); setSaved(false); }} /></label>
         <label className="field-label"><span>{t("delta")}</span><textarea rows={3} maxLength={1200} value={profile.sceneDelta} onChange={event => { setProfile({ ...profile, sceneDelta: event.target.value }); setSaved(false); }} /></label>

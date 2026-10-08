@@ -57,6 +57,8 @@ import type {
   BackupPayload,
 } from "../../core/types";
 import { parseBackup, restoreBackup } from "../../storage/backup";
+import { BackupRestore } from "../shared/BackupRestore";
+import { Modal } from "../shared/Modal";
 import { ExportDialog } from "./ExportDialog";
 import { exportText } from "../../core/export-i18n";
 import { repository, VaultLockedError } from "../../storage/repository";
@@ -896,24 +898,6 @@ function SettingsView(props: {
   );
 }
 
-function BackupRestore(props: { t: ReturnType<typeof useTranslator>; fileName: string; payload: BackupPayload; onClose: () => void; onRestore: (mode: "merge" | "replace") => Promise<void> }) {
-  const [mode, setMode] = useState<"merge" | "replace">("merge");
-  const [consent, setConsent] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-  const t = props.t;
-  return <Modal title={t("restoreTitle")} closeLabel={t("close")} onClose={() => { if (!busy) props.onClose(); }}>
-    <strong className="restore-file">{props.fileName}</strong>
-    <p className="setting-copy">{t("restorePreview", { worlds: props.payload.records.filter((r) => r.kind === "world").length, books: props.payload.records.filter((r) => r.kind === "book").length, entries: props.payload.records.filter((r) => r.kind === "entry").length })}</p>
-    <fieldset className="restore-modes" disabled={busy}><legend>{t("restoreChoose")}</legend>
-      {(["merge", "replace"] as const).map((value) => <label key={value} className="rp-check"><input type="radio" name="restore-mode" value={value} checked={mode === value} onChange={() => { setMode(value); setConsent(false); }} /><span><strong>{t(value === "merge" ? "restoreAdd" : "restoreReplace")}</strong><small>{t(value === "merge" ? "restoreAddHint" : "restoreReplaceHint")}</small></span></label>)}
-      {mode === "replace" && <label className="rp-check"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />{t("restoreConsent")}</label>}
-    </fieldset>
-    {error && <p className="error-text" role="alert">{t("restoreFailed")}</p>}
-    <div className="modal-actions"><button className="button secondary" disabled={busy} onClick={props.onClose}>{t("cancel")}</button><button className={`button ${mode === "replace" ? "danger-button" : "primary"}`} disabled={busy || mode === "replace" && !consent} onClick={() => { setBusy(true); setError(false); void props.onRestore(mode).catch(() => setError(true)).finally(() => setBusy(false)); }}>{t(mode === "merge" ? "restoreAdd" : "restoreReplace")}</button></div>
-  </Modal>;
-}
-
 function BookEditor(props: { t: ReturnType<typeof useTranslator>; locale: DeepRoleSettings["locale"]; book: MemoryBook | null; onClose: () => void; onSave: (book: MemoryBook) => Promise<void> }) {
   const [busy, setBusy] = useState(false); const [error, setError] = useState<"conflict" | "failed" | null>(null);
   const [name, setName] = useState(props.book?.name ?? "");
@@ -973,36 +957,7 @@ function Onboarding(props: { t: ReturnType<typeof useTranslator>; onFinish: () =
   return <div className="onboarding"><div className="onboarding-brand"><div className="brand-mark large"><span /></div><strong>DeepRole</strong></div><div className="onboarding-visual"><Globe2 /></div><h1>{props.t("welcomeTitle")}</h1><p>{props.t("welcomeText")}</p><div className="onboarding-actions"><HelpButton className="button primary" onClick={props.onFinish}>{props.t("finish")}<ChevronRight /></HelpButton></div></div>;
 }
 
-function Modal(props: { title: string; closeLabel: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
-  const backdrop = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const root = backdrop.current;
-    const hidden: { element: HTMLElement; inert: boolean; aria: string | null }[] = [];
-    // Only hide siblings in this extension document, never the host DeepSeek chat.
-    for (let branch: HTMLElement | null = root; branch?.parentElement; branch = branch.parentElement) {
-      for (const sibling of branch.parentElement.children) {
-        if (sibling === branch || !(sibling instanceof HTMLElement)) continue;
-        hidden.push({ element: sibling, inert: sibling.inert, aria: sibling.getAttribute("aria-hidden") });
-        sibling.inert = true; sibling.setAttribute("aria-hidden", "true");
-      }
-      if (branch.parentElement === document.body) break;
-    }
-    if (!root?.contains(previous)) root?.querySelector<HTMLElement>("button, input, textarea, select")?.focus();
-    return () => {
-      for (const item of hidden) { item.element.inert = item.inert; if (item.aria === null) item.element.removeAttribute("aria-hidden"); else item.element.setAttribute("aria-hidden", item.aria); }
-      if (previous?.isConnected) previous.focus();
-    };
-  }, []);
-  return <div ref={backdrop} className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) props.onClose(); }} onKeyDown={(event) => {
-    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); props.onClose(); }
-    if (event.key !== "Tab") return;
-    const controls = [...(backdrop.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, [tabindex="0"]') ?? [])].filter((element) => element.getClientRects().length);
-    const first = controls[0]; const last = controls.at(-1);
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-  }}><HelpSection className={`modal ${props.wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={props.title}><header><h2>{props.title}</h2><HelpButton className="icon-button" onClick={props.onClose} aria-label={props.closeLabel}><X /></HelpButton></header><div className="modal-body">{props.children}</div></HelpSection></div>;
-}
+
 function SettingsCard(props: { icon: React.ReactNode; title: string; children: React.ReactNode }) { return <HelpSection className="settings-card"><header>{props.icon}<h2>{props.title}</h2></header><div>{props.children}</div></HelpSection>; }
 function EmptyState(props: { icon: React.ReactNode; text: string; action?: string; onAction?: () => void }) { return <div className="empty-state"><div>{props.icon}</div><p>{props.text}</p>{props.action && <HelpButton className="button secondary" onClick={props.onAction}>{props.action}</HelpButton>}</div>; }
 function NavButton(props: { active: boolean; label: string; icon: React.ReactNode; onClick: () => void }) { return <HelpButton className={props.active ? "active" : ""} onClick={props.onClick}>{props.icon}<span>{props.label}</span></HelpButton>; }

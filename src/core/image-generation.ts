@@ -1,5 +1,6 @@
 import type { Locale } from "./types";
 import { validPortrait } from "./portrait-variations";
+import { validImageReplay } from "./image-plan";
 
 // One entry defines the type, validator and both labels. These are presets, not prompt filters.
 // "adult" requires an explicit age confirmation in the same settings record; see validImageSettings.
@@ -35,7 +36,9 @@ export interface ImageModelInfo {
 export const IMAGE_RESPONSE_HEADERS = ["x-venice-is-blurred", "x-venice-is-content-violation", "x-venice-model-deprecation-warning"] as const;
 export type ImageResponseHeaders = Partial<Record<typeof IMAGE_RESPONSE_HEADERS[number], string>>;
 export interface ImageResult { image: string; headers: ImageResponseHeaders; seed?: number }
-export interface GenerateInput { prompt: string; seed?: number }
+export type ImageAspectRatio = "16:9" | "9:16";
+export const validImageAspect = (v: unknown): v is ImageAspectRatio => v === "16:9" || v === "9:16";
+export interface GenerateInput { prompt: string; seed?: number; aspectRatio?: ImageAspectRatio }
 export interface EditInput extends GenerateInput { images: string[] }
 export interface ImageProvider {
   listModels(): Promise<ImageModelInfo[]>;
@@ -46,9 +49,12 @@ export interface Illustration {
   id: string; worldId: string; chatId: string; messageKey: string; entityId?: string;
   providerId: string; modelId: string; prompt: string; referenceKeys?: string[];
   seed?: number; contentLevel: ImageContentLevel; image: string;
+  /** Frozen request, excluding credentials, for an explicit identical retry. */
+  request?: import("./image-plan").ImageReplay;
+  aspectRatio?: ImageAspectRatio;
   headers?: ImageResponseHeaders; createdAt: number; updatedAt: number;
 }
-export interface CharacterImagePrompt { canonical: string; sceneDelta: string; prefix: string; suffix: string; format: "prose" | "tags"; seed?: number }
+export interface CharacterImagePrompt { canonical: string; sceneDelta: string; prefix: string; suffix: string; format: "prose" | "tags"; seed?: number; referenceKey?: string; suggestiveReferenceKey?: string; referenceContext?: string; suggestiveReferenceContext?: string }
 export const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const text = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max;
 export const imageKey = (v: unknown): v is string => text(v, 160) && !!v.trim() && !["__proto__", "prototype", "constructor"].includes(v);
@@ -91,7 +97,7 @@ export function validImageSettings(v: unknown): v is ImageSettings {
     && Object.keys(v).every(k => ["enabled", "contentLevel", "profiles", "profileByLevel", "stylePrefix", "styleSuffix", "adultConfirmed"].includes(k));
 }
 export function validCharacterImagePrompt(v: unknown): v is CharacterImagePrompt {
-  return object(v) && ["canonical", "sceneDelta", "prefix", "suffix"].every(k => text(v[k], 1200)) && ["prose", "tags"].includes(String(v.format)) && validImageSeed(v.seed);
+  return object(v) && ["canonical", "sceneDelta", "prefix", "suffix"].every(k => text(v[k], 1200)) && ["prose", "tags"].includes(String(v.format)) && validImageSeed(v.seed) && ["referenceKey", "suggestiveReferenceKey"].every(k => v[k] === undefined || imageKey(v[k])) && ["referenceContext", "suggestiveReferenceContext"].every(k => v[k] === undefined || text(v[k], 600));
 }
 export const validImageSeed = (v: unknown) => v === undefined || Number.isSafeInteger(v) && Number(v) >= 0;
 export function validImageHeaders(v: unknown): v is ImageResponseHeaders {
@@ -102,5 +108,6 @@ export function validIllustration(v: unknown): v is Illustration {
     && (v.entityId === undefined || imageKey(v.entityId)) && validProviderId(v.providerId) && text(v.modelId, 200) && !!v.modelId
     && text(v.prompt, 12_000) && !!v.prompt.trim() && validImageSeed(v.seed) && validImageContentLevel(v.contentLevel) && validPortrait(v.image)
     && (v.referenceKeys === undefined || Array.isArray(v.referenceKeys) && v.referenceKeys.length <= 128 && v.referenceKeys.every(imageKey))
+    && (v.aspectRatio === undefined || validImageAspect(v.aspectRatio)) && (v.request === undefined || validImageReplay(v.request))
     && (v.headers === undefined || validImageHeaders(v.headers)) && ["createdAt", "updatedAt"].every(k => typeof v[k] === "number" && Number.isFinite(v[k]) && Number(v[k]) >= 0);
 }

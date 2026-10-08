@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="UTF-8"></head><body style="margin:0"><div id="root"></div>
+<script>const area=()=>{const values=new Map();return{get:async()=>Object.fromEntries(values),set:async v=>{for(const[k,val]of Object.entries(v))values.set(k,val);},remove:async()=>{}}};window.chrome={runtime:{id:"fixture",sendMessage:async()=>{},onMessage:{addListener(){},removeListener(){}}},storage:{local:area(),session:area(),onChanged:{addListener(){},removeListener(){}}}};</script>
+<script type="module">
+import React from "react";import {createRoot} from "react-dom/client";
+import {CastSetup} from "/src/entrypoints/shared/CastSetup.tsx";
+import {castRecords,castDraft} from "/tests/fixtures/cast-data.ts";
+import {repository} from "/src/storage/repository.ts";
+import {castSources,castSignature} from "/src/core/cast-initialization.ts";
+import {applyCastDraft} from "/src/storage/cast-initialization.ts";
+import {castView} from "/src/adapters/cast-coordinator.ts";
+import "/src/entrypoints/sidepanel/styles.css";
+const qs=new URLSearchParams(location.search),locale=qs.get("locale")??"ru";
+await repository.clear();await repository.mergeRecords(castRecords());const records=await repository.rawRecords();
+const job={id:"cast-fixture",worldId:"w",locale,createdAt:1,updatedAt:1,phase:"ready",step:1,awaiting:false,repair:false,sources:castSources(records,"w"),signature:castSignature(records,"w"),draft:castDraft("cast-fixture"),cleanup:"done"};
+await repository.put("cast",job);
+window.chrome.runtime.sendMessage=async m=>{if(m.action==="status")return{ok:true,job:castView(await repository.get("cast",job.id))};if(m.action==="apply"){await applyCastDraft(m.id,m.draft,m.selected,m.hero);window.saved=await repository.list("entity");return{ok:true};}return{ok:false};};
+createRoot(document.getElementById("root")).render(React.createElement("main",{className:"dr-root",style:{minHeight:"100vh",padding:12}},React.createElement(CastSetup,{worldId:"w",locale})));
+</script></body></html>

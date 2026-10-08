@@ -1,3 +1,4 @@
+import { startCastWorker } from "../adapters/cast-worker";
 import { characterFieldPrompt, characterFieldResult, validCharacterTextRequest, type CharacterTextRequest } from "../core/character-text";
 import { createRoot, type Root } from "react-dom/client";
 import { WIDGET_LAYOUT_KEY, parseWidgetLayout } from "./content/WidgetDeck";
@@ -15,12 +16,13 @@ import { experienceText } from "../core/experience-i18n";
 import { DEFAULT_SETTINGS } from "../core/defaults";
 import { validStoryContinuation, withLatestVisibleStory } from "../core/story-continuation";
 import { visibleStoryHistory } from "../adapters/story-history-dom";
-import { clearSelfieImageCache } from "../core/selfies";
+import { clearSelfieImageCache, isSelfieRequest, SELFIE_DELAY } from "../core/selfies";
 import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
-import { IllustrationsPresenter } from "../adapters/illustrations-dom";
+import { imagePlanRoster, parseImageScenePlan } from "../core/image-plan";
+import { IllustrationsPresenter, illustrationSceneText } from "../adapters/illustrations-dom";
 import { getImageSettings, IMAGE_SETTINGS_KEY } from "../storage/image-settings";
 import { DEFAULT_IMAGE_SETTINGS, type Illustration, type ImageSettings } from "../core/image-generation";
-import { imageText } from "../core/image-i18n";
+import { imageText, imageErrorKey } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
 import { continuationKey, continuationScopeMatches, recentSceneReference, type ContinuationFlow } from "../core/continuation-flow";
@@ -88,6 +90,7 @@ export default defineContentScript({
   cssInjectionMode: "ui",
   async main(ctx) {
     await injectScript("/injected.js", { keepInDom: true });
+    if (await startCastWorker()) return;
     const controller = new PageController();
     const ui = await createShadowRootUi(ctx, {
       name: "deeprole-page-widget",
@@ -373,19 +376,61 @@ class PageController {
   private readonly imagePresenter = new IllustrationsPresenter();
   private syncIllustrations() {
     const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw Object.assign(new Error("image-request-failed"), { code: result?.error ?? "failed", headers: result?.headers, ticketId: result?.ticketId }); return result; };
-    this.imagePresenter.sync({ enabled: this.imageSettings.enabled && !this.state.vaultLocked, generating: this.adapter.isGenerating(), worldId: this.currentScene().worldId, chatId: this.adapter.getChatId(), chatUrl: location.href, records: this.illustrations, entities: this.entities, settings: this.imageSettings, locale: this.state.locale, actions: {
-      onGenerate: async input => (await call({ type: "DR_IMAGE_GENERATE", input })).illustration,
+    this.imagePresenter.sync({ enabled: this.imageSettings.enabled && !this.state.vaultLocked, generating: this.adapter.isGenerating(), worldId: this.currentScene().worldId, chatId: this.adapter.getChatId(), chatUrl: location.href, records: this.illustrations, attempts: this.currentBinding()?.illustrationAttempts ?? [], entities: this.entities, settings: this.imageSettings, locale: this.state.locale, actions: {
+      onCreate: async (target, text) => this.generateIllustration(target, text),
+      onRepeat: async (target, id, attempt) => { await call({ type: "DR_IMAGE_REPEAT", target, id, attempt }); await this.reload(); },
       onRemove: async (target, id) => { await call({ type: "DR_IMAGE_REMOVE", target, id }); },
       onDownload: async ticketId => { await call({ type: "DR_IMAGE_OPEN_DOWNLOAD", ticketId }); },
-      onSaveProfile: async (entityId, profile, expected) => { const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId; if (!chatId || !worldId) throw new Error("scene-changed"); await call({ type: "DR_IMAGE_PROFILE", target: { worldId, chatId, chatUrl: location.href, messageKey: "profile" }, entityId, profile, expected }); },
-      onDelta: async (canonical, scene, name) => this.generateCharacterText({ field: { key: "image-scene", label: imageText(this.state.locale, "delta"), scope: "scene", maxLength: 1200, contentLevel: this.imageSettings.adultConfirmed === true ? this.imageSettings.contentLevel : "off" }, currentText: "", reference: { name, appearance: canonical, completedScene: scene } }),
     } });
   }
+  private async generateIllustration(target: import("../core/image-messages").ImageTarget, text: string): Promise<void> {
+    if (this.state.vaultLocked || this.adapter.isAuthenticationPage() || this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId) throw { code: "changed" };
+    if (this.adapter.isGenerating() || this.pendingService || this.preparingService || this.characterTextWaiter) throw { code: "busy" };
+    if (this.adapter.getDraft().trim()) throw { code: "draftBusyImage" };
+    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw { code: result?.error ?? "failed", ticketId: result?.ticketId }; return result; };
+    const selectedLevel = this.imageSettings.contentLevel;
+    const { attempt } = await call({ type: "DR_IMAGE_START", target });
+    try {
+      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: 6000 }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(this.entities.filter(e => e.worldId === target.worldId)), contentLevel: this.imageSettings.contentLevel } }, attempt);
+      if (this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId || this.state.vaultLocked || this.imageSettings.contentLevel !== selectedLevel) throw { code: "changed" };
+      const row = nativeMessageRows(document).find(row => nativeMessageIdentity(row) === target.messageKey);
+      if (row && illustrationSceneText(row) !== text) throw { code: "changed" };
+      await call({ type: "DR_IMAGE_RENDER", target, id: attempt.id, plan: parseImageScenePlan(value) });
+    } catch (error) {
+      const code = error instanceof Error && error.message === "invalidPlan" ? "invalidPlan" : imageErrorKey(error);
+      // The background keeps the original request after a provider failure.
+      await browser.runtime.sendMessage({ type: "DR_IMAGE_FAIL", target, id: attempt.id, error: code } satisfies import("../core/image-messages").ImageMessage).catch(() => undefined);
+      throw Object.assign(new Error(code), { code });
+    } finally { await this.reload(); }
+  }
+  private readonly selfieJobs = new Set<string>();
+  private selfieScanTimer = 0;
   private syncScenePhotos() {
-    this.scenePhotos.sync(this.currentBinding(), this.currentScene().worldId, this.entities, this.state.locale, !this.state.vaultLocked && this.settings.characterSheetsEnabled === true);
+    const binding = this.currentBinding(), worldId = this.currentScene().worldId, chatId = this.adapter.getChatId();
+    const enabled = !this.state.vaultLocked && this.settings.characterSheetsEnabled === true;
+    const run = async (photo: import("../core/types").ScenePhoto, retry = false) => {
+      if (!worldId || !chatId || !enabled || !this.imageSettings.enabled) return;
+      const key = [worldId, chatId, photo.imageKey].join(":");
+      if (this.selfieJobs.has(key)) return;
+      this.selfieJobs.add(key);
+      try {
+        const target = { worldId, chatId, chatUrl: location.href, messageKey: photo.messageKey };
+        const savedImage = this.illustrations.find(i => i.id === photo.generation?.illustrationId);
+        const result = retry && savedImage?.request ? await browser.runtime.sendMessage({ type: "DR_IMAGE_REPEAT", target, id: savedImage.id } satisfies import("../core/image-messages").ImageMessage) : await browser.runtime.sendMessage({ type: "DR_IMAGE_SELFIE", target: { worldId, chatId, chatUrl: location.href, messageKey: photo.messageKey }, entityId: photo.entityId, turnKey: photo.turnKey, retry } satisfies import("../core/image-messages").ImageMessage);
+        if (retry && !result?.ok) this.showToast(imageText(this.state.locale, result?.error ?? "failed"));
+      } finally { this.selfieJobs.delete(key); void this.reload(); }
+    };
+    this.scenePhotos.sync(binding, worldId, this.entities, this.state.locale, enabled, { illustrations: this.illustrations, generationEnabled: this.imageSettings.enabled, onRetry: photo => run(photo, true), onRemove: async photo => { if (!worldId || !chatId || !photo.generation?.illustrationId) return; await browser.runtime.sendMessage({ type: "DR_IMAGE_REMOVE", target: { worldId, chatId, chatUrl: location.href, messageKey: photo.messageKey }, id: photo.generation.illustrationId } satisfies import("../core/image-messages").ImageMessage); await this.reload(); }, onDownload: async ticketId => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_OPEN_DOWNLOAD", ticketId } satisfies import("../core/image-messages").ImageMessage); if (!result?.ok) this.showToast(imageText(this.state.locale, result?.error ?? "failed")); } });
+    if (!enabled || !this.imageSettings.enabled || this.adapter.isGenerating()) return;
+    const pending = binding?.scenePhotos?.filter(photo => photo.worldId === worldId && photo.generation && ["queued", "working"].includes(photo.generation.status)) ?? [];
+    const queued = pending.find(photo => photo.createdAt + SELFIE_DELAY <= Date.now() && !this.selfieJobs.size);
+    if (queued) void run(queued).catch(() => undefined);
+    if (pending.length && !this.selfieScanTimer) this.selfieScanTimer = window.setTimeout(() => { this.selfieScanTimer = 0; this.scheduleScan(); }, 2000);
+    if (!pending.length) { window.clearTimeout(this.selfieScanTimer); this.selfieScanTimer = 0; }
   }
   private clearPrivateState() {
     if (this.characterTextWaiter) this.settleCharacterText(this.characterTextWaiter.id, undefined, "vault-locked");
+    window.clearTimeout(this.selfieScanTimer); this.selfieScanTimer = 0;
     this.scenePhotos.clear(); this.imagePresenter.clear(); this.illustrations = []; closePortraitViewer(); clearSelfieImageCache();
     this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
@@ -510,7 +555,7 @@ class PageController {
     const characterScene = world ? this.currentBinding()?.characterScenes?.[world.id] ?? handoffCharacterScene(this.appliedSnapshot, world.id) : undefined;
     const profilesEnabled = !!(world && this.settings.characterSheetsEnabled && !this.state.vaultLocked);
     const sheetsEnabled = profilesEnabled && !!chatId;
-    const characterContext = profilesEnabled ? characterInstruction(world!.id, chatId ?? requestChatId ?? "", characterEntities, characterScene, emotionsFor(world?.characterEmotions ?? this.settings.characterEmotions), scene.focusIds, [draft, ...this.adapter.getRecentMessages(2)].join("\n"), characterRequestId, this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, !!this.pendingService) : "";
+    const characterContext = profilesEnabled ? characterInstruction(world!.id, chatId ?? requestChatId ?? "", characterEntities, characterScene, emotionsFor(world?.characterEmotions ?? this.settings.characterEmotions), scene.focusIds, [draft, ...this.adapter.getRecentMessages(2)].join("\n"), characterRequestId, this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, !!this.pendingService, this.imageSettings.enabled && isSelfieRequest(draft)) : "";
     const characterScope = `${scene.worldId}:${chatId}`;
     if (this.characterScan && this.characterScan.scope !== characterScope) { this.characterScan = null; this.characterStatus = "idle"; }
     this.state.characters = sheetsEnabled ? { relationshipsEnabled: this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, relationshipDisplay: this.settings.relationshipDisplay, worldId: world!.id, chatId: chatId!, base: characterRevision(characterEntities, characterScene), entities: characterEntities, scene: characterScene, emotions: emotionsFor(world?.characterEmotions ?? this.settings.characterEmotions), status: this.characterStatus, openId: this.state.characters?.openId } : undefined;
@@ -694,6 +739,7 @@ class PageController {
         const next = await repository.addCharacterEmotion({ worldId, chatId: cast.chatId, chatUrl: location.href, base: cast.base }, name);
         await this.reload(); return next;
       }}
+      onAskSelfie={id => this.askSelfie(id)}
       onSaveCharacter={(edit) => this.saveCharacter(edit)}
       onGenerateCharacterText={draft => this.generateCharacterText(draft)}
       onRequestCharacterFact={async (targetEntityId, brief) => { const result = await this.runService({ id: createId("service"), type: "memory-analysis", targetEntityId, brief, bookId: this.currentScene().bookId, createdAt: Date.now() }); if (!result.ok) throw new Error(result.error); }}
@@ -1019,10 +1065,25 @@ class PageController {
     window.clearTimeout(waiter.timer); this.characterTextWaiter = null;
     if (error) waiter.reject(new Error(error)); else waiter.resolve(text ?? "");
   }
-  private generateCharacterText(draft: CharacterTextRequest): Promise<string> {
+  private async askSelfie(entityId: string): Promise<void> {
+    const cast = this.state.characters, person = cast?.entities.find(e => e.id === entityId);
+    if (!person || person.characterSheet?.protagonist || this.state.vaultLocked || this.adapter.isAuthenticationPage()) throw new Error("scene-changed");
+    if (this.adapter.isGenerating() || this.pendingService || this.preparingService) throw new Error("busy");
+    if (this.adapter.getDraft().trim()) throw new Error("draft-not-empty");
+    const available = this.imageSettings.enabled || (person.characterSheet?.selfieCategories?.some(c => c.images.length) ?? false) || Object.keys(person.characterSheet?.sprites ?? {}).some(k => /^(?:selfie|селфи)/iu.test(k));
+    if (!available) { this.showToast(imageText(this.state.locale, "disabled")); throw new Error("image-disabled"); }
+    const url = location.href, worldId = cast!.worldId;
+    const prompt = this.state.locale === "ru" ? person.name + ", пришли мне селфи, если тебе комфортно. Как ты сейчас выглядишь и где находишься?" : person.name + ", could you send me a selfie if you feel comfortable? What do you look like and where are you now?";
+    await this.updateContext(prompt);
+    if (location.href !== url || this.currentScene().worldId !== worldId) throw new Error("scene-changed");
+    if (this.adapter.getDraft().trim()) throw new Error("draft-not-empty");
+    if (!this.adapter.setDraft(prompt)) throw new Error("unavailable");
+    if (!this.adapter.submitDraft()) throw new Error("unavailable");
+  }
+  private generateCharacterText(draft: CharacterTextRequest, imageAttempt?: import("../core/image-plan").ImageAttempt): Promise<string> {
     if (!validCharacterTextRequest(draft)) return Promise.reject(new Error("invalid-brief"));
     if (this.characterTextWaiter) return Promise.reject(new Error("busy"));
-    const request: ServiceRequest = { id: createId("service"), type: "character-text", characterText: draft, bookId: this.currentScene().bookId, createdAt: Date.now() };
+    const request: ServiceRequest = { id: createId("service"), type: "character-text", characterText: draft, ...(imageAttempt ? { imageAttemptId: imageAttempt.id, imageMessageKey: imageAttempt.messageKey } : {}), bookId: this.currentScene().bookId, createdAt: Date.now() };
     const url = location.href, worldId = this.currentScene().worldId;
     const promise = new Promise<string>((resolve, reject) => {
       const timer = window.setTimeout(() => { this.settleCharacterText(request.id, undefined, "service-failed"); if (this.pendingService?.id === request.id) void this.endUnusableService(this.pendingService); }, SERVICE_TIMEOUT_MS + 1000);
@@ -1046,7 +1107,7 @@ class PageController {
     this.processingService = true;
     try {
       let result: string | undefined, error: string | undefined;
-      try { result = characterFieldResult(raw, request.characterTextLimit ?? 1200); } catch (cause) { error = cause instanceof Error ? cause.message : "invalid-result"; }
+      try { result = request.imagePlan ? JSON.stringify(parseImageScenePlan(raw)) : characterFieldResult(raw, request.characterTextLimit ?? 1200); } catch (cause) { error = cause instanceof Error ? cause.message : "invalid-result"; }
       const found = this.syncCharacterTextServices().map(item => ({ ...item, chatId: request.chatId! }));
       const turns = [...this.characterTextTurns.filter(old => !found.some(item => item.requestId === old.requestId)), ...found];
       if (!await this.saveTabState({ service: null, characterTextTurns: turns }, { serviceId: request.id })) return;
@@ -1056,6 +1117,7 @@ class PageController {
       const waiter = this.characterTextWaiter;
       if (await repository.isLocked()) error = "vault-locked";
       else if (waiter && (location.href !== waiter.url || this.currentScene().worldId !== waiter.worldId)) error = "scene-changed";
+      if (request.imagePlan && !waiter && request.imageAttemptId && request.imageMessageKey && request.worldId && request.chatId) await browser.runtime.sendMessage({ type: "DR_IMAGE_FAIL", target: { worldId: request.worldId, chatId: request.chatId, chatUrl: request.chatUrl!, messageKey: request.imageMessageKey }, id: request.imageAttemptId, error: "expired" } satisfies import("../core/image-messages").ImageMessage).catch(() => undefined);
       this.settleCharacterText(request.id, result, error);
       await this.reload();
     } catch { this.settleCharacterText(request.id, undefined, "service-failed"); await this.endUnusableService(request).catch(() => undefined); }
@@ -1135,7 +1197,7 @@ class PageController {
       const prompt = [basePrompt.replace("[DeepRole Service]\n", `[DeepRole Service]\n[Request ID: ${request.id}]\n`), reference, selectedMemory].filter(Boolean).join("\n\n");
       // Keep only correlation metadata in session storage, not the user's lore brief.
       delete request.brief;
-      if (request.type === "character-text") request.characterTextLimit = request.characterText!.field.maxLength;
+      if (request.type === "character-text") { request.characterTextLimit = request.characterText!.field.maxLength; request.imagePlan = request.characterText!.field.key === "image-plan"; }
       delete request.characterText;
       const preparedError = guard();
       if (preparedError) return { ok: false, error: preparedError };
@@ -1627,7 +1689,7 @@ class PageController {
           if (scene.worldId && characterChatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked) {
             const entities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character");
             const characterScene = this.currentBinding()?.characterScenes?.[scene.worldId] ?? handoffCharacterScene(this.appliedSnapshot, scene.worldId);
-            delivery.characterRequest = { id, worldId: scene.worldId, chatId: characterChatId, base: characterRevision(entities, characterScene), createdAt: Date.now(), accepted: false, relationshipsEnabled: !this.pendingService && this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === scene.worldId)?.relationshipsEnabled !== false };
+            delivery.characterRequest = { id, worldId: scene.worldId, chatId: characterChatId, base: characterRevision(entities, characterScene), createdAt: Date.now(), accepted: false, generatedSelfiesEnabled: !this.pendingService && this.imageSettings.enabled && isSelfieRequest(draft), relationshipsEnabled: !this.pendingService && this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === scene.worldId)?.relationshipsEnabled !== false };
             if (!await this.saveTabState({ characterRequest: delivery.characterRequest })) throw new Error("context-changed");
           }
           this.assertScope(delivery.scope);

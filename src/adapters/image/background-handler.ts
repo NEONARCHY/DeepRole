@@ -26,6 +26,11 @@ export async function handleImageMessage(message: ImageMessage, sender: ImageSen
     const tab = await browser.tabs.get(sender.tab.id);
     if (!tab.url || !isSameDeepSeekChat(target.chatUrl, tab.url, target.chatId)) throw new ImageApiError("changed");
     if (message.type === "DR_IMAGE_GENERATE") { if (!validImageJob(message.input)) throw new ImageApiError("invalid"); return { ok: true, illustration: await imageWorkerOperation(() => jobs.run(message.input)) }; }
+    if (message.type === "DR_IMAGE_START") return { ok: true, attempt: await jobs.start(target) };
+    if (message.type === "DR_IMAGE_RENDER") return { ok: true, illustration: await imageWorkerOperation(() => jobs.render(target, message.id, message.plan)) };
+    if (message.type === "DR_IMAGE_REPEAT") return { ok: true, illustration: await imageWorkerOperation(() => jobs.repeat(target, message.id, message.attempt === true)) };
+    if (message.type === "DR_IMAGE_FAIL") { await jobs.fail(target, message.id, { code: message.error }); return { ok: true }; }
+    if (message.type === "DR_IMAGE_SELFIE") return { ok: true, illustration: await imageWorkerOperation(() => jobs.selfie(target, message.entityId, message.turnKey, message.retry === true)) };
     if (message.type === "DR_IMAGE_REMOVE") await jobs.remove(target, message.id);
     else if (message.type === "DR_IMAGE_PROFILE") await jobs.saveProfile(target, message.entityId, message.profile, message.expected);
     else throw new ImageApiError("unsupported");

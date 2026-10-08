@@ -43,7 +43,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(help).toBeFocused();
-    await continuation.locator("summary").click({ position: { x: 35, y: 20 } });
+    await continuation.locator(":scope > summary").click({ position: { x: 35, y: 20 } });
     await expect(continuation).toHaveAttribute("open", "");
     await help.click();
     await page.getByRole("dialog").locator("footer button").click();

@@ -34,12 +34,13 @@ describe("single character field generation", () => {
 });
 describe("hidden character field service DOM", () => {
   const prompt = "[DeepRole Service]\n[Request ID: service-test]\n[DeepRole Character Text]\nWrite only personality.";
-  it("hides only the correlated command and answer, preserving their source", () => {
+  it.each(["Character Text", "Image Plan"])("hides only the correlated %s command and answer, preserving their source", service => {
     document.body.innerHTML = '<article data-message-id="ordinary" data-role="assistant">The gate opened.</article><article data-message-id="request" data-role="user"></article><article data-message-id="reply" data-role="assistant"><div class="ds-markdown">Calm and observant.</div></article>';
-    document.querySelector('[data-message-id=request]')!.textContent = prompt;
+    const command = prompt.replace("Character Text", service);
+    document.querySelector('[data-message-id=request]')!.textContent = command;
     const found = hideCharacterTextServices(); expect(found).toEqual([{ requestId: "service-test", replyIdentity: nativeMessageIdentity(document.querySelector('[data-message-id=reply]')!) }]);
     expect((document.querySelector('[data-message-id=request]') as HTMLElement).style.display).toBe("none");
-    expect(document.querySelector('[data-message-id=request]')!.textContent).toBe(prompt);
+    expect(document.querySelector('[data-message-id=request]')!.textContent).toBe(command);
     expect((document.querySelector('[data-message-id=ordinary]') as HTMLElement).style.display).toBe("");
   });
   it("restores hidden metadata after reload without matching by generated text and restores recycled rows", () => {

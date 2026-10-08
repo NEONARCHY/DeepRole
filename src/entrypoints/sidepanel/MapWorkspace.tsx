@@ -1,3 +1,4 @@
+import { castText } from "../../core/cast-i18n";
 import { Select } from "../shared/Select";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Columns2, Maximize2, Minimize2, Plus, X } from "lucide-react";
@@ -13,7 +14,7 @@ import { relationshipText } from "../../core/relationship-i18n";
 
 interface Props {
   locale: Locale; worlds: WorldProfile[]; initialWorldId: string | null; startInCreate?: boolean; activeWorldId: string | null;
-  onSelect: (id: string) => void; onClose: () => void; onCreate: (draft: { name: string; description: string; useDescriptionInContext: boolean; color: string; relationshipCast?: RelationshipCastDraft }) => Promise<WorldProfile>;
+  onSelect: (id: string) => void; onClose: () => void; onCreate: (draft: { name: string; description: string; useDescriptionInContext: boolean; color: string; relationshipCast?: RelationshipCastDraft; autoPrepareCharacters?: boolean }) => Promise<WorldProfile>;
   render: (world: WorldProfile, pane: { active: boolean; onRegister: (controller: MapPaneController | null) => void; onClose: () => void; onExit: (task: () => void) => void }) => ReactNode;
 }
 
@@ -29,6 +30,7 @@ export function MapWorkspace(props: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [useDescriptionInContext, setUseDescriptionInContext] = useState(true);
+  const [autoPrepareCharacters, setAutoPrepareCharacters] = useState(true);
   const [relationshipCast, setRelationshipCast] = useState<RelationshipCastDraft>(() => structuredClone(EMPTY_RELATIONSHIP_CAST));
   const [castError, setCastError] = useState(false);
   const [color, setColor] = useState<string>(BOOK_COLORS[props.worlds.length % BOOK_COLORS.length]!);
@@ -82,7 +84,7 @@ export function MapWorkspace(props: Props) {
     if (new Set(castNames).size !== castNames.length) { setCastError(true); root.current?.querySelector<HTMLDetailsElement>(".dr-bond-setup")?.setAttribute("open", ""); return; }
     setCastError(false);
     const pane = creating; const title = name.trim();
-    await withLeave([pane], async () => { const world = await props.onCreate({ name: title, description: description.trim(), useDescriptionInContext: useDescriptionInContext && Boolean(description.trim()), color, ...(relationshipCast.hero.trim() || relationshipCast.people.length ? { relationshipCast } : {}) }); if (!mounted.current) return; setIds((old) => old.map((value, index) => index === pane ? world.id : value)); setActive(pane); props.onSelect(world.id); setCreating(null); setName(""); setDescription(""); setRelationshipCast(structuredClone(EMPTY_RELATIONSHIP_CAST)); });
+    await withLeave([pane], async () => { const world = await props.onCreate({ autoPrepareCharacters, name: title, description: description.trim(), useDescriptionInContext: useDescriptionInContext && Boolean(description.trim()), color, ...(relationshipCast.hero.trim() || relationshipCast.people.length ? { relationshipCast } : {}) }); if (!mounted.current) return; setIds((old) => old.map((value, index) => index === pane ? world.id : value)); setActive(pane); props.onSelect(world.id); setCreating(null); setName(""); setDescription(""); setRelationshipCast(structuredClone(EMPTY_RELATIONSHIP_CAST)); });
   }
   function toggleSize() {
     const next = mode === "compact" ? "full" : "compact";
@@ -106,6 +108,7 @@ export function MapWorkspace(props: Props) {
       <label className="lm-create-check"><input type="checkbox" checked={useDescriptionInContext} disabled={busy} onChange={(event) => setUseDescriptionInContext(event.target.checked)} /><span>{m("useDescriptionInChat")}</span></label>
       <fieldset className="lm-create-colors"><legend>{m("worldColor")}</legend>{BOOK_COLORS.map((option, index) => <label key={option} className={color === option ? "is-selected" : ""} title={`${m("worldColor")} ${index + 1}`}><input type="radio" name="world-color" value={option} aria-label={`${m("worldColor")} ${index + 1}`} checked={color === option} disabled={busy} onChange={() => setColor(option)} /><span style={{ background: option }} /></label>)}</fieldset>
       {!relationshipCast.hero.trim() && <p className="lm-create-note">{m("emptyWorldHint")}</p>}
+      <label className="lm-create-check"><input type="checkbox" checked={autoPrepareCharacters} disabled={busy} onChange={e => setAutoPrepareCharacters(e.target.checked)} /><span>{castText(props.locale, "auto")}</span></label><p className="lm-create-note">{castText(props.locale, "autoHint")} {!description.trim() && castText(props.locale, "emptyHint")}</p>
       <RelationshipSetup locale={props.locale} value={relationshipCast} onChange={value => { setRelationshipCast(value); setCastError(false); }} disabled={busy} />
       {castError && <p className="lm-history-error" role="alert">{relationshipText(props.locale, "duplicateNames")}</p>}
       <div className="lm-create-actions"><button className="button secondary" type="button" disabled={busy} onClick={() => setCreating(null)}>{m("cancel")}</button><button className="button primary" disabled={busy || !name.trim()} type="submit">{relationshipCast.hero.trim() ? relationshipText(props.locale, "createWorld") : m("createEmpty")}</button></div>

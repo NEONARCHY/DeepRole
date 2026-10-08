@@ -243,6 +243,11 @@ export function syncSceneChoiceCards(enabled: boolean, generating: boolean, loca
   if (target && recovery && !target.row.nextElementSibling?.matches(RECOVERY)) {
     target.row.after(createRecoveryCard(locale, target.signature, recovery, target.row.ownerDocument));
   }
+  const recoveryCard = target?.row.nextElementSibling;
+  if (recoveryCard instanceof HTMLElement && recoveryCard.matches(RECOVERY)) {
+    recoveryCard.dataset.deeproleAdaptive = String(presentation?.adaptiveLayout !== false);
+    fitAdaptiveChoices(recoveryCard);
+  }
   if (!active) { if (!generating && !waiting) stopFollowing(root); return; }
   const blockText = (active.element.textContent ?? "").slice(active.parsed.start, active.parsed.end);
   const alreadyHidden = [...active.element.querySelectorAll<HTMLElement>(HIDDEN)]

@@ -19,6 +19,7 @@ export function validRelationshipProfile(v: unknown): v is RelationshipProfile {
   return object(v) && (v.stageBehavior === undefined || object(v.stageBehavior) && Object.entries(v.stageBehavior).every(([stage, behavior]) => ["guarded", "acquaintance", "trusting", "close"].includes(stage) && text(behavior, 240)))
     && (v.reactions === undefined || text(v.reactions, 600)) && typeof v.enabled === "boolean" && scores(v.initial) && scores(v.thresholds)
     && ["slow", "balanced", "open"].includes(String(v.pace)) && typeof v.romance === "boolean" && text(v.boundaries, 600)
+    && (v.initialCompleted === undefined || ids(v.initialCompleted) && Array.isArray(v.milestones) && v.initialCompleted.every(id => (v.milestones as { id: string }[]).some(m => m.id === id)))
     && Array.isArray(v.milestones) && v.milestones.length <= 8 && v.milestones.every(m => object(m) && key(m.id) && text(m.label, 100) && !!m.label.trim() && (m.required === undefined || typeof m.required === "boolean"))
     && new Set(v.milestones.map(m => m.id)).size === v.milestones.length;
 }
@@ -38,7 +39,7 @@ export function validRelationshipPatches(v: unknown): v is RelationshipPatch[] {
     && new Set(v.map(p => p.id)).size === v.length;
 }
 export function relationshipState(profile: RelationshipProfile, state?: RelationshipState): RelationshipState {
-  return state ?? { ...profile.initial, locked: false, completed: [], history: [] };
+  return state ?? { ...profile.initial, locked: false, completed: profile.initialCompleted ?? [], history: [] };
 }
 export function relationshipStage(state: Pick<RelationshipState, "trust" | "affinity">): RelationshipStage {
   return state.trust >= 70 && state.affinity >= 65 ? "close" : state.trust >= 50 ? "trusting" : state.trust >= 25 ? "acquaintance" : "guarded";

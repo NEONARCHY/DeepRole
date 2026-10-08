@@ -17,6 +17,49 @@ async function drag(page: Page, handle: Locator, dx: number, dy: number) {
 }
 async function ratio(image: Locator) { const box = (await image.boundingBox())!; expect(box.width / box.height).toBeCloseTo(.75, 3); }
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) test(`player speech portrait updates independently ${locale} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 950 });
+  await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
+  await page.waitForFunction(() => !!(window as any).getCast);
+  const speech = locale === "ru" ? "Разговаривает" : "speaking";
+  const images = await page.evaluate(speech => {
+    const image = (color: string) => {
+      const canvas = document.createElement("canvas"); canvas.width = 60; canvas.height = 80;
+      const context = canvas.getContext("2d")!; context.fillStyle = color; context.fillRect(0, 0, 60, 80);
+      return canvas.toDataURL("image/png");
+    };
+    const neutral = image("#657687"), talking = image("#789d88");
+    const current = (window as any).getCast();
+    (window as any).setCast({ entities: current.entities.map((person: any) => person.id === "hero"
+      ? { ...person, characterSheet: { ...person.characterSheet, sprites: { neutral, [speech]: talking } } }
+      : person) });
+    return { neutral, talking };
+  }, speech);
+  const hero = page.locator('.dr-cast-widget[data-character-id="hero"]');
+  const mira = page.locator('.dr-cast-widget[data-character-id="mira"]');
+  await expect(hero.locator("img")).toHaveAttribute("src", images.neutral);
+  const npcBefore = await mira.locator("small").innerText();
+  await page.evaluate(speech => {
+    const current = (window as any).getCast();
+    (window as any).setCast({ scene: { ...current.scene, states: { ...current.scene.states,
+      hero: { ...current.scene.states.hero, emotion: speech } } } });
+  }, speech);
+  await expect(hero.locator("img")).toHaveAttribute("src", images.talking);
+  await expect(hero.locator("small")).toHaveText(speech);
+  await expect(hero).toHaveAttribute("data-talking", "false");
+  await expect(mira.locator("small")).toHaveText(npcBefore);
+  await ratio(hero.locator("img"));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath(`player-speech-${locale}-${width}.png`) });
+  await page.evaluate(() => {
+    const current = (window as any).getCast();
+    (window as any).setCast({ scene: { ...current.scene, states: { ...current.scene.states,
+      hero: { ...current.scene.states.hero, emotion: "neutral" } } } });
+  });
+  await expect(hero.locator("img")).toHaveAttribute("src", images.neutral);
+  await expect(mira.locator("small")).toHaveText(npcBefore);
+});
+
 for (const width of [320, 1600]) test(`pinned scene keeps portraits with the options at ${width}px`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 800 });
   await page.goto("/tests/fixtures/characters.html?locale=en&pins");
@@ -34,6 +77,13 @@ for (const width of [320, 1600]) test(`pinned scene keeps portraits with the opt
   await expect(card).toHaveAttribute("data-deeprole-choices-pinned", "true");
   const hero = page.locator('.dr-cast-widget[data-character-id="hero"]');
   const mira = page.locator('.dr-cast-widget[data-character-id="mira"]');
+  // The card pin flag precedes the portrait reserve calculation.
+  await expect.poll(async () => {
+    const [c, h, m] = await Promise.all([card.boundingBox(), hero.boundingBox(), mira.boundingBox()]);
+    return !!c && !!h && !!m && h.width > 0 && h.height > 0 && m.width > 0 && m.height > 0 && h.y >= 0 && m.y >= 0 && (width < 700
+      ? h.y + h.height <= c.y && m.y + m.height <= c.y
+      : h.x + h.width <= c.x && m.x >= c.x + c.width);
+  }).toBe(true);
   const before = await Promise.all([card.boundingBox(), hero.boundingBox(), mira.boundingBox()]);
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);

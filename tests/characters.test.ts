@@ -400,11 +400,13 @@ describe("character protocol", () => {
     expect(parseCharacterTurn(block(schema))).not.toBeNull();
     expect(prompt).toContain("latest instruction");
   });
-  it("always keeps the protagonist in the six active profiles", () => {
-    const cast = Array.from({ length: 9 }, (_, i) => ({ ...entity, id: `actor${i}`, name: `Actor ${i}`, characterSheet: { ...entity.characterSheet!, protagonist: i === 8, appearance: `LOOK_${i}` } }));
+  it.each([9, 41])("keeps the last protagonist from %s people in the roster and six active profiles", count => {
+    const cast = Array.from({ length: count }, (_, i) => ({ ...entity, id: `actor${i}`, name: `Actor ${i}`, characterSheet: { ...entity.characterSheet!, protagonist: i === count - 1, appearance: `LOOK_${i}` } }));
     const prompt = characterInstruction("w", "a", cast, undefined, ["neutral"], cast.map(e => e.id), "");
-    expect(prompt).toContain("LOOK_8");
+    expect(prompt).toContain(`LOOK_${count - 1}`);
     expect(prompt.match(/LOOK_/g)).toHaveLength(6);
+    const roster = JSON.parse(prompt.match(/Roster: (.*)\nCurrent profiles/)![1]!);
+    expect(roster).toHaveLength(Math.min(count, 40)); expect(roster.at(-1).player).toBe(true);
   });
   it("accepts a complete neutral update with an ordinary scene around it", () => expect(parseCharacterTurn("Mira smiles.\n" + block(turn()))).toEqual(turn()));
   it.each(["{}", "<deeprole_characters>{}", block(turn()) + block(turn()), block({ ...turn(), present: ["mira", "mira"] }), block({ ...turn(), updates: [turn().updates[0], turn().updates[0]] }), block({ ...turn(), updates: [{ id: "__proto__", state: EMPTY_STATUS }] })])("rejects malformed, duplicate or prototype data: %s", text => expect(parseCharacterTurn(text)).toBeNull());
@@ -416,7 +418,33 @@ describe("character protocol", () => {
     const e = { ...entity, characterSheet: { ...entity.characterSheet!, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA" } } };
     const prompt = characterInstruction("w", "a", [e], undefined, ["neutral", "Focused"], [], "");
     expect(prompt).toContain("Focused"); expect(prompt).toContain("Blue coat"); expect(prompt).not.toContain("base64"); expect(prompt).not.toContain("sprites"); expect(prompt).not.toContain("ORIGINAL LORE");
-    expect(prompt.length).toBeLessThan(2600);
+    // Includes the player-specific speech/action contract, still bounded for context costs.
+    expect(prompt.length).toBeLessThan(3400);
+  });
+  it.each(["Разговаривает", "speaking"])("explains the player avatar and preserves the known state for %s", speaking => {
+    const hero: SceneEntity = { ...entity, id: "hero", name: "Leon", characterSheet: { ...EMPTY_CHARACTER, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA", [speaking]: "data:image/png;base64,BBBB", retired: "data:image/png;base64,CCCC", angry: "data:image/png;base64,DDDD" }, blockedEmotions: ["angry"] } };
+    const state = { ...EMPTY_STATUS, condition: "Safe", goal: "Find the key", stats: [{ label: "Energy", value: "Rested" }] };
+    const scene = { revision: "current", presentIds: ["hero", "mira"], partnerIds: ["mira"], states: { hero: state }, updatedAt: 1 };
+    const prompt = characterInstruction("w", "a", [entity, hero], scene, ["neutral", speaking, "angry"], [], 'I say: "I found the key."', "player-request-123");
+    const avatar = JSON.parse(prompt.match(/Player avatar: (.+)\n/)![1]!);
+    expect(avatar).toEqual({ id: "Leon", portraitEmotions: ["neutral", speaking] });
+    expect(prompt).toContain("latest user message"); expect(prompt).toContain("EVERY story reply");
+    expect(prompt).toContain("not every message means speaking"); expect(prompt).toContain("The player is never a partners entry");
+    expect(prompt).not.toContain("base64"); expect(prompt).not.toContain("Only neutral mood");
+    const schema = JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)![1]!);
+    expect(schema.updates).toEqual([{ id: "Leon", name: "Leon", state }]);
+    expect(scene.states.hero).toEqual(state);
+  });
+  it("does not ask a read-only service or an unknown destination to update the player avatar", () => {
+    const hero = { ...entity, characterSheet: { ...EMPTY_CHARACTER, protagonist: true } };
+    for (const prompt of [characterInstruction("w", "", [hero], undefined, ["neutral"], [], ""), characterInstruction("w", "a", [hero], undefined, ["neutral"], [], "", "service-request", false, true), characterInstruction("w", "a", [entity], undefined, ["neutral"], [], "")]) expect(prompt).not.toContain("Player avatar:");
+  });
+  it("uses an allowed schema mood for a retired player mood without changing other fields", () => {
+    const hero = { ...entity, characterSheet: { ...EMPTY_CHARACTER, protagonist: true, initialStatus: { ...EMPTY_STATUS, emotion: "retired", goal: "Known goal", stats: [{ label: "Energy", value: "Rested" }] } } };
+    const prompt = characterInstruction("w", "a", [hero], undefined, ["neutral"], [], "");
+    const schema = JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)![1]!);
+    expect(schema.updates[0].state).toEqual({ ...hero.characterSheet.initialStatus, emotion: "neutral" });
+    expect(hero.characterSheet.initialStatus.emotion).toBe("retired");
   });
   it("accepts custom emotion names but rejects duplicate, reserved and missing defaults", () => {
     expect(validEmotions(["neutral", "Смущение"])).toBe(true);
@@ -443,6 +471,22 @@ describe("character protocol", () => {
 });
 
 describe("character storage and isolation", () => {
+  it("updates the protagonist speaking portrait independently from NPCs and restores it for a later action", async () => {
+    const repo = await setup(); const speech = "Разговаривает";
+    const hero: SceneEntity = { ...entity, id: "hero", name: "Leon", characterSheet: { ...EMPTY_CHARACTER, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA", [speech]: "data:image/png;base64,BBBB" } } };
+    await repo.put("entity", hero); const entities = [entity, hero]; const base = characterRevision(entities);
+    const incoming = { ...turn(), base, present: ["hero", "mira"], partners: ["mira"], updates: [{ id: "hero", state: { ...EMPTY_STATUS, emotion: speech } }, ...turn().updates] };
+    await applyCharacterTurn({ ...scope(), base }, incoming, ["neutral", "happy", speech], repo);
+    let scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    expect(portraitSource(hero, scene.states.hero)).toBe(hero.characterSheet!.sprites[speech]);
+    expect(scene.partnerIds).toEqual(["mira"]); expect(scene.states.mira!.emotion).toBe("happy");
+    const nextBase = characterRevision(entities, scene);
+    await applyCharacterTurn({ ...scope(), base: nextBase }, { ...incoming, base: nextBase, updates: [{ id: "hero", state: EMPTY_STATUS }] }, ["neutral", "happy", speech], repo);
+    scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
+    expect(portraitSource(hero, scene.states.hero)).toBe(hero.characterSheet!.sprites.neutral);
+    expect(scene.states.mira!.emotion).toBe("happy"); expect(await repo.get("entity", "hero")).toEqual(hero);
+    expect((await repo.get<ChatBinding>("binding", "binding:b"))!.characterScenes).toBeUndefined();
+  });
   it("accepts the same DeepSeek chat at /chat and /a/chat without accepting another chat or origin", async () => {
     const repo = await setup();
     const canonical = "https://chat.deepseek.com/chat/s/a";

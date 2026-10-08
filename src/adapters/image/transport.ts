@@ -1,4 +1,4 @@
-import { IMAGE_RESPONSE_HEADERS, validExtraParams, validImageProviderConfig, object, type GenerateInput, type ImageProviderConfig, type ImageResponseHeaders, type ImageResult } from "../../core/image-generation";
+import { IMAGE_RESPONSE_HEADERS, validExtraParams, validImageProviderConfig, object, type GenerateInput, type ImageProviderConfig, type ImageResponseHeaders, type ImageResult, validImageAspect } from "../../core/image-generation";
 import { dataImageBlob, MAX_IMAGE_RESPONSE_BYTES, normalizeImage } from "./image-codec";
 import type { ImageCopyKey } from "../../core/image-i18n";
 export class ImageApiError extends Error {
@@ -16,7 +16,11 @@ export function requestBody(config: ImageProviderConfig, input: GenerateInput, s
   // A free model seed is preserved unless a separate fixed character seed would replace it.
   if (input.seed !== undefined && config.extraParams && Object.hasOwn(config.extraParams, "seed")) throw new ImageApiError("seedConflict");
   // No model-parameter parsing, rewriting or allowlist. Only transport collisions are rejected.
-  return { ...config.extraParams, model: config.modelId, prompt: input.prompt, ...(input.seed === undefined ? {} : { seed: input.seed }), ...service };
+  if (input.aspectRatio !== undefined && !validImageAspect(input.aspectRatio)) throw new ImageApiError("invalid");
+  const sizing = input.aspectRatio ? config.kind === "openai-images" ? { size: input.aspectRatio === "16:9" ? "1536x1024" : "1024x1536" } : config.extraParams?.width !== undefined || config.extraParams?.height !== undefined ? { width: input.aspectRatio === "16:9" ? 1024 : 576, height: input.aspectRatio === "16:9" ? 576 : 1024 } : { aspect_ratio: input.aspectRatio } : {};
+  const body = { ...config.extraParams, model: config.modelId, prompt: input.prompt, ...(input.seed === undefined ? {} : { seed: input.seed }), ...sizing, ...service };
+  if (input.aspectRatio && config.kind === "venice-native" && ("width" in sizing || "height" in sizing)) delete body.aspect_ratio;
+  return body;
 }
 export class ImageTransport {
   constructor(readonly config: ImageProviderConfig, private readonly key: string, private readonly permitted: ImagePermissionCheck, private readonly normalizer = normalizeImage, private readonly timeoutMs = 120_000) {}
@@ -45,7 +49,7 @@ export class ImageTransport {
       throw new ImageApiError("failed");
     } finally { clearTimeout(timer); }
   }
-  async image(response: Response, extract: (value: Record<string, unknown>) => unknown): Promise<ImageResult> {
+  async image(response: Response, extract: (value: Record<string, unknown>) => unknown, aspectRatio?: import("../../core/image-generation").ImageAspectRatio): Promise<ImageResult> {
     const headers = responseHeaders(response), type = response.headers.get("content-type")?.split(";")[0]?.trim();
     let blob: Blob;
     if (type && ["image/png", "image/jpeg", "image/webp"].includes(type)) blob = await response.blob();
@@ -66,7 +70,7 @@ export class ImageTransport {
         finally { clearTimeout(timer); }
       } else { try { blob = dataImageBlob(value); } catch { throw new ImageApiError("unsupported", headers); } }
     } else throw new ImageApiError("unsupported", headers);
-    try { return { image: await this.normalizer(blob), headers }; } catch { throw new ImageApiError("unsupported", headers); }
+    try { return { image: await this.normalizer(blob, false, aspectRatio), headers }; } catch { throw new ImageApiError("unsupported", headers); }
   }
 }
 export async function boundedBody(response: Response, max: number, signal: AbortSignal): Promise<ArrayBuffer> {

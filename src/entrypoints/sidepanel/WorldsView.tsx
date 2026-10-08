@@ -1,3 +1,10 @@
+import { CastSetup } from "../shared/CastSetup";
+import { BackupRestore } from "../shared/BackupRestore";
+import { translate } from "../../core/i18n";
+import { parseBackupData, restoreBackup } from "../../storage/backup";
+import { InvalidEncryptedPayloadError } from "../../storage/crypto";
+import type { BackupPayload } from "../../core/types";
+import { castText } from "../../core/cast-i18n";
 import { Select } from "../shared/Select";
 import { useEffect, useId, useRef, useState, type DragEvent as ReactDragEvent, type ReactNode } from "react";
 import { Check, ChevronDown, Plus, Upload, X } from "lucide-react";
@@ -39,6 +46,8 @@ export function WorldsView(props: { defaultEmotions?: string[]; onExport: (world
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [importer, setImporter] = useState(false);
+  const [backup, setBackup] = useState<{ fileName: string; payload: BackupPayload } | null>(null);
+  const importButton = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState<"map" | "list" | "manage">("map");
   const [mapOpen, setMapOpen] = useState(false);
   const [createWorldInMap, setCreateWorldInMap] = useState(false);
@@ -82,10 +91,16 @@ export function WorldsView(props: { defaultEmotions?: string[]; onExport: (world
   return <div className="view-stack worlds-view" aria-busy={busy}>
     <div className="view-title"><div><small>DeepRole</small><h1>{mt("lore")}</h1></div></div>
     <p className="dr-view-subtitle">{world ? x("mapHint") : x("startHint")}</p>
-    <div className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => { setMessage(""); setImporter(true); }}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
+    <div className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button ref={importButton} aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => { setMessage(""); setImporter(true); }}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
     {message && <p className="rp-status" role="status">{message}</p>}
     <WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("createNewWorld")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} />
-    {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onClose={() => setImporter(false)} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
+    {backup && <BackupRestore returnFocus={importButton.current} t={(key, vars) => translate(props.locale, key, vars)} fileName={backup.fileName} payload={backup.payload} onClose={() => setBackup(null)} onRestore={async mode => {
+      await restoreBackup(backup.payload, mode);
+      setBackup(null); setEditor(null);
+      try { await props.onChanged(); setMessage(translate(props.locale, "importSuccess")); }
+      catch { setMessage(t("importRefreshFailed")); }
+    }} />}
+    {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onClose={() => setImporter(false)} onBackup={(payload, fileName) => { setBackup({ payload, fileName }); setImporter(false); }} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
     {editor?.kind === "world" && <WorldEditor locale={props.locale} key={editor.id ?? "new-world"} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
     {world && <section className={worldConnected ? "lore-connection is-attached" : "lore-connection"} aria-label={mt("useWorld")}>
       <strong>{worldConnected ? mt("attached") : mt("libraryOnly")}</strong>
@@ -93,6 +108,7 @@ export function WorldsView(props: { defaultEmotions?: string[]; onExport: (world
       {!worldConnected && <button className="button primary small" disabled={!props.connected || busy} onClick={() => { setBusy(true); void props.onUseWorld(world.id).finally(() => setBusy(false)); }}>{mt("useWorld")}</button>}
       {!props.connected && <p>{mt("noSite")}</p>}
     </section>}
+    {world && <CastSetup key={world.id} worldId={world.id} locale={props.locale} />}
     <div className="rp-view-switch" role="group" aria-label={mt("lore")}>
       <button aria-pressed={view === "map"} onClick={() => setView("map")}>{t("worldMap")}</button>
       <button aria-pressed={view === "list"} onClick={() => setView("list")}>{mt("list")}</button>
@@ -273,9 +289,10 @@ function TemplateEditor(props: { worldId: string; template?: StoryTemplate; enti
   </form>;
 }
 
-function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: boolean; onClose: () => void; onDone: (worldId: string, attach: boolean) => Promise<void> }) {
+function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: boolean; onClose: () => void; onBackup: (payload: BackupPayload, fileName: string) => void; onDone: (worldId: string, attach: boolean) => Promise<void> }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
   const [attach, setAttach] = useState(props.canAttach);
+  const [prepareCast, setPrepareCast] = useState(true);
   const [lore, setLore] = useState<LoreImport | null>(null);
   const items = lore?.items ?? [];
   const [acceptUnsupported, setAcceptUnsupported] = useState(false);
@@ -316,13 +333,26 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     const generation = ++readGeneration.current;
     const current = () => mounted.current && generation === readGeneration.current;
     setBusy(true); setLore(null); setAcceptUnsupported(false); setPack(null); setWorldId(""); setError(""); setFileName(file.name);
+    let fullBackup = false, encrypted = false;
     try {
-      if (importFileTooLarge(file.size, "world")) throw new Error("worldTooLarge");
+      if (importFileTooLarge(file.size, "backup")) throw new Error("backupTooLarge");
       const text = await file.text(); if (!current()) return;
       const data = JSON.parse(text.replace(/^\uFEFF/, ""));
-      if (data?.format === "deeprole-world") { const value = parseWorldPackageData(data, file.size); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
+      encrypted = data?.format === "deeprole-encrypted";
+      fullBackup = encrypted || data?.format === "deeprole-backup";
+      if (fullBackup) {
+        const password = encrypted ? window.prompt(translate(props.locale, "password")) : undefined;
+        if (password === null) return;
+        const payload = await parseBackupData(data, file.size, password);
+        if (current() && !await repository.isLocked() && current()) props.onBackup(payload, file.name);
+      } else if (data?.format === "deeprole-world") { const value = parseWorldPackageData(data, file.size); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
       else { if (file.size > 10_000_000) throw new Error("fileInvalid"); const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
-    } catch (error) { if (current()) setError(t(error instanceof Error && error.message === "worldTooLarge" ? "worldTooLarge" : "fileInvalid")); }
+    } catch (error) {
+      if (!current()) return;
+      const code = error instanceof Error ? error.message : "";
+      setError(code === "backupTooLarge" ? translate(props.locale, "backupTooLarge") : code === "worldTooLarge" ? t("worldTooLarge")
+        : fullBackup ? translate(props.locale, encrypted && !(error instanceof InvalidEncryptedPayloadError) ? "wrongPassword" : "invalidBackup") : t("fileInvalid"));
+    }
     finally { if (current()) setBusy(false); }
   }
   async function importRecords(build: () => DataRecord[], attachToChat: boolean) {
@@ -331,7 +361,13 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     let saved = false;
     try {
       const records = build(); const id = worldId || records.find(record => record.kind === "world")!.id;
+      const worldRow = records.find(r => r.kind === "world" && r.id === id);
+      if (worldRow) (worldRow.data as WorldProfile).autoPrepareCharacters = prepareCast;
       await repository.mergeRecords(records); saved = true;
+      if (!worldRow) await repository.updateRecords(current => {
+        const existing = current.find(r => r.kind === "world" && r.id === id);
+        return { records: existing ? [{ ...existing, data: { ...existing.data as WorldProfile, autoPrepareCharacters: prepareCast } }] : [], removed: [], result: undefined };
+      });
       if (mounted.current) setCommittedImport({ worldId: id, attach: attachToChat });
       await props.onDone(id, attachToChat);
     }
@@ -371,6 +407,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     <p className="rp-hint">{props.locale === "ru" ? "Также поддерживается память из " : "You can also import memory from "}<a href="https://github.com/EdgeTypE/better-deepseek" target="_blank" rel="noopener noreferrer">Better Deepseek (BDS)</a>.</p>
     {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
     {props.canAttach && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label><p className="rp-hint">{menuText(props.locale, "attachHint")}</p></>}
+    {(pack || items.length > 0) && <><label className="rp-check"><input type="checkbox" checked={prepareCast} onChange={e => setPrepareCast(e.target.checked)} />{castText(props.locale, "auto")}</label><p className="rp-hint">{castText(props.locale, "autoHint")}</p></>}
     {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field></>}
     {items.length > 0 && <>
       <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>

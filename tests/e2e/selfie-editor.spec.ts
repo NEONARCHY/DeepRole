@@ -20,7 +20,7 @@ for (const locale of ["ru", "en"] as const) test("selfie collections persist in 
   await characterTab(editor, "images", locale);
   await editor.getByRole("button", { name: imageTitle, exact: true }).click();
   await expect(viewer).toBeVisible(); await page.keyboard.press("Escape");
-  await expect(editor).toBeVisible(); const categories = editor.locator(".dr-selfie-categories");
+  await expect(editor).toBeVisible(); await editor.locator(".dr-selfie-collections > summary").click(); const categories = editor.locator(".dr-selfie-categories");
   await categories.getByRole("button", { name: locale === "ru" ? "Добавить категорию" : "Add category", exact: true }).click();
   await categories.getByRole("textbox", { name: locale === "ru" ? "Когда подходит 1" : "When it fits 1", exact: true }).fill("Casual portrait at home");
   await categories.getByRole("button", { name: new RegExp("^" + (locale === "ru" ? "Добавить фото" : "Add photos")) }).click();

@@ -16,7 +16,7 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1500]) test(`pinned
   const host = page.locator("[data-deeprole-choices-host]");
   await host.getByRole("button", { name: locale === "ru" ? "Закрепить варианты на экране" : "Pin options on screen", exact: true }).click();
   await expect.poll(() => host.evaluate(node => node.parentElement === document.body)).toBe(true);
-  const tools = host.locator(".choice-pin"); await expect(tools).toHaveCount(2);
+  const tools = host.locator("[data-choice-pin]"); await expect(tools).toHaveCount(2);
   await host.getByRole("button", { name: locale === "ru" ? "Закрепить оба портрета" : "Pin both portraits", exact: true }).click();
   const assertFits = async () => {
     const result = await host.evaluate(node => {

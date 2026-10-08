@@ -15,7 +15,7 @@ export async function createBackup(
     format: "deeprole-backup",
     version: 1,
     exportedAt: new Date().toISOString(),
-    records: await repo.rawRecords(),
+    records: (await repo.rawRecords()).filter(record => record.kind !== "cast"),
     settings: await getSettings(),
   };
   const bytes = new Blob([JSON.stringify(payload)]).size;
@@ -24,9 +24,16 @@ export async function createBackup(
 }
 
 export async function parseBackup(text: string, password?: string): Promise<BackupPayload> {
-  if (importFileTooLarge(new Blob([text]).size, "backup")) throw new Error("backupTooLarge");
-  const parsed = JSON.parse(text.replace(/^\uFEFF/, "")) as BackupPayload | EncryptedEnvelope;
-  const payload = parsed.format === "deeprole-encrypted"
+  const bytes = new Blob([text]).size;
+  if (importFileTooLarge(bytes, "backup")) throw new Error("backupTooLarge");
+  return parseBackupData(JSON.parse(text.replace(/^\uFEFF/, "")), bytes, password);
+}
+
+/** The unified file picker already parsed JSON; preserve its records without reparsing image data. */
+export async function parseBackupData(value: unknown, bytes: number, password?: string): Promise<BackupPayload> {
+  if (importFileTooLarge(bytes, "backup")) throw new Error("backupTooLarge");
+  const parsed = value as BackupPayload | EncryptedEnvelope;
+  const payload = parsed?.format === "deeprole-encrypted"
     ? await decryptJson<BackupPayload>(parsed, password ?? "")
     : parsed;
   validateBackup(payload);

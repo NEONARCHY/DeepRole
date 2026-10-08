@@ -1,6 +1,7 @@
 @import "./relationships.css";
 @import "./emotion-availability.css";
 @import "./selfie-categories.css";
+@import "./selfies.css";
 
 .dr-characters { box-sizing:border-box; pointer-events:auto; width:288px; max-width:calc(100vw - 32px); margin-top:var(--dr-space-2); padding:var(--dr-space-3); border:1px solid var(--dr-border); border-radius:var(--dr-radius); background:var(--dr-panel); color:var(--dr-text); font:12px/1.5 system-ui,sans-serif; }
 .dr-portrait-variations{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
@@ -73,6 +74,8 @@
 .dr-character-partner-control .dr-character-hint { margin:0; }
 .dr-character-dialog .dr-character-partner-control .dr-character-check { min-height:44px; cursor:pointer; }
 .dr-character-highlights>span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; padding:var(--dr-space-1) var(--dr-space-2); border-radius:6px; background:var(--dr-bg); font-size:12px; line-height:1.4; }
+.dr-character-row .dr-character-highlights { display:flex; flex-wrap:wrap; gap:var(--dr-space-1); }
+.dr-character-row .dr-character-highlights>span { padding:0 var(--dr-space-2); font-size:11px; line-height:1.5; }
 .dr-character-status { margin:4px 0 8px; }
 .dr-character-hint { display:block; margin:8px 0 0; }
 .dr-character-presence { position:absolute; top:14px; right:14px; height:9px; width:9px; border:1px solid var(--dr-muted); border-radius:50%; background:var(--dr-bg); box-shadow:0 0 0 3px var(--dr-bg); }

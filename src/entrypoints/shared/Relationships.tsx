@@ -37,7 +37,7 @@ export function RelationshipEditor(props: { onGenerate?: CharacterTextGenerator;
   const profile = props.sheet.relationships;
   const bond = !props.profileOnly && profile && props.hero ? relationshipState(profile, props.state.bonds?.[props.hero.id]) : undefined;
   const last = bond?.history[0];
-  const setProfile = (value: RelationshipProfile) => props.onSheet({ ...props.sheet, relationships: value });
+  const setProfile = (value: RelationshipProfile) => props.onSheet({ ...props.sheet, relationships: { ...value, ...(value.initialCompleted ? { initialCompleted: value.initialCompleted.filter(id => value.milestones.some(m => m.id === id)) } : {}) } });
   const setBond = (value: RelationshipState) => { if (props.hero) props.onState({ ...props.state, bonds: { ...props.state.bonds, [props.hero.id]: value } }); };
   const person = { ...props.entity, id: props.entity?.id ?? "new", characterSheet: props.sheet } as SceneEntity;
   return <fieldset className="dr-bond-editor" onClickCapture={preventLabelActivation} disabled={props.disabled}><legend>{t("title")}</legend><p className="dr-character-hint">{t(props.profileOnly ? "profileScope" : "scope")}</p>{props.enabled === false && <p className="dr-bond-note">{t("paused")}</p>}

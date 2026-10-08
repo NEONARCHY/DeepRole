@@ -1,4 +1,5 @@
 .dr-image-settings, .dr-image-form { min-width: 0; }
+.dr-image-settings { font:13px/1.5 system-ui,sans-serif; }
 .dr-image-settings > div, .dr-image-form { display: grid; gap: var(--dr-space-3); }
 .dr-image-settings .field-label { margin: 0; min-width: 0; }
 .dr-image-settings p { margin: 0; overflow-wrap: anywhere; }

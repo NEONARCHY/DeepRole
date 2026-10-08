@@ -125,7 +125,7 @@ test("saved panels stay under the chat title when the sidebar takes space", asyn
   await page.screenshot({ path: info.outputPath("sidebar-panels-wide.png") });
   await page.setViewportSize({ width: 640, height: 950 });
   await expect.poll(async () => Math.min(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().left)))).toBeGreaterThanOrEqual(280);
-  expect(Math.max(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().right)))).toBeLessThanOrEqual(640);
+  await expect.poll(async () => Math.max(...await panels.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().right)))).toBeLessThanOrEqual(640);
   await page.screenshot({ path: info.outputPath("sidebar-panels-compressed.png") });
 });
 

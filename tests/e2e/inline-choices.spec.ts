@@ -66,7 +66,12 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1057]) for (const a
   await scrollToBottom();
   await card.getByRole("button", { name: locale === "ru" ? "Закрепить варианты на экране" : "Pin options on screen", exact: true }).click();
   await expect(card).toHaveAttribute("data-deeprole-choices-pinned", "true");
+  await page.evaluate(() => { document.querySelector("#native-scroll")!.scrollTop -= 400; });
+  const beforeUnpin = await page.evaluate(() => document.querySelector("#native-scroll")!.scrollTop);
   await card.getByRole("button", { name: locale === "ru" ? "Открепить варианты" : "Unpin options", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => document.querySelector("#native-scroll")!.scrollTop)).toBeCloseTo(beforeUnpin, 0);
+  // Unpinning preserves the reading position; returning to the bottom is explicit.
+  await scrollToBottom();
   await expect.poll(async () => { try { await assertClear(); return true; } catch { return false; } }).toBe(true);
   await expect(page.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("MY PRIVATE DRAFT");
   await page.evaluate(() => (window as any).choicesTest.navigate('<article data-role="assistant"><div class="ds-markdown">A new scene.</div></article>'));

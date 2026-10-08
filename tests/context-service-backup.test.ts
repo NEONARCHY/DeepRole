@@ -3,7 +3,7 @@ import { formatMemoryContext, injectContextIntoPrompt } from "../src/core/contex
 import { DEFAULT_SETTINGS } from "../src/core/defaults";
 import { handoffPrompt, loreDraftPrompt, memoryAnalysisPrompt, parseServiceData, SERVICE_END, SERVICE_START } from "../src/core/service-protocol";
 import type { BackupPayload, ContextSelection, MemoryEntry } from "../src/core/types";
-import { createBackup, parseBackup, restoreBackup } from "../src/storage/backup";
+import { createBackup, parseBackup, parseBackupData, restoreBackup } from "../src/storage/backup";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { saveSettings } from "../src/storage/settings";
@@ -99,6 +99,40 @@ describe("portable backups", () => {
     const parsed = await parseBackup(JSON.stringify(backup));
     await restoreBackup(parsed, "replace", target);
     expect((await target.list<MemoryEntry>("entry")).map((item) => item.id)).toEqual(["hero"]);
+  });
+
+  it("accepts an already parsed full backup above the world limit without altering records", async () => {
+    const source = repo(), target = repo();
+    await saveSettings({ ...DEFAULT_SETTINGS, locale: "ru", pinPortraitLeft: true });
+    await source.put("entry", { ...record, content: "  Mira keeps the key.\n\tОригинальный текст.  " });
+    const exported = await createBackup(undefined, source);
+    const data = JSON.parse(JSON.stringify(exported));
+    const before = structuredClone(data);
+    const parsed = await parseBackupData(data, 150_000_000);
+    expect(parsed.records).toEqual(before.records);
+    expect(parsed.settings.pinPortraitLeft).toBe(true);
+    expect(data).toEqual(before);
+    await restoreBackup(parsed, "replace", target);
+    expect(await target.rawRecords()).toEqual(await source.rawRecords());
+  });
+
+  it("decrypts an already parsed backup with the same password contract", async () => {
+    const source = repo(); await source.put("entry", record);
+    const data = JSON.parse(JSON.stringify(await createBackup("file password", source)));
+    const bytes = new Blob([JSON.stringify(data)]).size;
+    expect((await parseBackupData(data, bytes, "file password")).records[0]?.data).toEqual(record);
+    await expect(parseBackupData(data, bytes, "wrong")).rejects.toThrow();
+  });
+
+  it.each([200_000_001, Infinity, NaN, -1])("rejects invalid file size %s before adopting parsed data", async bytes => {
+    const source = repo(); await source.put("entry", record);
+    const data = await createBackup(undefined, source);
+    await expect(parseBackupData(data, bytes)).rejects.toThrow("backupTooLarge");
+    expect(await source.get("entry", record.id)).toEqual(record);
+  });
+
+  it.each([null, [], { format: "deeprole-backup", records: [] }])("rejects malformed parsed backup %j", async data => {
+    await expect(parseBackupData(data, 100)).rejects.toThrow("Invalid DeepRole backup");
   });
 
   it("exports and reads a password-protected file", async () => {

@@ -1,6 +1,7 @@
 import { validateLoreMapLayout } from "./lore-categories";
 import { validLoreChange, validMemoryEntry, validMemoryProposal } from "./proposal-validation";
 import type { DataRecord, DeepRoleSettings } from "./types";
+import { validImageAttempts } from "./image-plan";
 import { DEFAULT_SETTINGS } from "./defaults";
 import { validCharacterSheet, validCharacterScenes, validEmotions } from "./characters";
 import { validPortraitLayouts } from "./portrait-layout";
@@ -30,6 +31,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
   switch (value.kind) {
     case "illustration": return validIllustration(d);
     case "world":
+      if (d.autoPrepareCharacters !== undefined && typeof d.autoPrepareCharacters !== "boolean") return false;
       if (d.relationshipsEnabled !== undefined && typeof d.relationshipsEnabled !== "boolean") return false;
       if (d.characterEmotions !== undefined && !validEmotions(d.characterEmotions)) return false;
       if (typeof d.name !== "string" || typeof d.description !== "string" || typeof d.color !== "string" || !integer(d.contextBudget, 500, 16000) || typeof d.relevanceThreshold !== "number" || ![4, 6, 8, 9].includes(d.relevanceThreshold)) return false;
@@ -46,7 +48,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
     case "template": return id(d.worldId) && typeof d.name === "string" && typeof d.opening === "string" && typeof d.initialState === "string" && strings(d.focusIds);
     case "binding":
       return id(d.chatId) && typeof d.chatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && integer(d.messageCountAtAnalysis, 0, Number.MAX_SAFE_INTEGER) &&
-        (d.memoryOverrides === undefined || object(d.memoryOverrides) && strings(d.memoryOverrides.includedIds) && strings(d.memoryOverrides.excludedIds)) && (d.characterScenes === undefined || validCharacterScenes(d.characterScenes)) && (d.portraitLayouts === undefined || validPortraitLayouts(d.portraitLayouts)) && (d.recoveredReplies === undefined || validRecoveredReplies(d.recoveredReplies)) && (d.scenePhotos === undefined || validScenePhotos(d.scenePhotos));
+        (d.memoryOverrides === undefined || object(d.memoryOverrides) && strings(d.memoryOverrides.includedIds) && strings(d.memoryOverrides.excludedIds)) && (d.characterScenes === undefined || validCharacterScenes(d.characterScenes)) && (d.portraitLayouts === undefined || validPortraitLayouts(d.portraitLayouts)) && (d.recoveredReplies === undefined || validRecoveredReplies(d.recoveredReplies)) && (d.scenePhotos === undefined || validScenePhotos(d.scenePhotos)) && (d.illustrationAttempts === undefined || validImageAttempts(d.illustrationAttempts));
     case "snapshot": return typeof d.title === "string" && typeof d.summary === "string" && typeof d.sourceChatId === "string" && typeof d.sourceChatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && (d.appliedAt === undefined || time(d.appliedAt)) && (d.characterScene === undefined || validCharacterScenes({ snapshot: d.characterScene }));
     case "proposal": return validMemoryProposal(d) && d.items.every((item) => !item.expectedEntry || validDataRecord({ kind: "entry", id: item.expectedEntry.id, data: item.expectedEntry }));
     case "change": return validLoreChange(d) && d.entries.every((pair) => validDataRecord({ kind: "entry", id: pair.after.id, data: pair.after }) && (!pair.before || validDataRecord({ kind: "entry", id: pair.before.id, data: pair.before })));

@@ -16,7 +16,7 @@ const copy = {
     startHint: "Импортируйте JSON из Better Deepseek (BDS) или DeepRole, либо создайте мир и запишите свои правила.",
     addFact: "Запомнить", addFactHint: "Записать факт или правило для этого мира", update: "Обновить лор", updateHint: "Предложения по последним репликам — с вашим подтверждением",
     continue: "Продолжение истории", more: "Дополнительно", libraryTools: "Книги и учебный пример", list: "Список записей", worldOptions: "Мир и профили", advanced: "Подбор и защита",
-    importHelp: "Better Deepseek (BDS), экспорт мира DeepRole или JSON со списком записей: название и текст, необязательно ключи и режим. Перед сохранением проверьте содержимое. Полная резервная копия восстанавливается в настройках.",
+    importHelp: "Better Deepseek (BDS), экспорт мира DeepRole или JSON со списком записей: название и текст, необязательно ключи и режим. Перед сохранением проверьте содержимое. Полная резервная копия распознаётся здесь и в настройках: добавьте недостающее или явно подтвердите полную замену.",
     example: "Нужен пример?", quickGuide: "Запись появится и в списке, и на карте. Выберите ниже, когда передавать её в чат.",
   },
   en: {
@@ -34,7 +34,7 @@ const copy = {
     startHint: "Import JSON from Better Deepseek (BDS) or DeepRole, or create a world and write your own rules.",
     addFact: "Remember", addFactHint: "Save a fact or rule for this world", update: "Update lore", updateHint: "Suggestions from recent messages — with your approval",
     continue: "Continue your story", more: "More options", libraryTools: "Books & tutorial", list: "Memory list", worldOptions: "World & profiles", advanced: "Selection & protection",
-    importHelp: "Use Better Deepseek (BDS), a DeepRole world export, or JSON entries with a title and text, optionally keywords and mode. Preview before saving. Restore full backups in Settings.",
+    importHelp: "Use Better Deepseek (BDS), a DeepRole world export, or JSON entries with a title and text, optionally keywords and mode. Preview before saving. Full backups are recognized here and in Settings: add missing data or explicitly confirm full replacement.",
     example: "Want an example?", quickGuide: "This record will appear in both the list and the map. Choose below when to send it to the chat.",
   },
 } as const;

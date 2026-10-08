@@ -1,15 +1,18 @@
 import { browser } from "wxt/browser";
+import { getImageSettings } from "../storage/image-settings";
+import { approveSelfie } from "../storage/selfie-images";
+import { CastCoordinator, type CastMessage } from "../adapters/cast-coordinator";
 import { handleImageMessage } from "../adapters/image/background-handler";
 import type { DeepRoleMessage } from "../core/messages";
 import { repository } from "../storage/repository";
 import { applyMemoryProposals, discardMemoryProposals, undoLoreChange } from "../storage/memory-proposals";
 import { validMemoryProposal, validMemoryEntry } from "../core/proposal-validation";
 import { migrateLegacyProposals } from "../storage/legacy-proposals";
-import { announceLibraryChange } from "../storage/changes";
+import { announceLibraryChange, LIBRARY_CHANGE_KEY } from "../storage/changes";
 import { storageKeys, getSettings } from "../storage/settings";
 import { saveCharacter, applyCharacterTurn, addCharacterEmotion } from "../storage/characters";
 import { savePortraitLayout } from "../storage/portrait-layout";
-import { bindCharacterTurn, emotionsFor, parseCharacterTurn, relationshipTurnEnabled } from "../core/characters";
+import { bindCharacterTurn, characterTurnKey, emotionsFor, parseCharacterTurn, relationshipTurnEnabled } from "../core/characters";
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { TabSessionStore } from "../storage/tab-session";
 import { captureContinuation, completeContinuation } from "../storage/story-continuation";
@@ -17,6 +20,8 @@ import { acknowledgeRecoveredReply, saveRecoveredReply } from "../storage/recove
 
 export default defineBackground(() => {
   const tabSessions = new TabSessionStore(browser.storage.session);
+  const cast = new CastCoordinator();
+  void cast.auto().catch(() => undefined);
   const browserApi = browser as typeof browser & {
     sidePanel?: {
       setPanelBehavior?: (options: { openPanelOnActionClick: boolean }) => Promise<void>;
@@ -28,10 +33,12 @@ export default defineBackground(() => {
   // Session storage isn't exposed to content scripts by default in Chrome.
   // Relay lock/unlock as a text-free library signal, never expose the vault key.
   browser.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && LIBRARY_CHANGE_KEY in changes) void cast.auto().catch(() => undefined);
     if (area === "session" && storageKeys.sessionKey in changes) void announceLibraryChange();
   });
 
   browser.runtime.onMessage.addListener((message: DeepRoleMessage, sender) => {
+    if (message.type === "DR_CAST" || message.type === "DR_CAST_WORKER") return cast.handle(message as CastMessage, sender);
     if (message.type.startsWith("DR_IMAGE_")) return handleImageMessage(message as import("../core/image-messages").ImageMessage, sender);
     if (message.type === "DR_PING") {
       if (sender.id !== browser.runtime.id) return;
@@ -102,7 +109,13 @@ export default defineBackground(() => {
               const bound = turn.request ? bindCharacterTurn(turn, receipt, message.scope) : turn;
               if (!bound) throw new Error("character-conflict");
               const characterWorld = await repository.get<import("../core/types").WorldProfile>("world", message.scope.worldId);
-              await applyCharacterTurn(message.scope, bound, emotionsFor(characterWorld?.characterEmotions ?? settings.characterEmotions), repository, !!turn.request, relationshipTurnEnabled(turn, receipt, message.scope, settings.relationshipsEnabled !== false));
+              await applyCharacterTurn(message.scope, bound, emotionsFor(characterWorld?.characterEmotions ?? settings.characterEmotions), repository, !!turn.request, relationshipTurnEnabled(turn, receipt, message.scope, settings.relationshipsEnabled !== false), !!turn.request && receipt?.accepted === true && receipt.generatedSelfiesEnabled === true && (await getImageSettings()).enabled);
+              if (turn.request && receipt?.generatedSelfiesEnabled) {
+                const binding = (await repository.list<import("../core/types").ChatBinding>("binding")).find(b => b.chatId === message.scope.chatId);
+                for (const photo of binding?.scenePhotos ?? []) if (photo.generation?.status === "queued" && photo.worldId === message.scope.worldId && photo.turnKey === characterTurnKey(bound)) {
+                  await approveSelfie({ ...message.scope, messageKey: photo.messageKey }, photo);
+                }
+              }
             }
             return { ok: true };
           }
@@ -133,6 +146,7 @@ export default defineBackground(() => {
         : tabSessions.get(sender.tab.id);
     }
     if (message.type === "DR_DATA_CHANGED") {
+      void cast.auto().catch(() => undefined);
       // An embedded extension frame can report the same tab as the content script.
       // Include that tab too, otherwise edits inside the menu leave chat context stale.
       return browser.tabs.query({ url: "https://chat.deepseek.com/*" }).then((tabs) => Promise.all(tabs.filter((tab) => tab.id).map((tab) => browser.tabs.sendMessage(tab.id!, message).catch(() => undefined))));
@@ -156,6 +170,7 @@ export default defineBackground(() => {
   });
   browser.tabs.onRemoved.addListener((tabId) => {
     void tabSessions.remove(tabId);
+    void cast.removed(tabId);
   });
 
   browser.contextMenus.onClicked.addListener((info, tab) => {

@@ -1,9 +1,11 @@
 export type Locale = "ru" | "en";
 export type ActivationMode = "always" | "smart" | "manual";
 export type MemoryPriority = "low" | "normal" | "high";
-export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration";
+export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration" | "cast";
 
 export interface WorldProfile {
+  /** User opted into one preparation when this world first has lore. */
+  autoPrepareCharacters?: boolean;
   relationshipsEnabled?: boolean;
   characterEmotions?: string[];
   useDescriptionInContext?: boolean;
@@ -40,9 +42,13 @@ export interface SceneEntity {
 }
 
 export interface CharacterSheet {
+  /** Starting narrative facts extracted from approved lore; no chat progress. */
+  initialStatus?: CharacterStatus;
   imageGeneration?: import("./image-generation").CharacterImagePrompt;
   /** Local photo collections. Only their names and context rules reach the model. */
   selfieCategories?: SelfieCategory[];
+  /** Access to generated selfies; existing collections keep their own rules. */
+  selfieAccess?: { minTrust: number; minAffinity: number };
   /** Player-edited world-wide exclusions. New world emotions are allowed by default. */
   blockedEmotions?: string[];
   attributes?: CharacterAttribute[];
@@ -68,7 +74,19 @@ export interface SelfieCategory {
   minAffinity: number;
   images: string[];
 }
+export interface SelfieGeneration {
+  request?: import("./image-plan").ImageReplay;
+  reference?: "neutral" | "suggestive";
+  scene: string;
+  appearance?: string;
+  status: "queued" | "working" | "ready" | "failed";
+  updatedAt: number;
+  illustrationId?: string;
+  error?: string;
+  ticketId?: string;
+}
 export interface ScenePhoto {
+  generation?: SelfieGeneration;
   worldId: string;
   entityId: string;
   messageKey: string;
@@ -126,7 +144,7 @@ export interface StoryTemplate {
   updatedAt: number;
 }
 
-export type RecordValue = MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot | WorldProfile | SceneEntity | StoryTemplate | MemoryProposalBatch | LoreChange | import("./image-generation").Illustration;
+export type RecordValue = MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot | WorldProfile | SceneEntity | StoryTemplate | MemoryProposalBatch | LoreChange | import("./image-generation").Illustration | import("./cast-initialization").CastJob;
 export type DataRecord = { kind: RecordKind; id: string; data: RecordValue };
 
 export interface MemoryBook {
@@ -167,6 +185,7 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  illustrationAttempts?: import("./image-plan").ImageAttempt[];
   /** Local references to photos attached to specific native replies. */
   scenePhotos?: ScenePhoto[];
   /** Local visible fragments of assistant replies replaced by DeepSeek's refusal. */
@@ -246,6 +265,7 @@ export interface DeepRoleSettings {
 }
 
 export interface RelationshipProfile {
+  initialCompleted?: string[];
   /** Optional player-authored behavior; no inferred personality or automatic rewards. */
   stageBehavior?: Partial<Record<RelationshipStage, string>>;
   /** Player-authored reactions; never a universal reward formula. */
@@ -418,6 +438,9 @@ export interface VaultConfig {
 export interface ServiceRequest {
   characterText?: import("./character-text").CharacterTextRequest;
   characterTextLimit?: number;
+  imagePlan?: boolean;
+  imageAttemptId?: string;
+  imageMessageKey?: string;
   continuationId?: string;
   /** Observed native reply key, never an inferred id or model-provided selector. */
   replyIdentity?: string;

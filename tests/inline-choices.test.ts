@@ -25,6 +25,14 @@ test("an empty auto-scroll viewport is still the owner before options add overfl
   expect(choiceScrollContainer(host)).toBe(scroll);
 });
 
+test("a short chat follows the options before reserved footer space adds overflow", () => {
+  const { scroll, host } = fixture();
+  Object.defineProperty(scroll, "scrollHeight", { configurable: true, value: 700 });
+  scroll.scrollTop = 0;
+  bindInlineChoices(host);
+  expect(scroll.scrollTop).toBe(112);
+});
+
 test("normal-flow inputs do not receive floating-input geometry", () => {
   const { form } = fixture();
   form.style.position = "static";

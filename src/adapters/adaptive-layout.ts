@@ -26,7 +26,7 @@ export function fitAdaptiveChoices(host: HTMLElement) {
     let pending = false;
     const update = () => {
       if (pending) return; pending = true;
-      doc.defaultView?.requestAnimationFrame(() => { pending = false; doc.querySelectorAll<HTMLElement>("[data-deeprole-choices-host]").forEach(fitAdaptiveChoices); });
+      doc.defaultView?.requestAnimationFrame(() => { pending = false; doc.querySelectorAll<HTMLElement>("[data-deeprole-choices-host],[data-deeprole-choices-recovery]").forEach(fitAdaptiveChoices); });
     };
     doc.defaultView?.addEventListener("resize", update);
     doc.defaultView?.addEventListener("deeprole-layout-change", update);

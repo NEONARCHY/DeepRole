@@ -15,15 +15,19 @@ export async function blobDataUrl(blob: Blob): Promise<string> {
   return `data:${blob.type};base64,${btoa(binary)}`;
 }
 /** Browser-native decoder/canvas also works in the MV3 worker; no DOM or libraries. */
-export async function normalizeImage(blob: Blob, reference = false): Promise<string> {
+export async function normalizeImage(blob: Blob, reference = false, aspectRatio?: import("../../core/image-generation").ImageAspectRatio): Promise<string> {
   if (!["image/png", "image/jpeg", "image/webp"].includes(blob.type) || !blob.size || blob.size > MAX_IMAGE_RESPONSE_BYTES) throw new Error("image-invalid");
   const bitmap = await createImageBitmap(blob);
   try {
     if (!bitmap.width || !bitmap.height || bitmap.width * bitmap.height > 80_000_000) throw new Error("image-invalid");
     const scale = reference ? Math.min(1, Math.sqrt(1_500_000 / (bitmap.width * bitmap.height))) : Math.min(1, 768 / Math.max(bitmap.width, bitmap.height));
-    const canvas = new OffscreenCanvas(Math.max(1, Math.floor(bitmap.width * scale)), Math.max(1, Math.floor(bitmap.height * scale)));
+    const ratio = !reference && aspectRatio ? aspectRatio === "16:9" ? 16 / 9 : 9 / 16 : undefined;
+    const cropWidth = ratio ? Math.min(bitmap.width, bitmap.height * ratio) : bitmap.width;
+    const cropHeight = ratio ? Math.min(bitmap.height, bitmap.width / ratio) : bitmap.height;
+    // Exact 16:9 / 9:16 output even when a provider ignores its sizing parameter; no stretching.
+    const canvas = new OffscreenCanvas(ratio ? aspectRatio === "16:9" ? 768 : 432 : Math.max(1, Math.floor(bitmap.width * scale)), ratio ? aspectRatio === "16:9" ? 432 : 768 : Math.max(1, Math.floor(bitmap.height * scale)));
     const ctx = canvas.getContext("2d"); if (!ctx) throw new Error("image-invalid");
-    ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(bitmap, (bitmap.width - cropWidth) / 2, (bitmap.height - cropHeight) / 2, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
     for (const quality of [.88, .75, .6, .45, .3]) {
       const result = await canvas.convertToBlob({ type: "image/jpeg", quality });
       if (reference ? result.size < 10_000_000 : result.size <= 224_970) { const data = await blobDataUrl(result); if (reference || validPortrait(data)) return data; }
