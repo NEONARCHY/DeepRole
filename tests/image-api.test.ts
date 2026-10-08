@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Blob as NodeBlob } from "node:buffer";
 import { ImageTransport, requestBody, ImageApiError } from "../src/adapters/image/transport";
 import { OpenAiImagesProvider } from "../src/adapters/image/openai-images";
-import { VeniceNativeProvider } from "../src/adapters/image/venice-native";
+import { VeniceNativeProvider, MAX_MULTI_EDIT_REFERENCES, lowestUsdPrice, usdPrices } from "../src/adapters/image/venice-native";
 import { dataImageBlob, normalizeImage } from "../src/adapters/image/image-codec";
 import { ImageJobs } from "../src/storage/image-jobs";
 import { saveImageSettings } from "../src/storage/image-settings";
@@ -33,6 +33,35 @@ describe("documented image adapters (mock fetch only)", () => {
   it.each([[401, "unauthorized"], [402, "balance"], [403, "forbidden"], [415, "unsupported"], [429, "rate"], [500, "server"], [503, "unavailable"]])("maps %s without retries or leaking response body", async (status, code) => { const fetchMock = vi.fn(async () => new Response(secret, { status: status as number })); vi.stubGlobal("fetch", fetchMock); await expect(new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, permitted, normalized)).generate({ prompt: "Ordinary scene" })).rejects.toMatchObject({ code }); expect(fetchMock).toHaveBeenCalledTimes(1); });
   it("never calls the network for a disabled profile or missing permission", async () => { const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock); const config = { ...profile, enabled: false }; await expect(new ImageTransport(config, secret, permitted).request("/models")).rejects.toMatchObject({ code: "disabled" }); await expect(new ImageTransport(profile, secret, async () => false).request("/models")).rejects.toMatchObject({ code: "permission" }); expect(fetchMock).not.toHaveBeenCalled(); });
   it("reads actual Venice metadata without an inventory or guessed price", async () => { const fetchMock = vi.fn(async (url: string) => json({ data: [{ id: url.includes("inpaint") ? "synthetic-edit" : "synthetic-new-model", model_spec: { name: "Synthetic model", privacy: "private", pricing: { usd: .123 }, constraints: { promptCharacterLimit: 850, aspectRatios: ["3:4"], steps: { min: 3, max: 9 } }, capabilities: { maxInputImages: 4 } } }] })); vi.stubGlobal("fetch", fetchMock); const models = await new VeniceNativeProvider(profile, new ImageTransport(profile, secret, permitted)).listModels(); expect(models).toHaveLength(2); expect(models[0]).toMatchObject({ priceUsd: .123, maxInputImages: 4, promptLimit: 850, constraints: { aspectRatios: ["3:4"] } }); expect(models[1]?.supportsEdit).toBe(true); expect(fetchMock).toHaveBeenCalledTimes(2); });
+  it("reads the real nested Venice price shape and the multi-edit reference flag", async () => {
+    // Shapes taken from the live catalog on 2026-10-08: price lives under pricing.inpaint,
+    // and an edit model reports the ability to combine images as a boolean only.
+    expect(lowestUsdPrice({ inpaint: { usd: .04, diem: .04 } })).toBe(.04);
+    expect(lowestUsdPrice({ inpaint: { usd: .04 }, resolutions: { "1K": { usd: .04 }, "2K": { usd: .29 }, "4K": { usd: .98 } }, inputImages: { additional: { usd: .00345 } } })).toBe(.00345);
+    expect(lowestUsdPrice({ inpaint: { diem: .04 } })).toBeUndefined();
+    expect(usdPrices({ resolutions: { "1K": { usd: 1 } } })).toEqual([1]);
+    const catalog = { data: [
+      { id: "qwen-edit-uncensored", type: "inpaint", model_spec: { name: "Qwen Edit Uncensored", privacy: "private", uncensored: true, pricing: { inpaint: { usd: .04, diem: .04 } }, constraints: { combineImages: true, promptCharacterLimit: 1500, aspectRatios: ["auto", "3:4"] } } },
+      { id: "hunyuan-image-v3", type: "image", model_spec: { name: "Hunyuan Image 3.0", privacy: "private", pricing: { inpaint: { usd: .05 } }, constraints: { promptCharacterLimit: 3000 } } },
+    ] };
+    // The adapter asks for both catalogs separately; this mock answers each with the matching type.
+    const fetchMock = vi.fn(async (url: string) => json({ data: catalog.data.filter(model => url.includes("inpaint") ? model.type === "inpaint" : model.type === "image") }));
+    vi.stubGlobal("fetch", fetchMock);
+    const models = await new VeniceNativeProvider(profile, new ImageTransport(profile, secret, permitted)).listModels();
+    const edit = models.find(model => model.id === "qwen-edit-uncensored"), plain = models.find(model => model.id === "hunyuan-image-v3");
+    expect(edit).toMatchObject({ priceUsd: .04, maxInputImages: MAX_MULTI_EDIT_REFERENCES, uncensored: true, supportsEdit: true, privacy: "private" });
+    // No combineImages and no explicit limit: the adapter does not invent a reference count.
+    expect(plain).toMatchObject({ priceUsd: .05, supportsEdit: false }); expect(plain?.maxInputImages).toBeUndefined(); expect(plain?.uncensored).toBeUndefined();
+  });
+  it("never claims more reference images than the documented multi-edit maximum", async () => {
+    const config = { ...profile, kind: "venice-native" as const, editModelId: "synthetic-edit-model", maxReferences: MAX_MULTI_EDIT_REFERENCES };
+    const fetchMock = vi.fn(async () => new Response(Uint8Array.from(atob(realPng), c => c.charCodeAt(0)), { headers: { "content-type": "image/png" } })); vi.stubGlobal("fetch", fetchMock);
+    const transport = new ImageTransport(config, secret, permitted, normalized), provider = new VeniceNativeProvider(config, transport);
+    const url = await provider.edit({ prompt: "Three references", images: Array(MAX_MULTI_EDIT_REFERENCES).fill("data:image/png;base64," + realPng) });
+    expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toMatch(/\/image\/multi-edit$/); expect(url.image).toBe(tinyImage);
+    await expect(provider.edit({ prompt: "Too many", images: Array(MAX_MULTI_EDIT_REFERENCES + 1).fill("data:image/png;base64," + realPng) })).rejects.toMatchObject({ code: "invalid" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("keeps unavailable OpenAI model metadata undefined", async () => { vi.stubGlobal("fetch", vi.fn(async () => json({ data: [{ id: "synthetic-model" }] }))); const models = await new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, permitted)).listModels(); expect(models).toEqual([{ id: "synthetic-model", label: "synthetic-model" }]); });
   it("downloads URL responses without leaking authorization to the image host", async () => { const fetchMock = vi.fn(async (url: string) => url.includes("generations") ? json({ data: [{ url: "https://cdn.example.test/result.png" }] }) : new Response(Uint8Array.from(atob(realPng), c => c.charCodeAt(0)), { headers: { "content-type": "image/png" } })); vi.stubGlobal("fetch", fetchMock); await new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, permitted, normalized)).generate({ prompt: "Forest" }); const second = fetchMock.mock.calls[1] as unknown as [string, RequestInit]; expect(second[1].headers).toBeUndefined(); expect(second[1].credentials).toBe("omit"); expect(second[1].redirect).toBe("error"); });
   it("refuses an unapproved image domain without downloading it", async () => { const fetchMock = vi.fn(async () => json({ data: [{ url: "https://cdn.example.test/result.png" }] })); vi.stubGlobal("fetch", fetchMock); await expect(new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, async url => url.startsWith(profile.baseUrl), normalized)).generate({ prompt: "Forest" })).rejects.toMatchObject({ code: "downloadOrigin" }); expect(fetchMock).toHaveBeenCalledTimes(1); });

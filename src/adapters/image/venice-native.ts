@@ -1,5 +1,22 @@
 import { object, type EditInput, type GenerateInput, type ImageModelInfo, type ImageProvider, type ImageProviderConfig } from "../../core/image-generation";
 import { ImageApiError, ImageTransport, requestBody } from "./transport";
+/**
+ * POST /image/multi-edit documents one to three input images and reports the ability to combine
+ * them only as a boolean (constraints.combineImages). Use the documented maximum, never more.
+ */
+export const MAX_MULTI_EDIT_REFERENCES = 3;
+/** Venice nests prices per mode (inpaint, resolutions, inputImages); the top-level usd key may be absent. */
+export function usdPrices(pricing: Record<string, unknown>, found: number[] = []): number[] {
+  const usd = pricing.usd;
+  if (typeof usd === "number" && Number.isFinite(usd) && usd >= 0) found.push(usd);
+  for (const value of Object.values(pricing)) if (object(value)) usdPrices(value, found);
+  return found;
+}
+/** The cheapest documented price of this model, or undefined when the API reports no amount at all. */
+export function lowestUsdPrice(pricing: Record<string, unknown>): number | undefined {
+  const prices = usdPrices(pricing);
+  return prices.length ? Math.min(...prices) : undefined;
+}
 export class VeniceNativeProvider implements ImageProvider {
   constructor(private readonly config: ImageProviderConfig, private readonly transport: ImageTransport) {}
   async listModels(): Promise<ImageModelInfo[]> {
@@ -12,12 +29,17 @@ export class VeniceNativeProvider implements ImageProvider {
     return json.data.filter(item => object(item) && typeof item.id === "string" && item.id.length <= 200).slice(0, 2000).map(item => {
       const spec = object(item.model_spec) ? item.model_spec : {}, capabilities = object(spec.capabilities) ? spec.capabilities : {}, constraints = object(spec.constraints) ? spec.constraints : {}, pricing = object(spec.pricing) ? spec.pricing : {};
       // Only actual API fields: no guessed prices, resolutions, steps or model-name heuristics.
-      const max = capabilities.maxInputImages ?? constraints.maxInputImages;
+      // An edit model usually reports the reference limit through constraints.combineImages only;
+      // the documented multi-edit contract accepts up to three images. Never exceed that here.
+      const raw = capabilities.maxInputImages ?? constraints.maxInputImages;
+      const max = Number.isInteger(raw) && Number(raw) > 0 ? Number(raw) : constraints.combineImages === true ? MAX_MULTI_EDIT_REFERENCES : undefined;
+      const price = lowestUsdPrice(pricing);
       return { id: item.id as string, label: typeof spec.name === "string" ? spec.name.slice(0, 200) : item.id as string,
         ...(spec.privacy === "private" || spec.privacy === "anonymized" ? { privacy: spec.privacy } : {}),
-        ...(typeof pricing.usd === "number" && Number.isFinite(pricing.usd) && pricing.usd >= 0 ? { priceUsd: pricing.usd } : {}),
-        ...(Number.isInteger(max) && Number(max) > 0 ? { maxInputImages: Number(max) } : {}),
+        ...(price === undefined ? {} : { priceUsd: price }),
+        ...(max === undefined ? {} : { maxInputImages: max }),
         ...(Number.isInteger(constraints.promptCharacterLimit) && Number(constraints.promptCharacterLimit) > 0 ? { promptLimit: Number(constraints.promptCharacterLimit) } : {}),
+        ...(spec.uncensored === true ? { uncensored: true } : {}),
         supportsEdit: type === "inpaint", constraints } satisfies ImageModelInfo;
     });
   }

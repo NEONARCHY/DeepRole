@@ -8,6 +8,7 @@ import { DEFAULT_IMAGE_SETTINGS, type ImageProvider } from "../src/core/image-ge
 import { EMPTY_CHARACTER } from "../src/core/characters";
 import { characterFieldPrompt, validCharacterTextRequest } from "../src/core/character-text";
 import { saveImageSettings } from "../src/storage/image-settings";
+import * as settingsModule from "../src/storage/image-settings";
 import { saveProviderKey } from "../src/storage/image-keys";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { DeepRoleDatabase } from "../src/storage/database";
@@ -49,6 +50,22 @@ it("expires download tickets without any provider request", async () => {
   const { repo, jobs, factory } = await setup(provider()); const id = crypto.randomUUID(); await browser.storage.session.set({ ["deeprole_image_download_" + id]: { input, url: "https://cdn.example.test/image.png", createdAt: Date.now() - 16 * 60_000 } });
   await expect(jobs.download(id)).rejects.toMatchObject({ code: "expired" }); expect(factory).not.toHaveBeenCalled(); await repo.clear();
 });
+it("runs the explicit preset only when the age confirmation is present", async () => {
+  const { repo, jobs, factory } = await setup(provider());
+  await saveImageSettings({ ...DEFAULT_IMAGE_SETTINGS, enabled: true, contentLevel: "adult", adultConfirmed: true, profiles: [profile] });
+  await expect(jobs.run(input)).resolves.toMatchObject({ contentLevel: "adult" });
+  expect(factory).toHaveBeenCalledTimes(1);
+  await repo.clear();
+});
+it("refuses an explicit level whose confirmation is missing, without a provider request", async () => {
+  const { repo, jobs, factory } = await setup(provider());
+  // Defence in depth: an invalid record is rejected on read, and the job gate refuses it too.
+  vi.spyOn(settingsModule, "getImageSettings").mockResolvedValue({ ...DEFAULT_IMAGE_SETTINGS, enabled: true, contentLevel: "adult", adultConfirmed: false, profiles: [profile] });
+  await expect(jobs.run(input)).rejects.toMatchObject({ code: "adultOnly" }); expect(factory).not.toHaveBeenCalled();
+  vi.restoreAllMocks(); await repo.clear();
+});
+// The adapter suite covers the API-reported reference limit and the Venice metadata shapes.
+// Here only the local gates that must hold before any provider is constructed are checked.
 it("blocks duplicate paid requests for one story turn", async () => {
   let finish!: (value: { image: string; headers: {} }) => void; const generate = vi.fn(() => new Promise<{ image: string; headers: {} }>(resolve => { finish = resolve; }));
   const { repo, jobs } = await setup(provider(generate)); const first = jobs.run(input); await expect(jobs.run(input)).rejects.toMatchObject({ code: "busy" }); await vi.waitFor(() => expect(generate).toHaveBeenCalledOnce()); finish({ image: tinyImage, headers: {} }); await first; await repo.clear();
@@ -74,6 +91,6 @@ it("saves only the image profile and rejects a stale appearance edit", async () 
   await expect(jobs.saveProfile(input, entity.id, { ...value, canonical: "Changed" }, null)).rejects.toMatchObject({ code: "changed" }); expect(await repo.get("entity", entity.id)).toMatchObject({ description: entity.description, characterSheet: { imageGeneration: value } }); await repo.clear();
 });
 it("requests a visual scene delta separately, without rewriting stable appearance or sending image bytes", () => {
-  const request = { field: { key: "image-scene", label: "Current scene", scope: "scene" as const, maxLength: 1200 }, currentText: "", reference: { name: "Mira", appearance: "Copper hair", completedScene: "An observatory" } };
+  const request = { field: { key: "image-scene", label: "Current scene", scope: "scene" as const, maxLength: 1200, contentLevel: "off" as const }, currentText: "", reference: { name: "Mira", appearance: "Copper hair", completedScene: "An observatory" } };
   expect(validCharacterTextRequest(request)).toBe(true); const prompt = characterFieldPrompt(request, [], "en"); expect(prompt).toContain("short visual scene description"); expect(prompt).toContain("Do not repeat or rewrite the stable appearance"); expect(prompt).not.toContain("data:image");
 });

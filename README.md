@@ -86,7 +86,7 @@ Upload a batch to the **Image library**, then select pictures and assign emotion
 
 ### Optional image generation
 
-Connect your own image API in **Settings → Images**, grant access and load its current model list. DeepRole includes no preset provider, model inventory or prices. Ordinary illustrations and non-explicit romance use separate connection presets; generation is off by default and only runs when you click.
+Connect your own image API in **Settings → Images**, grant access and load its current model list. DeepRole includes no preset provider, model inventory or prices. Ordinary illustrations, non-explicit romance and an explicit 18+ preset use separate connection presets; the 18+ preset additionally requires an age confirmation in the same section. Generation is off by default and only runs when you click. What counts as acceptable content is decided by your provider and your local law, not by DeepRole: it does not analyse or rewrite your description, and it reports a provider refusal instead of bypassing it. Characters must be fictional.
 
 Use **Create illustration** below a completed story reply. Stable appearance, the current scene, style and seed are separate; any uploaded character image can be a reference. Preview the exact description before sending it. Results stay with that reply, survive reload and can be viewed or deleted. There are no automatic paid retries. Keys stay separate and are not exported; illustrations are included in backups and world packages. [Setup, formats, limits and privacy →](docs/IMAGE-GENERATION.en.md)
 

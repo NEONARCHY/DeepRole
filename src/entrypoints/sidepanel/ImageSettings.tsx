@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { IMAGE_CONTENT_LEVELS, DEFAULT_IMAGE_SETTINGS, validImageProviderConfig, type ImageModelInfo, type ImageProviderConfig, type ImageSettings as Settings } from "../../core/image-generation";
+import { ADULT_CONTENT_LEVEL, IMAGE_CONTENT_LEVELS, DEFAULT_IMAGE_SETTINGS, validImageProviderConfig, type ImageModelInfo, type ImageProviderConfig, type ImageSettings as Settings } from "../../core/image-generation";
 import { imageText, imageErrorKey, type ImageCopyKey } from "../../core/image-i18n";
 import type { Locale } from "../../core/types";
 import { getImageSettings, saveImageSettings } from "../../storage/image-settings";
@@ -15,12 +15,20 @@ export function ImageSettings({ locale, onModels, onPermission }: { locale: Loca
   const [keyDraft, setKeyDraft] = useState(""); const [hint, setHint] = useState<string | null>(null);
   const [models, setModels] = useState<ImageModelInfo[]>([]); const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<ImageCopyKey | null>(null); const [error, setError] = useState<ImageCopyKey | null>(null);
+  const [gate, setGate] = useState(false);
   const id = useId();
   useEffect(() => { let alive = true; void getImageSettings().then(value => { if (alive) setSettings(value); }).catch(() => { if (alive) setError("invalid"); }); return () => { alive = false; }; }, []);
   async function commit(next: Settings) { setError(null); await saveImageSettings(next); setSettings(next); setNotice("saved"); }
   async function act(task: () => Promise<void>) { if (busy) return; setBusy(true); setError(null); setNotice(null); try { await task(); } catch (cause) { setError(imageErrorKey(cause)); } finally { setBusy(false); } }
   function edit(profile: ImageProviderConfig) { setDraft(structuredClone(profile)); setExtra(JSON.stringify(profile.extraParams ?? {}, null, 2)); setKeyDraft(""); setHint(null); setModels([]); setNotice(null); setError(null); void providerKeyHint(profile.id).then(setHint).catch(() => setError("failed")); }
   function parsed(): ImageProviderConfig | null { try { const value = { ...draft, extraParams: JSON.parse(extra) }; return validImageProviderConfig(value) ? value : null; } catch { return null; } }
+  function pickModel(profile: ImageProviderConfig, name: "modelId" | "editModelId", id: string): ImageProviderConfig {
+    const limit = models.find(m => m.id === id)?.maxInputImages;
+    // The API-reported limit replaces the manual value; the manual value stays as typed when the
+    // chosen model belongs to generation only and references still use the main model.
+    const applies = name === "editModelId" || !profile.editModelId;
+    return { ...profile, [name]: id, ...(applies && limit ? { maxReferences: limit } : {}) };
+  }
   async function saveProfile() {
     const value = parsed(); if (!value) { setError("invalid"); return; }
     await act(async () => { await commit({ ...settings, profiles: [...settings.profiles.filter(p => p.id !== value.id), value] }); setDraft(value); });
@@ -30,7 +38,10 @@ export function ImageSettings({ locale, onModels, onPermission }: { locale: Loca
     <header><h2>{t("title")}</h2></header><div>
       <label className="toggle-row"><span>{t("enabled")}</span><input type="checkbox" role="switch" checked={settings.enabled} disabled={busy} onChange={event => void act(() => commit({ ...settings, enabled: event.target.checked }))} /></label>
       <p className="setting-copy">{t("disclosure")}</p>
-      <label className="field-label"><span>{t("level")}</span><Select value={settings.contentLevel} disabled={busy} onChange={event => void act(() => commit({ ...settings, contentLevel: event.target.value as Settings["contentLevel"] }))}>{IMAGE_CONTENT_LEVELS.map(level => <option key={level.id} value={level.id}>{level[locale]}</option>)}</Select></label>
+      <label className="field-label"><span>{t("level")}</span><Select value={settings.contentLevel} disabled={busy} onChange={event => { const level = event.target.value as Settings["contentLevel"]; if (level === ADULT_CONTENT_LEVEL && settings.adultConfirmed !== true) { setError(null); setNotice(null); setGate(true); return; } setGate(false); void act(() => commit({ ...settings, contentLevel: level })); }}>{IMAGE_CONTENT_LEVELS.map(level => <option key={level.id} value={level.id}>{level[locale]}</option>)}</Select></label>
+      {(settings.contentLevel === ADULT_CONTENT_LEVEL || gate) && <label className="toggle-row"><span>{t("adultToggle")}</span><input type="checkbox" role="switch" checked={settings.adultConfirmed === true} disabled={busy} onChange={event => { const adultConfirmed = event.target.checked; if (!adultConfirmed && settings.contentLevel === ADULT_CONTENT_LEVEL) { setGate(true); void act(() => commit({ ...settings, contentLevel: "off", adultConfirmed: false })); return; } setGate(false); void act(() => commit({ ...settings, adultConfirmed, ...(adultConfirmed && gate ? { contentLevel: ADULT_CONTENT_LEVEL } : {}) })); }} /></label>}
+      <p className="setting-copy">{t("adultHint")}</p>
+      {gate && settings.contentLevel !== ADULT_CONTENT_LEVEL && <p role="alert" className="error-text">{t("adultGate")}</p>}
       <label className="field-label"><span>{t("selected")}</span><Select value={selected} disabled={busy} onChange={event => { const profiles = { ...settings.profileByLevel }; if (event.target.value) profiles[settings.contentLevel] = event.target.value; else delete profiles[settings.contentLevel]; void act(() => commit({ ...settings, profileByLevel: profiles })); }}><option value="">{t("choose")}</option>{settings.profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.label}</option>)}</Select></label>
       {(["stylePrefix", "styleSuffix"] as const).map((name, i) => <label className="field-label" key={name}><span>{t(i ? "suffix" : "prefix")}</span><textarea maxLength={1200} defaultValue={settings[name]} key={settings[name]} onBlur={event => { if (event.target.value !== settings[name]) void act(() => commit({ ...settings, [name]: event.target.value })); }} /></label>)}
       <h3>{t("profiles")}</h3>
@@ -47,7 +58,7 @@ export function ImageSettings({ locale, onModels, onPermission }: { locale: Loca
         {hint && <p className="setting-copy">{t("keySaved", { last: hint })}</p>}<p className="setting-copy">{t("keyHint")}</p>
         <div className="button-row"><button type="button" className="button secondary" disabled={!keyDraft} onClick={() => void act(async () => { await saveProviderKey(draft.id, keyDraft); setHint(await providerKeyHint(draft.id)); setKeyDraft(""); setNotice("saved"); })}>{t("keySave")}</button><button type="button" className="button secondary danger" disabled={!hint} onClick={() => void act(async () => { await removeProviderKey(draft.id); setHint(null); })}>{t("keyRemove")}</button></div>
         <button type="button" className="button secondary" disabled={!onModels || !draft.enabled} onClick={() => { const profile = parsed(); if (!profile) { setError("invalid"); return; } void act(async () => { const values = await onModels!(profile); setModels(values); }); }}>{t("models")}</button>
-        {(["modelId", "editModelId"] as const).map((name, i) => <label className="field-label" key={name}><span>{t(i ? "editModel" : "model")}</span><Select value={draft[name] ?? ""} onChange={event => { const model = models.find(m => m.id === event.target.value); setDraft({ ...draft, [name]: event.target.value, ...(model?.maxInputImages ? { maxReferences: model.maxInputImages } : {}) }); }}><option value="">{t("choose")}</option>{draft[name] && !models.some(m => m.id === draft[name]) && <option value={draft[name]}>{draft[name]}</option>}{models.map(model => <option key={model.id} value={model.id}>{model.label}{model.priceUsd !== undefined ? ` · ${new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format(model.priceUsd)}` : ""}</option>)}</Select></label>)}
+        {(["modelId", "editModelId"] as const).map((name, i) => <label className="field-label" key={name}><span>{t(i ? "editModel" : "model")}</span><Select value={draft[name] ?? ""} onChange={event => setDraft(pickModel(draft, name, event.target.value))}><option value="">{t("choose")}</option>{draft[name] && !models.some(m => m.id === draft[name]) && <option value={draft[name]}>{draft[name]}</option>}{models.map(model => <option key={model.id} value={model.id}>{model.label}{model.uncensored ? ` · ${t("uncensored")}` : ""}{model.priceUsd !== undefined ? ` · ${new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format(model.priceUsd)}` : ""}</option>)}</Select></label>)}
         <p className="setting-copy">{t("modelHint")}</p>
         <label className="field-label"><span>{t("references")}</span><input type="number" min={1} max={128} value={draft.maxReferences} onChange={event => setDraft({ ...draft, maxReferences: Number(event.target.value) })} /></label><p className="setting-copy">{t("fallback")}</p>
         <label className="field-label"><span>{t("extra")}</span><textarea spellCheck={false} maxLength={32000} value={extra} onChange={event => setExtra(event.target.value)} aria-invalid={error === "invalid"} aria-describedby={error ? id + "error" : undefined} /></label><p className="setting-copy">{t("extraHint")}</p>

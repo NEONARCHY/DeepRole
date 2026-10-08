@@ -378,7 +378,7 @@ class PageController {
       onRemove: async (target, id) => { await call({ type: "DR_IMAGE_REMOVE", target, id }); },
       onDownload: async ticketId => { await call({ type: "DR_IMAGE_OPEN_DOWNLOAD", ticketId }); },
       onSaveProfile: async (entityId, profile, expected) => { const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId; if (!chatId || !worldId) throw new Error("scene-changed"); await call({ type: "DR_IMAGE_PROFILE", target: { worldId, chatId, chatUrl: location.href, messageKey: "profile" }, entityId, profile, expected }); },
-      onDelta: async (canonical, scene, name) => this.generateCharacterText({ field: { key: "image-scene", label: imageText(this.state.locale, "delta"), scope: "scene", maxLength: 1200 }, currentText: "", reference: { name, appearance: canonical, completedScene: scene } }),
+      onDelta: async (canonical, scene, name) => this.generateCharacterText({ field: { key: "image-scene", label: imageText(this.state.locale, "delta"), scope: "scene", maxLength: 1200, contentLevel: this.imageSettings.adultConfirmed === true ? this.imageSettings.contentLevel : "off" }, currentText: "", reference: { name, appearance: canonical, completedScene: scene } }),
     } });
   }
   private syncScenePhotos() {

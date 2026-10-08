@@ -2,7 +2,7 @@ import { imageProvider } from "../adapters/image";
 import { ImageApiError, boundedBody, type ImagePermissionCheck } from "../adapters/image/transport";
 import { browser } from "wxt/browser";
 import { dataImageBlob, normalizeImage, MAX_IMAGE_RESPONSE_BYTES } from "../adapters/image/image-codec";
-import { imageKey, object, validImageSeed, validImageProviderConfig, validCharacterImagePrompt, type CharacterImagePrompt, type ImageProviderConfig, type Illustration, type ImageProvider } from "../core/image-generation";
+import { ADULT_CONTENT_LEVEL, imageKey, object, validImageSeed, validImageProviderConfig, validCharacterImagePrompt, type CharacterImagePrompt, type ImageProviderConfig, type Illustration, type ImageProvider } from "../core/image-generation";
 import type { ImageJobInput, ImageTarget } from "../core/image-messages";
 import { imageReferences } from "../core/image-prompt";
 import { createId } from "../core/id";
@@ -48,6 +48,7 @@ export class ImageJobs {
     try {
       const settings = await getImageSettings(), config = settings.profiles.find(p => p.id === input.providerId);
       if (!settings.enabled || !config?.enabled) throw new ImageApiError("disabled");
+      if (settings.contentLevel === ADULT_CONTENT_LEVEL && settings.adultConfirmed !== true) throw new ImageApiError("adultOnly");
       if (!config.modelId || input.referenceKeys.length && !(config.editModelId || config.modelId)) throw new ImageApiError("missingModel");
       if (input.referenceKeys.length > config.maxReferences) throw new ImageApiError("invalid");
       const key = await getProviderKey(config.id); if (!key) throw new ImageApiError("missingKey");

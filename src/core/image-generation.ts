@@ -2,13 +2,16 @@ import type { Locale } from "./types";
 import { validPortrait } from "./portrait-variations";
 
 // One entry defines the type, validator and both labels. These are presets, not prompt filters.
+// "adult" requires an explicit age confirmation in the same settings record; see validImageSettings.
 export const IMAGE_CONTENT_LEVELS = [
   { id: "off", ru: "Обычные изображения", en: "Ordinary images" },
   { id: "suggestive", ru: "Неоткровенная романтика", en: "Non-explicit romance" },
+  { id: "adult", ru: "Откровенные сцены · 18+", en: "Explicit scenes · 18+" },
 ] as const satisfies readonly { id: string; ru: string; en: string }[];
 export type ImageContentLevel = typeof IMAGE_CONTENT_LEVELS[number]["id"];
 export const validImageContentLevel = (v: unknown): v is ImageContentLevel => IMAGE_CONTENT_LEVELS.some(level => level.id === v);
 export const imageContentLabel = (level: ImageContentLevel, locale: Locale) => IMAGE_CONTENT_LEVELS.find(item => item.id === level)![locale];
+export const ADULT_CONTENT_LEVEL: ImageContentLevel = "adult";
 export type ImageProviderKind = "openai-images" | "venice-native";
 export interface ImageProviderConfig {
   id: string; label: string; kind: ImageProviderKind; baseUrl: string;
@@ -20,11 +23,13 @@ export interface ImageSettings {
   profiles: ImageProviderConfig[];
   profileByLevel: Partial<Record<ImageContentLevel, string>>;
   stylePrefix: string; styleSuffix: string;
+  adultConfirmed?: boolean;
 }
-export const DEFAULT_IMAGE_SETTINGS: ImageSettings = { enabled: false, contentLevel: "off", profiles: [], profileByLevel: {}, stylePrefix: "", styleSuffix: "" };
+export const DEFAULT_IMAGE_SETTINGS: ImageSettings = { enabled: false, contentLevel: "off", profiles: [], profileByLevel: {}, stylePrefix: "", styleSuffix: "", adultConfirmed: false };
 export interface ImageModelInfo {
   id: string; label: string; privacy?: "private" | "anonymized"; priceUsd?: number;
   maxInputImages?: number; promptLimit?: number; supportsEdit?: boolean;
+  uncensored?: boolean;
   constraints?: Record<string, unknown>;
 }
 export const IMAGE_RESPONSE_HEADERS = ["x-venice-is-blurred", "x-venice-is-content-violation", "x-venice-model-deprecation-warning"] as const;
@@ -78,9 +83,12 @@ export function validImageSettings(v: unknown): v is ImageSettings {
   if (!object(v) || !validImageProviders(v.profiles)) return false;
   const profiles = v.profiles;
   return typeof v.enabled === "boolean" && validImageContentLevel(v.contentLevel)
+    && (v.adultConfirmed === undefined || typeof v.adultConfirmed === "boolean")
+    // The explicit level is unusable, and therefore not storable, without the age confirmation.
+    && !(v.contentLevel === ADULT_CONTENT_LEVEL && v.adultConfirmed !== true)
     && object(v.profileByLevel) && Object.entries(v.profileByLevel).every(([level, id]) => validImageContentLevel(level) && validProviderId(id) && profiles.some(p => p.id === id))
     && text(v.stylePrefix, 1200) && text(v.styleSuffix, 1200)
-    && Object.keys(v).every(k => ["enabled", "contentLevel", "profiles", "profileByLevel", "stylePrefix", "styleSuffix"].includes(k));
+    && Object.keys(v).every(k => ["enabled", "contentLevel", "profiles", "profileByLevel", "stylePrefix", "styleSuffix", "adultConfirmed"].includes(k));
 }
 export function validCharacterImagePrompt(v: unknown): v is CharacterImagePrompt {
   return object(v) && ["canonical", "sceneDelta", "prefix", "suffix"].every(k => text(v[k], 1200)) && ["prose", "tags"].includes(String(v.format)) && validImageSeed(v.seed);
