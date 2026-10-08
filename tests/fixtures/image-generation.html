@@ -13,9 +13,11 @@ import{DEFAULT_IMAGE_SETTINGS}from"/src/core/image-generation.ts";
 import{imageDeltaInstruction}from"/src/core/image-prompt.ts";
 import"/src/entrypoints/sidepanel/styles.css";
 const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;
+// The explicit preset is only storable with the age confirmation, so the fixture always sets both.
+const preset=new URL(location.href).searchParams.get("preset")??"off";
 const canvas=document.createElement("canvas");canvas.width=512;canvas.height=768;const ctx=canvas.getContext("2d");ctx.fillStyle="#485d67";ctx.fillRect(0,0,512,768);ctx.fillStyle="#bfdfeb";ctx.fillRect(80,100,352,500);const reference=canvas.toDataURL("image/png");window.reference=reference;
 const profile={id:"11111111-1111-4111-8111-111111111111",label:"Synthetic connection",kind:"openai-images",baseUrl:"https://images.example.test/v1",modelId:"synthetic-image-model",maxReferences:2,enabled:true,extraParams:{future_parameter:{value:[true,null,"literal"]}}};
-await saveProviderKey(profile.id,"SYNTHETIC-TEST-KEY-NOT-A-REAL-SECRET");await saveImageSettings({...DEFAULT_IMAGE_SETTINGS,enabled:true,profiles:[profile],profileByLevel:{off:profile.id}});
+await saveProviderKey(profile.id,"SYNTHETIC-TEST-KEY-NOT-A-REAL-SECRET");await saveImageSettings({...DEFAULT_IMAGE_SETTINGS,enabled:true,profiles:[profile],profileByLevel:{[preset]:profile.id},contentLevel:preset,adultConfirmed:preset==="adult"});
 const world={id:"image-world",name:"Observatory",description:"Keep this lore unchanged.",color:"blue",contextBudget:2000,relevanceThreshold:6,createdAt:1,updatedAt:1};
 if(!await repository.get("world",world.id)){await repository.put("world",world);await repository.put("entity",{id:"mira",worldId:world.id,kind:"character",name:"Mira",description:"",aliases:[],memberIds:[],characterSheet:{gender:"female",protagonist:false,appearance:"Copper hair. Brown eyes.",personality:"Curious",goals:"Explore",background:"",sprites:{neutral:reference}},createdAt:1,updatedAt:1});}
 const jobs=new ImageJobs(repository,async()=>true),presenter=new IllustrationsPresenter();
