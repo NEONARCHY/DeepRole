@@ -9,6 +9,7 @@ import { validStoryContinuation } from "./story-continuation";
 import { validScenePhotos } from "./selfies";
 import { validRecoveredReplies } from "./reply-recovery";
 import { validIllustration } from "./image-generation";
+import { validPortraitMaxEdge, validPortraitPreviewSize } from "./portrait-upload";
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const id = (value: unknown): value is string => typeof value === "string" && value.length > 0;
@@ -64,6 +65,8 @@ export function parseBackupSettings(value: unknown): DeepRoleSettings {
     if (value[key] === undefined) continue;
     const setting = value[key];
     const valid = key === "portraitLayoutResetAt" ? time(setting) && (setting as number) <= Number.MAX_SAFE_INTEGER : key === "characterEmotions" ? validEmotions(setting) : key === "locale" ? setting === "ru" || setting === "en" :
+      key === "portraitMaxEdge" ? validPortraitMaxEdge(setting) :
+      key === "portraitPreviewSize" ? validPortraitPreviewSize(setting) :
       key === "floatingPanelWidth" ? integer(setting, 200, 360) :
       key === "chatContextCapacity" ? integer(setting, 8000, 2000000) :
       key === "relationshipDisplay" ? ["both", "numbers", "stages"].includes(String(setting)) :

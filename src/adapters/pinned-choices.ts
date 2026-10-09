@@ -48,7 +48,7 @@ export function fitComposerInlineChoices(host: HTMLElement): boolean {
   const composer = composerBounds(host.ownerDocument, true), parent = host.parentElement;
   if (!composer || !parent) return false;
   const doc = host.ownerDocument, rect = parent.getBoundingClientRect(), style = doc.defaultView!.getComputedStyle(parent);
-  const fit = inlineSceneFit(doc, 0, host.dataset.deeproleAdaptive === "true");
+  const fit = inlineSceneFit(doc);
   const contentLeft = rect.left + (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.borderLeftWidth) || 0);
   for (const [key, value] of [["width", `${fit.choices}px`], ["left", ""], ["margin-left", `${fit.x - contentLeft}px`]] as const) {
     if (host.style.getPropertyValue(key) !== value) host.style.setProperty(key, value);
@@ -63,18 +63,8 @@ export function pinnedSceneFit(doc: Document, count = 0) {
     : fitScene(width, left, (left + width - 8) / 2, count);
 }
 
-export function inlineSceneFit(doc: Document, count = 0, adaptive = true) {
-  const composer = composerBounds(doc, true), fit = pinnedSceneFit(doc, count);
-  if (!composer || !adaptive) return fit;
-  const center = composer.left + composer.width / 2, left = sceneAvailableLeft(doc);
-  const room = Math.floor(2 * Math.min(center - left, doc.documentElement.clientWidth - 8 - center));
-  // Keep enough width for readable controls; compact HUDs already free the lane.
-  // A symmetric reduction avoids both shifting off the input and covering a HUD.
-  if (room >= 240 && room < fit.choices) return {
-    ...fit, choices: room, x: center - room / 2,
-    portrait: fit.compact ? Math.min(fit.portrait, Math.max(64, room / Math.min(Math.max(count, 2), 5) - 6)) : fit.portrait,
-  };
-  return fit;
+export function inlineSceneFit(doc: Document, count = 0) {
+  return pinnedSceneFit(doc, count);
 }
 
 export function fitPinnedChoices(host: HTMLElement): void {

@@ -175,10 +175,11 @@ test("installed pinned options follow the native message panel without changing 
     const aligned = async () => {
       const geometry = await host.evaluate(node => {
         const card = node.shadowRoot!.querySelector("section")!.getBoundingClientRect(), form = document.querySelector("form")!.getBoundingClientRect();
-        return { center: card.left + card.width / 2, formCenter: form.left + form.width / 2, gap: form.top - card.bottom, inBody: node.parentElement === document.body };
+        return { center: card.left + card.width / 2, formCenter: form.left + form.width / 2, width: card.width, formWidth: form.width, gap: form.top - card.bottom, inBody: node.parentElement === document.body };
       });
       expect(geometry.inBody).toBe(true);
       expect(geometry.center).toBeCloseTo(geometry.formCenter, 0);
+      expect(geometry.width).toBeCloseTo(geometry.formWidth, 0);
       expect(geometry.gap).toBeCloseTo(12, 0);
     };
     await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
@@ -196,8 +197,32 @@ test("installed pinned options follow the native message panel without changing 
     await chat.evaluate(() => Object.assign(document.querySelector("form")!.style, { left: "20px", width: "calc(100% - 40px)" }));
     await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
     await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("My personal draft remains untouched.");
+    await host.getByRole("button", { name: "Minimize options", exact: true }).click();
+    const restore = host.getByRole("button", { name: "Restore options", exact: true });
+    await expect(restore).toBeFocused(); await expect(host.locator(".grid")).toBeHidden();
+    await expect.poll(async () => (await host.boundingBox())!.height).toBeLessThan(65);
+    await chat.screenshot({ path: testInfo.outputPath("installed-minimized-above-composer.png") });
+    await restore.click(); await expect(host.locator(".grid")).toBeVisible();
+    await expect.poll(async () => { try { await aligned(); return true; } catch { return false; } }).toBe(true);
+    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("My personal draft remains untouched.");
     await chat.screenshot({ path: testInfo.outputPath("installed-pinned-above-composer.png") });
-    await chat.evaluate(() => Object.assign(document.querySelector("main")!.style, { minHeight: "0", paddingTop: "1000px" }));
+    await chat.evaluate(async () => {
+      Object.assign(document.querySelector("main")!.style, { minHeight: "0", paddingTop: "1000px" });
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
+    // Pause the real follower with reader input, not a layout's programmatic
+    // scroll which can race the native anchoring/ResizeObserver callbacks.
+    await chat.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(() => chat.evaluate(() => document.documentElement.scrollHeight - innerHeight - scrollY)).toBeLessThan(1);
+    await chat.mouse.move(620, 80); await chat.mouse.wheel(0, -8);
+    await expect.poll(() => chat.evaluate(() => document.documentElement.scrollHeight - innerHeight - scrollY)).toBeGreaterThan(1);
+    await chat.waitForTimeout(150);
+    expect(await chat.evaluate(() => document.documentElement.scrollHeight - innerHeight - scrollY)).toBeGreaterThan(1);
+    const beforeCardWheel = await chat.evaluate(() => scrollY), cardBox = (await host.locator('section').boundingBox())!;
+    await chat.mouse.move(cardBox.x + 40, cardBox.y + 20); await chat.mouse.wheel(0, -8);
+    await expect.poll(() => chat.evaluate(() => scrollY)).toBeLessThan(beforeCardWheel - 1);
+    await chat.mouse.move(620, 80); await chat.mouse.wheel(0, -200);
+    await expect.poll(() => chat.evaluate(() => document.documentElement.scrollHeight - innerHeight - scrollY)).toBeGreaterThan(100);
     const beforeUnpin = await chat.evaluate(() => window.scrollY);
     await host.getByRole("button", { name: "Unpin options", exact: true }).click();
     await expect.poll(async () => panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.pinSceneChoices)).toBe(false);

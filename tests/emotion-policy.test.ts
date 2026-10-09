@@ -101,7 +101,8 @@ it("merges separate rule toggles without undoing a live reply or other fields", 
 it("saving a rule falls back locally but keeps old chat facts, images and raw backups", async () => {
   const repo = await setup(); const original = characterEditBaseline(entity, [entity], scene);
   const saved = await saveCharacter({ ...scope, ...original, original, entityId: "mira", sheet: { ...sheet, blockedEmotions: [...sheet.blockedEmotions, "happy"] } }, repo);
-  expect(saved.original.state).toMatchObject({ ...scene.states.mira, emotion: "neutral" }); expect(saved.original.sheet.sprites).toEqual(sheet.sprites);
+  expect(saved.original.state).toMatchObject({ ...scene.states.mira, emotion: "neutral" }); expect(saved.original.sheet.sprites).toEqual({ neutral: sheet.sprites.neutral });
+  expect(saved.original.sheet.portraitLibrary).toEqual([sheet.portraitLibrary[0], sheet.sprites.angry[0]]);
   const person = (await repo.get<SceneEntity>("entity", "mira"))!; expect(person.description).toBe(entity.description);
   const pack = parseWorldPackage(JSON.stringify(await exportWorld("w", repo)));
   expect((cloneWorldPackage(pack).find(row => row.kind === "entity")!.data as SceneEntity).characterSheet).toEqual(person.characterSheet);

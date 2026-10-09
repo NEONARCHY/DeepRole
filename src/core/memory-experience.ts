@@ -5,11 +5,17 @@ import type { ExperienceKey } from "./experience-i18n";
 export interface ServiceActivity {
   phase: "preparing" | "waiting" | "empty" | "error";
   type: ServiceRequest["type"];
+  /** The originating chat card owns progress and errors; keep busy state intact. */
+  presentation?: "inline";
 }
 export const SERVICE_TIMEOUT_MS = 10 * 60 * 1000;
+export function serviceActivity(request: ServiceRequest, phase: ServiceActivity["phase"]): ServiceActivity {
+  const inline = request.type === "character-text" && (request.imagePlan || request.characterText?.field.key === "image-plan");
+  return { phase, type: request.type, ...(inline ? { presentation: "inline" as const } : {}) };
+}
 export function pendingActivity(request: ServiceRequest | null, chatId: string | null, _generating: boolean, now = Date.now()): ServiceActivity | null {
   if (!request || (request.chatId ?? null) !== chatId) return null;
-  return { phase: now - request.createdAt < SERVICE_TIMEOUT_MS ? "waiting" : "error", type: request.type };
+  return serviceActivity(request, now - request.createdAt < SERVICE_TIMEOUT_MS ? "waiting" : "error");
 }
 export function memoryReadiness(connected: boolean, warning: string | undefined, selected: number, available: number): "offline" | "failed" | "ready" | "empty" | "matching" {
   if (!connected) return "offline";

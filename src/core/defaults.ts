@@ -1,6 +1,10 @@
 import type { DeepRoleSettings } from "./types";
+import { DEFAULT_PORTRAIT_MAX_EDGE, DEFAULT_PORTRAIT_PREVIEW_SIZE } from "./portrait-upload";
 
 export const DEFAULT_SETTINGS: DeepRoleSettings = {
+  portraitMaxEdge: DEFAULT_PORTRAIT_MAX_EDGE,
+  portraitPreviewSize: DEFAULT_PORTRAIT_PREVIEW_SIZE,
+  showDeepSeekReasoning: false,
   replyRecoveryEnabled: true,
   contextWarningsEnabled: true,
   chatContextCapacity: 1_000_000,

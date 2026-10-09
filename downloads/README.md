@@ -13,4 +13,6 @@ Already using DeepRole? **Do not uninstall it just to update**: that can remove 
 
 This build adds **optional image generation with your own API connection**, current models from the API, uploaded-image references and illustrations attached to story replies. Keys are not exported; generation requires a click and never retries automatically. [Image setup →](../docs/IMAGE-GENERATION.en.md) It also includes reply recovery, relationship stages, numeric characteristics, visible consequences, personal emotion rules and story continuation. See the walkthrough in [English](../README.md) or [Russian](../docs/README.ru.md). [Roadmap and test notes →](../ROADMAP.md)
 
-The release archives do not contain personal images, lore or saved chat states.
+New uploads default to a **1920 px long edge**, customizable in **Settings → Appearance**. The viewer supports wheel zoom up to **128×** and drag-to-pan; the image library has adjustable preview sizes. World exports embed saved portraits, library pictures, selfie photos and illustrations **inside one JSON file**. [Portable worlds and full backups →](../README.md#one-json-file-your-whole-visual-world)
+
+The release archives do not contain personal images, lore or saved chat states. Your exported world JSON does contain your saved images: keep private exports somewhere safe.

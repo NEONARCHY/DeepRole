@@ -1,10 +1,13 @@
 import { Select } from "../shared/Select";
 import { ImageSettings } from "./ImageSettings";
+import { PortraitUploadSettings } from "../shared/PortraitUploadSettings";
+import { portraitUploadText } from "../../core/portrait-upload-i18n";
 import { imageText } from "../../core/image-i18n";
 import { requestImagePermission } from "../../storage/image-permissions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelWidthControl } from "../shared/PanelWidthControl";
 import { CharacterSettings } from "../shared/CharacterSheets";
+import { detachDefaultEmotionImages, saveWorldEmotionList } from "../../storage/emotion-settings";
 import { MemoryGuide } from "../shared/MemoryGuide";
 import { characterText } from "../../core/characters";
 import { sceneChoiceText } from "../../core/scene-choices";
@@ -755,7 +758,7 @@ function SettingsView(props: {
   onRefresh: () => void;
   onToast: (message: string) => void;
 }) {
-  const [section, setSection] = useState<"memory" | "data" | "characters" | "app" | "images">("memory");
+  const [section, setSection] = useState<"memory" | "data" | "characters" | "app" | "images" | "appearance">("memory");
   const [capacityDraft, setCapacityDraft] = useState(String(chatCapacity(props.settings.chatContextCapacity)));
   useEffect(() => setCapacityDraft(String(chatCapacity(props.settings.chatContextCapacity))), [props.settings.chatContextCapacity]);
   const [reminderDraft, setReminderDraft] = useState(String(props.settings.suggestionInterval));
@@ -820,8 +823,17 @@ function SettingsView(props: {
   return (
     <div className="view-stack">
       <div className="view-title"><div><small>DeepRole</small><h1>{props.t("settings")}</h1></div></div>
-      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "images", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "images" ? imageText(props.settings.locale, "title") : id === "characters" ? characterText(props.settings.locale, "title") : x(id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
-      <div className="dr-settings-page" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw new Error(result?.error ?? "failed"); return result.models; }} /></div>
+      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "images", "appearance", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "images" ? imageText(props.settings.locale, "title") : id === "characters" ? characterText(props.settings.locale, "title") : x(id === "appearance" ? "settingsAppearance" : id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
+      <div className="dr-settings-page" hidden={section !== "appearance"}>
+        <SettingsCard icon={<Eye />} title={portraitUploadText(props.settings.locale, "title")}>
+          <PortraitUploadSettings settings={props.settings} onSettings={props.onSettings} />
+        </SettingsCard>
+        <SettingsCard icon={<Eye />} title={x("reasoningTitle")}>
+          <label className="toggle-row"><span>{x("reasoningShow")}</span><input type="checkbox" checked={props.settings.showDeepSeekReasoning === true} onChange={event => void props.onSettings({ ...props.settings, showDeepSeekReasoning: event.target.checked })} /></label>
+          <p className="setting-copy">{x("reasoningHint")}</p>
+        </SettingsCard>
+      </div>
+      <div className="dr-settings-page" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw Object.assign(new Error(result?.error ?? "failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers }); return result.models; }} /></div>
       <div className="dr-settings-page" hidden={section !== "memory"}>
       <SettingsCard icon={<BrainCircuit />} title={u("memorySettings")}>
         <MemorySelectionSettings key={props.world?.id ?? "global"} locale={props.settings.locale} world={props.world} settings={props.settings} onSave={async (values, expected) => {
@@ -833,11 +845,11 @@ function SettingsView(props: {
       <div className="dr-settings-page" hidden={section !== "characters"}>
       <SettingsCard icon={<BrainCircuit />} title={characterText(props.settings.locale, "title")}>
         {props.world && <p className="setting-copy">{exportText(props.settings.locale, "emotionScope").replace("{name}", props.world.name)}</p>}
-        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldEmotions={props.world?.characterEmotions} onSettings={props.onSettings} onEmotions={props.world ? async emotions => {
-          const world = props.world!;
-          await repository.putIfUnchanged("world", { ...world, characterEmotions: emotions, updatedAt: Date.now() }, world);
+        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldEmotions={props.world?.characterEmotions} onSettings={props.onSettings} onEmotions={async emotions => {
+          if (props.world) await saveWorldEmotionList(props.world, emotions);
+          else { await detachDefaultEmotionImages(props.settings.characterEmotions ?? DEFAULT_SETTINGS.characterEmotions!, emotions); await props.onSettings({ ...props.settings, characterEmotions: emotions }); }
           props.onRefresh();
-        } : undefined} />
+        }} />
       </SettingsCard>
       </div><div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<Pin />} title={props.settings.locale === "ru" ? "Панели и сцена" : "Panels and scene"}>

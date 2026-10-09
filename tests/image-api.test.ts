@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Blob as NodeBlob } from "node:buffer";
 import { ImageTransport, requestBody, ImageApiError } from "../src/adapters/image/transport";
 import { OpenAiImagesProvider } from "../src/adapters/image/openai-images";
-import { VeniceNativeProvider, MAX_MULTI_EDIT_REFERENCES, lowestUsdPrice, usdPrices } from "../src/adapters/image/venice-native";
+import { VeniceNativeProvider, lowestUsdPrice, usdPrices } from "../src/adapters/image/venice-native";
 import { dataImageBlob, normalizeImage } from "../src/adapters/image/image-codec";
 import { ImageJobs } from "../src/storage/image-jobs";
 import { saveImageSettings } from "../src/storage/image-settings";
@@ -49,31 +49,30 @@ describe("documented image adapters (mock fetch only)", () => {
     vi.stubGlobal("fetch", fetchMock);
     const models = await new VeniceNativeProvider(profile, new ImageTransport(profile, secret, permitted)).listModels();
     const edit = models.find(model => model.id === "qwen-edit-uncensored"), plain = models.find(model => model.id === "hunyuan-image-v3");
-    expect(edit).toMatchObject({ priceUsd: .04, maxInputImages: MAX_MULTI_EDIT_REFERENCES, uncensored: true, supportsEdit: true, privacy: "private" });
+    expect(edit).toMatchObject({ priceUsd: .04, uncensored: true, supportsEdit: true, privacy: "private" }); expect(edit?.maxInputImages).toBeUndefined();
     // No combineImages and no explicit limit: the adapter does not invent a reference count.
     expect(plain).toMatchObject({ priceUsd: .05, supportsEdit: false }); expect(plain?.maxInputImages).toBeUndefined(); expect(plain?.uncensored).toBeUndefined();
   });
-  it("never claims more reference images than the documented multi-edit maximum", async () => {
-    const config = { ...profile, kind: "venice-native" as const, editModelId: "synthetic-edit-model", maxReferences: MAX_MULTI_EDIT_REFERENCES };
+  it("never sends more reference images than the user connection limit", async () => {
+    const limit = 6, config = { ...profile, kind: "venice-native" as const, editModelId: "synthetic-edit-model", maxReferences: limit };
     const fetchMock = vi.fn(async () => new Response(Uint8Array.from(atob(realPng), c => c.charCodeAt(0)), { headers: { "content-type": "image/png" } })); vi.stubGlobal("fetch", fetchMock);
     const transport = new ImageTransport(config, secret, permitted, normalized), provider = new VeniceNativeProvider(config, transport);
-    const url = await provider.edit({ prompt: "Three references", images: Array(MAX_MULTI_EDIT_REFERENCES).fill("data:image/png;base64," + realPng) });
+    const url = await provider.edit({ prompt: "Group references", images: Array(limit).fill("data:image/png;base64," + realPng) });
     expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toMatch(/\/image\/multi-edit$/); expect(url.image).toBe(tinyImage);
-    await expect(provider.edit({ prompt: "Too many", images: Array(MAX_MULTI_EDIT_REFERENCES + 1).fill("data:image/png;base64," + realPng) })).rejects.toMatchObject({ code: "invalid" });
+    await expect(provider.edit({ prompt: "Too many", images: Array(limit + 1).fill("data:image/png;base64," + realPng) })).rejects.toMatchObject({ code: "invalid" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   it("keeps unavailable OpenAI model metadata undefined", async () => { vi.stubGlobal("fetch", vi.fn(async () => json({ data: [{ id: "synthetic-model" }] }))); const models = await new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, permitted)).listModels(); expect(models).toEqual([{ id: "synthetic-model", label: "synthetic-model" }]); });
   it("downloads URL responses without leaking authorization to the image host", async () => { const fetchMock = vi.fn(async (url: string) => url.includes("generations") ? json({ data: [{ url: "https://cdn.example.test/result.png" }] }) : new Response(Uint8Array.from(atob(realPng), c => c.charCodeAt(0)), { headers: { "content-type": "image/png" } })); vi.stubGlobal("fetch", fetchMock); await new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, permitted, normalized)).generate({ prompt: "Forest" }); const second = fetchMock.mock.calls[1] as unknown as [string, RequestInit]; expect(second[1].headers).toBeUndefined(); expect(second[1].credentials).toBe("omit"); expect(second[1].redirect).toBe("error"); });
   it("refuses an unapproved image domain without downloading it", async () => { const fetchMock = vi.fn(async () => json({ data: [{ url: "https://cdn.example.test/result.png" }] })); vi.stubGlobal("fetch", fetchMock); await expect(new OpenAiImagesProvider(profile, new ImageTransport(profile, secret, async url => url.startsWith(profile.baseUrl), normalized)).generate({ prompt: "Forest" })).rejects.toMatchObject({ code: "downloadOrigin" }); expect(fetchMock).toHaveBeenCalledTimes(1); });
   it("times out once, without retry", async () => { const fetchMock = vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(new Error("aborted"))))); vi.stubGlobal("fetch", fetchMock); await expect(new ImageTransport(profile, secret, permitted, normalized, 10).request("/models")).rejects.toMatchObject({ code: "timeout" }); expect(fetchMock).toHaveBeenCalledTimes(1); });
-  it.each([false, true])("normalizes JPEG with bounded dimensions (reference=%s)", async reference => { vi.stubGlobal("Blob", NodeBlob); const close = vi.fn(); vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 2000, height: 3000, close }))); const sizes: number[][] = []; vi.stubGlobal("OffscreenCanvas", class { constructor(public width: number, public height: number) { sizes.push([width, height]); } getContext() { return { fillRect: vi.fn(), drawImage: vi.fn() }; } async convertToBlob() { return new NodeBlob([Uint8Array.of(0xff, 0xd8, 0xff)], { type: "image/jpeg" }); } }); const result = await normalizeImage(dataImageBlob("data:image/png;base64," + realPng), reference); expect(result).toMatch(/^data:image\/jpeg;base64,/); expect(close).toHaveBeenCalledOnce(); const [w, h] = sizes[0]!; expect(reference ? w! * h! : Math.max(w!, h!)).toBeLessThanOrEqual(reference ? 1_500_000 : 768); });
-  it.each(["16:9", "9:16"] as const)("crops %s without distorting pixels", async aspect => {
-    vi.stubGlobal("Blob", NodeBlob); const draw = vi.fn(), close = vi.fn(); const sizes: number[][] = [];
-    vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 1600, height: 1200, close })));
-    vi.stubGlobal("OffscreenCanvas", class { constructor(public width: number, public height: number) { sizes.push([width,height]); } getContext() { return { fillRect: vi.fn(), drawImage: draw }; } async convertToBlob() { return new NodeBlob([Uint8Array.of(0xff,0xd8,0xff)], { type: "image/jpeg" }); } });
-    await normalizeImage(dataImageBlob("data:image/png;base64," + realPng), false, aspect);
-    expect(sizes).toEqual([aspect === "16:9" ? [768,432] : [432,768]]);
-    const [,x,y,w,h,,,dw,dh] = draw.mock.calls[0]!; expect(w/h).toBeCloseTo(dw/dh); expect(x).toBeGreaterThanOrEqual(0); expect(y).toBeGreaterThanOrEqual(0); expect(close).toHaveBeenCalledOnce();
+  it("normalizes references as JPEG within their upload budget", async () => { vi.stubGlobal("Blob", NodeBlob); const close = vi.fn(); vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 2000, height: 3000, close }))); const sizes: number[][] = []; vi.stubGlobal("OffscreenCanvas", class { constructor(public width: number, public height: number) { sizes.push([width, height]); } getContext() { return { fillRect: vi.fn(), drawImage: vi.fn() }; } async convertToBlob() { return new NodeBlob([Uint8Array.of(0xff, 0xd8, 0xff)], { type: "image/jpeg" }); } }); const result = await normalizeImage(dataImageBlob("data:image/png;base64," + realPng), true); expect(result).toMatch(/^data:image\/jpeg;base64,/); expect(close).toHaveBeenCalledOnce(); const [w, h] = sizes[0]!; expect(w! * h!).toBeLessThanOrEqual(1_500_000); });
+  it.each(["16:9", "9:16"] as const)("keeps source pixels even if the provider ignores %s", async aspect => {
+    vi.stubGlobal("Blob", NodeBlob); const close = vi.fn(), canvas = vi.fn();
+    vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 1600, height: 1200, close }))); vi.stubGlobal("OffscreenCanvas", canvas);
+    const source = "data:image/png;base64," + realPng;
+    expect(await normalizeImage(dataImageBlob(source), false, aspect)).toBe(source);
+    expect(canvas).not.toHaveBeenCalled(); expect(close).toHaveBeenCalledOnce();
   });
   it("accepts only real image signatures and closes failed decoders", async () => { expect(() => dataImageBlob("data:image/jpeg;base64,YQ==")).toThrow(); vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 100_000, height: 100_000, close: vi.fn() }))); await expect(normalizeImage(new NodeBlob(["x"], { type: "image/png" }) as Blob)).rejects.toThrow(); });
   it("authorizes model access only from extension UI, never the page", () => { const ui = "chrome-extension://extension/"; expect(imageSenderAllowed({ id: "extension", url: ui + "sidepanel.html" }, "extension", ui, true)).toBe(true); expect(imageSenderAllowed({ id: "extension", url: "https://chat.deepseek.com/chat/s/a", tab: { id: 1 } }, "extension", ui, true)).toBe(false); expect(imageSenderAllowed({ id: "other", url: ui + "sidepanel.html" }, "extension", ui, true)).toBe(false); });

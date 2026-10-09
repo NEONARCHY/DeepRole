@@ -11,6 +11,19 @@ describe("delayed action tooltips", () => {
     const view = render(<TooltipButton aria-label="Zoom in" tooltip="Change the map scale." aria-describedby="original-description" onClick={click} onPointerDown={pointer}>+</TooltipButton>);
     return { ...view, click, pointer, button: screen.getByRole("button", { name: "Zoom in" }) };
   }
+  it.each([
+    ["Обновить лор", "DeepSeek просмотрит переписку. Проверьте предложения перед сохранением."],
+    ["Update lore", "DeepSeek reviews the conversation. Review suggestions before saving."],
+  ])("provides an opt-in native explanation without a duplicate custom popup: %s", (label, help) => {
+    const click = vi.fn(), view = render(<TooltipButton nativeTooltip aria-label={label} tooltip={help} onClick={click}>+</TooltipButton>);
+    const button = view.getByRole("button", { name: label });
+    expect(button).toHaveAttribute("title", label + "\n" + help); expect(button).toHaveAttribute("aria-description", help);
+    fireEvent.mouseEnter(button); advance(2000); expect(screen.queryByRole("tooltip")).toBeNull(); expect(click).not.toHaveBeenCalled();
+    vi.spyOn(button, "matches").mockReturnValue(true); fireEvent.focus(button); expect(screen.queryByRole("tooltip")).toBeNull();
+    fireEvent.click(button); expect(click).toHaveBeenCalledOnce();
+    view.rerender(<TooltipButton nativeTooltip aria-label={label} tooltip={help + "\nBusy"} aria-disabled>+</TooltipButton>);
+    expect(button).toHaveAttribute("title", label + "\n" + help + "\nBusy");
+  });
   it("waits exactly one second, with no extra question button or native title", () => {
     const { button } = setup();
     expect(screen.getAllByRole("button")).toHaveLength(1); expect(button).not.toHaveAttribute("title");

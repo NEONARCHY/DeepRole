@@ -32,7 +32,7 @@ async function geometry(page: Page) {
   return page.evaluate(() => {
     const host = document.querySelector<HTMLElement>("[data-deeprole-choices-host]")!;
     const card = host.shadowRoot!.querySelector("section")!.getBoundingClientRect(), composer = document.querySelector("form")!.getBoundingClientRect();
-    return { gap: composer.top - card.bottom, center: card.left + card.width / 2, composerCenter: composer.left + composer.width / 2, top: card.top, left: card.left, right: card.right, width: innerWidth, fixed: getComputedStyle(host).position === "fixed" };
+    return { gap: composer.top - card.bottom, center: card.left + card.width / 2, composerCenter: composer.left + composer.width / 2, cardWidth: card.width, composerWidth: composer.width, top: card.top, left: card.left, right: card.right, width: innerWidth, fixed: getComputedStyle(host).position === "fixed" };
   });
 }
 
@@ -48,7 +48,7 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1057]) for (const a
     expect(box.center).toBeCloseTo(box.composerCenter, 0);
     expect(box.top).toBeGreaterThanOrEqual(54);
     expect(box.left).toBeGreaterThanOrEqual(8); expect(box.right).toBeLessThanOrEqual(box.width - 8);
-    if (adaptive && width > 900) expect(box.left).toBeGreaterThanOrEqual(280);
+    expect(box.cardWidth).toBeCloseTo(box.composerWidth, 0);
   };
   await scrollToBottom();
   await expect.poll(async () => { try { await assertClear(); return true; } catch { return false; } }).toBe(true);
@@ -66,10 +66,35 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1057]) for (const a
   await scrollToBottom();
   await card.getByRole("button", { name: locale === "ru" ? "Закрепить варианты на экране" : "Pin options on screen", exact: true }).click();
   await expect(card).toHaveAttribute("data-deeprole-choices-pinned", "true");
+  const storyClear = () => page.evaluate(() => {
+    const story = document.querySelector('[data-message-id="current"]')!.getBoundingClientRect();
+    const card = document.querySelector('[data-deeprole-choices-host]')!.getBoundingClientRect();
+    return card.top - story.bottom;
+  });
+  await scrollToBottom();
+  await expect.poll(storyClear).toBeGreaterThanOrEqual(11);
+  await expect.poll(() => geometry(page).then(box => box.cardWidth - box.composerWidth)).toBeCloseTo(0, 0);
+  const reservedHeight = await page.locator('[data-deeprole-choices-anchor]').evaluate(node => node.getBoundingClientRect().height);
+  expect(reservedHeight).toBeGreaterThan(100);
+  await card.getByRole('button', { name: locale === 'ru' ? 'Текст целиком' : 'Full text', exact: true }).click();
+  await expect.poll(storyClear).toBeGreaterThanOrEqual(11);
+  await page.locator('textarea').evaluate(node => { node.style.height = '210px'; });
+  await expect.poll(storyClear).toBeGreaterThanOrEqual(11);
   await page.evaluate(() => { document.querySelector("#native-scroll")!.scrollTop -= 400; });
+  const pinnedReadingTop = await page.evaluate(() => document.querySelector('#native-scroll')!.scrollTop);
+  await page.locator('textarea').evaluate(node => { node.style.height = '190px'; });
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => document.querySelector('#native-scroll')!.scrollTop)).toBeCloseTo(pinnedReadingTop, 0);
+  await scrollToBottom();
+  await page.waitForTimeout(50);
+  await page.locator('textarea').evaluate(node => { node.style.height = '200px'; });
+  await expect.poll(storyClear).toBeGreaterThanOrEqual(11);
+  await page.screenshot({ path: info.outputPath('pinned-reserved-story.png') });
+  await page.evaluate(() => { document.querySelector('#native-scroll')!.scrollTop -= 400; });
   const beforeUnpin = await page.evaluate(() => document.querySelector("#native-scroll")!.scrollTop);
   await card.getByRole("button", { name: locale === "ru" ? "Открепить варианты" : "Unpin options", exact: true }).click();
   await expect.poll(() => page.evaluate(() => document.querySelector("#native-scroll")!.scrollTop)).toBeCloseTo(beforeUnpin, 0);
+  await expect(page.locator('[data-deeprole-choices-anchor]')).toHaveCount(0);
   // Unpinning preserves the reading position; returning to the bottom is explicit.
   await scrollToBottom();
   await expect.poll(async () => { try { await assertClear(); return true; } catch { return false; } }).toBe(true);

@@ -29,8 +29,8 @@ export async function acceptCastReply(id: string, step: number, raw: string, rep
   return mutateCastJob(id, job => {
     if (!["reading", "analyzing"].includes(job.phase) || job.step !== step || !job.awaiting) throw new Error("stale-step");
     if (job.step < castParts(job.sources).length) return { ...job, step: job.step + 1, awaiting: false };
-    try { return { ...job, phase: "ready", awaiting: false, draft: parseCastDraft(raw, job.id, job.sources) }; }
-    catch (e) { if (!job.repair) return { ...job, repair: true, awaiting: false }; return { ...job, phase: "error", awaiting: false, error: e instanceof Error ? e.message : "invalid-result" }; }
+    try { return { ...job, phase: "ready", awaiting: false, replyCheckpoint: undefined, draft: parseCastDraft(raw, job.id, job.sources) }; }
+    catch (e) { if (!job.repair) return { ...job, repair: true, awaiting: false, replyCheckpoint: undefined }; return { ...job, phase: "error", awaiting: false, replyCheckpoint: undefined, error: e instanceof Error ? e.message : "invalid-result" }; }
   }, repo);
 }
 function fillSheet(old: CharacterSheet | undefined, proposed: CharacterSheet, state: CharacterStatus): CharacterSheet {

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { EMPTY_CHARACTER, EMPTY_STATUS, characterInstruction, characterRevision, characterTurnKey, parseCharacterTurn, validCharacterSheet } from "../src/core/characters";
 import { DEFAULT_RELATIONSHIP } from "../src/core/relationships";
-import { selfieCategories, selfieGate, selfieImageKey, resolveScenePhoto, validScenePhotos, validSelfieCategories } from "../src/core/selfies";
+import { addSelfieLibraryImages, selfieCategories, selfieGate, selfieImageKey, resolveScenePhoto, validScenePhotos, validSelfieCategories } from "../src/core/selfies";
+import { libraryImages } from "../src/core/portrait-library";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { applyCharacterTurn, saveCharacter } from "../src/storage/characters";
@@ -30,6 +31,20 @@ async function setup(mira = person) {
     turn: { world: "w", chat: "a", base, present: [hero.id, mira.id], updates: [], selfies: [{ id: mira.id, category: home.id, quote }] } };
 }
 describe("local selfie categories", () => {
+  it("persists library selfies in exports and backups without detaching sources or changing lore", async () => {
+    const sheet = { ...person.characterSheet!, portraitLibrary: [other], sprites: { neutral: image, happy: [image] } };
+    const mira = { ...person, characterSheet: sheet }, { repo, scope } = await setup(mira);
+    const categories = addSelfieLibraryImages(sheet.selfieCategories!, regular.id, libraryImages(sheet), [image, other]);
+    await saveCharacter({ ...scope, original: characterEditBaseline(mira, [hero, mira]), entityId: mira.id, name: mira.name, sheet: { ...sheet, selfieCategories: categories }, state: EMPTY_STATUS, present: false }, repo);
+    const saved = (await repo.get<SceneEntity>("entity", mira.id))!;
+    expect(saved.characterSheet).toEqual({ ...sheet, selfieCategories: categories });
+    expect(saved.description).toBe(mira.description); expect(await repo.get("entity", hero.id)).toEqual(hero);
+    const pack = await parseWorldPackage(JSON.stringify(await exportWorld("w", repo)));
+    expect((pack.records.find(r => r.kind === "entity" && (r.data as SceneEntity).name === mira.name)!.data as SceneEntity).characterSheet?.selfieCategories?.[0]?.images).toEqual([image, other]);
+    expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(await repo.rawRecords());
+    const prompt = characterInstruction("w", "a", [hero, saved], undefined, ["neutral"], [], "Mira, send a selfie", "request-library", true);
+    expect(prompt).not.toContain(image); expect(prompt).not.toContain(other); expect(prompt).toContain("may refuse");
+  });
   it("validates collections and exports while keeping image bytes out of the model prompt", async () => {
     expect(validSelfieCategories([regular, home])).toBe(true); expect(validCharacterSheet(person.characterSheet)).toBe(true);
     const prompt = characterInstruction("w", "a", [hero, person], undefined, ["neutral"], [], "Mira, send a selfie", "request-001", true);

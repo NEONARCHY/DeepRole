@@ -7,7 +7,7 @@ export type ImageMessage =
   | { type: "DR_IMAGE_GENERATE"; input: ImageJobInput }
   | { type: "DR_IMAGE_START"; target: ImageTarget }
   | { type: "DR_IMAGE_RENDER"; target: ImageTarget; id: string; plan: import("./image-plan").ImageScenePlan }
-  | { type: "DR_IMAGE_FAIL"; target: ImageTarget; id: string; error: ImageCopyKey }
+  | { type: "DR_IMAGE_FAIL"; target: ImageTarget; id: string; error: ImageCopyKey; phase?: "plan" }
   | { type: "DR_IMAGE_REPEAT"; target: ImageTarget; id: string; attempt?: boolean }
   | { type: "DR_IMAGE_SELFIE"; target: ImageTarget; entityId: string; turnKey: string; retry?: boolean }
   | { type: "DR_IMAGE_REMOVE"; target: ImageTarget; id: string }
@@ -15,4 +15,4 @@ export type ImageMessage =
   | { type: "DR_IMAGE_OPEN_DOWNLOAD"; ticketId: string }
   | { type: "DR_IMAGE_TICKET"; ticketId: string }
   | { type: "DR_IMAGE_DOWNLOAD"; ticketId: string };
-export interface ImageFailure { ok: false; error: ImageCopyKey; headers?: ImageResponseHeaders; ticketId?: string; downloadOrigin?: string }
+export interface ImageFailure { ok: false; error: ImageCopyKey; headers?: ImageResponseHeaders; diagnostic?: import("./image-diagnostics").ImageDiagnostic; ticketId?: string; downloadOrigin?: string }

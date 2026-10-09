@@ -26,8 +26,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360]) {
     const audit = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(audit.violations).toEqual([]);
     await page.screenshot({ path: info.outputPath(`image-editor-${locale}-${width}.png`) });
-    const dimensions = await first.locator("img").evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]); expect(dimensions).toEqual([768,432]);
-    await first.getByRole("button", { name: locale === "ru" ? "Попробовать ещё раз" : "Try again", exact: true }).click(); await expect(first.locator("img")).toHaveCount(2); expect(generations).toBe(2);
+    const dimensions = await first.locator("img").evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]); expect(dimensions).toEqual([2,2]);
+    await first.getByRole("button", { name: locale === "ru" ? "Попробовать ещё раз" : "Try again", exact: true }).click(); await expect(first.locator("img")).toHaveCount(1); await expect(first.getByText(locale === "ru" ? "Генерация 2 из 2" : "Generation 2 of 2", {exact:true})).toBeVisible(); await first.getByRole("button",{name:locale === "ru" ? "Предыдущая генерация" : "Previous generation"}).click(); await first.getByRole("button",{name:locale === "ru" ? "Следующая генерация" : "Next generation"}).click(); expect(generations).toBe(2);
     await first.getByRole("button", { name: t.remove }).last().click();
     expect(body.size).toBe("1536x1024");
     await expect(editor).toHaveCount(0); await expect(first.locator("img")).toHaveCount(1); await expect(second.locator("img")).toHaveCount(0);
@@ -57,4 +57,29 @@ test("refusal and timeout stay inline and never retry automatically", async ({ p
   await host.getByRole("button", { name: "Try again", exact: true }).click(); await expect(host.getByRole("alert")).toContainText("timed out");
   expect(await page.evaluate(() => (window as any).requests.length)).toBe(2);
   await page.reload(); await expect(host.getByRole("alert")).toContainText("timed out"); expect(await host.locator("img").count()).toBe(0);
+});
+for (const locale of ["ru", "en"] as const) for (const width of [320, 800]) test(`safe HTTP error details, keyboard and reload ${locale} ${width}px`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 900 }); let calls = 0;
+  await page.route("https://images.example.test/**", async route => {
+    const headers = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type", "access-control-allow-methods": "GET,POST,OPTIONS" };
+    if (route.request().method() === "OPTIONS") { await route.fulfill({ status: 204, headers }); return; }
+    calls++;
+    await route.fulfill({ status: 400, json: { error: { code: "INVALID_MODEL", message: "Unsupported editing model; SYNTHETIC-TEST-KEY-NOT-A-REAL-SECRET", param: "model" } }, headers });
+  });
+  await page.goto(`/tests/fixtures/image-generation.html?locale=${locale}`);
+  const host = page.locator('[data-message-id="reply-1"] [data-deeprole-illustrations]');
+  await host.getByRole("button", { name: locale === "ru" ? "Создать иллюстрацию" : "Create illustration", exact: true }).click();
+  await expect(host.getByRole("alert")).toHaveAttribute("title", "badRequest · HTTP 400 · INVALID_MODEL");
+  const summary = host.locator(".dr-image-error-details summary");
+  await summary.focus(); await page.keyboard.press("Enter");
+  await expect(host.getByText("INVALID_MODEL", { exact: true })).toBeVisible();
+  await expect(host.getByText("/images/edits", { exact: true })).toBeVisible();
+  expect(await host.innerText()).not.toContain("SYNTHETIC-TEST-KEY-NOT-A-REAL-SECRET");
+  expect(await host.innerText()).not.toContain("Copper hair. Brown eyes.");
+  expect(calls).toBe(1); expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: info.outputPath(`image-error-${locale}-${width}.png`) });
+  await page.reload(); await expect(host.getByRole("alert")).toHaveAttribute("title", "badRequest · HTTP 400 · INVALID_MODEL");
+  await host.locator(".dr-image-error-details summary").click(); await expect(host.getByText("INVALID_MODEL", { exact: true })).toBeVisible();
+  expect(calls).toBe(1);
 });

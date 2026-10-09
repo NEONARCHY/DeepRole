@@ -1,10 +1,28 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { findDeepestServiceElements, findSafeServiceContainer, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, presentMemoryAnalysis, serviceReplyText, replaceServicePayloadWithSummary, restoreServiceTurns } from "../src/adapters/deepseek-service-dom";
+import { findDeepestServiceElements, findSafeServiceContainer, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, hideCharacterTextServices, plainCharacterReplyText, presentMemoryAnalysis, serviceReplyText, replaceServicePayloadWithSummary, restoreServiceTurns } from "../src/adapters/deepseek-service-dom";
+import { parseImageScenePlan } from "../src/core/image-plan";
 import { SERVICE_PREFIX } from "../src/core/service-protocol";
 import { nativeMessageIdentity } from "../src/adapters/deepseek-message-dom";
 
 describe("DeepSeek service message isolation", () => {
   afterEach(() => { document.body.innerHTML = ""; vi.restoreAllMocks(); });
+
+  it.each(["ds-assistant-message-main-content", "ds-markdown"])("hiding an image service preserves its exact request and valid final JSON: %s", className => {
+    document.body.innerHTML = '<main><article data-role="user" data-message-id="command"></article><article data-role="assistant" data-message-id="answer"><div class="ds-think-content">Private reasoning</div><div id="final"></div></article><textarea></textarea></main>';
+    const command = document.querySelector<HTMLElement>('article[data-role="user"]')!, answer = document.querySelector<HTMLElement>('article[data-role="assistant"]')!;
+    const prompt = '[DeepRole Service]\n[Request ID: image-plan]\n[DeepRole Image Plan]\nPrepare a neutral landscape.';
+    const plan = { scene: "An observatory at dusk under a clear sky.", characters: [] };
+    const raw = JSON.stringify(plan), final = document.getElementById("final")!;
+    command.textContent = prompt; final.className = className; final.textContent = raw;
+    expect(plainCharacterReplyText(answer)).toBe(raw);
+    expect(hideCharacterTextServices()).toEqual([{ requestId: "image-plan", replyIdentity: nativeMessageIdentity(answer) }]);
+    expect(command.style.getPropertyValue("display")).toBe("none");
+    expect(answer.style.getPropertyValue("display")).toBe("none");
+    expect(command.textContent).toBe(prompt); expect(final.textContent).toBe(raw);
+    expect(parseImageScenePlan(plainCharacterReplyText(answer))).toEqual(plan);
+    hideCharacterTextServices();
+    expect(plainCharacterReplyText(answer)).toBe(raw);
+  });
 
   it("uses a single real turn for tall virtualized DeepSeek replies with paragraph-split JSON", () => {
     document.body.innerHTML = '<section><div data-virtual-list-item-key="1"><div class="ds-message" id="request"><div class="ds-collapsible-text"></div></div></div><div data-virtual-list-item-key="2"><div class="ds-message" id="answer"><div class="ds-think-content">Thinking</div><div class="ds-markdown ds-assistant-message-main-content" id="final"><p>Summary</p><p>&lt;deeprole_data&gt;</p><p>{"type":"memory-suggestions","items":[]}</p><p>&lt;/deeprole_data&gt;</p></div></div></div></section>';

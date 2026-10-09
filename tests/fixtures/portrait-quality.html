@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portrait quality fixture</title></head><body style="margin:0;background:#151a20"><div id="app" class="dr-root"></div><script src="/tests/fixtures/portrait-storage.js"></script><script type="module">
+import React,{useState,useEffect} from "react";import{createRoot}from"react-dom/client";
+import{PortraitUploadSettings}from"/src/entrypoints/shared/PortraitUploadSettings.tsx";
+import{DEFAULT_SETTINGS}from"/src/core/defaults.ts";import{getSettings,saveSettings}from"/src/storage/settings.ts";
+import{readPortrait}from"/src/entrypoints/shared/portrait-file.ts";
+import{openPortraitViewer}from"/src/adapters/portrait-viewer.ts";
+import"/src/entrypoints/sidepanel/styles.css";
+const locale=new URL(location.href).searchParams.get("locale")||"en";document.documentElement.lang=locale;
+function App(){const[settings,setSettings]=useState({...DEFAULT_SETTINGS,locale});useEffect(()=>{getSettings().then(value=>setSettings({...value,locale}));},[]);window.readPortrait=readPortrait;window.openImage=(src)=>openPortraitViewer(document,src,locale==="ru"?"Портрет · обсерватория":"Portrait · observatory",locale);return React.createElement("section",{className:"settings-card",style:{margin:"16px auto",padding:16,maxWidth:440}},React.createElement("h2",null,locale==="ru"?"Качество загруженных изображений":"Uploaded image quality"),React.createElement(PortraitUploadSettings,{settings,onSettings:async value=>{await saveSettings(value);setSettings(value);}}));}
+createRoot(document.querySelector("#app")).render(React.createElement(App));
+</script></body></html>

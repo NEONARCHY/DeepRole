@@ -1,5 +1,6 @@
 import { parseServiceData, SERVICE_END, SERVICE_START } from "../core/service-protocol";
 import { nativeMessageRow, nativeMessageRows, nativeMessageIdentity, isUserMessage, REASONING } from "./deepseek-message-dom";
+import { syncHiddenMessageLayout } from "./hidden-message-layout";
 
 /** Hide field-generation turns without changing DeepSeek's stored message text. */
 export function hideCharacterTextServices(root: ParentNode = document, saved: { requestId: string; replyIdentity: string }[] = []): { requestId: string; replyIdentity: string }[] {
@@ -30,6 +31,7 @@ export function hideCharacterTextServices(root: ParentNode = document, saved: { 
     if (row.style.getPropertyValue("display") !== "none") row.style.setProperty("display", "none", "important");
     if (!isUserMessage(row)) markServiceReplyRow(row, requestId);
   }
+  syncHiddenMessageLayout(root);
   return found;
 }
 
@@ -199,14 +201,15 @@ export function presentMemoryAnalysis(requestId: string, label: string, summary?
   if (turn?.response) turn.request.dataset.deeproleMemoryRequest = requestId;
   showServicePreloader(requestId, row, row, label);
   if (summary !== undefined) finishServicePreloader(requestId, [row], summary);
+  syncHiddenMessageLayout(root);
 }
 
 /** Ignore all extension feedback when assessing whether the native reply stopped changing. */
 /** Plain final prose, preserving paragraph breaks and excluding reasoning/controls. */
 export function plainCharacterReplyText(row: HTMLElement): string {
-  const scope = row.querySelector(".ds-assistant-message-main-content") ?? row.querySelector(".ds-markdown") ?? row;
+  const scope = row.querySelector(".ds-assistant-message-main-content") ?? [...row.querySelectorAll(".ds-markdown")].find(node => !node.closest(REASONING)) ?? row;
   const copy = scope.cloneNode(true) as HTMLElement;
-  copy.querySelectorAll(`${REASONING},button,[role=button],[data-deeprole-memory-card],[data-deeprole-result],[data-deeprole-scene-photos]`).forEach(node => node.remove());
+  copy.querySelectorAll(`${REASONING},button,[role=button],[data-deeprole-memory-card],[data-deeprole-result],[data-deeprole-scene-photos],[data-deeprole-cast-recovery]`).forEach(node => node.remove());
   copy.querySelectorAll("br").forEach(node => node.replaceWith("\n"));
   copy.querySelectorAll("p,li").forEach(node => node.append("\n"));
   return (copy.textContent ?? "").replace(/\n{3,}/gu, "\n\n").trim();
@@ -241,6 +244,7 @@ export function removeServicePreloader(requestId: string, rows: HTMLElement[]): 
       delete node.dataset.deeprolePayloadPriority;
     }
   }
+  syncHiddenMessageLayout(rows[0]?.ownerDocument ?? document);
 }
 
 /** Keep the machine block hidden if DeepSeek replaced its DOM during saving. */

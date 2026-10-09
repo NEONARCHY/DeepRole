@@ -1,10 +1,11 @@
 import { useEffect, useId, useState } from "react";
-import { ADULT_CONTENT_LEVEL, IMAGE_CONTENT_LEVELS, DEFAULT_IMAGE_SETTINGS, validImageProviderConfig, type ImageModelInfo, type ImageProviderConfig, type ImageSettings as Settings } from "../../core/image-generation";
+import { ADULT_CONTENT_LEVEL, IMAGE_CONTENT_LEVELS, DEFAULT_IMAGE_SETTINGS, imageModelsFor, validImageProviderConfig, type ImageModelInfo, type ImageProviderConfig, type ImageSettings as Settings } from "../../core/image-generation";
 import { imageText, imageErrorKey, type ImageCopyKey } from "../../core/image-i18n";
 import type { Locale } from "../../core/types";
 import { getImageSettings, saveImageSettings } from "../../storage/image-settings";
 import { providerKeyHint, removeProviderKey, saveProviderKey } from "../../storage/image-keys";
 import { Select } from "../shared/Select";
+import { ImageErrorDetails } from "../shared/ImageErrorDetails";
 import "../shared/image-generation.css";
 
 export function ImageSettings({ locale, onModels, onPermission }: { locale: Locale; onModels?: (profile: ImageProviderConfig) => Promise<ImageModelInfo[]>; onPermission?: (profile: ImageProviderConfig) => Promise<boolean> }) {
@@ -14,12 +15,12 @@ export function ImageSettings({ locale, onModels, onPermission }: { locale: Loca
   const [extra, setExtra] = useState("{}");
   const [keyDraft, setKeyDraft] = useState(""); const [hint, setHint] = useState<string | null>(null);
   const [models, setModels] = useState<ImageModelInfo[]>([]); const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<ImageCopyKey | null>(null); const [error, setError] = useState<ImageCopyKey | null>(null);
+  const [notice, setNotice] = useState<ImageCopyKey | null>(null); const [error, setError] = useState<unknown>(null);
   const [gate, setGate] = useState(false);
   const id = useId();
   useEffect(() => { let alive = true; void getImageSettings().then(value => { if (alive) setSettings(value); }).catch(() => { if (alive) setError("invalid"); }); return () => { alive = false; }; }, []);
   async function commit(next: Settings) { setError(null); await saveImageSettings(next); setSettings(next); setNotice("saved"); }
-  async function act(task: () => Promise<void>) { if (busy) return; setBusy(true); setError(null); setNotice(null); try { await task(); } catch (cause) { setError(imageErrorKey(cause)); } finally { setBusy(false); } }
+  async function act(task: () => Promise<void>) { if (busy) return; setBusy(true); setError(null); setNotice(null); try { await task(); } catch (cause) { setError(cause); } finally { setBusy(false); } }
   function edit(profile: ImageProviderConfig) { setDraft(structuredClone(profile)); setExtra(JSON.stringify(profile.extraParams ?? {}, null, 2)); setKeyDraft(""); setHint(null); setModels([]); setNotice(null); setError(null); void providerKeyHint(profile.id).then(setHint).catch(() => setError("failed")); }
   function parsed(): ImageProviderConfig | null { try { const value = { ...draft, extraParams: JSON.parse(extra) }; return validImageProviderConfig(value) ? value : null; } catch { return null; } }
   function pickModel(profile: ImageProviderConfig, name: "modelId" | "editModelId", id: string): ImageProviderConfig {
@@ -60,15 +61,20 @@ export function ImageSettings({ locale, onModels, onPermission }: { locale: Loca
         {hint && <p className="setting-copy">{t("keySaved", { last: hint })}</p>}<p className="setting-copy">{t("keyHint")}</p>
         <div className="button-row"><button type="button" className="button secondary" disabled={!keyDraft} onClick={() => void act(async () => { await saveProviderKey(draft.id, keyDraft); setHint(await providerKeyHint(draft.id)); setKeyDraft(""); setNotice("saved"); })}>{t("keySave")}</button><button type="button" className="button secondary danger" disabled={!hint} onClick={() => void act(async () => { await removeProviderKey(draft.id); setHint(null); })}>{t("keyRemove")}</button></div>
         <button type="button" className="button secondary" disabled={!onModels || !draft.enabled} onClick={() => { const profile = parsed(); if (!profile) { setError("invalid"); return; } void act(async () => { const values = await onModels!(profile); setModels(values); }); }}>{t("models")}</button>
-        {(["modelId", "editModelId"] as const).map((name, i) => <label className="field-label" key={name}><span>{t(i ? "editModel" : "model")}</span><Select value={draft[name] ?? ""} onChange={event => setDraft(pickModel(draft, name, event.target.value))}><option value="">{t("choose")}</option>{draft[name] && !models.some(m => m.id === draft[name]) && <option value={draft[name]}>{draft[name]}</option>}{models.map(model => <option key={model.id} value={model.id}>{model.label}{model.uncensored ? ` · ${t("uncensored")}` : ""}{model.priceUsd !== undefined ? ` · ${new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format(model.priceUsd)}` : ""}</option>)}</Select></label>)}
+        {(["modelId", "editModelId"] as const).map((name, i) => {
+          const eligible = imageModelsFor(models, i ? "edit" : "generate");
+          return <label className="field-label" key={name}><span>{t(i ? "editModel" : "model")}</span><Select value={draft[name] ?? ""} onChange={event => setDraft(pickModel(draft, name, event.target.value))}><option value="">{t("choose")}</option>{draft[name] && !eligible.some(m => m.id === draft[name]) && <option value={draft[name]}>{draft[name]}</option>}{eligible.map(model => <option key={model.id} value={model.id}>{model.label}{model.uncensored ? ` · ${t("uncensored")}` : ""}{model.priceUsd !== undefined ? ` · ${new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format(model.priceUsd)}` : ""}</option>)}</Select></label>;
+        })}
+        {models.find(m => m.id === (draft.editModelId || draft.modelId))?.supportsEdit === false && <p className="error-text" role="status">{t("editModelMismatch")}</p>}
+        {models.find(m => m.id === draft.modelId)?.supportsGenerate === false && <p className="error-text" role="status">{t("generationModelMismatch")}</p>}
         <p className="setting-copy">{t("modelHint")}</p>
         <label className="field-label"><span>{t("references")}</span><input type="number" min={1} max={128} value={draft.maxReferences} onChange={event => setDraft({ ...draft, maxReferences: Number(event.target.value) })} /></label><p className="setting-copy">{t("fallback")}</p>
-        <label className="field-label"><span>{t("extra")}</span><textarea spellCheck={false} maxLength={32000} value={extra} onChange={event => setExtra(event.target.value)} aria-invalid={error === "invalid"} aria-describedby={error ? id + "error" : undefined} /></label><p className="setting-copy">{t("extraHint")}</p>
+        <label className="field-label"><span>{t("extra")}</span><textarea spellCheck={false} maxLength={32000} value={extra} onChange={event => setExtra(event.target.value)} aria-invalid={!!error && imageErrorKey(error) === "invalid"} aria-describedby={error ? id + "error" : undefined} /></label><p className="setting-copy">{t("extraHint")}</p>
         <button type="button" className="button primary" onClick={() => void saveProfile()}>{t("save")}</button>
         {settings.profiles.some(p => p.id === draft.id) && <button type="button" className="button secondary danger" onClick={() => void act(async () => { await commit({ ...settings, profiles: settings.profiles.filter(p => p.id !== draft.id), profileByLevel: Object.fromEntries(Object.entries(settings.profileByLevel).filter(([, value]) => value !== draft.id)) }); await removeProviderKey(draft.id); setDraft(null); })}>{t("remove")}</button>}
       </fieldset>}
       {!onModels && <p className="setting-copy">{t("pending")}</p>}
-      {error && <p id={id + "error"} role="alert" className="error-text">{t(error)}</p>}
+      {!!error && <ImageErrorDetails id={id + "error"} error={error} locale={locale} />}
       <p role="status" aria-live="polite" className="setting-copy">{busy ? t("busy") : notice ? t(notice) : ""}</p>
     </div>
   </section>;

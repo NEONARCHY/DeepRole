@@ -109,7 +109,7 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
       const width = dock.current?.offsetWidth ?? 280;
       const left = Math.max(minimumLeft, Math.min(point ? point.x * innerWidth + anchorShift : minimumLeft, innerWidth - width - 8));
       const top = Math.max(minimumTop, Math.min(point ? point.y * innerHeight : minimumTop, innerHeight - 80));
-      return id === "dock" ? { position: "fixed" as const, left, top } : { position: "fixed" as const, left, top: top + (dock.current?.offsetHeight ?? 76) + 1, maxHeight: Math.max(120, innerHeight - top - 90) };
+      return id === "dock" ? { position: "fixed" as const, left, top } : { position: "fixed" as const, left, top: top + (dock.current?.offsetHeight ?? 76) + WIDGET_GAP, maxHeight: Math.max(120, innerHeight - top - 90) };
     }
     if (overflow) return undefined;
     const point = layout.positions[id as Id];

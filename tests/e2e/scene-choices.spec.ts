@@ -183,11 +183,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
       const spacing = await card.evaluate(host => {
         const root = host.shadowRoot!; const section = root.querySelector("section")!; const grid = root.querySelector(".grid")!; const heading = root.querySelector(".choice-heading")!;
         const box = section.getBoundingClientRect(); const tiles = grid.getBoundingClientRect(); const header = heading.getBoundingClientRect();
-        return { gap: parseFloat(getComputedStyle(grid).gap), offsets: [tiles.left - box.left, box.right - tiles.right, box.bottom - tiles.bottom, header.top - box.top, tiles.top - header.bottom], tools: [...root.querySelectorAll(".choice-tools button")].map(button => { const rect = button.getBoundingClientRect(); return [rect.width, rect.height]; }) };
+        return { gap: parseFloat(getComputedStyle(grid).gap), offsets: [tiles.left - box.left, box.right - tiles.right, box.bottom - tiles.bottom, header.top - box.top, tiles.top - header.bottom], tools: [...root.querySelectorAll(".choice-tools button:not([hidden])")].map(button => { const rect = button.getBoundingClientRect(); return [rect.width, rect.height]; }) };
       });
       expect(spacing.gap).toBe(adaptiveLayout ? 6 : 8);
       for (const offset of spacing.offsets) expect(offset).toBeCloseTo(spacing.gap, 1);
-      expect(spacing.tools).toEqual([[32, 32], [32, 32], [32, 32]]);
+      expect(spacing.tools).toEqual([[32, 32], [32, 32], [32, 32], [32, 32]]);
     }
     const expand = card.getByRole("button", { name: locale === "ru" ? "Текст целиком" : "Full text", exact: true });
     await expect(expand.locator("svg")).toHaveCount(1); expect(await expand.textContent()).toBe("");

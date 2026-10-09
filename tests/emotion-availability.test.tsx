@@ -27,10 +27,11 @@ it("retains retired exclusions and allows removing them explicitly", () => {
   const retired = view.getByRole("switch", { name: "Allow emotion: retired" }); expect(retired).not.toBeChecked(); fireEvent.click(retired);
   expect(view.getByRole("status").textContent).not.toContain("blockedEmotions");
 });
-it("bulk neutral-only keeps portraits and permits newly added keys", () => {
+it("bulk neutral-only detaches portraits without deleting images and permits newly added keys", () => {
   const initial = { ...EMPTY_CHARACTER, sprites: { angry: "data:image/png;base64,AAAA" } };
   const view = render(<Form initial={initial} />); fireEvent.click(view.getByText("Customize list")); fireEvent.click(view.getByRole("button", { name: "Calm only" }));
   expect(view.getByText("1 of 6 available")).toBeVisible(); expect(view.getByRole("status").textContent).toContain(initial.sprites.angry);
+  expect(JSON.parse(view.getByRole("status").textContent!)).toMatchObject({ sprites: {}, portraitLibrary: [initial.sprites.angry] });
   view.rerender(<Form initial={initial} emotions={[...DEFAULT_EMOTIONS, "focused"]} />); expect(view.getByRole("switch", { name: "Allow emotion: focused" })).toBeChecked();
 });
 it("reports retained-list capacity without changing the draft and lets the user recover", () => {
@@ -40,4 +41,13 @@ it("reports retained-list capacity without changing the draft and lets the user 
   expect(view.getByRole("switch", { name: "Allow emotion: Happy · happy" })).toBeChecked();
   fireEvent.click(view.getByRole("button", { name: "Allow all" })); expect(view.queryByRole("alert")).toBeNull();
   fireEvent.click(view.getByRole("button", { name: "Calm only" })); expect(view.getByText("1 of 6 available")).toBeVisible();
+});
+it("keeps the switch and every image unchanged when detachment would overflow the library", () => {
+  const images = Array.from({ length: 513 }, (_, i) => "data:image/png;base64," + btoa("portrait-" + i));
+  const initial = { ...EMPTY_CHARACTER, sprites: { happy: images[512]! }, portraitLibrary: images.slice(0, 512) };
+  const view = render(<Form initial={initial} />); fireEvent.click(view.getByText("Customize list"));
+  fireEvent.click(view.getByRole("switch", { name: "Allow emotion: Happy · happy" }));
+  expect(view.getByRole("alert")).toHaveTextContent("The library has no room");
+  expect(view.getByRole("switch", { name: "Allow emotion: Happy · happy" })).toBeChecked();
+  expect(JSON.parse(view.getByRole("status").textContent!)).toEqual(initial);
 });

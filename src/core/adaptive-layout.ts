@@ -23,13 +23,14 @@ export function fitScene(width: number, left: number, center: number, count: num
 export function fitPinnedScene(width: number, left: number, center: number, count: number, composerWidth: number, preferred = 192) {
   const available = Math.max(1, width - left - 8);
   const viewportRoom = Math.max(1, 2 * Math.min(center - 8, width - 8 - center));
-  const limit = Math.max(1, Math.min(720, composerWidth, viewportRoom));
+  const limit = Math.max(1, Math.min(composerWidth, viewportRoom));
   const compactFit = () => ({ compact: count > 0, portrait: clamp(limit / Math.min(Math.max(count, 2), 5) - 6, 64, 96), choices: limit, x: center - limit / 2 });
   if (!count) return compactFit();
   if (available < 850 || count > 5) return compactFit();
   const rightCount = Math.max(0, count - 1);
-  const choices = Math.min(limit, 2 * (center - left - 120), rightCount ? 2 * (width - 8 - center - rightCount * 102 - 18) : limit);
-  if (choices < Math.min(400, limit)) return compactFit();
-  const portrait = Math.min(preferred, center - choices / 2 - left - 24, rightCount ? (width - 8 - center - choices / 2 - 18) / rightCount - 6 : preferred);
-  return { compact: false, portrait: Math.max(96, portrait), choices, x: center - choices / 2 };
+  // The input owns the options width. Fit portraits into the remaining gutters,
+  // or use the compact strip; never silently narrow the options to make room.
+  const portrait = Math.min(preferred, center - limit / 2 - left - 24, rightCount ? (width - 8 - center - limit / 2 - 24 - (rightCount - 1) * 6) / rightCount : preferred);
+  if (portrait < 96) return compactFit();
+  return { compact: false, portrait, choices: limit, x: center - limit / 2 };
 }

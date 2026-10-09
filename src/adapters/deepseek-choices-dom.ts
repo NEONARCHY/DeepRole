@@ -7,6 +7,8 @@ import designEffects from "../entrypoints/shared/design-effects.css?raw";
 import { fitAdaptiveChoices } from "./adaptive-layout";
 import { bindPinnedChoices, composerBounds } from "./pinned-choices";
 import { bindInlineChoices, unbindInlineChoices, choiceScrollContainer } from "./inline-choices";
+import { bindPinnedChoiceSpace, unbindPinnedChoiceSpace } from "./pinned-choice-space";
+import { syncHiddenMessageLayout } from "./hidden-message-layout";
 
 const MARKER = "<deeprole_choices>";
 const STREAM_MARKERS = ["<deeprole_characters", "<deeprole_choices"] as const;
@@ -23,7 +25,7 @@ function choiceCards(root: ParentNode): HTMLElement[] {
   return [...new Set([...root.querySelectorAll<HTMLElement>(HOST), ...(managedCards.get(root) ?? [])])].filter(host => host.isConnected);
 }
 function removeChoiceCard(host: HTMLElement): void {
-  unbindInlineChoices(host); bindPinnedChoices(host, false); inlineAnchors.get(host)?.remove(); inlineAnchors.delete(host); host.remove();
+  unbindInlineChoices(host); unbindPinnedChoiceSpace(host); bindPinnedChoices(host, false); inlineAnchors.get(host)?.remove(); inlineAnchors.delete(host); host.remove();
 }
 function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal?: boolean): void {
   sourceRows.set(host, row);
@@ -31,16 +33,23 @@ function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal?: boolean):
   if (host.dataset.deeproleChoicesPinned === "true") {
     unbindInlineChoices(host);
     let anchor = inlineAnchors.get(host);
-    if (!anchor?.isConnected) { anchor = row.ownerDocument.createElement("span"); anchor.hidden = true; anchor.dataset.deeproleChoicesAnchor = "true"; row.after(anchor); inlineAnchors.set(host, anchor); }
+    if (!anchor?.isConnected) {
+      anchor = row.ownerDocument.createElement("div"); anchor.dataset.deeproleChoicesAnchor = "true";
+      anchor.setAttribute("aria-hidden", "true");
+      anchor.style.cssText = "height:0;min-height:0;margin:0;padding:0;border:0;flex:none;pointer-events:none;overflow-anchor:none";
+      row.after(anchor); inlineAnchors.set(host, anchor);
+    }
     if (host.parentElement !== row.ownerDocument.body) row.ownerDocument.body.append(host);
   } else {
+    unbindPinnedChoiceSpace(host);
     const anchor = inlineAnchors.get(host);
     if (anchor?.isConnected) anchor.replaceWith(host);
     else if (row.nextElementSibling !== host) row.after(host);
     inlineAnchors.delete(host);
   }
   bindPinnedChoices(host, host.dataset.deeproleChoicesPinned === "true");
-  if (host.dataset.deeproleChoicesPinned !== "true") bindInlineChoices(host, reveal ?? hadAnchor);
+  if (host.dataset.deeproleChoicesPinned === "true") bindPinnedChoiceSpace(host, inlineAnchors.get(host)!);
+  if (host.dataset.deeproleChoicesPinned !== "true") bindInlineChoices(host, reveal ?? hadAnchor, hadAnchor && reveal === false);
 }
 type SettlingState = { signature: string; changedAt: number; row?: HTMLElement; observedGeneration: boolean; busy?: boolean; requestSource?: string; timer?: ReturnType<typeof setTimeout> };
 const settling = new WeakMap<ParentNode, SettlingState>();
@@ -192,6 +201,11 @@ export function latestSceneChoiceTarget(root: ParentNode = document): { row: HTM
 
 /** Keep the story in DeepSeek's reply while replacing only its machine-readable choices. */
 export function syncSceneChoiceCards(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode = document, recovery?: { busy: boolean; loading?: boolean; requestSignature?: string; onRequest: (signature: string) => Promise<boolean> }, presentation?: ChoicePresentation): void {
+  try { syncSceneChoiceCardsInner(enabled, generating, locale, onPick, root, recovery, presentation); }
+  finally { syncHiddenMessageLayout(root); }
+}
+
+function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale: Locale, onPick: ChoiceHandler, root: ParentNode, recovery?: { busy: boolean; loading?: boolean; requestSignature?: string; onRequest: (signature: string) => Promise<boolean> }, presentation?: ChoicePresentation): void {
   const previous = settling.get(root);
   if (previous?.timer) clearTimeout(previous.timer);
   if (!enabled) {
@@ -290,11 +304,24 @@ export function concealChoicePayloads(root: ParentNode): void {
       [...element.querySelectorAll<HTMLElement>(HIDDEN)].filter(node => !node.textContent).forEach(node => node.remove());
     }
   }
-  for (const row of root.querySelectorAll<HTMLElement>(".ds-message, article, [data-message-id]")) {
+  for (const row of root.querySelectorAll<HTMLElement>(".ds-message, article, [data-message-id], [data-deeprole-choices-request]")) {
     const text = row.textContent?.trim() ?? "";
     if (text.startsWith("[DeepRole Service]") && text.includes("[DeepRole Scene Choices]") && !row.querySelector(".ds-message, article, [data-message-id]")) {
-      row.dataset.deeproleChoicesRequest = "true";
-      row.style.setProperty("display", "none", "important");
+      if (!row.hasAttribute("data-deeprole-choices-request")) {
+        row.dataset.deeproleChoicesRequestDisplay = row.style.getPropertyValue("display");
+        row.dataset.deeproleChoicesRequestPriority = row.style.getPropertyPriority("display");
+        row.dataset.deeproleChoicesRequest = "true";
+      }
+      if (row.style.display !== "none" || row.style.getPropertyPriority("display") !== "important") row.style.setProperty("display", "none", "important");
+    } else if (row.hasAttribute("data-deeprole-choices-request")) {
+      if (row.style.display === "none" && row.style.getPropertyPriority("display") === "important") {
+        const original = row.dataset.deeproleChoicesRequestDisplay;
+        if (original) row.style.setProperty("display", original, row.dataset.deeproleChoicesRequestPriority ?? "");
+        else row.style.removeProperty("display");
+      }
+      delete row.dataset.deeproleChoicesRequest;
+      delete row.dataset.deeproleChoicesRequestDisplay;
+      delete row.dataset.deeproleChoicesRequestPriority;
     }
   }
 }
@@ -354,7 +381,7 @@ function createRecoveryCard(locale: Locale, signature: string, recovery: { busy:
   host.dataset.busy = String(recovery.busy);
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = `${designTokens}:host{display:block;margin:var(--dr-space-4) 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-text)}.box{max-width:690px;padding:var(--dr-space-4);border:1px solid var(--dr-border);border-radius:var(--dr-radius);background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card);box-sizing:border-box}button{min-height:40px;padding:9px 14px;border:1px solid var(--dr-action);border-radius:10px;background:var(--dr-action);color:var(--dr-on-action);font:600 13px/1.4 system-ui,sans-serif;cursor:pointer}button:hover{background:var(--dr-action-hover)}button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}button:disabled{opacity:.65;cursor:wait}p{margin:var(--dr-space-2) 0 0;color:var(--dr-muted);font-size:12px;overflow-wrap:anywhere}${designEffects}`;
+  style.textContent = `${designTokens}:host{display:block;margin:var(--dr-space-4) 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-text)}.box{width:100%;padding:var(--dr-space-4);border:1px solid var(--dr-border);border-radius:var(--dr-radius);background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card);box-sizing:border-box}button{min-height:40px;padding:9px 14px;border:1px solid var(--dr-action);border-radius:10px;background:var(--dr-action);color:var(--dr-on-action);font:600 13px/1.4 system-ui,sans-serif;cursor:pointer}button:hover{background:var(--dr-action-hover)}button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}button:disabled{opacity:.65;cursor:wait}p{margin:var(--dr-space-2) 0 0;color:var(--dr-muted);font-size:12px;overflow-wrap:anywhere}${designEffects}`;
   const box = doc.createElement("div"); box.className = "box";
   const button = doc.createElement("button"); button.type = "button"; button.className = "dr-accent-action"; button.disabled = recovery.busy;
   button.textContent = sceneChoiceText(locale, recovery.busy ? "waiting" : "request");
@@ -429,11 +456,16 @@ function applyChoicePresentation(host: HTMLElement, presentation?: ChoicePresent
   if (!presentation) return;
   choicePresentations.set(host, presentation);
   const wasPinned = host.dataset.deeproleChoicesPinned === "true";
+  const row = sourceRows.get(host);
+  const readingScroller = wasPinned && !presentation.pinSceneChoices && row ? choiceScrollContainer(row) : null;
+  const readingTop = readingScroller?.scrollTop;
   host.dataset.deeproleChoicesPinned = String(presentation.pinSceneChoices);
   host.dataset.deeproleAdaptive = String(!!presentation.adaptiveLayout);
-  const row = sourceRows.get(host);
   if (row) placeChoiceCard(host, row, wasPinned && !presentation.pinSceneChoices ? false : undefined);
   fitAdaptiveChoices(host);
+  // Removing the fixed card's reserve temporarily shortens native flow and may
+  // clamp scrollTop. Capture before changing placement, then restore after fitting.
+  if (readingScroller && readingTop !== undefined) readingScroller.scrollTop = readingTop;
   if (!host.isConnected) queueMicrotask(() => { if (host.isConnected) fitAdaptiveChoices(host); });
   for (const key of ["pinPortraits", "pinSceneChoices"] as const) {
     const button = host.shadowRoot?.querySelector<HTMLButtonElement>(`[data-choice-pin='${key}']`);
@@ -457,9 +489,13 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     :host([data-deeprole-choices-pinned=true]){position:fixed;left:50%;bottom:24px;z-index:2147481900;width:min(720px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
     :host([data-deeprole-choices-pinned=true]) section{max-height:var(--dr-pinned-max-height,calc(100dvh - 84px));overflow:auto;overscroll-behavior:contain;box-shadow:var(--dr-depth-panel)}
     :host([data-deeprole-choices-inline=true]) section{max-height:var(--dr-inline-max-height);overflow:auto;overscroll-behavior:contain}
-    section{box-sizing:border-box;max-width:1000px;padding:var(--choice-gap);border:0;border-radius:16px;background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
-    .choice-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--dr-space-2);margin-bottom:var(--choice-gap)}h3{margin:0;min-width:0;font-size:17px;font-weight:650}.choice-tools{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.choice-pin{display:grid;place-items:center;min-width:32px;min-height:32px;padding:4px;border:1px solid var(--dr-border);border-radius:9px;background:var(--dr-surface);color:var(--dr-muted);cursor:pointer}.choice-pin:hover{background:var(--dr-raised);color:var(--dr-text)}.choice-pin[aria-pressed=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}.choice-pin svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.choice-pin span{font-size:14px;line-height:1}
+    section{box-sizing:border-box;width:100%;padding:var(--choice-gap);border:0;border-radius:16px;background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
+    .choice-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--dr-space-2);margin-bottom:var(--choice-gap)}h2{margin:0;min-width:0;font-size:17px;font-weight:650}.choice-tools{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.choice-pin{display:grid;place-items:center;min-width:32px;min-height:32px;padding:4px;border:1px solid var(--dr-border);border-radius:9px;background:var(--dr-surface);color:var(--dr-muted);cursor:pointer}.choice-pin:hover{background:var(--dr-raised);color:var(--dr-text)}.choice-pin[aria-pressed=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}.choice-pin svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.choice-pin span{font-size:14px;line-height:1}
     .choice-expand[aria-expanded=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}
+    .choice-pin[hidden],.grid[hidden]{display:none}
+    :host([data-deeprole-choices-minimized=true]) .choice-heading{margin-bottom:0}
+    :host([data-deeprole-choices-minimized=true]) :is(.choice-navigation,.choice-status,.dr-cast-toolbar){display:none}
+    :host([data-deeprole-choices-minimized=true]) .choice-pin:not(.choice-restore){display:none}
     .grid{display:grid;grid-template-columns:1fr;gap:var(--choice-gap)}
     .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border-strong);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit;box-shadow:inset 0 1px 0 #ffffff08;transition:border-color 280ms var(--dr-ease-out)}
     .grid button::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,color-mix(in oklab,var(--choice-tint) 14%,transparent),color-mix(in oklab,var(--choice-tint) 7%,transparent) 58%,transparent);opacity:0;transform:scaleX(0);transform-origin:left center;transition:transform 280ms cubic-bezier(.2,.75,.25,1),opacity 180ms ease-out}
@@ -490,7 +526,7 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   `;
   const section = doc.createElement("section");
   section.setAttribute("aria-label", sceneChoiceText(locale, "title"));
-  const title = doc.createElement("h3"); title.textContent = sceneChoiceText(locale, "title");
+  const title = doc.createElement("h2"); title.textContent = sceneChoiceText(locale, "title");
   const heading = doc.createElement("div"); heading.className = "choice-heading";
   const expand = doc.createElement("button"); expand.type = "button"; expand.className = "choice-pin choice-expand"; expand.setAttribute("aria-label", sceneChoiceText(locale, "expand")); expand.title = sceneChoiceText(locale, "expand"); expand.setAttribute("aria-expanded", "false"); expand.setAttribute("aria-controls", "scene-choice-options");
   const expandIcon = doc.createElementNS("http://www.w3.org/2000/svg", "svg"); expandIcon.setAttribute("viewBox", "0 0 24 24"); expandIcon.setAttribute("aria-hidden", "true");
@@ -512,7 +548,25 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     } else { const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true"); const path = doc.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("d", "M7 4H3v16h4m10-16h4v16h-4M8 12h8m-6-2-2 2 2 2m4-4 2 2-2 2"); svg.append(path); button.append(svg); }
     button.addEventListener("click", () => { const current = choicePresentations.get(host); if (current) void current.onToggle(key); }); tools.append(button);
   }
-  tools.append(expand); heading.append(title, tools);
+  const minimize = doc.createElement("button"); minimize.type = "button"; minimize.className = "choice-pin choice-minimize";
+  const restore = doc.createElement("button"); restore.type = "button"; restore.className = "choice-pin choice-restore"; restore.hidden = true;
+  for (const [button, key, pathData] of [[minimize, "minimizeChoices", "M5 12h14"], [restore, "restoreChoices", "M5 5h14v14H5z"]] as const) {
+    const label = sceneChoiceText(locale, key); button.setAttribute("aria-label", label); button.title = label;
+    button.setAttribute("aria-controls", grid.id); button.setAttribute("aria-expanded", "true");
+    const icon = doc.createElementNS("http://www.w3.org/2000/svg", "svg"); icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("aria-hidden", "true");
+    const path = doc.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("d", pathData); icon.append(path); button.append(icon);
+  }
+  const setMinimized = (minimized: boolean) => {
+    // This is local presentation only: keep the same choices, selection and
+    // full-text state. A new scene gets a new, open card rather than being missed.
+    host.dataset.deeproleChoicesMinimized = String(minimized); grid.hidden = minimized;
+    minimize.hidden = minimized; restore.hidden = !minimized;
+    minimize.setAttribute("aria-expanded", String(!minimized)); restore.setAttribute("aria-expanded", String(!minimized));
+    (minimized ? restore : minimize).focus({ preventScroll: true });
+  };
+  minimize.addEventListener("click", () => setMinimized(true));
+  restore.addEventListener("click", () => setMinimized(false));
+  tools.append(expand, minimize, restore); heading.append(title, tools);
   grid.title = sceneChoiceText(locale, "navigation");
   const navigation = doc.createElement("p"); navigation.className = "choice-navigation"; navigation.id = "scene-choice-navigation"; navigation.textContent = sceneChoiceText(locale, "navigation"); grid.setAttribute("aria-describedby", navigation.id);
   const status = doc.createElement("p"); status.className = "choice-status"; status.hidden = true; status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");

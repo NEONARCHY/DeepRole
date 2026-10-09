@@ -29,14 +29,14 @@ export async function handleImageMessage(message: ImageMessage, sender: ImageSen
     if (message.type === "DR_IMAGE_START") return { ok: true, attempt: await jobs.start(target) };
     if (message.type === "DR_IMAGE_RENDER") return { ok: true, illustration: await imageWorkerOperation(() => jobs.render(target, message.id, message.plan)) };
     if (message.type === "DR_IMAGE_REPEAT") return { ok: true, illustration: await imageWorkerOperation(() => jobs.repeat(target, message.id, message.attempt === true)) };
-    if (message.type === "DR_IMAGE_FAIL") { await jobs.fail(target, message.id, { code: message.error }); return { ok: true }; }
+    if (message.type === "DR_IMAGE_FAIL") { await jobs.fail(target, message.id, { code: message.error }, message.phase === "plan" ? "plan" : undefined); return { ok: true }; }
     if (message.type === "DR_IMAGE_SELFIE") return { ok: true, illustration: await imageWorkerOperation(() => jobs.selfie(target, message.entityId, message.turnKey, message.retry === true)) };
     if (message.type === "DR_IMAGE_REMOVE") await jobs.remove(target, message.id);
     else if (message.type === "DR_IMAGE_PROFILE") await jobs.saveProfile(target, message.entityId, message.profile, message.expected);
     else throw new ImageApiError("unsupported");
     return { ok: true };
   } catch (error) {
-    // Never echo raw exceptions, API bodies, headers other than the declared diagnostics, or keys.
-    return error instanceof ImageApiError ? { ok: false, error: error.code, headers: error.headers, ...(error.ticketId ? { ticketId: error.ticketId, downloadOrigin: error.downloadUrl } : {}) } : { ok: false, error: "failed" };
+    // Never echo raw exceptions or API bodies. Diagnostics are bounded and redacted in the worker.
+    return error instanceof ImageApiError ? { ok: false, error: error.code, headers: error.headers, diagnostic: error.diagnostic, ...(error.ticketId ? { ticketId: error.ticketId, downloadOrigin: error.downloadUrl } : {}) } : { ok: false, error: "failed" };
   }
 }

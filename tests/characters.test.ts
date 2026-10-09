@@ -167,11 +167,12 @@ it("preserves portrait variations through saves, automatic updates and portable/
   expect(rows.find(r => r.kind === "entity")!.data).toEqual(expect.objectContaining({ description: entity.description }));
 });
 
-it("saves a thirteenth portrait emotion after replacing an active emotion, including reopening and exports", async () => {
+it("detaches a retired portrait emotion when saving its replacement, including reopening and exports", async () => {
   const repo = await setup();
   const names = ["neutral", "retired-mood", ...Array.from({ length: 10 }, (_, i) => `mood-${i}`)];
   const images = ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"];
-  let person = { ...entity, characterSheet: { ...entity.characterSheet!, sprites: Object.fromEntries(names.map(name => [name, images])) } };
+  const retired = ["data:image/png;base64,CCCC", "data:image/png;base64,DDDD"];
+  let person = { ...entity, characterSheet: { ...entity.characterSheet!, sprites: Object.fromEntries(names.map(name => [name, name === "retired-mood" ? retired : images])) } };
   await repo.put("entity", person);
   const active = [...names.filter(name => name !== "retired-mood"), "happy"];
   await repo.put("world", { ...world, characterEmotions: active });
@@ -179,14 +180,17 @@ it("saves a thirteenth portrait emotion after replacing an active emotion, inclu
   let edit = opened(); edit.sheet.sprites.happy = images;
   await saveCharacter(edit, repo);
   person = (await repo.get<SceneEntity>("entity", entity.id))! as typeof person;
-  expect(Object.keys(person.characterSheet.sprites)).toHaveLength(13);
-  // The editor's opening snapshot can now itself contain thirteen image groups.
+  expect(Object.keys(person.characterSheet.sprites)).toHaveLength(12);
+  expect(person.characterSheet.sprites["retired-mood"]).toBeUndefined();
+  expect(person.characterSheet).toMatchObject({ portraitLibrary: retired });
+  // Reopening and exporting must not restore a retired image assignment.
   edit = opened(); edit.sheet.protagonist = true; edit.sheet.appearance = "Green coat";
   await saveCharacter(edit, repo);
   const pack = await exportWorld("w", repo);
   const copied = cloneWorldPackage(pack).find(r => r.kind === "entity")!.data as SceneEntity;
-  expect(copied.characterSheet).toMatchObject({ protagonist: true, appearance: "Green coat", sprites: { "retired-mood": images, happy: images } });
-  expect(Object.keys(copied.characterSheet!.sprites)).toHaveLength(13);
+  expect(copied.characterSheet).toMatchObject({ protagonist: true, appearance: "Green coat", sprites: { happy: images }, portraitLibrary: retired });
+  expect(copied.characterSheet!.sprites["retired-mood"]).toBeUndefined();
+  expect(Object.keys(copied.characterSheet!.sprites)).toHaveLength(12);
   expect((pack.records.find(r => r.kind === "world")!.data as WorldProfile).characterEmotions).toEqual(active);
   expect(pack.records.every(validDataRecord)).toBe(true);
   const rows = await repo.rawRecords();

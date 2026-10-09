@@ -1,18 +1,30 @@
 <!doctype html><html><head><meta charset="UTF-8"></head><body style="margin:0"><div id="root"></div>
-<script>const area=()=>{const values=new Map();return{get:async()=>Object.fromEntries(values),set:async v=>{for(const[k,val]of Object.entries(v))values.set(k,val);},remove:async()=>{}}};window.chrome={runtime:{id:"fixture",sendMessage:async()=>{},onMessage:{addListener(){},removeListener(){}}},storage:{local:area(),session:area(),onChanged:{addListener(){},removeListener(){}}}};</script>
+<script>const area=()=>{const values=new Map();return{get:async()=>Object.fromEntries(values),set:async v=>{for(const[k,val]of Object.entries(v))values.set(k,val);},remove:async()=>{}}};window.chrome={runtime:{id:"fixture",getURL:p=>"chrome-extension://fixture/"+p,sendMessage:async()=>{},onMessage:{addListener(){},removeListener(){}}},storage:{local:area(),session:area(),onChanged:{addListener(){},removeListener(){}}}};</script>
 <script type="module">
 import React from "react";import {createRoot} from "react-dom/client";
 import {CastSetup} from "/src/entrypoints/shared/CastSetup.tsx";
 import {castRecords,castDraft} from "/tests/fixtures/cast-data.ts";
 import {repository} from "/src/storage/repository.ts";
 import {castSources,castSignature} from "/src/core/cast-initialization.ts";
-import {applyCastDraft} from "/src/storage/cast-initialization.ts";
-import {castView} from "/src/adapters/cast-coordinator.ts";
+import {mutateCastJob} from "/src/storage/cast-initialization.ts";
+import {CastCoordinator} from "/src/adapters/cast-coordinator.ts";
 import "/src/entrypoints/sidepanel/styles.css";
 const qs=new URLSearchParams(location.search),locale=qs.get("locale")??"ru";
-await repository.clear();await repository.mergeRecords(castRecords());const records=await repository.rawRecords();
-const job={id:"cast-fixture",worldId:"w",locale,createdAt:1,updatedAt:1,phase:"ready",step:1,awaiting:false,repair:false,sources:castSources(records,"w"),signature:castSignature(records,"w"),draft:castDraft("cast-fixture"),cleanup:"done"};
-await repository.put("cast",job);
-window.chrome.runtime.sendMessage=async m=>{if(m.action==="status")return{ok:true,job:castView(await repository.get("cast",job.id))};if(m.action==="apply"){await applyCastDraft(m.id,m.draft,m.selected,m.hero);window.saved=await repository.list("entity");return{ok:true};}return{ok:false};};
-createRoot(document.getElementById("root")).render(React.createElement("main",{className:"dr-root",style:{minHeight:"100vh",padding:12}},React.createElement(CastSetup,{worldId:"w",locale})));
+if(qs.get("persist")!=="1"||!await repository.get("cast","cast-fixture")){
+ await repository.clear();await repository.mergeRecords(castRecords());const records=await repository.rawRecords();
+ const job={id:"cast-fixture",worldId:"w",locale,createdAt:Date.now(),updatedAt:Date.now(),phase:qs.get("phase")??"ready",error:"model-refusal",step:1,awaiting:false,repair:false,sources:castSources(records,"w"),signature:castSignature(records,"w"),draft:castDraft("cast-fixture"),cleanup:qs.get("cleanup")??"done",chatId:qs.get("chatId")??(qs.get("cleanup")?"already-deleted":undefined),chatUrl:qs.get("chatUrl")??undefined};
+ await repository.put("cast",job);
+}
+const coordinator=new CastCoordinator(repository);window.castMessages=[];
+window.castOpened=[];window.chrome.tabs={get:async()=>{throw new Error("missing");},create:async options=>{window.castOpened.push(options);return{id:50,url:options.url};}};
+window.chrome.runtime.sendMessage=async m=>{
+ window.castMessages.push(m);const result=await coordinator.handle(m,{id:"fixture",url:"chrome-extension://fixture/sidepanel.html"});
+ if(m.action==="status"&&window.castDelayStatus){window.castDelayStatus=false;window.castHeld=true;await new Promise(resolve=>window.castReleaseStatus=resolve);}
+ if(m.action===window.castDelayAction){window.castDelayAction=null;window.castHeldAction=true;await new Promise(resolve=>window.castReleaseAction=resolve);}
+ if(m.action==="apply"&&result.ok)window.saved=await repository.list("entity");return result;
+};
+const compact=qs.get("compact")==="1";
+window.castUpdate=async phase=>mutateCastJob("cast-fixture",job=>({...job,phase}));
+window.castSnapshot=async()=>({job:await repository.get("cast","cast-fixture"),records:(await repository.rawRecords()).filter(r=>r.kind!=="cast")});
+createRoot(document.getElementById("root")).render(React.createElement("main",{className:"dr-root",style:{minHeight:"100vh",padding:12}},compact?React.createElement("section",{className:"dr-characters",style:{position:"absolute",left:qs.get("left")??"40px",top:qs.get("top")??"180px",width:224,minHeight:300,boxSizing:"border-box"}},React.createElement("header",null,React.createElement("strong",null,locale==="ru"?"Персонажи":"Characters"),React.createElement(CastSetup,{worldId:"w",locale,compact})),React.createElement("p",null,"Leon · Mira")):React.createElement(CastSetup,{worldId:"w",locale})));
 </script></body></html>

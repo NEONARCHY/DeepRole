@@ -8,10 +8,12 @@ export interface CastMember {
 }
 export interface CastDraft { version: 1; request: string; characters: CastMember[]; present: string[]; partners: string[]; warnings: string[] }
 export interface CastJob {
+ statusHidden?: boolean;
   id: string; worldId: string; locale: Locale; createdAt: number; updatedAt: number;
   phase: "opening" | "reading" | "analyzing" | "ready" | "error" | "applied" | "cancelled";
   step: number; awaiting: boolean; repair: boolean; sources: CastSource[]; signature: string;
-  draft?: CastDraft; error?: string; chatId?: string; cleanup: "pending" | "done" | "failed" | "none";
+  draft?: CastDraft; error?: string; chatId?: string; chatUrl?: string; cleanup: "pending" | "done" | "failed" | "none";
+  replyCheckpoint?: { step: number; repair: boolean; chatId: string; replyIdentity: string; raw: string };
 }
 export const CAST_MAX_SOURCE = 220000;
 export const CAST_PART_SIZE = 20000;

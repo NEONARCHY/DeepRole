@@ -1,4 +1,4 @@
-export const WIDGET_GAP = 1;
+export const WIDGET_GAP = 3;
 export interface WidgetRect { x: number; y: number; width: number; height: number }
 export const widgetsOverlap = (a: WidgetRect, b: WidgetRect, gap = WIDGET_GAP) => a.x < b.x + b.width + gap - .1 && a.x + a.width + gap > b.x + .1 && a.y < b.y + b.height + gap - .1 && a.y + a.height + gap > b.y + .1;
 

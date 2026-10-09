@@ -6,7 +6,15 @@
 
 Готовые анкеты появляются для проверки: выберите персонажей и главного героя, при необходимости поправьте текст и числа, затем нажмите **Сохранить выбранных**. Числа — оценка по истории; рядом видны объяснение и цитаты источников. Близость определяется по доверию и симпатии. Неизвестные факты не должны выдумываться. Заполненные ранее поля, изображения и значения с журналом и блокировками в сыгранных чатах сохраняются. Новые анкеты и стартовые значения доступны во всех чатах мира; текущий прогресс остаётся отдельным для каждого чата.
 
+Мини-окно палочки появляется справа от панели персонажей, на уровне её верхнего края. Если места мало — оно остаётся в пределах экрана. Потяните за заголовок, чтобы переместить его, или используйте стрелки при фокусе на заголовке; кнопка со стрелкой возврата снова ставит его рядом с панелью. Показываются реальные этапы, лёгкая анимация ожидания и меняющиеся подсказки — без выдуманных процентов. Системная настройка уменьшения движения учитывается.
+
+Полный уже полученный код анкет сохраняется до завершения разбора. Если DeepSeek затем заменяет его плашкой отказа, DeepRole восстанавливает эти данные для проверки, в том числе после перезагрузки служебной вкладки. Снимок привязан к заданию, шагу, чату и ответу, защищён сейфом и не входит в экспорт мира или резервную копию. После завершения или отмены снимок удаляется. Незавершённый или не полученный браузером ответ не восстанавливается. Отказ без полного ответа не создаёт анкет; можно явно повторить подготовку. Промпты для обхода отказа не отправляются, ответ на сервере не переписывается.
+
 После получения результата DeepRole удаляет только свой временный чат через меню DeepSeek и закрывает служебную вкладку. При ошибке удаления результат не теряется: появятся **Повторить удаление** и ссылка на временный чат. Если вы начали вручную редактировать служебный чат, автоматизация остановится. В пустом мире подготовка ждёт первого лора; для существующего мира используйте **Создать персонажей из лора** в разделе «Лор» или палочку в заголовке панели персонажей.
+
+Окно подготовки можно скрыть крестиком или клавишей **Escape**, когда фокус находится внутри окна. Палочка в панели персонажей вернёт его. Скрытие сохраняется после обновления страницы, не отменяет подготовку и не удаляет результат. Если временный чат уже удалён вручную, нажмите **Чат уже удалён**: DeepRole снимет старую отметку об ошибке удаления и разрешит повторную подготовку. Кнопка не удаляет чаты, анкеты, аватарки или лор и доступна только после завершения либо отмены подготовки. Готовые анкеты можно проверить даже при ошибке удаления временного чата.
+
+**Открыть временный чат** показывает уже существующую служебную вкладку. Если она закрыта, открывает сохранённый адрес того же диалога в новой вкладке браузера — без нового промпта и повторной подготовки. Адрес берётся из реально созданного чата, включая его путь `/a`; служебные метки запуска не переносятся. Для старых заданий с сохранённым ID используется обычный адрес DeepSeek `/a/chat/s/ID`. Если достоверного ID нет, кнопка недоступна с пояснением: пустой чат вместо прежнего не создаётся. Уже удалённый на сервере диалог восстановить этой кнопкой нельзя.
 
 Пределы текущей системы: 40 персонажей, до шести числовых характеристик у каждого, до восьми событий отношений и 220 тысяч символов источников на один разбор. Портреты в DeepSeek не отправляются. При изменении лора во время подготовки сохранение остановится и предложит повторный разбор.
 
@@ -57,7 +65,9 @@
 
 В **Селфи из генератора** выберите готовность: **По решению персонажа**, **Когда комфортно общаться** или **В близких отношениях**. Точные числа скрыты под **Точные показатели и пороги**. Достигнутый уровень не гарантирует согласия.
 
-Необязательные **Готовые подборки селфи** сохраняют прежние фото: название, описание подходящей ситуации и тот же понятный выбор уровня. Например, «Дома» — вечером в повседневной одежде; «Прогулка» — на улице днём. Одна **Обычная категория** служит запасной, когда сцена не подходит к остальным. Сохраните подборки кнопкой **Сохранить персонажа**. Поддерживаются и ранее назначенные эмоции «Селфи», «Селфи: дома», «Selfie».
+Селфи бывают двух видов: **готовый снимок без генерации ИИ** и **новое фото от отдельно включённого генератора**. Оба вызываются вашей просьбой — кнопкой **Попросить селфи** либо сообщением в чате. В готовой подборке DeepSeek только отыгрывает согласие/отказ и выбирает категорию: новую картинку он не рисует, сервис генерации при показе готового фото не используется. Генератор требует подключения/ключа API и может быть платным. Разница объясняется непосредственно во вкладке **Изображения**.
+
+Необязательные **Готовые подборки селфи** сохраняют прежние фото: название, описание подходящей ситуации и тот же понятный выбор уровня. Например, «Дома» — вечером в повседневной одежде; «Прогулка» — на улице днём. **Добавить фото** загружает файлы, **Выбрать из библиотеки** открывает изображения только этого персонажа. Можно отметить несколько, включая назначенные эмоциям и постоянные референсы, и нажать **Добавить выбранные**. Прежние назначения не меняются, дубликаты не добавляются. Уже имеющиеся в подборке фото помечены; выбор можно отменить кнопкой или Escape. Удаление из подборки не удаляет источник из библиотеки. Одна **Обычная категория** служит запасной, когда сцена не подходит к остальным. Сохраните подборки кнопкой **Сохранить персонажа**. До сохранения это черновик. Поддерживаются и ранее назначенные эмоции «Селфи», «Селфи: дома», «Selfie».
 
 Просьба отправить селфи — обычная реплика. DeepSeek получает описание подборок и сам отыгрывает согласие или отказ. При настроенном учёте отношений с главным героем расширение дополнительно проверяет сохранённые доверие и симпатию: по умолчанию не ниже 40/30, пороги редактируются для каждой категории. При выключенном учёте числовой барьер не применяется; учитываются отношения в истории. Достигнутый порог разрешает возможность, но не обязывает персонажа соглашаться. Правки чисел в этом же ответе не обходят проверку предыдущего сохранённого состояния.
 
@@ -65,7 +75,7 @@
 
 Фото остаётся за конкретным сообщением, включая reload и виртуализацию истории. Полная резервная копия сохраняет эти привязки; экспорт мира переносит подборки, но не историю сообщений. После удаления исходного фото показывается пояснение вместо подстановки другого изображения. Блокировка сейфа убирает фото с экрана. Состояние генерации сохраняется: перезагрузка не создаёт ещё один оплаченный запрос. После ошибки доступен только ручной повтор; после неопределённого таймаута провайдер мог обработать исходный запрос. Разрешение загрузить готовый результат с другого домена не повторяет генерацию. Импорт резервной копии сам не запускает оплаченные задания: разрешение автоматического запуска хранится только в текущем сеансе браузера.
 
-Аватарки в галерее, редакторе и сцене, а также фото в ответе раскрываются по нажатию. Доступны вписывание в окно, масштаб 100% сохранённого изображения и закрытие Escape. Имя на плавающем портрете открывает анкету. Файлы по-прежнему проходят локальное уменьшение по правилам портретов; просмотр не восстанавливает исходное разрешение загруженного файла.
+Аватарки в галерее, редакторе и сцене, а также фото в ответе раскрываются по нажатию. Колёсико и +/− увеличивают до 128×; перетаскивание перемещает картинку, уменьшение останавливается на вписанном размере. Кнопки 100% и «Вписать», клавиши 0 / F / Escape доступны отдельно. Имя плавающего портрета открывает анкету. Просмотр не восстанавливает утраченное исходное разрешение.
 
 ## Исправить постоянный факт
 
@@ -104,13 +114,15 @@
 
 ## Доступные эмоции персонажа
 
-В карточке откройте **Анкета → Доступные эмоции → Настроить список**. По умолчанию разрешены все эмоции мира. Выключите ненужные переключатели и нажмите **Сохранить персонажа**. Есть поиск, **Разрешить все** и **Только спокойствие**. То же правило можно изменить в **Лор → Мир и профили**, даже без подключённого чата.
+В карточке откройте **Изображения → Доступные эмоции**: переключатели сразу раскрыты. Выключите ненужные эмоции и нажмите **Сохранить персонажа**. По умолчанию разрешены все эмоции мира; есть поиск, **Разрешить все** и **Только спокойствие**. Тот же список остаётся в **Анкета → Доступные эмоции** и в **Лор → Мир и профили**, даже без подключённого чата.
 
 Правило общее для всех чатов этого мира. Новые названия эмоций разрешены автоматически; удалённые из списка мира названия сохраняют запрет в разделе **Вне списка мира**, пока вы не снимете его. `neutral` — **Спокойствие** — всегда доступна. Если текущее настроение стало запрещённым, карточка и игровой портрет используют спокойствие; остальные сведения не меняются.
 
 DeepSeek получает персональный разрешённый список. Если он всё-таки вернёт запрещённую эмоцию в коде карточки, DeepRole оставит прежнее допустимое настроение или выберет спокойствие, но примет остальные корректные поля. Модель не может снять запрет. Это защищает настроение и портрет карточки, но не гарантирует отсутствие такой эмоции в сюжетном описании.
 
-Картинки не удаляются. Во вкладке **Изображения** по-прежнему можно выбрать выключенную эмоцию, просмотреть и подготовить её портреты; рядом будет пояснение, что в игре она недоступна. Если картинка просто отсутствует, запрещать эмоцию не нужно: используется обычный портрет или силуэт. Экспорт мира и полная резервная копия переносят правило вместе с изображениями.
+Выключение сразу снимает все портреты с этой эмоции в редакторе, а сохранение применяет изменения. Картинки не удаляются: они остаются в библиотеке персонажа, а назначения другим эмоциям сохраняются. Выключенная эмоция недоступна для загрузки и назначения изображений. Повторное включение не восстанавливает старые привязки: назначьте нужные картинки из библиотеки заново. Если картинка просто отсутствует, запрещать эмоцию не нужно: используется обычный портрет или силуэт. Экспорт мира и полная резервная копия переносят правило и оставшиеся картинки.
+
+Удаление эмоции из списка мира с последующим **Сохранить эмоции** также автоматически снимает её портреты у всех персонажей этого мира, убирает устаревшие циклы и возвращает настроение к спокойствию в его чатах. Другие миры не меняются. Общий список применяется только к мирам без собственного списка эмоций. Старые ошибочные привязки исправляются при сохранении списка мира или карточки персонажа. Если для отвязанных изображений не хватает места в библиотеке (512), изменение отменяется с пояснением; картинки не теряются.
 
 ## Сохранение анкеты и сцены
 
@@ -141,7 +153,7 @@ DeepSeek получает персональный разрешённый спи
 Одна маленькая кнопка в карточке вариантов закрепляет оба портрета по сторонам. Кнопка с булавкой удерживает сами варианты над полем сообщения при прокрутке; вместе с ними остаются видны и портреты. На узком экране портреты складываются над карточкой, чтобы не закрывать варианты. Те же настройки находятся в **Настройки → Приложение → Панели и сцена** и включаются независимо друг от друга.
 
 - Перетащите **имя с ручкой ⠿**, чтобы переместить портрет в любое место экрана, в том числе за границы колонки чата.
-- Потяните **нижний правый угол**, чтобы изменить размер. Изображение всегда остаётся **3:4**; ширина — от 96 до 360 px. В узком окне оно временно уменьшается, не теряя сохранённого размера.
+- Потяните **нижний правый угол**, чтобы изменить размер, вплоть до всей высоты видимой области страницы. Изображение остаётся **3:4**; подписи и ручки тоже помещаются в экран. Предела 360 px больше нет. Ручное увеличение делает только этот портрет независимым от автоматической группы и закрепления — размер не сбрасывается. В узком окне карточка временно уменьшается, не теряя сохранённого размера; увеличенный портрет не прячется в компактный ряд. Сброс расстановки возвращает автоматическую группу.
 - Нажмите **изображение**, чтобы открыть анкету, эмоции и все показатели.
 - **Сбросить расстановку** возвращает обычное расположение в текущем чате. Общий сброс доступен в **Настройки → Персонажи**.
 
@@ -179,9 +191,11 @@ DeepSeek получает персональный разрешённый спи
 
 Под индикаторами — компактные имена и статусы. Крупные портреты доступны в центральной галерее и плавающем слое рядом с вариантами. В галерее нажмите карандаш, в плавающем слое — изображение, чтобы изменить анкету.
 
-В **Настройки → Персонажи** можно сохранить свой список эмоций: одна в строке, до 32 вместе с `neutral`. Если в чате выбран мир, список сохраняется для этого мира. Без выбранного мира меняется общий список для миров без собственного списка. Новые названия передаются DeepSeek с последующим сообщением. Удаление эмоции из списка не удаляет ваши картинки; их можно убрать в карточке. Карточка хранит до 64 наборов эмоций, включая неактивные. DeepSeek получает только активный список из настроек, без изображений.
+В **Настройки → Персонажи** можно сохранить свой список эмоций: одна в строке, до 32 вместе с `neutral`. Если в чате выбран мир, список сохраняется для этого мира. Без выбранного мира меняется общий список для миров без собственного списка. Новые названия передаются DeepSeek с последующим сообщением. Удаление эмоции и сохранение списка автоматически отвязывают её портреты, сохраняя картинки в библиотеке или других эмоциях. DeepSeek получает только активный список из настроек, без изображений.
 
-Изображения хранятся локально. При загрузке уменьшаются до 384 px по большей стороне и сжимаются. DeepSeek получает название эмоции, **но не картинку**. Автоматического рисования новых изображений во время чата нет: переключаются только ваши готовые варианты.
+Изображения хранятся локально. По умолчанию длинная сторона ограничена 1920 px вместо прежних 384; **Настройки → Оформление → Качество загруженных изображений** позволяют выбрать 256–4096 px. Маленькие исходники не растягиваются; подходящий PNG/JPG/WebP сохраняется без пересжатия в пределах бюджета, большой уменьшается в WebP с качеством 92%. Если результат слишком тяжёлый, загрузка показывает ошибку, не ухудшает его скрытно. Уже загруженные картинки не меняются. Это общая настройка портретов, библиотеки, загружаемых референсов и селфи, не разрешение генератора API. DeepSeek получает название эмоции, **но не картинку**. Без отдельно включённой генерации переключаются только ваши готовые варианты.
+
+Ползунок **Размер превью** в библиотеке меняет размер миниатюр от 96 до 280 px и запоминается отдельно от анкеты. Кнопка **Просмотр** открывает картинку без изменения выбора или эмоций. Настройка размера не создаёт несохранённых изменений персонажа. В экспорт мира входят сами сохранённые данные изображений: отдельная папка с файлами не нужна.
 
 ## Токены и надёжность
 
@@ -201,9 +215,21 @@ DeepSeek получает персональный разрешённый спи
 
 ## English quick start
 
+The character-preparation wand opens a small progress window beside Characters, top-aligned. Drag the heading, use arrow keys on it, or dock it again with the reset icon. Narrow screens keep it within the viewport. Waiting animations respect reduced motion; rotating hints do not claim fake percentages. A complete character-data reply received before a later refusal can be recovered for schema/evidence validation and review, even after reloading the owned service tab. It is tied to the exact job, step, chat and reply; incomplete or unseen data is not restored. No bypass prompt is sent and the server's answer is unchanged. The temporary checkpoint is vault-protected, excluded from exports/backups and cleared when preparation ends or is cancelled.
+
+Hide the preparation window with its **×** button or **Escape** while focused inside it. The Characters wand restores it. Hiding survives refresh; it does not cancel preparation or discard its result. If you manually deleted the temporary chat, choose **Chat already deleted** to clear the old cleanup reminder and allow preparation again. This acknowledges your deletion rather than checking DeepSeek's server; it never deletes chats, profiles, portraits or lore. It is available only after preparation finishes or is cancelled. Ready profiles can still be reviewed when temporary-chat deletion fails.
+
+**Open temporary chat** focuses the existing service tab. If it was closed, it opens the saved address of the same conversation in a new browser tab, without sending another prompt or restarting preparation. The address comes from the actual owned chat, preserving its native `/a` route and dropping service-launch markers. Legacy jobs with a valid saved ID use DeepSeek's `/a/chat/s/ID` route. Without a trustworthy ID, the button is disabled with an explanation rather than opening an empty replacement. A conversation already deleted on the server cannot be restored by this button.
+
 The editor has three tabs: **Profile**, **In scene**, **Images**. Switching tabs keeps your draft, and saving keeps the editor open. Add an emotion directly in Images; the name is saved to this world immediately, while images need Save character. Settings → Characters has a visual list, with a bulk text editor available on demand. The image library is open by default; small uploads are selected for assignment.
 
 All panels below the chat title share a 224 px default width. The width button beside Together and Settings → App → Panels and scene adjust them all between 200 and 360 px. Narrow windows fit automatically without overwriting this preference.
+
+### Ready selfies and AI generation
+
+The **Images** tab explains both methods. Ready uploaded selfies are **not AI image generation**: ask manually with **Ask for a selfie** or in the chat; DeepSeek roleplays agreement/refusal and chooses a collection. A ready photo is shown locally without using an image service. New AI-generated photos require separately enabled image settings and a provider/API key; charges may apply. Suitable ready photos take priority. Relationship boundaries and the character’s right to refuse apply to both methods.
+
+Open **Images → Uploaded selfie collections**. In a category, **Choose from library** lets you select several of this character’s existing images, including assigned emotion portraits and permanent references. Click **Add selected**, then **Save character**; until saved, changes are a draft. Existing assignments are preserved, duplicates are skipped, and removing a collection photo keeps its source in the library. Already-added photos are marked; **Cancel selection** or Escape closes the picker without saving the selection. The list expands with **Show more**, rather than limiting which library photos can be used. Each category keeps its 48-photo limit; thresholds and one default collection work as before.
 
 ### Protagonist avatar
 
@@ -223,7 +249,11 @@ Open a character sheet → **Images → Image library → Upload to library**. S
 
 Select thumbnails, choose an emotion below, then click **Assign to emotion**. Switch to **All** to reuse an already assigned image for another emotion. Click **Save character** to keep the library, even if you have not assigned any emotions yet. Until then, changes are only a draft.
 
-Each character has a separate library. World exports and full backups include it; images are never sent to DeepSeek. Limits: 512 unassigned images per character, 48 variations per emotion, and about 50 MB of encoded portrait data across the extension after processing. Removing an emotion variation keeps its image in the library. Use the library’s trash button to delete an unassigned image.
+Each character has a separate library. World exports and full backups embed its saved image data, not external links; no separate photo folder is needed. Images are never sent to DeepSeek. Limits: 512 unassigned images per character, 48 variations per emotion, 50 MB across uploaded portraits, and 50 MB of combined images per world, including portraits, selfies and illustrations. Removing an emotion variation keeps its image in the library. Use the library’s trash button to delete an unassigned image.
+
+New uploads use a **1920 px long edge** by default instead of 384. Set a custom **256–4096 px** edge in **Settings → Appearance → Uploaded image quality**. Smaller sources are never enlarged; fitting PNG/JPG/WebP bytes are preserved within the budget, while larger images use WebP quality 92%. Oversize output is rejected with guidance rather than silently reduced further. Existing images stay unchanged: re-upload originals for more detail. This applies to portraits, library pictures, uploaded references and selfies, not provider result resolution.
+
+Use the library’s **Preview size** slider (96–280 px) to inspect faces; its preference is remembered independently of the character draft. **View** opens the full image without altering selection. The viewer supports wheel and +/− zoom up to 128×, drag-to-pan, a fixed fit minimum, 100% and fit buttons, and 0 / F / Escape shortcuts. Zoom does not create extra image detail.
 
 Context, character, world and control panels keep at least a 1 px gap, including their hover controls. The controls sit beside each panel rather than in a separate row between cards. Dragging finds the nearest free space; old overlaps, restored panels and viewport changes are handled too. On very small screens they use a scrollable column until there is enough space for free positioning. Floating character portraits remain independent.
 
@@ -238,6 +268,8 @@ Each accepted scene update advances a shuffled cycle without repeating an image 
 ### Panel controls and automatic states
 
 **Adaptive sizing** is enabled by default. Toggle the framing icon beside the group controls, or use **Settings → App → Adaptive sizing**. Portraits and options share the available space with the floating panels. In a constrained window, portraits become a compact, horizontally scrollable row; panel icons open one panel at a time (Escape closes it). Enlarging the window restores the full layout. Saved portrait sizes and panel minimization choices are not overwritten. Manual portrait movement remains available in the full layout; the compact row follows the automatic arrangement.
+
+Drag a portrait's lower-right corner to resize it up to the visible page height. Its 3:4 image, captions and controls fit on screen; the old 360 px cap is gone. Explicitly resizing makes just that card independent of automatic grouping and pinning, so repeated updates and refresh cannot shrink it back. Narrow windows temporarily fit it without rewriting the saved size or hiding it in the compact row. Drag its name to move it; snapping places it beside the choices without shrinking it. **Reset layout** returns it to the automatic group. Arrow keys resize too; Shift uses larger steps and Escape cancels an active drag. Layout changes do not modify scenes or send model requests.
 
 Drag the context, memory, characters, reply-choice or world panel itself to move it; there is no separate handle on each panel. A short click on a control inside still performs its normal action. The **−** button appears on its panel’s hover, and stays available on touch devices. The top group handle is always visible. Enable **Together** to drag the whole group from any panel, or disable it for independent movement. Focus a panel and use the arrow keys for keyboard movement. Minimized panels snap into one row of icons; select an icon to restore it. The reset arrow restores the default layout and expands all panels. Layout is saved in this browser and does not affect lore or tokens. Portrait drag and resize handles appear on hover or keyboard focus; touch devices keep them available.
 

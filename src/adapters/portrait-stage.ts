@@ -1,6 +1,6 @@
 import { characterCast, characterHighlights, characterInterlocutors, characterText, emotionLabel, syncPortraitImage } from "../core/characters";
 import { resolveCharacterEmotion } from "../core/character-emotions";
-import { clamp, portraitBounds, portraitPose } from "../core/portrait-layout";
+import { clamp, PORTRAIT_MAX_WIDTH, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
@@ -22,8 +22,8 @@ export interface PortraitStageOptions {
   adaptiveLayout?: boolean;
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
-type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; zoom: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
-type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
+type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
+type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; manualFrame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
 let statsId = 0;
@@ -67,15 +67,18 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
   const contentLeft = parent.left + (parseFloat(parentStyle.paddingLeft) || 0) + (parseFloat(parentStyle.borderLeftWidth) || 0);
   const left = sceneAvailableLeft(host.ownerDocument);
   const center = stage.options.pinSceneChoices ? (left + width - 8) / 2 : parent.left + parent.width / 2;
-  const fitted = stage.options.pinSceneChoices ? pinnedSceneFit(host.ownerDocument, stage.widgets.size)
-    : composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, stage.widgets.size) : fitScene(width, left, center, stage.widgets.size);
+  // The fit helpers reserve one left-hand hero slot. If that hero was enlarged
+  // into the floating frame, preserve the right-side budget for every NPC.
+  const fitCount = stage.widgets.size + (stage.heroId && !stage.widgets.has(stage.heroId) ? 1 : 0);
+  const fitted = stage.options.pinSceneChoices ? pinnedSceneFit(host.ownerDocument, fitCount)
+    : composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, fitCount) : fitScene(width, left, center, fitCount);
   const trayHeight = height < 560 ? 70 : 104;
   const dock = widgetDeck(host.ownerDocument)?.querySelector<HTMLElement>(".dr-widget-dock")?.getBoundingClientRect();
   const laneKey = JSON.stringify([width, height, left, parent.left, parent.width, fitted.compact, fitted.x, fitted.choices, fitted.portrait, stage.heroId, [...stage.partnerIds], [...stage.widgets].map(([id, widget]) => [id, widget.pose, widget.statsKey]), stage.options.pinSceneChoices, stage.options.pinLeft, stage.options.pinRight, stage.options.pinSceneChoices ? host.style.bottom : null]);
   const changed = stage.placementKey !== laneKey;
   stage.placementKey = laneKey;
   host.dataset.adaptivePortraits = "true";
-  host.dataset.pinnedPortraitCount = String(stage.widgets.size);
+  host.dataset.pinnedPortraitCount = String(fitCount);
   css(host, "width", `${fitted.choices}px`);
   css(host, "left", stage.options.pinSceneChoices ? `${fitted.x + fitted.choices / 2}px` : "");
   css(host, "margin-left", stage.options.pinSceneChoices ? "0px" : `${fitted.x - contentLeft}px`);
@@ -113,18 +116,22 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
   const availableBottom = stage.options.pinSceneChoices ? (composerBounds(host.ownerDocument)?.top ?? height) - 12 : height - 8;
   const baseline = clamp(anchor.top, 8, availableBottom - tallest) + tallest;
   let rightX = anchor.right + PORTRAIT_CHOICE_GAP;
+  let leftX = anchor.left - PORTRAIT_CHOICE_GAP;
   for (const [id, widget] of widgets) {
-    const x = id === heroId ? anchor.left - PORTRAIT_CHOICE_GAP - widget.box.offsetWidth : rightX;
+    const pinned = stage.options.pinSceneChoices || (id === heroId ? stage.options.pinLeft : stage.options.pinRight);
+    const side = !pinned && widget.pose?.dock ? widget.pose.dock : id === heroId ? "left" : "right";
+    const x = side === "left" ? leftX - widget.box.offsetWidth : rightX;
     const y = baseline - widget.box.offsetHeight;
     css(widget.box, "left", `${x}px`); css(widget.box, "top", `${y}px`);
     css(widget.resize, "top", `${Math.max(0, widget.open.querySelector("img")!.offsetHeight - 44)}px`);
     widget.restingPose = portraitPose(x, y, widget.box.offsetWidth, width - 16, height - 16);
-    if (id !== heroId) rightX += widget.box.offsetWidth + PORTRAIT_PEER_GAP;
+    if (side === "left") leftX = x - PORTRAIT_PEER_GAP;
+    else rightX += widget.box.offsetWidth + PORTRAIT_PEER_GAP;
   }
   // Honor manual poses where they fit, while keeping other cards and controls clear.
   for (const [id, widget] of widgets) {
     const pinned = stage.options.pinSceneChoices || (id === heroId ? stage.options.pinLeft : stage.options.pinRight);
-    if (!widget.pose || pinned) continue;
+    if (!widget.pose || widget.pose.dock || pinned) continue;
     const saved = portraitBounds(widget.pose, width - 16, height - 16);
     const obstacles = [anchor, ...widgetRects(host.ownerDocument), ...widgets.filter(([otherId]) => otherId !== id).map(([, other]) => other.box.getBoundingClientRect())].map(r => ({ x: r.x, y: r.y, width: r.width, height: r.height }));
     const safe = nearestWidgetSpace({ x: saved.x, y: saved.y, width: widget.box.offsetWidth, height: widget.box.offsetHeight }, obstacles, { width, height }, 8, 8);
@@ -205,7 +212,55 @@ function arrangeCompactPinned(stage: Stage, anchor: DOMRect, width: number, heig
   return true;
 }
 
+/** Full-size cards live outside the compact strip so a resize never snaps back
+ * to the automatic lane or gets clipped when the viewport becomes narrow. */
 function arrange(stage: Stage) {
+  const width = stage.overlay.clientWidth, height = stage.overlay.clientHeight;
+  if (!width || !height) return;
+  const widgets = stage.widgets;
+  const automatic = new Map([...widgets].filter(([, widget]) => !widget.pose?.manualSize));
+  for (const [id, widget] of widgets) {
+    const parent = widget.pose?.manualSize ? stage.manualFrame : stage.frame;
+    // Reparenting a captured pointer target cancels the native gesture. Move its
+    // slot to the floating frame only after pointerup/cancel releases capture.
+    if (!(stage.dragging && stage.draggingId === id) && widget.slot.parentElement !== parent) parent.append(widget.slot);
+  }
+  const dragging = stage.dragging;
+  // Rendering is synchronous. Keep all cards accessible to gesture/save handlers
+  // while excluding only manually resized cards from the automatic lane's budget.
+  stage.widgets = automatic;
+  if (stage.draggingId && !automatic.has(stage.draggingId)) stage.dragging = false;
+  try {
+    if (automatic.size) arrangeAutomatic(stage);
+    else {
+      clearAdaptive(stage); fitPinnedChoices(stage.anchor);
+      const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
+      if (section) css(section, "padding-top", "");
+      stage.frame.removeAttribute("data-pinned-compact"); stage.placementKey = undefined;
+    }
+  } finally { stage.widgets = widgets; stage.dragging = dragging; }
+  for (const widget of widgets.values()) {
+    if (!widget.pose?.manualSize) continue;
+    const image = widget.open.querySelector("img")!;
+    let captions = Math.max(0, widget.open.scrollHeight - image.offsetHeight);
+    // Text can rewrap when the image changes width. Measure at the requested
+    // width before fitting again; round down to keep the entire card on screen.
+    for (let pass = 0; pass < 3; pass++) {
+      const bounds = portraitBounds(widget.pose, width - 16, height - 16, captions);
+      css(widget.box, "width", `${Math.floor(bounds.width)}px`);
+      const measured = Math.max(0, widget.open.scrollHeight - image.offsetHeight);
+      if (Math.abs(measured - captions) < 1) break;
+      captions = measured;
+    }
+    const bounds = portraitBounds({ ...widget.pose, width: widget.box.offsetWidth }, width - 16, height - 16, captions);
+    css(widget.box, "left", `${clamp(bounds.x, 8, width - widget.box.offsetWidth - 8)}px`);
+    css(widget.box, "top", `${clamp(bounds.y, 8, height - widget.box.offsetHeight - 8)}px`);
+    css(widget.resize, "top", `${Math.max(0, Math.min(image.offsetHeight, widget.box.offsetHeight) - 44)}px`);
+    widget.restingPose = undefined;
+  }
+}
+
+function arrangeAutomatic(stage: Stage) {
   const width = stage.overlay.clientWidth;
   const height = stage.overlay.clientHeight;
   if (!width || !height) return;
@@ -331,7 +386,17 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     const completed = gesture; gesture = undefined; stage.dragging = false; stage.draggingId = undefined;
     control.classList.remove("is-dragging");
     if (control.hasPointerCapture(completed.pointer)) control.releasePointerCapture(completed.pointer);
-    if (cancel) { widget.pose = completed.previous; arrange(stage); return; }
+    if (cancel) { widget.pose = completed.previous; stage.placementKey = undefined; arrange(stage); return; }
+    if (completed.changed && widget.pose?.manualSize) {
+      // A magnet is a placement gesture, not a reason to shrink a large portrait.
+      // Snap once on release, then keep that viewport pose while scrolling.
+      const rect = widget.box.getBoundingClientRect();
+      const anchor = (stage.anchor.shadowRoot?.querySelector("section") ?? stage.anchor).getBoundingClientRect();
+      const dock = !resize ? widget.pose.dock : undefined;
+      const x = dock === "left" ? anchor.left - rect.width - PORTRAIT_CHOICE_GAP : dock === "right" ? anchor.right + PORTRAIT_CHOICE_GAP : rect.left;
+      widget.pose = { ...portraitPose(clamp(x, 8, stage.overlay.clientWidth - rect.width - 8), rect.top, resize ? rect.width : widget.pose.width, stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16), manualSize: true, ...(dock ? { dock } : {}) };
+      arrange(stage);
+    }
     if (completed.changed && widget.pose) void persist(stage, id, { ...widget.pose }, () => { widget.pose = completed.previous; });
     else { widget.pose = completed.previous; arrange(stage); }
   };
@@ -346,10 +411,10 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     const dx = event.clientX - gesture.x; const dy = event.clientY - gesture.y;
     if (Math.abs(dx) + Math.abs(dy) < 4 && !gesture.changed) return;
     gesture.changed = true;
-    const width = resize ? clamp(gesture.width + (Math.abs(dx) >= Math.abs(dy * .75) ? dx : dy * .75), 96, 360) : gesture.width;
+    const width = resize ? clamp(gesture.width + (Math.abs(dx) >= Math.abs(dy * .75) ? dx : dy * .75), 96, PORTRAIT_MAX_WIDTH) : gesture.previous?.manualSize ? gesture.previous.width : gesture.width;
     widget.pose = portraitPose(gesture.startX + (resize ? 0 : dx), gesture.startY + (resize ? 0 : dy), width, stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16);
+    if (resize || gesture.previous?.manualSize) widget.pose.manualSize = true;
     if (!resize) widget.pose.dock = nearbyDock(stage, gesture.startX + dx, gesture.startY + dy, width);
-    else if (gesture.previous?.dock) widget.pose.dock = gesture.previous.dock;
     arrange(stage); event.preventDefault();
   });
   control.addEventListener("pointerup", event => { if (event.pointerId === gesture?.pointer) finish(false); });
@@ -362,9 +427,13 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
     const step = event.shiftKey ? 24 : 8;
     const dx = event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0;
     const dy = event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0;
-    widget.pose = portraitPose(rect.left + (resize ? 0 : dx), rect.top + (resize ? 0 : dy), rect.width + (resize ? dx || dy : 0), stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16);
-    if (resize && previous?.dock) widget.pose.dock = previous.dock;
+    widget.pose = portraitPose(rect.left + (resize ? 0 : dx), rect.top + (resize ? 0 : dy), resize ? rect.width + (dx || dy) : previous?.manualSize ? previous.width : rect.width, stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16);
+    if (resize || previous?.manualSize) widget.pose.manualSize = true;
     arrange(stage); event.preventDefault(); event.stopPropagation();
+    if (resize) {
+      const fitted = widget.box.getBoundingClientRect();
+      widget.pose = { ...portraitPose(fitted.left, fitted.top, fitted.width, stage.overlay.clientWidth - 16, stage.overlay.clientHeight - 16), manualSize: true };
+    }
     void persist(stage, id, { ...widget.pose }, () => { widget.pose = previous; });
   });
 }
@@ -392,6 +461,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         stage.anchor = host; stage.toolbar.remove(); shadow.append(stage.toolbar);
         stage.placementKey = undefined; stage.needsRedock = true;
         stages.set(host, stage); stage.observer.observe(host);
+        for (const widget of stage.widgets.values()) stage.observer.observe(widget.box);
       }
     }
     if (!stage) {
@@ -401,7 +471,8 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       const floating = overlay.attachShadow({ mode: "open" });
       const style = doc.createElement("style"); style.textContent = designTokens + portraitStyle;
       const frame = doc.createElement("div"); frame.className = "dr-cast-frame";
-      floating.append(style, frame); doc.body.append(overlay);
+      const manualFrame = doc.createElement("div"); manualFrame.className = "dr-cast-manual-frame";
+      floating.append(style, frame, manualFrame); doc.body.append(overlay);
       section.classList.add("dr-cast-content");
       const toolbar = doc.createElement("div"); toolbar.className = "dr-cast-toolbar";
       const hint = doc.createElement("p"); const reset = doc.createElement("button"); reset.type = "button";
@@ -417,7 +488,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         doc.defaultView?.requestAnimationFrame(() => { framePending = false; if (currentStage && !currentStage.disposed) arrange(currentStage); });
       };
       const observer = new ResizeObserver(onResize);
-      stage = { anchor: host, overlay, frame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, partnerIds: new Set(), busy: false, dragging: false, observer, onResize, disposed: false };
+      stage = { anchor: host, overlay, frame, manualFrame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, partnerIds: new Set(), busy: false, dragging: false, observer, onResize, disposed: false };
       currentStage = stage;
       stages.set(host, stage); activeStages.add(stage); observer.observe(host); observer.observe(frame);
       doc.defaultView?.addEventListener("resize", onResize);
@@ -439,7 +510,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
     const hero = entities.find(entity => entity.characterSheet?.protagonist);
     stage.heroId = hero?.id; stage.partnerIds = partners;
     const other = people.find(entity => entity.id !== hero?.id);
-    for (const [id, widget] of stage.widgets) if (!people.some(person => person.id === id)) { widget.slot.remove(); stage.widgets.delete(id); }
+    for (const [id, widget] of stage.widgets) if (!people.some(person => person.id === id)) { stage.observer.unobserve(widget.box); widget.slot.remove(); stage.widgets.delete(id); }
     for (const entity of people) {
       let widget = stage.widgets.get(entity.id);
       const side = entity.id === hero?.id ? "left" : entity.id === other?.id ? "right" : "extra";
@@ -452,16 +523,16 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         const mood = doc.createElement("small"); const role = doc.createElement("span"); role.className = "dr-cast-role";
         open.append(image, name, mood, role);
         const resize = doc.createElement("button"); resize.type = "button"; resize.className = "dr-cast-resize"; resize.textContent = "⤡";
-        const zoom = doc.createElement("button"); zoom.type = "button"; zoom.className = "dr-cast-zoom"; zoom.textContent = "⤢";
-        box.append(move, open, zoom, resize); slot.append(box);
-        widget = { slot, box, move, open, zoom, resize }; stage.widgets.set(entity.id, widget);
+        box.append(move, open, resize); slot.append(box);
+        widget = { slot, box, move, open, resize }; stage.widgets.set(entity.id, widget);
+        stage.observer.observe(box);
         manipulate(stage, widget, entity.id, move, false); manipulate(stage, widget, entity.id, resize, true);
       }
       attr(widget.slot, "class", `dr-cast-slot ${side}`);
-      const parent = stage.frame;
-      if (widget.slot.parentElement !== parent) parent.append(widget.slot);
       attr(widget.open, "class", `dr-cast-portrait ${side}`);
       if (!stage.dragging && !stage.busy) widget.pose = options?.layout?.resetAt === (options?.resetAt ?? 0) ? options.layout.positions[entity.id] : options ? undefined : widget.pose;
+      const parent = widget.pose?.manualSize ? stage.manualFrame : stage.frame;
+      if (!(stage.dragging && stage.draggingId === entity.id) && widget.slot.parentElement !== parent) parent.append(widget.slot);
       text(widget.move, `⠿ ${entity.name}`); attr(widget.move, "aria-label", `${characterText(locale, "layoutMove")}: ${entity.name}`); attr(widget.move, "title", characterText(locale, "layoutKeys"));
       attr(widget.resize, "aria-label", `${characterText(locale, "layoutResize")}: ${entity.name}`); attr(widget.resize, "title", characterText(locale, "layoutResizeKeys"));
       attr(widget.open, "aria-label", `${characterText(locale, "edit")}: ${entity.name}`);
@@ -482,13 +553,28 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       }
       const image = widget.open.querySelector("img")!;
       const view = () => openPortraitViewer(host.ownerDocument, image.getAttribute("src") ?? "", entity.name, locale);
-      const noImage = !validPortrait(image.getAttribute("src")); if (widget.zoom.hidden !== noImage) widget.zoom.hidden = noImage; attr(widget.zoom, "aria-label", `${photoCopy(locale).open}: ${entity.name}`); widget.zoom.onclick = view;
+      const noImage = !validPortrait(image.getAttribute("src"));
+      attr(image, "data-viewable", String(!noImage));
+      if (noImage) {
+        image.removeAttribute("title"); widget.open.removeAttribute("aria-keyshortcuts"); widget.open.removeAttribute("aria-description");
+      } else {
+        attr(image, "title", photoCopy(locale).open); attr(widget.open, "aria-keyshortcuts", "Space"); attr(widget.open, "aria-description", photoCopy(locale).open);
+      }
       widget.open.onclick = event => { if (event.target === image && view()) return; onOpen(entity.id); };
+      // Keep Enter's existing profile-editor action. Space offers the removed
+      // image-viewer control's keyboard access without a second visible button.
+      widget.open.onkeydown = event => {
+        if (event.key !== " " || event.altKey || event.ctrlKey || event.metaKey || noImage) return;
+        event.preventDefault(); if (!event.repeat) view();
+      };
     }
     // Scene order may change when the hero or interlocutors change. Keep existing
     // nodes and saved poses, but use the current cast order for unplaced defaults.
     stage.widgets = new Map(people.map(entity => [entity.id, stage!.widgets.get(entity.id)!]));
-    for (const [index, widget] of [...stage.widgets.values()].entries()) if (stage.frame.children[index] !== widget.slot) stage.frame.insertBefore(widget.slot, stage.frame.children[index] ?? null);
+    for (const frame of [stage.frame, stage.manualFrame]) {
+      const widgets = [...stage.widgets.values()].filter(widget => widget.slot.parentElement === frame);
+      for (const [index, widget] of widgets.entries()) if (!(stage.dragging && stage.widgets.get(stage.draggingId ?? "") === widget) && frame.children[index] !== widget.slot) frame.insertBefore(widget.slot, frame.children[index] ?? null);
+    }
     if (focused?.isConnected && stage.overlay.shadowRoot!.activeElement !== focused) focused.focus({ preventScroll: true });
     arrange(stage);
   }

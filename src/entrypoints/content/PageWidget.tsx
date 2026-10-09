@@ -204,6 +204,7 @@ export function PageWidget(props: {
   const chatMeterState = chatEstimatePercent >= 90 ? "is-critical" : chatEstimatePercent >= 75 ? "is-low" : chatEstimatePercent >= 50 ? "is-mid" : "is-roomy";
   const serviceBusy = props.state.activity?.phase === "preparing" || props.state.activity?.phase === "waiting";
   const analysisBlocked = serviceBusy || !!props.state.generating || !props.state.canAnalyzeChat;
+  const analysisHelp = [at("chatAnalyzeHelp"), analysisBlocked ? x(serviceBusy ? "waiting" : "generating") : undefined].filter(Boolean).join("\n");
   const proposals = props.state.proposals ?? [];
   const review = proposals.find((batch) => batch.id === reviewId);
   const assistantOpen = Boolean((quick && props.onQuickSave && props.onDraftLore) || (review && props.onReview && props.onDiscard));
@@ -286,7 +287,7 @@ export function PageWidget(props: {
   return <HelpLocale.Provider value={props.state.locale}><div className="dr-root">
     <button className="dr-launcher" onClick={() => setMenuOpen(!menuOpen)} aria-label={t("openDeepRole")} aria-expanded={menuOpen}><span className="dr-orb" /><span>DeepRole</span></button>
     {props.state.startupError && <div className="dr-toast" role="alert">{x("startupError")}</div>}
-    {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisBlocked ? x(serviceBusy ? "waiting" : "generating") : x("requestsVisible")} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
+    {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton nativeTooltip className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisHelp} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={props.menuUrl} title="DeepRole" /></aside></div>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
     {!props.state.vaultLocked && props.state.continuation && (!review || review.id !== props.state.continuation.proposalId) && <section className="dr-continuation-progress" aria-label={continuationText(props.state.locale, "title")}>

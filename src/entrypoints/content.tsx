@@ -6,6 +6,7 @@ import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
+import { ReasoningPresentation } from "../adapters/reasoning-presentation";
 import { DeepSeekReplyRecovery, recoveredReplyContext } from "../adapters/deepseek-reply-recovery";
 import { pendingRecoveredReply, replyRecoveryText } from "../core/reply-recovery";
 import type { RecoveredReplyEdit } from "../storage/recovered-replies";
@@ -21,7 +22,7 @@ import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
 import { imagePlanRoster, parseImageScenePlan } from "../core/image-plan";
 import { IllustrationsPresenter, illustrationSceneText } from "../adapters/illustrations-dom";
 import { getImageSettings, IMAGE_SETTINGS_KEY } from "../storage/image-settings";
-import { DEFAULT_IMAGE_SETTINGS, type Illustration, type ImageSettings } from "../core/image-generation";
+import { DEFAULT_IMAGE_SETTINGS, MAX_IMAGE_PLAN_TEXT, type Illustration, type ImageSettings } from "../core/image-generation";
 import { imageText, imageErrorKey } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
@@ -67,7 +68,7 @@ import type {
   MemoryOverrides, MemoryProposalBatch, LoreChange,
 } from "../core/types";
 import { PageWidget, type WidgetState } from "./content/PageWidget";
-import { pendingActivity, SERVICE_TIMEOUT_MS, type ServiceActivity } from "../core/memory-experience";
+import { pendingActivity, serviceActivity, SERVICE_TIMEOUT_MS, type ServiceActivity } from "../core/memory-experience";
 import "./content/page-widget.css";
 import "./shared/help.css";
 import { contentRepository as repository } from "../storage/content-repository";
@@ -138,6 +139,7 @@ class PageController {
   private characterScanTask: Promise<void> | null = null;
   private characterStatus: CharacterCopyKey = "idle";
   private readonly adapter = new DeepSeekDomAdapter();
+  private readonly reasoningPresentation = new ReasoningPresentation();
   private readonly replyRecovery = new DeepSeekReplyRecovery(async edit => {
     if (this.state.vaultLocked || this.settings.replyRecoveryEnabled === false || this.adapter.getChatId() !== edit.chatId) throw new Error("reply-scope");
     await repository.saveRecoveredReply(edit);
@@ -219,6 +221,7 @@ class PageController {
     this.observePage();
     try {
       this.settings = await startupDeadline(getSettings());
+      this.reasoningPresentation.configure(this.settings.showDeepSeekReasoning === true, this.settings.locale);
       this.state.locale = this.settings.locale;
       this.draftScene = (await startupDeadline(browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage))) ?? { ...EMPTY_SCENE };
       this.previousChatId = this.adapter.getChatId();
@@ -288,6 +291,7 @@ class PageController {
   }
 
   unmountWidget() {
+    this.reasoningPresentation.dispose();
     this.root?.unmount();
     this.root = null;
   }
@@ -305,6 +309,7 @@ class PageController {
     if (generation !== this.reloadGeneration) return false;
     this.state.startupError = false;
     this.settings = settings;
+    this.reasoningPresentation.configure(settings.showDeepSeekReasoning === true, settings.locale);
     this.state.locale = this.settings.locale;
     this.state.showChatContextMeter = this.settings.showChatContextMeter;
     this.state.showMemoryContextIndicator = this.settings.showMemoryContextIndicator;
@@ -375,7 +380,7 @@ class PageController {
   private readonly scenePhotos = new ScenePhotosPresenter();
   private readonly imagePresenter = new IllustrationsPresenter();
   private syncIllustrations() {
-    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw Object.assign(new Error("image-request-failed"), { code: result?.error ?? "failed", headers: result?.headers, ticketId: result?.ticketId }); return result; };
+    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw Object.assign(new Error("image-request-failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers, ticketId: result?.ticketId }); return result; };
     this.imagePresenter.sync({ enabled: this.imageSettings.enabled && !this.state.vaultLocked, generating: this.adapter.isGenerating(), worldId: this.currentScene().worldId, chatId: this.adapter.getChatId(), chatUrl: location.href, records: this.illustrations, attempts: this.currentBinding()?.illustrationAttempts ?? [], entities: this.entities, settings: this.imageSettings, locale: this.state.locale, actions: {
       onCreate: async (target, text) => this.generateIllustration(target, text),
       onRepeat: async (target, id, attempt) => { await call({ type: "DR_IMAGE_REPEAT", target, id, attempt }); await this.reload(); },
@@ -387,20 +392,24 @@ class PageController {
     if (this.state.vaultLocked || this.adapter.isAuthenticationPage() || this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId) throw { code: "changed" };
     if (this.adapter.isGenerating() || this.pendingService || this.preparingService || this.characterTextWaiter) throw { code: "busy" };
     if (this.adapter.getDraft().trim()) throw { code: "draftBusyImage" };
-    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw { code: result?.error ?? "failed", ticketId: result?.ticketId }; return result; };
+    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers, ticketId: result?.ticketId }; return result; };
     const selectedLevel = this.imageSettings.contentLevel;
+    const referenceBudget = this.imageSettings.profiles.find(p => p.id === this.imageSettings.profileByLevel[selectedLevel])?.maxReferences ?? 1;
     const { attempt } = await call({ type: "DR_IMAGE_START", target });
+    let phase: "plan" | undefined = "plan";
     try {
-      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: 6000 }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(this.entities.filter(e => e.worldId === target.worldId)), contentLevel: this.imageSettings.contentLevel } }, attempt);
+      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(this.entities.filter(e => e.worldId === target.worldId)), referenceBudget, contentLevel: this.imageSettings.contentLevel } }, attempt);
       if (this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId || this.state.vaultLocked || this.imageSettings.contentLevel !== selectedLevel) throw { code: "changed" };
       const row = nativeMessageRows(document).find(row => nativeMessageIdentity(row) === target.messageKey);
       if (row && illustrationSceneText(row) !== text) throw { code: "changed" };
-      await call({ type: "DR_IMAGE_RENDER", target, id: attempt.id, plan: parseImageScenePlan(value) });
+      const plan = parseImageScenePlan(value);
+      phase = undefined;
+      await call({ type: "DR_IMAGE_RENDER", target, id: attempt.id, plan });
     } catch (error) {
       const code = error instanceof Error && error.message === "invalidPlan" ? "invalidPlan" : imageErrorKey(error);
       // The background keeps the original request after a provider failure.
-      await browser.runtime.sendMessage({ type: "DR_IMAGE_FAIL", target, id: attempt.id, error: code } satisfies import("../core/image-messages").ImageMessage).catch(() => undefined);
-      throw Object.assign(new Error(code), { code });
+      await browser.runtime.sendMessage({ type: "DR_IMAGE_FAIL", target, id: attempt.id, error: code, phase } satisfies import("../core/image-messages").ImageMessage).catch(() => undefined);
+      throw Object.assign(new Error(code), typeof error === "object" && error !== null ? error : {}, { code, ...(phase ? { diagnostic: { source: "deepseek", phase } } : {}) });
     } finally { await this.reload(); }
   }
   private readonly selfieJobs = new Set<string>();
@@ -1145,11 +1154,11 @@ class PageController {
     if ((request.type === "lore-draft" || request.targetEntityId) && (!request.brief?.trim() || request.brief.length > 6000)) return { ok: false, error: "invalid-brief" };
     if (request.targetEntityId && request.type !== "memory-analysis") return { ok: false, error: "invalid-brief" };
     this.preparingService = true;
-    this.serviceFeedback = { phase: "preparing", type: request.type };
+    this.serviceFeedback = serviceActivity(request, "preparing");
     this.render();
     let stored = false;
     const cancel = async (error: string) => {
-      if (location.href === initialUrl && sceneKey() === initialScene && error !== "vault-locked") this.serviceFeedback = { phase: "error", type: request.type };
+      if (location.href === initialUrl && sceneKey() === initialScene && error !== "vault-locked") this.serviceFeedback = serviceActivity(request, "error");
       if (stored) {
         if (request.type === "memory-analysis") removeServicePreloader(request.id, findServiceReplyRows(request.id));
         if (this.pendingService?.id === request.id) this.pendingService = null;
@@ -1363,7 +1372,7 @@ class PageController {
     this.setServiceResult(request, "error");
     this.malformedServiceReplies.delete(request.id);
     await this.updateContext(); this.syncSceneChoices(); this.render();
-    this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, /handoff/.test(request.type) ? "invalidHandoffResult" : "invalidServiceResult"));
+    if (!request.imagePlan) this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, /handoff/.test(request.type) ? "invalidHandoffResult" : "invalidServiceResult"));
   }
 
   private scheduleHandoffNavigation(snapshot: HandoffSnapshot, scope: PageScope, continuationId?: string) {
@@ -1729,7 +1738,7 @@ class PageController {
     // failure for that already received result or disturb its storage operation.
     if (!request || request.id !== id || this.processingService) return;
     await this.endUnusableService(request);
-    this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "networkFailed"));
+    if (!request.imagePlan) this.showToast(request.type === "scene-choices" ? sceneChoiceText(this.state.locale, "failedHint") : assistantText(this.state.locale, "networkFailed"));
   }
 
   private async acknowledgeDelivery(delivery: ContextDelivery) {
@@ -1800,7 +1809,7 @@ class PageController {
 
   private setServiceResult(request: ServiceRequest, phase: "empty" | "error" | null) {
     if ((request.chatId ?? null) !== this.adapter.getChatId() || (request.worldId ?? null) !== this.currentScene().worldId) return;
-    this.serviceFeedback = phase ? { phase, type: request.type } : null;
+    this.serviceFeedback = phase ? serviceActivity(request, phase) : null;
   }
 
   private async saveTabState(state: TabSessionState, expected?: TabSessionGuard): Promise<boolean> {

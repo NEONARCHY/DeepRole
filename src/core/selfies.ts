@@ -32,6 +32,17 @@ export function validSelfieCategories(v: unknown): v is SelfieCategory[] {
     && Array.isArray(c.images) && c.images.length <= MAX_PORTRAIT_VARIATIONS && c.images.every(validPortrait) && new Set(c.images).size === c.images.length)
     && new Set(v.map(c => c.id)).size === v.length && v.filter(c => c.default).length <= 1;
 }
+/** Local assignment only: preserve the source library, portraits and category rules. */
+export function addSelfieLibraryImages(categories: SelfieCategory[], categoryId: string, library: string[], selected: string[]): SelfieCategory[] {
+  const category = categories.find(c => c.id === categoryId);
+  if (!category) throw new Error("selfie-category-missing");
+  const available = new Set(library);
+  if (selected.some(image => !validPortrait(image) || !available.has(image))) throw new Error("selfie-library-missing");
+  const images = [...new Set([...category.images, ...selected])];
+  if (images.length > MAX_PORTRAIT_VARIATIONS) throw new Error("selfie-category-full");
+  if (images.length === category.images.length) return categories;
+  return categories.map(c => c.id === categoryId ? { ...c, images } : c);
+}
 /** Older emotion assignments remain usable without editing or moving their images. */
 export function selfieCategories(sheet?: CharacterSheet): SelfieCategory[] {
   const legacy = Object.entries(sheet?.sprites ?? {}).filter(([name]) => /^(?:selfie|селфи)(?:$|\s*[:/—-])/iu.test(name.trim()))

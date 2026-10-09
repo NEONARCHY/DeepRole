@@ -1,5 +1,5 @@
 import type { Locale } from "./types";
-import { validPortrait } from "./portrait-variations";
+import { validGeneratedImage } from "./generated-images";
 import { validImageReplay } from "./image-plan";
 
 // One entry defines the type, validator and both labels. These are presets, not prompt filters.
@@ -13,6 +13,9 @@ export type ImageContentLevel = typeof IMAGE_CONTENT_LEVELS[number]["id"];
 export const validImageContentLevel = (v: unknown): v is ImageContentLevel => IMAGE_CONTENT_LEVELS.some(level => level.id === v);
 export const imageContentLabel = (level: ImageContentLevel, locale: Locale) => IMAGE_CONTENT_LEVELS.find(item => item.id === level)![locale];
 export const ADULT_CONTENT_LEVEL: ImageContentLevel = "adult";
+// Local payload safeguards, not limits or capabilities of any provider/model.
+export const MAX_IMAGE_SCENE_CHARACTERS = 40;
+export const MAX_IMAGE_PLAN_TEXT = 12_000;
 export type ImageProviderKind = "openai-images" | "venice-native";
 export interface ImageProviderConfig {
   id: string; label: string; kind: ImageProviderKind; baseUrl: string;
@@ -29,9 +32,13 @@ export interface ImageSettings {
 export const DEFAULT_IMAGE_SETTINGS: ImageSettings = { enabled: false, contentLevel: "off", profiles: [], profileByLevel: {}, stylePrefix: "", styleSuffix: "", adultConfirmed: false };
 export interface ImageModelInfo {
   id: string; label: string; privacy?: "private" | "anonymized"; priceUsd?: number;
-  maxInputImages?: number; promptLimit?: number; supportsEdit?: boolean;
+  maxInputImages?: number; promptLimit?: number; supportsEdit?: boolean; supportsGenerate?: boolean;
   uncensored?: boolean;
   constraints?: Record<string, unknown>;
+}
+/** Unknown capabilities remain selectable; only an explicit API capability excludes a model. */
+export function imageModelsFor(models: ImageModelInfo[], mode: "generate" | "edit"): ImageModelInfo[] {
+  return models.filter(model => (mode === "edit" ? model.supportsEdit : model.supportsGenerate) !== false);
 }
 export const IMAGE_RESPONSE_HEADERS = ["x-venice-is-blurred", "x-venice-is-content-violation", "x-venice-model-deprecation-warning"] as const;
 export type ImageResponseHeaders = Partial<Record<typeof IMAGE_RESPONSE_HEADERS[number], string>>;
@@ -106,7 +113,7 @@ export function validImageHeaders(v: unknown): v is ImageResponseHeaders {
 export function validIllustration(v: unknown): v is Illustration {
   return object(v) && ["id", "worldId", "chatId"].every(k => imageKey(v[k])) && text(v.messageKey, 1000) && !!v.messageKey
     && (v.entityId === undefined || imageKey(v.entityId)) && validProviderId(v.providerId) && text(v.modelId, 200) && !!v.modelId
-    && text(v.prompt, 12_000) && !!v.prompt.trim() && validImageSeed(v.seed) && validImageContentLevel(v.contentLevel) && validPortrait(v.image)
+    && text(v.prompt, 12_000) && !!v.prompt.trim() && validImageSeed(v.seed) && validImageContentLevel(v.contentLevel) && validGeneratedImage(v.image)
     && (v.referenceKeys === undefined || Array.isArray(v.referenceKeys) && v.referenceKeys.length <= 128 && v.referenceKeys.every(imageKey))
     && (v.aspectRatio === undefined || validImageAspect(v.aspectRatio)) && (v.request === undefined || validImageReplay(v.request))
     && (v.headers === undefined || validImageHeaders(v.headers)) && ["createdAt", "updatedAt"].every(k => typeof v[k] === "number" && Number.isFinite(v[k]) && Number(v[k]) >= 0);

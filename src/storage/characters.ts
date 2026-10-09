@@ -9,7 +9,7 @@ import { characterEditBaseline, mergeCharacterEdit, type CharacterEditBaseline }
 import { advanceRelationship, recordManualBonds, relationshipNarrative, relationshipState, validRelationshipPatches } from "../core/relationships";
 import { EMPTY_STATUS, narrativeCharacterStatus } from "../core/characters";
 import { advanceAttributes, attributeState, recordManualAttributes, validAttributePatches } from "../core/attributes";
-import { characterStatusForSheet, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
+import { cleanCharacterEmotionImages, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
 
 import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents, GENERATED_SELFIE, generatedSelfieCategory, selfieWasSent } from "../core/selfies";
 import { validateWorldImageBudgets } from "./illustrations";
@@ -46,7 +46,7 @@ export async function addCharacterEmotion(scope: CharacterScope, name: string, f
   });
 }
 
-export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository): Promise<CharacterSaveResult> {
+export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepository = repository, defaultEmotions?: string[]): Promise<CharacterSaveResult> {
   if (!edit.name.trim() || edit.name.length > 80 || !validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
   if ((edit.interlocutor !== undefined && typeof edit.interlocutor !== "boolean") || (edit.interlocutor === true && (!edit.present || edit.sheet.protagonist))) throw new Error("character-invalid");
   const original = edit.original;
@@ -59,7 +59,9 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     // snapshot to merge disjoint fields atomically under the same library lock.
     if (original) edit = { ...edit, ...mergeCharacterEdit(original, edit, characterEditBaseline(before ?? null, entities, scene)) };
     if (!validCharacterSheet(edit.sheet) || !validCharacterStatus(edit.state)) throw new Error("character-invalid");
-    edit = { ...edit, state: characterStatusForSheet(edit.sheet, edit.state) };
+    const world = all.find(row => row.kind === "world" && row.id === edit.worldId)!.data as WorldProfile;
+    const worldEmotions = world.characterEmotions ?? defaultEmotions;
+    edit = { ...edit, sheet: cleanCharacterEmotionImages(edit.sheet, worldEmotions), state: { ...edit.state, emotion: resolveCharacterEmotion(edit.sheet, edit.state.emotion, undefined, worldEmotions) } };
     const now = Date.now();
     edit = { ...edit, state: { ...edit.state, attributes: recordManualAttributes(edit.sheet.attributes ?? [], scene?.states[before?.id ?? ""]?.attributes, edit.state.attributes, now) } };
     edit = { ...edit, state: { ...edit.state, ...(edit.state.bonds || scene?.states[before?.id ?? ""]?.bonds ? { bonds: recordManualBonds(scene?.states[before?.id ?? ""]?.bonds, edit.state.bonds, now, before?.characterSheet?.relationships?.initial ?? edit.sheet.relationships?.initial) } : {}) } };

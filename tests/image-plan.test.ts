@@ -33,7 +33,7 @@ describe("private scene planning",()=>{
 it("accepts plain and fenced JSON only",()=>{expect(parseImageScenePlan(JSON.stringify(plan))).toEqual(plan);expect(parseImageScenePlan("\`\`\`json\n"+JSON.stringify(plan)+"\n\`\`\`")).toEqual(plan);expect(()=>parseImageScenePlan("Explanation "+JSON.stringify(plan))).toThrow("invalidPlan");});
 it.each([{...plan,scene:"short"},{...plan,characters:[{...plan.characters[0],reference:"unknown"}]},{...plan,characters:[...plan.characters,...plan.characters]}])("rejects malformed frame %#",v=>expect(()=>parseImageScenePlan(JSON.stringify(v))).toThrow());
 it("supplies textual identity and both reference contexts without pixels",()=>{const roster=imagePlanRoster([person]);expect(roster[0]?.references).toMatchObject({neutral:{available:true,context:"Everyday coat"},suggestive:{available:true,context:"Alternate evening look"}});const prompt=imagePlanInstruction({completedScene:"OLD requested scene",roster});expect(prompt).toContain("OLD requested scene");expect(prompt).toContain("Other replies");expect(prompt).not.toContain("data:image");});
-it.each(["neutral","suggestive","none"] as const)("chooses the requested %s slot",reference=>{const input=planImageInput({...plan,characters:[{...plan.characters[0]!,reference}]},target,[person],settings);expect(input.referenceKeys).toEqual(reference==="none"?[]:[imageProfile[reference==="neutral"?"referenceKey":"suggestiveReferenceKey"]]);expect(input.aspectRatio).toBe("16:9");expect(input.prompt).toContain("Watercolor");expect(input.prompt).toContain("Copper hair.");expect(input.prompt).not.toContain("OLD SCENE");});
+it.each(["neutral","suggestive","none"] as const)("chooses the requested %s slot with the pinned ordinary reference as fallback",reference=>{const input=planImageInput({...plan,characters:[{...plan.characters[0]!,reference}]},target,[person],settings);expect(input.referenceKeys).toEqual([imageProfile[reference==="suggestive"?"suggestiveReferenceKey":"referenceKey"]]);expect(input.aspectRatio).toBe("16:9");expect(input.prompt).toContain("Watercolor");expect(input.prompt).toContain("Copper hair.");expect(input.prompt).not.toContain("OLD SCENE");});
 it("ordinary preset forces the neutral look",()=>expect(planImageInput(plan,target,[person],{...settings,contentLevel:"off"}).referenceKeys).toEqual([imageProfile.referenceKey]));
 it("missing alternate falls back to neutral then text",()=>{const a={...person,characterSheet:{...person.characterSheet!,portraitLibrary:[neutral]}};expect(planImageInput(plan,target,[a],settings).referenceKeys).toEqual([imageProfile.referenceKey]);expect(planImageInput(plan,target,[{...a,characterSheet:{...a.characterSheet!,portraitLibrary:[]}}],settings).referenceKeys).toEqual([]);});
 it("combines identities in order within the provider reference limit",()=>{const second={...person,id:"noah",name:"Noah"},both={...plan,characters:[...plan.characters,{...plan.characters[0]!,id:"noah"}]};const input=planImageInput(both,target,[person,second],settings);expect(input.entityIds).toEqual(["mira","noah"]);expect(input.references).toEqual([{entityId:"mira",key:imageProfile.suggestiveReferenceKey},{entityId:"noah",key:imageProfile.suggestiveReferenceKey}]);const one=planImageInput(both,target,[person,second],{...settings,profiles:[{...config,maxReferences:1}]});expect(one.references).toHaveLength(1);expect(one.prompt).toContain("Noah");});
@@ -51,5 +51,26 @@ it("preserves pictures and remaps archived replay identities when cloning a worl
 it("counts saved retry references in the image budget",async()=>{const{repo,jobs}=await setup();const job=await jobs.start(target),first=await jobs.render(target,job.id,plan);const records=await repo.rawRecords();expect(worldImageUsage(records,world.id).bytes).toBe(neutral.length+alternate.length+first.image.length+first.request!.images.reduce((n,x)=>n+x.length,0));});
 });
 describe("required image framing",()=>{
-it.each(["16:9","9:16"] as const)("overrides only sizing for %s",aspectRatio=>{const open=requestBody({...config,extraParams:{size:"auto",other:true}},{prompt:plan.scene,aspectRatio});expect(open.size).toBe(aspectRatio==="16:9"?"1536x1024":"1024x1536");expect(open.other).toBe(true);const venice=requestBody({...config,kind:"venice-native"},{prompt:plan.scene,aspectRatio});expect(venice.aspect_ratio).toBe(aspectRatio);expect(venice).not.toHaveProperty("width");const pixel=requestBody({...config,kind:"venice-native",extraParams:{width:1024,height:1024,aspect_ratio:"1:1"}},{prompt:plan.scene,aspectRatio});expect(pixel).toMatchObject(aspectRatio==="16:9"?{width:1024,height:576}:{width:576,height:1024});expect(pixel).not.toHaveProperty("aspect_ratio");});
+it.each(["16:9","9:16"] as const)("defaults framing without overwriting user sizing: %s",aspectRatio=>{
+ const open=requestBody(config,{prompt:plan.scene,aspectRatio});expect(open.size).toBe(aspectRatio==="16:9"?"1536x1024":"1024x1536");
+ const explicit=requestBody({...config,extraParams:{size:"auto",other:true}},{prompt:plan.scene,aspectRatio});expect(explicit).toMatchObject({size:"auto",other:true});
+ const venice=requestBody({...config,kind:"venice-native"},{prompt:plan.scene,aspectRatio});expect(venice.aspect_ratio).toBe(aspectRatio);expect(venice).not.toHaveProperty("width");
+ const pixel=requestBody({...config,kind:"venice-native",extraParams:{width:1024,height:1024,aspect_ratio:"1:1"}},{prompt:plan.scene,aspectRatio});expect(pixel).toMatchObject({width:1024,height:1024,aspect_ratio:"1:1"});
+});
+});
+describe("persistent safe error details",()=>{
+it("retains worker diagnostics through content cleanup and reload without leaking the key",async()=>{
+  const {repo,jobs,provider}=await setup(); const diagnostic={source:"provider" as const,phase:"request" as const,status:400,endpoint:"/image/edit",providerCode:"INVALID_MODEL",message:"Unsupported model SYNTHETIC-PRIVATE-KEY"};
+  provider.edit.mockRejectedValueOnce(new ImageApiError("badRequest",{"x-venice-is-content-violation":"false"},undefined,undefined,diagnostic));
+  const job=await jobs.start(target);await expect(jobs.render(target,job.id,plan)).rejects.toMatchObject({code:"badRequest",diagnostic:{status:400}});
+  await jobs.fail(target,job.id,{code:"failed"},"plan");
+  const saved=(await repo.get<ChatBinding>("binding","binding:a"))!.illustrationAttempts![0]!;
+  expect(saved).toMatchObject({error:"badRequest",diagnostic:{status:400,providerCode:"INVALID_MODEL",message:"Unsupported model [redacted]"},headers:{"x-venice-is-content-violation":"false"}});
+  expect(validImageAttempts([saved])).toBe(true);expect(JSON.stringify(saved)).not.toContain("SYNTHETIC-PRIVATE-KEY");expect(provider.edit).toHaveBeenCalledOnce();
+});
+it("records a plan-stage failure without claiming an image API request was made",async()=>{
+  const {repo,jobs,provider}=await setup();const job=await jobs.start(target);await jobs.fail(target,job.id,{code:"invalidPlan"},"plan");
+  const saved=(await repo.get<ChatBinding>("binding","binding:a"))!.illustrationAttempts![0]!;
+  expect(saved.diagnostic).toEqual({source:"deepseek",phase:"plan"});expect(saved.request).toBeUndefined();expect(provider.edit).not.toHaveBeenCalled();expect(provider.generate).not.toHaveBeenCalled();
+});
 });

@@ -28,7 +28,7 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1500]) test(`pinned
     expect(result.bottom).toBeLessThanOrEqual(result.composer - 10);
     expect(result.composer - result.bottom).toBeCloseTo(12, 0);
     expect(result.center).toBeCloseTo(result.composerCenter, 0);
-    expect(result.cardWidth).toBeLessThanOrEqual(result.composerWidth + 1);
+    expect(result.cardWidth).toBeCloseTo(result.composerWidth, 0);
     expect(result.left).toBeGreaterThanOrEqual(0); expect(result.right).toBeLessThanOrEqual(result.width);
   };
   await assertFits();

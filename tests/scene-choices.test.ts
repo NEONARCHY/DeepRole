@@ -282,7 +282,7 @@ describe("history restoration and explicit recovery", () => {
   it("localizes recovery and restores the final card when a complete answer arrives", () => {
     const row = answer("Scene"); sync("en"); expect(recovery()?.shadowRoot?.querySelector("button")?.textContent).toBe("Suggest options");
     row.textContent = "Scene\n" + payload; sync("en"); expect(recovery()).toBeNull();
-    expect(host()?.shadowRoot?.querySelector("h3")?.textContent).toBe("Your move");
+    expect(host()?.shadowRoot?.querySelector("h2")?.textContent).toBe("Your move");
   });
   it("keeps existing hosts during repeated idle scans instead of churning the DOM", () => {
     const row = answer("Scene"); sync(); const buttonHost = recovery();
@@ -337,6 +337,33 @@ describe("history restoration and explicit recovery", () => {
     expect(card.shadowRoot!.querySelector(".grid")?.getAttribute("data-expanded")).toBe("true");
     expect(card.shadowRoot!.activeElement).toBe(toggle); expect(pick).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
     toggle.click(); expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+  it.each(["ru", "en"] as const)("minimizes locally and restores the same options, selection and text mode (%s)", async locale => {
+    const input = document.createElement("textarea"); input.value = "My untouched draft"; document.body.append(input);
+    answer("Scene\n" + payload); sync(locale);
+    const card = host()!, root = card.shadowRoot!;
+    const grid = root.querySelector<HTMLElement>(".grid")!;
+    const minimize = root.querySelector<HTMLButtonElement>(".choice-minimize")!;
+    const restore = root.querySelector<HTMLButtonElement>(".choice-restore")!;
+    expect(minimize.getAttribute("aria-label")).toBe(locale === "ru" ? "Свернуть варианты" : "Minimize options");
+    expect(restore.getAttribute("aria-label")).toBe(locale === "ru" ? "Развернуть варианты" : "Restore options");
+    root.querySelector<HTMLButtonElement>(".choice-expand")!.click();
+    const choice = grid.querySelector<HTMLButtonElement>("button")!; choice.click(); await Promise.resolve(); await Promise.resolve();
+    pick.mockClear(); minimize.click(); sync(locale);
+    expect(host()).toBe(card); expect(grid.hidden).toBe(true); expect(minimize.hidden).toBe(true); expect(restore.hidden).toBe(false);
+    expect(restore.getAttribute("aria-expanded")).toBe("false"); expect(root.activeElement).toBe(restore);
+    restore.click();
+    expect(grid.hidden).toBe(false); expect(root.activeElement).toBe(minimize); expect(restore.hidden).toBe(true);
+    expect(grid.dataset.expanded).toBe("true"); expect(choice.getAttribute("aria-pressed")).toBe("true");
+    expect(input.value).toBe("My untouched draft"); expect(pick).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
+  });
+  it("opens fresh choices after a minimized scene without altering the enabled mode", () => {
+    answer("Scene\n" + payload); sync("en");
+    const old = host()!; old.shadowRoot!.querySelector<HTMLButtonElement>(".choice-minimize")!.click();
+    answer("A new scene\n" + payload, "new"); sync("en");
+    expect(host()).not.toBe(old); expect(old.isConnected).toBe(false);
+    expect(host()!.shadowRoot!.querySelector<HTMLElement>(".grid")!.hidden).toBe(false);
+    expect(request).not.toHaveBeenCalled();
   });
   it.each(["ru", "en"] as const)("keeps successful selections quiet and retains accessible navigation (%s)", async locale => {
     answer("Scene\n" + payload); sync(locale);

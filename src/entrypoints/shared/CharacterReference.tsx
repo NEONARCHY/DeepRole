@@ -6,6 +6,7 @@ import { withPortraitLibrary } from "../../core/portrait-library";
 import { selfieImageKey } from "../../core/selfies";
 import { selfieText } from "../../core/selfie-i18n";
 import { readPortrait } from "./portrait-file";
+import { portraitUploadError } from "../../core/portrait-upload-i18n";
 import { openPortraitViewer } from "../../adapters/portrait-viewer";
 
 export function CharacterReference({ sheet, name, locale, disabled, onChange, onBusy }: { sheet: CharacterSheet; name: string; locale: Locale; disabled: boolean; onChange(sheet: CharacterSheet): void; onBusy(busy: boolean): void }) {
@@ -30,7 +31,7 @@ export function CharacterReference({ sheet, name, locale, disabled, onChange, on
     <small className="dr-character-hint">{t("private")}</small>{error && <p role="alert">{error}</p>}
     <input ref={file} hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={e => {
       const selected = e.target.files?.[0]; e.target.value = ""; if (!selected) return;
-      onBusy(true); setError(""); void readPortrait(selected).then(image => pin(withPortraitLibrary(sheet, [...(sheet.portraitLibrary ?? []), image]), selfieImageKey(image))).catch(() => setError(t("uploadError"))).finally(() => onBusy(false));
+      onBusy(true); setError(""); void readPortrait(selected).then(image => pin(withPortraitLibrary(sheet, [...(sheet.portraitLibrary ?? []), image]), selfieImageKey(image))).catch(cause => setError(portraitUploadError(locale, cause, t("uploadError")))).finally(() => onBusy(false));
     }} />
   </section>;
 }

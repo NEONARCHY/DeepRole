@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { memoryReadiness, pendingActivity, selectionReason } from "../src/core/memory-experience";
+import { memoryReadiness, pendingActivity, selectionReason, serviceActivity } from "../src/core/memory-experience";
 import type { RankedMemory, ServiceRequest } from "../src/core/types";
 
 describe("memory status reflects the actual outgoing selection", () => {
@@ -34,5 +34,12 @@ describe("service progress", () => {
   });
   it("supports creating lore before the new chat has an id", () => {
     expect(pendingActivity({ ...request, chatId: undefined, type: "lore-draft" }, null, false, 200)?.phase).toBe("waiting");
+  });
+  it("keeps image preparation busy but presents it only beside the illustration", () => {
+    const imageRequest = { ...request, type: "character-text" as const, imagePlan: true };
+    expect(pendingActivity(imageRequest, "a", false, 200)).toEqual({ phase: "waiting", type: "character-text", presentation: "inline" });
+    expect(pendingActivity(imageRequest, "a", false, 600100)).toEqual({ phase: "error", type: "character-text", presentation: "inline" });
+    expect(serviceActivity({ ...imageRequest, imagePlan: undefined, characterText: { field: { key: "image-plan", label: "Frame", maxLength: 6000, scope: "scene" }, currentText: "", reference: { name: "Scene" } } }, "preparing")).toMatchObject({ presentation: "inline" });
+    expect(serviceActivity({ ...request, type: "character-text" }, "waiting")).toEqual({ phase: "waiting", type: "character-text" });
   });
 });

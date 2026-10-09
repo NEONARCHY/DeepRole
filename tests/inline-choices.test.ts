@@ -40,19 +40,27 @@ test("normal-flow inputs do not receive floating-input geometry", () => {
   expect(composerBounds(document, true)).toBeNull();
 });
 
+test("an explicit paused unpin does not follow after native flow temporarily clamps to bottom", () => {
+  const { scroll, host } = fixture();
+  Object.defineProperty(scroll, "scrollHeight", { configurable: true, value: 700 }); scroll.scrollTop = 0;
+  bindInlineChoices(host, false, true);
+  expect(scroll.scrollTop).toBe(0);
+  expect(document.querySelector("[data-deeprole-choices-spacer]")).not.toBeNull();
+});
+
 test("inline width uses the input center, not a displaced message wrapper", () => {
   const { host } = fixture();
   expect(fitComposerInlineChoices(host)).toBe(true);
-  expect(host.style.width).toBe("720px"); expect(host.style.marginLeft).toBe("-270px");
+  expect(host.style.width).toBe("740px"); expect(host.style.marginLeft).toBe("-280px");
 });
 
-test("adaptive inline options narrow symmetrically to clear left-side HUDs", () => {
+test("adaptive inline options retain the native input width with left-side HUDs", () => {
   const { host } = fixture(); host.dataset.deeproleAdaptive = "true";
   const deck = document.createElement("div"); deck.className = "dr-widget-deck"; deck.dataset.minimumLeft = "8";
   const tile = document.createElement("div"); tile.className = "dr-widget-tile"; deck.append(tile); document.body.append(deck);
   rect(tile, 40, 80, 224, 350);
   expect(fitComposerInlineChoices(host)).toBe(true);
-  expect(host.style.width).toBe("420px"); expect(host.style.marginLeft).toBe("-120px");
+  expect(host.style.width).toBe("740px"); expect(host.style.marginLeft).toBe("-280px");
 });
 
 test("only missing native footer space is added and cleanup removes it", () => {

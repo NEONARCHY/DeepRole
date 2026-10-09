@@ -1,12 +1,14 @@
 /* A body-level shadow host prevents chat ancestors from clipping or reserving space. */
 :host([data-deeprole-portrait-layer]){position:fixed;inset:0;z-index:2147482000;display:block;pointer-events:none;contain:layout style;font:13px/1.4 system-ui,sans-serif}
-.dr-cast-frame{position:absolute;inset:0;pointer-events:none}
+.dr-cast-frame,.dr-cast-manual-frame{position:absolute;inset:0;pointer-events:none}
+.dr-cast-manual-frame .dr-cast-portrait{max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--dr-muted) transparent}
 .dr-cast-slot{display:contents}
 .dr-cast-content{min-width:0}
 .dr-cast-widget{position:absolute;width:192px;pointer-events:auto;color:var(--dr-text);border-radius:var(--dr-radius);background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
 .dr-cast-widget:focus-within{z-index:3}
 .dr-cast-portrait{display:grid;justify-items:stretch;gap:var(--dr-space-1);width:100%;min-height:44px;border:0;background:transparent;color:var(--dr-text);padding:0;text-align:center;cursor:pointer;font:inherit}
 .dr-cast-portrait img{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:contain;border-radius:var(--dr-radius);background:var(--dr-surface)}
+.dr-cast-portrait img[data-viewable=true]{cursor:zoom-in}
 .dr-cast-portrait .dr-cast-name{display:block;font-weight:600;padding-inline:6px}.dr-cast-portrait small{font-size:12px;margin:0;color:var(--dr-text)}
 .dr-cast-role{font-size:11px;color:var(--dr-muted);overflow-wrap:anywhere}
 .dr-cast-widget[data-talking=true] .dr-cast-role{color:var(--dr-primary)}
@@ -14,7 +16,6 @@
 .dr-cast-move{position:absolute;top:4px;left:4px;z-index:2;width:calc(100% - 8px);min-height:44px;border:1px solid var(--dr-border);border-radius:8px;background:var(--dr-panel);color:var(--dr-text);padding:var(--dr-space-2) var(--dr-space-1);font:600 13px/1.4 system-ui,sans-serif;text-align:center;overflow-wrap:anywhere;cursor:grab;touch-action:none;user-select:none}
 .dr-cast-move:hover{background:var(--dr-surface)}.dr-cast-move.is-dragging{cursor:grabbing}
 .dr-cast-resize{position:absolute;right:0;width:44px;height:44px;border:1px solid var(--dr-border-strong);border-radius:10px;background:var(--dr-panel);color:var(--dr-muted);font:22px/1 system-ui;cursor:nwse-resize;touch-action:none;z-index:1}
-.dr-cast-zoom{position:absolute;left:4px;top:52px;width:36px;height:36px;border:1px solid var(--dr-border-strong);border-radius:8px;background:var(--dr-panel);color:var(--dr-text);font:22px/1 system-ui;cursor:zoom-in}.dr-cast-zoom[hidden]{display:none}
 /* The corner follows the 3:4 image, independently of text height. */
 .dr-cast-highlights{display:grid;gap:var(--dr-space-1);width:100%;min-width:0}.dr-cast-highlights[hidden]{display:none}
 .dr-cast-highlights>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;padding:var(--dr-space-1) var(--dr-space-2);border-radius:6px;box-sizing:border-box;background:var(--dr-surface);font-size:12px;line-height:1.4;font-weight:400}

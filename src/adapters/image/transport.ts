@@ -1,8 +1,9 @@
 import { IMAGE_RESPONSE_HEADERS, validExtraParams, validImageProviderConfig, object, type GenerateInput, type ImageProviderConfig, type ImageResponseHeaders, type ImageResult, validImageAspect } from "../../core/image-generation";
 import { dataImageBlob, MAX_IMAGE_RESPONSE_BYTES, normalizeImage } from "./image-codec";
 import type { ImageCopyKey } from "../../core/image-i18n";
+import { providerDiagnostic, type ImageDiagnostic } from "../../core/image-diagnostics";
 export class ImageApiError extends Error {
-  constructor(public readonly code: ImageCopyKey, public readonly headers: ImageResponseHeaders = {}, public readonly downloadUrl?: string, public readonly ticketId?: string) { super(code); }
+  constructor(public readonly code: ImageCopyKey, public readonly headers: ImageResponseHeaders = {}, public readonly downloadUrl?: string, public readonly ticketId?: string, public readonly diagnostic?: ImageDiagnostic) { super(code); }
 }
 export type ImagePermissionCheck = (url: string) => Promise<boolean>;
 export function responseHeaders(response: Response): ImageResponseHeaders {
@@ -17,10 +18,13 @@ export function requestBody(config: ImageProviderConfig, input: GenerateInput, s
   if (input.seed !== undefined && config.extraParams && Object.hasOwn(config.extraParams, "seed")) throw new ImageApiError("seedConflict");
   // No model-parameter parsing, rewriting or allowlist. Only transport collisions are rejected.
   if (input.aspectRatio !== undefined && !validImageAspect(input.aspectRatio)) throw new ImageApiError("invalid");
-  const sizing = input.aspectRatio ? config.kind === "openai-images" ? { size: input.aspectRatio === "16:9" ? "1536x1024" : "1024x1536" } : config.extraParams?.width !== undefined || config.extraParams?.height !== undefined ? { width: input.aspectRatio === "16:9" ? 1024 : 576, height: input.aspectRatio === "16:9" ? 576 : 1024 } : { aspect_ratio: input.aspectRatio } : {};
-  const body = { ...config.extraParams, model: config.modelId, prompt: input.prompt, ...(input.seed === undefined ? {} : { seed: input.seed }), ...sizing, ...service };
-  if (input.aspectRatio && config.kind === "venice-native" && ("width" in sizing || "height" in sizing)) delete body.aspect_ratio;
-  return body;
+  // User sizing takes priority. Defaults must never replace explicit model parameters.
+  const params = config.extraParams ?? {};
+  const hasSizing = ["size", "width", "height", "aspect_ratio"].some(key => Object.hasOwn(params, key));
+  const sizing = input.aspectRatio && !hasSizing ? config.kind === "openai-images"
+    ? { size: input.aspectRatio === "16:9" ? "1536x1024" : "1024x1536" }
+    : { aspect_ratio: input.aspectRatio } : {};
+  return { ...params, model: config.modelId, prompt: input.prompt, ...(input.seed === undefined ? {} : { seed: input.seed }), ...sizing, ...service };
 }
 export class ImageTransport {
   constructor(readonly config: ImageProviderConfig, private readonly key: string, private readonly permitted: ImagePermissionCheck, private readonly normalizer = normalizeImage, private readonly timeoutMs = 120_000) {}
@@ -32,21 +36,29 @@ export class ImageTransport {
     if (!await this.permitted(url)) throw new ImageApiError("permission");
     // One attempt. redirect:error prevents credentials reaching a redirected host.
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const base: ImageDiagnostic = { source: "provider", phase: path.startsWith("/models") ? "models" : "request", endpoint: path.split("?")[0], ...(typeof (body?.model ?? body?.modelId) === "string" ? { model: String(body?.model ?? body?.modelId).slice(0, 200) } : {}) };
     try {
       const response = await fetch(url, { method: body ? "POST" : "GET", headers: { Authorization: `Bearer ${this.key}`, ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}), redirect: "error", credentials: "omit", referrerPolicy: "no-referrer", signal: controller.signal });
       if (!response.ok) {
-        // Do not echo an untrusted error body: it may contain a key or the entire request.
-        // TODO: parse non-402 balance codes/payment URLs only after a provider documents their schema.
-        const code: ImageCopyKey = ({ 401: "unauthorized", 402: "balance", 403: "forbidden", 415: "unsupported", 429: "rate", 500: "server", 503: "unavailable" } as Record<number, ImageCopyKey>)[response.status] ?? "failed";
-        await response.body?.cancel(); throw new ImageApiError(code, responseHeaders(response));
+        const code: ImageCopyKey = ({ 400: "badRequest", 401: "unauthorized", 402: "balance", 403: "forbidden", 404: "notFound", 413: "payloadLarge", 415: "unsupported", 429: "rate", 500: "server", 503: "unavailable" } as Record<number, ImageCopyKey>)[response.status] ?? "failed";
+        let diagnostic: ImageDiagnostic = { ...base, status: response.status };
+        try {
+          if (response.headers.get("content-type")?.split(";")[0]?.trim() === "application/json") {
+            const bytes = await boundedBody(response, 32_768, controller.signal);
+            const privateText = [this.key, body?.prompt, body?.image, ...(Array.isArray(body?.images) ? body.images.map(v => object(v) ? v.image_url : v) : [])].filter((v): v is string => typeof v === "string");
+            // Also protect a provider reflecting an individual line of a multi-line prompt.
+            privateText.push(...String(body?.prompt ?? "").split("\n").filter(line => line.length >= 8));
+            diagnostic = providerDiagnostic(JSON.parse(new TextDecoder().decode(bytes)), diagnostic, privateText);
+          } else await response.body?.cancel();
+        } catch { /* Malformed/large/slow diagnostics must not erase the known HTTP status. */ }
+        throw new ImageApiError(code, responseHeaders(response), undefined, undefined, diagnostic);
       }
       // Keep the deadline active through the body, not only until headers arrive.
       const bytes = await boundedBody(response, MAX_IMAGE_RESPONSE_BYTES, controller.signal);
       return new Response(bytes, { status: response.status, headers: response.headers });
     } catch (error) {
-      if (controller.signal.aborted) throw new ImageApiError("timeout");
       if (error instanceof ImageApiError) throw error;
-      throw new ImageApiError("failed");
+      throw new ImageApiError(controller.signal.aborted ? "timeout" : "failed", {}, undefined, undefined, base);
     } finally { clearTimeout(timer); }
   }
   async image(response: Response, extract: (value: Record<string, unknown>) => unknown, aspectRatio?: import("../../core/image-generation").ImageAspectRatio): Promise<ImageResult> {
@@ -70,7 +82,7 @@ export class ImageTransport {
         finally { clearTimeout(timer); }
       } else { try { blob = dataImageBlob(value); } catch { throw new ImageApiError("unsupported", headers); } }
     } else throw new ImageApiError("unsupported", headers);
-    try { return { image: await this.normalizer(blob, false, aspectRatio), headers }; } catch { throw new ImageApiError("unsupported", headers); }
+    try { return { image: await this.normalizer(blob, false, aspectRatio), headers }; } catch (error) { throw new ImageApiError(error instanceof Error && error.message === "image-too-large" ? "imageTooLarge" : "unsupported", headers); }
   }
 }
 export async function boundedBody(response: Response, max: number, signal: AbortSignal): Promise<ArrayBuffer> {

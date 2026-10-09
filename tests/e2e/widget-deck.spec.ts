@@ -46,7 +46,9 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
   const tiles = page.locator(".dr-widget-tile"); await expect(tiles).toHaveCount(5);
   expect((await page.locator(".dr-characters").boundingBox())!.width).toBeLessThanOrEqual(288);
   const dock = (await page.locator(".dr-widget-dock").boundingBox())!, firstTile = (await tiles.first().boundingBox())!;
-  expect(firstTile.y - dock.y - dock.height).toBeCloseTo(1, 0);
+  expect(firstTile.y - dock.y - dock.height).toBeCloseTo(3, 0);
+  const initialGaps = await tiles.evaluateAll(nodes => nodes.slice(1).map((node, index) => node.getBoundingClientRect().top - nodes[index]!.getBoundingClientRect().bottom));
+  for (const gap of initialGaps) expect(gap).toBeCloseTo(3, 0);
   await page.screenshot({ path: info.outputPath(`panels-${locale}-${width}.png`) });
   const memory = page.locator('[data-widget="memory"]'); const meter = page.locator('[data-widget="meter"]');
   const before = (await memory.boundingBox())!, meterBefore = (await meter.boundingBox())!;

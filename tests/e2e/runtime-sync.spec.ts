@@ -351,7 +351,12 @@ for (const refused of [false, true]) {
           event.preventDefault(); const composer = document.querySelector("form textarea") as HTMLTextAreaElement, prompt = composer.value; composer.value = "";
           const user = document.createElement("article"); user.dataset.role = "user"; user.dataset.messageId = "field-user"; user.id = "field-user"; user.textContent = prompt;
           const reply = document.createElement("article"); reply.dataset.role = "assistant"; reply.dataset.messageId = "field-answer"; reply.id = "field-answer";
-          document.querySelector("#conversation")!.append(user, reply);
+          for (const row of [user, reply]) {
+            const shell = document.createElement("div"); shell.id = row.id + "-shell"; shell.dataset.virtualListItemKey = row.id;
+            shell.style.cssText = "min-height:180px;margin-block:32px;padding-block:20px";
+            const tools = document.createElement("div"); tools.innerHTML = '<button>Copy</button><button>Share</button>';
+            shell.append(row, tools); document.querySelector("#conversation")!.append(shell);
+          }
           void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, chat_session_id: "a" }) }).then(() => {
             reply.innerHTML = '<div class="ds-think-content">Reasoning must not be inserted.</div><div class="ds-assistant-message-main-content"><p></p><button>Copy</button></div>';
             reply.querySelector("p")!.textContent = refused ? "Sorry, that's beyond my current scope. Let's talk about something else." : "Calm, observant and considerate.";
@@ -368,6 +373,11 @@ for (const refused of [false, true]) {
       await expect.poll(() => prompts.length).toBe(1);
       expect(prompts[0]).toContain("[DeepRole Character Text]"); expect(prompts[0]).toContain("Plain text only"); expect(prompts[0]).not.toContain("data:image");
       await expect(chat.locator("#field-user")).toBeHidden(); await expect(chat.locator("#field-answer")).toBeHidden();
+      for (const id of ["field-user-shell", "field-answer-shell"]) {
+        await expect(chat.locator("#" + id)).toBeHidden(); expect(await chat.locator("#" + id).evaluate(node => node.getBoundingClientRect().height)).toBe(0);
+      }
+      expect(await chat.locator("#field-user").textContent()).toBe(prompts[0]);
+      await expect(chat.locator('[data-message-id="old-answer"]')).toBeVisible();
       if (refused) { await expect(area.getByRole("alert")).toContainText("Could not get the text"); await expect(field).toHaveValue("Old profile."); }
       else { await expect(field).toHaveValue("Calm, observant and considerate."); await expect(editor).toContainText("Text inserted."); }
       const records = await databaseRecords(panel); expect(records.find(r => r.kind === "entity" && r.id === "mira").data.characterSheet.personality).toBe("Old profile.");
@@ -377,10 +387,12 @@ for (const refused of [false, true]) {
         await editor.getByRole("button", { name: "Save character", exact: true }).click();
         await expect.poll(async () => (await databaseRecords(panel)).find(r => r.kind === "entity" && r.id === "mira").data.characterSheet.personality).toBe("Calm, observant and considerate.");
       }
-      await context.addInitScript(() => window.addEventListener("DOMContentLoaded", () => { document.querySelector("#conversation")!.innerHTML = '<article id="field-answer" data-role="assistant" data-message-id="field-answer"><div class="ds-markdown">Calm, observant and considerate.</div></article>'; }, { once: true }));
+      await context.addInitScript(() => window.addEventListener("DOMContentLoaded", () => { document.querySelector("#conversation")!.innerHTML = '<div id="field-answer-shell" data-virtual-list-item-key="field-answer" style="min-height:180px;margin-block:32px;padding-block:20px"><article id="field-answer" data-role="assistant" data-message-id="field-answer"><div class="ds-markdown">Calm, observant and considerate.</div></article><button>Copy</button><button>Share</button></div>'; }, { once: true }));
       await chat.reload(); await expect(chat.getByRole("button", { name: /^Context/ })).toBeVisible(); await expect(chat.locator("#field-answer")).toBeHidden();
-      await chat.evaluate(() => { const row = document.querySelector<HTMLElement>("#field-answer")!; row.dataset.messageId = "ordinary-new"; row.textContent = "Ordinary scene."; });
-      await expect(chat.locator("#field-answer")).toBeVisible();
+      await expect(chat.locator("#field-answer-shell")).toBeHidden();
+      await chat.evaluate(() => { const row = document.querySelector<HTMLElement>("#field-answer")!; row.dataset.messageId = "ordinary-new"; row.textContent = "Ordinary scene."; row.parentElement!.dataset.virtualListItemKey = "ordinary-new"; });
+      await expect(chat.locator("#field-answer")).toBeVisible(); await expect(chat.locator("#field-answer-shell")).toBeVisible();
+      expect(prompts).toHaveLength(1);
     } finally { await context.close(); }
   });
 }

@@ -1,5 +1,5 @@
 import { isReplacedReply } from "./reply-recovery";
-import { validImageContentLevel, type ImageContentLevel } from "./image-generation";
+import { MAX_IMAGE_PLAN_TEXT, validImageContentLevel, type ImageContentLevel } from "./image-generation";
 import { sceneDeltaInstruction } from "./image-prompt";
 import { imagePlanInstruction } from "./image-plan";
 import type { CharacterSheet, CharacterStatus, Locale, MemoryEntry, SceneEntity } from "./types";
@@ -20,7 +20,7 @@ export function validCharacterTextRequest(value: unknown): value is CharacterTex
   if (!value || typeof value !== "object") return false;
   const v = value as CharacterTextRequest, f = v.field;
   if (!f || !text(f.key, 200) || !f.key.trim() || !text(f.label, 200) || !f.label.trim()
-    || !Number.isInteger(f.maxLength) || f.maxLength < 1 || f.maxLength > (f.key === "image-plan" ? 6000 : 1200)
+    || !Number.isInteger(f.maxLength) || f.maxLength < 1 || f.maxLength > (f.key === "image-plan" ? MAX_IMAGE_PLAN_TEXT : 1200)
     || (f.contentLevel !== undefined && !validImageContentLevel(f.contentLevel))
     || !["profile", "scene", "relationship", "attribute", "selfie", "milestone"].includes(f.scope)
     || !text(v.currentText, f.maxLength) || !v.reference || typeof v.reference !== "object" || Array.isArray(v.reference)

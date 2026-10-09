@@ -8,7 +8,7 @@ import { memoryReadiness, selectionReason, type ServiceActivity } from "../../co
 import { sceneChoiceText } from "../../core/scene-choices";
 
 export function ServiceProgress({ locale, activity }: { locale: Locale; activity?: ServiceActivity | null }) {
-  if (!activity) return null;
+  if (!activity || activity.presentation === "inline") return null;
   const t = (key: Parameters<typeof experienceText>[1]) => experienceText(locale, key);
   const busy = activity.phase === "preparing" || activity.phase === "waiting";
   const handoff = /handoff/.test(activity.type);

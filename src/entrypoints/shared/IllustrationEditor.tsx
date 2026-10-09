@@ -4,8 +4,9 @@ import type { Locale, SceneEntity } from "../../core/types";
 import type { CharacterImagePrompt, ImageSettings, Illustration, ImageResponseHeaders } from "../../core/image-generation";
 import { validCharacterImagePrompt } from "../../core/image-generation";
 import { buildImagePrompt, imageReferences } from "../../core/image-prompt";
-import { imageText, imageErrorKey, type ImageCopyKey } from "../../core/image-i18n";
+import { imageText, type ImageCopyKey } from "../../core/image-i18n";
 import type { ImageJobInput, ImageTarget } from "../../core/image-messages";
+import { ImageErrorDetails } from "./ImageErrorDetails";
 export interface IllustrationEditorProps {
   locale: Locale; target: ImageTarget; entities: SceneEntity[]; settings: ImageSettings; sceneText: string;
   onClose(): void; onGenerate(input: ImageJobInput): Promise<Illustration>;
@@ -24,7 +25,7 @@ export function ImageHeaders({ headers, locale }: { headers?: ImageResponseHeade
 export function IllustrationEditor(props: IllustrationEditorProps) {
   const t = (key: ImageCopyKey) => imageText(props.locale, key);
   const dialog = useRef<HTMLDialogElement>(null), alive = useRef(true), pending = useRef(false);
-  const [busy, setBusy] = useState(false), [error, setError] = useState<ImageCopyKey | null>(null), [headers, setHeaders] = useState<ImageResponseHeaders>();
+  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [headers, setHeaders] = useState<ImageResponseHeaders>();
   const [downloadTicket, setDownloadTicket] = useState<string>();
   const [entityId, setEntityId] = useState(props.entities[0]?.id ?? "");
   const person = props.entities.find(e => e.id === entityId);
@@ -39,7 +40,7 @@ export function IllustrationEditor(props: IllustrationEditorProps) {
   useEffect(() => { setProfile(initial()); setReferenceKeys(base?.referenceKey ? [base.referenceKey] : []); setSaved(false); setSavedBaseline(base ?? null); }, [entityId]);
   async function act(task: () => Promise<void>) {
     if (pending.current) return; pending.current = true; setBusy(true); setError(null); setHeaders(undefined);
-    try { await task(); } catch (cause) { if (alive.current) { const e = cause as { headers?: ImageResponseHeaders; ticketId?: string }; setError(imageErrorKey(cause)); setHeaders(e?.headers); setDownloadTicket(e?.ticketId); } }
+    try { await task(); } catch (cause) { if (alive.current) { const e = cause as { headers?: ImageResponseHeaders; ticketId?: string }; setError(cause); setHeaders(e?.headers); setDownloadTicket(e?.ticketId); } }
     finally { pending.current = false; if (alive.current) setBusy(false); }
   }
   return <dialog className="dr-image-modal dr-root" ref={dialog} aria-labelledby="dr-image-editor-title" onCancel={event => { event.preventDefault(); props.onClose(); }}>
@@ -62,7 +63,7 @@ export function IllustrationEditor(props: IllustrationEditorProps) {
         {references.length > 0 && <section aria-label={t("referencePick")}><h3>{t("referencePick")} · {referenceKeys.length}/{config?.maxReferences ?? 1}</h3><div className="dr-image-references">{references.map((ref, index) => <button type="button" key={ref.key} aria-label={`${t("referencePick")} ${index + 1}`} aria-pressed={referenceKeys.includes(ref.key)} disabled={!referenceKeys.includes(ref.key) && referenceKeys.length >= (config?.maxReferences ?? 1)} onClick={() => setReferenceKeys(current => current.includes(ref.key) ? current.filter(key => key !== ref.key) : [...current, ref.key])}><img src={ref.image} alt="" /></button>)}</div></section>}
       </fieldset>
       <details open><summary>{t("preview")}</summary><div className="dr-image-preview">{prompt || t("prompt")}</div></details>
-      {error && <p className="error-text" role="alert">{t(error)}</p>}<ImageHeaders headers={headers} locale={props.locale} />
+      {!!error && <ImageErrorDetails error={error} locale={props.locale} />}<ImageHeaders headers={error ? undefined : headers} locale={props.locale} />
       {downloadTicket && props.onDownload && <button type="button" className="button secondary" onClick={() => void act(() => props.onDownload!(downloadTicket))}>{t("downloadResult")}</button>}
       <footer><p role="status" aria-live="polite">{busy ? t("generating") : ""}</p><button type="button" className="button primary" disabled={busy || !props.settings.enabled || !config?.enabled || !config.modelId || !profile.sceneDelta.trim()} onClick={() => { if (!validCharacterImagePrompt(profile) || prompt.length > 12_000) { setError("invalid"); return; } void act(async () => { await props.onGenerate({ ...props.target, providerId, ...(entityId ? { entityId } : {}), prompt, referenceKeys, ...(profile.seed === undefined ? {} : { seed: profile.seed }) }); if (alive.current) props.onClose(); }); }}>{busy ? t("generating") : t("generate")}</button></footer>
     </div>

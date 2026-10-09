@@ -37,7 +37,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360]) {
   });
 }
 
-test("an explicit turn is generated, scoped to its reply and restored with its preset recorded", async ({ page }) => {
+test("a neutral fixture image retains its confirmed preset and reply association", async ({ page }) => {
   await page.route("https://images.example.test/**", async route => {
     const headers = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type", "access-control-allow-methods": "GET,POST,OPTIONS" };
     if (route.request().method() === "OPTIONS") { await route.fulfill({ status: 204, headers }); return; }
@@ -48,11 +48,8 @@ test("an explicit turn is generated, scoped to its reply and restored with its p
   await page.goto("/tests/fixtures/image-generation.html?locale=en&preset=adult");
   const host = page.locator('[data-message-id="reply-1"] [data-deeprole-illustrations]');
   await host.getByRole("button", { name: copy("generate", "en"), exact: true }).click();
-  const editor = page.getByRole("dialog", { name: copy("generate", "en"), exact: true });
-  await expect(editor.getByRole("combobox", { name: copy("selected", "en"), exact: true })).toHaveValue(/./);
-  await editor.getByRole("textbox", { name: copy("delta", "en"), exact: true }).fill("In the observatory at dusk, wearing a coat.");
-  await editor.getByRole("button", { name: copy("generate", "en"), exact: true }).click();
-  await expect(editor).toHaveCount(0);
+  await expect(host.getByRole("status")).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(host.locator("img")).toHaveCount(1);
   const records = await page.evaluate(async () => (await (window as any).repo.list("illustration")).map((record: any) => ({ contentLevel: record.contentLevel, messageKey: record.messageKey })));
   expect(records).toEqual([{ contentLevel: "adult", messageKey: '["message","reply-1"]' }]);

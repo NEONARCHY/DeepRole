@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepRole thoughts preview</title>
+<style>html,body{margin:0;background:#141414;color:#e6edf2;font:14px/1.65 system-ui}main{max-width:690px;margin:auto;padding:16px 12px 180px}.ds-message{margin:20px 0}.thought-heading{display:flex;align-items:center;gap:8px;color:#a6b9cc;cursor:pointer}.thought-heading:focus-visible{outline:2px solid #b7dae6;outline-offset:4px}.icon{color:#5899ec}.chevron{display:inline-block;font-size:20px;line-height:1;transform:rotate(90deg)}[aria-expanded=false] .chevron{transform:rotate(0)}.ds-think-content-wrapper{margin:12px 0 20px;padding-left:14px;border-left:1px solid #353c44;color:#9dabb8}.ds-markdown{padding-top:16px}.options{margin-top:14px;padding:16px;background:#1d252d;border:1px solid #34444f;border-radius:14px}.options strong{font-size:17px}form{box-sizing:border-box;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(690px,calc(100vw - 24px));padding:12px;border-radius:16px;background:#293038}textarea{width:100%;box-sizing:border-box;resize:none;border:0;color:inherit;background:transparent}form button{padding:8px;border:1px solid #455c77;border-radius:20px;background:#26324b;color:#80b7fa}</style>
+</head><body><main><h1>DeepRole · Observatory</h1><div id="chat"></div></main><form><textarea aria-label="Message">Unsent draft.</textarea><button type="button" id="deepthink" aria-pressed="true">DeepThink</button><button type="button">Send</button></form>
+<script type="module">
+import { ReasoningPresentation } from "/src/adapters/reasoning-presentation.ts";
+const params = new URL(location.href).searchParams, locale = params.get("locale") ?? "en";
+document.documentElement.lang=locale;
+function makeRow(id, fallback=false){
+  const row=document.createElement("article");row.dataset.role="assistant";row.dataset.messageId=id;row.id=id;
+  row.innerHTML=(fallback?"":'<div class="thought-heading" role="button" tabindex="0" aria-expanded="true"><span class="icon">✧</span><span class="title"></span><span class="chevron" aria-hidden="true">›</span></div>')+'<div class="ds-think-content-wrapper"><div class="ds-think-content">Private test thoughts about the observatory. Prepare four distinct options.</div></div><div class="ds-assistant-message-main-content ds-markdown">Mira opens the observatory at dusk.</div><div class="options"><strong></strong><p>The story continues here. Options remain below it.</p></div>';
+  row.querySelector(".options strong").textContent=locale==="ru"?"Ваш ход":"Your move";
+  if(!fallback){const control=row.querySelector(".thought-heading"),body=row.querySelector(".ds-think-content-wrapper"); control.querySelector(".title").textContent=locale==="ru"?"Думал 2 секунды":"Thought for 2 seconds";
+    control.onclick=()=>{const expanded=control.getAttribute("aria-expanded")!=="true";control.setAttribute("aria-expanded",String(expanded));body.style.display=expanded?"block":"none";};
+    control.onkeydown=event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();control.click();}};
+  } return row;
+}
+document.querySelector("#chat").append(makeRow("first"),makeRow("fallback",true));
+let modeClicks=0;document.querySelector("#deepthink").onclick=()=>modeClicks++;
+const controller=new ReasoningPresentation(document);controller.configure(false,locale);
+window.thoughtsTest={controller,setShow:show=>controller.configure(show,locale),stream:()=>{document.querySelector("#first .ds-think-content").append(" More streamed test thoughts.");},replace:()=>{document.querySelector("#first").replaceWith(makeRow("first"));},add:()=>{document.querySelector("#chat").append(makeRow("new-reply"));},newChat:()=>{history.pushState({},"","?locale="+locale+"&chat=new");document.querySelector("#chat").replaceChildren(makeRow("first"));controller.sync();},modeClicks:()=>modeClicks};
+</script></body></html>

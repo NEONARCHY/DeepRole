@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { characterCast, characterInterlocutors, characterInstruction, characterRevision, characterTurnKey, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn } from "../src/core/characters";
-import { portraitBounds, portraitPose, validPortraitLayout, validPortraitPose } from "../src/core/portrait-layout";
+import { PORTRAIT_MAX_WIDTH, portraitBounds, portraitPose, validPortraitLayout, validPortraitPose } from "../src/core/portrait-layout";
 import { validDataRecord, parseBackupSettings } from "../src/core/record-validation";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
@@ -83,12 +83,37 @@ describe("saved UI layout", () => {
     expect((restored.data as ChatBinding).portraitLayouts!.w!.positions.mira).toEqual(floating);
     expect((restored.data as ChatBinding).characterScenes!.w).toEqual(initial);
   });
-  it.each([{ ...pose, x: NaN }, { ...pose, y: -1 }, { ...pose, y: 1201 }, { ...pose, x: 1.01 }, { ...pose, width: 0 }, { ...pose, width: Infinity }, { ...pose, width: 361 }])("rejects unsafe coordinates %j", value => expect(validPortraitPose(value)).toBe(false));
+  it.each([{ ...pose, x: NaN }, { ...pose, y: -1 }, { ...pose, y: 1201 }, { ...pose, x: 1.01 }, { ...pose, width: 0 }, { ...pose, width: Infinity }, { ...pose, width: 8193 }, { ...pose, manualSize: "true" }])("rejects unsafe coordinates %j", value => expect(validPortraitPose(value)).toBe(false));
   it("clamps resizing and adapts to narrow panels without changing the saved width", () => {
-    expect(portraitPose(-20, -10, 900, 300)).toEqual({ x: 0, y: 0, width: 360 });
+    expect(portraitPose(-20, -10, 900, 300)).toEqual({ x: 0, y: 0, width: 900 });
     expect(portraitPose(900, 9000, 240, 900)).toEqual({ x: 1, y: 1200, width: 240 });
     expect(portraitBounds({ x: 1, y: 100, width: 360 }, 280)).toEqual({ x: 0, y: 100, width: 280 });
     expect(validPortraitLayout({ resetAt: 0, positions: JSON.parse('{"__proto__":{"x":0,"y":0,"width":120}}') })).toBe(false);
+  });
+  it("accepts large manual sizes without removing the technical bound or accepting invalid flags", () => {
+    expect(PORTRAIT_MAX_WIDTH).toBe(8192);
+    expect(validPortraitPose({ ...pose, width: 640, manualSize: true })).toBe(true);
+    expect(validPortraitPose({ ...pose, width: PORTRAIT_MAX_WIDTH })).toBe(true);
+    expect(validPortraitPose({ ...pose, width: PORTRAIT_MAX_WIDTH + 1 })).toBe(false);
+    expect(validPortraitPose({ ...pose, manualSize: null })).toBe(false);
+    expect(portraitPose(0, 0, 90000, 1800, 1000).width).toBe(PORTRAIT_MAX_WIDTH);
+  });
+  it("fits the full card using actual caption height without rewriting the requested width", () => {
+    const full = { x: 1, y: .2, width: 900, space: "viewport" as const, manualSize: true };
+    expect(portraitBounds(full, 1784, 944, 64)).toEqual({ x: 1124, y: 188.8, width: 660 });
+    expect(portraitBounds(full, 304, 784, 64).width).toBe(304);
+    expect(portraitBounds(full, 1784, 1400, 64).width).toBe(900);
+    expect(full.width).toBe(900);
+  });
+  it("keeps resized identities and scene data intact through storage and full backups", async () => {
+    const repo = await setup(); const large = { x: .9, y: .01, width: 640, space: "viewport" as const, manualSize: true };
+    await savePortraitLayout({ ...edit(), pose: large }, repo);
+    const backup = await parseBackup(JSON.stringify(await createBackup(undefined, repo)));
+    const restored = backup.records.find(r => r.id === binding.id)!;
+    expect(validDataRecord(restored)).toBe(true);
+    expect((restored.data as ChatBinding).portraitLayouts!.w!.positions.mira).toEqual(large);
+    expect((restored.data as ChatBinding).characterScenes!.w).toEqual(initial);
+    expect(await repo.list<SceneEntity>("entity")).toEqual([...people].sort((a, b) => a.id.localeCompare(b.id)));
   });
   it("merges concurrent UI changes without rewriting memory, scene version or the other chat", async () => {
     const repo = await setup(); const before = await repo.get<ChatBinding>("binding", "binding:b");

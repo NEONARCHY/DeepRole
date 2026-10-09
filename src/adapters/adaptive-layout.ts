@@ -19,6 +19,26 @@ export function sceneAvailableLeft(doc: Document): number {
 }
 
 const listening = new WeakSet<Document>();
+
+/** The optional request belongs to its story illustration, not to the input. */
+function fitIllustrationRecovery(host: HTMLElement): boolean {
+  if (!host.hasAttribute("data-deeprole-choices-recovery")) return false;
+  const parent = host.parentElement, row = host.previousElementSibling;
+  const image = row?.querySelector<HTMLElement>("[data-deeprole-illustrations]");
+  if (!parent || !image) return false;
+  const anchor = image.shadowRoot?.querySelector<HTMLElement>(".dr-illustration-reply") ?? image;
+  const bounds = anchor.getBoundingClientRect(), doc = host.ownerDocument, viewport = doc.documentElement.clientWidth;
+  if (!bounds.width || !viewport) return false;
+  const style = doc.defaultView!.getComputedStyle(parent), parentBounds = parent.getBoundingClientRect();
+  const contentLeft = parentBounds.left + (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.borderLeftWidth) || 0);
+  const x = Math.max(8, Math.min(viewport - 9, bounds.left));
+  const width = Math.max(1, Math.min(bounds.width, viewport - x - 8));
+  for (const [key, value] of [["width", `${width}px`], ["left", ""], ["margin-left", `${x - contentLeft}px`]] as const) {
+    if (host.style.getPropertyValue(key) !== value) host.style.setProperty(key, value);
+  }
+  return true;
+}
+
 export function fitAdaptiveChoices(host: HTMLElement) {
   const doc = host.ownerDocument;
   if (!listening.has(doc)) {
@@ -34,6 +54,7 @@ export function fitAdaptiveChoices(host: HTMLElement) {
   if (host.hasAttribute("data-adaptive-portraits")) return;
   // Pinned geometry has a single owner, including when adaptive sizing is disabled.
   if (host.dataset.deeproleChoicesPinned === "true") return;
+  if (fitIllustrationRecovery(host)) return;
   if (fitComposerInlineChoices(host)) return;
   if (host.dataset.deeproleAdaptive !== "true") {
     for (const key of ["width", "left", "margin-left"]) host.style.removeProperty(key);

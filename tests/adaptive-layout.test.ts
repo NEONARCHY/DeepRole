@@ -19,7 +19,7 @@ test("pinned options keep the composer center even in an asymmetric chat lane", 
     const center = width * fraction, left = width > 1000 ? 284 : 8;
     const fit = fitPinnedScene(width, left, center, count, Math.min(740, width - 40));
     expect(fit.x + fit.choices / 2).toBeCloseTo(center, 6);
-    expect(fit.choices).toBeLessThanOrEqual(Math.min(720, width - 40));
+    expect(fit.choices).toBe(Math.max(1, Math.min(740, width - 40, 2 * Math.min(center - 8, width - 8 - center))));
     expect(fit.x).toBeGreaterThanOrEqual(8);
     expect(fit.x + fit.choices).toBeLessThanOrEqual(width - 8);
     if (!fit.compact && count) {
@@ -33,5 +33,12 @@ test("pinned portraits become a strip rather than pushing the card away from the
   const fit = fitPinnedScene(1500, 284, 390, 4, 740);
   expect(fit.compact).toBe(true);
   expect(fit.x + fit.choices / 2).toBe(390);
-  expect(fit.choices).toBe(720);
+  expect(fit.choices).toBe(740);
+});
+
+test("native input width is not reduced for a portrait gutter", () => {
+  const fit = fitPinnedScene(1800, 280, 1000, 4, 1100);
+  expect(fit.choices).toBe(1100);
+  expect(fit.x).toBe(450);
+  expect(fit.compact).toBe(true);
 });

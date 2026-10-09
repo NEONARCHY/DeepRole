@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Image, RotateCcw, Trash2, LoaderCircle } from "lucide-react";
+import { Image, RotateCcw, Trash2, LoaderCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Illustration } from "../../core/image-generation";
 import type { ImageAttempt } from "../../core/image-plan";
 import type { ImageTarget } from "../../core/image-messages";
 import type { Locale } from "../../core/types";
-import { imageText, imageErrorKey } from "../../core/image-i18n";
+import { imageText } from "../../core/image-i18n";
 import { ImageHeaders } from "./IllustrationEditor";
+import { ImageErrorDetails } from "./ImageErrorDetails";
 export interface IllustrationReplyProps {
   target: ImageTarget; sceneText: string; records: Illustration[]; attempts: ImageAttempt[]; locale: Locale; generating: boolean;
+  entityNames?: Record<string, string>;
   onCreate(target: ImageTarget, sceneText: string): Promise<void>;
   onRepeat(target: ImageTarget, id: string, attempt?: boolean): Promise<void>;
   onRemove(target: ImageTarget, id: string): Promise<void>;
@@ -15,26 +17,66 @@ export interface IllustrationReplyProps {
   onView(record: Illustration): void;
 }
 export function IllustrationReply(p: IllustrationReplyProps) {
-  const [busy, setBusy] = useState(false), pending = useRef(false), [error, setError] = useState<unknown>();
+  const [busy, setBusy] = useState<"generation" | "delete" | null>(null), pending = useRef(false);
+  const [error, setError] = useState<{ operation: "generation" | "delete"; value: unknown }>();
+  const baseline = useRef<string | undefined>(undefined), [selected, setSelected] = useState<string>();
+  const [pixels, setPixels] = useState<{ key: string; width: number; height: number }>();
+  const [generationPhase, setGenerationPhase] = useState<"prepareImage" | "generating" | "downloadResult">("prepareImage");
+  const [removed, setRemoved] = useState<Set<string>>(() => new Set());
   const t = (key: Parameters<typeof imageText>[1]) => imageText(p.locale, key);
+  const inReply = (row: ImageTarget | Illustration) => row.worldId === p.target.worldId && row.chatId === p.target.chatId && row.messageKey === p.target.messageKey;
+  const records = p.records.filter(row => inReply(row) && !removed.has(row.id)).sort((a, b) => a.createdAt - b.createdAt || a.updatedAt - b.updatedAt || a.id.localeCompare(b.id));
+  const attempt = p.attempts.filter(inReply).sort((a, b) => a.createdAt - b.createdAt || a.updatedAt - b.updatedAt).at(-1);
   const [, tick] = useState(0);
-  useEffect(() => { const latest = p.attempts.at(-1); if (!latest || latest.status === "failed") return; const timer = setTimeout(() => tick(n => n + 1), Math.max(1, latest.updatedAt + 5 * 60_000 - Date.now() + 1)); return () => clearTimeout(timer); }, [p.attempts]);
-  const attempt = p.attempts.at(-1), stale = !!attempt && attempt.status !== "failed" && attempt.updatedAt + 5 * 60_000 < Date.now();
-  const working = busy || !!attempt && attempt.status !== "failed" && !stale;
-  const failed = !working && (error || attempt?.error || stale && "timeout");
-  async function act(task: () => Promise<void>) {
-    if (pending.current) return; pending.current = true; setBusy(true); setError(undefined);
-    try { await task(); } catch (error) { setError(error); } finally { pending.current = false; setBusy(false); }
+  useEffect(() => { if (!attempt || attempt.status === "failed") return; const timer = setTimeout(() => tick(n => n + 1), Math.max(1, attempt.updatedAt + 5 * 60_000 - Date.now() + 1)); return () => clearTimeout(timer); }, [attempt?.id, attempt?.updatedAt, attempt?.status]);
+  const stale = !!attempt && attempt.status !== "failed" && attempt.updatedAt + 5 * 60_000 < Date.now();
+  const working = busy === "generation" && records.at(-1)?.id === baseline.current || !!attempt && attempt.status !== "failed" && !stale;
+  const failed = !working && (error?.operation === "generation" ? error.value : attempt?.error ? { code: attempt.error, diagnostic: attempt.diagnostic, headers: attempt.headers } : stale ? "timeout" : undefined);
+  const hasAttempt = !!working || !!failed;
+  const keys = [...records.map(record => "image:" + record.id), ...(hasAttempt ? ["attempt"] : [])];
+  const latest = keys.at(-1), scope = JSON.stringify([p.target.worldId, p.target.chatId, p.target.messageKey]);
+  useEffect(() => { setSelected(latest); }, [latest, scope]);
+  useEffect(() => { setRemoved(new Set()); }, [scope]);
+  const index = Math.max(0, selected && keys.includes(selected) ? keys.indexOf(selected) : keys.length - 1);
+  const showingAttempt = keys[index] === "attempt", record = showingAttempt ? undefined : records[index];
+  const pixelKey = record && record.id + ":" + record.updatedAt;
+  function move(delta: number) { const next = keys[index + delta]; if (next) setSelected(next); }
+  async function act(operation: "generation" | "delete", task: () => Promise<void>, phase: typeof generationPhase = "prepareImage") {
+    if (pending.current || working) return;
+    pending.current = true; baseline.current = records.at(-1)?.id; setBusy(operation); setError(undefined);
+    if (operation === "generation") { setSelected("attempt"); setGenerationPhase(phase); }
+    try { await task(); } catch (value) { setError({ operation, value }); } finally { pending.current = false; setBusy(null); }
   }
+  const retryFailure = () => void act("generation", () => attempt?.ticketId ? p.onDownload(attempt.ticketId) : attempt?.request ? p.onRepeat(p.target, attempt.id, true) : p.onCreate(p.target, p.sceneText), attempt?.ticketId ? "downloadResult" : attempt?.request ? "generating" : "prepareImage");
   return <section className="dr-illustration-reply" aria-label={t("generate")}>
-    <button type="button" className="button secondary dr-image-generate" disabled={working || p.generating} onClick={() => void act(() => p.onCreate(p.target, p.sceneText))}><Image size={16} />{t("generate")}</button>
-    {working && <div className="dr-image-loading" role="status" aria-live="polite"><LoaderCircle size={20} /><span>{t(attempt?.status === "generating" ? "generating" : "prepareImage")}</span></div>}
-    {failed && <div className="dr-image-error"><p role="alert">{t(imageErrorKey(typeof failed === "string" ? { code: failed } : failed))}</p>{attempt?.ticketId ? <button type="button" className="button secondary" onClick={() => void act(() => p.onDownload(attempt.ticketId!))}>{t("downloadResult")}</button> : <button type="button" className="button secondary" disabled={p.generating || working} title={t("retryHint")} onClick={() => void act(() => attempt?.request ? p.onRepeat(p.target, attempt.id, true) : p.onCreate(p.target, p.sceneText))}><RotateCcw size={15} />{t("retrySame")}</button>}</div>}
-    <div className="dr-image-gallery">{p.records.map(record => <figure key={record.id}>
-      <button className="dr-image-open" type="button" aria-label={t("view")} onClick={() => p.onView(record)}><img src={record.image} alt={record.prompt.slice(0, 200)} loading="lazy" /></button>
-      <div className="dr-image-actions"><button type="button" className="button secondary" disabled={working || p.generating || !record.request} title={t(record.request ? "retryHint" : "oldRetry")} onClick={() => void act(() => p.onRepeat(p.target, record.id))}><RotateCcw size={15} />{t("retrySame")}</button><button type="button" className="button secondary dr-image-delete" aria-label={t("deleteImage")} disabled={working} onClick={() => void act(() => p.onRemove(p.target, record.id))}><Trash2 size={15} /></button></div>
-      <details className="dr-image-info"><summary>{t("details")} · {record.aspectRatio ?? "16:9"}</summary><p>{record.prompt}</p><small>{record.modelId}</small></details>
-      <ImageHeaders headers={record.headers} locale={p.locale} />
-    </figure>)}</div>
+    <button type="button" className="button secondary dr-image-generate" disabled={working || !!busy || p.generating} onClick={() => void act("generation", () => p.onCreate(p.target, p.sceneText))}><Image size={16} />{t("generate")}</button>
+    {!!keys.length && <div className="dr-image-gallery"><figure>
+      <div className="dr-image-frame" style={{ aspectRatio: (record?.aspectRatio ?? attempt?.request?.input.aspectRatio ?? records.at(-1)?.aspectRatio ?? "16:9").replace(":", " / ") }}>
+        {showingAttempt && working ? <div className="dr-image-loading" role="status" aria-live="polite"><LoaderCircle size={20} /><span>{t(attempt?.status === "generating" ? "generating" : busy === "generation" ? generationPhase : "prepareImage")}</span></div>
+          : showingAttempt ? <div className="dr-image-error"><ImageErrorDetails error={failed} locale={p.locale} /><button type="button" className="button secondary" disabled={p.generating || !!busy} title={t("retryHint")} onClick={retryFailure}><RotateCcw size={15} />{t(attempt?.ticketId ? "downloadResult" : "retrySame")}</button></div>
+          : record && <button className="dr-image-open" type="button" aria-label={t("view")} onClick={() => p.onView(record)}><img key={pixelKey} src={record.image} alt={record.prompt.slice(0, 200)} loading="lazy" onLoad={event => { const img = event.currentTarget; setPixels({ key: pixelKey!, width: img.naturalWidth, height: img.naturalHeight }); }} /></button>}
+      </div>
+      <div className="dr-image-history" role="group" tabIndex={0} aria-label={t("generationHistory")} onKeyDown={event => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); event.currentTarget.focus(); move(event.key === "ArrowLeft" ? -1 : 1); } }}>
+        <button type="button" className="button secondary" aria-label={t("previousGeneration")} title={t("previousGeneration")} disabled={index === 0} onClick={() => move(-1)}><ChevronLeft size={18} /></button>
+        <span aria-live="polite" aria-atomic="true">{imageText(p.locale, "generationCounter", { current: String(index + 1), total: String(keys.length) })}</span>
+        <button type="button" className="button secondary" aria-label={t("nextGeneration")} title={t("nextGeneration")} disabled={index === keys.length - 1} onClick={() => move(1)}><ChevronRight size={18} /></button>
+      </div>
+      {record && <>
+        {pixels && pixels.key === pixelKey && <small className="dr-image-pixels">{imageText(p.locale, "actualPixels", { width: String(pixels.width), height: String(pixels.height) })}</small>}
+        <div className="dr-image-actions"><button type="button" className="button secondary" disabled={working || !!busy || p.generating || !record.request} title={t(record.request ? "retryHint" : "oldRetry")} onClick={() => void act("generation", () => p.onRepeat(p.target, record.id), "generating")}><RotateCcw size={15} />{t("retrySame")}</button><button type="button" className="button secondary dr-image-delete" aria-label={t("deleteImage")} disabled={working || !!busy} onClick={() => void act("delete", async () => { await p.onRemove(p.target, record.id); setRemoved(previous => new Set(previous).add(record.id)); })}><Trash2 size={15} /></button></div>
+        <details className="dr-image-info"><summary>{t("details")} · {record.aspectRatio ?? "16:9"}</summary>
+          {!!record.request?.input.entityIds?.length && <div className="dr-image-cast-summary">
+            <strong>{imageText(p.locale, "frameCoverage", { attached: String(record.request.input.references?.length ?? 0), total: String(record.request.input.entityIds.length) })}</strong>
+            <ul aria-label={t("frameCast")}>{record.request.input.entityIds.map(id => {
+              const refIndex = record.request!.input.references?.findIndex(r => r.entityId === id) ?? -1;
+              return <li key={id}><span>{p.entityNames?.[id] ?? id}</span><small>{refIndex >= 0 ? imageText(p.locale, "frameReference", { number: String(refIndex + 1) }) : t("frameTextOnly")}</small></li>;
+            })}</ul>
+            {(record.request.input.references?.length ?? 0) < record.request.input.entityIds.length && <small>{t("frameCoverageHint")}</small>}
+          </div>}
+          <p>{record.prompt}</p><small>{record.modelId}</small></details>
+        <ImageHeaders headers={record.headers} locale={p.locale} />
+      </>}
+    </figure></div>}
+    {error?.operation === "delete" && <div className="dr-image-error"><ImageErrorDetails error={error.value} locale={p.locale} /></div>}
   </section>;
 }

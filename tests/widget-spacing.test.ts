@@ -1,11 +1,11 @@
 import { expect, it } from "vitest";
 import { nearestWidgetSpace, widgetsOverlap } from "../src/core/widget-spacing";
 const viewport = { width: 1280, height: 900 };
-it("leaves free positions unchanged and keeps a one-pixel gap", () => {
+it("leaves free positions unchanged and keeps a three-pixel gap", () => {
   const obstacle = { x: 100, y: 100, width: 200, height: 80 };
   const wanted = { x: 280, y: 100, width: 120, height: 40 };
   const next = nearestWidgetSpace(wanted, [obstacle], viewport)!;
-  expect(next.x).toBe(301); expect(widgetsOverlap(next, obstacle)).toBe(false);
+  expect(next.x).toBe(303); expect(widgetsOverlap(next, obstacle)).toBe(false);
   expect(nearestWidgetSpace(next, [obstacle], viewport)).toEqual(next);
 });
 it("accounts for every obstacle and viewport edge without forcing an overlap", () => {

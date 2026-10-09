@@ -1,19 +1,32 @@
 import { browser } from "wxt/browser";
 import { DeepSeekDomAdapter } from "./deepseek-dom";
 import { isUserMessage, nativeMessageRows } from "./deepseek-message-dom";
-import { plainCharacterReplyText } from "./deepseek-service-dom";
 import type { CastMessage } from "./cast-coordinator";
+import { CastReplyCapture } from "./cast-reply-capture";
+import { castText } from "../core/cast-i18n";
+import type { Locale } from "../core/types";
+import { castChatId, castChatReference } from "../core/cast-chat";
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const DELETE = /^(?:delete(?: chat| conversation)?|удалить(?: чат| диалог)?|删除(?:对话)?)$/iu;
 const MORE = /more|options|menu|ещё|еще|меню|действия|更多/iu;
 const visible = (node: HTMLElement) => !!node.getClientRects().length && getComputedStyle(node).visibility !== "hidden";
-function currentChat(): string | undefined { return location.pathname.match(/\/chat\/(?:s\/)?([^/?#]+)/u)?.[1]; }
+function showRecoveredCastReply(raw: string, marker: string, locale: Locale) {
+  const rows = nativeMessageRows(document), user = rows.findLastIndex(row => isUserMessage(row) && (row.textContent ?? "").includes(marker));
+  const row = user >= 0 ? rows[user + 1] : undefined;
+  if (!row || isUserMessage(row) || row.querySelector("[data-deeprole-cast-recovery]")) return;
+  const card = document.createElement("details"); card.dataset.deeproleCastRecovery = "true";
+  card.style.cssText = "margin:12px 0;padding:12px;border:1px solid #39434c;border-radius:12px;background:#20272d;color:#e3e8ed;font:13px/1.5 system-ui;";
+  const summary = document.createElement("summary"); summary.textContent = castText(locale, "recovered"); summary.style.cursor = "pointer";
+  const pre = document.createElement("pre"); pre.setAttribute("aria-label", castText(locale, "recoveredCode")); pre.textContent = raw; pre.style.cssText = "white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;scrollbar-width:thin;";
+  card.append(summary, pre); row.append(card);
+}
+function currentChat(): string | undefined { return castChatId(location.pathname); }
 /** Only opens controls belonging to the exact owned chat, never a global delete action. */
 export async function deleteOwnedChat(chatId: string, doc: Document = document, wait = pause): Promise<boolean> {
   if (currentChat() !== chatId) return false;
   const anchor = [...doc.querySelectorAll<HTMLAnchorElement>("a[href]")].find(a => {
-    try { return new URL(a.href).origin === "https://chat.deepseek.com" && new URL(a.href).pathname.endsWith("/" + chatId); } catch { return false; }
+    return castChatReference(a.href)?.id === chatId;
   });
   if (!anchor) return false;
   let row: HTMLElement | null = anchor, more: HTMLElement | undefined;
@@ -50,11 +63,12 @@ export async function startCastWorker(): Promise<boolean> {
   if (!claim?.ok) return !!wanted; // Never inject ordinary roleplay UI into a stale service URL.
   const id: string = claim.id, adapter = new DeepSeekDomAdapter();
   let touched = false, cleaning = false, stopped = false, failedRequest = false;
+  let capture: CastReplyCapture | undefined, activeRequestMarker = "";
   let nativeOwned = !!claim.chatId;
   document.addEventListener("click", e => { if (e.isTrusted && (e.target as Element)?.closest("a[href]")) touched = true; }, true);
   document.addEventListener("input", e => { if (e.isTrusted) touched = true; }, true);
   window.addEventListener("message", e => {
-    if (e.source === window && e.data?.source === "deeprole-page-bridge" && e.data.type === "SERVICE_REQUEST_FAILED" && e.data.id?.startsWith(id + "-")) failedRequest = true;
+    if (e.source === window && e.data?.source === "deeprole-page-bridge" && e.data.type === "SERVICE_REQUEST_FAILED" && "[Request ID: " + e.data.id + "]" === activeRequestMarker) failedRequest = true;
   });
   const call = async (message: CastMessage) => {
     const result = await browser.runtime.sendMessage(message);
@@ -63,7 +77,7 @@ export async function startCastWorker(): Promise<boolean> {
   };
   const cleanup = async () => {
     if (cleaning) return;
-    cleaning = true; stopped = true;
+    cleaning = true; stopped = true; capture?.stop();
     const chatId = currentChat();
     let ok = !chatId;
     if (chatId && nativeOwned && !touched) {
@@ -86,6 +100,21 @@ export async function startCastWorker(): Promise<boolean> {
         if (!["opening", "reading", "analyzing"].includes(step.phase)) break;
         if (touched || stopped) throw new Error("user-interrupted");
         const requestMarker = "[Request ID: " + id + "-" + step.step + (step.repair ? "-repair" : "") + "]";
+        activeRequestMarker = requestMarker; failedRequest = false;
+        let bound = !!step.chatId, pendingCheckpoint: { raw: string; identity: string } | undefined;
+        let writes = Promise.resolve();
+        const checkpoint = () => {
+          const pending = pendingCheckpoint; if (!pending || !bound || stopped || touched) return;
+          pendingCheckpoint = undefined; const chatId = currentChat(); if (!chatId) return;
+          writes = writes.then(async () => {
+            if (stopped || touched || currentChat() !== chatId) return;
+            // Failed/invalid checkpoints never weaken validation or stop the normal reply parser.
+            await call({ type: "DR_CAST_WORKER", action: "checkpoint", id, step: step.step, repair: !!step.repair, chatId, replyIdentity: pending.identity, raw: pending.raw }).catch(() => undefined);
+          });
+        };
+        capture?.stop();
+        capture = new CastReplyCapture(id, requestMarker, step.prompt.includes("Return ONLY <deeprole_cast>JSON"), document, (raw, identity) => { pendingCheckpoint = { raw, identity }; checkpoint(); }, step.replyCheckpoint);
+        capture.start();
         if (!step.awaiting) {
           if (step.step === 0 && !step.repair && (currentChat() || nativeMessageRows(document).length)) throw new Error("not-empty-chat");
           if (adapter.getDraft().trim()) throw new Error("draft-not-empty");
@@ -98,26 +127,30 @@ export async function startCastWorker(): Promise<boolean> {
         for (let i = 0; !currentChat() && i < 30; i++) await pause(200);
         if (currentChat() && !touched && (step.chatId || nativeMessageRows(document).some(row => isUserMessage(row) && (row.textContent ?? "").includes(requestMarker)))) {
           await call({ type: "DR_CAST_WORKER", action: "bound", id, chatId: currentChat()! }); nativeOwned = true;
+          bound = true; checkpoint();
         }
-        const started = Date.now(); let last = "", stable = Date.now(), response = "";
+        const started = Date.now(); let last = "", stable = Date.now(), response = "", recovered = false;
         while (Date.now() - started < 7 * 60 * 1000) {
           if (stopped || touched) throw new Error("user-interrupted");
           if (failedRequest) throw new Error("request-failed");
           if (step.chatId && currentChat() !== step.chatId) throw new Error("chat-changed");
-          const rows = nativeMessageRows(document);
-          const user = rows.findLastIndex(row => isUserMessage(row) && (row.textContent ?? "").includes(requestMarker));
-          const replies = user >= 0 ? rows.slice(user + 1).filter(row => !isUserMessage(row)) : [];
-          const raw = replies.map(plainCharacterReplyText).join("\n").trim();
+          const raw = capture.scan();
           if (raw !== last) { last = raw; stable = Date.now(); }
-          if (raw && !adapter.isGenerating() && Date.now() - stable >= 1500) { response = raw; break; }
+          const resolved = capture.resolve(raw);
+          if (resolved.raw && !adapter.isGenerating() && Date.now() - stable >= 1500) { response = resolved.raw; recovered = resolved.recovered; break; }
           await pause(500);
         }
         if (!response || !currentChat()) throw new Error("reply-timeout");
-        await call({ type: "DR_CAST_WORKER", action: "reply", id, step: step.step, chatId: currentChat()!, raw: response }); nativeOwned = true;
+        await writes;
+        if (stopped || touched) throw new Error("user-interrupted");
+        if (recovered) showRecoveredCastReply(response, requestMarker, step.locale ?? "ru");
+        capture.stop(); capture = undefined;
+        await call({ type: "DR_CAST_WORKER", action: "reply", id, step: step.step, repair: !!step.repair, chatId: currentChat()!, raw: response }); nativeOwned = true;
       }
     } catch (e) {
       await call({ type: "DR_CAST_WORKER", action: "error", id, error: e instanceof Error ? e.message : "preparation-failed", chatId: nativeOwned ? currentChat() : undefined } as CastMessage).catch(() => undefined);
     }
+    capture?.stop();
     await cleanup();
   })();
   return true;

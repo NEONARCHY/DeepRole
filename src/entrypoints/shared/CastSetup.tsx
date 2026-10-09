@@ -3,9 +3,11 @@ import { createPortal } from "react-dom";
 import { WandSparkles, X } from "lucide-react";
 import { browser } from "wxt/browser";
 import { castText, castError, type CastCopyKey } from "../../core/cast-i18n";
+import { castChatLink } from "../../core/cast-chat";
 import type { CastDraft, CastMember } from "../../core/cast-initialization";
 import type { CastMessage, CastView } from "../../adapters/cast-coordinator";
 import type { Locale } from "../../core/types";
+import { CastStatus } from "./CastStatus";
 
 
 export function CastSetup({ worldId, locale, compact = false }: { worldId: string; locale: Locale; compact?: boolean }) {
@@ -13,12 +15,19 @@ export function CastSetup({ worldId, locale, compact = false }: { worldId: strin
  const [job, setJob] = useState<CastView | null>(null), [draft, setDraft] = useState<CastDraft | null>(null);
  const [selected, setSelected] = useState<string[]>([]), [hero, setHero] = useState("");
  const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
+ const [visibility, setVisibility] = useState<{ id: string; hidden: boolean } | null>(null);
+ const visibilityVersion = useRef(0), visibilityPending = useRef(false);
  const root = useRef<HTMLDivElement>(null), dialog = useRef<HTMLDivElement>(null), origin = useRef<HTMLElement | null>(null);
  const scope = useRef(worldId); scope.current = worldId;
  const run = async (message: CastMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw new Error(result?.error ?? "preparation-failed"); return result; };
  useEffect(() => {
-   let disposed = false; setJob(null); setOpen(false); setDraft(null); setError("");
-   const update = async () => { try { const r = await run({ type: "DR_CAST", action: "status", worldId }); if (!disposed) setJob(r.job ?? null); } catch { /* The start action reports connection/lock errors. */ } };
+   let disposed = false; setJob(null); setOpen(false); setDraft(null); setError(""); setBusy(false); setVisibility(null);
+   visibilityVersion.current++; visibilityPending.current = false;
+   const update = async () => {
+     if (visibilityPending.current) return;
+     const version = visibilityVersion.current;
+     try { const r = await run({ type: "DR_CAST", action: "status", worldId }); if (!disposed && version === visibilityVersion.current && !visibilityPending.current) setJob(r.job ?? null); } catch { /* The start action reports connection/lock errors. */ }
+   };
    void update(); const timer = setInterval(() => void update(), 2500);
    return () => { disposed = true; clearInterval(timer); };
  }, [worldId]);
@@ -29,27 +38,50 @@ export function CastSetup({ worldId, locale, compact = false }: { worldId: strin
    return () => { if (origin.current?.isConnected) origin.current.focus({ preventScroll: true }); };
  }, [open]);
  const act = async (message: CastMessage) => {
-   if (busy) return; setBusy(true); setError(""); const world = worldId;
-   try { const result = await run(message); if (scope.current !== world) return; const latest = await run({ type: "DR_CAST", action: "status", worldId }); if (scope.current === world) { setJob(latest.job ?? result.job ?? null); if (message.type === "DR_CAST" && message.action === "apply") setOpen(false); } }
+   if (busy) return; setBusy(true); setError(""); const world = worldId, version = visibilityVersion.current;
+   try { const result = await run(message); if (scope.current !== world) return; const latest = await run({ type: "DR_CAST", action: "status", worldId }); if (scope.current === world) {
+     const next = latest.job ?? result.job ?? null;
+     setJob(current => version !== visibilityVersion.current && current && next && current.id === next.id ? { ...next, statusHidden: current.statusHidden } : next);
+     if (message.type === "DR_CAST" && message.action === "apply") setOpen(false);
+   } }
    catch (e) { if (scope.current === world) setError(castError(locale, e instanceof Error ? e.message : "")); }
    finally { if (scope.current === world) setBusy(false); }
+ };
+ const setStatusVisible = async (visible: boolean) => {
+   if (!job) return;
+   const id = job.id, world = worldId, version = ++visibilityVersion.current;
+   visibilityPending.current = true; setVisibility({ id, hidden: !visible }); setError("");
+   if (!visible) root.current?.querySelector<HTMLButtonElement>(".dr-cast-trigger")?.focus({ preventScroll: true });
+   try {
+     const result = await run({ type: "DR_CAST", action: visible ? "show" : "hide", id });
+     if (scope.current === world && visibilityVersion.current === version) { setJob(result.job); setVisibility(null); }
+   } catch (e) {
+     // Keep the local hide even while the extension is locked/offline. Hiding is
+     // never cancellation, cleanup, or deletion of the generated draft.
+     if (scope.current === world && visibilityVersion.current === version) setError(castError(locale, e instanceof Error ? e.message : ""));
+   } finally { if (scope.current === world && visibilityVersion.current === version) visibilityPending.current = false; }
  };
  const review = () => { if (!job?.draft) return; setDraft(structuredClone(job.draft)); setSelected(job.draft.characters.map(c => c.key)); setHero(job.draft.characters.find(c => c.sheet.protagonist)?.key ?? ""); setError(""); setOpen(true); };
  const change = (key: string, update: (member: CastMember) => CastMember) => setDraft(old => old ? { ...old, characters: old.characters.map(c => c.key === key ? update(c) : c) } : old);
  const preparing = !!job && ["opening", "reading", "analyzing"].includes(job.phase);
- const label = job?.phase === "ready" ? t("review") : t("start");
+ const hidden = !!job && (visibility?.id === job.id ? visibility.hidden : !!job.statusHidden);
+ const hasStatus = !!job && (!compact || preparing || job.phase === "ready" || job.phase === "error" || job.cleanup === "pending" || job.cleanup === "failed");
+ const statusVisible = hasStatus && !hidden;
+ const togglesStatus = hasStatus && (hidden || preparing || job?.phase === "ready" || job?.phase === "error" || job?.cleanup === "pending" || job?.cleanup === "failed");
+ const label = togglesStatus ? t(hidden ? "showStatus" : "hide") : job?.phase === "ready" ? t("review") : t("start");
  return <div ref={root} className={compact ? "dr-cast-setup is-compact" : "dr-cast-setup"}>
    {!compact && <><strong>{t("title")}</strong><p>{t("hint")}</p></>}
-   <button className={compact ? "icon-button dr-cast-trigger" : "button secondary small"} type="button" title={label} aria-label={label} disabled={busy || preparing} onClick={() => job?.phase === "ready" ? review() : void act({ type: "DR_CAST", action: "start", worldId, locale, retry: !!job })}><WandSparkles size={16}/>{!compact && <span>{label}</span>}</button>
-   {job && (!compact || preparing || job.phase === "ready" || job.cleanup === "failed") && <div className="dr-cast-status" role="status">
-     <span>{t(job.phase)}{preparing && job.partCount > 0 && " · " + Math.min(job.step + 1, job.partCount) + "/" + job.partCount}</span>
+   <button className={compact ? "icon-button dr-cast-trigger" : "button secondary small dr-cast-trigger"} type="button" title={label} aria-label={label} disabled={busy && !togglesStatus} onClick={() => togglesStatus ? void setStatusVisible(hidden) : job?.phase === "ready" ? review() : void act({ type: "DR_CAST", action: "start", worldId, locale, retry: !!job })}><WandSparkles size={16}/>{!compact && <span>{label}</span>}</button>
+   {job && statusVisible && <CastStatus key={job.id} job={job} locale={locale} compact={compact} anchor={root} onHide={() => void setStatusVisible(false)}>
      {preparing && <button type="button" className="button secondary small" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cancel", id: job.id })}>{t("cancel")}</button>}
-     {job.phase === "ready" && <button type="button" className="button secondary small" disabled={busy || job.cleanup === "pending"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t("reprepare")}</button>}
-     {job.phase === "error" && <p>{castError(locale, job.error ?? "")}</p>}
+     {job.phase === "ready" && <><button type="button" className="button primary small" disabled={busy} onClick={review}>{t("review")}</button><button type="button" className="button secondary small" disabled={busy || job.cleanup === "pending" || job.cleanup === "failed"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t("reprepare")}</button></>}
+     {job.phase === "error" && <><p>{castError(locale, job.error ?? "")}</p><button type="button" className="button secondary small" disabled={busy || job.cleanup === "pending" || job.cleanup === "failed"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t("retry")}</button></>}
      {job.cleanup === "pending" && !preparing && <small>{t("cleanup")}</small>}
-     {job.cleanup === "failed" && <><small>{t("cleanupFailed")}</small><div className="button-row"><button className="button secondary small" type="button" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cleanup", id: job.id })}>{t("cleanupRetry")}</button>{job.chatId && <a href={"https://chat.deepseek.com/chat/s/" + encodeURIComponent(job.chatId)} target="_blank" rel="noopener noreferrer">{t("openChat")}</a>}</div></>}
-   </div>}
-   {error && <p role="alert" className="error-text">{error}</p>}
+     {job.cleanup === "failed" && <><small>{t("cleanupFailed")}</small><div className="button-row"><button className="button secondary small" type="button" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cleanup", id: job.id })}>{t("cleanupRetry")}</button><button className="dr-cast-open-chat" type="button" disabled={busy || !castChatLink(job.chatId, job.chatUrl)} onClick={() => void act({ type: "DR_CAST", action: "open", id: job.id })}>{t("openChat")}</button></div>{!castChatLink(job.chatId, job.chatUrl) && <small>{t("openMissing")}</small>}</>}
+     {!preparing && (job.cleanup === "pending" || job.cleanup === "failed") && <div className="dr-cast-cleanup-confirm"><button type="button" className="button secondary small" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "confirm-cleanup", id: job.id })}>{t("cleanupConfirm")}</button><small>{t("cleanupConfirmHint")}</small></div>}
+     {error && <p role="alert" className="error-text">{error}</p>}
+   </CastStatus>}
+   {error && !statusVisible && <p role="alert" className={compact ? "error-text dr-cast-trigger-error" : "error-text"}>{error}</p>}
    {open && draft && createPortal(<div className="dr-cast-layer" onKeyDown={e => {
      if (e.key === "Escape" && !busy) { e.preventDefault(); e.stopPropagation(); setOpen(false); }
      if (e.key === "Tab") {

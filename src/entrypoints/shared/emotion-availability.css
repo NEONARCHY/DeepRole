@@ -10,5 +10,10 @@
 .dr-emotion-policy-row span { display:grid; gap:4px; min-width:0; overflow-wrap:anywhere; }
 .dr-emotion-policy-row strong { font-size:12px; font-weight:500; }
 .dr-emotion-policy-row small { color:var(--dr-muted); font-size:11px; line-height:1.45; }
+.dr-emotion-policy-row:has(input:not(:checked)) { background:var(--dr-bg); color:var(--dr-muted); }
+.dr-emotion-policy-list { max-block-size:280px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--dr-border-strong) transparent; }
+.dr-emotion-policy-list::-webkit-scrollbar { width:4px; }
+.dr-emotion-policy-list::-webkit-scrollbar-thumb { background:var(--dr-border-strong); border-radius:4px; }
+.dr-emotion-policy-list::-webkit-scrollbar-track { background:transparent; }
 .dr-emotion-policy-retired { border-block-start:1px solid var(--dr-border); padding-block-start:4px; }
 .dr-emotion-policy-notice { display:grid; gap:8px; margin-block:10px; }

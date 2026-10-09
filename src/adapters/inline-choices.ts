@@ -1,5 +1,6 @@
 import { fitAdaptiveChoices } from "./adaptive-layout";
 import { composerBounds, observeChoiceComposer } from "./pinned-choices";
+import { observeChoiceScrollFollow } from "./choice-scroll-follow";
 
 const bindings = new WeakMap<HTMLElement, { dispose: () => void; reveal: () => void }>();
 const GAP = 12;
@@ -19,7 +20,7 @@ export function unbindInlineChoices(host: HTMLElement): void {
   bindings.get(host)?.dispose(); bindings.delete(host);
 }
 
-function flowTail(host: HTMLElement, scroller: Element, ownHeight: number): number {
+export function flowTail(host: HTMLElement, scroller: Element, ownHeight: number): number {
   const win = host.ownerDocument.defaultView!;
   let bottom = host.getBoundingClientRect().bottom;
   for (let node: HTMLElement | null = host; node && node !== scroller; node = node.parentElement) {
@@ -36,31 +37,23 @@ function flowTail(host: HTMLElement, scroller: Element, ownHeight: number): numb
 }
 
 /** Reserve only the missing footer space. Never edit DeepSeek's styles or draft. */
-export function bindInlineChoices(host: HTMLElement, reveal = false): void {
+export function bindInlineChoices(host: HTMLElement, reveal = false, paused = false): void {
   const existing = bindings.get(host);
   if (existing) { if (reveal) existing.reveal(); return; }
   if (!host.isConnected) return;
   const doc = host.ownerDocument, win = doc.defaultView!;
   let scroller = choiceScrollContainer(host), disposed = false;
   // Capture the native bottom before reserving space, including a short chat.
-  let following = reveal || scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 48;
+  const follow = observeChoiceScrollFollow(host, scroller, !paused && (reveal || scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 48), paused);
   const spacer = doc.createElement("div");
   spacer.dataset.deeproleChoicesSpacer = "true"; spacer.setAttribute("aria-hidden", "true");
   spacer.style.cssText = "height:0;min-height:0;margin:0;padding:0;border:0;flex:none;pointer-events:none;overflow-anchor:none";
   const set = (key: string, value: string) => { if (host.style.getPropertyValue(key) !== value) host.style.setProperty(key, value); };
-  const nearBottom = () => scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 48;
-  const onScroll = () => { following = nearBottom(); };
-  const stopReading = (event: WheelEvent) => { if (event.deltaY < 0) following = false; };
-  const onKey = (event: KeyboardEvent) => {
-    if (event.target instanceof Element && event.target.closest("input,textarea,select,[contenteditable]")) return;
-    if (["ArrowUp", "PageUp", "Home"].includes(event.key)) following = false;
-  };
-  const scrollTarget = () => scroller === doc.scrollingElement ? win : scroller;
   const update = () => {
     if (disposed) return;
     if (!host.isConnected || host.dataset.deeproleChoicesPinned === "true") { unbindInlineChoices(host); return; }
     const next = choiceScrollContainer(host);
-    if (next !== scroller) { scrollTarget().removeEventListener("scroll", onScroll); scroller = next; scrollTarget().addEventListener("scroll", onScroll); following = false; }
+    if (next !== scroller) { scroller = next; follow.setScroller(next); }
     const composer = composerBounds(doc, true);
     if (!composer || !host.getClientRects().length) {
       spacer.remove(); host.removeAttribute("data-deeprole-choices-inline"); set("--dr-inline-max-height", "");
@@ -88,20 +81,17 @@ export function bindInlineChoices(host: HTMLElement, reveal = false): void {
     if (Math.abs(ownHeight - missing) > .5) spacer.style.height = `${missing}px`;
     // A reader above the last scene keeps their scroll position. Resizing the
     // draft only follows the card while the reader is already at the bottom.
-    if (following) {
+    if (follow.following) {
       const delta = host.getBoundingClientRect().bottom - safeBottom;
       if (delta > .5) scroller.scrollTop += delta;
     }
     win.dispatchEvent(new Event("deeprole-inline-layout"));
   };
-  scrollTarget().addEventListener("scroll", onScroll);
-  doc.addEventListener("wheel", stopReading, true); doc.addEventListener("keydown", onKey, true);
   const stopObserving = observeChoiceComposer(host, update, [host, ...(host.parentElement ? [host.parentElement] : [])]);
   bindings.set(host, {
-    reveal: () => { following = true; update(); },
+    reveal: () => { follow.reveal(); update(); },
     dispose: () => {
-      disposed = true; stopObserving(); scrollTarget().removeEventListener("scroll", onScroll);
-      doc.removeEventListener("wheel", stopReading, true); doc.removeEventListener("keydown", onKey, true);
+      disposed = true; stopObserving(); follow.dispose();
       spacer.remove(); host.removeAttribute("data-deeprole-choices-inline"); set("--dr-inline-max-height", "");
     },
   });

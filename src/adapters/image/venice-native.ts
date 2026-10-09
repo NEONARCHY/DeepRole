@@ -1,10 +1,5 @@
 import { object, type EditInput, type GenerateInput, type ImageModelInfo, type ImageProvider, type ImageProviderConfig } from "../../core/image-generation";
 import { ImageApiError, ImageTransport, requestBody } from "./transport";
-/**
- * POST /image/multi-edit documents one to three input images and reports the ability to combine
- * them only as a boolean (constraints.combineImages). Use the documented maximum, never more.
- */
-export const MAX_MULTI_EDIT_REFERENCES = 3;
 /** Venice nests prices per mode (inpaint, resolutions, inputImages); the top-level usd key may be absent. */
 export function usdPrices(pricing: Record<string, unknown>, found: number[] = []): number[] {
   const usd = pricing.usd;
@@ -21,7 +16,12 @@ export class VeniceNativeProvider implements ImageProvider {
   constructor(private readonly config: ImageProviderConfig, private readonly transport: ImageTransport) {}
   async listModels(): Promise<ImageModelInfo[]> {
     const images = await this.models("image"), edits = await this.models("inpaint");
-    return [...new Map([...images, ...edits].map(model => [model.id, model])).values()];
+    const models = new Map<string, ImageModelInfo>();
+    for (const model of [...images, ...edits]) {
+      const previous = models.get(model.id);
+      models.set(model.id, { ...previous, ...model, supportsEdit: !!(previous?.supportsEdit || model.supportsEdit), supportsGenerate: !!(previous?.supportsGenerate || model.supportsGenerate) });
+    }
+    return [...models.values()];
   }
   private async models(type: "image" | "inpaint"): Promise<ImageModelInfo[]> {
     const response = await this.transport.request(`/models?type=${type}`); const json: unknown = await response.json();
@@ -29,10 +29,10 @@ export class VeniceNativeProvider implements ImageProvider {
     return json.data.filter(item => object(item) && typeof item.id === "string" && item.id.length <= 200).slice(0, 2000).map(item => {
       const spec = object(item.model_spec) ? item.model_spec : {}, capabilities = object(spec.capabilities) ? spec.capabilities : {}, constraints = object(spec.constraints) ? spec.constraints : {}, pricing = object(spec.pricing) ? spec.pricing : {};
       // Only actual API fields: no guessed prices, resolutions, steps or model-name heuristics.
-      // An edit model usually reports the reference limit through constraints.combineImages only;
-      // the documented multi-edit contract accepts up to three images. Never exceed that here.
+      // Multi-edit's maximum is per model (capabilities.maxInputImages), not a
+      // universal count. combineImages is only a boolean, not a numeric limit.
       const raw = capabilities.maxInputImages ?? constraints.maxInputImages;
-      const max = Number.isInteger(raw) && Number(raw) > 0 ? Number(raw) : constraints.combineImages === true ? MAX_MULTI_EDIT_REFERENCES : undefined;
+      const max = Number.isInteger(raw) && Number(raw) > 0 ? Number(raw) : undefined;
       const price = lowestUsdPrice(pricing);
       return { id: item.id as string, label: typeof spec.name === "string" ? spec.name.slice(0, 200) : item.id as string,
         ...(spec.privacy === "private" || spec.privacy === "anonymized" ? { privacy: spec.privacy } : {}),
@@ -40,7 +40,7 @@ export class VeniceNativeProvider implements ImageProvider {
         ...(max === undefined ? {} : { maxInputImages: max }),
         ...(Number.isInteger(constraints.promptCharacterLimit) && Number(constraints.promptCharacterLimit) > 0 ? { promptLimit: Number(constraints.promptCharacterLimit) } : {}),
         ...(spec.uncensored === true ? { uncensored: true } : {}),
-        supportsEdit: type === "inpaint", constraints } satisfies ImageModelInfo;
+        supportsEdit: type === "inpaint", supportsGenerate: type === "image", constraints } satisfies ImageModelInfo;
     });
   }
   async generate(input: GenerateInput) { return this.transport.image(await this.transport.request("/image/generate", requestBody(this.config, input)), json => Array.isArray(json.images) ? json.images[0] : undefined, input.aspectRatio); }

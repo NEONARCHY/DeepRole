@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef } from "react";
 import { createPortal } from "react-dom";
 
-type Props = Omit<ComponentPropsWithoutRef<"button">, "title" | "aria-label"> & { "aria-label": string; tooltip?: string };
+type Props = Omit<ComponentPropsWithoutRef<"button">, "title" | "aria-label"> & { "aria-label": string; tooltip?: string; nativeTooltip?: boolean };
 type Phase = "idle" | "pending" | "open";
 let dismissActive: (() => void) | undefined;
 
 /** Help belongs to the action itself; never adds a second focusable control. */
-export function TooltipButton({ tooltip, "aria-label": label, onMouseEnter, onMouseLeave, onFocus, onBlur, onPointerDown, onClick, onKeyDown, ...props }: Props) {
+export function TooltipButton({ tooltip, nativeTooltip = false, "aria-label": label, onMouseEnter, onMouseLeave, onFocus, onBlur, onPointerDown, onClick, onKeyDown, ...props }: Props) {
   const button = useRef<HTMLButtonElement>(null);
   const tip = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -23,7 +23,7 @@ export function TooltipButton({ tooltip, "aria-label": label, onMouseEnter, onMo
     if (dismissActive === hide) dismissActive = undefined;
   }, [cancelTimer]);
   const show = (immediate = false) => {
-    if (props.disabled) return;
+    if (props.disabled || nativeTooltip) return;
     cancelTimer();
     if (phaseRef.current === "open") return;
     if (dismissActive !== hide) dismissActive?.();
@@ -41,7 +41,7 @@ export function TooltipButton({ tooltip, "aria-label": label, onMouseEnter, onMo
   };
 
   useEffect(() => () => { cancelTimer(); if (dismissActive === hide) dismissActive = undefined; }, [cancelTimer, hide]);
-  useEffect(() => { if (props.disabled) hide(); }, [props.disabled, hide]);
+  useEffect(() => { if (props.disabled || nativeTooltip) hide(); }, [props.disabled, nativeTooltip, hide]);
   useEffect(() => {
     if (phase === "idle") return;
     const key = (event: KeyboardEvent) => {
@@ -81,7 +81,7 @@ export function TooltipButton({ tooltip, "aria-label": label, onMouseEnter, onMo
 
   const root = button.current?.getRootNode();
   return <>
-    <button {...props} ref={button} type={props.type ?? "button"} aria-label={label} aria-describedby={[props["aria-describedby"], phase === "open" ? id : undefined].filter(Boolean).join(" ") || undefined}
+    <button {...props} ref={button} type={props.type ?? "button"} aria-label={label} title={nativeTooltip ? [label, tooltip].filter(Boolean).join("\n") : undefined} aria-description={props["aria-description"] ?? (nativeTooltip ? tooltip : undefined)} aria-describedby={[props["aria-describedby"], phase === "open" ? id : undefined].filter(Boolean).join(" ") || undefined}
       onMouseEnter={(event) => { show(); onMouseEnter?.(event); }}
       onMouseLeave={(event) => { leave(); onMouseLeave?.(event); }}
       onFocus={(event) => { keyboardFocus.current = event.currentTarget.matches(":focus-visible"); if (keyboardFocus.current) show(true); onFocus?.(event); }}

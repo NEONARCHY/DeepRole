@@ -124,7 +124,7 @@ export interface CharacterScene {
 export interface PortraitCycle { key: string; order: number[]; cursor: number }
 
 /** UI-only. Never included in model context or character revisions. */
-export interface PortraitPose { x: number; y: number; width: number; space?: "viewport"; dock?: "left" | "right" }
+export interface PortraitPose { x: number; y: number; width: number; space?: "viewport"; dock?: "left" | "right"; /** Explicit resize overrides automatic grouping, not the rest of the cast. */ manualSize?: boolean }
 export interface PortraitLayout { resetAt: number; positions: Record<string, PortraitPose> }
 
 export interface SceneState {
@@ -233,6 +233,12 @@ export interface HandoffSnapshot {
 }
 
 export interface DeepRoleSettings {
+  /** Long edge for future uploaded portraits; never rewrites stored images. */
+  portraitMaxEdge?: number;
+  /** Preferred library tile size; narrow layouts still fit their container. */
+  portraitPreviewSize?: number;
+  /** Presentation only; never changes DeepSeek's reasoning mode or requests. */
+  showDeepSeekReasoning?: boolean;
   replyRecoveryEnabled?: boolean;
   contextWarningsEnabled?: boolean;
   /** User-adjustable estimate, not a guaranteed DeepSeek server limit. */

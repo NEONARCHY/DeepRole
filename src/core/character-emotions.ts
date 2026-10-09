@@ -1,5 +1,6 @@
 import type { CharacterSheet, CharacterStatus, SceneEntity } from "./types";
 import { portraitVariations } from "./portrait-variations";
+import { unassignPortraitEmotions } from "./portrait-library";
 
 // Retain restrictions on retired world keys so re-adding a key cannot bypass them.
 export const MAX_BLOCKED_EMOTIONS = 128;
@@ -11,6 +12,27 @@ export function validBlockedEmotions(value: unknown): value is string[] {
 }
 export const isCharacterEmotionAllowed = (sheet: CharacterSheet | undefined, emotion: string) =>
   emotion === "neutral" || !sheet?.blockedEmotions?.includes(emotion);
+
+/** User edits detach images, not delete them. Re-enabling never restores an old
+ * assignment behind the user's back; references and selfie collections stay. */
+export function withCharacterEmotionRules(sheet: CharacterSheet, blocked: string[]): CharacterSheet {
+  if (!validBlockedEmotions(blocked)) throw new Error("character-invalid");
+  let next = { ...sheet };
+  if (blocked.length) next.blockedEmotions = [...blocked]; else delete next.blockedEmotions;
+  next = cleanCharacterEmotionImages(next);
+  return next;
+}
+
+/** Save-time protection also removes retired world keys and stale assignments. */
+export function cleanCharacterEmotionImages(sheet: CharacterSheet, worldEmotions?: string[]): CharacterSheet {
+  const retired = Object.keys(sheet.sprites).filter(key => key !== "neutral" && (!isCharacterEmotionAllowed(sheet, key) || worldEmotions && !worldEmotions.includes(key)));
+  let next = unassignPortraitEmotions(sheet, retired);
+  if (sheet.initialStatus) {
+    const emotion = resolveCharacterEmotion(sheet, sheet.initialStatus.emotion, undefined, worldEmotions);
+    if (emotion !== sheet.initialStatus.emotion) next = { ...next, initialStatus: { ...sheet.initialStatus, emotion } };
+  }
+  return next;
+}
 
 export function allowedCharacterEmotions(sheet: CharacterSheet | undefined, emotions: string[]): string[] {
   return [...new Set(["neutral", ...emotions])].filter(key => isCharacterEmotionAllowed(sheet, key));

@@ -1,8 +1,9 @@
+import { MAX_GENERATED_IMAGE_LENGTH } from "../core/generated-images";
 import { imageProvider } from "../adapters/image";
 import { ImageApiError, boundedBody, type ImagePermissionCheck } from "../adapters/image/transport";
 import { browser } from "wxt/browser";
 import { dataImageBlob, normalizeImage, MAX_IMAGE_RESPONSE_BYTES } from "../adapters/image/image-codec";
-import { ADULT_CONTENT_LEVEL, imageKey, object, validImageSeed, validImageProviderConfig, validCharacterImagePrompt, type CharacterImagePrompt, type ImageProviderConfig, type Illustration, type ImageProvider } from "../core/image-generation";
+import { MAX_IMAGE_SCENE_CHARACTERS, ADULT_CONTENT_LEVEL, imageKey, object, validImageSeed, validImageProviderConfig, validCharacterImagePrompt, type CharacterImagePrompt, type ImageProviderConfig, type Illustration, type ImageProvider } from "../core/image-generation";
 import type { ImageJobInput, ImageTarget } from "../core/image-messages";
 import { validImageAspect } from "../core/image-generation";
 import { validImageReplay, planImageInput, type ImageReplay, type ImageScenePlan } from "../core/image-plan";
@@ -10,6 +11,7 @@ import { startImageAttempt, imageAttempt, patchImageAttempt } from "./image-atte
 import { imageReferences, buildImagePrompt } from "../core/image-prompt";
 import { claimSelfie, finishSelfie, selfieIllustrationId } from "./selfie-images";
 import { imageErrorKey } from "../core/image-i18n";
+import { imageFailureDetails, validImageDiagnostic } from "../core/image-diagnostics";
 import { createId } from "../core/id";
 import type { SceneEntity } from "../core/types";
 import { getImageSettings } from "./image-settings";
@@ -30,7 +32,7 @@ export function validImageJob(v: unknown): v is ImageJobInput {
     && typeof v.prompt === "string" && !!v.prompt.trim() && v.prompt.length <= 12_000 && validImageSeed(v.seed)
     && Array.isArray(v.referenceKeys) && v.referenceKeys.length <= 128 && v.referenceKeys.every(imageKey) && (v.references !== undefined || new Set(v.referenceKeys).size === v.referenceKeys.length)
     && (v.aspectRatio === undefined || validImageAspect(v.aspectRatio))
-    && (v.entityIds === undefined || Array.isArray(v.entityIds) && v.entityIds.length <= 6 && v.entityIds.every(imageKey))
+    && (v.entityIds === undefined || Array.isArray(v.entityIds) && v.entityIds.length <= MAX_IMAGE_SCENE_CHARACTERS && v.entityIds.every(imageKey))
     && (v.references === undefined || Array.isArray(v.references) && v.references.length <= 128 && v.references.every(r => object(r) && imageKey(r.entityId) && imageKey(r.key)) && new Set(v.references.map(r => JSON.stringify(r))).size === v.references.length);
 }
 export class ImageJobs {
@@ -45,7 +47,7 @@ export class ImageJobs {
       // A server-controlled label/header must never echo the credential into page messages.
       return models.filter(model => !model.id.includes(key)).map(model => redactMetadata(model, key) as typeof model);
     } catch (error) {
-      if (error instanceof ImageApiError) throw new ImageApiError(error.code, Object.fromEntries(Object.entries(error.headers).map(([name, value]) => [name, value.replaceAll(key, "[redacted]")])));
+      if (error instanceof ImageApiError) throw new ImageApiError(error.code, Object.fromEntries(Object.entries(error.headers).map(([name, value]) => [name, value.replaceAll(key, "[redacted]")])), undefined, undefined, error.diagnostic ? redactMetadata(error.diagnostic, key) as typeof error.diagnostic : undefined);
       throw new ImageApiError("failed");
     }
   }
@@ -72,7 +74,7 @@ export class ImageJobs {
       usage.bytes -= pending?.request?.images.reduce((n, image) => n + image.length, 0) ?? 0;
       if (illustrationId?.startsWith("selfie:")) usage.bytes -= records.filter(r => r.kind === "binding").flatMap(r => (r.data as import("../core/types").ChatBinding).scenePhotos ?? []).filter(p => selfieIllustrationId(p) === illustrationId).reduce((sum, p) => sum + (p.generation?.request?.images.reduce((n, image) => n + image.length, 0) ?? 0), 0);
       // Reserve worst-case local output size BEFORE charging. Re-check atomically at commit.
-      if (usage.illustrations >= MAX_WORLD_ILLUSTRATIONS || usage.bytes + 300_000 > MAX_WORLD_IMAGE_BYTES) throw new ImageApiError("full");
+      if (usage.illustrations >= MAX_WORLD_ILLUSTRATIONS || usage.bytes + MAX_GENERATED_IMAGE_LENGTH > MAX_WORLD_IMAGE_BYTES) throw new ImageApiError("full");
       const entity = input.entityId ? records.find(r => r.kind === "entity" && r.id === input.entityId)?.data as SceneEntity | undefined : undefined;
       if (input.entityId && entity?.worldId !== input.worldId) throw new ImageApiError("changed");
       const images: string[] = options.replay ? [...options.replay.images] : [];
@@ -85,8 +87,8 @@ export class ImageJobs {
       const aspectRatio = input.aspectRatio ?? "16:9";
       const frozen: ImageReplay = options.replay ?? { input: structuredClone({ ...input, aspectRatio }), config: structuredClone(config), images, contentLevel };
       if (!validImageReplay(frozen)) throw new ImageApiError("invalid");
-      if (usage.bytes + images.reduce((sum, image) => sum + image.length, 0) + 300_000 > MAX_WORLD_IMAGE_BYTES) throw new ImageApiError("full");
-      if (options.attemptId) await patchImageAttempt(this.repo, input, options.attemptId, { status: "generating", request: frozen, error: undefined, ticketId: undefined }, "preparing");
+      if (usage.bytes + images.reduce((sum, image) => sum + image.length, 0) + MAX_GENERATED_IMAGE_LENGTH > MAX_WORLD_IMAGE_BYTES) throw new ImageApiError("full");
+      if (options.attemptId) await patchImageAttempt(this.repo, input, options.attemptId, { status: "generating", request: frozen, error: undefined, diagnostic: undefined, headers: undefined, ticketId: undefined }, "preparing");
       await options.onPrepared?.(frozen);
       const provider = this.createProvider(config, key, this.permitted);
       let result;
@@ -103,7 +105,8 @@ export class ImageJobs {
           await browser.storage.session.set({ ["deeprole_image_download_" + ticketId]: stored });
           throw new ImageApiError("downloadOrigin", headers, new URL(error.downloadUrl).origin, ticketId);
         }
-        throw new ImageApiError(error.code, headers);
+        const diagnostic = error.diagnostic ? redactMetadata(error.diagnostic, key) : undefined;
+        throw new ImageApiError(error.code, headers, undefined, undefined, validImageDiagnostic(diagnostic) ? diagnostic : undefined);
       }
       // Credentials are not serialized into records, messages or logging.
       const headers = Object.fromEntries(Object.entries(result.headers).map(([name, value]) => [name, value.replaceAll(key, "[redacted]")]));
@@ -122,8 +125,11 @@ export class ImageJobs {
     if (!await this.permitted(config.baseUrl)) throw new ImageApiError("permission");
     return startImageAttempt(this.repo, target);
   }
-  async fail(target: ImageTarget, id: string, error: unknown) {
-    await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error) });
+  async fail(target: ImageTarget, id: string, error: unknown, phase?: "plan") {
+    // A content-script cleanup must not erase diagnostics already committed by the worker.
+    const attempt = await imageAttempt(this.repo, target, id);
+    if (attempt.status === "failed") return;
+    await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error), diagnostic: { source: phase === "plan" ? "deepseek" : "deeprole", phase: phase ?? "local" } }, attempt.status);
   }
   async render(target: ImageTarget, id: string, plan: ImageScenePlan) {
     const attempt = await imageAttempt(this.repo, target, id);
@@ -132,7 +138,7 @@ export class ImageJobs {
       const input = planImageInput(plan, target, await this.repo.list<SceneEntity>("entity"), await getImageSettings());
       return await this.run(input, id, { attemptId: id });
     } catch (error) {
-      await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error), ticketId: error instanceof ImageApiError ? error.ticketId : undefined }).catch(() => undefined); throw error instanceof ImageApiError ? error : new ImageApiError(imageErrorKey(error));
+      await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error), ...imageFailureDetails(error), ticketId: error instanceof ImageApiError ? error.ticketId : undefined }).catch(() => undefined); throw error instanceof ImageApiError ? error : new ImageApiError(imageErrorKey(error));
     }
   }
   async repeat(target: ImageTarget, id: string, failedAttempt = false) {
@@ -144,11 +150,11 @@ export class ImageJobs {
     if (attempt && attempt.status !== "failed") throw new ImageApiError("busy");
     if (attempt?.ticketId) throw new ImageApiError("downloadOrigin");
     const job = attempt ?? await this.start(target);
-    if (attempt) await patchImageAttempt(this.repo, target, job.id, { status: "preparing", error: undefined, ticketId: undefined }, "failed");
+    if (attempt) await patchImageAttempt(this.repo, target, job.id, { status: "preparing", error: undefined, diagnostic: undefined, headers: undefined, ticketId: undefined }, "failed");
     try {
       return await this.run(frozen.input, original?.id.startsWith("selfie:") ? original.id : job.id, { replay: frozen, attemptId: job.id });
     } catch (error) {
-      await patchImageAttempt(this.repo, target, job.id, { status: "failed", error: imageErrorKey(error), ticketId: error instanceof ImageApiError ? error.ticketId : undefined }).catch(() => undefined); throw error;
+      await patchImageAttempt(this.repo, target, job.id, { status: "failed", error: imageErrorKey(error), ...imageFailureDetails(error), ticketId: error instanceof ImageApiError ? error.ticketId : undefined }).catch(() => undefined); throw error;
     }
   }
   async selfie(target: ImageTarget, entityId: string, turnKey: string, retry = false): Promise<Illustration> {
@@ -205,7 +211,7 @@ export class ImageJobs {
       const image = await normalizeImage(blob, false, ticket.input.aspectRatio), now = Date.now(), input = ticket.input;
       const illustration: Illustration = { id: ticket.illustrationId ?? createId("illustration"), worldId: input.worldId, chatId: input.chatId, messageKey: input.messageKey, ...(input.entityId ? { entityId: input.entityId } : {}), providerId: input.providerId, modelId: ticket.modelId, prompt: input.prompt, referenceKeys: input.referenceKeys, ...(input.seed === undefined ? {} : { seed: input.seed }), contentLevel: ticket.contentLevel, ...(ticket.request ? { request: ticket.request } : {}), aspectRatio: input.aspectRatio, image, headers: ticket.headers, createdAt: now, updatedAt: now };
       await saveIllustration(illustration, this.repo, ticket.attemptId); if (ticket.attemptId) await patchImageAttempt(this.repo, input, ticket.attemptId, null).catch(() => undefined); await browser.storage.session.remove("deeprole_image_download_" + ticketId); return illustration;
-    } catch (error) { if (error instanceof ImageApiError) throw error; throw new ImageApiError(controller.signal.aborted ? "timeout" : "failed"); }
+    } catch (error) { if (error instanceof ImageApiError) throw error; throw new ImageApiError(controller.signal.aborted ? "timeout" : error instanceof Error && error.message === "image-too-large" ? "imageTooLarge" : "failed"); }
     finally { clearTimeout(timer); }
   }
   async remove(target: ImageTarget, id: string) {
