@@ -66,7 +66,7 @@ export function parseBackupSettings(value: unknown): DeepRoleSettings {
     const setting = value[key];
     const valid = key === "portraitLayoutResetAt" ? time(setting) && (setting as number) <= Number.MAX_SAFE_INTEGER : key === "characterEmotions" ? validEmotions(setting) : key === "locale" ? setting === "ru" || setting === "en" :
       key === "portraitMaxEdge" ? validPortraitMaxEdge(setting) :
-      key === "portraitPreviewSize" ? validPortraitPreviewSize(setting) :
+      key === "portraitPreviewSize" || key === "referencePreviewSize" ? validPortraitPreviewSize(setting) :
       key === "floatingPanelWidth" ? integer(setting, 200, 360) :
       key === "chatContextCapacity" ? integer(setting, 8000, 2000000) :
       key === "relationshipDisplay" ? ["both", "numbers", "stages"].includes(String(setting)) :

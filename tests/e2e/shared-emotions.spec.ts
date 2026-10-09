@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test } from "@playwright/test";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
 
@@ -15,7 +16,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`shared
   await expect(portraitEmotion.locator('option[value="happy"]')).toHaveText(locale === "ru" ? "Радость · happy" : "Happy · happy");
   await expect(portraitEmotion.locator('option[value="смех"]')).toHaveText("смех");
   const png = await page.evaluate(() => { const c = document.createElement("canvas"); c.width = 120; c.height = 160; const ctx = c.getContext("2d")!; ctx.fillStyle = "#728aa1"; ctx.fillRect(0, 0, 120, 160); return c.toDataURL("image/png").split(",")[1]!; });
-  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") }); await chooseImageCompression(page);
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);
   const save = dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true });
   const saved = dialog.locator("footer [role=status]");

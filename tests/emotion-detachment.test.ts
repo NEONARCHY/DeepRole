@@ -41,9 +41,9 @@ it("deduplicates bulk detachment and blocks assignments to disabled emotions ato
   expect(() => assignLibraryEmotions(blocked, ["sad", "happy"], [images[1]!])).toThrow("portrait-emotion-blocked");
   expect(blocked.sprites.sad).toEqual([images[2]]);
 });
-it("never loses images when the unassigned library has no capacity", () => {
+it("never loses images when the unassigned library exceeds the former capacity", () => {
   const full = { ...EMPTY_CHARACTER, portraitLibrary: images.slice(0, 512), sprites: { happy: images[512]! } }, before = structuredClone(full);
-  expect(() => withCharacterEmotionRules(full, ["happy"])).toThrow("portrait-library-full"); expect(full).toEqual(before);
+  expect(withCharacterEmotionRules(full, ["happy"]).portraitLibrary).toHaveLength(513); expect(full).toEqual(before);
 });
 it("rejects invalid rules rather than blocking neutral or accepting unsafe keys", () => {
   for (const blocked of [["neutral"], ["__proto__"], ["happy", "happy"]]) expect(() => withCharacterEmotionRules(sheet, blocked)).toThrow("character-invalid");
@@ -68,11 +68,11 @@ it("world-list save repairs historical orphan assignments even when the active l
   await saveWorldEmotionList(world, DEFAULT_EMOTIONS, repo);
   const next = (await repo.get<SceneEntity>("entity", "mira"))!.characterSheet!; expect(next.sprites.retired).toBeUndefined(); expect(next.portraitLibrary).toContain(images[3]);
 });
-it("conflict or a full library aborts the entire world edit without any partial detachment", async () => {
+it("conflicts abort atomically and large libraries detach successfully", async () => {
   const repo = await setup(); await repo.put("world", { ...world, updatedAt: 2 }); let before = await repo.rawRecords();
   await expect(saveWorldEmotionList(world, ["neutral"], repo)).rejects.toThrow("memory-conflict"); expect(await repo.rawRecords()).toEqual(before);
   await repo.put("world", world); await repo.put("entity", { ...person, id: "full", characterSheet: { ...EMPTY_CHARACTER, portraitLibrary: images.slice(0, 512), sprites: { happy: images[512]! } } }); before = await repo.rawRecords();
-  await expect(saveWorldEmotionList(world, ["neutral"], repo)).rejects.toThrow("portrait-library-full"); expect(await repo.rawRecords()).toEqual(before);
+  await saveWorldEmotionList(world, ["neutral"], repo); expect((await repo.get<SceneEntity>("entity", "full"))!.characterSheet!.portraitLibrary).toHaveLength(513);
 });
 it("a stale character editor cannot resurrect an emotion deleted from its world", async () => {
   const repo = await setup(), original = characterEditBaseline(person, [person], scene);

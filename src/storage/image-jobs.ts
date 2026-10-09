@@ -1,4 +1,3 @@
-import { MAX_GENERATED_IMAGE_LENGTH } from "../core/generated-images";
 import { imageProvider } from "../adapters/image";
 import { ImageApiError, boundedBody, type ImagePermissionCheck } from "../adapters/image/transport";
 import { browser } from "wxt/browser";
@@ -6,7 +5,8 @@ import { dataImageBlob, normalizeImage, MAX_IMAGE_RESPONSE_BYTES } from "../adap
 import { MAX_IMAGE_SCENE_CHARACTERS, ADULT_CONTENT_LEVEL, imageKey, object, validImageSeed, validImageProviderConfig, validCharacterImagePrompt, type CharacterImagePrompt, type ImageProviderConfig, type Illustration, type ImageProvider } from "../core/image-generation";
 import type { ImageJobInput, ImageTarget } from "../core/image-messages";
 import { validImageAspect } from "../core/image-generation";
-import { validImageReplay, planImageInput, type ImageReplay, type ImageScenePlan } from "../core/image-plan";
+import { validImageReplay, planImageInput, validImagePlanReview, type ImagePlanReview, type ImageReplay, type ImageScenePlan } from "../core/image-plan";
+import { imageReviewContextKey, sameImagePlanCast, validImageReferenceChoices, validImageReferenceOverrides, type ImageReferenceOverrides } from "../core/image-references";
 import { startImageAttempt, imageAttempt, patchImageAttempt } from "./image-attempts";
 import { imageReferences, buildImagePrompt } from "../core/image-prompt";
 import { claimSelfie, finishSelfie, selfieIllustrationId } from "./selfie-images";
@@ -17,7 +17,7 @@ import type { SceneEntity } from "../core/types";
 import { getImageSettings } from "./image-settings";
 import { getProviderKey } from "./image-keys";
 import { hasImagePermission } from "./image-permissions";
-import { MAX_WORLD_IMAGE_BYTES, MAX_WORLD_ILLUSTRATIONS, saveIllustration, worldImageUsage } from "./illustrations";
+import { saveIllustration } from "./illustrations";
 import { repository, type DeepRoleRepository } from "./repository";
 import { getVaultConfig, getSessionKey, getSettings } from "./settings";
 import { encryptJsonWithKey, decryptJsonWithKey, importKey, decodeSalt } from "./crypto";
@@ -31,6 +31,7 @@ export function validImageJob(v: unknown): v is ImageJobInput {
   return validImageTarget(v) && object(v) && imageKey(v.providerId) && (v.entityId === undefined || imageKey(v.entityId))
     && typeof v.prompt === "string" && !!v.prompt.trim() && v.prompt.length <= 12_000 && validImageSeed(v.seed)
     && Array.isArray(v.referenceKeys) && v.referenceKeys.length <= 128 && v.referenceKeys.every(imageKey) && (v.references !== undefined || new Set(v.referenceKeys).size === v.referenceKeys.length)
+    && (v.referenceChoices === undefined || validImageReferenceChoices(v.referenceChoices))
     && (v.aspectRatio === undefined || validImageAspect(v.aspectRatio))
     && (v.entityIds === undefined || Array.isArray(v.entityIds) && v.entityIds.length <= MAX_IMAGE_SCENE_CHARACTERS && v.entityIds.every(imageKey))
     && (v.references === undefined || Array.isArray(v.references) && v.references.length <= 128 && v.references.every(r => object(r) && imageKey(r.entityId) && imageKey(r.key)) && new Set(v.references.map(r => JSON.stringify(r))).size === v.references.length);
@@ -51,7 +52,7 @@ export class ImageJobs {
       throw new ImageApiError("failed");
     }
   }
-  async run(input: ImageJobInput, illustrationId?: string, options: { replay?: ImageReplay; attemptId?: string; onPrepared?(request: ImageReplay): Promise<void> } = {}): Promise<Illustration> {
+  async run(input: ImageJobInput, illustrationId?: string, options: { replay?: ImageReplay; review?: ImagePlanReview; attemptId?: string; onPrepared?(request: ImageReplay): Promise<void> } = {}): Promise<Illustration> {
     if (!validImageJob(input) || illustrationId !== undefined && !imageKey(illustrationId)) throw new ImageApiError("invalid");
     const lock = JSON.stringify([input.worldId, input.chatId, input.messageKey]);
     if (this.active.has(lock)) throw new ImageApiError("busy"); this.active.add(lock);
@@ -66,15 +67,8 @@ export class ImageJobs {
       const key = await getProviderKey(config.id); if (!key) throw new ImageApiError("missingKey");
       if (await this.repo.isLocked()) throw new ImageApiError("changed");
       const records = await this.repo.rawRecords();
+      if (options.review && imageReviewContextKey(options.review.plan, input.worldId, records.filter(r => r.kind === "entity").map(r => r.data as SceneEntity), settings) !== options.review.contextKey) throw new ImageApiError("changed");
       if (!records.some(r => r.kind === "world" && r.id === input.worldId)) throw new ImageApiError("changed");
-      const usage = worldImageUsage(records, input.worldId);
-      const previous = illustrationId ? records.find(r => r.kind === "illustration" && r.id === illustrationId)?.data as Illustration | undefined : undefined;
-      if (previous) { usage.illustrations--; usage.bytes -= previous.image.length + (previous.request?.images.reduce((n, image) => n + image.length, 0) ?? 0); }
-      const pending = records.filter(r => r.kind === "binding").flatMap(r => (r.data as import("../core/types").ChatBinding).illustrationAttempts ?? []).find(a => a.id === options.attemptId);
-      usage.bytes -= pending?.request?.images.reduce((n, image) => n + image.length, 0) ?? 0;
-      if (illustrationId?.startsWith("selfie:")) usage.bytes -= records.filter(r => r.kind === "binding").flatMap(r => (r.data as import("../core/types").ChatBinding).scenePhotos ?? []).filter(p => selfieIllustrationId(p) === illustrationId).reduce((sum, p) => sum + (p.generation?.request?.images.reduce((n, image) => n + image.length, 0) ?? 0), 0);
-      // Reserve worst-case local output size BEFORE charging. Re-check atomically at commit.
-      if (usage.illustrations >= MAX_WORLD_ILLUSTRATIONS || usage.bytes + MAX_GENERATED_IMAGE_LENGTH > MAX_WORLD_IMAGE_BYTES) throw new ImageApiError("full");
       const entity = input.entityId ? records.find(r => r.kind === "entity" && r.id === input.entityId)?.data as SceneEntity | undefined : undefined;
       if (input.entityId && entity?.worldId !== input.worldId) throw new ImageApiError("changed");
       const images: string[] = options.replay ? [...options.replay.images] : [];
@@ -87,7 +81,6 @@ export class ImageJobs {
       const aspectRatio = input.aspectRatio ?? "16:9";
       const frozen: ImageReplay = options.replay ?? { input: structuredClone({ ...input, aspectRatio }), config: structuredClone(config), images, contentLevel };
       if (!validImageReplay(frozen)) throw new ImageApiError("invalid");
-      if (usage.bytes + images.reduce((sum, image) => sum + image.length, 0) + MAX_GENERATED_IMAGE_LENGTH > MAX_WORLD_IMAGE_BYTES) throw new ImageApiError("full");
       if (options.attemptId) await patchImageAttempt(this.repo, input, options.attemptId, { status: "generating", request: frozen, error: undefined, diagnostic: undefined, headers: undefined, ticketId: undefined }, "preparing");
       await options.onPrepared?.(frozen);
       const provider = this.createProvider(config, key, this.permitted);
@@ -131,12 +124,37 @@ export class ImageJobs {
     if (attempt.status === "failed") return;
     await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error), diagnostic: { source: phase === "plan" ? "deepseek" : "deeprole", phase: phase ?? "local" } }, attempt.status);
   }
+  async review(target: ImageTarget, id: string, review: ImagePlanReview) {
+    const attempt = await imageAttempt(this.repo, target, id);
+    if (attempt.status !== "preparing" || attempt.request || !validImagePlanReview(review)) throw new ImageApiError("changed");
+    const entities = await this.repo.list<SceneEntity>("entity"), settings = await getImageSettings();
+    if (imageReviewContextKey(review.plan, target.worldId, entities, settings) !== review.contextKey) throw new ImageApiError("changed");
+    planImageInput(review.plan, target, entities, settings, review.overrides);
+    await patchImageAttempt(this.repo, target, id, { status: "review", review, error: undefined, diagnostic: undefined }, "preparing");
+  }
+  async claimReview(target: ImageTarget, id: string, overrides: ImageReferenceOverrides): Promise<ImagePlanReview> {
+    const attempt = await imageAttempt(this.repo, target, id);
+    if (attempt.status !== "review" || !attempt.review || !validImageReferenceOverrides(overrides)) throw new ImageApiError("changed");
+    const entities = await this.repo.list<SceneEntity>("entity"), settings = await getImageSettings(), review = attempt.review;
+    if (imageReviewContextKey(review.plan, target.worldId, entities, settings) !== review.contextKey) throw new ImageApiError("changed");
+    planImageInput(review.plan, target, entities, settings, overrides);
+    await patchImageAttempt(this.repo, target, id, { status: "preparing", review: { ...review, overrides } }, "review");
+    return { ...review, overrides };
+  }
+  async cancelReview(target: ImageTarget, id: string) {
+    const attempt = await imageAttempt(this.repo, target, id);
+    if (attempt.status !== "review") throw new ImageApiError("changed");
+    await patchImageAttempt(this.repo, target, id, null, "review");
+  }
   async render(target: ImageTarget, id: string, plan: ImageScenePlan) {
     const attempt = await imageAttempt(this.repo, target, id);
     if (attempt.status !== "preparing") throw new ImageApiError("changed");
     try {
-      const input = planImageInput(plan, target, await this.repo.list<SceneEntity>("entity"), await getImageSettings());
-      return await this.run(input, id, { attemptId: id });
+      const entities = await this.repo.list<SceneEntity>("entity"), settings = await getImageSettings();
+      if (settings.reviewBeforeGeneration && !attempt.review) throw new ImageApiError("changed");
+      if (attempt.review && (imageReviewContextKey(attempt.review.plan, target.worldId, entities, settings) !== attempt.review.contextKey || !sameImagePlanCast(attempt.review.plan, plan))) throw new ImageApiError("changed");
+      const input = planImageInput(plan, target, entities, settings, attempt.review?.overrides);
+      return await this.run(input, id, { attemptId: id, review: attempt.review });
     } catch (error) {
       await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error), ...imageFailureDetails(error), ticketId: error instanceof ImageApiError ? error.ticketId : undefined }).catch(() => undefined); throw error instanceof ImageApiError ? error : new ImageApiError(imageErrorKey(error));
     }
@@ -169,14 +187,16 @@ export class ImageJobs {
       const saved = entity.characterSheet?.imageGeneration;
       const profile: CharacterImagePrompt = { canonical: entity.characterSheet?.appearance || photo.generation?.appearance || "", sceneDelta: "", prefix: "", suffix: "", format: "prose", ...saved };
       if (!profile.canonical.trim()) profile.canonical = entity.characterSheet?.appearance || photo.generation?.appearance || "";
-      const referenceKey = photo.generation?.reference === "suggestive" && settings.contentLevel !== "off" ? profile.suggestiveReferenceKey || profile.referenceKey : profile.referenceKey;
+      const referencePolicy = profile.referencePolicy ?? "auto";
+      const wantsAlternate = referencePolicy === "suggestive" || referencePolicy === "auto" && photo.generation?.reference === "suggestive";
+      const referenceKey = wantsAlternate && settings.contentLevel !== "off" ? profile.suggestiveReferenceKey || profile.referenceKey : profile.referenceKey;
       const available = imageReferences(entity.characterSheet);
       const selected = available.find(r => r.key === referenceKey) ?? available.find(r => r.key === profile.referenceKey);
       const referenceKeys = selected ? [selected.key] : [];
       if (!referenceKeys.length && !profile.canonical.trim()) throw new ImageApiError("missingAppearance");
       const providerId = settings.profileByLevel[settings.contentLevel];
       if (!providerId) throw new ImageApiError("missingModel");
-      const look = selected?.key === profile.suggestiveReferenceKey ? profile.suggestiveReferenceContext : profile.referenceContext;
+      const look = wantsAlternate && settings.contentLevel !== "off" && selected?.key === profile.suggestiveReferenceKey ? profile.suggestiveReferenceContext : profile.referenceContext;
       const prompt = buildImagePrompt(profile, settings, ["Selfie photograph, portrait 9:16. " + photo.generation!.scene, selected && look].filter(Boolean).join("\n"));
       const input = photo.generation?.request?.input ?? { ...target, entityId, providerId, referenceKeys, prompt, aspectRatio: "9:16" as const, ...(profile.seed === undefined ? {} : { seed: profile.seed }) };
       const result = await this.run(input, selfieIllustrationId(photo), { replay: photo.generation?.request, onPrepared: request => finishSelfie(this.repo, target, photo, { request }) });

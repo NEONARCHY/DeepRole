@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+import { REPOSITORY_PORT, requestJsonPort } from "./repository-stream";
 import type { DataRecord, RecordKind, RecordValue } from "../core/types";
 import type { CharacterEdit, CharacterScope, CharacterSaveResult } from "./characters";
 import type { CharacterTurn } from "../core/characters";
@@ -24,7 +25,7 @@ export type RepositoryRequest =
   | { type: "DR_REPOSITORY"; operation: "isLocked" };
 
 async function call<T>(message: RepositoryRequest): Promise<T> {
-  const result = await browser.runtime.sendMessage(message);
+  const result = await requestJsonPort<{ ok?: boolean; error?: string; data?: T }>(browser.runtime.connect({ name: REPOSITORY_PORT }), message);
   if (!result?.ok) throw new Error(result?.error ?? "DeepRole storage unavailable");
   return result.data as T;
 }

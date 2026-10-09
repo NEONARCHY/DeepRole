@@ -12,7 +12,7 @@ describe("local portrait library", () => {
     expect(next.portraitLibrary).toHaveLength(13); expect(first.sprites).toEqual({});
     const capacity = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 49));
     const full = assignLibraryImages(capacity, "shouting", images.slice(0, 48));
-    expect(() => assignLibraryEmotions(full, ["screaming", "shouting"], [images[48]!])).toThrow("portrait-variation-full");
+    expect(assignLibraryEmotions(full, ["screaming", "shouting"], [images[48]!]).sprites.shouting).toHaveLength(49);
     expect(full.sprites.screaming).toBeUndefined();
     expect(() => assignLibraryEmotions(first, ["screaming", "__proto__"], [images[0]!])).toThrow();
     for (const emotion of names) expect(portraitSource({ id: "mira", worldId: "w", name: "Mira", kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: next }, { ...EMPTY_STATUS, emotion })).toBe(images[0]);
@@ -26,8 +26,8 @@ describe("local portrait library", () => {
   });
   it("accepts an optional bounded collection and rejects unsafe, duplicate and oversized images", () => {
     expect(validCharacterSheet(EMPTY_CHARACTER)).toBe(true);
-    expect(validCharacterSheet({ ...EMPTY_CHARACTER, portraitLibrary: images.slice(0, 512) })).toBe(true);
-    for (const value of [null, "x", images, [images[0], images[0]], ["https://test/image.png"], ["data:image/svg+xml;base64,AAAA"]]) expect(validPortraitLibrary(value)).toBe(false);
+    expect(validCharacterSheet({ ...EMPTY_CHARACTER, portraitLibrary: images })).toBe(true);
+    for (const value of [null, "x", [images[0], images[0]], ["https://test/image.png"], ["data:image/svg+xml;base64,AAAA"]]) expect(validPortraitLibrary(value)).toBe(false);
   });
   it("stores batches without emotion assignments, deduplicates and reuses assigned images", () => {
     const first = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 20));
@@ -43,7 +43,7 @@ describe("local portrait library", () => {
   it("unassigns without losing an image and never partially assigns an overfull selection", () => {
     const first = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 20));
     const capacity = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 49));
-    expect(() => assignLibraryImages(capacity, "happy", images.slice(0, 49))).toThrow("portrait-variation-full");
+    expect(assignLibraryImages(capacity, "happy", images.slice(0, 49)).sprites.happy).toHaveLength(49);
     const assigned = assignLibraryImages(first, "happy", images.slice(0, 2));
     const next = unassignPortrait(assigned, "happy", 0);
     expect(next.sprites.happy).toEqual([images[1]]); expect(next.portraitLibrary).toContain(images[0]); expect(libraryImages(next)).toHaveLength(20);

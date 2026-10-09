@@ -207,7 +207,8 @@ export function presentMemoryAnalysis(requestId: string, label: string, summary?
 /** Ignore all extension feedback when assessing whether the native reply stopped changing. */
 /** Plain final prose, preserving paragraph breaks and excluding reasoning/controls. */
 export function plainCharacterReplyText(row: HTMLElement): string {
-  const scope = row.querySelector(".ds-assistant-message-main-content") ?? [...row.querySelectorAll(".ds-markdown")].find(node => !node.closest(REASONING)) ?? row;
+  // A single reply may contain several Markdown/code blocks. Read the full final turn.
+  const scope = row.querySelector(".ds-assistant-message-main-content") ?? row;
   const copy = scope.cloneNode(true) as HTMLElement;
   copy.querySelectorAll(`${REASONING},button,[role=button],[data-deeprole-memory-card],[data-deeprole-result],[data-deeprole-scene-photos],[data-deeprole-cast-recovery]`).forEach(node => node.remove());
   copy.querySelectorAll("br").forEach(node => node.replaceWith("\n"));

@@ -1,9 +1,10 @@
 import { Select } from "./Select";
+import { usePortraitUploadChoice } from "./PortraitUploadChoice";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Trash2, Upload, Maximize2 } from "lucide-react";
 import type { CharacterSheet, Locale } from "../../core/types";
 import { emotionLabel, emotionOptionLabel } from "../../core/characters";
-import { assignLibraryEmotions, libraryImages, MAX_UNASSIGNED_PORTRAITS, withPortraitLibrary } from "../../core/portrait-library";
+import { assignLibraryEmotions, libraryImages, withPortraitLibrary } from "../../core/portrait-library";
 import { portraitVariations } from "../../core/portrait-variations";
 import { readPortraitFiles } from "./portrait-file";
 import { getSettings, updateSettings } from "../../storage/settings";
@@ -13,19 +14,20 @@ import { openPortraitViewer, photoCopy } from "../../adapters/portrait-viewer";
 import type { CSSProperties } from "react";
 
 const copy = {
-  ru: { more: "Ещё эмоции для этих картинок", shared: "Отметьте дополнительные эмоции — выбранные картинки будут доступны для каждой. Новые названия можно добавить здесь, выше.", title: "Библиотека изображений", upload: "Загрузить в библиотеку", hint: "Загрузите пачку, выберите картинки и назначьте эмоцию. Сохраняется вместе с карточкой.", empty: "Здесь будут все портреты персонажа. Можно загрузить несколько файлов сразу.", all: "Все", unassigned: "Без эмоции", select: "Выбрать изображение", remove: "Удалить из библиотеки", clear: "Снять выбор", assign: "Назначить эмоции", emotion: "Назначить эмоцию", noRoom: "В одной эмоции может быть до 48 изображений. Выберите меньше или освободите место.", full: "До 512 неназначенных изображений. Сначала назначьте эмоции или удалите лишнее.", emotionFull: "В карточке уже 64 набора эмоций. Уберите ненужный набор перед добавлением нового.", badImage: "Не удалось загрузить пачку. Проверьте файлы: PNG, JPG или WebP до 10 МБ. Прежние изображения сохранены.", selected: (n: number) => `Выбрано: ${n}`, progress: (n: number, total: number) => `Загружаем: ${n}/${total}`, assigned: (n: number, emotion: string) => `Назначено: ${n} · ${emotion}` },
-  en: { more: "More emotions for these images", shared: "Choose extra emotions to use these images for each one. Add new names above.", title: "Image library", upload: "Upload to library", hint: "Upload a batch, select images, then assign an emotion. Saved with the character sheet.", empty: "All this character’s portraits will appear here. Upload several files at once.", all: "All", unassigned: "Unassigned", select: "Select image", remove: "Delete from library", clear: "Clear selection", assign: "Assign to emotion", emotion: "Assign emotion", noRoom: "Each emotion holds up to 48 images. Select fewer or make room first.", full: "Up to 512 unassigned images. Assign emotions or remove unused images first.", emotionFull: "This sheet already has 64 emotion sets. Remove an unused set before adding another.", badImage: "Couldn’t load the batch. Check the files: PNG, JPG or WebP up to 10 MB. Existing images are unchanged.", selected: (n: number) => `Selected: ${n}`, progress: (n: number, total: number) => `Uploading: ${n}/${total}`, assigned: (n: number, emotion: string) => `Assigned: ${n} · ${emotion}` },
+  ru: { more: "Ещё эмоции для этих картинок", shared: "Отметьте дополнительные эмоции — выбранные картинки будут доступны для каждой. Новые названия можно добавить здесь, выше.", title: "Библиотека изображений", upload: "Загрузить в библиотеку", hint: "Загрузите пачку, выберите картинки и назначьте эмоцию. Сохраняется вместе с карточкой.", empty: "Здесь будут все портреты персонажа. Можно загрузить несколько файлов сразу.", all: "Все", unassigned: "Без эмоции", select: "Выбрать изображение", remove: "Удалить из библиотеки", clear: "Снять выбор", assign: "Назначить эмоции", emotion: "Назначить эмоцию", noRoom: "Не удалось назначить изображения. Проверьте выбранную эмоцию.", full: "Не удалось обновить библиотеку.", emotionFull: "Не удалось создать набор изображений для эмоции.", badImage: "Не удалось загрузить пачку. Проверьте файлы: PNG, JPG или WebP. Прежние изображения сохранены.", selected: (n: number) => `Выбрано: ${n}`, progress: (n: number, total: number) => `Загружаем: ${n}/${total}`, assigned: (n: number, emotion: string) => `Назначено: ${n} · ${emotion}` },
+  en: { more: "More emotions for these images", shared: "Choose extra emotions to use these images for each one. Add new names above.", title: "Image library", upload: "Upload to library", hint: "Upload a batch, select images, then assign an emotion. Saved with the character sheet.", empty: "All this character’s portraits will appear here. Upload several files at once.", all: "All", unassigned: "Unassigned", select: "Select image", remove: "Delete from library", clear: "Clear selection", assign: "Assign to emotion", emotion: "Assign emotion", noRoom: "Could not assign images. Check the selected emotion.", full: "Could not update the library.", emotionFull: "Could not create the emotion image set.", badImage: "Couldn’t load the batch. Check the files: PNG, JPG or WebP. Existing images are unchanged.", selected: (n: number) => `Selected: ${n}`, progress: (n: number, total: number) => `Uploading: ${n}/${total}`, assigned: (n: number, emotion: string) => `Assigned: ${n} · ${emotion}` },
 };
 export const portraitLibraryTitle = (locale: Locale) => copy[locale].title;
 export const portraitLibraryFull = (locale: Locale) => copy[locale].full;
 const selectionCopy = (locale: Locale) => ({
-  ru: { all: "Выбрать видимые", ready: "Картинки загружены. Выберите эмоцию и нажмите «Назначить эмоции».", selection: "Выбранные изображения", assigned: "Уже с эмоциями", formats: "PNG, JPG, WebP · до 10 МБ на файл" },
-  en: { all: "Select visible", ready: "Images uploaded. Choose an emotion, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP · up to 10 MB per file" },
+  ru: { all: "Выбрать видимые", ready: "Картинки загружены. Выберите эмоцию и нажмите «Назначить эмоции».", selection: "Выбранные изображения", assigned: "Уже с эмоциями", formats: "PNG, JPG, WebP" },
+  en: { all: "Select visible", ready: "Images uploaded. Choose an emotion, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP" },
 }[locale]);
 
 export function PortraitLibrary({ sheet, locale, emotions, emotion, onEmotion, onChange, onBusy }: { sheet: CharacterSheet; locale: Locale; emotions: string[]; emotion: string; onEmotion: (value: string) => void; onChange: (sheet: CharacterSheet) => void; onBusy: (busy: boolean) => void }) {
   const t = copy[locale]; const input = useRef<HTMLInputElement>(null); const mounted = useRef(true);
   const ui = selectionCopy(locale);
+  const uploadChoice = usePortraitUploadChoice(locale);
   const [selected, setSelected] = useState<string[]>([]); const [filter, setFilter] = useState(false);
   const [previewSize, setPreviewSize] = useState(DEFAULT_PORTRAIT_PREVIEW_SIZE), previewSaved = useRef(DEFAULT_PORTRAIT_PREVIEW_SIZE), previewSaving = useRef(false), previewTouched = useRef(false), previewPending = useRef<number | undefined>(undefined);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -60,17 +62,19 @@ export function PortraitLibrary({ sheet, locale, emotions, emotion, onEmotion, o
   const shown = images.filter(image => !filter || assignments(image).length === 0);
   const upload = async (files: File[]) => {
     if (!files.length) return;
-    if (files.length > MAX_UNASSIGNED_PORTRAITS) { setError(t.full); return; }
-    setError(""); setStatus(""); setProgress({ done: 0, total: files.length }); onBusy(true);
+    setError(""); setStatus(""); onBusy(true);
     try {
-      const added = await readPortraitFiles(files, done => { if (mounted.current) setProgress({ done, total: files.length }); });
+      const mode = await uploadChoice.choose(files); if (!mode || !mounted.current) return;
+      setProgress({ done: 0, total: files.length });
+      const added = await readPortraitFiles(files, done => { if (mounted.current) setProgress({ done, total: files.length }); }, mode);
       if (!mounted.current) return;
       onChange(withPortraitLibrary(sheet, [...images, ...added]));
-      setFilter(true); setSelected(added.length <= 48 ? [...new Set(added)] : []); setStatus(ui.ready);
-    } catch (error) { if (mounted.current) setError(error instanceof Error && error.message === "portrait-library-full" ? t.full : portraitUploadError(locale, error, t.badImage)); }
+      setFilter(true); setSelected([...new Set(added)]); setStatus(ui.ready);
+    } catch (error) { if (mounted.current) setError(portraitUploadError(locale, error, t.badImage)); }
     finally { if (mounted.current) { setProgress(null); onBusy(false); } }
   };
   return <section className="dr-portrait-library" aria-label={t.title} aria-busy={!!progress}>
+    {uploadChoice.dialog}
     <header><strong>{t.title} · {images.length}</strong><button type="button" onClick={() => input.current?.click()}><Upload size={16} />{t.upload}</button></header>
     <p className="dr-character-hint">{ui.formats}</p>
     <label className="dr-library-size"><span>{portraitUploadText(locale, "preview")}</span><output>{previewSize} px</output><input data-portrait-preview aria-label={portraitUploadText(locale, "preview")} type="range" min={96} max={280} step={1} value={previewSize} onChange={event => { previewTouched.current = true; setPreviewSize(Number(event.target.value)); }} onPointerUp={() => void savePreviewSize()} onKeyUp={() => void savePreviewSize()} onBlur={() => void savePreviewSize()} /></label>

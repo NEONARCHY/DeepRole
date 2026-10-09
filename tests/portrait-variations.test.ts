@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles, MAX_PORTRAIT_VARIATIONS } from "../src/core/portrait-variations";
+import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles } from "../src/core/portrait-variations";
 import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes, validEmotions } from "../src/core/characters";
 import { parseWidgetLayout } from "../src/entrypoints/content/WidgetDeck";
 import type { CharacterScene, PortraitCycle, SceneEntity } from "../src/core/types";
@@ -15,17 +15,17 @@ describe("portrait variation cycles", () => {
     const cycles = Object.fromEntries(names.map(name => [name, nextPortraitCycle(images)]));
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites })).toBe(true);
     expect(validPortraitCycles({ mira: cycles })).toBe(true);
-    expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { ...sprites, extra: images } })).toBe(false);
-    expect(validPortraitCycles({ mira: { ...cycles, extra: nextPortraitCycle(images) } })).toBe(false);
+    expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { ...sprites, extra: images } })).toBe(true);
+    expect(validPortraitCycles({ mira: { ...cycles, extra: nextPortraitCycle(images) } })).toBe(true);
     expect(validEmotions(names.slice(0, 32))).toBe(true);
     expect(validEmotions(names.slice(0, 33))).toBe(false);
     const prompt = characterInstruction("w", "a", [{ ...person, characterSheet: { ...EMPTY_CHARACTER, sprites } }], scene(), ["neutral", "happy"], [], "Mira");
     expect(prompt).not.toContain("mood-"); expect(prompt).not.toContain("base64");
   });
-  it("accepts legacy portraits and bounded image arrays, rejects unsafe or duplicate images", () => {
+  it("accepts legacy portraits and large image arrays, rejects unsafe or duplicate images", () => {
     expect(validCharacterSheet(person.characterSheet)).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: images[0] } })).toBe(true);
-    for (const v of [[], [images[0], images[0]], [...images, "https://tracker/image"], Array.from({ length: MAX_PORTRAIT_VARIATIONS + 1 }, (_, i) => `data:image/png;base64,${btoa(String(i).padStart(4, "0"))}`)]) expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: v } })).toBe(false);
+    for (const v of [[], [images[0], images[0]], [...images, "https://tracker/image"]]) expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { neutral: v } })).toBe(false);
     expect(portraitVariations(images[0])).toEqual([images[0]]);
   });
   it("consumes every variation once per cycle and avoids repeats across the boundary", () => {

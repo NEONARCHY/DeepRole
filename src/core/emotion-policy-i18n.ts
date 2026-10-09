@@ -12,7 +12,7 @@ const copy = {
     retired: "Вне списка мира", retiredHint: "Эти запреты сохранены. Если название вернётся в список мира, запрет продолжит действовать. Включите переключатель, чтобы снять его.",
     empty: "Ничего не найдено. Попробуйте другое название.", limit: "Сохранено слишком много прежних запретов. Разрешите ненужные эмоции в разделе «Вне списка мира» и повторите.",
     manage: "Настроить доступные эмоции", unavailable: "Эмоция выключена: изображения отвязаны. Включите её переключателем, чтобы снова назначать портреты.",
-    detachFull: "В библиотеке нет места для отвязанных изображений. Назначьте часть картинок другим эмоциям или удалите ненужные из библиотеки. Настройка и изображения не изменены.",
+    detachFull: "Не удалось отвязать изображения. Настройка и изображения не изменены.",
   },
   en: {
     title: "Available emotions", count: "{count} of {total} available",
@@ -25,7 +25,7 @@ const copy = {
     retired: "Outside the world list", retiredHint: "These restrictions are retained. Re-adding the same name keeps it blocked. Turn on its switch to remove the restriction.",
     empty: "No matches. Try another name.", limit: "Too many retained restrictions. Allow unused emotions under Outside the world list, then try again.",
     manage: "Manage available emotions", unavailable: "Emotion disabled: its images are detached. Turn on its switch to assign portraits again.",
-    detachFull: "The library has no room for the detached images. Assign some images to other emotions or delete unused library images. The setting and images are unchanged.",
+    detachFull: "Could not detach the images. The setting and images are unchanged.",
   },
 };
 export type EmotionPolicyKey = keyof typeof copy.en;

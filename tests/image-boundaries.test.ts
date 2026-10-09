@@ -70,20 +70,20 @@ it("blocks duplicate paid requests for one story turn", async () => {
   let finish!: (value: { image: string; headers: {} }) => void; const generate = vi.fn(() => new Promise<{ image: string; headers: {} }>(resolve => { finish = resolve; }));
   const { repo, jobs } = await setup(provider(generate)); const first = jobs.run(input); await expect(jobs.run(input)).rejects.toMatchObject({ code: "busy" }); await vi.waitFor(() => expect(generate).toHaveBeenCalledOnce()); finish({ image: tinyImage, headers: {} }); await first; await repo.clear();
 });
-it("refuses a full world before constructing or charging a provider", async () => {
+it("generates normally beyond the former illustration quota", async () => {
   const { repo, jobs, factory } = await setup(provider()); await repo.mergeRecords(Array.from({ length: 60 }, (_, i) => ({ kind: "illustration" as const, id: `image-${i}`, data: { ...illustration, id: `image-${i}` } })));
-  await expect(jobs.run(input)).rejects.toMatchObject({ code: "full" }); expect(factory).not.toHaveBeenCalled(); expect(await repo.get("world", world.id)).toEqual(world); await repo.clear();
+  await jobs.run(input); expect(factory).toHaveBeenCalledOnce(); expect(await repo.list("illustration")).toHaveLength(61); expect(await repo.get("world", world.id)).toEqual(world); await repo.clear();
 });
 it("redacts credentials from provider-controlled model metadata and errors", async () => {
   const api = provider(); api.listModels.mockResolvedValue([{ id: "synthetic", label: key, constraints: { unknown: key } }] as never);
   const { repo, jobs } = await setup(api); expect(JSON.stringify(await jobs.models(profile))).not.toContain(key);
   api.listModels.mockRejectedValue(new ImageApiError("unauthorized", { "x-venice-model-deprecation-warning": key })); const error = await jobs.models(profile).catch(e => e); expect(JSON.stringify(error)).not.toContain(key); await repo.clear();
 });
-it("keeps backup merging atomic when combined illustrations exceed the world quota", async () => {
+it("merges backups beyond the former world illustration quota", async () => {
   const { repo } = await setup(provider()); await repo.mergeRecords(Array.from({ length: 30 }, (_, i) => ({ kind: "illustration" as const, id: `old-${i}`, data: { ...illustration, id: `old-${i}` } })));
   const payload = await import("../src/storage/backup").then(async m => m.createBackup(undefined, repo)); if (payload.format !== "deeprole-backup") throw new Error("fixture");
   payload.records = Array.from({ length: 40 }, (_, i) => ({ kind: "illustration", id: `new-${i}`, data: { ...illustration, id: `new-${i}` } })); payload.records.unshift({ kind: "world", id: world.id, data: world });
-  await expect(restoreBackup(payload, "merge", repo)).rejects.toThrow("image-full"); expect(await repo.list("illustration")).toHaveLength(30); expect(await repo.get("world", world.id)).toEqual(world); await repo.clear();
+  await restoreBackup(payload, "merge", repo); expect(await repo.list("illustration")).toHaveLength(70); expect(await repo.get("world", world.id)).toEqual(world); await repo.clear();
 });
 it("saves only the image profile and rejects a stale appearance edit", async () => {
   const { repo, jobs } = await setup(provider()); const entity = { id: "mira", worldId: world.id, kind: "character" as const, name: "Mira", description: "Preserve lore", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER }, createdAt: 1, updatedAt: 1 }; await repo.put("entity", entity);

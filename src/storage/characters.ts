@@ -4,7 +4,7 @@ import { characterRevision, characterTurnKey, characterInterlocutors, DEFAULT_EM
 import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity, WorldProfile } from "../core/types";
 import { emotionsFor, validEmotions } from "../core/characters";
 import { repository, type DeepRoleRepository } from "./repository";
-import { advancePortraitCycles, portraitVariations } from "../core/portrait-variations";
+import { advancePortraitCycles } from "../core/portrait-variations";
 import { characterEditBaseline, mergeCharacterEdit, type CharacterEditBaseline } from "../core/character-edit";
 import { advanceRelationship, recordManualBonds, relationshipNarrative, relationshipState, validRelationshipPatches } from "../core/relationships";
 import { EMPTY_STATUS, narrativeCharacterStatus } from "../core/characters";
@@ -12,7 +12,6 @@ import { advanceAttributes, attributeState, recordManualAttributes, validAttribu
 import { cleanCharacterEmotionImages, isCharacterEmotionAllowed, resolveCharacterEmotion } from "../core/character-emotions";
 
 import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents, GENERATED_SELFIE, generatedSelfieCategory, selfieWasSent } from "../core/selfies";
-import { validateWorldImageBudgets } from "./illustrations";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string; replyIdentity?: string; replyCompletedAt?: number }
 export interface CharacterEdit extends CharacterScope {
@@ -82,13 +81,7 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
     const nextScene = next.characterScenes![edit.worldId]!;
     nextScene.portraitCycles = advancePortraitCycles([...entities.filter(e => !changes.some(r => r.id === e.id)), ...changes.map(r => r.data as SceneEntity)], nextScene, scene, true);
     changes.push(record("binding", next));
-    // Keep full backup sizes practical. Images are encrypted with the rest of the library.
     const replaced = new Set(changes.map(r => r.id));
-    const bytes = [...all.filter(r => r.kind === "entity" && !replaced.has(r.id)), ...changes.filter(r => r.kind === "entity")].reduce((sum, r) => {
-      const sheet = (r.data as SceneEntity).characterSheet;
-      return sum + [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? []), ...(sheet?.selfieCategories ?? []).flatMap(c => c.images)].reduce((n, s) => n + s.length, 0);
-    }, 0);
-    if (bytes > 50_000_000 || !validateWorldImageBudgets([...all.filter(r => !changes.some(change => change.kind === r.kind && change.id === r.id)), ...changes])) throw new Error("character-images-full");
     const savedEntities = [...entities.filter(e => !replaced.has(e.id)), ...changes.filter(r => r.kind === "entity").map(r => r.data as SceneEntity)];
     return { records: changes, removed: [], result: { entityId: entity.id, base: characterRevision(savedEntities, nextScene), original: characterEditBaseline(entity, savedEntities, nextScene) } };
   });

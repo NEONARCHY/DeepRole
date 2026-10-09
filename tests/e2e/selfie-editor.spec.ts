@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test } from "@playwright/test";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
 
@@ -25,7 +26,7 @@ for (const locale of ["ru", "en"] as const) test("selfie collections persist in 
   await categories.getByRole("textbox", { name: locale === "ru" ? "Когда подходит 1" : "When it fits 1", exact: true }).fill("Casual portrait at home");
   await categories.getByRole("button", { name: new RegExp("^" + (locale === "ru" ? "Добавить фото" : "Add photos")) }).click();
   const source = await editor.locator(".dr-character-portrait-editor img").getAttribute("src");
-  await categories.locator("input[type=file]").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(source!.split(",")[1]!, "base64") });
+  await categories.locator("input[type=file]").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(source!.split(",")[1]!, "base64") }); await chooseImageCompression(page);
   await expect(categories.locator("img")).toHaveCount(1);
   const bounds = await categories.boundingBox();
   expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(360);

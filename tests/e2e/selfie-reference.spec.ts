@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
@@ -16,15 +17,18 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   await person.locator(".dr-character-row").click(); const editor = page.locator(".dr-character-dialog"); await characterTab(editor, "images", locale);
   const reference = editor.locator(".dr-character-reference");
   await expect(reference).toContainText("Qwen Image Edit");
-  await reference.locator("input[type=file]").setInputFiles({ name: "synthetic-reference.png", mimeType: "image/png", buffer: Buffer.from(realPng, "base64") });
+  await reference.locator("input[type=file]").setInputFiles({ name: "synthetic-reference.png", mimeType: "image/png", buffer: Buffer.from(realPng, "base64") }); await chooseImageCompression(page);
   await expect(reference.locator(".dr-pinned-reference img")).toBeVisible();
   const neutralName = locale === "ru" ? "Нейтральный" : "Neutral", alternateName = locale === "ru" ? "Пикантный" : "Suggestive";
   await reference.locator(".dr-reference-context > span").click(); await expect(reference.getByRole("textbox")).not.toBeFocused();
   await reference.getByRole("textbox").fill("Everyday coat");
   await reference.getByRole("button", { name: alternateName, exact: true }).click(); await expect(reference.locator(".dr-pinned-reference img")).toHaveCount(0);
-  await reference.locator("input[type=file]").setInputFiles({ name: "synthetic-alternate.png", mimeType: "image/png", buffer: Buffer.from(realPng, "base64") });
+  await reference.locator("input[type=file]").setInputFiles({ name: "synthetic-alternate.png", mimeType: "image/png", buffer: Buffer.from(realPng, "base64") }); await chooseImageCompression(page);
   await expect(reference.locator(".dr-pinned-reference img")).toBeVisible(); await reference.getByRole("textbox").fill("Alternate evening look");
   await reference.getByRole("button", { name: neutralName, exact: false }).click(); await expect(reference.getByRole("textbox")).toHaveValue("Everyday coat");
+  const policy = reference.getByRole("combobox", { name: locale === "ru" ? "Выбор референса" : "Reference selection", exact: true });
+  await expect(policy).toHaveValue("auto"); await reference.locator(".dr-reference-policy > span").click(); await expect(policy).not.toBeFocused();
+  await policy.selectOption("suggestive"); await expect(policy).toHaveValue("suggestive");
   const selfie = editor.locator(".dr-generated-selfie-settings"); await selfie.getByRole("combobox").selectOption("close");
   await expect(selfie.locator("input[type=number]").first()).not.toBeVisible();
   await selfie.locator(".dr-selfie-access details > summary").click();
@@ -36,8 +40,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
   await page.screenshot({ path: info.outputPath("reference-" + locale + "-" + width + ".png") });
   await editor.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(editor, locale);
-  const saved = await page.evaluate(() => (window as any).getCast().entities.find((e: any) => e.id === "mira")); expect(saved.description).toBe("Original profile"); expect(saved.characterSheet.selfieAccess).toEqual({ minTrust: 70, minAffinity: 65 }); expect(saved.characterSheet.imageGeneration.referenceKey).toBeTruthy(); expect(saved.characterSheet.imageGeneration.suggestiveReferenceKey).toBeTruthy(); expect(saved.characterSheet.imageGeneration.suggestiveReferenceContext).toBe("Alternate evening look");
-  await person.locator(".dr-character-row").click(); await characterTab(editor, "images", locale); await expect(reference.locator(".dr-pinned-reference img")).toBeVisible();
+  const saved = await page.evaluate(() => (window as any).getCast().entities.find((e: any) => e.id === "mira")); expect(saved.description).toBe("Original profile"); expect(saved.characterSheet.selfieAccess).toEqual({ minTrust: 70, minAffinity: 65 }); expect(saved.characterSheet.imageGeneration.referenceKey).toBeTruthy(); expect(saved.characterSheet.imageGeneration.suggestiveReferenceKey).toBeTruthy(); expect(saved.characterSheet.imageGeneration.suggestiveReferenceContext).toBe("Alternate evening look"); expect(saved.characterSheet.imageGeneration.referencePolicy).toBe("suggestive");
+  await person.locator(".dr-character-row").click(); await characterTab(editor, "images", locale); await expect(reference.locator(".dr-pinned-reference img")).toBeVisible(); await expect(policy).toHaveValue("suggestive");
   await reference.getByRole("button", { name: locale === "ru" ? "Открепить референс" : "Unpin reference", exact: true }).click(); await expect(reference.locator(".dr-pinned-reference img")).toHaveCount(0);
   await editor.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(editor, locale);
   expect(await page.evaluate(() => (window as any).getCast().entities.find((e: any) => e.id === "mira").characterSheet.portraitLibrary.length)).toBe(1);

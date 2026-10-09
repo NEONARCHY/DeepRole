@@ -1,10 +1,8 @@
 import type { EncryptedEnvelope } from "../core/types";
-import { MAX_BACKUP_CIPHERTEXT_BYTES } from "../core/import-limits";
 
 export const DEFAULT_KDF_ITERATIONS = 250_000;
 // v1 exports use 250k. Bound untrusted imports before WebCrypto starts work.
 export const MAX_KDF_ITERATIONS = 1_000_000;
-const MAX_CIPHERTEXT_BYTES = MAX_BACKUP_CIPHERTEXT_BYTES;
 
 export class InvalidEncryptedPayloadError extends Error {
   constructor() { super("Invalid encrypted DeepRole payload"); this.name = "InvalidEncryptedPayloadError"; }
@@ -18,7 +16,7 @@ function validateKdf(salt: Uint8Array, iterations: number): void {
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
+  for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
   return btoa(binary);
 }
 
@@ -141,7 +139,7 @@ function validateEnvelope(value: EncryptedEnvelope): DecodedEnvelope {
     value.kdf !== "PBKDF2-SHA-256" ||
     typeof value.iv !== "string" || value.iv.length > 32 ||
     typeof value.salt !== "string" || value.salt.length > 48 ||
-    typeof value.ciphertext !== "string" || value.ciphertext.length > Math.ceil(MAX_CIPHERTEXT_BYTES / 3) * 4 ||
+    typeof value.ciphertext !== "string" ||
     !Number.isInteger(value.iterations) || value.iterations < 1 || value.iterations > MAX_KDF_ITERATIONS
   ) {
     throw new InvalidEncryptedPayloadError();
@@ -151,7 +149,7 @@ function validateEnvelope(value: EncryptedEnvelope): DecodedEnvelope {
     const iv = base64ToBytes(value.iv);
     const ciphertext = base64ToBytes(value.ciphertext);
     validateKdf(salt, value.iterations);
-    if (iv.byteLength !== 12 || ciphertext.byteLength < 16 || ciphertext.byteLength > MAX_CIPHERTEXT_BYTES) throw new InvalidEncryptedPayloadError();
+    if (iv.byteLength !== 12 || ciphertext.byteLength < 16) throw new InvalidEncryptedPayloadError();
     return { salt, iv, ciphertext };
   } catch { throw new InvalidEncryptedPayloadError(); }
 }

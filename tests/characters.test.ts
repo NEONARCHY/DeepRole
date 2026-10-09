@@ -57,15 +57,15 @@ it("persists an unassigned library through live updates, reopening, assignment a
   expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(await repo.rawRecords());
 });
 
-it("rejects conflicting library edits and over-budget libraries without partial writes", async () => {
+it("rejects conflicting library edits atomically and saves collections beyond 50 MB", async () => {
   const repo = await setup(); const edit = { ...scope(), original: characterEditBaseline(entity, [entity]), entityId: entity.id, name: entity.name, sheet: { ...entity.characterSheet!, portraitLibrary: ["data:image/png;base64,AAAA"] }, state: EMPTY_STATUS, present: false };
   await saveCharacter(edit, repo); const before = await repo.rawRecords();
   await expect(saveCharacter({ ...edit, sheet: { ...edit.sheet, portraitLibrary: ["data:image/png;base64,BBBB"] } }, repo)).rejects.toThrow("character-edit-conflict");
   expect(await repo.rawRecords()).toEqual(before);
   const person = (await repo.get<SceneEntity>("entity", entity.id))!;
   const images = Array.from({ length: 180 }, (_, i) => "data:image/png;base64," + btoa(String(i).padStart(6, "0")) + "A".repeat(290000));
-  await expect(saveCharacter({ ...edit, original: characterEditBaseline(person, [person]), sheet: { ...edit.sheet, portraitLibrary: images } }, repo)).rejects.toThrow("character-images-full");
-  expect(await repo.rawRecords()).toEqual(before);
+  await saveCharacter({ ...edit, original: characterEditBaseline(person, [person]), sheet: { ...edit.sheet, portraitLibrary: images } }, repo);
+  expect((await repo.get<SceneEntity>("entity", entity.id))!.characterSheet!.portraitLibrary).toEqual(images);
 });
 
 describe("manual portrait edits alongside live updates", () => {

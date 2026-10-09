@@ -38,7 +38,7 @@ interface SceneIllustrationContext {
   enabled: boolean; generating: boolean; worldId: string | null; chatId: string | null; chatUrl: string;
   records: Illustration[]; entities: SceneEntity[]; settings: ImageSettings; locale: Locale;
   attempts: ImageAttempt[];
-  actions: Pick<IllustrationReplyProps, "onCreate" | "onRepeat" | "onDownload" | "onRemove">;
+  actions: Pick<IllustrationReplyProps, "onCreate" | "onRepeat" | "onDownload" | "onRemove" | "onConfirmReferences" | "onCancelReferences">;
 }
 export class IllustrationsPresenter {
   private readonly roots = new Map<HTMLElement, Root>();
@@ -74,7 +74,7 @@ export class IllustrationsPresenter {
       wanted.add(host);
       const signature = JSON.stringify([target, sceneText, attempts.map(a => [a.id, a.updatedAt]), records.map(r => [r.id, r.updatedAt]), context.settings, context.entities.map(e => [e.id, e.updatedAt]), context.locale, context.generating]);
       if (host.dataset.signature === signature) continue; host.dataset.signature = signature;
-      this.roots.get(host)!.render(<IllustrationReply key={JSON.stringify(target)} target={target} sceneText={sceneText} records={records} attempts={attempts} entityNames={Object.fromEntries(context.entities.filter(e => e.worldId === target.worldId).map(e => [e.id, e.name]))} locale={context.locale} generating={context.generating} onView={record => openPortraitViewer(this.doc, record.image, imageText(context.locale, "title"), context.locale)} {...context.actions} />);
+      this.roots.get(host)!.render(<IllustrationReply key={JSON.stringify(target)} target={target} sceneText={sceneText} records={records} attempts={attempts} entities={context.entities.filter(e => e.worldId === target.worldId)} settings={context.settings} entityNames={Object.fromEntries(context.entities.filter(e => e.worldId === target.worldId).map(e => [e.id, e.name]))} locale={context.locale} generating={context.generating} onView={record => openPortraitViewer(this.doc, record.image, imageText(context.locale, "title"), context.locale)} {...context.actions} />);
     }
     for (const [host, root] of this.roots) if (!wanted.has(host)) { root.unmount(); host.remove(); this.roots.delete(host); }
     this.layout.sync(wanted);

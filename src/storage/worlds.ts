@@ -6,7 +6,6 @@ import { repository, type DeepRoleRepository } from "./repository";
 import { emotionsFor } from "../core/characters";
 import { getSettings } from "./settings";
 import { importFileTooLarge } from "../core/import-limits";
-import { validateWorldImageBudgets } from "./illustrations";
 import type { Illustration } from "../core/image-generation";
 
 export interface WorldPackage { format: "deeprole-world"; version: 1; records: DataRecord[] }
@@ -32,7 +31,7 @@ export function parseWorldPackage(text: string): WorldPackage {
 export function parseWorldPackageData(input: unknown, bytes: number): WorldPackage {
   if (importFileTooLarge(bytes, "world")) throw new Error("worldTooLarge");
   const value = input as WorldPackage;
-  if (value?.format !== "deeprole-world" || value.version !== 1 || !Array.isArray(value.records) || value.records.length > 20000) throw new Error("invalidBackup");
+  if (value?.format !== "deeprole-world" || value.version !== 1 || !Array.isArray(value.records)) throw new Error("invalidBackup");
   if (value.records.some((r) => !validDataRecord(r))) throw new Error("invalidBackup");
   const worldRecords = value.records.filter((r) => r.kind === "world");
   if (worldRecords.length !== 1) throw new Error("invalidBackup");
@@ -46,7 +45,6 @@ export function parseWorldPackageData(input: unknown, bytes: number): WorldPacka
     if (r.kind !== "world" && d.worldId !== worldId) throw new Error("invalidBackup");
   }
   const byId = new Map(value.records.map((r) => [r.id, r.kind]));
-  if (!validateWorldImageBudgets(value.records)) throw new Error("worldTooLarge");
   for (const r of value.records) {
     const d = r.data;
     if (r.kind === "illustration" && (d as Illustration).entityId && byId.get((d as Illustration).entityId!) !== "entity") throw new Error("invalidBackup");
@@ -83,6 +81,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
         if (input.entityId) input.entityId = ids.get(input.entityId);
         if (input.entityIds) input.entityIds = input.entityIds.map(id => ids.get(id) ?? id);
         if (input.references) input.references = input.references.map(r => ({ ...r, entityId: ids.get(r.entityId) ?? r.entityId }));
+        if (input.referenceChoices) input.referenceChoices = input.referenceChoices.map(r => ({ ...r, entityId: ids.get(r.entityId) ?? r.entityId }));
       }
     }
     if ("bookId" in data && data.bookId) data.bookId = ids.get(data.bookId) ?? null;

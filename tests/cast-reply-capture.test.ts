@@ -52,9 +52,26 @@ it("never captures a reasoning Markdown fallback when the final answer is empty"
   const f = fixture(); f.body.remove(); const markdown = document.createElement("div"); markdown.className = "ds-markdown"; markdown.textContent = raw(); document.querySelector(".ds-think-content")!.append(markdown); await tick();
   expect(f.c.scan()).toBe(""); expect(f.remember).not.toHaveBeenCalled();
 });
-it("does not recover partial or never received data", async () => {
-  const f = fixture(); f.body.textContent = raw().slice(0, -30); await tick(); f.body.textContent = refusal; await tick();
+it("does not recover a cut first character or never received data", async () => {
+  const f = fixture(); f.body.textContent = raw().slice(0, 100); await tick(); f.body.textContent = refusal; await tick();
   expect(f.c.resolve(f.c.scan())).toEqual({ raw: refusal, recovered: false });
+});
+it("reads multiple Markdown blocks belonging to one final reply", async () => {
+  const f = fixture(), answer = raw(), cut = answer.indexOf('"characters"');
+  const a = document.createElement("div"), b = document.createElement("div");
+  a.className = b.className = "ds-markdown"; a.textContent = answer.slice(0, cut); b.textContent = answer.slice(cut);
+  f.body.replaceWith(a, b); await tick();
+  expect(f.c.resolve(f.c.scan())).toEqual({ raw: answer, recovered: false });
+  b.textContent = refusal; a.remove(); await tick();
+  expect(f.c.resolve(f.c.scan()).recovered).toBe(true);
+});
+it("keeps finished characters when the next character is cut and replaced", async () => {
+  const f = fixture(), member = castDraft(request).characters[0]!;
+  f.body.textContent = '<deeprole_cast>{"version":1,"request":"' + request + '","characters":[' + JSON.stringify(member) + ',{"key":"cut"';
+  await tick(); f.body.textContent = refusal; await tick();
+  const result = f.c.resolve(f.c.scan()); expect(result.recovered).toBe(true);
+  const data = JSON.parse(result.raw.slice(15, -16)); expect(data.partial).toBe(true); expect(data.characters).toEqual([member]);
+  expect(f.remember).toHaveBeenCalledOnce();
 });
 it("drops saved data on chat navigation or a different reply branch", async () => {
   const f = fixture(); f.body.textContent = raw(); await tick();

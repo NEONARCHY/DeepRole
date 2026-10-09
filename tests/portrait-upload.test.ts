@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "../src/core/defaults";
 import { validPortrait } from "../src/core/portrait-variations";
-import { DEFAULT_PORTRAIT_MAX_EDGE, MAX_PORTRAIT_IMAGE_LENGTH, portraitUploadDimensions, validPortraitMaxEdge, validPortraitPreviewSize } from "../src/core/portrait-upload";
+import { DEFAULT_PORTRAIT_MAX_EDGE, portraitUploadDimensions, validPortraitMaxEdge, validPortraitPreviewSize } from "../src/core/portrait-upload";
 import { parseBackupSettings } from "../src/core/record-validation";
 import { readPortrait, readPortraitFiles } from "../src/entrypoints/shared/portrait-file";
 import { saveSettings } from "../src/storage/settings";
@@ -33,11 +33,11 @@ it("defaults to 1920px and validates one shared strict setting in old and new ba
   expect(validPortraitPreviewSize(280)).toBe(true);expect(validPortraitPreviewSize(281)).toBe(false);
   expect(parseBackupSettings({...DEFAULT_SETTINGS,portraitMaxEdge:2560,portraitPreviewSize:240})).toMatchObject({portraitMaxEdge:2560,portraitPreviewSize:240});
 });
-it("preserves aspect ratio, never invents pixels, and rejects oversized decoded surfaces",()=>{
+it("preserves aspect ratio, never invents pixels, and resizes large decoded surfaces",()=>{
   expect(portraitUploadDimensions(3840,2160,1920)).toEqual({width:1920,height:1080});
   expect(portraitUploadDimensions(1080,1920,720)).toEqual({width:405,height:720});
   expect(portraitUploadDimensions(120,160,1920)).toEqual({width:120,height:160});
-  expect(()=>portraitUploadDimensions(10000,10000,1920)).toThrow("image-invalid");
+  expect(portraitUploadDimensions(10000,10000,1920)).toEqual({width:1920,height:1920});
 });
 it("preserves fitting source bytes rather than recompressing transparency",async()=>{
   const{revoke,draw}=decoder(1080,1920),file=new File([Uint8Array.of(1,2,3)],"portrait.png",{type:"image/png"});
@@ -53,10 +53,26 @@ it("rejects invalid files and failed decodes, always revoking owned URLs",async(
   vi.stubGlobal("Image",class{src="";decode=vi.fn(async()=>{throw Error("decode");});});
   await expect(readPortrait(new File(["x"],"bad.png",{type:"image/png"}))).rejects.toThrow("decode");expect(mock.revoke).toHaveBeenCalledOnce();
 });
-it("retains the larger per-image budget but rejects oversize instead of silently degrading quality",async()=>{
-  const mock=decoder(3840,2160);mock.encode.mockReturnValue("data:image/webp;base64,"+"A".repeat(MAX_PORTRAIT_IMAGE_LENGTH));
+it("keeps an oversized original byte-for-byte when compression is declined",async()=>{
+  await saveSettings({...DEFAULT_SETTINGS,portraitMaxEdge:256});
+  const mock=decoder(6000,4000),file=new File([Uint8Array.of(1,2,3)],"large.png",{type:"image/png"});
+  expect(await readPortrait(file,"original")).toBe("data:image/png;base64,AQID");
+  expect(mock.draw).not.toHaveBeenCalled();expect(mock.encode).not.toHaveBeenCalled();expect(mock.revoke).toHaveBeenCalledOnce();
+});
+it("compact mode reencodes at .82 and respects a lower configured edge",async()=>{
+  await saveSettings({...DEFAULT_SETTINGS,portraitMaxEdge:720});
+  const mock=decoder(3840,2160);await readPortraitFiles([new File(["source"],"large.jpg",{type:"image/jpeg"})],undefined,"compact");
+  expect(mock.sizes).toEqual([[720,405]]);expect(mock.encode).toHaveBeenCalledWith("image/webp",.82);
+});
+it("validates and restores reference preview size independently of library tiles",()=>{
+  expect(parseBackupSettings({...DEFAULT_SETTINGS,referencePreviewSize:280,portraitPreviewSize:96})).toMatchObject({referencePreviewSize:280,portraitPreviewSize:96});
+  expect(parseBackupSettings({}).referencePreviewSize).toBe(128);
+  expect(()=>parseBackupSettings({...DEFAULT_SETTINGS,referencePreviewSize:281})).toThrow();
+});
+it("accepts large encoded images without imposing a per-image byte quota",async()=>{
+  const mock=decoder(3840,2160);mock.encode.mockReturnValue("data:image/webp;base64,"+"A".repeat(2_100_000));
   expect(validPortrait("data:image/png;base64,"+"A".repeat(400000))).toBe(true);
-  await expect(readPortrait(new File(["x"],"large.png",{type:"image/png"}))).rejects.toThrow("image-too-large");
+  expect((await readPortrait(new File(["x"],"large.png",{type:"image/png"}))).length).toBeGreaterThan(2_000_000);
   expect(mock.encode).toHaveBeenCalledOnce();expect(mock.revoke).toHaveBeenCalledOnce();
 });
 it("embeds every uploaded collection and pinned reference in a portable JSON and restores bytes unchanged",async()=>{

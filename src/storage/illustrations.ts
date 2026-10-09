@@ -2,8 +2,6 @@ import { validIllustration, type Illustration } from "../core/image-generation";
 import type { ChatBinding, DataRecord, SceneEntity } from "../core/types";
 import { portraitVariations } from "../core/portrait-variations";
 import { repository, type DeepRoleRepository } from "./repository";
-export const MAX_WORLD_ILLUSTRATIONS = 60;
-export const MAX_WORLD_IMAGE_BYTES = 50_000_000;
 /** Same encoded-image budget as portraits. Count all image collections together. */
 export function worldImageUsage(records: DataRecord[], worldId: string): { bytes: number; illustrations: number } {
   let bytes = 0, illustrations = 0;
@@ -15,9 +13,6 @@ export function worldImageUsage(records: DataRecord[], worldId: string): { bytes
     if (record.kind === "entity") { const sheet = (record.data as SceneEntity).characterSheet; bytes += [...Object.values(sheet?.sprites ?? {}).flatMap(portraitVariations), ...(sheet?.portraitLibrary ?? []), ...(sheet?.selfieCategories ?? []).flatMap(c => c.images)].reduce((sum, image) => sum + image.length, 0); }
   }
   return { bytes, illustrations };
-}
-export function validateWorldImageBudgets(records: DataRecord[]): boolean {
-  return records.filter(r => r.kind === "world").every(r => { const usage = worldImageUsage(records, r.id); return usage.bytes <= MAX_WORLD_IMAGE_BYTES && usage.illustrations <= MAX_WORLD_ILLUSTRATIONS; });
 }
 export async function saveIllustration(value: Illustration, repo: DeepRoleRepository = repository, attemptId?: string): Promise<void> {
   if (!validIllustration(value)) throw new Error("image-invalid");
@@ -36,8 +31,6 @@ export async function saveIllustration(value: Illustration, repo: DeepRoleReposi
         const index = changes.findIndex(c => c.kind === "binding" && c.id === record.id); if (index >= 0) changes[index] = change; else changes.push(change);
       }
     }
-    const all = [...records.filter(r => !changes.some(c => c.kind === r.kind && c.id === r.id)), ...changes];
-    if (!validateWorldImageBudgets(all)) throw new Error("image-full");
     return { records: changes, removed: [], result: undefined };
   });
 }

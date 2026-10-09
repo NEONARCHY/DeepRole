@@ -1,11 +1,7 @@
 import type { CharacterScene, CharacterSheet, PortraitCycle, SceneEntity } from "./types";
 import { resolveCharacterEmotion } from "./character-emotions";
-import { MAX_PORTRAIT_IMAGE_LENGTH } from "./portrait-upload";
 
-export const MAX_PORTRAIT_VARIATIONS = 48;
-// Active assignments are bounded separately from the unassigned image library.
-export const MAX_STORED_PORTRAIT_EMOTIONS = 64;
-export const validPortrait = (value: unknown): value is string => typeof value === "string" && value.length <= MAX_PORTRAIT_IMAGE_LENGTH && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+export const validPortrait = (value: unknown): value is string => typeof value === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
 const variationCache = new WeakMap<object, { source: unknown[]; images: string[] }>();
 export const portraitVariations = (value: unknown): string[] => {
   if (!Array.isArray(value)) return validPortrait(value) ? [value] : [];
@@ -14,7 +10,7 @@ export const portraitVariations = (value: unknown): string[] => {
   const images = [...new Set(value.filter(validPortrait))];
   variationCache.set(value, { source: [...value], images }); return images;
 };
-export const validPortraitVariations = (value: unknown): boolean => validPortrait(value) || Array.isArray(value) && value.length > 0 && value.length <= MAX_PORTRAIT_VARIATIONS && value.every(validPortrait) && new Set(value).size === value.length;
+export const validPortraitVariations = (value: unknown): boolean => validPortrait(value) || Array.isArray(value) && value.length > 0 && value.every(validPortrait) && new Set(value).size === value.length;
 
 const fingerprints = new WeakMap<string[], string>();
 function fingerprint(images: string[]): string {
@@ -27,10 +23,10 @@ export function validPortraitCycles(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const safe = (key: string) => key.length > 0 && key.length <= 160 && !["__proto__", "prototype", "constructor"].includes(key);
   return Object.keys(value).length <= 100 && Object.entries(value).every(([id, cycles]) => safe(id) && cycles && typeof cycles === "object" && !Array.isArray(cycles)
-    && Object.keys(cycles).length <= MAX_STORED_PORTRAIT_EMOTIONS && Object.entries(cycles).every(([emotion, cycle]) => {
+    && Object.entries(cycles).every(([emotion, cycle]) => {
       if (!safe(emotion) || emotion.length > 32 || !cycle || typeof cycle !== "object" || Array.isArray(cycle)) return false;
       const c = cycle as Partial<PortraitCycle>;
-      return typeof c.key === "string" && c.key.length <= 40 && Array.isArray(c.order) && c.order.length > 0 && c.order.length <= MAX_PORTRAIT_VARIATIONS
+      return typeof c.key === "string" && c.key.length <= 40 && Array.isArray(c.order) && c.order.length > 0
         && c.order.every(n => Number.isInteger(n) && n >= 0 && n < c.order!.length) && new Set(c.order).size === c.order.length
         && Number.isInteger(c.cursor) && Number(c.cursor) >= 0 && Number(c.cursor) < c.order.length;
     }));

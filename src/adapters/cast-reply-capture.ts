@@ -1,4 +1,5 @@
 import { isRefusalFragment, isReplacedReply } from "../core/reply-recovery";
+import { receivedCastCharacters } from "../core/cast-batches";
 import { castChatId } from "../core/cast-chat";
 import { plainCharacterReplyText } from "./deepseek-service-dom";
 import { isUserMessage, nativeMessageIdentity, nativeMessageRows, NATIVE_TURN, REASONING } from "./deepseek-message-dom";
@@ -47,7 +48,13 @@ export class CastReplyCapture {
     return !this.invalidated;
   }
   private remember(raw: string) {
-    if (!this.enabled || !this.scoped() || !completeCastReply(raw, this.request) || raw === this.remembered) return;
+    if (!this.enabled || !this.scoped()) return;
+    if (!completeCastReply(raw, this.request)) raw = receivedCastCharacters(raw, this.request) ?? "";
+    if (!raw || raw === this.remembered || this.remembered && !this.remembered.includes('"partial":true') && raw.includes('"partial":true')) return;
+    if (this.remembered && raw.includes('"partial":true')) {
+      const count = (text: string) => JSON.parse(text.slice(text.indexOf(">") + 1, text.lastIndexOf("<"))).characters.length;
+      if (this.remembered.includes('"partial":true') && count(raw) < count(this.remembered)) return;
+    }
     this.remembered = raw;
     if (this.identity) this.onComplete(raw, this.identity);
   }
@@ -63,7 +70,7 @@ export class CastReplyCapture {
     if (this.identity && identity !== this.identity) this.remembered = ""; // A regenerated branch is not the old answer.
     this.identity = identity; this.row = row;
     this.chatId ??= this.currentChat();
-    this.source = row.querySelector<HTMLElement>(".ds-assistant-message-main-content") ?? [...row.querySelectorAll<HTMLElement>(".ds-markdown")].find(node => !node.closest(REASONING)) ?? row;
+    this.source = row.querySelector<HTMLElement>(".ds-assistant-message-main-content") ?? row;
     const raw = plainCharacterReplyText(row); this.remember(raw); return raw;
   }
   process(changes: MutationRecord[]) {
@@ -88,7 +95,7 @@ export class CastReplyCapture {
     }
   }
   resolve(raw: string): { raw: string; recovered: boolean } {
-    if (!this.enabled || !this.scoped() || !this.remembered || raw && !isReplacedReply(raw) && !isRefusalFragment(raw)) return { raw, recovered: false };
+    if (!this.enabled || !this.scoped() || !this.remembered || raw && completeCastReply(raw, this.request) && !isReplacedReply(raw) && !isRefusalFragment(raw)) return { raw, recovered: false };
     return { raw: this.remembered, recovered: true };
   }
 }

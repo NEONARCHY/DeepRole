@@ -2,6 +2,7 @@ import { browser } from "wxt/browser";
 import { repository, type DeepRoleRepository } from "../storage/repository";
 import { createCastJob, mutateCastJob, acceptCastReply, applyCastDraft } from "../storage/cast-initialization";
 import { castParts, castPrompt, parseCastDraft, type CastDraft, type CastJob } from "../core/cast-initialization";
+import { interruptedCastJob, parseCastBatch } from "../core/cast-batches";
 import type { Locale, WorldProfile } from "../core/types";
 import { getSettings } from "../storage/settings";
 import { isReplacedReply } from "../core/reply-recovery";
@@ -43,7 +44,7 @@ export class CastCoordinator {
     const owner = (await this.owners()).find(o => o.tabId === tabId);
     if (!owner) return;
     await this.changeOwners(owners => owners.filter(o => o.tabId !== tabId));
-    await mutateCastJob(owner.id, j => active(j) ? { ...j, phase: "error", error: "tab-closed", cleanup: j.chatId ? "failed" : "none" } : j, this.repo).catch(() => undefined);
+    await mutateCastJob(owner.id, j => active(j) ? { ...interruptedCastJob(j, "tab-closed"), cleanup: j.chatId ? "failed" : "none" } : j, this.repo).catch(() => undefined);
   }
   private async trusted(message: CastMessage, sender: { id?: string; url?: string; tab?: { id?: number } }) {
     if (sender.id !== this.api.runtime.id) throw new Error("untrusted");
@@ -84,7 +85,10 @@ export class CastCoordinator {
           if (typeof message.replyIdentity !== "string" || message.replyIdentity.length > 512 || typeof message.raw !== "string") throw new Error("invalid-result");
           let identity: unknown; try { identity = JSON.parse(message.replyIdentity); } catch { throw new Error("invalid-result"); }
           if (!Array.isArray(identity) || identity.length !== 2 || !["message", "virtual"].includes(identity[0]) || typeof identity[1] !== "string" || !identity[1]) throw new Error("invalid-result");
+          // Checkpoints can contain a complete batch or finished character objects.
+          // Missing batch completion does not authorize another request.
           parseCastDraft(message.raw, job.id, job.sources);
+          if (job.batchSize) parseCastBatch(message.raw, job.id, job.sources, job.batchSize);
           await mutateCastJob(job.id, j => {
             if (!active(j) || !j.awaiting || j.step !== message.step || j.repair !== message.repair) throw new Error("stale-step");
             return { ...j, replyCheckpoint: { step: message.step, repair: message.repair, chatId: message.chatId, replyIdentity: message.replyIdentity, raw: message.raw } };
@@ -97,11 +101,12 @@ export class CastCoordinator {
           await mutateCastJob(job.id, j => ({ ...j, chatId: message.chatId, chatUrl: currentChat!.url }), this.repo);
           await acceptCastReply(job.id, message.step, message.raw, this.repo);
         } else if (message.action === "error") {
+          if (active(job) && job.awaiting && job.replyCheckpoint?.step === job.step && job.replyCheckpoint.chatId === own.chatId && job.replyCheckpoint.repair === job.repair) await acceptCastReply(job.id, job.step, job.replyCheckpoint.raw, this.repo).catch(() => undefined);
           if (message.chatId && currentId === message.chatId && job.awaiting && (!own.chatId || own.chatId === message.chatId)) {
             await this.setOwner({ ...own, chatId: message.chatId });
             await mutateCastJob(job.id, j => ({ ...j, chatId: message.chatId, chatUrl: currentChat!.url }), this.repo);
           }
-          await mutateCastJob(job.id, j => active(j) ? { ...j, phase: "error", error: message.error.slice(0,80), awaiting: false, replyCheckpoint: undefined } : j, this.repo);
+          await mutateCastJob(job.id, j => active(j) ? { ...j, phase: "error", error: message.error.slice(0,80), awaiting: false } : j, this.repo);
         } else if (message.action === "cleaned") {
           if (message.chatId && message.chatId !== own.chatId) throw new Error("chat-changed");
           await mutateCastJob(job.id, j => {
@@ -120,7 +125,7 @@ export class CastCoordinator {
       }
       if (message.action === "status") {
         let job = (await this.repo.list<CastJob>("cast")).filter(j => j.worldId === message.worldId).sort((a,b) => b.createdAt - a.createdAt)[0];
-        if (job && active(job) && Date.now() - job.updatedAt > 30000 && !await this.owner(job.id)) job = await mutateCastJob(job.id, j => ({ ...j, phase: "error", error: "interrupted", cleanup: j.chatId ? "failed" : "none" }), this.repo);
+        if (job && active(job) && Date.now() - job.updatedAt > 30000 && !await this.owner(job.id)) job = await mutateCastJob(job.id, j => ({ ...interruptedCastJob(j, "interrupted"), cleanup: j.chatId ? "failed" : "none" }), this.repo);
         return { ok: true, job: job ? castView(job) : null };
       }
       if (message.action === "apply") return { ok: true, count: await applyCastDraft(message.id, message.draft, message.selected, message.hero, this.repo) };

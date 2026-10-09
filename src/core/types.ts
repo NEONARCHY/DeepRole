@@ -237,6 +237,8 @@ export interface DeepRoleSettings {
   portraitMaxEdge?: number;
   /** Preferred library tile size; narrow layouts still fit their container. */
   portraitPreviewSize?: number;
+  /** Reference thumbnails only; shared by neutral and alternative slots. */
+  referencePreviewSize?: number;
   /** Presentation only; never changes DeepSeek's reasoning mode or requests. */
   showDeepSeekReasoning?: boolean;
   replyRecoveryEnabled?: boolean;

@@ -40,15 +40,15 @@ it("explains an empty library and lets the user close it", () => {
   fireEvent.click(view.getByRole("button", { name: "Cancel selection" }));
   expect(view.queryByRole("group", { name: "Character’s library" })).toBeNull();
 });
-it("limits new selection to the remaining slots while allowing deselection", () => {
+it("keeps selection and upload available beyond 48 photos", () => {
   const images = Array.from({ length: 47 }, (_, i) => "data:image/png;base64," + btoa("photo-" + i));
   const view = render(<Form value={[{ ...initial[0]!, images }]} library={[image, other]} />);
   fireEvent.click(view.getByRole("button", { name: "Choose from library" }));
   const first = view.getByRole("button", { name: "Photo 1" }), second = view.getByRole("button", { name: "Photo 2" });
-  fireEvent.click(first); expect(second).toBeDisabled(); expect(first).toBeEnabled();
+  fireEvent.click(first); expect(second).toBeEnabled(); expect(first).toBeEnabled();
   fireEvent.click(first); expect(second).toBeEnabled(); fireEvent.click(second);
   fireEvent.click(view.getByRole("button", { name: "Add selected · 1" }));
-  expect(view.getByRole("button", { name: "Choose from library" })).toBeDisabled();
+  expect(view.getByRole("button", { name: "Choose from library" })).toBeEnabled();
 });
 it("ignores removed sources, deduplicates the library and hides invalid images", () => {
   vi.clearAllMocks(); const view = render(<Form library={[other, other, "https://example.com/private.png"]} />);

@@ -73,6 +73,19 @@ describe("requested generated selfies", () => {
     expect(provider.edit).toHaveBeenCalledOnce(); expect(provider.edit.mock.calls[0]![0]).toMatchObject({ images: [reference] }); expect(provider.generate).not.toHaveBeenCalled();
     expect(image.modelId).toBe("synthetic-qwen-edit"); expect(image.prompt).toContain("Manual constant appearance"); expect(image.prompt).not.toContain("OLD SCENE"); expect(JSON.stringify(image.referenceKeys)).not.toContain("data:image");
   });
+  it.each(["neutral", "suggestive"] as const)("respects the persistent %s reference preference for a generated selfie", async referencePolicy => {
+    const alternate = "data:image/jpeg;base64,/9j/AAAA";
+    const person = { ...mira, characterSheet: { ...mira.characterSheet!, portraitLibrary: [reference, alternate], imageGeneration: { canonical: "Copper hair.", sceneDelta: "", prefix: "", suffix: "", format: "prose" as const, referenceKey: selfieImageKey(reference), suggestiveReferenceKey: selfieImageKey(alternate), referenceContext: "Everyday jacket", suggestiveReferenceContext: "Evening coat", referencePolicy } } };
+    const { repo, jobs, target, provider, photo } = await setup(person);
+    await saveImageSettings({ ...DEFAULT_IMAGE_SETTINGS, enabled: true, contentLevel: "suggestive", reviewBeforeGeneration: true, profiles: [profile], profileByLevel: { suggestive: profile.id } });
+    const current = (await repo.get<ChatBinding>("binding", binding.id))!;
+    await repo.put("binding", { ...current, scenePhotos: [{ ...photo, generation: { ...photo.generation!, reference: referencePolicy === "neutral" ? "suggestive" : "neutral" } }] });
+    vi.mocked(codec.normalizeImage).mockImplementation(async blob => blob.type === "image/jpeg" ? alternate : reference);
+    const result = await jobs.selfie(target, person.id, photo.turnKey);
+    expect(result.referenceKeys).toEqual([referencePolicy === "neutral" ? selfieImageKey(reference) : selfieImageKey(alternate)]);
+    expect(provider.edit.mock.calls[0]![0]).toMatchObject({ images: [referencePolicy === "neutral" ? reference : alternate], aspectRatio: "9:16" });
+    expect(result.prompt).toContain(referencePolicy === "neutral" ? "Everyday jacket" : "Evening coat"); expect(await repo.get("entity", person.id)).toEqual(person);
+  });
   it("uses DeepSeek’s visual appearance only when the profile has no known appearance", async () => {
     const { repo, jobs, target, provider } = await setup({ ...mira, characterSheet: { ...mira.characterSheet!, appearance: "" } });
     const current = (await repo.get<ChatBinding>("binding", binding.id))!; const photo: ScenePhoto = { ...current.scenePhotos![0]!, generation: { ...current.scenePhotos![0]!.generation!, appearance: "Established silver hair, green coat." } };

@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { closeSavedCharacter, characterTab } from "./character-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
@@ -120,10 +121,10 @@ test("upload fallback, failed save keeps draft, custom emotions validation", asy
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
   const dialog = page.getByRole("dialog");
   await characterTab(dialog, "images");
-  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "test.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });
+  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "test.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") }); await chooseImageCompression(page);
   await expect(dialog.getByRole("alert")).toContainText("Couldn’t open");
   const png = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 8; canvas.height = 8; canvas.getContext("2d")!.fillRect(0, 0, 8, 8); return canvas.toDataURL("image/png").split(",")[1]!; });
-  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") }); await chooseImageCompression(page);
   await expect(dialog.locator(".dr-character-portrait-editor img")).toHaveAttribute("src", /^data:image\/(webp|png);base64,/);
   await expectPortraitRatio(dialog.locator(".dr-character-portrait-editor img"), false);
   await page.evaluate(() => { (window as any).rejectSave = true; });

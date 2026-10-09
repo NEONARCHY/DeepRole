@@ -11,7 +11,7 @@ import { createBackup, parseBackup } from "../src/storage/backup";
 import { exportWorld, parseWorldPackage, cloneWorldPackage } from "../src/storage/worlds";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { DeepRoleDatabase } from "../src/storage/database";
-import { saveIllustration, validateWorldImageBudgets } from "../src/storage/illustrations";
+import { saveIllustration } from "../src/storage/illustrations";
 import type { DataRecord } from "../src/core/types";
 import { profile, tinyImage, world, illustration } from "./image-fixtures";
 describe("image generation skeleton", () => {
@@ -53,11 +53,11 @@ describe("image generation skeleton", () => {
   });
   it("rejects invalid stored settings, not silently repairing them", async () => { await browser.storage.local.set({ deeprole_image_settings: { enabled: true, contentLevel: "unknown" } }); await expect(getImageSettings()).rejects.toThrow("image-settings-invalid"); });
   it("validates the image record and response headers", () => { expect(validIllustration(illustration)).toBe(true); expect(validIllustration({ ...illustration, image: "https://external.test/image" })).toBe(false); expect(validIllustration({ ...illustration, headers: { authorization: "secret" } })).toBe(false); });
-  it("refuses quota overflow atomically, keeping all old images and lore", async () => {
+  it("saves beyond 60 illustrations, keeping all old images and lore", async () => {
     const repo = new DeepRoleRepository(new DeepRoleDatabase("image-quota-test-" + crypto.randomUUID())); await repo.put("world", world);
     const records: DataRecord[] = Array.from({ length: 60 }, (_, i) => ({ kind: "illustration", id: `image-${i}`, data: { ...illustration, id: `image-${i}` } })); await repo.mergeRecords(records);
-    await expect(saveIllustration(illustration, repo)).rejects.toThrow("image-full"); expect((await repo.list("illustration")).length).toBe(60); expect(await repo.get("world", world.id)).toEqual(world);
-    expect(validateWorldImageBudgets([{ kind: "world", id: world.id, data: world }, { kind: "illustration", id: illustration.id, data: { ...illustration, image: "x".repeat(50_000_001) } }])).toBe(false); await repo.clear();
+    await saveIllustration(illustration, repo); expect((await repo.list("illustration")).length).toBe(61); expect(await repo.get("world", world.id)).toEqual(world);
+    await repo.clear();
   });
   it("uses all uploaded portraits without sending bytes to DeepSeek", () => { const sheet = { ...EMPTY_CHARACTER, sprites: { neutral: tinyImage, happy: [tinyImage, "data:image/png;base64,Yg=="] }, portraitLibrary: ["data:image/webp;base64,Yw=="] }; expect(imageReferences(sheet)).toHaveLength(3); const canonical = "Hair: copper.  Keep double spaces."; expect(buildImagePrompt({ canonical, sceneDelta: "At dusk", prefix: "", suffix: "", format: "prose" }, DEFAULT_IMAGE_SETTINGS)).toBe(canonical + "\n\nAt dusk"); expect(imageDeltaInstruction(canonical, "Dusk")).not.toContain("data:image"); });
   it("has paired meaningful RU/EN copy without question-mark controls", () => { for (const values of Object.values(IMAGE_STRINGS)) { expect(values).toHaveLength(2); expect(values.every(value => value.trim().length > 1)).toBe(true); expect(values).not.toContain("?"); } });

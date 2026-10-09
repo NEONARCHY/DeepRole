@@ -38,14 +38,14 @@ describe("ready selfie library assignment", () => {
   it.each(["https://example.com/photo.png", "data:image/svg+xml;base64,AAAA", "not-an-image"])("rejects invalid sources even if listed in the library: %s", source => {
     expect(() => addSelfieLibraryImages(categories, "home", [source], [source])).toThrow("selfie-library-missing");
   });
-  it("accepts exactly 48 unique photos but rejects 49 without partial writes", () => {
+  it("accepts more than 48 photos without changing the source", () => {
     const images = Array.from({ length: 49 }, (_, i) => "data:image/png;base64," + btoa("photo-" + i));
     const empty = [{ ...category, images: [] }];
     expect(addSelfieLibraryImages(empty, category.id, images, images.slice(0, 48))[0]?.images).toHaveLength(48);
-    expect(() => addSelfieLibraryImages(empty, category.id, images, images)).toThrow("selfie-category-full");
+    expect(addSelfieLibraryImages(empty, category.id, images, images)[0]?.images).toHaveLength(49);
     expect(empty[0]?.images).toEqual([]);
     const full = addSelfieLibraryImages(empty, category.id, images, images.slice(0, 48));
     expect(addSelfieLibraryImages(full, category.id, images, images.slice(0, 48))).toBe(full);
-    expect(() => addSelfieLibraryImages(full, category.id, images, images.slice(48))).toThrow("selfie-category-full");
+    expect(addSelfieLibraryImages(full, category.id, images, images.slice(48))[0]?.images).toHaveLength(49);
   });
 });

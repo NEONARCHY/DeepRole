@@ -28,6 +28,9 @@ export async function handleImageMessage(message: ImageMessage, sender: ImageSen
     if (message.type === "DR_IMAGE_GENERATE") { if (!validImageJob(message.input)) throw new ImageApiError("invalid"); return { ok: true, illustration: await imageWorkerOperation(() => jobs.run(message.input)) }; }
     if (message.type === "DR_IMAGE_START") return { ok: true, attempt: await jobs.start(target) };
     if (message.type === "DR_IMAGE_RENDER") return { ok: true, illustration: await imageWorkerOperation(() => jobs.render(target, message.id, message.plan)) };
+    if (message.type === "DR_IMAGE_REVIEW") { await jobs.review(target, message.id, message.review); return { ok: true }; }
+    if (message.type === "DR_IMAGE_REVIEW_CLAIM") return { ok: true, review: await jobs.claimReview(target, message.id, message.overrides) };
+    if (message.type === "DR_IMAGE_REVIEW_CANCEL") { await jobs.cancelReview(target, message.id); return { ok: true }; }
     if (message.type === "DR_IMAGE_REPEAT") return { ok: true, illustration: await imageWorkerOperation(() => jobs.repeat(target, message.id, message.attempt === true)) };
     if (message.type === "DR_IMAGE_FAIL") { await jobs.fail(target, message.id, { code: message.error }, message.phase === "plan" ? "plan" : undefined); return { ok: true }; }
     if (message.type === "DR_IMAGE_SELFIE") return { ok: true, illustration: await imageWorkerOperation(() => jobs.selfie(target, message.entityId, message.turnKey, message.retry === true)) };

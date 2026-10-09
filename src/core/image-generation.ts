@@ -1,6 +1,7 @@
 import type { Locale } from "./types";
 import { validGeneratedImage } from "./generated-images";
 import { validImageReplay } from "./image-plan";
+import { validImageReferencePolicy, type ImageReferencePolicy } from "./image-references";
 
 // One entry defines the type, validator and both labels. These are presets, not prompt filters.
 // "adult" requires an explicit age confirmation in the same settings record; see validImageSettings.
@@ -28,8 +29,9 @@ export interface ImageSettings {
   profileByLevel: Partial<Record<ImageContentLevel, string>>;
   stylePrefix: string; styleSuffix: string;
   adultConfirmed?: boolean;
+  reviewBeforeGeneration?: boolean;
 }
-export const DEFAULT_IMAGE_SETTINGS: ImageSettings = { enabled: false, contentLevel: "off", profiles: [], profileByLevel: {}, stylePrefix: "", styleSuffix: "", adultConfirmed: false };
+export const DEFAULT_IMAGE_SETTINGS: ImageSettings = { enabled: false, contentLevel: "off", profiles: [], profileByLevel: {}, stylePrefix: "", styleSuffix: "", adultConfirmed: false, reviewBeforeGeneration: false };
 export interface ImageModelInfo {
   id: string; label: string; privacy?: "private" | "anonymized"; priceUsd?: number;
   maxInputImages?: number; promptLimit?: number; supportsEdit?: boolean; supportsGenerate?: boolean;
@@ -61,7 +63,7 @@ export interface Illustration {
   aspectRatio?: ImageAspectRatio;
   headers?: ImageResponseHeaders; createdAt: number; updatedAt: number;
 }
-export interface CharacterImagePrompt { canonical: string; sceneDelta: string; prefix: string; suffix: string; format: "prose" | "tags"; seed?: number; referenceKey?: string; suggestiveReferenceKey?: string; referenceContext?: string; suggestiveReferenceContext?: string }
+export interface CharacterImagePrompt { canonical: string; sceneDelta: string; prefix: string; suffix: string; format: "prose" | "tags"; seed?: number; referenceKey?: string; suggestiveReferenceKey?: string; referenceContext?: string; suggestiveReferenceContext?: string; referencePolicy?: ImageReferencePolicy }
 export const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const text = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max;
 export const imageKey = (v: unknown): v is string => text(v, 160) && !!v.trim() && !["__proto__", "prototype", "constructor"].includes(v);
@@ -97,14 +99,15 @@ export function validImageSettings(v: unknown): v is ImageSettings {
   const profiles = v.profiles;
   return typeof v.enabled === "boolean" && validImageContentLevel(v.contentLevel)
     && (v.adultConfirmed === undefined || typeof v.adultConfirmed === "boolean")
+    && (v.reviewBeforeGeneration === undefined || typeof v.reviewBeforeGeneration === "boolean")
     // The explicit level is unusable, and therefore not storable, without the age confirmation.
     && !(v.contentLevel === ADULT_CONTENT_LEVEL && v.adultConfirmed !== true)
     && object(v.profileByLevel) && Object.entries(v.profileByLevel).every(([level, id]) => validImageContentLevel(level) && validProviderId(id) && profiles.some(p => p.id === id))
     && text(v.stylePrefix, 1200) && text(v.styleSuffix, 1200)
-    && Object.keys(v).every(k => ["enabled", "contentLevel", "profiles", "profileByLevel", "stylePrefix", "styleSuffix", "adultConfirmed"].includes(k));
+    && Object.keys(v).every(k => ["enabled", "contentLevel", "profiles", "profileByLevel", "stylePrefix", "styleSuffix", "adultConfirmed", "reviewBeforeGeneration"].includes(k));
 }
 export function validCharacterImagePrompt(v: unknown): v is CharacterImagePrompt {
-  return object(v) && ["canonical", "sceneDelta", "prefix", "suffix"].every(k => text(v[k], 1200)) && ["prose", "tags"].includes(String(v.format)) && validImageSeed(v.seed) && ["referenceKey", "suggestiveReferenceKey"].every(k => v[k] === undefined || imageKey(v[k])) && ["referenceContext", "suggestiveReferenceContext"].every(k => v[k] === undefined || text(v[k], 600));
+  return object(v) && ["canonical", "sceneDelta", "prefix", "suffix"].every(k => text(v[k], 1200)) && ["prose", "tags"].includes(String(v.format)) && validImageSeed(v.seed) && ["referenceKey", "suggestiveReferenceKey"].every(k => v[k] === undefined || imageKey(v[k])) && ["referenceContext", "suggestiveReferenceContext"].every(k => v[k] === undefined || text(v[k], 600)) && (v.referencePolicy === undefined || validImageReferencePolicy(v.referencePolicy));
 }
 export const validImageSeed = (v: unknown) => v === undefined || Number.isSafeInteger(v) && Number(v) >= 0;
 export function validImageHeaders(v: unknown): v is ImageResponseHeaders {

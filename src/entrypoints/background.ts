@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+import { REPOSITORY_PORT, serveJsonPort } from "../storage/repository-stream";
 import { getImageSettings } from "../storage/image-settings";
 import { approveSelfie } from "../storage/selfie-images";
 import { CastCoordinator, type CastMessage } from "../adapters/cast-coordinator";
@@ -37,7 +38,7 @@ export default defineBackground(() => {
     if (area === "session" && storageKeys.sessionKey in changes) void announceLibraryChange();
   });
 
-  browser.runtime.onMessage.addListener((message: DeepRoleMessage, sender) => {
+  const handleMessage = (message: DeepRoleMessage, sender: import("wxt/browser").Browser.runtime.MessageSender) => {
     if (message.type === "DR_CAST" || message.type === "DR_CAST_WORKER") return cast.handle(message as CastMessage, sender);
     if (message.type.startsWith("DR_IMAGE_")) return handleImageMessage(message as import("../core/image-messages").ImageMessage, sender);
     if (message.type === "DR_PING") {
@@ -157,6 +158,16 @@ export default defineBackground(() => {
       if (options) return browserApi.sidePanel.open(options);
     }
     if (browserApi.sidebarAction?.open) return browserApi.sidebarAction.open();
+  };
+  browser.runtime.onMessage.addListener(handleMessage);
+  browser.runtime.onConnect.addListener(port => {
+    if (port.name !== REPOSITORY_PORT) return;
+    const sender = port.sender;
+    if (sender?.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith("https://chat.deepseek.com/")) { port.disconnect(); return; }
+    serveJsonPort(port, request => {
+      if (!request || typeof request !== "object" || (request as { type?: unknown }).type !== "DR_REPOSITORY") throw new Error("unsupported-operation");
+      return handleMessage(request as DeepRoleMessage, sender);
+    });
   });
   browser.runtime.onInstalled.addListener(() => {
     void browser.contextMenus.removeAll().then(() => {

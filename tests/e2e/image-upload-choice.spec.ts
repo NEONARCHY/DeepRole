@@ -1,0 +1,47 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { characterTab, closeSavedCharacter } from "./character-helpers";
+import { chooseImageCompression } from "./image-upload-helpers";
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) test("upload choice and reference preview " + locale + " " + width, async ({page}, info) => {
+  await page.setViewportSize({width,height:900});await page.goto("/tests/fixtures/characters.html?locale="+locale);
+  const source=await page.evaluate(()=>{const c=document.createElement("canvas");c.width=2400;c.height=1800;const ctx=c.getContext("2d")!;ctx.fillStyle="#608b90";ctx.fillRect(0,0,c.width,c.height);return c.toDataURL("image/png");});
+  const file={name:"synthetic.png",mimeType:"image/png",buffer:Buffer.from(source.split(",")[1]!,"base64")};
+  await page.locator(".dr-character-row").filter({hasText:"Mira"}).click();
+  const editor=page.locator(".dr-character-dialog");await characterTab(editor,"images",locale);
+  const library=editor.locator(".dr-portrait-library");
+  const choice=page.getByRole("dialog",{name:locale==="ru"?"Сжать изображения?":"Compress images?",exact:true});
+  await library.locator("input[type=file]").setInputFiles(file);
+  await expect(choice).toBeVisible();await expect(library.locator(".dr-library-image")).toHaveCount(0);
+  const controls=choice.getByRole("button");await controls.first().focus();await page.keyboard.press("Shift+Tab");await expect(controls.last()).toBeFocused();await page.keyboard.press("Tab");await expect(controls.first()).toBeFocused();
+  expect((await new AxeBuilder({page}).include(".dr-upload-modal").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  await page.screenshot({path:info.outputPath("compression-"+locale+"-"+width+".png")});
+  await choice.press("Escape");await expect(choice).toHaveCount(0);await expect(editor).toBeVisible();
+  await expect(editor.locator(".dr-editor-unsaved")).toHaveCount(0);
+  const preview=editor.getByRole("slider",{name:locale==="ru"?"Размер превью референсов":"Reference preview size"});await preview.fill("160");await preview.dispatchEvent("pointerup");await preview.blur();await expect(editor.locator(".dr-editor-unsaved")).toHaveCount(0);
+  for(const [index,mode] of (["original","configured","compact"] as const).entries()){
+    await library.locator("input[type=file]").setInputFiles(file);await chooseImageCompression(page,mode);
+    await expect(library.locator(".dr-library-image")).toHaveCount(index+1);
+    const src=await library.locator(".dr-library-image img").nth(index).getAttribute("src");
+    if(mode==="original")expect(src).toBe(source);
+    const size=await page.evaluate(async src=>{const image=new Image();image.src=src!;await image.decode();return[image.naturalWidth,image.naturalHeight];},src);
+    expect(size).toEqual(mode==="original"?[2400,1800]:mode==="configured"?[1920,1440]:[1280,960]);
+  }
+  const reference=editor.locator(".dr-character-reference");
+  await reference.locator("input[type=file]").setInputFiles(file);await chooseImageCompression(page,"original");
+  const slider=reference.getByRole("slider",{name:locale==="ru"?"Размер превью референсов":"Reference preview size"});
+  await slider.fill("240");await slider.dispatchEvent("pointerup");await slider.blur();
+  await expect.poll(()=>page.evaluate(async()=>((await(window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.referencePreviewSize))).toBe(240);
+  const original=await reference.locator(".dr-pinned-reference img").getAttribute("src");expect(original).toBe(source);
+  await reference.locator(".dr-reference-slots button").nth(1).click();
+  await reference.locator("input[type=file]").setInputFiles(file);await chooseImageCompression(page,"configured");
+  await expect(slider).toHaveValue("240");
+  await slider.fill("280");await slider.dispatchEvent("pointerup");await slider.blur();
+  await reference.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  const bounds=await reference.boundingBox();expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(width);expect(await editor.locator(".dr-character-editor-body").evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({path:info.outputPath("reference-preview-"+locale+"-"+width+".png")});
+  await editor.getByRole("button",{name:locale==="ru"?"Сохранить персонажа":"Save character",exact:true}).click();await closeSavedCharacter(editor,locale);
+  await page.locator(".dr-character-row").filter({hasText:"Mira"}).click();await characterTab(editor,"images",locale);
+  await expect(slider).toHaveValue("280");await expect(reference.locator(".dr-pinned-reference img")).toHaveAttribute("src",source);
+  expect(await page.evaluate(()=>(window as any).getCast().entities.find((e:any)=>e.id==="mira").description)).toBe("Original profile");
+});

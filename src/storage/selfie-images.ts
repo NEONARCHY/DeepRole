@@ -3,7 +3,6 @@ import type { ChatBinding, SceneEntity, ScenePhoto, SelfieGeneration } from "../
 import type { ImageTarget } from "../core/image-messages";
 import type { Illustration } from "../core/image-generation";
 import { generatedSelfieCategory, selfieGate } from "../core/selfies";
-import { validateWorldImageBudgets } from "./illustrations";
 import { ImageApiError } from "../adapters/image/transport";
 import type { DeepRoleRepository } from "./repository";
 
@@ -60,7 +59,6 @@ export async function finishSelfie(repo: DeepRoleRepository, target: ImageTarget
       if (p.worldId !== target.worldId || p.messageKey !== target.messageKey || p.entityId !== photo.entityId || p.turnKey !== photo.turnKey || !p.generation) return p;
       changed = true; return { ...p, generation: { ...p.generation, ...patch, updatedAt: Date.now() } };
     });
-    if (!validateWorldImageBudgets(records.map(r => r.kind === "binding" && r.id === current.id ? { ...r, data: { ...current, scenePhotos } } : r))) throw new ImageApiError("full");
     return { records: changed ? [{ kind: "binding" as const, id: current.id, data: { ...current, scenePhotos } }] : [], removed: [], result: undefined };
   });
 }

@@ -1,6 +1,7 @@
 import { repository, type DeepRoleRepository } from "./repository";
 import { createId } from "../core/id";
 import { castParts, castSources, castSignature, parseCastDraft, type CastDraft, type CastJob } from "../core/cast-initialization";
+import { mergeCastBatches, parseCastBatch } from "../core/cast-batches";
 import { EMPTY_CHARACTER, emotionsFor } from "../core/characters";
 import { resolveCharacterEmotion } from "../core/character-emotions";
 import { attributeState } from "../core/attributes";
@@ -12,7 +13,8 @@ export async function createCastJob(worldId: string, locale: Locale, retry = fal
     if (previous && (!retry || ["opening", "reading", "analyzing"].includes(previous.phase))) return { records: [], removed: [], result: previous };
     if (previous && retry && ["pending", "failed"].includes(previous.cleanup)) throw new Error("cleanup-required");
     const sources = castSources(records, worldId); castParts(sources);
-    const now = Date.now(), job: CastJob = { id: createId("cast"), worldId, locale, phase: "opening", createdAt: now, updatedAt: now, sources, signature: castSignature(records, worldId), step: 0, awaiting: false, repair: false, cleanup: "pending" };
+    const now = Date.now(), job: CastJob = { id: createId("cast"), worldId, locale, phase: "opening", createdAt: now, updatedAt: now, sources, signature: castSignature(records, worldId), step: 0, awaiting: false, repair: false, cleanup: "pending", batchSize: 2, ...(previous?.batchSize && previous.phase === "error" && previous.draft && previous.signature === castSignature(records, worldId) ? { draft: { ...previous.draft, request: "" } } : {}) };
+    if (job.draft) job.draft.request = job.id;
     const world = records.find(r => r.kind === "world" && r.id === worldId)!.data as WorldProfile;
     return { records: [{ kind: "cast", id: job.id, data: job }, { kind: "world", id: worldId, data: { ...world, autoPrepareCharacters: false } }], removed: previous ? [{ kind: "cast", id: previous.id }] : [], result: job };
   });
@@ -29,7 +31,16 @@ export async function acceptCastReply(id: string, step: number, raw: string, rep
   return mutateCastJob(id, job => {
     if (!["reading", "analyzing"].includes(job.phase) || job.step !== step || !job.awaiting) throw new Error("stale-step");
     if (job.step < castParts(job.sources).length) return { ...job, step: job.step + 1, awaiting: false };
-    try { return { ...job, phase: "ready", awaiting: false, replyCheckpoint: undefined, draft: parseCastDraft(raw, job.id, job.sources) }; }
+    try {
+      if (job.batchSize) {
+        const batch = parseCastBatch(raw, job.id, job.sources, job.batchSize);
+        const draft = mergeCastBatches(job.draft, batch.draft, job.id, job.sources);
+        if (batch.partial) return { ...job, phase: "error", awaiting: false, replyCheckpoint: undefined, draft, error: "partial-reply" };
+        if (batch.more && draft.characters.length >= 40) return { ...job, phase: "error", awaiting: false, replyCheckpoint: undefined, draft, error: "character-limit" };
+        return { ...job, draft, phase: batch.more ? "analyzing" : "ready", step: job.step + 1, repair: false, awaiting: false, replyCheckpoint: undefined };
+      }
+      return { ...job, phase: "ready", awaiting: false, replyCheckpoint: undefined, draft: parseCastDraft(raw, job.id, job.sources) };
+    }
     catch (e) { if (!job.repair) return { ...job, repair: true, awaiting: false, replyCheckpoint: undefined }; return { ...job, phase: "error", awaiting: false, replyCheckpoint: undefined, error: e instanceof Error ? e.message : "invalid-result" }; }
   }, repo);
 }
@@ -45,7 +56,7 @@ function fillSheet(old: CharacterSheet | undefined, proposed: CharacterSheet, st
 export async function applyCastDraft(id: string, draft: CastDraft, selected: string[], heroKey: string, repo: DeepRoleRepository = repository): Promise<number> {
   return repo.updateRecords(records => {
     const job = records.find(r => r.kind === "cast" && r.id === id)?.data as CastJob | undefined;
-    if (!job || job.phase !== "ready" || !job.draft) throw new Error("job-missing");
+    if (!job || !["ready", "error"].includes(job.phase) || !job.draft) throw new Error("job-missing");
     if (castSignature(records, job.worldId) !== job.signature) throw new Error("lore-changed");
     const sanitized = parseCastDraft(JSON.stringify(draft), id, job.sources);
     if (sanitized.characters.length !== job.draft.characters.length || sanitized.characters.some(c => !job.draft!.characters.some(old => old.key === c.key && old.name === c.name))) throw new Error("invalid-result");

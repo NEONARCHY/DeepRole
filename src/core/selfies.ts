@@ -1,10 +1,9 @@
 import type { CharacterScene, CharacterSheet, SceneEntity, ScenePhoto, SelfieCategory } from "./types";
-import { MAX_PORTRAIT_VARIATIONS, portraitVariations, validPortrait } from "./portrait-variations";
+import { portraitVariations, validPortrait } from "./portrait-variations";
 import { validImageReplay } from "./image-plan";
 import { imageReferences } from "./image-prompt";
 import { relationshipState } from "./relationships";
 
-export const MAX_SELFIE_CATEGORIES = 32;
 export const SELFIE_DELAY = 1500;
 export const GENERATED_SELFIE = "generated";
 export const DEFAULT_SELFIE_ACCESS = { minTrust: 40, minAffinity: 30 };
@@ -26,10 +25,10 @@ const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v ===
 const key = (v: unknown): v is string => typeof v === "string" && !!v.trim() && v.length <= 160 && !["__proto__", "prototype", "constructor"].includes(v);
 const score = (v: unknown) => Number.isInteger(v) && Number(v) >= 0 && Number(v) <= 100;
 export function validSelfieCategories(v: unknown): v is SelfieCategory[] {
-  return Array.isArray(v) && v.length <= MAX_SELFIE_CATEGORIES && v.every(c => object(c) && key(c.id)
+  return Array.isArray(v) && v.every(c => object(c) && key(c.id)
     && typeof c.name === "string" && c.name.trim().length > 0 && c.name.length <= 64
     && (c.default === undefined || typeof c.default === "boolean") && typeof c.description === "string" && c.description.length <= 600 && score(c.minTrust) && score(c.minAffinity)
-    && Array.isArray(c.images) && c.images.length <= MAX_PORTRAIT_VARIATIONS && c.images.every(validPortrait) && new Set(c.images).size === c.images.length)
+    && Array.isArray(c.images) && c.images.every(validPortrait) && new Set(c.images).size === c.images.length)
     && new Set(v.map(c => c.id)).size === v.length && v.filter(c => c.default).length <= 1;
 }
 /** Local assignment only: preserve the source library, portraits and category rules. */
@@ -39,7 +38,6 @@ export function addSelfieLibraryImages(categories: SelfieCategory[], categoryId:
   const available = new Set(library);
   if (selected.some(image => !validPortrait(image) || !available.has(image))) throw new Error("selfie-library-missing");
   const images = [...new Set([...category.images, ...selected])];
-  if (images.length > MAX_PORTRAIT_VARIATIONS) throw new Error("selfie-category-full");
   if (images.length === category.images.length) return categories;
   return categories.map(c => c.id === categoryId ? { ...c, images } : c);
 }

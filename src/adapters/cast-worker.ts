@@ -132,7 +132,7 @@ export async function startCastWorker(): Promise<boolean> {
         const started = Date.now(); let last = "", stable = Date.now(), response = "", recovered = false;
         while (Date.now() - started < 7 * 60 * 1000) {
           if (stopped || touched) throw new Error("user-interrupted");
-          if (failedRequest) throw new Error("request-failed");
+          if (failedRequest) { const saved = capture.resolve(""); if (saved.raw) { response = saved.raw; recovered = true; break; } throw new Error("request-failed"); }
           if (step.chatId && currentChat() !== step.chatId) throw new Error("chat-changed");
           const raw = capture.scan();
           if (raw !== last) { last = raw; stable = Date.now(); }
@@ -140,6 +140,7 @@ export async function startCastWorker(): Promise<boolean> {
           if (resolved.raw && !adapter.isGenerating() && Date.now() - stable >= 1500) { response = resolved.raw; recovered = resolved.recovered; break; }
           await pause(500);
         }
+        if (!response) { const saved = capture.resolve(""); response = saved.raw; recovered = !!saved.raw; }
         if (!response || !currentChat()) throw new Error("reply-timeout");
         await writes;
         if (stopped || touched) throw new Error("user-interrupted");

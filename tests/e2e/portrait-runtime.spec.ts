@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
 import { chromium, expect, test } from "@playwright/test";
 import { mkdir, mkdtemp } from "node:fs/promises";
@@ -95,7 +96,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await dialog.getByRole("checkbox", { name: "My protagonist", exact: true }).check();
     await characterTab(dialog, "images");
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
-    await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero.png", mimeType: "image/png", buffer: Buffer.from(variations[0]!.split(",")[1]!, "base64") });
+    await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero.png", mimeType: "image/png", buffer: Buffer.from(variations[0]!.split(",")[1]!, "base64") }); await chooseImageCompression(chat);
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);
     // A reply can finish while the portrait picker/editor is open.
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon notices the telescope is unlocked." }) }));
@@ -112,7 +113,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await characterTab(dialog, "images");
     await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
-    await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero2.png", mimeType: "image/png", buffer: Buffer.from(variations[1]!.split(",")[1]!, "base64") });
+    await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero2.png", mimeType: "image/png", buffer: Buffer.from(variations[1]!.split(",")[1]!, "base64") }); await chooseImageCompression(chat);
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
     await chat.screenshot({ path: info.outputPath("protagonist-emotion-portraits.png") });
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
@@ -146,7 +147,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await characterTab(dialog, "images");
     await expect(dialog.locator(".dr-portrait-library")).toBeVisible();
     const library = dialog.locator(".dr-portrait-library");
-    await library.locator('input[type=file]').setInputFiles(inbox.map((image, i) => ({ name: `inbox-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") })));
+    await library.locator('input[type=file]').setInputFiles(inbox.map((image, i) => ({ name: `inbox-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") }))); await chooseImageCompression(chat);
     await expect(library.locator(".dr-library-image")).toHaveCount(3);
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog); await expect(dialog).toHaveCount(0);
     expect((await records()).find(r => r.id === "leon").data.characterSheet.portraitLibrary).toHaveLength(3);

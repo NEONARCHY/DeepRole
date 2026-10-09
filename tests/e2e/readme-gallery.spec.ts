@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { setEnglish } from "./helpers/settings";
 import { characterTab } from "./character-helpers";
@@ -83,7 +84,7 @@ for (const locale of ["en", "ru"] as const) {
     const dialog = page.getByRole("dialog");
     await characterTab(dialog, "images", locale);
     const library = dialog.locator(".dr-portrait-library");
-    await library.locator("input[type=file]").setInputFiles(samples.map((data, i) => ({ name: `sample-${i + 1}.png`, mimeType: "image/png", buffer: Buffer.from(data, "base64") })));
+    await library.locator("input[type=file]").setInputFiles(samples.map((data, i) => ({ name: `sample-${i + 1}.png`, mimeType: "image/png", buffer: Buffer.from(data, "base64") }))); await chooseImageCompression(page);
     await expect(library.locator(".dr-library-image[aria-pressed=true]")).toHaveCount(3);
     await library.locator(".dr-library-emotions summary").click();
     await library.getByRole("checkbox", { name: emotionOptionLabel(locale, "surprised"), exact: true }).check();

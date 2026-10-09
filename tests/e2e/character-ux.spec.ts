@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { characterTab } from "./character-helpers";
@@ -23,7 +24,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
   expect(await page.evaluate(() => (window as any).settings.characterEmotions.includes("New mood"))).toBe(false);
   const png = await page.evaluate(() => { const c = document.createElement("canvas"); c.width = 24; c.height = 32; c.getContext("2d")!.fillRect(0, 0, 24, 32); return c.toDataURL("image/png").split(",")[1]!; });
   const library = dialog.locator(".dr-portrait-library");
-  await library.locator("input[type=file]").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await library.locator("input[type=file]").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") }); await chooseImageCompression(page);
   await expect(library.locator('.dr-library-image[aria-pressed=true]')).toHaveCount(1);
   await library.getByRole("button", { name: locale === "ru" ? "Назначить эмоции" : "Assign to emotion", exact: true }).click();
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);

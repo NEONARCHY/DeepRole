@@ -75,6 +75,7 @@ export function CastStatus({ job, locale, compact, anchor, children, onHide }: {
     <div className="dr-cast-phase" role="status" aria-live="polite"><span className={waiting ? "dr-cast-spinner" : "dr-cast-ready-dot"} aria-hidden="true"/><strong>{t(job.phase)}</strong></div>
     {preparing && <><div className="dr-cast-activity" aria-hidden="true"><span/></div><p className="dr-cast-waiting-hint" aria-live="off">{t((job.phase === "opening" ? ["waitOpening", "waitConnection", "waitService"] : job.phase === "reading" ? ["waitFragments", "waitSources", "waitService"] : ["waitProfiles", "waitRelationships", "waitService"])[hint] as Parameters<typeof castText>[1])}</p>
       <small>{job.phase === "analyzing" ? t("finalStep") : job.phase === "opening" ? t("source") + ": " + job.sourceCount : t("fragment") + " " + Math.min(job.step + 1, job.partCount) + "/" + job.partCount}{job.repair ? " · " + t("repairStep") : ""}</small></>}
+    {!!job.draft?.characters.length && preparing && <small>{t("savedCount")}: {job.draft.characters.length}</small>}
     {children}
   </div>;
   return compact && anchor.current ? createPortal(status, anchor.current.closest(".dr-root") ?? anchor.current.ownerDocument.body) : status;

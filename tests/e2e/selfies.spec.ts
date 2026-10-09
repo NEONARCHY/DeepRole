@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test } from "@playwright/test";
 
 
@@ -9,7 +10,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.getByRole("textbox", { name: ui.name + " 1", exact: true }).fill(locale === "ru" ? "Обычные" : "Regular");
     await page.getByRole("button", { name: new RegExp("^" + ui.upload) }).click();
     const png = Buffer.from((await page.locator(".avatar").getAttribute("src"))!.split(",")[1]!, "base64");
-    await page.locator('input[type=file]').setInputFiles({ name: "neutral.png", mimeType: "image/png", buffer: png });
+    await page.locator('input[type=file]').setInputFiles({ name: "neutral.png", mimeType: "image/png", buffer: png }); await chooseImageCompression(page);
     await expect.poll(() => page.evaluate(() => (window as any).categories[0]?.images.length)).toBe(1);
     await page.getByRole("button", { name: ui.add, exact: true }).click();
     await page.getByRole("textbox", { name: ui.name + " 2", exact: true }).fill(locale === "ru" ? "Дома" : "At home");

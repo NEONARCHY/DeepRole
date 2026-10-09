@@ -25,7 +25,7 @@ const strings = {
   removePhoto: ["Убрать фото из подборки", "Remove photo from collection"],
   unpin: ["Открепить референс", "Unpin reference"], pinned: ["Закреплено", "Pinned"], more: ["Показать ещё", "Show more"],
   missing: ["Изображение референса удалено. Выберите другое — автоматическая замена внешности не выполняется.", "The reference image was removed. Choose another; appearance is never silently replaced."],
-  uploadError: ["Не удалось загрузить. Выберите PNG, JPG или WebP до 10 МБ; проверьте место в библиотеке.", "Upload failed. Choose PNG, JPG or WebP up to 10 MB; check library space."],
+  uploadError: ["Не удалось загрузить. Выберите PNG, JPG или WebP; проверьте место в библиотеке.", "Upload failed. Choose PNG, JPG or WebP; check library space."],
   ask: ["Попросить селфи", "Ask for a selfie"], asking: ["Отправляем просьбу…", "Sending request…"],
   requestHint: ["Просьба отправится в чат. Персонаж может отказать; фото появится после его согласия. Генерация оплачивается по тарифу подключённого сервиса.", "The request goes to the chat. The character may refuse; the photo appears after agreement. Your connected service’s charges apply."],
   draftBusy: ["В поле сообщения уже есть черновик. Отправьте или уберите его, затем попросите селфи.", "The message field contains a draft. Send or clear it before asking for a selfie."],

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { CharacterPanel } from "../src/entrypoints/shared/CharacterSheets";
 import { EMPTY_CHARACTER, EMPTY_STATUS, characterSaveError } from "../src/core/characters";
@@ -56,6 +56,7 @@ it("does not claim an unsaved edit when an invalid upload changed no portrait", 
   const dialog = container.querySelector<HTMLElement>("[role=dialog]")!;
   const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
   fireEvent.change(dialog.querySelector("input[type=file]")!, { target: { files: [new File(["<svg/>"], "bad.svg", { type: "image/svg+xml" })] } });
+  fireEvent.click(await screen.findByRole("button", { name: /^High quality/ }));
   await waitFor(() => expect(dialog.querySelector("[role=alert]")).not.toBeNull());
   fireEvent.keyDown(dialog, { key: "Escape" }); expect(confirm).not.toHaveBeenCalled();
   expect(container.querySelector("[role=dialog]")).toBeNull();

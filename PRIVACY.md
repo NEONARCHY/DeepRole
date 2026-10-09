@@ -1,8 +1,10 @@
 # Политика приватности DeepRole
 
-Дата обновления: 8 октября 2026 года.
+Дата обновления: 9 октября 2026 года.
 
 DeepRole хранит записи памяти, книги, миры, профили персонажей/мест, заготовки, настройки, связи и ручной выбор памяти в чатах, слепки сюжета, неподтверждённые предложения и журнал отмены изменений локально в хранилище расширения в профиле браузера пользователя.
+
+Разрешение `unlimitedStorage` используется для локальной библиотеки изображений: DeepRole не устанавливает квоты на объём и число файлов. Оно не добавляет сетевой доступ. Фактический доступный объём зависит от диска и браузера.
 
 DeepRole:
 
@@ -40,9 +42,11 @@ DeepRole:
 
 # DeepRole Privacy Policy
 
-Last updated: October 8, 2026.
+Last updated: October 9, 2026.
 
 DeepRole stores memories, worlds, character/location profiles, story starters, settings, books, chat bindings, and handoff snapshots locally in extension-owned browser storage. It has no server, analytics or telemetry. It does not sell data or send it to the developer.
+
+The `unlimitedStorage` permission supports the local image library without application storage or file-count quotas. It does not add network access. Actual available capacity depends on disk space and the browser.
 
 Per-chat attachments/exclusions, pending proposals and recovery history are also stored locally. They are not separate active memory copies and are encrypted with the other records when the optional vault is enabled.
 

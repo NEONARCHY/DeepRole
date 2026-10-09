@@ -34,7 +34,7 @@ it("completes exact sequential turns, persists review then closes only its clean
  await f.run({type:"DR_CAST_WORKER",action:"reply",id,step:0,chatId:"owned",raw:"received"},s());
  expect((await f.run({type:"DR_CAST_WORKER",action:"reply",id,step:0,chatId:"owned",raw:"received"},s())).ok).toBe(false);
  await f.run({type:"DR_CAST_WORKER",action:"sent",id,step:1},s());
- await f.run({type:"DR_CAST_WORKER",action:"reply",id,step:1,chatId:"owned",raw:JSON.stringify(castDraft(id))},s());
+  await f.run({type:"DR_CAST_WORKER",action:"reply",id,step:1,chatId:"owned",raw:JSON.stringify({...castDraft(id),more:false})},s());
  expect((await f.repo.get<CastJob>("cast",id))!.phase).toBe("ready");f.tabs.set(5,{id:5,url:"https://chat.deepseek.com/"});
  expect((await f.run({type:"DR_CAST_WORKER",action:"cleaned",id,chatId:"owned",ok:true},s())).ok).toBe(true);
  expect(f.api.tabs.remove).toHaveBeenCalledExactlyOnceWith(5);expect((await f.repo.get<CastJob>("cast",id))!.draft!.characters).toHaveLength(2);
@@ -56,7 +56,7 @@ async function finalStep() {
  await f.run({type:"DR_CAST_WORKER",action:"bound",id,chatId:"owned"},s());
  await f.run({type:"DR_CAST_WORKER",action:"reply",id,step:0,chatId:"owned",raw:"received"},s());
  await f.run({type:"DR_CAST_WORKER",action:"sent",id,step:1},s());
- const message={type:"DR_CAST_WORKER",action:"checkpoint",id,step:1,repair:false,chatId:"owned",replyIdentity:JSON.stringify(["message","r1"]),raw:JSON.stringify(castDraft(id))};
+  const message={type:"DR_CAST_WORKER",action:"checkpoint",id,step:1,repair:false,chatId:"owned",replyIdentity:JSON.stringify(["message","r1"]),raw:JSON.stringify({...castDraft(id),more:false})};
  return {...f,id,s,message};
 }
 it("checkpoints only validated final data, survives a worker restart and excludes it from UI views",async()=>{
@@ -66,6 +66,15 @@ it("checkpoints only validated final data, survives a worker restart and exclude
  expect((await f.run({type:"DR_CAST",action:"status",worldId:"w"})).job.replyCheckpoint).toBeUndefined();
  expect(JSON.stringify(await browser.storage.session.get())).not.toContain("Leon");expect(await f.repo.list("entity")).toEqual([]);
  await f.run({...f.message,action:"reply"},f.s());expect((await f.repo.get<CastJob>("cast",f.id))!.replyCheckpoint).toBeUndefined();
+});
+it("keeps validated partial checkpoints when the owned tab closes", async () => {
+ const f=await finalStep(), d=castDraft(f.id);
+ const partial=JSON.stringify({...d,characters:[d.characters[0]],present:[],partners:[],partial:true});
+ expect((await f.run({...f.message,raw:partial},f.s())).ok).toBe(true);
+ await f.coordinator.removed(5);
+ const job=await f.repo.get<CastJob>("cast",f.id);
+ expect(job?.phase).toBe("error");expect(job?.draft?.characters).toHaveLength(1);
+ expect(job?.replyCheckpoint).toBeUndefined();expect(await f.repo.list("entity")).toHaveLength(0);
 });
 it("rejects incomplete, wrong-request, invalid-evidence, stale-step and cross-chat checkpoints",async()=>{
  const f=await finalStep();

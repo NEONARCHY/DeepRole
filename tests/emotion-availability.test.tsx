@@ -42,12 +42,12 @@ it("reports retained-list capacity without changing the draft and lets the user 
   fireEvent.click(view.getByRole("button", { name: "Allow all" })); expect(view.queryByRole("alert")).toBeNull();
   fireEvent.click(view.getByRole("button", { name: "Calm only" })); expect(view.getByText("1 of 6 available")).toBeVisible();
 });
-it("keeps the switch and every image unchanged when detachment would overflow the library", () => {
+it("detaches images beyond the former library capacity without losing images", () => {
   const images = Array.from({ length: 513 }, (_, i) => "data:image/png;base64," + btoa("portrait-" + i));
   const initial = { ...EMPTY_CHARACTER, sprites: { happy: images[512]! }, portraitLibrary: images.slice(0, 512) };
   const view = render(<Form initial={initial} />); fireEvent.click(view.getByText("Customize list"));
   fireEvent.click(view.getByRole("switch", { name: "Allow emotion: Happy · happy" }));
-  expect(view.getByRole("alert")).toHaveTextContent("The library has no room");
-  expect(view.getByRole("switch", { name: "Allow emotion: Happy · happy" })).toBeChecked();
-  expect(JSON.parse(view.getByRole("status").textContent!)).toEqual(initial);
+  expect(view.queryByRole("alert")).toBeNull();
+  expect(view.getByRole("switch", { name: "Allow emotion: Happy · happy" })).not.toBeChecked();
+  expect(JSON.parse(view.getByRole("status").textContent!).portraitLibrary).toHaveLength(513);
 });

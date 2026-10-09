@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="UTF-8"></head><body><main id="turns"></main><form><textarea aria-label="Message"></textarea><button type="submit">Send</button><button type="button" data-testid="stop-generation" hidden>Stop</button></form>
+<script>const area=()=>{const values=new Map();return{get:async()=>Object.fromEntries(values),set:async v=>{for(const[k,val]of Object.entries(v))values.set(k,val);},remove:async()=>{}}};window.chrome={runtime:{id:"fixture",sendMessage:async()=>{},onMessage:{addListener(){},removeListener(){}}},storage:{local:area(),session:area(),onChanged:{addListener(){},removeListener(){}}}};</script>
+<script type="module">
+import { startCastWorker } from "/src/adapters/cast-worker.ts";
+import { createCastJob, mutateCastJob, acceptCastReply } from "/src/storage/cast-initialization.ts";
+import { castPrompt } from "/src/core/cast-initialization.ts";
+import { repository } from "/src/storage/repository.ts";
+import { castRecords, castDraft } from "/tests/fixtures/cast-data.ts";
+const scenario=new URLSearchParams(location.search).get("scenario")??"full";
+history.replaceState({}, "", "/");
+await repository.clear();await repository.mergeRecords(castRecords());
+const job=await createCastJob("w","en",false,repository), id=job.id;
+window.sentPrompts=[];window.workerFinished=false;
+window.chrome.runtime.sendMessage=async message=>{
+ const j=await repository.get("cast",id);
+ if(message.action==="claim")return {ok:true,...j,prompt:castPrompt(j),replyCheckpoint:j.replyCheckpoint};
+ if(message.action==="sent")await mutateCastJob(id,v=>({...v,awaiting:true,phase:message.step===0?"reading":"analyzing",replyCheckpoint:undefined}));
+ if(message.action==="bound")await mutateCastJob(id,v=>({...v,chatId:"owned"}));
+ if(message.action==="checkpoint")await mutateCastJob(id,v=>({...v,replyCheckpoint:{...message}}));
+ if(message.action==="reply")await acceptCastReply(id,message.step,message.raw);
+ if(message.action==="error")await mutateCastJob(id,v=>({...v,phase:"error",error:message.error}));
+ if(message.action==="cleaned"){window.workerFinished=true;}
+ return {ok:true};
+};
+window.workerSnapshot=()=>repository.get("cast",id);
+const form=document.querySelector("form"),composer=document.querySelector("textarea"),stop=document.querySelector("[data-testid=stop-generation]"),turns=document.getElementById("turns");
+form.addEventListener("submit",e=>{
+ e.preventDefault();const prompt=composer.value;composer.value="";window.sentPrompts.push(prompt);
+ history.replaceState({}, "", "/chat/s/owned");
+ const u=document.createElement("article");u.dataset.messageRole="user";u.textContent=prompt;
+ const a=document.createElement("article");a.dataset.messageRole="assistant";a.dataset.messageId="reply-"+window.sentPrompts.length;
+ const think=document.createElement("div");think.className="ds-think-content";think.textContent="Synthetic reasoning excluded from profiles.";
+ const body=document.createElement("div");body.className="ds-assistant-message-main-content";a.append(think,body);turns.append(u,a);stop.hidden=false;
+ setTimeout(()=>{
+  if(window.sentPrompts.length===1){body.textContent="received";stop.hidden=true;return;}
+  const draft=castDraft(id),index=window.sentPrompts.length===2?0:1,member=draft.characters[index];
+  if(scenario==="partial"){
+   body.textContent='<deeprole_cast>{"version":1,"request":"'+id+'","characters":['+JSON.stringify(member)+',{"key":"unfinished","sheet":';
+   setTimeout(()=>{body.textContent="Sorry, that's beyond my current scope. Let's talk about something else.";stop.hidden=true;},200);
+  }else{
+   body.textContent="<deeprole_cast>"+JSON.stringify({...draft,characters:[member],present:[member.key],partners:index===1?[member.key]:[],more:index===0})+"</deeprole_cast>";
+   stop.hidden=true;
+  }
+ },200);
+});
+await startCastWorker();
+</script></body></html>

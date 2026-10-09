@@ -19,7 +19,8 @@ import { validStoryContinuation, withLatestVisibleStory } from "../core/story-co
 import { visibleStoryHistory } from "../adapters/story-history-dom";
 import { clearSelfieImageCache, isSelfieRequest, SELFIE_DELAY } from "../core/selfies";
 import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
-import { imagePlanRoster, parseImageScenePlan } from "../core/image-plan";
+import { imagePlanRoster, parseImageScenePlan, type ImagePlanReview, type ImageScenePlan } from "../core/image-plan";
+import { imagePlanCast, imageReviewContextKey, sameImagePlanCast, type ImageReferenceOverrides } from "../core/image-references";
 import { IllustrationsPresenter, illustrationSceneText } from "../adapters/illustrations-dom";
 import { getImageSettings, IMAGE_SETTINGS_KEY } from "../storage/image-settings";
 import { DEFAULT_IMAGE_SETTINGS, MAX_IMAGE_PLAN_TEXT, type Illustration, type ImageSettings } from "../core/image-generation";
@@ -382,35 +383,81 @@ class PageController {
   private syncIllustrations() {
     const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw Object.assign(new Error("image-request-failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers, ticketId: result?.ticketId }); return result; };
     this.imagePresenter.sync({ enabled: this.imageSettings.enabled && !this.state.vaultLocked, generating: this.adapter.isGenerating(), worldId: this.currentScene().worldId, chatId: this.adapter.getChatId(), chatUrl: location.href, records: this.illustrations, attempts: this.currentBinding()?.illustrationAttempts ?? [], entities: this.entities, settings: this.imageSettings, locale: this.state.locale, actions: {
-      onCreate: async (target, text) => this.generateIllustration(target, text),
+      onCreate: async (target, text, review) => this.generateIllustration(target, text, review),
+      onConfirmReferences: async (target, id, overrides) => this.confirmIllustrationReferences(target, id, overrides),
+      onCancelReferences: async (target, id) => { await call({ type: "DR_IMAGE_REVIEW_CANCEL", target, id }); await this.reload(); },
       onRepeat: async (target, id, attempt) => { await call({ type: "DR_IMAGE_REPEAT", target, id, attempt }); await this.reload(); },
       onRemove: async (target, id) => { await call({ type: "DR_IMAGE_REMOVE", target, id }); },
       onDownload: async ticketId => { await call({ type: "DR_IMAGE_OPEN_DOWNLOAD", ticketId }); },
     } });
   }
-  private async generateIllustration(target: import("../core/image-messages").ImageTarget, text: string): Promise<void> {
+  private async imageCall(message: import("../core/image-messages").ImageMessage) {
+    const result = await browser.runtime.sendMessage(message);
+    if (!result?.ok) throw { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers, ticketId: result?.ticketId };
+    return result;
+  }
+  private checkIllustrationScope(target: import("../core/image-messages").ImageTarget, text?: string) {
     if (this.state.vaultLocked || this.adapter.isAuthenticationPage() || this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId) throw { code: "changed" };
     if (this.adapter.isGenerating() || this.pendingService || this.preparingService || this.characterTextWaiter) throw { code: "busy" };
     if (this.adapter.getDraft().trim()) throw { code: "draftBusyImage" };
-    const call = async (message: import("../core/image-messages").ImageMessage) => { const result = await browser.runtime.sendMessage(message); if (!result?.ok) throw { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers, ticketId: result?.ticketId }; return result; };
-    const selectedLevel = this.imageSettings.contentLevel;
-    const referenceBudget = this.imageSettings.profiles.find(p => p.id === this.imageSettings.profileByLevel[selectedLevel])?.maxReferences ?? 1;
-    const { attempt } = await call({ type: "DR_IMAGE_START", target });
+    const row = nativeMessageRows(document).find(row => nativeMessageIdentity(row) === target.messageKey);
+    if (text !== undefined && row && illustrationSceneText(row) !== text) throw { code: "changed" };
+  }
+  private async generateIllustration(target: import("../core/image-messages").ImageTarget, text: string, forceReview = false): Promise<void> {
+    this.checkIllustrationScope(target, text);
+    const settings = this.imageSettings, entities = this.entities.filter(e => e.worldId === target.worldId);
+    const referenceBudget = settings.profiles.find(p => p.id === settings.profileByLevel[settings.contentLevel])?.maxReferences ?? 1;
+    const { attempt } = await this.imageCall({ type: "DR_IMAGE_START", target });
     let phase: "plan" | undefined = "plan";
     try {
-      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(this.entities.filter(e => e.worldId === target.worldId)), referenceBudget, contentLevel: this.imageSettings.contentLevel } }, attempt);
-      if (this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId || this.state.vaultLocked || this.imageSettings.contentLevel !== selectedLevel) throw { code: "changed" };
-      const row = nativeMessageRows(document).find(row => nativeMessageIdentity(row) === target.messageKey);
-      if (row && illustrationSceneText(row) !== text) throw { code: "changed" };
-      const plan = parseImageScenePlan(value);
-      phase = undefined;
-      await call({ type: "DR_IMAGE_RENDER", target, id: attempt.id, plan });
+      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(entities), referenceBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
+      this.checkIllustrationScope(target, text);
+      const parsed = parseImageScenePlan(value);
+      const plan: ImageScenePlan = { ...parsed, characters: imagePlanCast(parsed, target.worldId, entities).map(c => ({ ...c.chosen, id: c.person.id })) };
+      const contextKey = imageReviewContextKey(plan, target.worldId, entities, settings);
+      if (contextKey !== imageReviewContextKey(plan, target.worldId, this.entities, this.imageSettings)) throw { code: "changed" };
+      if (forceReview || settings.reviewBeforeGeneration) {
+        await this.imageCall({ type: "DR_IMAGE_REVIEW", target, id: attempt.id, review: { plan, sceneText: text, contextKey } });
+      } else {
+        phase = undefined;
+        await this.imageCall({ type: "DR_IMAGE_RENDER", target, id: attempt.id, plan });
+      }
     } catch (error) {
-      const code = error instanceof Error && error.message === "invalidPlan" ? "invalidPlan" : imageErrorKey(error);
-      // The background keeps the original request after a provider failure.
-      await browser.runtime.sendMessage({ type: "DR_IMAGE_FAIL", target, id: attempt.id, error: code, phase } satisfies import("../core/image-messages").ImageMessage).catch(() => undefined);
-      throw Object.assign(new Error(code), typeof error === "object" && error !== null ? error : {}, { code, ...(phase ? { diagnostic: { source: "deepseek", phase } } : {}) });
+      await this.failIllustration(target, attempt.id, error, phase);
     } finally { await this.reload(); }
+  }
+  private async confirmIllustrationReferences(target: import("../core/image-messages").ImageTarget, id: string, overrides: ImageReferenceOverrides): Promise<void> {
+    this.checkIllustrationScope(target);
+    let claimed = false, phase: "plan" | undefined = "plan";
+    try {
+      const result = await this.imageCall({ type: "DR_IMAGE_REVIEW_CLAIM", target, id, overrides });
+      const review = result.review as ImagePlanReview;
+      claimed = true;
+      this.checkIllustrationScope(target, review.sceneText);
+      let plan = review.plan;
+      const entities = this.entities.filter(e => e.worldId === target.worldId), settings = this.imageSettings;
+      const changed = Object.entries(overrides).some(([entityId, policy]) => policy !== (entities.find(e => e.id === entityId)?.characterSheet?.imageGeneration?.referencePolicy ?? "auto"));
+      if (changed) {
+        const attempt = { ...target, id, status: "preparing" as const, createdAt: Date.now(), updatedAt: Date.now() };
+        const referenceBudget = settings.profiles.find(p => p.id === settings.profileByLevel[settings.contentLevel])?.maxReferences ?? 1;
+        const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Reviewed scene illustration", completedScene: review.sceneText, previousPlan: review.plan, referenceOverrides: overrides, roster: imagePlanRoster(entities), referenceBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
+        plan = parseImageScenePlan(value);
+        if (!sameImagePlanCast(review.plan, plan)) throw new Error("invalidPlan");
+      }
+      this.checkIllustrationScope(target, review.sceneText);
+      if (imageReviewContextKey(review.plan, target.worldId, this.entities, this.imageSettings) !== review.contextKey) throw { code: "changed" };
+      phase = undefined;
+      await this.imageCall({ type: "DR_IMAGE_RENDER", target, id, plan });
+    } catch (error) {
+      if (claimed) await this.failIllustration(target, id, error, phase);
+      throw error;
+    } finally { await this.reload(); }
+  }
+  private async failIllustration(target: import("../core/image-messages").ImageTarget, id: string, error: unknown, phase?: "plan"): Promise<never> {
+    const code = error instanceof Error && error.message === "invalidPlan" ? "invalidPlan" : imageErrorKey(error);
+    // Preserve the frozen provider request for exact retry after a provider failure.
+    await browser.runtime.sendMessage({ type: "DR_IMAGE_FAIL", target, id, error: code, phase } satisfies import("../core/image-messages").ImageMessage).catch(() => undefined);
+    throw Object.assign(new Error(code), typeof error === "object" && error !== null ? error : {}, { code, ...(phase ? { diagnostic: { source: "deepseek", phase } } : {}) });
   }
   private readonly selfieJobs = new Set<string>();
   private selfieScanTimer = 0;

@@ -1,3 +1,4 @@
+import { chooseImageCompression } from "./image-upload-helpers";
 import { chromium, expect, test } from "@playwright/test";
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -6,7 +7,7 @@ import { characterTab, closeSavedCharacter } from "./character-helpers";
 import { portraitUploadText } from "../../src/core/portrait-upload-i18n";
 
 for(const locale of ["ru","en"] as const)test(`installed custom portrait quality and embedded world JSON ${locale}`,async({},info)=>{
-  test.skip(info.project.name!=="chromium","Fresh MV3 runtime; shared controls also tested in Firefox");test.setTimeout(60000);
+  test.skip(info.project.name!=="chromium","Fresh MV3 runtime; shared controls also tested in Firefox");test.setTimeout(180000);
   const profiles=path.join(info.project.outputDir,"profiles");await mkdir(profiles,{recursive:true});
   const profile=await mkdtemp(path.join(profiles,"portrait-quality-")),extension=path.resolve(".output/chrome-mv3");
   const context=await chromium.launchPersistentContext(profile,{channel:"msedge",headless:true,args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});context.setDefaultTimeout(10000);
@@ -22,18 +23,38 @@ for(const locale of ["ru","en"] as const)test(`installed custom portrait quality
       await new Promise<void>((resolve,reject)=>{const open=indexedDB.open("deeprole");open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction("records","readwrite");for(const[kind,data]of rows)tx.objectStore("records").put({kind,id:data.id,pk:kind+":"+data.id,data,updatedAt:1});tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};});
       await(window as any).chrome.storage.local.set({deeprole_settings:{locale,onboardingComplete:true,characterSheetsEnabled:true}});
     },{rows:rows as Array<[string,any]>,locale});
+    await panel.evaluate(async () => {
+      const canvas = document.createElement("canvas"); canvas.width = 20; canvas.height = 20;
+      const context = canvas.getContext("2d")!; context.fillStyle = "#567c86"; context.fillRect(0, 0, 20, 20);
+      const raw = atob(canvas.toDataURL("image/png").split(",")[1]!);
+      const images = Array.from({ length: 5 }, (_, index) => "data:image/png;base64," + btoa(raw + String.fromCharCode(0).repeat(10_500_000) + String.fromCharCode(index)));
+      await new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
+        open.onsuccess = () => { const db = open.result, tx = db.transaction("records", "readwrite"), store = tx.objectStore("records"), get = store.get("entity:mira");
+          get.onsuccess = () => { const row = get.result; row.data.characterSheet.portraitLibrary = images; store.put(row); };
+          tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error);
+        };
+      });
+    });
     await panel.reload();await panel.getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();await panel.getByRole("button",{name:locale==="ru"?"Оформление":"Appearance",exact:true}).click();
     const quality=panel.locator(".settings-card").filter({hasText:portraitUploadText(locale,"title")});await expect(quality.getByRole("spinbutton")).toHaveValue("1920");await quality.getByRole("spinbutton").fill("1280");await quality.getByRole("button",{name:portraitUploadText(locale,"save"),exact:true}).click();await expect(quality.getByRole("status")).toContainText(portraitUploadText(locale,"saved"));await quality.screenshot({path:info.outputPath(`quality-installed-${locale}.png`)});
     await panel.reload();expect(await panel.evaluate(async()=>((await(window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.portraitMaxEdge))).toBe(1280);
     const source=await panel.evaluate(()=>{const canvas=document.createElement("canvas");canvas.width=1200;canvas.height=1800;const ctx=canvas.getContext("2d")!;ctx.fillStyle="#759aaa";ctx.fillRect(0,0,1200,1800);ctx.fillStyle="#182630";ctx.fillRect(300,400,600,900);return canvas.toDataURL("image/png").split(",")[1]!;});
     const chat=await context.newPage();await chat.goto("https://chat.deepseek.com/a/chat/s/quality");const editor=chat.locator(".dr-character-dialog");
     await chat.locator(".dr-character-row").filter({hasText:"Mira"}).click();await characterTab(editor,"images",locale);const library=editor.locator(".dr-portrait-library");
-    await library.locator("input[type=file]").setInputFiles({name:"portrait.png",mimeType:"image/png",buffer:Buffer.from(source,"base64")});await expect(library.locator(".dr-library-image")).toHaveCount(1);
-    await editor.getByRole("button",{name:locale==="ru"?"Сохранить персонажа":"Save character",exact:true}).click();await closeSavedCharacter(editor,locale);await expect(chat.getByRole("textbox",{name:"Message"})).toHaveValue("Unsent draft.");
+    const upload={name:"portrait.png",mimeType:"image/png",buffer:Buffer.from(source,"base64")};
+    await library.locator("input[type=file]").setInputFiles(upload);
+    const choice=chat.getByRole("dialog",{name:locale==="ru"?"Сжать изображения?":"Compress images?",exact:true}),controls=choice.getByRole("button");
+    await expect(choice).toBeVisible();await controls.first().focus();await chat.keyboard.press("Shift+Tab");await expect(controls.last()).toBeFocused();await chat.keyboard.press("Tab");await expect(controls.first()).toBeFocused();
+    await chat.screenshot({path:info.outputPath(`compression-installed-${locale}.png`)});await choice.press("Escape");await expect(choice).toHaveCount(0);await expect(library.locator(".dr-library-image")).toHaveCount(5);
+    const preview=editor.getByRole("slider",{name:locale==="ru"?"Размер превью референсов":"Reference preview size"});await preview.fill("240");await preview.dispatchEvent("pointerup");await preview.blur();await expect(editor.locator(".dr-editor-unsaved")).toHaveCount(0);
+    await expect.poll(()=>panel.evaluate(async()=>((await(window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.referencePreviewSize))).toBe(240);
+    await library.locator("input[type=file]").setInputFiles(upload);await chooseImageCompression(chat);await expect(library.locator(".dr-library-image")).toHaveCount(6);
+    await editor.getByRole("button",{name:locale==="ru"?"Сохранить персонажа":"Save character",exact:true}).click();await expect(editor.locator("footer [role=status]")).toHaveText(locale === "ru" ? "Сохранено" : "Saved", { timeout: 60000 });await closeSavedCharacter(editor,locale);await expect(chat.getByRole("textbox",{name:"Message"})).toHaveValue("Unsent draft.");
     await panel.getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();await panel.getByRole("button",{name:locale==="ru"?"Файлы и защита":"Files & security",exact:true}).click();await panel.getByRole("button",{name:locale==="ru"?"Экспорт":"Export",exact:true}).click();
     const exportDialog=panel.getByRole("dialog",{name:locale==="ru"?"Экспорт":"Export",exact:true});await exportDialog.getByRole("radio",{name:locale==="ru"?/^Этот мир/:/^This world/}).check();
     const event=panel.waitForEvent("download");await exportDialog.getByRole("button",{name:locale==="ru"?"Скачать файл":"Download file",exact:true}).click();const file=await(await event).path();if(!file)throw Error("missing download");
-    const json=JSON.parse(await readFile(file,"utf8"));expect(json.format).toBe("deeprole-world");const person=json.records.find((row:any)=>row.kind==="entity").data;expect(person.description).toBe("ORIGINAL PROFILE");const saved=person.characterSheet.portraitLibrary[0];
+    const json=JSON.parse(await readFile(file,"utf8"));expect(json.format).toBe("deeprole-world");const person=json.records.find((row:any)=>row.kind==="entity").data;expect(person.description).toBe("ORIGINAL PROFILE");expect(person.characterSheet.portraitLibrary).toHaveLength(6); expect(person.characterSheet.portraitLibrary.reduce((sum:number,image:string)=>sum+image.length,0)).toBeGreaterThan(64_000_000);const saved=person.characterSheet.portraitLibrary.at(-1);
     expect(await panel.evaluate(async src=>{const img=new Image();img.src=src;await img.decode();return[img.naturalWidth,img.naturalHeight];},saved)).toEqual([853,1280]);expect(json.records.find((row:any)=>row.kind==="world").data.description).toBe("UNCHANGED LORE");expect(requests).toBe(0);
   }finally{await context.close();}
 });

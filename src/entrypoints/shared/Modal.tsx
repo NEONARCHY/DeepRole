@@ -2,10 +2,16 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { HelpButton, HelpSection } from "./Help";
 
-export function Modal(props: { title: string; closeLabel: string; children: ReactNode; onClose: () => void; wide?: boolean; returnFocus?: HTMLElement | null }) {
+function activeControl(doc: Document) {
+  let current = doc.activeElement;
+  while (current?.shadowRoot?.activeElement) current = current.shadowRoot.activeElement;
+  return current as HTMLElement | null;
+}
+
+export function Modal(props: { title: string; closeLabel: string; children: ReactNode; onClose: () => void; wide?: boolean; returnFocus?: HTMLElement | null; plainClose?: boolean }) {
   const backdrop = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const previous = props.returnFocus ?? document.activeElement as HTMLElement | null;
+    const previous = props.returnFocus ?? activeControl(backdrop.current?.ownerDocument ?? document);
     const root = backdrop.current;
     const hidden: { element: HTMLElement; inert: boolean; aria: string | null }[] = [];
     // Only hide siblings in this extension document, never the host DeepSeek chat.
@@ -26,9 +32,11 @@ export function Modal(props: { title: string; closeLabel: string; children: Reac
   return <div ref={backdrop} className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) props.onClose(); }} onKeyDown={(event) => {
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); props.onClose(); }
     if (event.key !== "Tab") return;
+    event.stopPropagation();
     const controls = [...(backdrop.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, [tabindex="0"]') ?? [])].filter((element) => element.getClientRects().length);
     const first = controls[0]; const last = controls.at(-1);
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-  }}><HelpSection className={`modal ${props.wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={props.title}><header><h2>{props.title}</h2><HelpButton className="icon-button" onClick={props.onClose} aria-label={props.closeLabel}><X /></HelpButton></header><div className="modal-body">{props.children}</div></HelpSection></div>;
+    const focused = activeControl(event.currentTarget.ownerDocument);
+    if (event.shiftKey && focused === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && focused === last) { event.preventDefault(); first?.focus(); }
+  }}><HelpSection className={`modal ${props.wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={props.title}><header><h2>{props.title}</h2>{props.plainClose ? <button type="button" className="icon-button" onClick={props.onClose} aria-label={props.closeLabel}><X /></button> : <HelpButton className="icon-button" onClick={props.onClose} aria-label={props.closeLabel}><X /></HelpButton>}</header><div className="modal-body">{props.children}</div></HelpSection></div>;
 }

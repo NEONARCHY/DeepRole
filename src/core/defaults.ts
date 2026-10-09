@@ -4,6 +4,7 @@ import { DEFAULT_PORTRAIT_MAX_EDGE, DEFAULT_PORTRAIT_PREVIEW_SIZE } from "./port
 export const DEFAULT_SETTINGS: DeepRoleSettings = {
   portraitMaxEdge: DEFAULT_PORTRAIT_MAX_EDGE,
   portraitPreviewSize: DEFAULT_PORTRAIT_PREVIEW_SIZE,
+  referencePreviewSize: DEFAULT_PORTRAIT_PREVIEW_SIZE,
   showDeepSeekReasoning: false,
   replyRecoveryEnabled: true,
   contextWarningsEnabled: true,

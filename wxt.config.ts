@@ -24,6 +24,7 @@ export default defineConfig({
     },
     permissions: [
       "storage",
+      "unlimitedStorage",
       "contextMenus",
       ...(browser === "chrome" ? ["sidePanel"] : []),
     ],
