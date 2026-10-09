@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Blob as NodeBlob } from "node:buffer";
 import { ImageTransport, requestBody, ImageApiError } from "../src/adapters/image/transport";
 import { OpenAiImagesProvider } from "../src/adapters/image/openai-images";
-import { VeniceNativeProvider, lowestUsdPrice, usdPrices } from "../src/adapters/image/venice-native";
+import { VeniceNativeProvider, MULTI_EDIT_REFERENCE_FALLBACK, lowestUsdPrice, usdPrices } from "../src/adapters/image/venice-native";
 import { dataImageBlob, normalizeImage } from "../src/adapters/image/image-codec";
 import { ImageJobs } from "../src/storage/image-jobs";
 import { saveImageSettings } from "../src/storage/image-settings";
@@ -49,9 +49,19 @@ describe("documented image adapters (mock fetch only)", () => {
     vi.stubGlobal("fetch", fetchMock);
     const models = await new VeniceNativeProvider(profile, new ImageTransport(profile, secret, permitted)).listModels();
     const edit = models.find(model => model.id === "qwen-edit-uncensored"), plain = models.find(model => model.id === "hunyuan-image-v3");
-    expect(edit).toMatchObject({ priceUsd: .04, uncensored: true, supportsEdit: true, privacy: "private" }); expect(edit?.maxInputImages).toBeUndefined();
+    expect(edit).toMatchObject({ priceUsd: .04, uncensored: true, supportsEdit: true, privacy: "private" }); expect(edit?.maxInputImages).toBe(MULTI_EDIT_REFERENCE_FALLBACK);
     // No combineImages and no explicit limit: the adapter does not invent a reference count.
     expect(plain).toMatchObject({ priceUsd: .05, supportsEdit: false }); expect(plain?.maxInputImages).toBeUndefined(); expect(plain?.uncensored).toBeUndefined();
+  });
+  it("keeps a model that reports only combineImages usable for group frames", async () => {
+    // qwen-edit-uncensored is the exact live case: a flag and no number. Without the documented
+    // fallback the interface would allow a single reference and group scenes would lose the cast.
+    expect(MULTI_EDIT_REFERENCE_FALLBACK).toBeGreaterThan(1);
+    const numeric = { data: [{ id: "seedream-v5-pro-edit", type: "inpaint", model_spec: { constraints: { combineImages: true, maxInputImages: 6 } } }] };
+    vi.stubGlobal("fetch", vi.fn(async () => json(numeric)));
+    const models = await new VeniceNativeProvider(profile, new ImageTransport(profile, secret, permitted)).listModels();
+    // An API-reported number always wins over the documented fallback.
+    expect(models[0]?.maxInputImages).toBe(6);
   });
   it("never sends more reference images than the user connection limit", async () => {
     const limit = 6, config = { ...profile, kind: "venice-native" as const, editModelId: "synthetic-edit-model", maxReferences: limit };

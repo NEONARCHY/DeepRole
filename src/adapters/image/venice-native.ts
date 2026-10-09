@@ -1,5 +1,12 @@
 import { object, type EditInput, type GenerateInput, type ImageModelInfo, type ImageProvider, type ImageProviderConfig } from "../../core/image-generation";
 import { ImageApiError, ImageTransport, requestBody } from "./transport";
+/**
+ * Some edit models report only `constraints.combineImages: true` and no number, so the adapter cannot
+ * read their reference limit from the API. Venice's documented multi-edit contract accepts up to three
+ * input images; never claim more than that here. Models that do report a number are used as-is, and the
+ * owner can always raise the connection limit by hand. See docs/IMAGE-GENERATION.ru.md.
+ */
+export const MULTI_EDIT_REFERENCE_FALLBACK = 3;
 /** Venice nests prices per mode (inpaint, resolutions, inputImages); the top-level usd key may be absent. */
 export function usdPrices(pricing: Record<string, unknown>, found: number[] = []): number[] {
   const usd = pricing.usd;
@@ -29,10 +36,10 @@ export class VeniceNativeProvider implements ImageProvider {
     return json.data.filter(item => object(item) && typeof item.id === "string" && item.id.length <= 200).slice(0, 2000).map(item => {
       const spec = object(item.model_spec) ? item.model_spec : {}, capabilities = object(spec.capabilities) ? spec.capabilities : {}, constraints = object(spec.constraints) ? spec.constraints : {}, pricing = object(spec.pricing) ? spec.pricing : {};
       // Only actual API fields: no guessed prices, resolutions, steps or model-name heuristics.
-      // Multi-edit's maximum is per model (capabilities.maxInputImages), not a
-      // universal count. combineImages is only a boolean, not a numeric limit.
+      // A numeric maxInputImages wins. `combineImages` is a boolean, so a model that reports only the
+      // flag would otherwise lose multi-reference support; it falls back to the documented maximum.
       const raw = capabilities.maxInputImages ?? constraints.maxInputImages;
-      const max = Number.isInteger(raw) && Number(raw) > 0 ? Number(raw) : undefined;
+      const max = Number.isInteger(raw) && Number(raw) > 0 ? Number(raw) : constraints.combineImages === true ? MULTI_EDIT_REFERENCE_FALLBACK : undefined;
       const price = lowestUsdPrice(pricing);
       return { id: item.id as string, label: typeof spec.name === "string" ? spec.name.slice(0, 200) : item.id as string,
         ...(spec.privacy === "private" || spec.privacy === "anonymized" ? { privacy: spec.privacy } : {}),

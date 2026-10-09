@@ -5,7 +5,7 @@ import { imagePlanInstruction, imagePlanRoster, parseImageScenePlan, planImageIn
 import { selfieImageKey } from "../src/core/selfies";
 import type { SceneEntity } from "../src/core/types";
 import { profile, realPng, world } from "./image-fixtures";
-import { VeniceNativeProvider } from "../src/adapters/image/venice-native";
+import { VeniceNativeProvider, MULTI_EDIT_REFERENCE_FALLBACK } from "../src/adapters/image/venice-native";
 import { ImageTransport } from "../src/adapters/image/transport";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -79,8 +79,17 @@ it("sends six data URLs through Venice multi-edit unchanged and reads binary out
   expect(url).toMatch(/\/image\/multi-edit$/); expect(body.images).toEqual(images); expect(body.futureOption).toEqual(providerConfig.extraParams.futureOption);
   expect(body.modelId).toBe(providerConfig.editModelId); expect(body).not.toHaveProperty("model"); expect(fetchMock).toHaveBeenCalledOnce();
 });
-it("does not invent a reference limit from Venice's combineImages flag", async () => {
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({data: [{id: "synthetic-group-model", model_spec: {constraints: {combineImages: true}}}]}), {headers: {"content-type": "application/json"}})));
-  const models = await new VeniceNativeProvider(config, new ImageTransport(config, "synthetic-private-key", async () => true)).listModels();
-  expect(models[0]?.maxInputImages).toBeUndefined();
+it("uses the documented fallback only when the model reports no number", async () => {
+  // combineImages alone carries no number, so the documented multi-edit maximum is applied instead of
+  // leaving group frames with a single reference. A reported number always wins.
+  const response = (spec: unknown) => new Response(JSON.stringify({ data: [{ id: "synthetic-group-model", model_spec: spec }] }), { headers: { "content-type": "application/json" } });
+  vi.stubGlobal("fetch", vi.fn(async () => response({ constraints: { combineImages: true } })));
+  const flagOnly = await new VeniceNativeProvider(config, new ImageTransport(config, "synthetic-private-key", async () => true)).listModels();
+  expect(flagOnly[0]?.maxInputImages).toBe(MULTI_EDIT_REFERENCE_FALLBACK);
+  vi.stubGlobal("fetch", vi.fn(async () => response({ constraints: { combineImages: true, maxInputImages: 6 } })));
+  const numeric = await new VeniceNativeProvider(config, new ImageTransport(config, "synthetic-private-key", async () => true)).listModels();
+  expect(numeric[0]?.maxInputImages).toBe(6);
+  vi.stubGlobal("fetch", vi.fn(async () => response({ constraints: {} })));
+  const neither = await new VeniceNativeProvider(config, new ImageTransport(config, "synthetic-private-key", async () => true)).listModels();
+  expect(neither[0]?.maxInputImages).toBeUndefined();
 });
