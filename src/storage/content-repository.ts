@@ -14,6 +14,15 @@ import type { StoryCheckpointChoice, StoryCheckpointReview, StoryCheckpointScope
 import type { StoryPreviewInput, StoryReviewInput, StoryReviewPage, StoryReviewPreview } from "../core/story-review";
 
 export type RepositoryRequest =
+  | { type: "DR_REPOSITORY"; operation: "readAutomationReview"; input: import("../core/story-automation-review").AutomationReviewRead; chatUrl: string }
+  | { type: "DR_REPOSITORY"; operation: "resolveAutomationReview"; input: import("../core/story-automation-review").AutomationReviewDecision; chatUrl: string }
+  | { type: "DR_REPOSITORY"; operation: "activateWorldGame"; input: import("../core/world-game").WorldGameActivation }
+  | { type: "DR_REPOSITORY"; operation: "acknowledgeOldChatNotice"; input: import("../core/old-chat-notice").OldChatNoticeEdit }
+  | { type: "DR_REPOSITORY"; operation: "readStoryMerge"; input: import("../core/story-character-merge").MergeRead; chatUrl: string }
+  | { type: "DR_REPOSITORY"; operation: "approveStoryMerge"; input: import("../core/story-character-merge").MergeApproval; chatUrl: string }
+  | { type: "DR_REPOSITORY"; operation: "undoStoryMerge"; input: import("../core/story-character-merge").MergeUndo; chatUrl: string }
+  | { type: "DR_REPOSITORY"; operation: "readStoryIdentities"; input: import("../core/story-identity-management").IdentityRead; chatUrl: string }
+  | { type: "DR_REPOSITORY"; operation: "approveStoryIdentity"; input: import("../core/story-identity-management").IdentityApproval; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "readProfileSupplements"; input: import("../core/profile-supplements").SupplementRead; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "approveProfileSupplement"; input: import("../core/profile-supplements").SupplementApproval; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "readCharacterDiscovery"; input: import("../core/story-character-discovery").CharacterDiscoveryRead; chatUrl: string }
@@ -57,6 +66,15 @@ async function call<T>(message: RepositoryRequest): Promise<T> {
 // IndexedDB in a content script belongs to the website, not the extension.
 // All content access is routed to the extension-owned background repository.
 export const contentRepository = {
+  readAutomationReview: (input: import("../core/story-automation-review").AutomationReviewRead, chatUrl: string) => call<import("../core/story-automation-review").AutomationReviewPage>({ type: "DR_REPOSITORY", operation: "readAutomationReview", input, chatUrl }),
+  resolveAutomationReview: (input: import("../core/story-automation-review").AutomationReviewDecision, chatUrl: string) => call<{ changed: boolean }>({ type: "DR_REPOSITORY", operation: "resolveAutomationReview", input, chatUrl }),
+  activateWorldGame: (input: import("../core/world-game").WorldGameActivation) => call<import("../core/world-game").WorldGame>({ type: "DR_REPOSITORY", operation: "activateWorldGame", input }),
+  acknowledgeOldChatNotice: (input: import("../core/old-chat-notice").OldChatNoticeEdit) => call<void>({ type: "DR_REPOSITORY", operation: "acknowledgeOldChatNotice", input }),
+  readStoryMerge: (input: import("../core/story-character-merge").MergeRead, chatUrl: string) => call<import("../core/story-character-merge").MergePage>({ type: "DR_REPOSITORY", operation: "readStoryMerge", input, chatUrl }),
+  approveStoryMerge: (input: import("../core/story-character-merge").MergeApproval, chatUrl: string) => call<import("../core/story-character-merge").MergePage>({ type: "DR_REPOSITORY", operation: "approveStoryMerge", input, chatUrl }),
+  undoStoryMerge: (input: import("../core/story-character-merge").MergeUndo, chatUrl: string) => call<import("../core/story-character-merge").MergePage>({ type: "DR_REPOSITORY", operation: "undoStoryMerge", input, chatUrl }),
+  readStoryIdentities: (input: import("../core/story-identity-management").IdentityRead, chatUrl: string) => call<import("../core/story-identity-management").IdentityPage>({ type: "DR_REPOSITORY", operation: "readStoryIdentities", input, chatUrl }),
+  approveStoryIdentity: (input: import("../core/story-identity-management").IdentityApproval, chatUrl: string) => call<import("../core/story-identity-management").IdentityPage>({ type: "DR_REPOSITORY", operation: "approveStoryIdentity", input, chatUrl }),
   readProfileSupplements: (input: import("../core/profile-supplements").SupplementRead, chatUrl: string) => call<import("../core/profile-supplements").SupplementPage>({ type: "DR_REPOSITORY", operation: "readProfileSupplements", input, chatUrl }),
   approveProfileSupplement: (input: import("../core/profile-supplements").SupplementApproval, chatUrl: string) => call<{ entityId: string; applied: number; skipped: import("../core/character-profile").ProfileField[] }>({ type: "DR_REPOSITORY", operation: "approveProfileSupplement", input, chatUrl }),
   readCharacterDiscovery: (input: import("../core/story-character-discovery").CharacterDiscoveryRead, chatUrl: string) => call<import("../core/story-character-discovery").CharacterDiscoveryPage>({ type: "DR_REPOSITORY", operation: "readCharacterDiscovery", input, chatUrl }),

@@ -21,6 +21,9 @@ export interface TabSessionState {
 export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
+  | { type: "DR_RESUME_WORLD_GAME"; chatId: string; worldId: string }
+  | ({ type: "DR_STORY_IDENTITIES" } & import("./story-identity-management").IdentityAction)
+  | ({ type: "DR_STORY_MERGE" } & import("./story-character-merge").MergeAction)
   | ({ type: "DR_STORY_PROFILE" } & import("./profile-supplements").SupplementAction)
   | import("../adapters/isolated-field-coordinator").FieldMessage
   | import("./image-messages").ImageMessage
@@ -29,7 +32,9 @@ export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_MIGRATE_LEGACY" }
   | { type: "DR_GET_PAGE_STATE" }
   | { type: "DR_STORY_DIAGNOSTICS" }
-  | { type: "DR_STORY_GAME"; operation: "start" | "restart" | "sync" | "undo" | "out-of-character"; manual: "stop" | "keep" }
+  | { type: "DR_STORY_GAME"; operation: "start" | "restart" | "reset" | "restore" | "sync" | "undo" | "out-of-character"; manual: "stop" | "keep"; scope?: { chatId: string; worldId: string } }
+  | { type: "DR_AUTOMATION_READ"; input: import("./story-automation-review").AutomationReviewRead }
+  | { type: "DR_AUTOMATION_RESOLVE"; input: import("./story-automation-review").AutomationReviewDecision }
   | { type: "DR_STORY_FACT"; input: import("../storage/story-facts").StoryFactApproval }
   | { type: "DR_STORY_REPAIR"; input: import("../storage/story-repair").StoryRepairInput; cancel?: boolean }
   | ({ type: "DR_CHARACTER_DISCOVERY" } & import("./story-character-discovery").CharacterDiscoveryAction)

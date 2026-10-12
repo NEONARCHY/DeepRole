@@ -35,6 +35,6 @@ for (const locale of ["ru", "en"] as const) test(`invalid boundaries reveal the 
 
 test("an open draft can change resolve while the answer updates energy", async ({ page }) => {
   await page.goto("/tests/fixtures/relationships.html?locale=en"); const hero = page.locator(".dr-character-row").filter({ hasText: "Leon" }); await hero.click(); const dialog = page.getByRole("dialog"); await dialog.getByRole("tab", { name: "In scene", exact: true }).click(); await dialog.getByRole("button", { name: "Add stamina and confidence", exact: true }).click(); const save = dialog.getByRole("button", { name: "Save character", exact: true }); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible();
-  await dialog.getByLabel("Now in this chat · Confidence", { exact: true }).fill("90"); await page.evaluate(() => (window as any).playProgressEvent()); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible();
+  await dialog.getByLabel("Now in this game · Confidence", { exact: true }).fill("90"); await page.evaluate(() => (window as any).playProgressEvent()); await save.click(); await expect(dialog.locator("footer [role=status]")).toBeVisible();
   const state = await page.evaluate(async () => (await (window as any).records()).find((row: any) => row.kind === "binding").data.characterScenes.world.states.hero.attributes); expect(state.values).toEqual({ energy: 73, resolve: 90 }); expect(state.history.map((h: any) => h.source)).toEqual(["manual", "scene"]);
 });

@@ -26,8 +26,11 @@ import { FieldValidationError } from "../core/field-validation";
 import { fieldServiceValidation, type ServiceValidation } from "../core/service-validation";
 import { recordFieldServiceValidation, recordFieldWorkerRuntime, type FieldValidationBinding } from "../storage/field-service-validation";
 import { FIELD_CLEANUP_WAIT, fieldWorkerStages, validFieldWorkerRuntime, type FieldWorkerRuntime, type FieldWorkerStage, type FieldWorkerVisibility } from "../core/field-runtime";
+import { validDiscoveryQueueInput, type DiscoveryQueueInput } from "../core/discovery-profile-queue";
+import { editDiscoveryQueue, failDiscoveryProfileTask } from "../storage/discovery-profile-queue";
 
 export type FieldMessage =
+ | { type: "DR_FIELD"; action: "discovery-queue"; input: DiscoveryQueueInput }
  | { type: "DR_FIELD"; action: "enrich-profile"; input: SupplementInput }
  | { type: "DR_FIELD"; action: "discovery-profile"; input: DiscoveryProfileInput }
  | { type: "DR_FIELD"; action: "discover"; input: CharacterDiscoveryInput }
@@ -47,7 +50,7 @@ interface Owner {
  runtime?: FieldWorkerRuntime; settledAt?: number; delivered?: boolean; mode?: "history" | "suggest"; fieldScope?: CharacterTextField["scope"];
  repair?: StoryRepairInput;
  discovery?: CharacterDiscoveryInput;
- discoveryProfile?: Pick<DiscoveryProfileInput, "worldId" | "chatId" | "guard" | "eventId">;
+  discoveryProfile?: Pick<DiscoveryProfileInput, "worldId" | "chatId" | "guard" | "eventId" | "queueId">;
  enrichment?: SupplementInput;
 }
 interface Job { prompt: string; field: CharacterTextField; partialContext: boolean; sources: FieldSource[]; presentation: FieldServicePresentation; historyOrigin?: "native" | "visible"; text?: string; evidence?: string[]; repair?: StoryRepairBrief; discovery?: CharacterDiscoveryBrief; discoveryProfile?: DiscoveryProfileBrief; enrichment?: SupplementBrief }
@@ -71,6 +74,7 @@ export class IsolatedFieldCoordinator {
  private async audit(owner: Owner) {
   if (owner.repair && owner.phase === "error") await finishStoryRepair(owner.repair, owner.id, owner.error === "cancelled" ? "cancelled" : "failed", this.repo).catch(() => undefined);
   if (owner.discovery && owner.phase === "error") await finishCharacterDiscovery(owner.discovery, owner.id, owner.error === "cancelled" ? "cancelled" : "failed", this.repo).catch(() => undefined);
+  if (owner.discoveryProfile && owner.phase === "error") await failDiscoveryProfileTask(owner.discoveryProfile, owner.id, this.repo).catch(() => undefined);
   if (owner.runtime && owner.mode && owner.fieldScope && this.runtimeSnapshots.get(owner.id) !== JSON.stringify(owner.runtime)) {
    try {
     await recordFieldWorkerRuntime({ id: owner.id, worldId: owner.source.worldId, sourceChatId: owner.source.chatId, workerChatId: owner.chatId, createdAt: owner.createdAt, mode: owner.mode, fieldScope: owner.fieldScope }, owner.runtime, this.repo);
@@ -115,12 +119,23 @@ export class IsolatedFieldCoordinator {
   try {
    if (sender.id !== this.api.runtime.id || sender.tab?.id === undefined || sender.frameId && sender.frameId !== 0) throw new Error("untrusted");
    const tabId = sender.tab.id, tab = await this.api.tabs.get(tabId).catch(() => undefined);
-   if (!tab?.url || new URL(tab.url).origin !== "https://chat.deepseek.com") throw new Error("untrusted");
+    if (!tab?.url || new URL(tab.url).origin !== "https://chat.deepseek.com") throw new Error("untrusted");
+    if (message.type === "DR_FIELD" && message.action === "discovery-queue") {
+     if (!validDiscoveryQueueInput(message.input) || !fieldSourceUrl(tab.url, message.input.chatId) || !tab.active) throw Error("invalid-brief");
+     if (await this.repo.isLocked()) throw Error("vault-locked");
+     for (const owner of await this.owners()) {
+      if (owner.cleanup === "done") continue;
+      if (owner.phase === "running" && (!this.jobs.has(owner.id) || !await this.sourceValid(owner) || Date.now() - owner.createdAt >= FIELD_TIMEOUT)) { this.stop(owner, "interrupted"); await this.save(owner); this.wake(owner); }
+      throw Error(owner.cleanup === "failed" ? "cleanup-required" : "busy");
+     }
+     const current = async () => { const latest = await this.api.tabs.get(tabId); if (!latest?.active || !fieldSourceUrl(latest.url, message.input.chatId)) throw Error("scene-changed"); };
+     await editDiscoveryQueue(message.input, this.repo, current); return { ok: true };
+    }
    if (message.type === "DR_FIELD" && (message.action === "discovery-profile" || message.action === "enrich-profile")) {
     if (!(message.action === "discovery-profile" ? validDiscoveryProfileInput(message.input) : validSupplementInput(message.input)) || !fieldSourceUrl(tab.url, message.input.chatId) || !tab.active) throw Error("invalid-brief");
     if (await this.repo.isLocked()) throw Error("vault-locked");
     await this.flushPending().catch(() => undefined);
-    if ((await this.owners()).some(o => !o.cleanup)) throw Error("busy");
+     if ((await this.owners()).some(o => !o.cleanup || "queueId" in message.input && message.input.queueId && o.cleanup !== "done")) throw Error("busy");
     const id = "field_" + crypto.randomUUID(), input = structuredClone(message.input), settings = await this.settings(), createdAt = Date.now();
     const brief = "entityId" in input ? await prepareProfileSupplement(input, id, settings.locale, this.repo) : await prepareDiscoveryProfile(input, id, settings.locale, this.repo);
     let worker: import("wxt/browser").Browser.tabs.Tab | undefined;
@@ -130,13 +145,14 @@ export class IsolatedFieldCoordinator {
      const tabs = popup?.tabs ?? (popup?.id !== undefined ? await this.api.tabs.query({ windowId: popup.id }) : []);
      if (tabs.length !== 1 || tabs[0]?.id === undefined || tabs[0].id === tabId) throw Error("tab-unavailable");
      worker = tabs[0];
-     const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", ...("entityId" in input ? { enrichment: input } : { discoveryProfile: { worldId: input.worldId, chatId: input.chatId, guard: input.guard, eventId: input.eventId } }), mode: "history", fieldScope: "profile", runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
+      const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", ...("entityId" in input ? { enrichment: input } : { discoveryProfile: { worldId: input.worldId, chatId: input.chatId, guard: input.guard, eventId: input.eventId, ...(input.queueId ? { queueId: input.queueId } : {}) } }), mode: "history", fieldScope: "profile", runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
      await this.save(owner);
      this.jobs.set(id, { prompt: brief.prompt, field: brief.draft.field, sources: [], partialContext: brief.partial, ...("canonical" in brief ? { enrichment: brief } : { discoveryProfile: brief }), presentation: { locale: settings.locale, kind: "profile", characterName: brief.draft.reference.name as string, fieldLabel: brief.draft.field.label } });
      await this.api.tabs.update(worker.id!, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
      return { ok: true, id };
     } catch {
      this.jobs.delete(id);
+      if (!("entityId" in input)) await failDiscoveryProfileTask(input, id, this.repo).catch(() => undefined);
      const current = worker?.id !== undefined ? await this.api.tabs.get(worker.id).catch(() => undefined) : undefined;
      const cleaned = !current || current.url === "about:blank" && await this.api.tabs.remove(worker!.id!).then(() => true, () => false);
      const owner = (await this.owners()).find(o => o.id === id);
@@ -335,7 +351,12 @@ export class IsolatedFieldCoordinator {
     return { ok: true };
    }
    throw new Error("invalid-brief");
-  } catch (error) { return { ok: false, error: safeFieldError(error instanceof Error ? error.message : error) }; }
+   } catch (error) {
+    const code = error instanceof Error ? error.message : error;
+    // Queue storage conflicts need their existing UI copy; no arbitrary error text crosses the boundary.
+    const queueError = message.type === "DR_FIELD" && message.action === "discovery-queue" && ["cleanup-required", "story-review-stale", "character-discovery-known"].includes(String(code));
+    return { ok: false, error: queueError ? code : safeFieldError(code) };
+   }
  }); }
  removed(tabId: number) { return this.enqueue(async () => { for (const owner of await this.owners()) {
   if (owner.sourceTab === tabId) { this.stop(owner, "tab-closed"); await this.save(owner); this.wake(owner); }

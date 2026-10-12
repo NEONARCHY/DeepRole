@@ -9,7 +9,8 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`shared
   await page.getByLabel(locale === "ru" ? "Действия для портретов" : "Portrait actions", { exact: true }).fill(names.join("\n"));
   await page.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true }).click();
   expect(await page.evaluate(() => (window as any).settings.characterActions)).toEqual(names);
-  await page.locator(".dr-action-settings > .dr-action-help").last().locator("summary").click(); await expect(page.locator(".dr-action-settings > .dr-action-help").last()).toContainText(locale === "ru" ? "на языке расширения" : "Standard actions");
+  const help = page.locator(".dr-action-settings > .dr-settings-help");
+  await help.getByRole("button").click(); await expect(help.getByRole("note")).toContainText(locale === "ru" ? "на языке расширения" : "Standard actions");
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");
   await characterTab(dialog, "images", locale);
   const portraitAction = dialog.getByLabel(locale === "ru" ? "Действие портрета" : "Portrait action", { exact: true });
@@ -36,7 +37,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`shared
   // A live update between saves remains authoritative for fields left untouched.
   await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, goal: "Reach the observatory" } } } }); });
   await characterTab(dialog, "profile", locale);
-  await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Green coat");
+  await dialog.getByRole("textbox", { name: locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", exact: true }).fill("Green coat");
   await save.click(); await expect(saved).toBeVisible(); await expect(dialog.getByLabel(locale === "ru" ? "Ближайшая цель" : "Current goal", { exact: true })).toHaveValue("Reach the observatory");
   await expect(dialog.getByRole("alert")).toHaveCount(0);
   let confirmations = 0; page.on("dialog", async event => { confirmations++; await event.dismiss(); });
@@ -48,7 +49,7 @@ test("saving a new character twice keeps the same identity and editor", async ({
   const dialog = page.getByRole("dialog"); await dialog.getByLabel("Name", { exact: true }).fill("Jun");
   const save = dialog.getByRole("button", { name: "Save character", exact: true });
   await save.click(); await expect(dialog.locator("footer [role=status]")).toHaveText("Saved");
-  await dialog.getByLabel("Appearance and clothing", { exact: true }).fill("Grey coat");
+  await dialog.getByRole("textbox", { name: "Appearance and clothing", exact: true }).fill("Grey coat");
   await save.click(); await expect(dialog.locator("footer [role=status]")).toHaveText("Saved");
   const people = await page.evaluate(() => (window as any).getCast().entities.filter((e: any) => e.name === "Jun"));
   expect(people).toHaveLength(1); expect(people[0].characterSheet.appearance).toBe("Grey coat");
@@ -60,7 +61,7 @@ for (const locale of ["ru", "en"]) test(`gallery stays in the editor after savin
   await page.setViewportSize({ width: 320, height: 950 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   await page.getByRole("button", { name: locale === "ru" ? "Открыть галерею персонажей" : "Open character gallery", exact: true }).click();
   const dialog = page.getByRole("dialog"); await dialog.getByRole("button", { name: (locale === "ru" ? "Редактировать персонажа" : "Edit character") + ": Mira", exact: true }).click();
-  await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Grey coat");
+  await dialog.getByRole("textbox", { name: locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", exact: true }).fill("Grey coat");
   await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
   await expect(dialog.locator("footer [role=status]")).toBeVisible();
   await expect(dialog.locator(".dr-character-editor-view")).toBeVisible(); await expect(dialog.locator(".dr-character-gallery-view")).toBeHidden();

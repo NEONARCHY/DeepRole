@@ -59,9 +59,10 @@ export function projectStoryBranch(records: StoryRecord[], branchId: string, hea
   const approved = new Set(acceptedEventIds);
   for (const id of approved) {
     const event = all.get(id);
-    if (event?.type !== "event" || !compatible(event) || event.branchId !== branch.id && !prefixIds.has(event.revisionId)) throw new StoryProjectionError("story-approval-invalid");
+    const root = event?.type === "event" && !!(event.identityControl || event.characterMerge) && event.revisionId === baseline.id && event.branchId === baseline.branchId;
+    if (event?.type !== "event" || !compatible(event) || event.branchId !== branch.id && !prefixIds.has(event.revisionId) && !root) throw new StoryProjectionError("story-approval-invalid");
     const source = all.get(event.revisionId);
-    if (source?.type !== "revision" || source.completion !== "complete") throw new StoryProjectionError("story-source-incomplete");
+    if (!root && (source?.type !== "revision" || source.completion !== "complete")) throw new StoryProjectionError("story-source-incomplete");
   }
   if (selected.some(revision => revision.completion !== "complete")) throw new StoryProjectionError("story-source-incomplete");
 
@@ -69,7 +70,8 @@ export function projectStoryBranch(records: StoryRecord[], branchId: string, hea
   for (const record of records) if (record.type === "event" && approved.has(record.id)) {
     const events = eventsByRevision.get(record.revisionId) ?? []; events.push(record); eventsByRevision.set(record.revisionId, events);
   }
-  const ordered: StoryEvent[] = [];
+  const ordered: StoryEvent[] = (eventsByRevision.get(baseline.id) ?? []).sort((a, b) => a.ordinal - b.ordinal);
+  if (new Set(ordered.map(event => event.ordinal)).size !== ordered.length) throw new StoryProjectionError("story-order-conflict");
   for (const revision of selected) {
     const events = (eventsByRevision.get(revision.id) ?? []).sort((a, b) => a.ordinal - b.ordinal);
     if (new Set(events.map(event => event.ordinal)).size !== events.length) throw new StoryProjectionError("story-order-conflict");

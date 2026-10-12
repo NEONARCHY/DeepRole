@@ -28,6 +28,7 @@ import type { DataRecord } from "../core/types";
 import { withLibraryLock } from "./library-lock";
 import { PhotoAssets } from "./photo-assets";
 import { photoAddresses } from "../core/photo-assets";
+import { sharedGameCommit } from "./world-game";
 
 export class MemoryConflictError extends Error {
   constructor() { super("memory-conflict"); this.name = "MemoryConflictError"; }
@@ -41,6 +42,9 @@ export class VaultLockedError extends Error {
 }
 
 export class DeepRoleRepository {
+  private async stagePortablePhotos(photos?: import("../core/portable-photos").PortablePhoto[]) {
+    for (const photo of photos ?? []) await this.photos.store(photo.image,photo.id);
+  }
   private readonly photos: PhotoAssets;
   constructor(private readonly db: DeepRoleDatabase = database, private readonly compactPhotos = false) { this.photos = new PhotoAssets(db); }
 
@@ -145,10 +149,11 @@ export class DeepRoleRepository {
     });
   }
 
-  async replaceRecords(records: DataRecord[], finish?: () => Promise<void>): Promise<void> {
+  async replaceRecords(records: DataRecord[], finish?: () => Promise<void>, photos?: import("../core/portable-photos").PortablePhoto[]): Promise<void> {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
       const config = await getVaultConfig();
+      await this.stagePortablePhotos(photos);
       const rows = await this.encodeRecords(records, config);
       const before = finish ? await this.db.records.toArray() : [];
       await this.db.transaction("rw", this.db.records, async () => {
@@ -170,14 +175,17 @@ export class DeepRoleRepository {
   /** Pure transform of the current library under one cross-window write lock.
    * Do not call repository methods inside the transform (they acquire this lock).
    */
-  async updateRecords<T>(transform: (current: DataRecord[]) => { records: DataRecord[]; removed: { kind: RecordKind; id: string }[]; result: T; deleteOrphanedPhotos?: boolean }, finish?: () => Promise<void>, readKinds?: RecordKind[]): Promise<T> {
+  async updateRecords<T>(transform: (current: DataRecord[]) => { records: DataRecord[]; removed: { kind: RecordKind; id: string }[]; result: T; deleteOrphanedPhotos?: boolean }, finish?: () => Promise<void>, readKinds?: RecordKind[], photos?: import("../core/portable-photos").PortablePhoto[]): Promise<T> {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
+      if (readKinds?.some(k => ["binding", "story", "entity"].includes(k))) readKinds = [...new Set([...readKinds, "world", "binding", "story", "entity"])] as RecordKind[];
       const stored = readKinds ? await this.db.records.where("kind").anyOf(readKinds).toArray() : await this.db.records.toArray();
       const current = await Promise.all(stored.map(async (row) => ({ kind: row.kind, id: row.id, data: await this.decode<RecordValue>(row) })));
       const plan = transform(current);
-      if (readKinds && [...plan.records, ...plan.removed].some(row => !readKinds.includes(row.kind))) throw new Error("repository-scope");
+      plan.records = sharedGameCommit(current, plan.records, plan.removed);
+      if (readKinds && [...plan.records, ...plan.removed].some(row => !readKinds!.includes(row.kind))) throw new Error("repository-scope");
       const config = await getVaultConfig();
+      await this.stagePortablePhotos(photos);
       const rows = await this.encodeRecords(plan.records, config);
       let photoRemovals: string[] = [];
       if (plan.deleteOrphanedPhotos) {
@@ -212,8 +220,10 @@ export class DeepRoleRepository {
     });
   }
 
-  async mergeRecords(records: Array<{ kind: RecordKind; id: string; data: RecordValue }>): Promise<void> {
+  async mergeRecords(records: Array<{ kind: RecordKind; id: string; data: RecordValue }>, photos?: import("../core/portable-photos").PortablePhoto[]): Promise<void> {
     return withLibraryLock("exclusive", async () => {
+      await this.requireUnlocked();
+      await this.stagePortablePhotos(photos);
       const config = await getVaultConfig();
       const rows = await this.encodeRecords(records, config);
       await this.db.transaction("rw", this.db.records, () => this.db.records.bulkPut(rows));
@@ -243,6 +253,11 @@ export class DeepRoleRepository {
       const before = await this.db.records.bulkGet(keys);
       const decoded = await Promise.all(before.map((row) => row ? this.decode<RecordValue>(row) : null));
       if (decoded.some((value, i) => JSON.stringify(value) !== JSON.stringify(expected[i]!.data))) throw new MemoryConflictError();
+      if ([...records, ...removed].some(r => ["world", "binding", "entity", "story"].includes(r.kind))) {
+        const gameRows = await this.db.records.where("kind").anyOf(["world", "binding", "entity", "story"]).toArray();
+        const gameRecords = await Promise.all(gameRows.map(async r => ({ kind: r.kind, id: r.id, data: await this.decode<RecordValue>(r) })));
+        records = sharedGameCommit(gameRecords, records, removed);
+      }
       const config = await getVaultConfig();
       const rows = await this.encodeRecords(records, config);
       await this.db.transaction("rw", this.db.records, async () => {

@@ -1,0 +1,15 @@
+.dr-story-merge { min-width: 0; }
+.dr-story-merge input:not([type=radio]):not([type=checkbox]), .dr-story-merge textarea { width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; padding: 8px; border: 1px solid var(--dr-border-strong); border-radius: var(--dr-radius); background: var(--dr-raised); color: var(--dr-text); font: inherit; }
+.dr-story-merge-pickers { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 12px; margin: 12px 0; }
+.dr-story-merge fieldset { min-width: 0; border: 1px solid var(--dr-border); border-radius: 10px; padding: 10px; margin: 10px 0; }
+.dr-story-merge-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; cursor: pointer; overflow-wrap: anywhere; }
+.dr-story-merge-option input { flex: 0 0 auto; margin-top: 3px; }
+.dr-story-merge-option small { display: block; color: var(--dr-muted); font-size: 12px; line-height: 1.5; }
+:is(.app-shell, .dr-root) .dr-story-merge .dr-story-merge-option input[type=radio], :is(.app-shell, .dr-root) .dr-story-merge .dr-story-merge-option input[type=checkbox] { width: 16px; height: 16px; min-height: 0; padding: 0; flex: 0 0 16px; appearance: none; border: 1px solid var(--dr-muted); background: var(--dr-panel); border-radius: 4px; }
+:is(.app-shell, .dr-root) .dr-story-merge .dr-story-merge-option input { min-width: 16px; box-sizing: border-box; }
+:is(.app-shell, .dr-root) .dr-story-merge .dr-story-merge-option input[type=radio] { border-radius: 50%; }
+:is(.app-shell, .dr-root) .dr-story-merge .dr-story-merge-option input:checked { background: var(--dr-primary); border-color: var(--dr-primary); box-shadow: inset 0 0 0 3px var(--dr-panel); }
+.dr-story-merge button.primary { background: var(--dr-action); color: var(--dr-on-action); border-color: var(--dr-action); }
+.dr-story-merge .dr-story-merge-option input::after, .dr-story-merge .dr-story-merge-option input::before { display: none !important; }
+.dr-story-merge-pickers fieldset { max-height: 300px; overflow: auto; }
+.dr-story-merge p, .dr-story-merge strong { overflow-wrap: anywhere; }

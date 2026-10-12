@@ -72,9 +72,11 @@ export function CastStatus({ job, locale, compact, anchor, children, onHide }: {
       {!compact && <strong className="dr-cast-status-title">{t("title")}</strong>}
       <button type="button" className="icon-button dr-cast-status-reset" title={t("hide")} aria-label={t("hide")} onClick={onHide}><X size={14}/></button>
     </div>
-    <div className="dr-cast-phase" role="status" aria-live="polite"><span className={waiting ? "dr-cast-spinner" : "dr-cast-ready-dot"} aria-hidden="true"/><strong>{t(job.phase)}</strong></div>
-    {preparing && <><div className="dr-cast-activity" aria-hidden="true"><span/></div><p className="dr-cast-waiting-hint" aria-live="off">{t((job.phase === "opening" ? ["waitOpening", "waitConnection", "waitService"] : job.phase === "reading" ? ["waitFragments", "waitSources", "waitService"] : ["waitProfiles", "waitRelationships", "waitService"])[hint] as Parameters<typeof castText>[1])}</p>
-      <small>{job.phase === "analyzing" ? t("finalStep") : job.phase === "opening" ? t("source") + ": " + job.sourceCount : t("fragment") + " " + Math.min(job.step + 1, job.partCount) + "/" + job.partCount}{job.repair ? " · " + t("repairStep") : ""}</small></>}
+    <div className="dr-cast-phase" role="status" aria-live="polite"><span className={waiting ? "dr-cast-spinner" : "dr-cast-ready-dot"} aria-hidden="true"/><strong>{t(job.large && job.large.stage !== "done" && (preparing || job.phase === "ready") ? job.phase === "ready" ? "largeBetween" : job.large.stage === "scan" ? "largeScan" : "largeProfiles" : job.phase)}</strong></div>
+    {job.large && <><small>{t("largeSource")}: {job.large.source}/{job.sourceCount} · {t("largeFound")}: {job.large.found}</small><small>{t("largePrepared")}: {job.large.prepared}/{job.large.found}</small></>}
+    {job.large?.stage === "scan" && <small>{t("largeRead")}: {new Intl.NumberFormat(locale).format(job.large.offset)}</small>}
+    {preparing && <><div className="dr-cast-activity" aria-hidden="true"><span/></div><p className="dr-cast-waiting-hint" aria-live="off">{t((job.large?.stage === "scan" ? ["waitNames", "waitSources", "waitService"] : job.phase === "opening" ? ["waitOpening", "waitConnection", "waitService"] : job.phase === "reading" ? ["waitFragments", "waitSources", "waitService"] : ["waitProfiles", "waitRelationships", "waitService"])[hint] as Parameters<typeof castText>[1])}</p>
+      {!job.large && <small>{job.phase === "analyzing" ? t("finalStep") : job.phase === "opening" ? t("source") + ": " + job.sourceCount : t("fragment") + " " + Math.min(job.step + 1, job.partCount) + "/" + job.partCount}{job.repair ? " · " + t("repairStep") : ""}</small>}{job.large && job.repair && <small>{t("repairStep")}</small>}</>}
     {!!job.draft?.characters.length && preparing && <small>{t("savedCount")}: {job.draft.characters.length}</small>}
     {children}
   </div>;

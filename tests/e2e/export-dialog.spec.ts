@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { setEnglish } from "./helpers/settings";
+import AxeBuilder from "@axe-core/playwright";
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
   test(`unified export transfers actions and images ${locale} ${width}`, async ({ page }, info) => {
@@ -33,7 +34,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     const pack = JSON.parse(await readFile((await download.path())!, "utf8"));
     expect(pack.format).toBe("deeprole-world");
     expect(pack.records.find((r: any) => r.kind === "world").data.characterActions).toEqual(["neutral", "ухмылка", "laugh"]);
-    expect(pack.records.find((r: any) => r.id === "export-person").data.characterSheet.sprites.laugh).toBe("data:image/png;base64,YQ==");
+    expect(pack.version).toBe(2);
+    const portrait = pack.records.find((r: any) => r.id === "export-person").data.characterSheet.sprites.laugh;
+    expect(pack.photos).toHaveLength(1);
+    expect(pack.photos.find((p: any) => p.id === portrait).image).toBe("data:image/png;base64,YQ==");
     expect(pack.records.some((r: any) => r.kind === "binding")).toBe(false);
     await expect(dialog).toHaveCount(0);
     await page.getByRole("button", { name: l("Экспорт", "Export"), exact: true }).click();
@@ -56,3 +60,34 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await expect(page.getByRole("button", { name: l("Экспорт", "Export"), exact: true })).toBeFocused();
   });
 }
+
+for(const locale of ["ru","en"] as const) test(`missing photo gives a readable export error without downloading or changing the library ${locale}`,async({page},info)=>{
+  const l=(ru:string,en:string)=>locale==="ru"?ru:en;
+  await page.setViewportSize({width:320,height:560});
+  await page.goto("/tests/fixtures/sidepanel.html?world");
+  await expect(page.getByRole("button",{name:"Настройки",exact:true})).toBeVisible();
+  const before=await page.evaluate(async()=>{
+    const {repository}=await import("/src/storage/repository.ts" as string);
+    const {database}=await import("/src/storage/database.ts" as string);
+    const {EMPTY_CHARACTER}=await import("/src/core/characters.ts" as string);
+    const world=(await repository.list("world"))[0]!;
+    const id=await repository.storePhoto("data:image/png;base64,YQ==");
+    await repository.put("entity",{id:"broken-photo",worldId:world.id,name:"Mira",kind:"character",description:"Original lore",aliases:[],memberIds:[],createdAt:1,updatedAt:1,characterSheet:{...EMPTY_CHARACTER,sprites:{neutral:id}}});
+    await database.photos.delete(id);return repository.rawRecords();
+  });
+  await page.getByRole("button",{name:"Настройки",exact:true}).click();
+  if(locale==="en")await setEnglish(page);
+  await page.getByRole("button",{name:l("Файлы и защита","Files & security"),exact:true}).click();
+  await page.getByRole("button",{name:l("Экспорт","Export"),exact:true}).click();
+  const dialog=page.getByRole("dialog",{name:l("Экспорт","Export"),exact:true});
+  await dialog.getByRole("radio",{name:new RegExp("^"+l("Полная резервная копия","Full backup"))}).check();
+  let downloads=0;page.on("download",()=>downloads++);
+  await dialog.getByRole("button",{name:l("Скачать файл","Download file"),exact:true}).click();
+  await expect(dialog.getByRole("alert")).toContainText("EX-PHOTO");
+  await expect(dialog.getByRole("button",{name:l("Скачать файл","Download file"),exact:true})).toBeEnabled();
+  expect(downloads).toBe(0);
+  expect(await page.evaluate(async()=>{const {repository}=await import("/src/storage/repository.ts" as string);return repository.rawRecords();})).toEqual(before);
+  expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  expect((await new AxeBuilder({page}).include(".dr-export-dialog").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+  await page.screenshot({path:info.outputPath("export-error-"+locale+".png")});
+});

@@ -1,0 +1,8 @@
+.dr-old-chat-notice { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; pointer-events: auto; width: min(380px,calc(100vw - 32px)); box-sizing: border-box; padding: 14px; border: 1px solid var(--dr-border-strong); border-radius: 12px; background: var(--dr-panel); color: var(--dr-text); box-shadow: 0 8px 28px #0005; font-size: 13px; line-height: 1.5; }
+.dr-old-chat-notice p { margin: 6px 0 10px; overflow-wrap: anywhere; color: var(--dr-muted); font-size: 12px; }
+.dr-old-chat-notice > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.dr-old-chat-notice .button { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 36px; padding: 7px 10px; border: 1px solid var(--dr-border); border-radius: 8px; font: inherit; font-size: 12px; text-decoration: none; cursor: pointer; }
+.dr-old-chat-notice .button.primary { background: var(--dr-action); color: var(--dr-on-action); }
+.dr-old-chat-notice .button.secondary { background: var(--dr-surface); color: var(--dr-text); }
+.dr-old-chat-notice .button:focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 2px; }
+.dr-old-chat-notice .button:disabled { opacity: .6; }

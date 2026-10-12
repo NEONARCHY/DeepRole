@@ -4,7 +4,7 @@ const ru = {
   limit: "Просмотр и предпросмотр ничего не меняют. Автоматическая история включается отдельно и не отправляет новые запросы модели.",
   startGame: "Включить историю с этой сцены", syncGame: "Учесть ответ, выбранный в чате", synced: "История и карточки обновлены.",
   gameHint: "После включения играйте как обычно. Варианты ответа выбирайте стрелками DeepSeek: расширение пересчитает карточки по показанной линии. Старую переписку оно не меняет.",
-  newStart: "Новая исходная сцена", newStartHint: "Текущие карточки станут началом нового прохождения. Прежняя хроника сохранится в архиве, но кнопки возврата к нему пока нет. Старые ответы не войдут в новую линию. Переписка DeepSeek останется на месте.", restart: "Начать отслеживание заново отсюда",
+  newStart: "Новая исходная сцена", newStartHint: "Текущий прогресс станет новой исходной точкой записи этой же игры. Прежняя хроника сохранится в архиве, но кнопки возврата к нему пока нет. Старые ответы не войдут в новую линию. Переписка DeepSeek останется на месте.", restart: "Начать отслеживание заново отсюда",
   undo: "Отменить последнее изменение", undoDone: "Карточки возвращены к предыдущей сцене. Автоматическая запись приостановлена. Выберите нужную линию в DeepSeek, затем нажмите «Учесть ответ, выбранный в чате».",
   paused: "После отмены история приостановлена. Выберите нужную линию в DeepSeek и нажмите «Учесть ответ, выбранный в чате».",
   nonStory: "Вопрос вне игры", nonStoryHint: "Следующую отправку можно исключить из игровых изменений — например, если отправляете отчёт или обсуждаете правила. Текст сохранится, но карточки от этого ответа не обновятся. Повторное нажатие снимает отметку.", markNonStory: "Переключить отметку следующей реплики", nonStoryMarked: "Отметка следующей отправки переключена. Проверьте её в описании запроса перед отправкой.",
@@ -27,14 +27,14 @@ const ru = {
   snapshot: "Состояние в предпросмотре", condition: "Состояние: {text}", goal: "Цель: {text}", noPeople: "Состояний персонажей нет.", unnamed: "Персонаж без сохранённого имени",
   stale: "История или выбранный мир изменились. Обновите историю перед просмотром последствий.",
   locked: "Откройте сейф, затем обновите историю.", busy: "Дождитесь окончания генерации или служебного запроса.",
-  noScope: "Откройте чат DeepSeek с выбранным миром и попробуйте ещё раз.", failed: "Не удалось прочитать историю. Обновите её и повторите попытку.",
+  inactive: "Игра продолжена в другом чате. Сначала нажмите «Продолжить здесь» в разделе «История».", resetChanged: "Новая игра уже изменена. Быстрая отмена сброса недоступна; текущий прогресс сохранён.", noScope: "Откройте чат DeepSeek с выбранным миром и попробуйте ещё раз.", failed: "Не удалось прочитать историю. Обновите её и повторите попытку.",
 };
 const en: Record<keyof typeof ru, string> = {
   title: "Story history", hint: "Review messages saved after the starting point in this chat.",
   limit: "Review and preview do not change anything. Automatic story tracking is enabled separately and sends no new model requests.",
   startGame: "Track the story from this scene", syncGame: "Apply the reply shown in chat", synced: "Story and character states updated.",
   gameHint: "Once enabled, play normally. Use DeepSeek’s arrows to choose a reply: character states follow the displayed line. Earlier chat messages are not changed.",
-  newStart: "New starting scene", newStartHint: "Current character states start a new playthrough. The earlier chronicle is archived; there is no button to return to it yet. Old replies are not part of the new line. DeepSeek messages stay in place.", restart: "Restart tracking from here",
+  newStart: "New starting scene", newStartHint: "Current progress becomes a new recording checkpoint of the same game. The earlier chronicle is archived; there is no button to return to it yet. Old replies are not part of the new line. DeepSeek messages stay in place.", restart: "Restart tracking from here",
   undo: "Undo the latest change", undoDone: "Character states returned to the previous scene. Automatic tracking is paused. Choose the intended line in DeepSeek, then use “Apply the reply shown in chat”.",
   paused: "Tracking is paused after undo. Choose the intended line in DeepSeek, then use “Apply the reply shown in chat”.",
   nonStory: "Out-of-character question", nonStoryHint: "Exclude the next send from story changes, for example a report or a question about rules. Its text is saved, but its reply does not update character states. Click again to clear the mark.", markNonStory: "Toggle the next message’s mark", nonStoryMarked: "The next-send mark was toggled. Check the request description before sending.",
@@ -57,12 +57,14 @@ const en: Record<keyof typeof ru, string> = {
   snapshot: "Previewed state", condition: "State: {text}", goal: "Goal: {text}", noPeople: "No character states.", unnamed: "Character without a saved name",
   stale: "The story or selected world changed. Refresh the story before previewing consequences.",
   locked: "Unlock the vault, then refresh the story.", busy: "Wait for generation or the service request to finish.",
-  noScope: "Open a DeepSeek chat with a world selected, then try again.", failed: "Could not read the story. Refresh it and try again.",
+  inactive: "This game continues in another chat. Choose Continue here in Story first.", resetChanged: "The new game has already changed. Quick reset undo is unavailable; current progress is kept.", noScope: "Open a DeepSeek chat with a world selected, then try again.", failed: "Could not read the story. Refresh it and try again.",
 };
 export type StoryReviewTextKey = keyof typeof ru;
 export const storyReviewText = (locale: Locale, key: StoryReviewTextKey) => (locale === "ru" ? ru : en)[key];
 export function storyReviewError(error: unknown): StoryReviewTextKey {
   const code = error instanceof Error ? error.message : "";
+  if (code === "story-game-inactive") return "inactive";
+  if (code === "story-game-reset-changed") return "resetChanged";
   if (code === "vault-locked") return "locked";
   if (code === "story-checkpoint-busy") return "busy";
   if (code === "story-checkpoint-no-scope") return "noScope";
@@ -70,6 +72,6 @@ export function storyReviewError(error: unknown): StoryReviewTextKey {
   if (["story-native-line-unavailable", "story-source-incomplete"].includes(code)) return "sourceUnavailable";
   if (code === "story-start-stale") return "startStale";
   if (code === "story-game-paused") return "paused";
-  if (["story-review-stale", "story-binding-conflict", "story-source-incomplete"].includes(code)) return "stale";
+  if (["story-review-stale", "story-binding-conflict", "story-source-incomplete", "story-game-stale"].includes(code)) return "stale";
   return "failed";
 }

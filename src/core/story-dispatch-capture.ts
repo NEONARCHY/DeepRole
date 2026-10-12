@@ -3,10 +3,12 @@ import { validNativeStoryStreamPacket, type NativeStoryStreamPacket } from "./st
 import { validNativeStoryRequestLink, type NativeStoryRequestLink } from "./story-exchange";
 import { validNativeStoryId, validStoryTransportIdentity, type StoryTransportIdentity } from "./story-transport";
 import { sameStoryValue } from "./story-value";
+import { validStoryAutomationCapture, type StoryAutomationCapture } from "./story-automation";
 import { validStoryDispatchReply, type StoryDispatchReply } from "./story-native-reply";
 
 /** A durable outgoing-call journal, NOT a selected story request or event authority. */
 export interface StoryDispatchCapture {
+  accompaniment?: StoryAutomationCapture;
   format: "deeprole-story-dispatch";
   contractVersion: 1;
   id: string;
@@ -61,8 +63,10 @@ export function confirmedDispatchText(value: StoryDispatchCapture): string | nul
 export function validStoryDispatchCapture(value: unknown): value is StoryDispatchCapture {
   const hasReply = !!value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "reply");
   const hasBranch = !!value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "storyBranchId");
-  if (!shape(value, ["format", "contractVersion", "id", "worldId", "bindingId", "identity", "ownerTabId", "origin", "purpose", "transport", "sceneRevision", "originalDraft", "proposedContext", "injection", "started", "delivery", "wire", "createdAt", "updatedAt", ...(hasReply ? ["reply"] : []), ...(hasBranch ? ["storyBranchId"] : [])])
-    || value.format !== "deeprole-story-dispatch" || value.contractVersion !== 1 || !(value.worldId === null || id(value.worldId))
+  const hasAccompaniment = !!value && typeof value === "object" && Object.hasOwn(value, "accompaniment");
+  if (!shape(value, ["format", "contractVersion", "id", "worldId", "bindingId", "identity", "ownerTabId", "origin", "purpose", "transport", "sceneRevision", "originalDraft", "proposedContext", "injection", "started", "delivery", "wire", "createdAt", "updatedAt", ...(hasReply ? ["reply"] : []), ...(hasBranch ? ["storyBranchId"] : []), ...(hasAccompaniment ? ["accompaniment"] : [])])
+    || value.accompaniment !== undefined && !validStoryAutomationCapture(value.accompaniment)
+     || value.format !== "deeprole-story-dispatch" || value.contractVersion !== 1 || !(value.worldId === null || id(value.worldId))
     || !validStoryDispatchCaptureInput({ id: value.id, worldId: value.worldId ?? "detached", bindingId: value.bindingId, identity: value.identity, transport: value.transport, sceneRevision: value.sceneRevision, originalDraft: value.originalDraft, proposedContext: value.proposedContext })
     || !Number.isSafeInteger(value.ownerTabId) || (value.ownerTabId as number) < 0 || !["local", "restored"].includes(value.origin as string) || !["user-turn", "out-of-character"].includes(value.purpose as string)
     || !["unconfirmed", "none", "context"].includes(value.injection as string) || typeof value.started !== "boolean"

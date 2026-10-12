@@ -20,11 +20,17 @@ import { readStoryReview, previewStoryReview } from "../storage/story-review";
 import { validStoryReviewInput, validStoryPreviewInput } from "../core/story-review";
 import { validStoryGameInput } from "../core/story-game";
 import { runStoryGame, storyGameStatus, markNonStoryMessage } from "../storage/story-game";
+import { readAutomationReview, resolveAutomationReview } from "../storage/story-automation-review";
+import { validAutomationReviewRead, validAutomationReviewDecision } from "../core/story-automation-review";
 import { approveStoryFact, validStoryFactApproval } from "../storage/story-facts";
 import { readCharacterDiscovery, approveCharacterDiscovery } from "../storage/story-character-discovery";
 import { validCharacterDiscoveryRead, validCharacterDiscoveryApproval } from "../core/story-character-discovery";
 import { validSupplementRead, validSupplementApproval } from "../core/profile-supplements";
 import { readProfileSupplements, approveProfileSupplement } from "../storage/profile-supplements";
+import { readStoryIdentities, approveStoryIdentity } from "../storage/story-identity-management";
+import { readStoryMerge, approveStoryMerge, undoStoryMerge } from "../storage/story-character-merge";
+import { validMergeRead, validMergeApproval, validMergeUndo } from "../core/story-character-merge";
+import { validIdentityRead, validIdentityApproval } from "../core/story-identity-management";
 import { applyMemoryProposals, discardMemoryProposals, undoLoreChange } from "../storage/memory-proposals";
 import { validMemoryProposal, validMemoryEntry } from "../core/proposal-validation";
 import { migrateLegacyProposals } from "../storage/legacy-proposals";
@@ -36,6 +42,10 @@ import { bindCharacterTurn, characterTurnKey, actionsFor, parseCharacterTurn, re
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { TabSessionStore } from "../storage/tab-session";
 import { captureContinuation, completeContinuation } from "../storage/story-continuation";
+import { acknowledgeOldChatNotice } from "../storage/old-chat-notice";
+import { validOldChatNoticeEdit } from "../core/old-chat-notice";
+import { activateWorldGame } from "../storage/world-game";
+import { validWorldGameActivation } from "../core/world-game";
 import { acknowledgeRecoveredReply, saveRecoveredReply } from "../storage/recovered-replies";
 
 export default defineBackground(() => {
@@ -89,6 +99,15 @@ export default defineBackground(() => {
         try {
           if (message.operation === "isLocked") return { ok: true, data: await repository.isLocked() };
           if (await repository.isLocked()) throw new Error("vault-locked");
+          if (message.operation === "activateWorldGame") {
+            if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || !validWorldGameActivation(message.input)) throw Error("story-game-invalid");
+            const current = async () => {
+              const tab = await browser.tabs.get(sender.tab!.id!);
+              if (tab.url !== message.input.chatUrl || !isSameDeepSeekChat(message.input.chatUrl, tab.url, message.input.chatId) || message.input.mode !== "initialize" && !tab.active) throw Error("story-binding-conflict");
+              if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
+            };
+            await current(); const data = await activateWorldGame(message.input, repository, current); await current(); return { ok: true, data };
+          }
           if (message.operation === "readProfileSupplements" || message.operation === "approveProfileSupplement") {
             if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || (message.operation === "readProfileSupplements" ? !validSupplementRead(message.input) : !validSupplementApproval(message.input))) throw Error("story-review-invalid");
             const current = async () => {
@@ -99,6 +118,28 @@ export default defineBackground(() => {
             };
             await current();
             const data = message.operation === "readProfileSupplements" ? await readProfileSupplements(message.input) : await approveProfileSupplement(message.input, repository, current);
+            await current(); return { ok: true, data };
+          }
+          if (message.operation === "readStoryMerge" || message.operation === "approveStoryMerge" || message.operation === "undoStoryMerge") {
+            if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || !(message.operation === "readStoryMerge" ? validMergeRead(message.input) : message.operation === "approveStoryMerge" ? validMergeApproval(message.input) : validMergeUndo(message.input))) throw Error("story-review-invalid");
+            const current = async () => {
+              const tab = await browser.tabs.get(sender.tab!.id!);
+              if (!tab.url || tab.url !== message.chatUrl || !isSameDeepSeekChat(message.chatUrl, tab.url, message.input.chatId) || message.operation !== "readStoryMerge" && !tab.active) throw Error("story-binding-conflict");
+              if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
+            };
+            await current();
+            const data = message.operation === "readStoryMerge" ? await readStoryMerge(message.input) : message.operation === "approveStoryMerge" ? await approveStoryMerge(message.input, repository, current) : await undoStoryMerge(message.input, repository, current);
+            await current(); return { ok: true, data };
+          }
+          if (message.operation === "readStoryIdentities" || message.operation === "approveStoryIdentity") {
+            if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || (message.operation === "readStoryIdentities" ? !validIdentityRead(message.input) : !validIdentityApproval(message.input))) throw Error("story-review-invalid");
+            const current = async () => {
+              const tab = await browser.tabs.get(sender.tab!.id!);
+              if (!tab.url || tab.url !== message.chatUrl || !isSameDeepSeekChat(message.chatUrl, tab.url, message.input.chatId) || message.operation === "approveStoryIdentity" && !tab.active) throw Error("story-binding-conflict");
+              if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
+            };
+            await current();
+            const data = message.operation === "readStoryIdentities" ? await readStoryIdentities(message.input) : await approveStoryIdentity(message.input, repository, current);
             await current(); return { ok: true, data };
           }
           if (message.operation === "readCharacterDiscovery" || message.operation === "approveCharacterDiscovery") {
@@ -112,6 +153,18 @@ export default defineBackground(() => {
             const data = message.operation === "readCharacterDiscovery" ? await readCharacterDiscovery(message.input) : await approveCharacterDiscovery(message.input, repository, current);
             await current(); return { ok: true, data };
           }
+          if (message.operation === "readAutomationReview" || message.operation === "resolveAutomationReview") {
+            const input = message.input;
+            if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || !(message.operation === "readAutomationReview" ? validAutomationReviewRead(input) : validAutomationReviewDecision(input))) throw Error("story-review-invalid");
+            const current = async () => {
+              const tab = await browser.tabs.get(sender.tab!.id!);
+              if (!tab.active || !tab.url || tab.url !== message.chatUrl || !isSameDeepSeekChat(message.chatUrl, tab.url, input.chatId)) throw Error("story-binding-conflict");
+              if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
+            };
+            await current();
+            const data = message.operation === "readAutomationReview" ? await readAutomationReview(message.input) : await resolveAutomationReview(message.input,repository,current);
+            await current(); return { ok: true, data };
+          }
           if (message.operation === "runStoryGame" || message.operation === "storyGameStatus" || message.operation === "markNonStoryMessage" || message.operation === "approveStoryFact") {
             const scope = message.operation === "runStoryGame" || message.operation === "approveStoryFact" ? message.input : message;
             if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || !validNativeStoryId(scope.chatId) || !scope.worldId || message.operation === "runStoryGame" && !validStoryGameInput(message.input)) throw Error("story-game-invalid");
@@ -119,7 +172,7 @@ export default defineBackground(() => {
             const current = async () => {
               const tab = await browser.tabs.get(sender.tab!.id!);
               if (!tab.url || tab.url !== message.chatUrl || !isSameDeepSeekChat(message.chatUrl, tab.url, scope.chatId)) throw Error("story-binding-conflict");
-              if ((message.operation === "markNonStoryMessage" || message.operation === "approveStoryFact" || message.operation === "runStoryGame" && ["start", "restart", "resume", "undo"].includes(message.input.operation)) && !tab.active) throw Error("story-binding-conflict");
+              if ((message.operation === "markNonStoryMessage" || message.operation === "approveStoryFact" || message.operation === "runStoryGame" && ["start", "restart", "reset", "restore", "resume", "undo"].includes(message.input.operation)) && !tab.active) throw Error("story-binding-conflict");
               // Also called while updateRecords holds the library lock. A nested
               // repository.isLocked() would deadlock every successful game write.
               if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
@@ -194,6 +247,15 @@ export default defineBackground(() => {
             if (message.operation === "saveRecoveredReply") await saveRecoveredReply(message.edit);
             else await acknowledgeRecoveredReply(message.edit);
             return { ok: true };
+          }
+          if (message.operation === "acknowledgeOldChatNotice") {
+            if (sender.frameId !== 0 || !validOldChatNoticeEdit(message.input)) throw Error("handoff-scope");
+            const current = async () => {
+              const tab = await browser.tabs.get(sender.tab!.id!);
+              if (!tab.url || !isSameDeepSeekChat(message.input.chatUrl, tab.url, message.input.chatId)) throw Error("handoff-scope");
+              if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
+            };
+            await current(); await acknowledgeOldChatNotice(message.input, repository, current); return { ok: true };
           }
           if (message.operation === "completeContinuation") {
             const tabId = sender.tab!.id!, tab = await browser.tabs.get(tabId);

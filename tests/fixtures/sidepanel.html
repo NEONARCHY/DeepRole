@@ -44,6 +44,8 @@
       import "/src/entrypoints/shared/help.css";
 
       await repository.clear();
+      const qs = new URLSearchParams(location.search);
+      if (qs.get("locale") === "en") await window.chrome.storage.local.set({ deeprole_settings: { ...(await window.chrome.storage.local.get("deeprole_settings")).deeprole_settings, locale: "en" } });
       const now = Date.now();
       await repository.put("book", { id: "book-1", name: "Лунный предел", description: "Основной сюжет", color: "#58a6ff", active: true, createdAt: now, updatedAt: now });
       await repository.put("entry", { id: "memory-1", bookId: "book-1", title: "Клятва Миры", content: "Мира поклялась не покидать город до рассвета.", keywords: ["Мира", "клятва", "город"], activation: "smart", priority: "high", enabled: true, source: { type: "manual" }, createdAt: now, updatedAt: now });
@@ -54,6 +56,21 @@
         let pageState = { type: "DR_PAGE_STATE", chatId: "test", chatUrl: "https://chat.deepseek.com/a/chat/test", messageCount: 2, status: { compatible: true }, scene: { worldId: "world-a", bookId: null, focusIds: [] }, selection: { entries: [], estimatedTokens: 0, omittedCount: 0 } };
         window.chrome.tabs.sendMessage = async () => pageState;
         window.setPageState = (patch) => { pageState = { ...pageState, ...patch }; runtimeListeners.forEach(listener => listener({ type: "DR_CONTEXT_CHANGED" })); };
+        if (qs.has("story")) {
+          const { storyReviewPage } = await import("/tests/fixtures/story-review.ts");
+          const locale = qs.get("locale") === "en" ? "en" : "ru";
+          const story = { ...storyReviewPage(locale), chatId: "test", worldId: "world-a", worldName: "Observatory", managed: !qs.has("inactive"), paused: qs.has("paused"), facts: [{ eventId: "gate", kind: "event", text: locale === "ru" ? "Ворота закрыты." : "The gate is locked.", quote: "The gate is locked.", accepted: false, edited: false }] };
+          const people = Array.from({ length: 21 }, (_, i) => ({ eventId: "person-" + i, name: "Courier " + i, quote: "Courier arrived.", background: "Courier arrived.", added: false }));
+          window.storyUX = { messages: [], story, people, fail: false };
+          window.chrome.tabs.sendMessage = async (_, message) => {
+            window.storyUX.messages.push(message);
+            if (message.type === "DR_STORY_REVIEW_READ") return window.storyUX.fail ? { ok: false, error: "story-review-stale" } : { ok: true, data: structuredClone(story) };
+            if (message.type === "DR_STORY_GAME") { if (message.scope.worldId !== story.worldId || message.scope.chatId !== story.chatId) return { ok: false, error: "story-binding-conflict" }; story.managed = true; story.paused = false; return { ok: true, data: { active: true } }; }
+            if (message.type === "DR_CHARACTER_DISCOVERY") { const offset = message.input.offset ?? 0; return { ok: true, data: { chatId: "test", worldId: "world-a", guard: story.guard, sources: 2, completed: 2, remaining: 0, total: people.length, offset, next: offset ? null : 20, candidates: people.slice(offset, offset + 20) } }; }
+            if (message.type === "DR_STORY_FACT") { Object.assign(story.facts[0], { text: message.input.text, accepted: message.input.accept, edited: true }); story.guard.selectionVersion++; story.next.selectionVersion++; return { ok: true }; }
+            return pageState;
+          };
+        }
       }
       if (new URLSearchParams(location.search).has("vault")) await repository.enableVault("session-password");
       createRoot(document.querySelector("#root")).render(React.createElement(App));

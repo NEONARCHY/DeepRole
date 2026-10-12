@@ -13,7 +13,12 @@ import { repository, type DeepRoleRepository } from "./repository";
 import { confirmedDispatchText, type StoryDispatchCapture } from "../core/story-dispatch-capture";
 import { parseStoryUpdate, type StoryUpdateDiagnostic } from "../core/story-update";
 import { currentStoryProfileEntities, type ProfileSeeds, PROFILE_TEXT_FIELDS } from "../core/story-profile-view";
+import { identityCanonical, type IdentitySeeds } from "../core/story-character-identity";
+import { currentMergeSeeds, type MergeSeeds } from "../core/story-character-merge";
 import { profileValues } from "../core/character-profile";
+import { assertWorldGameWriter } from "../core/world-game";
+import { resetWorldGame, undoWorldGameReset } from "./world-game";
+import { planStoryAccompaniment } from "./story-automation";
 
 const rows = (all: DataRecord[]) => all.filter(r => r.kind === "story").map(r => r.data as StoryRecord);
 const people = (all: DataRecord[], world: string, chat: string) => all.filter(r => r.kind === "entity" && (r.data as SceneEntity).worldId === world && (r.data as SceneEntity).kind === "character" && characterInChat(r.data as SceneEntity, chat)).map(r => r.data as SceneEntity);
@@ -21,7 +26,7 @@ const state = (scene?: CharacterScene) => ({ states: scene?.states ?? {}, presen
 export async function storyGameStatus(chatId: string, worldId: string, repo: DeepRoleRepository = repository) {
   return repo.updateRecords(all => {
     const bindings = all.filter(r => r.kind === "binding" && (r.data as ChatBinding).chatId === chatId && (r.data as ChatBinding).worldId === worldId);
-    return { records: [], removed: [], result: bindings.length === 1 && rows(all).some(r => r.type === "branch" && r.gameManaged && r.worldId === worldId && rows(all).some(b => b.type === "baseline" && b.id === r.baselineId && b.origin.bindingId === bindings[0]!.id && b.origin.chatId === chatId)) };
+    return { records: [], removed: [], result: bindings.length === 1 && (!(all.find(r => r.kind === "world" && r.id === worldId)?.data as WorldProfile | undefined)?.sharedGame || (all.find(r => r.kind === "world" && r.id === worldId)?.data as WorldProfile).sharedGame!.activeBindingId === bindings[0]!.id) && rows(all).some(r => r.type === "branch" && r.gameManaged && r.worldId === worldId && rows(all).some(b => b.type === "baseline" && b.id === r.baselineId && b.origin.bindingId === bindings[0]!.id && b.origin.chatId === chatId)) };
   }, undefined, ["story", "world", "binding"]);
 }
 /** Runtime-only permission, never accepted from the page/backup/model. */
@@ -41,8 +46,16 @@ export async function markNonStoryMessage(chatId: string, worldId: string, repo:
 }
 /** One writer for sources, events, profiles, portraits, photos and selected state.
  * The site owns its transcript; this never sends/deletes/changes a site message. */
-export function planStoryGame(initial: DataRecord[], input: StoryGameInput, settings: DeepRoleSettings, imagePermission?: StoryImagePermission) {
+export function planStoryGame(initial: DataRecord[], input: StoryGameInput, settings: DeepRoleSettings, imagePermission?: StoryImagePermission): { records: DataRecord[]; removed: { kind: import("../core/types").RecordKind; id: string }[]; result: import("../core/story-game").StoryGameOutcome & { freshPhotos?: ScenePhoto[] } } {
   if (!validStoryGameInput(input)) throw Error("story-game-invalid");
+  if (input.operation === "reset" || input.operation === "restore") {
+    const current = initial.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === input.chatId)?.data as ChatBinding | undefined;
+    if (!current || characterRevision(people(initial, input.worldId, input.chatId), current.characterScenes?.[input.worldId]) !== input.expectedBase) throw Error("story-review-stale");
+    const reset = (input.operation === "restore" ? undoWorldGameReset : resetWorldGame)(initial, input.chatId, input.worldId), binding = reset.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === input.chatId)!.data as ChatBinding;
+    const started = planStoryGame(reset, { ...input, operation: "start", expectedBase: characterRevision(people(reset, input.worldId, input.chatId), binding.characterScenes?.[input.worldId]) }, settings);
+    const keys = new Set([...started.records, ...started.removed].map(r => r.kind + ":" + r.id)), final = [...reset.filter(r => !keys.has(r.kind + ":" + r.id)), ...started.records];
+    return { records: final.filter(r => !initial.some(o => o.kind === r.kind && o.id === r.id && sameStoryValue(o.data, r.data))), removed: initial.filter(r => !final.some(n => n.kind === r.kind && n.id === r.id)).map(r => ({ kind: r.kind, id: r.id })), result: { active: true, changed: true } };
+  }
   let all = structuredClone(initial);
   const freshPhotos: ScenePhoto[] = [];
   let preparedParentKey: string | null | undefined;
@@ -51,6 +64,8 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
   let binding = bindings[0]?.data as ChatBinding | undefined;
   const world = all.find(r => r.kind === "world" && r.id === input.worldId)?.data as WorldProfile | undefined;
   if (bindings.length !== 1 || !binding || binding.worldId !== input.worldId || !world) throw Error("story-binding-conflict");
+  if (world.sharedGame && world.sharedGame.activeBindingId !== binding.id && ["sync", "parent", "edit"].includes(input.operation)) return { records: [], removed: [], result: { active: false, changed: false } };
+  assertWorldGameWriter(all, binding, input.worldId);
   if (characterRevision(people(all, input.worldId, input.chatId), binding.characterScenes?.[input.worldId]) !== input.expectedBase) throw Error("story-review-stale");
   const write = (changes: DataRecord[], removed: { kind: string; id: string }[] = []) => {
     const keys = new Set([...changes, ...removed].map(r => r.kind + ":" + r.id));
@@ -58,8 +73,10 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     binding = all.find(r => r.kind === "binding" && r.id === binding!.id)!.data as ChatBinding;
   };
   let baseline = rows(all).find((r): r is StoryBaseline => r.type === "baseline" && r.worldId === input.worldId && r.origin.bindingId === binding!.id);
+  if (baseline && world.storyAutomation && world.sharedGame && !baseline.gameId) { baseline = { ...baseline, gameId: world.sharedGame.id }; write([storyRow(baseline)]); }
   if (input.operation === "start" || input.operation === "restart") {
-    const inheritedProfiles: ProfileSeeds = {};
+    const inheritedProfiles: ProfileSeeds = {}, inheritedIdentities: IdentitySeeds = {};
+    let inheritedMerges: MergeSeeds = {};
     const prior = baseline && rows(all).find(r => r.id === baseline!.branchId) as StoryBranch | undefined;
     if (prior?.gameManaged && input.operation !== "restart") return { records: [], removed: [], result: { active: true, changed: false } };
     if (baseline && (input.operation === "restart" || prior?.headRevisionId !== null || prior?.projectionId
@@ -68,18 +85,23 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
       || baseline.origin.nativeAnchor && baseline.origin.nativeAnchor.nativeMessageKey !== input.snapshot.selectedNativeKey)) {
       // Preserve old sources/checkpoints unchanged. Rotate only the live binding's
       // identity, atomically; another tab cannot keep writing the archived owner.
+      inheritedMerges = currentMergeSeeds(rows(all), input.worldId, input.chatId, binding.id);
       const rawPeople = people(all, input.worldId, input.chatId), rawById = new Map(rawPeople.map(p => [p.id, p]));
       for (const p of currentStoryProfileEntities(rawPeople, rows(all), input.worldId, input.chatId, binding.id)) {
-        const raw = rawById.get(p.id)!; if (!raw.characterSheet || !p.characterSheet) continue;
+        const raw = rawById.get(p.id)!;
+        const aliases = p.aliases.filter(n => !raw.aliases.includes(n));
+        if (aliases.length) inheritedIdentities[p.id] = { canonical: identityCanonical(raw), aliases };
+        if (!raw.characterSheet || !p.characterSheet) continue;
         const values = Object.fromEntries(PROFILE_TEXT_FIELDS.filter(k => p.characterSheet![k] !== raw.characterSheet![k]).map(k => [k, p.characterSheet![k]]));
         if (Object.keys(values).length) inheritedProfiles[p.id] = { canonical: profileValues(raw.characterSheet), versions: { ...raw.profileFieldRevisions }, values };
       }
       const oldId = binding.id, next = { ...binding, id: createId("binding"), updatedAt: Date.now() };
       all = all.filter(r => !(r.kind === "binding" && r.id === oldId)); binding = next; all.push({ kind: "binding", id: next.id, data: next }); baseline = undefined;
+      if (world.sharedGame) write([{ kind: "world", id: world.id, data: { ...world, sharedGame: { ...world.sharedGame, activeBindingId: next.id, revision: createId("game-rev") } } }]);
     }
     if (!baseline) {
       write(planLegacyStory(all, { worldId: input.worldId, bindingId: binding.id }).records); baseline = rows(all).find((r): r is StoryBaseline => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === input.worldId)!;
-      if (Object.keys(inheritedProfiles).length) { baseline = { ...baseline, profileSeeds: inheritedProfiles }; write([storyRow(baseline)]); }
+      if (Object.keys(inheritedProfiles).length || Object.keys(inheritedIdentities).length || Object.keys(inheritedMerges).length) { baseline = { ...baseline, ...(Object.keys(inheritedProfiles).length ? { profileSeeds: inheritedProfiles } : {}), ...(Object.keys(inheritedIdentities).length ? { identitySeeds: inheritedIdentities } : {}), ...(Object.keys(inheritedMerges).length ? { mergeSeeds: inheritedMerges } : {}) }; write([storyRow(baseline)]); }
     }
     const branch = rows(all).find(r => r.id === baseline!.branchId) as StoryBranch;
     if (branch.gameManaged) return { records: [], removed: [], result: { active: true, changed: false } };
@@ -88,7 +110,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     const anchor = input.snapshot.selectedNativeKey;
     if (anchor !== null && !input.snapshot.messages.some(m => m.identity.nativeMessageKey === anchor && m.identity.role === "assistant" && m.completion === "complete")) throw Error("story-source-incomplete");
     if (baseline.origin.nativeAnchor && baseline.origin.nativeAnchor.nativeMessageKey !== anchor) throw Error("story-start-stale");
-    write([storyRow({ ...baseline, origin: { ...baseline.origin, nativeAnchor: { nativeMessageKey: anchor, role: anchor === null ? null : "assistant" } } }), storyRow({ ...branch, gameManaged: true })]);
+    write([storyRow({ ...baseline, ...(world.storyAutomation && world.sharedGame ? { gameId: world.sharedGame.id, pendingReviewSeeds: baseline.pendingReviewSeeds ?? [...world.sharedGame.pendingReviewIds ?? []], reviewResolutionSeeds: baseline.reviewResolutionSeeds ?? { ...world.sharedGame.reviewResolutions } } : {}), origin: { ...baseline.origin, nativeAnchor: { nativeMessageKey: anchor, role: anchor === null ? null : "assistant" } } }), storyRow({ ...branch, gameManaged: true })]);
     const chosen = planStorySelection(all, branch.id, { headRevisionId: null, expectedHeadRevisionId: null, expectedSelectionVersion: branch.selectionVersion, acceptedEventIds: [] });
     write(chosen.records, chosen.removed);
   } else {
@@ -204,7 +226,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
             effects: { before: captureStoryBaselineEffects(prefixBinding, input.worldId), after: captureStoryBaselineEffects(next, input.worldId), createdEntities: planned.records.filter(r => r.kind === "entity" && !virtual.some(v => v.kind === "entity" && v.id === r.id)).map(r => r.data as SceneEntity), createdPhotos: (next.scenePhotos ?? []).filter(p => !prefixBinding.scenePhotos.some(old => sameStoryValue(old, p))) } };
           write([storyRow(event)]); approved.add(event.id);
           }
-          for (const [index, fact] of parsed.facts.entries()) write([storyRow({ ...common, type: "event", id: createId("event"), revisionId: revision.id, ordinal: index + 1, disposition: "candidate", label: "Memory proposal", quote: fact.quote, participantIds: [], changes: [], memory: fact })]);
+          write(planStoryAccompaniment(all, world, baseline, branch, revision, approved, parentCapture, parsed.facts, parsed.raw, input.chatId));
         }
       }
       for (const event of rows(all)) if (event.type === "event" && event.revisionId === revision.id && event.effects) approved.add(event.id);

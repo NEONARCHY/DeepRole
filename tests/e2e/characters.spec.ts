@@ -32,7 +32,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   await page.goto("/tests/fixtures/sidepanel.html?world=1");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   if (locale === "en") await setEnglish(page);
-  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
   const enable = page.getByRole("checkbox", { name: locale === "ru" ? "Карточки персонажей" : "Character sheets", exact: true });
   await expect(enable).toBeChecked(); await enable.uncheck(); await enable.check();
   const settings = page.locator(".dr-character-settings");
@@ -50,7 +50,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
     return (await repository.get("world", "world-a"))?.characterActions;
   })).toEqual(actions);
   await page.getByRole("button", { name: locale === "ru" ? "Память" : "Memory", exact: true }).click();
-  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
   await expect(settings.locator("textarea")).toHaveValue(actions.join("\n"));
   await settings.locator("textarea").fill([...actions, "extra"].join("\n")); await saveActions.click();
   await expect(settings.getByRole("alert")).toContainText("32");

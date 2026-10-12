@@ -28,7 +28,7 @@ export async function prepareStoryRequest(branchId: string, input: StoryRequestP
   if (!validStoryTransportIdentity(input.identity) || !Number.isSafeInteger(input.expectedSelectionVersion) || input.expectedSelectionVersion < 0) throw new Error("story-request-invalid");
   return repo.updateRecords(all => {
     return planStoryRequest(all, branchId, input);
-  }, undefined, ["story", "world", "binding"]);
+  }, undefined, ["story", "world", "binding", "entity"]);
 }
 
 /** Pure planner for an atomic outgoing capture + pre-send receipt. Caller owns the lock. */
@@ -76,7 +76,7 @@ export async function readStoryRequestContext(branchId: string, requestId: strin
     assertStoryGraph(all);
     const records = all.filter(row => row.kind === "story").map(row => row.data as StoryRecord);
     return { records: [], removed: [], result: projectStoryRequestContext(records, branchId, requestId) };
-  }, undefined, ["story", "world"]);
+  }, undefined, ["story", "world", "entity"]);
 }
 
 /** HTTP success confirms delivery only. No stream consumption and no inferred completion. */
@@ -85,7 +85,7 @@ export async function settleStoryRequest(id: string, input: StoryRequestSettleme
   if (!Object.keys(input).every(key => ["status", "httpStatus", "reason"].includes(key)) || !validStoryRequestDelivery({ ...input, at: Date.now() }) || input.status !== "accepted" && input.status !== "failed") throw new Error("story-request-invalid");
   return repo.updateRecords(all => {
     return planStoryRequestSettlement(all, id, input);
-  }, undefined, ["story", "world"]);
+  }, undefined, ["story", "world", "entity"]);
 }
 
 /** Delivery and its dispatch journal advance together, never in two partial writes. */

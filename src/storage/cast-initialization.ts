@@ -1,6 +1,6 @@
 import { repository, type DeepRoleRepository } from "./repository";
 import { createId } from "../core/id";
-import { castDiagnostic, castParts, castSources, castSignature, castRepairIssues, parseCastDraft, validateCastDraftValue, type CastDraft, type CastJob } from "../core/cast-initialization";
+import { CAST_MAX_SOURCE, castDiagnostic, castParts, castSources, castSignature, castRepairIssues, parseCastDraft, validateCastDraftValue, type CastDraft, type CastJob } from "../core/cast-initialization";
 import { mergeCastBatches, parseCastBatch } from "../core/cast-batches";
 import { EMPTY_CHARACTER, actionsFor } from "../core/characters";
 import { resolveCharacterAction } from "../core/character-actions";
@@ -8,36 +8,48 @@ import { attributeState } from "../core/attributes";
 import { getSettings } from "./settings";
 import { CastValidationError } from "../core/cast-validation";
 import type { CharacterScene, CharacterSheet, CharacterStatus, ChatBinding, DataRecord, Locale, SceneEntity, WorldProfile } from "../core/types";
+import { acceptLargeCastReply } from "../core/cast-large-lore";
 
-export async function createCastJob(worldId: string, locale: Locale, retry = false, repo: DeepRoleRepository = repository): Promise<CastJob> {
+export async function createCastJob(worldId: string, locale: Locale, retry = false, repo: DeepRoleRepository = repository, continuationOf?: string, restart = false): Promise<CastJob> {
   const defaults = (await getSettings()).characterActions;
   return repo.updateRecords(records => {
     const previous = records.filter(r => r.kind === "cast" && (r.data as CastJob).worldId === worldId).map(r => r.data as CastJob).sort((a,b) => b.createdAt - a.createdAt)[0];
+    if (continuationOf && (previous?.id !== continuationOf || previous.phase !== "ready" || !previous.large || previous.large.stage === "done" || previous.cleanup !== "done")) { if (!previous) throw Error("job-missing"); return { records: [], removed: [], result: previous }; }
     if (previous && (!retry || ["opening", "reading", "analyzing"].includes(previous.phase))) return { records: [], removed: [], result: previous };
     if (previous && retry && ["pending", "failed"].includes(previous.cleanup)) throw new Error("cleanup-required");
-    const sources = castSources(records, worldId); castParts(sources);
-    const now = Date.now(), job: CastJob = { id: createId("cast"), worldId, locale, phase: "opening", createdAt: now, updatedAt: now, sources, signature: castSignature(records, worldId), step: 0, awaiting: false, repair: false, cleanup: "pending", batchSize: 1, ...(previous?.batchSize && previous.phase === "error" && previous.draft && previous.signature === castSignature(records, worldId) ? { draft: { ...previous.draft, request: "" } } : {}) };
+    const rawSources = castSources(records, worldId), signature = JSON.stringify(rawSources); if (!rawSources.length) throw Error("lore-empty");
+    const resumable = !restart && !!previous?.large && previous.large.stage !== "done" && ["error", "cancelled", "ready"].includes(previous.phase);
+    if (resumable && previous!.signature !== signature) throw Error("lore-changed");
+    const large = resumable ? structuredClone(previous!.large!) : signature.length > CAST_MAX_SOURCE ? { stage: "scan" as const, source: 0, offset: 0, prepared: 0, candidates: [] } : undefined;
+    // Titles are source data too (saved character names often occur only there).
+    // Prefix in this immutable working snapshot; do not rewrite the source record.
+    const sources = large ? resumable ? structuredClone(previous!.sources) : rawSources.map(s => ({ ...s, text: s.title + "\n" + s.text })) : rawSources;
+    if (!large) castParts(sources);
+    const now = Math.max(Date.now(), (previous?.createdAt ?? 0) + 1), job: CastJob = { id: createId("cast"), worldId, locale, phase: "opening", createdAt: now, updatedAt: now, sources, signature, step: 0, awaiting: false, repair: false, cleanup: "pending", batchSize: 1, ...(large ? { large } : {}), ...(!restart && previous?.draft && (resumable || !previous.large && previous.batchSize && previous.phase === "error" && previous.signature === signature) ? { draft: { ...previous.draft, request: "" } } : {}) };
     if (job.draft) job.draft.request = job.id;
+    if (resumable) { job.statusHidden = previous!.statusHidden; job.incognito = previous!.incognito; }
     if (previous?.diagnostics) job.diagnostics = previous.diagnostics.slice(-24);
     const world = records.find(r => r.kind === "world" && r.id === worldId)!.data as WorldProfile;
     job.actions = [...actionsFor(world.characterActions ?? defaults)];
     return { records: [{ kind: "cast", id: job.id, data: job }, { kind: "world", id: worldId, data: { ...world, autoPrepareCharacters: false } }], removed: previous ? [{ kind: "cast", id: previous.id }] : [], result: job };
   });
 }
-export async function mutateCastJob(id: string, update: (job: CastJob) => CastJob, repo: DeepRoleRepository = repository): Promise<CastJob> {
+export async function mutateCastJob(id: string, update: (job: CastJob, records: DataRecord[]) => CastJob, repo: DeepRoleRepository = repository): Promise<CastJob> {
   return repo.updateRecords(records => {
     const job = records.find(r => r.kind === "cast" && r.id === id)?.data as CastJob | undefined;
     if (!job) throw new Error("job-missing");
-    const next = { ...update(job), updatedAt: Date.now() };
+    const next = { ...update(job, records), updatedAt: Date.now() };
     return { records: [{ kind: "cast", id, data: next }], removed: [], result: next };
   });
 }
 export async function acceptCastReply(id: string, step: number, raw: string, repo: DeepRoleRepository = repository): Promise<CastJob> {
-  return mutateCastJob(id, job => {
+  return mutateCastJob(id, (job, records) => {
+    if (job.large && castSignature(records, job.worldId) !== job.signature) throw Error("lore-changed");
     if (!["reading", "analyzing"].includes(job.phase) || job.step !== step || !job.awaiting) throw new Error("stale-step");
-    if (job.step < castParts(job.sources).length) return { ...job, step: job.step + 1, awaiting: false };
+    if (!job.large && job.step < castParts(job.sources).length) return { ...job, step: job.step + 1, awaiting: false };
     let stage: "parse" | "merge" = "parse";
     try {
+      if (job.large) return acceptLargeCastReply(job, raw);
       if (job.batchSize) {
         const batch = parseCastBatch(raw, job.id, job.sources, job.batchSize, job.draft);
         stage = "merge";
@@ -49,7 +61,7 @@ export async function acceptCastReply(id: string, step: number, raw: string, rep
     }
     catch (e) {
       const details = e instanceof CastValidationError ? e.issues.slice(0, 60) : undefined;
-      const hints = castRepairIssues(raw, job);
+      const hints = job.large?.stage === "scan" ? ["Return one complete version/request/names/more catalogue with exact source quotes."] : castRepairIssues(raw, job);
       const repairIssues = [...(details?.map(d => `${d.path}: expected ${d.rule}; received ${d.actual}.`) ?? []), ...(details?.length && hints[0]?.startsWith("Schema or exact") ? [] : hints)].filter((v, i, all) => all.indexOf(v) === i).slice(0, 60);
       const diagnosed = castDiagnostic(job, e instanceof Error ? e.message : "invalid-result", repairIssues, { details, stage, replyLength: raw.length });
       if (!job.repair) return { ...diagnosed, repair: true, repairIssues, awaiting: false, replyCheckpoint: undefined };

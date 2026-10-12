@@ -1,4 +1,4 @@
-/** Internal immutable image addresses. Portable files always contain data URLs. */
+/** Immutable image addresses. Portable files carry every referenced original inline or in a photo table. */
 export const PHOTO_PREFIX = "deeprole-photo:";
 export const isPhotoAddress = (value: unknown): value is string => typeof value === "string" && /^deeprole-photo:[a-f0-9]{64}:\d+:[a-z0-9]+:[a-z0-9]+$/.test(value);
 export const photoLegacyKey = (value: string) => isPhotoAddress(value) ? value.split(":").slice(2).join(":") : undefined;

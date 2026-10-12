@@ -1,7 +1,8 @@
+import { readJsonFile } from "../../core/read-json-file";
 import { Select } from "../shared/Select";
 import { StoryDiagnostics } from "../shared/StoryDiagnostics";
-import { ActiveStoryCheckpoint } from "../shared/StoryCheckpoint";
-import { ActiveStoryReviewCard } from "../shared/StoryReview";
+import { StoryWorkspace } from "../shared/StoryWorkspace";
+import { storyUxText } from "../../core/story-ux-i18n";
 import { StoryUpdateSettings } from "../shared/StoryUpdateSettings";
 import { ServiceDiagnostics } from "../shared/ServiceDiagnostics";
 import { readServiceDiagnostics } from "../../storage/service-diagnostics";
@@ -19,7 +20,6 @@ import { PanelWidthControl } from "../shared/PanelWidthControl";
 import { CharacterSettings } from "../shared/CharacterSheets";
 import { saveDefaultActionList, saveWorldActionList } from "../../storage/action-settings";
 import { MemoryGuide } from "../shared/MemoryGuide";
-import { characterText } from "../../core/characters";
 import { sceneChoiceText } from "../../core/scene-choices";
 import { adaptiveText } from "../../core/adaptive-layout";
 import {
@@ -33,6 +33,7 @@ import {
   Eye,
   FileKey2,
   Globe2,
+  BookOpen,
   Languages,
   LayoutDashboard,
   LockKeyhole,
@@ -69,7 +70,7 @@ import type {
   ServiceRequest,
   BackupPayload,
 } from "../../core/types";
-import { parseBackup, restoreBackup } from "../../storage/backup";
+import { parseBackupData, restoreBackup } from "../../storage/backup";
 import { BackupRestore } from "../shared/BackupRestore";
 import { Modal } from "../shared/Modal";
 import { ExportDialog } from "./ExportDialog";
@@ -94,6 +95,7 @@ import { InvalidEncryptedPayloadError } from "../../storage/crypto";
 import { removeBook } from "../../storage/worlds";
 
 import { HelpButton, HelpSection, HelpLocale } from "../shared/Help";
+import { SettingsHelp } from "../shared/SettingsHelp";
 import { DeferredWorldsView as WorldsView } from "./DeferredWorldsView";
 import { SceneControls } from "../shared/SceneControls";
 import { EMPTY_SCENE, memoryWorld } from "../../core/scene";
@@ -105,7 +107,7 @@ import "../shared/memory-assistant.css";
 import "./worlds.css";
 import "./lore-map.css";
 
-type Tab = "overview" | "settings" | "worlds";
+type Tab = "overview" | "settings" | "worlds" | "story";
 
 interface PageState {
   pendingHandoff?: string;
@@ -146,6 +148,8 @@ export function App() {
   const pageGeneration = useRef(0);
   const [page, setPage] = useState<PageState>(EMPTY_PAGE);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [storyVisited, setStoryVisited] = useState(false);
+  const openStory = () => { setStoryVisited(true); setActiveTab("story"); };
   const [openMapWorldId, setOpenMapWorldId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -511,6 +515,7 @@ export function App() {
             onNewMemory={() => { chooseLibraryWorld(scene.worldId); openEntry("new", scene.worldId); }}
             onAnalyze={() => void runService("memory-analysis")}
             onHandoff={() => void runService("handoff")}
+            onOpenStory={openStory}
             onOpenMemory={() => { chooseLibraryWorld(scene.worldId ?? (worlds.length === 1 ? worlds[0]!.id : libraryWorld)); setActiveTab("worlds"); }}
           />
         )}
@@ -533,6 +538,7 @@ export function App() {
           />
         </details></div>}
 
+        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
         {activeTab === "settings" && (
           <SettingsView
             onExport={() => setExportRequest({ worldId: scene.worldId ?? libraryWorld })}
@@ -550,6 +556,7 @@ export function App() {
       <nav className="bottom-nav" aria-label={t("navigation")}>
         <NavButton active={activeTab === "overview"} label={mt("play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
         <NavButton active={activeTab === "worlds"} label={mt("lore")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
+        <NavButton active={activeTab === "story"} label={storyUxText(settings.locale, "nav")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
         <NavButton active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={() => setActiveTab("settings")} />
       </nav>
 
@@ -609,6 +616,7 @@ function Overview(props: {
   onAnalyze: () => void;
   onHandoff: () => void;
   onOpenMemory: () => void;
+  onOpenStory: () => void;
 }) {
   const mt = (key: Parameters<typeof menuText>[1]) => menuText(props.locale, key);
   const x = (key: Parameters<typeof experienceText>[1]) => experienceText(props.locale, key);
@@ -630,6 +638,7 @@ function Overview(props: {
     <section className="quick-actions">
       <button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button>
       <button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button>
+      <button className="action-card" aria-label={storyUxText(props.locale, "open")} onClick={props.onOpenStory}><BookOpen /><span><strong>{storyUxText(props.locale, "open")}</strong><small>{storyUxText(props.locale, "openHint")}</small></span><ChevronRight /></button>
     </section>
   </div>;
 }
@@ -802,12 +811,12 @@ function SettingsView(props: {
     let encrypted = false;
     try {
       if (importFileTooLarge(file.size, "backup")) throw new Error("backupTooLarge");
-      const text = await file.text();
-      const parsedHeader = JSON.parse(text.replace(/^\uFEFF/, "")) as { format?: string } | null;
+      const parsedHeader = await readJsonFile(file,() => mounted.current);
+      if (!await canFinish()) return;
       encrypted = parsedHeader?.format === "deeprole-encrypted";
       const importPassword = encrypted ? password || window.prompt(props.t("password")) : undefined;
       if (importPassword === null) return;
-      const payload = await parseBackup(text, importPassword);
+      const payload = await parseBackupData(parsedHeader,file.size,importPassword);
       if (!await canFinish()) return;
       setRestore({ fileName: file.name, payload });
     } catch (error) {
@@ -840,14 +849,14 @@ function SettingsView(props: {
   return (
     <div className="view-stack">
       <div className="view-title"><div><small>DeepRole</small><h1>{props.t("settings")}</h1></div></div>
-      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "images", "appearance", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "images" ? imageText(props.settings.locale, "title") : id === "characters" ? characterText(props.settings.locale, "title") : x(id === "appearance" ? "settingsAppearance" : id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
+      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "images", "appearance", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "images" ? imageText(props.settings.locale, "title") : id === "characters" ? storyUxText(props.settings.locale, "settingsCharacters") : x(id === "appearance" ? "settingsAppearance" : id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
       <div className="dr-settings-page" hidden={section !== "appearance"}>
         <SettingsCard icon={<Eye />} title={portraitUploadText(props.settings.locale, "title")}>
           <PortraitUploadSettings settings={props.settings} onSettings={props.onSettings} />
         </SettingsCard>
-        <SettingsCard icon={<Eye />} title={x("reasoningTitle")}>
+        <SettingsCard icon={<Eye />} title={x("reasoningTitle")} locale={props.settings.locale} help={x("reasoningHint")}>
           <label className="toggle-row"><span>{x("reasoningShow")}</span><input type="checkbox" checked={props.settings.showDeepSeekReasoning === true} onChange={event => void props.onSettings({ ...props.settings, showDeepSeekReasoning: event.target.checked })} /></label>
-          <p className="setting-copy">{x("reasoningHint")}</p>
+
         </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw Object.assign(new Error(result?.error ?? "failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers }); return result.models; }} /></div>
@@ -858,10 +867,12 @@ function SettingsView(props: {
           else await props.onSettings({ ...props.settings, ...values });
         }} />
       </SettingsCard>
+      <StoryUpdateSettings settings={props.settings} onSave={settings => void props.onSettings(settings)} />
       </div>
       <div className="dr-settings-page" hidden={section !== "characters"}>
-      <SettingsCard icon={<BrainCircuit />} title={characterText(props.settings.locale, "title")}>
-        {props.world && <p className="setting-copy">{exportText(props.settings.locale, "actionScope").replace("{name}", props.world.name)}</p>}
+      <SettingsCard icon={<BrainCircuit />} title={storyUxText(props.settings.locale, "settingsCharacters")} locale={props.settings.locale} help={[storyUxText(props.settings.locale, "settingsCharactersHint"), props.world ? exportText(props.settings.locale, "actionScope").replace("{name}", props.world.name) : ""].filter(Boolean).join("\n\n")}>
+
+
         <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldActions={props.world?.characterActions} onSettings={props.onSettings} onActions={async (actions, renames) => {
           if (props.world) await saveWorldActionList(props.world, actions, undefined, renames, props.settings.characterActions);
           else { await saveDefaultActionList(props.settings, actions, renames); }
@@ -869,40 +880,36 @@ function SettingsView(props: {
         }} />
       </SettingsCard>
       </div><div className="dr-settings-page" hidden={section !== "app"}>
-      <SettingsCard icon={<Pin />} title={props.settings.locale === "ru" ? "Панели и сцена" : "Panels and scene"}>
+      <SettingsCard icon={<Pin />} title={props.settings.locale === "ru" ? "Панели и сцена" : "Panels and scene"} locale={props.settings.locale} help={props.settings.locale === "ru" ? "Эти настройки действуют во всех чатах. Перетаскивание портретов остаётся доступным, когда закрепление выключено." : "These settings apply across chats. You can still drag portraits when pinning is off."}>
         <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />
-        <label className="toggle-row"><span>{adaptiveText(props.settings.locale).title}</span><input type="checkbox" checked={props.settings.adaptiveLayout !== false} onChange={event => void props.onSettings({ ...props.settings, adaptiveLayout: event.target.checked })} /></label>
-        <p className="setting-copy">{adaptiveText(props.settings.locale).hint}</p>
-        <p className="setting-copy">{props.settings.locale === "ru" ? "Эти настройки действуют во всех чатах. Перетаскивание портретов остаётся доступным, когда закрепление выключено." : "These settings apply across chats. You can still drag portraits when pinning is off."}</p>
+        <div className="toggle-row"><SettingsHelp locale={props.settings.locale} title={adaptiveText(props.settings.locale).title} text={adaptiveText(props.settings.locale).hint}/><input aria-label={adaptiveText(props.settings.locale).title} type="checkbox" checked={props.settings.adaptiveLayout !== false} onChange={event => void props.onSettings({ ...props.settings, adaptiveLayout: event.target.checked })} /></div>
+
+
         <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinChoices")}</span><input type="checkbox" checked={!!props.settings.pinSceneChoices} onChange={event => void props.onSettings({ ...props.settings, pinSceneChoices: event.target.checked })} /></label>
         <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinPortraits")}</span><input type="checkbox" checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={event => void props.onSettings({ ...props.settings, pinPortraitLeft: event.target.checked, pinPortraitRight: event.target.checked })} /></label>
       </SettingsCard>
-      <SettingsCard icon={<ShieldCheck />} title={replyRecoveryText(props.settings.locale).title}>
+      <SettingsCard icon={<ShieldCheck />} title={replyRecoveryText(props.settings.locale).title} locale={props.settings.locale} help={replyRecoveryText(props.settings.locale).hint}>
         <label className="toggle-row"><span>{replyRecoveryText(props.settings.locale).toggle}</span><input type="checkbox" checked={props.settings.replyRecoveryEnabled !== false} onChange={event => void props.onSettings({ ...props.settings, replyRecoveryEnabled: event.target.checked })} /></label>
-        <p className="setting-copy">{replyRecoveryText(props.settings.locale).hint}</p>
+
       </SettingsCard>
       <SettingsCard icon={<Languages />} title={props.t("language")}>
         <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
       </SettingsCard>
-      <SettingsCard icon={<Eye />} title={x("contextIndicatorsTitle")}>
-        <p className="setting-copy">{x("contextIndicatorsHint")}</p>
+      <SettingsCard icon={<Eye />} title={x("contextIndicatorsTitle")} locale={props.settings.locale} help={[x("contextIndicatorsHint"), continuationText(props.settings.locale, "warnings") + ": " + continuationText(props.settings.locale, "warningHint"), continuationText(props.settings.locale, "capacity") + ": " + continuationText(props.settings.locale, "capacityHint")].join("\n\n")}>
+
         <label className="toggle-row"><span>{x("chatContextIndicator")}</span><input type="checkbox" checked={props.settings.showChatContextMeter} onChange={(event) => void props.onSettings({ ...props.settings, showChatContextMeter: event.target.checked })} /></label>
         <label className="toggle-row"><span>{x("memoryContextIndicator")}</span><input type="checkbox" checked={props.settings.showMemoryContextIndicator} onChange={(event) => void props.onSettings({ ...props.settings, showMemoryContextIndicator: event.target.checked })} /></label>
         <label className="toggle-row"><span>{continuationText(props.settings.locale, "warnings")}</span><input type="checkbox" checked={props.settings.contextWarningsEnabled !== false} onChange={event => void props.onSettings({ ...props.settings, contextWarningsEnabled: event.target.checked })} /></label>
-        <p className="setting-copy">{continuationText(props.settings.locale, "warningHint")}</p>
+
         <label className="field-label"><span>{continuationText(props.settings.locale, "capacity")}</span><input type="number" min="8000" max="2000000" step="1000" value={capacityDraft} onChange={event => setCapacityDraft(event.target.value)} onBlur={() => {
           const number = Number(capacityDraft), value = capacityDraft.trim() && Number.isFinite(number) ? Math.min(2_000_000, Math.max(8000, Math.round(number))) : chatCapacity(props.settings.chatContextCapacity);
           setCapacityDraft(String(value)); if (value !== props.settings.chatContextCapacity) void props.onSettings({ ...props.settings, chatContextCapacity: value });
         }} /></label>
-        <p className="setting-copy">{continuationText(props.settings.locale, "capacityHint")}</p>
+
       </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "data"}>
-      <StoryUpdateSettings settings={props.settings} onSave={settings => void props.onSettings(settings)} />
-      <ActiveStoryCheckpoint locale={props.settings.locale} tabs={browser.tabs} />
-      <ActiveStoryReviewCard locale={props.settings.locale} tabs={browser.tabs} />
-      <StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(browser.tabs)} />
-      <ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} />
+      <details className="settings-card dr-story-advanced"><summary>{storyUxText(props.settings.locale, "diagnostics")}</summary><p className="setting-copy">{storyUxText(props.settings.locale, "diagnosticsHint")}</p><StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(browser.tabs)} /><ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} /></details>
       <SettingsCard icon={<FileKey2 />} title={u("backup")}>
         <p className="setting-copy">{u("backupHint")}</p>
         <label className="field-label"><span className="help-field-title">{u("backupPassword")}</span><input className="input" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
@@ -912,8 +919,8 @@ function SettingsView(props: {
       </div>
       {restore && <BackupRestore t={props.t} fileName={restore.fileName} payload={restore.payload} onClose={() => setRestore(null)} onRestore={async (mode) => { await restoreBackup(restore.payload, mode); setRestore(null); props.onToast(props.t("importSuccess")); props.onRefresh(); }} />}
       <div className="dr-settings-page" hidden={section !== "app"}>
-      <SettingsCard icon={<BrainCircuit />} title={u("reminders")}>
-        <p className="setting-copy">{u("remindersHint")}</p>
+      <SettingsCard icon={<BrainCircuit />} title={u("reminders")} locale={props.settings.locale} help={u("remindersHint")}>
+
         <label className="toggle-row"><span>{u("remind")}</span><input type="checkbox" checked={props.settings.suggestionsEnabled} onChange={(event) => void props.onSettings({ ...props.settings, suggestionsEnabled: event.target.checked })} /></label>
         <label className="field-label"><span className="help-field-title">{u("interval")}</span><input type="number" min="4" max="100" value={reminderDraft} disabled={!props.settings.suggestionsEnabled} onChange={(event) => setReminderDraft(event.target.value)} onBlur={() => { const number = Number(reminderDraft); const value = reminderDraft.trim() && Number.isFinite(number) ? Math.min(100, Math.max(4, Math.round(number))) : props.settings.suggestionInterval; setReminderDraft(String(value)); if (value !== props.settings.suggestionInterval) void props.onSettings({ ...props.settings, suggestionInterval: value }); }} /></label>
       </SettingsCard></div>
@@ -992,9 +999,9 @@ function Onboarding(props: { t: ReturnType<typeof useTranslator>; onFinish: () =
 }
 
 
-function SettingsCard(props: { icon: React.ReactNode; title: string; children: React.ReactNode }) { return <HelpSection className="settings-card"><header>{props.icon}<h2>{props.title}</h2></header><div>{props.children}</div></HelpSection>; }
+function SettingsCard(props: { icon: React.ReactNode; title: string; children: React.ReactNode; locale?: import("../../core/types").Locale; help?: string }) { return <HelpSection className="settings-card"><header>{props.icon}{props.help ? <SettingsHelp locale={props.locale ?? "ru"} title={props.title} text={props.help} heading/> : <h2>{props.title}</h2>}</header><div>{props.children}</div></HelpSection>; }
 function EmptyState(props: { icon: React.ReactNode; text: string; action?: string; onAction?: () => void }) { return <div className="empty-state"><div>{props.icon}</div><p>{props.text}</p>{props.action && <HelpButton className="button secondary" onClick={props.onAction}>{props.action}</HelpButton>}</div>; }
-function NavButton(props: { active: boolean; label: string; icon: React.ReactNode; onClick: () => void }) { return <HelpButton className={props.active ? "active" : ""} onClick={props.onClick}>{props.icon}<span>{props.label}</span></HelpButton>; }
+function NavButton(props: { active: boolean; label: string; icon: React.ReactNode; badge?: number; onClick: () => void }) { return <HelpButton className={props.active ? "active" : ""} aria-current={props.active ? "page" : undefined} onClick={props.onClick} aria-label={props.label}>{props.icon}<span>{props.label}</span>{!!props.badge && <span className="dr-story-inbox-count" aria-hidden="true">{props.badge}</span>}</HelpButton>; }
 function LoadingScreen() { return <div className="center-screen"><div className="brand-mark large pulse"><span /></div></div>; }
 function useTranslator() { return (key: MessageKey, vars?: Record<string, string | number>) => translate("en", key, vars); }
 

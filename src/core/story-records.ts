@@ -1,4 +1,4 @@
-import { validCharacterStatus, EMPTY_STATUS } from "./characters";
+import { validCharacterStatus, EMPTY_STATUS, characterInChat } from "./characters";
 import type { CharacterStatus, DataRecord } from "./types";
 import { projectStoryBranch, replayStoryEvents } from "./story-projection";
 import { sameStoryValue } from "./story-value";
@@ -9,9 +9,15 @@ import { validStoryTurnEffects, type StoryTurnEffects } from "./story-turn-effec
 import { validStoryFact, validStoryUpdateDiagnostic, storyReplyProse } from "./story-update";
 import { validCharacterCandidate, validCharacterDiscoveryProgress, type CharacterCandidate, type CharacterDiscoveryProgress } from "./story-character-discovery";
 import { validDiscoveryProfile, type DiscoveryProfile } from "./discovery-profile";
+import { validDiscoveryProfileTask, type DiscoveryProfileTask } from "./discovery-profile-queue";
 import { validProfileSupplement, validProfileAdditions, type ProfileSupplement } from "./profile-supplements";
 import type { ProfileValues } from "./character-profile";
 import { validProfileSeeds, type ProfileSeeds } from "./story-profile-view";
+import { validIdentitySeeds, validStoryCharacterIdentity, type IdentitySeeds, type StoryCharacterIdentity } from "./story-character-identity";
+import { validCharacterMerge, validMergeSeeds, type CharacterMerge, type MergeSeeds } from "./story-character-merge";
+import { validIdentityControl, identityControlSource, type IdentityControl } from "./story-identity-management";
+import { validStoryContinuation } from "./story-continuation";
+import { validStoryAutomationDecision, validReviewResolutions, type ReviewResolutions, type StoryAutomationDecision } from "./story-automation";
 export { canonicalStoryValue } from "./story-value";
 
 interface StoryScope {
@@ -32,7 +38,15 @@ export interface StorySnapshot {
   names: Record<string, string>;
 }
 export interface StoryBaseline extends StoryScope {
+  gameId?: string;
+  pendingReviewSeeds?: string[];
+  reviewResolutionSeeds?: ReviewResolutions;
+  storySeeds?: import("./types").StoryContinuation;
+  storySourceChatId?: string;
+  factSeeds?: import("./story-update").StoryFact[];
   profileSeeds?: ProfileSeeds;
+  identitySeeds?: IdentitySeeds;
+  mergeSeeds?: MergeSeeds;
   type: "baseline";
   historyBeforeBaseline: "unknown";
   legacyEntryScope: "unclassified";
@@ -92,6 +106,9 @@ export interface StoryRequest extends StoryScope {
 export interface StoryStateChange { entityId: string; before: CharacterStatus | null; after: CharacterStatus | null }
 export interface StorySceneMembership { presentIds: string[]; partnerIds: string[] }
 export interface StoryEvent extends StoryScope {
+  /** Explicit human resolution of a source-backed proposal in this same game. */
+  originEventId?: string;
+  automation?: StoryAutomationDecision;
   type: "event";
   revisionId: string;
   ordinal: number;
@@ -105,7 +122,12 @@ export interface StoryEvent extends StoryScope {
   effects?: StoryTurnEffects;
   memory?: import("./story-update").StoryFact & { edited?: boolean };
   characterCandidate?: CharacterCandidate;
+  characterIdentity?: StoryCharacterIdentity;
+  /** Explicit author decision. It may belong to the checkpoint before any new turn. */
+  identityControl?: IdentityControl;
+  characterMerge?: CharacterMerge;
   characterProfile?: DiscoveryProfile;
+  characterProfileTask?: DiscoveryProfileTask;
   /** Original quote source when the approved full profile belongs to a later turn. */
   characterSourceRevisionId?: string;
   profileSupplement?: ProfileSupplement;
@@ -160,12 +182,13 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
   switch (value.type) {
     case "baseline": {
       const origin = value.origin;
-      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds"])
-        && value.historyBeforeBaseline === "unknown" && value.legacyEntryScope === "unclassified"
+      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds"])
+        && (value.gameId === undefined || id(value.gameId)) && (value.pendingReviewSeeds === undefined || ids(value.pendingReviewSeeds)) && (value.reviewResolutionSeeds === undefined || validReviewResolutions(value.reviewResolutionSeeds))
+         && value.historyBeforeBaseline === "unknown" && value.legacyEntryScope === "unclassified"
         && object(origin) && keys(origin, ["bindingId", "chatId", "worldId", "sceneRevision", "nativeAnchor"]) && id(origin.bindingId) && id(origin.chatId) && id(origin.worldId) && optionalId(origin.sceneRevision)
         && (origin.nativeAnchor === undefined || object(origin.nativeAnchor) && keys(origin.nativeAnchor, ["nativeMessageKey", "role"])
           && (origin.nativeAnchor.nativeMessageKey === null ? origin.nativeAnchor.role === null : validNativeStoryKey(origin.nativeAnchor.nativeMessageKey) && origin.nativeAnchor.role === "assistant"))
-        && snapshot(value.snapshot) && (value.legacyEffects === undefined || validStoryBaselineEffects(value.legacyEffects, origin.worldId)) && (value.profileSeeds === undefined || validProfileSeeds(value.profileSeeds));
+        && (value.factSeeds === undefined || Array.isArray(value.factSeeds) && value.factSeeds.every(validStoryFact)) && (value.storySeeds === undefined || validStoryContinuation(value.storySeeds)) && (value.storySourceChatId === undefined || id(value.storySourceChatId)) && snapshot(value.snapshot) && (value.legacyEffects === undefined || validStoryBaselineEffects(value.legacyEffects, origin.worldId)) && (value.profileSeeds === undefined || validProfileSeeds(value.profileSeeds)) && (value.identitySeeds === undefined || validIdentitySeeds(value.identitySeeds)) && (value.mergeSeeds === undefined || validMergeSeeds(value.mergeSeeds));
     }
     case "branch": return keys(value, [...common, "baselineId", "parentBranchId", "forkRevisionId", "headRevisionId", "selectionVersion", "projectionId", "gameManaged", "pausedAtRevisionId"])
       && value.branchId === value.id && id(value.baselineId) && optionalId(value.parentBranchId) && optionalId(value.forkRevisionId) && optionalId(value.headRevisionId) && integer(value.selectionVersion)
@@ -183,15 +206,21 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
       && (value.delivery.status === "prepared" || value.delivery.at >= value.createdAt && value.delivery.at <= value.updatedAt)
       && (value.context === undefined || object(value.context) && keys(value.context, ["algorithmVersion", "acceptedEventIds"]) && value.context.algorithmVersion === 1 && ids(value.context.acceptedEventIds)
         && value.context.acceptedEventIds.every((item, index, list) => index === 0 || list[index - 1]! < item));
-    case "event": return keys(value, [...common, "revisionId", "ordinal", "disposition", "label", "quote", "participantIds", "changes", "sceneChange", "effects", "memory", "characterCandidate", "characterProfile", "characterSourceRevisionId", "profileSupplement", "profileUpdate"])
-      && id(value.revisionId) && integer(value.ordinal) && value.disposition === "candidate" && text(value.label, 240) && !!value.label.trim() && text(value.quote, 4000) && !!value.quote.trim() && ids(value.participantIds)
+    case "event": return keys(value, [...common, "revisionId", "ordinal", "disposition", "label", "quote", "participantIds", "changes", "sceneChange", "effects", "memory", "characterCandidate", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate", "characterIdentity", "identityControl", "characterMerge", "automation", "originEventId"])
+      && (value.automation === undefined || validStoryAutomationDecision(value.automation) && (value.memory !== undefined || value.characterCandidate !== undefined || value.profileSupplement !== undefined || value.originEventId !== undefined))
+       && (value.originEventId === undefined || id(value.originEventId) && value.originEventId !== value.id && value.automation !== undefined && (value.automation as StoryAutomationDecision).reason === "manual")
+       && id(value.revisionId) && integer(value.ordinal) && value.disposition === "candidate" && text(value.label, 240) && !!value.label.trim() && text(value.quote, 4000) && !!value.quote.trim() && ids(value.participantIds)
       && Array.isArray(value.changes) && value.changes.every(change => object(change) && keys(change, ["entityId", "before", "after"]) && id(change.entityId) && (value.participantIds as string[]).includes(change.entityId) && state(change.before) && state(change.after))
       && new Set(value.changes.map(change => change.entityId)).size === value.changes.length
       && (value.effects === undefined || validStoryTurnEffects(value.effects, value.worldId as string | null))
-      && (value.memory === undefined || object(value.memory) && keys(value.memory, ["text", "kind", "quote", "edited"]) && validStoryFact({ text: value.memory.text, kind: value.memory.kind, quote: value.memory.quote }) && value.memory.quote === value.quote && (value.memory.edited === undefined || typeof value.memory.edited === "boolean") && value.changes.length === 0 && value.effects === undefined && value.sceneChange === undefined)
+      && (value.memory === undefined || object(value.memory) && keys(value.memory, ["text", "kind", "quote", "edited", "claim"]) && validStoryFact({ text: value.memory.text, kind: value.memory.kind, quote: value.memory.quote, ...(value.memory.claim !== undefined ? { claim: value.memory.claim } : {}) }) && value.memory.quote === value.quote && (value.memory.edited === undefined || typeof value.memory.edited === "boolean") && value.changes.length === 0 && value.effects === undefined && value.sceneChange === undefined)
       && (value.characterCandidate === undefined || validCharacterCandidate(value.characterCandidate) && value.characterCandidate.quote === value.quote && value.memory === undefined && value.sceneChange === undefined && (value.effects === undefined ? value.changes.length === 0 && (value.participantIds as string[]).length === 0 : validDiscoveryEffect(value.effects as import("./story-turn-effects").StoryTurnEffects, value.changes)))
       && (value.characterProfile === undefined || value.characterCandidate !== undefined && validDiscoveryProfile(value.characterProfile))
-      && (value.characterSourceRevisionId === undefined || id(value.characterSourceRevisionId) && value.characterCandidate !== undefined && value.characterProfile !== undefined && value.effects !== undefined && (value.characterProfile as DiscoveryProfile).headRevisionId === value.revisionId)
+      && (value.characterProfileTask === undefined || value.characterCandidate !== undefined && validDiscoveryProfileTask(value.characterProfileTask) && (value.characterProfileTask.status !== "ready" || value.characterProfile !== undefined && (value.characterProfile as DiscoveryProfile).headRevisionId === value.characterProfileTask.guard.headRevisionId))
+      && (value.characterSourceRevisionId === undefined || id(value.characterSourceRevisionId) && value.characterCandidate !== undefined && (value.characterIdentity !== undefined || value.characterProfile !== undefined && value.effects !== undefined && (value.characterProfile as DiscoveryProfile).headRevisionId === value.revisionId))
+      && (value.characterIdentity === undefined || validStoryCharacterIdentity(value.characterIdentity) && value.characterCandidate !== undefined && value.characterIdentity.alias === (value.characterCandidate as CharacterCandidate).name && value.effects === undefined && value.characterProfile === undefined && value.characterProfileTask === undefined && value.changes.length === 0 && value.participantIds.length === 0)
+      && (value.identityControl === undefined || validIdentityControl(value.identityControl) && value.quote === value.identityControl.alias && value.changes.length === 0 && value.participantIds.length === 0 && ["sceneChange", "effects", "memory", "characterCandidate", "characterIdentity", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate", "characterMerge"].every(k => value[k] === undefined))
+      && (value.characterMerge === undefined || validCharacterMerge(value.characterMerge) && validStoryTurnEffects(value.effects, value.worldId as string | null) && value.effects.createdEntities.length === 1 && value.effects.createdPhotos.length === 0 && sameStoryValue(value.effects.before, value.effects.after) && value.effects.createdEntities[0]!.id === value.characterMerge.mergedId && sameStoryValue({ name: value.effects.createdEntities[0]!.name, aliases: value.effects.createdEntities[0]!.aliases }, value.characterMerge.canonical) && value.changes.some(c => c.entityId === (value.characterMerge as CharacterMerge).mergedId && c.before === null && c.after !== null) && ["identityControl", "memory", "characterCandidate", "characterIdentity", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate"].every(k => value[k] === undefined))
       && (value.profileSupplement === undefined || validProfileSupplement(value.profileSupplement) && value.profileSupplement.profile.headRevisionId === value.revisionId && value.changes.length === 0 && (value.participantIds as string[]).length === 1 && value.participantIds[0] === value.profileSupplement.entityId && value.effects === undefined && value.sceneChange === undefined && value.memory === undefined && value.characterCandidate === undefined && value.characterProfile === undefined)
       && (value.profileUpdate === undefined || value.profileSupplement !== undefined && validProfileAdditions(value.profileUpdate) && Object.entries(value.profileUpdate).every(([k, text]) => {
         const profile = (value.profileSupplement as ProfileSupplement).profile, before = profile.values[k as keyof ProfileValues];
@@ -226,6 +255,15 @@ export function assertStoryGraph(records: DataRecord[]): void {
     if (target?.type !== "branch" || !compatible(item, target)) throw new Error("story-link-invalid");
     return target;
   };
+  const proposalOrigin = (item: StoryEvent, owner: StoryBranch) => {
+    if (!item.originEventId) return undefined;
+    const origin = all.get(item.originEventId), base = all.get(owner.baselineId);
+    const oldBranch = origin?.type === "event" ? all.get(origin.branchId) : undefined;
+    const oldBase = oldBranch?.type === "branch" ? all.get(oldBranch.baselineId) : undefined;
+    if (origin?.type !== "event" || origin.originEventId || !origin.automation || origin.automation.status === "duplicate" || base?.type !== "baseline" || oldBase?.type !== "baseline" || !base.gameId || base.gameId !== oldBase.gameId || item.worldId !== origin.worldId || item.quote !== origin.quote) throw Error("story-evidence-invalid");
+    if (item.memory && (!origin.memory || item.memory.kind !== origin.memory.kind || item.memory.quote !== origin.memory.quote) || item.profileSupplement && !origin.profileSupplement && !origin.characterCandidate || item.characterCandidate && !origin.characterCandidate) throw Error("story-evidence-invalid");
+    return origin;
+  };
   const eventSlots = new Set<string>(), legacyRoots = new Set<string>();
   const messages = new Map<string, string>();
   for (const item of all.values()) {
@@ -236,9 +274,14 @@ export function assertStoryGraph(records: DataRecord[]): void {
       const key = JSON.stringify([item.origin.bindingId, item.origin.worldId]);
       if (legacyRoots.has(key)) throw new Error("story-baseline-conflict");
       legacyRoots.add(key);
-      for (const id of Object.keys(item.profileSeeds ?? {})) {
+      for (const proposalId of [...item.pendingReviewSeeds ?? [], ...Object.keys(item.reviewResolutionSeeds ?? {})]) {
+        const proposal = all.get(proposalId), proposalBranch = proposal?.type === "event" ? all.get(proposal.branchId) : undefined;
+        const proposalBase = proposalBranch?.type === "branch" ? all.get(proposalBranch.baselineId) : undefined;
+        if (!item.gameId || proposal?.type !== "event" || !proposal.automation || proposal.originEventId || proposal.worldId !== item.worldId || proposalBase?.type !== "baseline" || proposalBase.gameId !== item.gameId) throw Error("story-evidence-invalid");
+      }
+      for (const id of new Set([...Object.keys(item.profileSeeds ?? {}), ...Object.keys(item.identitySeeds ?? {})])) {
         const p = entityProfiles.get(id);
-        if (!p || p.worldId !== item.worldId || p.kind !== "character" || p.playthroughChatId && p.playthroughChatId !== item.origin.chatId) throw Error("story-evidence-invalid");
+        if (!p || p.worldId !== item.worldId || p.kind !== "character" || !characterInChat(p, item.origin.chatId)) throw Error("story-evidence-invalid");
       }
     }
     if (item.type === "branch") {
@@ -268,22 +311,61 @@ export function assertStoryGraph(records: DataRecord[]): void {
     }
     if (item.type === "event") {
       const revision = all.get(item.revisionId);
+      if (item.identityControl || item.characterMerge) {
+        const baseline = all.get(owner.baselineId) as StoryBaseline;
+        const root = revision?.type === "baseline" && revision.id === baseline.id && item.branchId === baseline.branchId;
+        if (!root && (revision?.type !== "revision" || !compatible(item, revision) || item.branchId !== revision.branchId || revision.completion !== "complete")) throw Error("story-link-invalid");
+        if (item.identityControl && !identityControlSource(all, baseline, item.identityControl)) throw Error("story-evidence-invalid");
+        if (item.characterMerge) {
+          const m = item.characterMerge, created = item.effects!.createdEntities[0]!;
+          const ancestors = new Set<string>(); let cursor: StoryRecord | undefined = revision;
+          while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
+          const known = new Set([...Object.keys(baseline.snapshot.names), ...[...entityProfiles.values()].filter(p => p.worldId === item.worldId && p.kind === "character" && (!p.playthroughChatId || p.sharedInWorld)).map(p => p.id)]);
+          for (const e of all.values()) if (e.type === "event" && compatible(item, e) && (e.revisionId === baseline.id || ancestors.has(e.revisionId)) && (e.revisionId !== item.revisionId || e.ordinal < item.ordinal)) for (const p of e.effects?.createdEntities ?? []) known.add(p.id);
+          if (m.sourceIds.some(id => !known.has(id))) throw Error("story-evidence-invalid");
+          if (created.playthroughChatId !== baseline.origin.chatId || m.sourceIds.some(id => {
+            const p = entityProfiles.get(id);
+            return !p || p.kind !== "character" || p.worldId !== item.worldId || !characterInChat(p, baseline.origin.chatId);
+          })) throw Error("story-evidence-invalid");
+        }
+        const source = all.get(item.identityControl?.sourceId ?? "");
+        if (source?.type === "event") {
+          const ancestors = new Set<string>(); let cursor: StoryRecord | undefined = revision;
+          while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
+          if (source.revisionId !== baseline.id && !ancestors.has(source.revisionId) || source.revisionId === item.revisionId && source.ordinal >= item.ordinal) throw Error("story-evidence-invalid");
+        }
+        const slot = JSON.stringify([item.revisionId, item.ordinal]);
+        if (eventSlots.has(slot)) throw Error("story-order-conflict");
+        eventSlots.add(slot); continue;
+      }
       if (revision?.type !== "revision" || !compatible(item, revision) || item.branchId !== revision.branchId) throw new Error("story-link-invalid");
-      const quoteSource = item.characterSourceRevisionId ? all.get(item.characterSourceRevisionId) : revision;
-      if (quoteSource?.type !== "revision" || !compatible(item, quoteSource) || !quoteSource.content.includes(item.quote)) throw new Error("story-evidence-invalid");
+      const origin = proposalOrigin(item, owner);
+      const quoteSource = origin ? all.get(origin.characterSourceRevisionId ?? origin.revisionId) : item.characterSourceRevisionId ? all.get(item.characterSourceRevisionId) : revision;
+      if (quoteSource?.type !== "revision" || (!origin && !compatible(item, quoteSource)) || !!origin && (quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character") || !quoteSource.content.includes(item.quote)) throw new Error("story-evidence-invalid");
       const candidateBaseline = item.characterCandidate ? all.get(owner.baselineId) : undefined;
       if (item.characterCandidate && (candidateBaseline?.type !== "baseline" || revision.completion !== "complete" || revision.storyPurpose === "out-of-character" || quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character" || !storyReplyProse(quoteSource.content).includes(item.quote) || item.effects?.createdEntities.some(e => e.playthroughChatId !== candidateBaseline.origin.chatId))) throw new Error("story-evidence-invalid");
+      if (item.characterIdentity) {
+        const person = entityProfiles.get(item.characterIdentity.entityId), baseline = all.get(owner.baselineId);
+        const ancestors = new Set<string>(); let cursor: StoryRecord | undefined = revision;
+        while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
+        if (!person || person.kind !== "character" || person.worldId !== item.worldId || person.playthroughChatId && !person.sharedInWorld && (baseline?.type !== "baseline" || person.playthroughChatId !== baseline.origin.chatId) || !ancestors.has(quoteSource.id)) throw Error("story-evidence-invalid");
+      }
       const profile = item.characterProfile ?? item.profileSupplement?.profile;
+      if (item.characterProfileTask) {
+        const task = item.characterProfileTask, head = all.get(task.guard.headRevisionId!), ancestors = new Set<string>(); let cursor = head;
+        while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
+        if (task.guard.branchId !== item.branchId || head?.type !== "revision" || !compatible(item, head) || head.branchId !== item.branchId || head.completion !== "complete" || head.storyPurpose === "out-of-character" || !ancestors.has(quoteSource.id)) throw Error("story-link-invalid");
+      }
       if (profile) {
         const head = all.get(profile.headRevisionId), ancestors = new Set<string>();
         let cursor = head;
         while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
-        if (head?.type !== "revision" || !compatible(item, head) || head.branchId !== item.branchId || head.completion !== "complete" || head.storyPurpose === "out-of-character" || !ancestors.has(quoteSource.id)
-          || profile.proofs.some(p => { const source = all.get(p.revisionId); return source?.type !== "revision" || !compatible(item, source) || source.completion !== "complete" || source.storyPurpose === "out-of-character" || !ancestors.has(source.id) || !storyReplyProse(source.content).includes(p.quote); })) throw Error("story-evidence-invalid");
+        if (head?.type !== "revision" || !compatible(item, head) || head.branchId !== item.branchId || head.completion !== "complete" || head.storyPurpose === "out-of-character" || !origin && !ancestors.has(quoteSource.id)
+          || profile.proofs.some(p => { const source = all.get(p.revisionId); return source?.type !== "revision" || !origin && !compatible(item, source) || source.completion !== "complete" || source.storyPurpose === "out-of-character" || (origin ? !(origin.characterProfile ?? origin.profileSupplement?.profile)?.proofs.some(proof => proof.revisionId === p.revisionId && proof.quote === p.quote) : !ancestors.has(source.id)) || !storyReplyProse(source.content).includes(p.quote); })) throw Error("story-evidence-invalid");
         if (item.profileSupplement) {
           const person = entityProfiles.get(item.profileSupplement.entityId);
           const baseline = all.get(owner.baselineId);
-          if (!person || person.kind !== "character" || person.worldId !== item.worldId || person.playthroughChatId && (baseline?.type !== "baseline" || person.playthroughChatId !== baseline.origin.chatId) || !storyReplyProse(revision.content).includes(item.quote)) throw Error("story-evidence-invalid");
+          if (!person || person.kind !== "character" || person.worldId !== item.worldId || person.playthroughChatId && !person.sharedInWorld && (baseline?.type !== "baseline" || person.playthroughChatId !== baseline.origin.chatId) || !storyReplyProse(quoteSource.content).includes(item.quote)) throw Error("story-evidence-invalid");
         }
       }
       const slot = JSON.stringify([item.revisionId, item.ordinal]);
@@ -324,6 +406,7 @@ export function assertStoryGraph(records: DataRecord[]): void {
     const parentPosition = ancestry!.get(item.parentRevisionId ?? "");
     const events = item.context.acceptedEventIds.map(id => {
       const event = all.get(id), source = event?.type === "event" ? all.get(event.revisionId) : undefined, position = source && ancestry!.get(source.id);
+      if (event?.type === "event" && (event.identityControl || event.characterMerge) && source?.type === "baseline" && source.id === owner.baselineId && event.branchId === owner.id && compatible(item, event)) return { event, position: { start: -1 } };
       if (event?.type !== "event" || !compatible(item, event) || event.branchId !== owner.id || source?.type !== "revision" || source.completion !== "complete"
         || !parentPosition || !position || position.start > parentPosition.start || parentPosition.start >= position.end) throw new Error("story-request-context-invalid");
       return { event, position };

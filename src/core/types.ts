@@ -4,6 +4,10 @@ export type MemoryPriority = "low" | "normal" | "high";
 export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration" | "cast" | "story" | "service" | "dispatch";
 
 export interface WorldProfile {
+  storyAutomation?: import("./story-automation").StoryAutomationPolicy;
+  /** One live game per lore; chat branches remain historical checkpoints. */
+  sharedGame?: import("./world-game").WorldGame;
+  sharedGameArchives?: import("./world-game").WorldGame[];
   /** User opted into one preparation when this world first has lore. */
   autoPrepareCharacters?: boolean;
   relationshipsEnabled?: boolean;
@@ -32,6 +36,8 @@ export interface SceneEntity {
   profileFieldRevisions?: import("./profile-supplements").ProfileFieldRevisions;
   /** Auto-created in one playthrough; not shared world canon until manually saved. */
   playthroughChatId?: string;
+  /** Accepted game characters belong to the world roster; origin remains intact. */
+  sharedInWorld?: true;
   characterSheet?: CharacterSheet;
   useDescriptionInContext?: boolean;
   id: string;
@@ -46,6 +52,7 @@ export interface SceneEntity {
 }
 
 export interface CharacterSheet {
+  protectedProfileFields?: import("./character-profile").ProfileField[];
   /** Starting narrative facts extracted from approved lore; no chat progress. */
   initialStatus?: CharacterStatus;
   imageGeneration?: import("./image-generation").CharacterImagePrompt;
@@ -189,6 +196,7 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  oldChatNotice?: import("./old-chat-notice").OldChatNoticeReceipt;
   nextStoryMessageMode?: "out-of-character";
   illustrationAttempts?: import("./image-plan").ImageAttempt[];
   /** Local references to photos attached to specific native replies. */
@@ -221,6 +229,10 @@ export interface RecoveredReply {
 }
 
 export interface HandoffSnapshot {
+  /** Optimistic guard: recap delivery may not restore an older shared game. */
+  sharedGameRevision?: string;
+  /** Confirmed destination, recorded only after accepted continuation delivery. */
+  targetChatId?: string;
   continuation?: StoryContinuation;
   memoryOverrides?: MemoryOverrides;
   /** Local structured state; the model's recap never controls these values. */
@@ -422,7 +434,8 @@ export interface DeepSeekAdapter {
 
 export interface BackupPayload {
   format: "deeprole-backup";
-  version: 1 | 2 | 3 | 4;
+  version: 1 | 2 | 3 | 4 | 5;
+  photos?: import("./portable-photos").PortablePhoto[];
   exportedAt: string;
   records: Array<{
     kind: RecordKind;

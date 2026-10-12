@@ -1,7 +1,14 @@
 import { expect, it, vi } from "vitest";
-import { readActiveStoryReview, previewActiveStoryReview, type StoryReviewTabs } from "../src/adapters/story-review-client";
+import { readActiveStoryReview, previewActiveStoryReview, runActiveStoryGame, type StoryReviewTabs } from "../src/adapters/story-review-client";
 import { storyReviewPage, storyReviewLastPage, storyReviewPreview } from "./fixtures/story-review";
 const tab = { id: 7, url: "https://chat.deepseek.com/a/chat/s/synthetic-a" };
+it("freezes the requested game scope and rejects another chat before sending", async () => {
+  const f = fixture(), scope = { chatId: "synthetic-a", worldId: "world" };
+  f.sendMessage.mockResolvedValue({ ok: true, data: { active: true } });
+  const pending = runActiveStoryGame(f.tabs, "sync", "stop", scope); scope.worldId = "late-change"; await pending;
+  expect(f.sendMessage).toHaveBeenCalledWith(7, { type: "DR_STORY_GAME", operation: "sync", manual: "stop", scope: { chatId: "synthetic-a", worldId: "world" } });
+  f.sendMessage.mockClear(); await expect(runActiveStoryGame(f.tabs, "restart", "stop", { chatId: "other", worldId: "world" })).rejects.toThrow("story-binding-conflict"); expect(f.sendMessage).not.toHaveBeenCalled();
+});
 function fixture() {
   const page = storyReviewPage(), query = vi.fn<StoryReviewTabs["query"]>().mockResolvedValue([tab]), sendMessage = vi.fn<StoryReviewTabs["sendMessage"]>().mockResolvedValue({ ok: true, data: page });
   return { page, query, sendMessage, tabs: { query, sendMessage }, target: { tabId: tab.id, url: tab.url, page } };

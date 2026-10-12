@@ -9,16 +9,26 @@ import { actionsFor } from "../core/characters";
 import { getSettings } from "./settings";
 import { importFileTooLarge } from "../core/import-limits";
 import type { Illustration } from "../core/image-generation";
+import { validPortablePhotos, type PortablePhoto } from "../core/portable-photos";
+import { worldGamePeople } from "../core/world-game";
 
-export interface WorldPackage { format: "deeprole-world"; version: 1; records: DataRecord[] }
+export interface WorldPackage { format: "deeprole-world"; version: 1 | 2; photos?: PortablePhoto[]; records: DataRecord[] }
 
-export async function exportWorld(worldId: string, repo: DeepRoleRepository = repository): Promise<WorldPackage> {
+export async function exportWorld(worldId: string, repo: DeepRoleRepository = repository): Promise<WorldPackage> { return createWorldContent(worldId,repo,true); }
+export async function createWorldContent(worldId: string, repo: DeepRoleRepository = repository, expandPhotos = true): Promise<WorldPackage> {
   const all = await repo.rawRecords();
   const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
-  const records = await repo.portableRecords(all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId));
+  const liveWorld = all.find(r => r.kind === "world" && r.id === worldId)?.data as WorldProfile | undefined;
+  const roster = worldGamePeople(all.filter(r => r.kind === "entity" && (r.data as SceneEntity).worldId === worldId).map(r => r.data as SceneEntity), liveWorld, all.filter(r => r.kind === "story").map(r => r.data as import("../core/story-records").StoryRecord));
+  const people = new Map(roster.map(p => [p.id,p])), merged = new Map(Object.values(liveWorld?.sharedGame?.mergeSeeds ?? {}).flatMap(m => m.sourceIds.map(id => [id,m.mergedId] as const)));
+  const remap = (ids: string[]) => [...new Set(ids.map(id => merged.get(id) ?? id))];
+  const selected = all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId && (r.kind !== "entity" || people.has(r.id))).map(r => r.kind === "entity" ? { ...r, data: people.get(r.id)! } : r);
+  const records = expandPhotos ? await repo.portableRecords(selected) : structuredClone(selected);
+  for (const r of records) { if ("entityIds" in r.data && r.data.entityIds) r.data.entityIds = remap(r.data.entityIds); if ("memberIds" in r.data) r.data.memberIds = remap(r.data.memberIds); if ("focusIds" in r.data && r.data.focusIds) r.data.focusIds = remap(r.data.focusIds); if (r.kind === "illustration" && (r.data as Illustration).entityId) (r.data as Illustration).entityId = merged.get((r.data as Illustration).entityId!) ?? (r.data as Illustration).entityId; }
   // An explicit world export is a reusable canon package, not a live playthrough.
   // Full backups retain this origin; a portable world must work in a new chat.
   for (const row of records) if (row.kind === "entity") delete (row.data as SceneEntity).playthroughChatId;
+  for (const row of records) if (row.kind === "world") { delete (row.data as WorldProfile).sharedGame; delete (row.data as WorldProfile).sharedGameArchives; }
   if (!records.some((r) => r.kind === "world")) throw new Error("invalidBackup");
   const entryIds = new Set(records.filter((r) => r.kind === "entry").map((r) => r.id));
   const world = records.find(r => r.kind === "world")!.data as WorldProfile;
@@ -37,8 +47,9 @@ export function parseWorldPackageData(input: unknown, bytes: number): WorldPacka
   if (importFileTooLarge(bytes, "world")) throw new Error("worldTooLarge");
   const raw = input as WorldPackage;
   const value = raw && Array.isArray(raw.records) ? { ...raw, records: raw.records.map(normalizeActionRecord) } : raw;
-  if (value?.format !== "deeprole-world" || value.version !== 1 || !Array.isArray(value.records)) throw new Error("invalidBackup");
-  if (value.records.some((r) => !validDataRecord(r) || hasInternalPhotoAddresses(r.kind, r.data))) throw new Error("invalidBackup");
+  if (value?.format !== "deeprole-world" || ![1,2].includes(value.version) || !Array.isArray(value.records)) throw new Error("invalidBackup");
+  if (value.version === 2 && !validPortablePhotos(value.photos,value.records) || value.version === 1 && value.photos !== undefined) throw Error("invalidBackup");
+  if (value.records.some((r) => !validDataRecord(r) || value.version !== 2 && hasInternalPhotoAddresses(r.kind, r.data))) throw new Error("invalidBackup");
   const worldRecords = value.records.filter((r) => r.kind === "world");
   if (worldRecords.length !== 1) throw new Error("invalidBackup");
   const worldId = worldRecords[0]!.id;
@@ -69,6 +80,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
     const data = structuredClone(r.data);
     data.id = ids.get(r.id)!;
     if (r.kind === "world") (data as WorldProfile).autoPrepareCharacters = false;
+    if (r.kind === "world") { delete (data as WorldProfile).sharedGame; delete (data as WorldProfile).sharedGameArchives; }
     if (r.kind === "world" && (data as WorldProfile).mapLayout) {
       const layout = (data as WorldProfile).mapLayout!;
       const remap = (key: string) => key.split(":").map((part) => ids.get(part) ?? part).join(":");

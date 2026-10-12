@@ -1,5 +1,95 @@
 # Персонажи и портреты
 
+## Ручная правка и автоматические обновления
+
+В редакторе видны поясняющие плашки: состояние сцены, текущие отношения, значения характеристик и отметки сыгранных событий могут обновляться после ответов DeepSeek, если получены подходящие изменения. Ручная правка применяется после «Сохранить персонажа» и заменяет соответствующие текущие значения общей игры лора. Используйте её для исправления ошибки или задания нужного состояния. Последующие ответы могут снова менять незакреплённые значения; фиксация запрещает автоматические изменения чисел, сохраняя ручное редактирование.
+
+Плашки учитывают выключенное отслеживание и фиксацию. **Анкета** объясняется отдельно: обычные ответы не перезаписывают её постоянные поля, при включённом сопровождении пригодные сведения из сцен дополняют игровую анкету поверх исходного текста. Защищённые поля ждут проверки. [Режимы сопровождения](AUTOMATIC-MEMORY.md). Начальные значения, названия шкал, правила и условия событий задаёт пользователь. Просмотр плашки не меняет данные, не запускает DeepSeek и не требует подтверждения.
+
+### Manual edits and automatic updates
+
+Visible notices explain which current scene fields, relationships, characteristic values and event marks may update after DeepSeek replies. Saving a manual edit replaces the corresponding values in the lore’s shared game; later replies may update unlocked values again. Numeric locks and disabled tracking are reflected in the notice. Ordinary replies preserve original profile text, starting values and definitions. Enabled accompaniment can append source-backed game details; protected fields await review. [Accompaniment modes](AUTOMATIC-MEMORY.md). Viewing a notice does not change data or send a request.
+
+## Возврат в предыдущий чат
+
+После подключения того же лора к другому чату в предыдущем появится небольшое напоминание со ссылкой. При первом сообщении там DeepSeek получает скрытую просьбу один раз предупредить, что игра перенесена, и предложить актуальный чат. Это ответ вне сцены; после следующего сообщения можно продолжить игру здесь.
+
+Отправку расширение не блокирует. **«Продолжить здесь»** скрывает плашку, отключает просьбу и делает этот чат актуальным, используя последние общие значения игры. Если новый чат удалён, можно остаться в старом. Ссылка не проверяет доступность чата на сервере. При неудачной отправке просьба остаётся для повтора; после принятой отправки не добавляется снова, включая перезагрузку. Подсказка расширения работает независимо от ответа модели.
+
+Один лор использует одну общую игру: отношения, показатели, объединения, псевдонимы и настройки памяти сохраняются при смене чата. Старый чат показывает актуальные значения, но не записывает последствия, пока не выбран для продолжения. После одноразового предупреждения обычное следующее сообщение возобновляет игру здесь. [Подробное руководство](WORLD-GAME.md).
+
+## Объединение и унаследованные имена
+
+В **«История → Персонажи»** откройте **«Имена и псевдонимы»**, чтобы отключить или вернуть имя, подтверждённое в прохождении либо перенесённое в новую исходную точку. Исходные имена анкеты мира меняются в самой анкете. Общие имена нескольких людей не используются для автоматического подбора.
+
+**«Объединить дубликаты персонажа»** предназначено для двух анкет одного человека. Выберите обе, сравните и укажите источники: анкета с правилами и изображениями, текущее состояние, отношения других персонажей. Ничего не складывается. При разных правилах выбирайте анкету и состояние из одной карточки. Проверьте имя, псевдонимы и отметку главного героя, затем подтвердите.
+
+Объединение действует в общей игре этого лора, включая её продолжения в других чатах. Исходные карточки скрыты из актуального состава. Оригиналы и другая библиотека изображений сохраняются; новая карточка получает библиотеку выбранного источника. Кнопка отмены возвращает оригиналы. Если после объединения сыграны сцены, отмена возвращает историю к месту объединения и приостанавливает запись; сообщения чата остаются. Изменённая или используемая другими данными карточка не удаляется автоматически: отмена остановится.
+
+Новая исходная точка закрепляет ранние решения. Перенесённое объединение видно в списке, но отмена через границу исходной точки не предлагается. Имена по-прежнему можно отключать отдельно. Генерация DeepSeek для этих действий не требуется.
+
+### Merge scope
+
+**Story → Characters → Merge duplicate characters** affects this lore’s shared game, including its continuation chats. Source cards are hidden from the current roster. Explicitly choose the profile/images, played state and incoming relationships; numbers are not combined. Originals remain intact. Undo restores originals and, when necessary, pauses recording at the merge scene. Edited or externally referenced merged cards block destructive undo. A new checkpoint fixes earlier merges; their aliases remain individually manageable. These tools do not call the model.
+
+## Где найти нужное действие
+
+Откройте **«История → Персонажи»** в основном меню. **«Персонажи из лора мира»** готовит первоначальный состав созданного или импортированного мира. **«Люди, найденные в игре»** ищет пропущенных персонажей в записанных сценах этого чата. Откройте **«Проверить персонажа»** для цитат, полей и привязки к существующей анкете. **«Дополнить сохранённую анкету»** собирает новые сведения для уже известного персонажа. Открытие раздела само не отправляет запрос модели.
+
+Сначала подключите мир в **«Игре»**. Для поиска в сыгранных сценах включите запись истории; переписка до исходной точки не анализируется. Состояние записи видно сразу в **«Истории»**. Настройки **«Поведение персонажей»** относятся к аватаркам и правилам, а не к библиотеке анкет.
+
+Правки проверки состава остаются при её закрытии и повторном открытии. Черновики каталога сохраняются при переключении страниц и разделов открытой панели. Для сохранения после перезагрузки подтвердите анкету; локальный несохранённый черновик не является резервной копией.
+
+### Finding the right action
+
+Open **Story → Characters**. **Characters from world lore** prepares the initial world cast; **People found during play** searches recorded scenes in this chat. Open **Review this person** for sources, fields and linking a saved profile. **Add details to a saved profile** handles new details for an existing person. Opening this view does not send a model request. Connect a world in **Play** and enable scene recording for played-history tools. Earlier messages before the starting point are not analysed.
+
+Closing/reopening the same cast review and paging/navigating the open panel preserve local edits. Save a reviewed profile to retain it after reload; unsaved UI drafts are not backups. **Character behaviour** settings govern avatars and rules, not the profile library.
+
+## Имена и псевдонимы в выбранной истории
+
+В «История → Персонажи → Люди, найденные в игре» у найденного имени нажмите **«Это известный персонаж»**. Найдите сохранённую карточку по имени или псевдониму, проверьте описание, выберите её и нажмите **«Связать имя»**. Список имеет страницы; это не предел библиотеки. Связь не запускает генерацию и не копирует анкету, отношения, числа или изображения.
+
+Имя начинает учитываться в этой истории с момента подтверждения. Общий мир и другие чаты не меняются. Другой вариант ответа исключает связь; возврат восстанавливает её. **«Убрать связь»** оставляет найденный кандидат для новой проверки. Связь переживает перезагрузку и резервную копию; новая исходная точка той же истории наследует её отдельно от мирового канона. «Убрать связь» относится к событию текущего каталога; отдельный список управления унаследованными именами пока не добавлен.
+
+Если карточка переименована или псевдоним оказался общим, заимствование отключается с пояснением. Уберите связь и проверьте её заново. При другом человеке с уже известным именем модель может предложить отдельного кандидата: уточните имя, например «Алекс, курьер», перед подготовкой. Для такого кандидата используется только его отличающая исходная цитата, а не все записи про любого Алекса; недостающие факты могут не найтись.
+
+Это ручное подтверждение личности, не доказательство модели и не объединение двух существующих карточек. В большой исходной подготовке мира разрешение псевдонимов пока не подключено. Поиск до исходной точки и смысловое разрешение местоимений/маскировок остаются отдельными этапами.
+
+### Names in the selected story
+
+For a found name in **Story → Characters → People found during play**, open **This is a known character**, search the saved profiles, check the description and explicitly **Link this name**. Nothing is generated or copied; world profiles, numeric state, relationships and images stay unchanged. The alias is used only in this selected story from approval onward. Other variants exclude it, returning restores it, and **Remove this link** keeps the original candidate.
+
+Reload, encrypted backups and a new checkpoint of the same story preserve approved links separately from world canon. Renaming the saved profile or a later shared-name collision disables borrowed matching and explains why. A distinct namesake needs a qualified name before profile preparation; only their distinguishing source quote is used, so another person's facts are not retrieved through a shared name. Review missing details yourself. This does not merge existing cards or resolve aliases in the large original cast preparation.
+
+## Большой исходный лор
+
+Для мира больше 220000 символов **«Создать персонажей из лора»** сначала ищет имена в небольших частях источников, затем готовит по одной анкете с нужными выдержками. Каждая часть использует новый видимый служебный чат, открывающийся после очистки предыдущего. Историю делить на отдельные миры не требуется. Модель может пропустить людей или сведения — итог всё равно нужно проверить.
+
+Прогресс чтения, найденные имена и готовые предложения сохраняются в этой локальной базе. После отмены, отказа или сбоя нажмите **«Продолжить подготовку»**: завершённые части не повторяются. Неудачную очистку сначала исправьте кнопками в статусе; отсутствие окна не доказывает удаления чата. Перезагрузка и разблокировка сами не отправляют новые запросы. Если лор изменён, **«Начать разбор изменённого лора заново»** отделяет новый разбор от старого.
+
+Анкеты используют ограниченные выдержки по точному имени; местоимения и неизвестные псевдонимы могут не найтись. По старым отдельным записям не угадывается, кто физически находится в текущей сцене. Числа и отношения — предложения для проверки; сохранённые авторские поля и сыгранные значения защищены прежними правилами. Рабочее задание подготовки не включается в переносной backup, а сохранённые персонажи и лор включаются. После импорта копии процесс подготовки сам не возобновится.
+
+### Large source lore
+
+Above 220,000 characters, **Create characters from lore** reads bounded excerpts to find names, then prepares one profile at a time using literal-name excerpts. Each step opens a fresh visible service chat after verified cleanup. The story does not need splitting into worlds. Saved progress resumes explicitly after a failure or reload; completed steps are skipped. If sources changed, restart their analysis instead of mixing old and new proposals.
+
+Review missing or ambiguous information; the catalogue does not prove a complete cast. Pronouns/unknown aliases may be missed, scene membership is not guessed from old excerpts, and scores remain proposals. Source text, author profiles and played values stay protected. Working cast jobs stay local and are excluded from portable backups; backups preserve saved lore and characters without restarting service requests.
+
+## Очередь анкет из записанной истории
+
+В «История → Персонажи → Люди, найденные в игре» покажите найденные имена. Отметьте **«В очередь анкет»** у нужных людей или **«Выбрать без готовой анкеты»** на текущей странице. Имя и авторские поля можно поправить перед запуском. **«Подготовить выбранные анкеты»** сохраняет эти черновики и готовит предложения по одному в видимых служебных окнах DeepSeek.
+
+Готовые предложения остаются для проверки: выберите поля, поправьте текст и отдельно добавьте каждого персонажа в эту историю. Очередь не меняет общий мир, сыгранные числа, отношения, изображения или текущую сцену и не придумывает отсутствующие факты. Каждое имя требует отдельного запроса; выдержки с точным именем могут не охватить все сведения.
+
+**«Остановить очередь»** сохраняет завершённые предложения. После закрытия панели, сбоя или перезагрузки покажите найденное и нажмите **«Продолжить сохранённую очередь»**: готовые анкеты повторно не запрашиваются. Игровой черновик/новый ответ останавливает подготовку, не перезаписывается. При смене истории очистите очередь и выберите имена заново; **«Очистить очередь»** не удаляет полученные предложения. Если временный чат не удалось убрать, сначала проверьте диагностику палочек. После reload ничего не отправляется модели само.
+
+### Queue profiles from the recorded story
+
+In **Story → Characters → People found during play**, show the found names, select **Queue profile** or **Select profiles not prepared** on the current page, edit names/drafts if needed, then click **Prepare selected profiles**. Draft snapshots and each verified proposal are saved; separate visible service windows run sequentially. Review fields and add each character explicitly. Shared world profiles, scene state, scores and images stay intact; missing facts are not invented.
+
+Stop at any time, then **Continue saved queue** after reopening or reloading. Completed profiles are skipped. A game draft or changed story stops work. Clear a stale queue and select names again; clearing preserves saved proposals. Resolve failed temporary-chat cleanup before continuing. Reload does not send requests; each selected name uses a separate DeepSeek request with bounded name-matching excerpts.
+
 ## Сгенерировать анкету одного персонажа
 
 В редакторе карточки нажмите **«Сгенерировать анкету»**. Это не подготовка всего состава: запрос касается только имени и четырёх текстовых полей этой карточки. Для нового персонажа сначала укажите имя и, если нужно, исходное условие — например, **«подруга Миры»** в **«О персонаже»**.
@@ -70,9 +160,9 @@ Portraits, library photos and ready-made selfies are stored separately from char
 
 Новый служебный чат получает лор из выбранного мира, а не из истории сюжетной вкладки. В новых запусках персонажи запрашиваются по одному, друг за другом. Если модель нарушит формат, один запрос исправления укажет конкретные структурные ошибки: например, пропущенное состояние или объекты вместо ID событий. Некорректные данные не подставляются в анкеты автоматически; формат и цитаты из источников проверяются строго. Ошибка подготовки и невозможность удалить служебный чат — разные проблемы, даже когда показаны вместе.
 
-The new service chat receives lore from the selected world, not from the story tab's conversation history. Profiles are requested in batches of at most two. One format-correction request identifies local structural errors, such as a missing state or milestone objects where string IDs are required. Invalid output is never silently filled in or applied; schema and exact source evidence remain strictly checked. Preparation failure and temporary-chat deletion failure are separate issues even when displayed together.
+The new service chat receives lore from the selected world, not from the story tab's conversation history. New preparations request one profile at a time; existing older batches of up to two remain supported. One format-correction request identifies local structural errors, such as a missing state or milestone objects where string IDs are required. Invalid output is never silently filled in or applied; schema and exact source evidence remain strictly checked. Preparation failure and temporary-chat deletion failure are separate issues even when displayed together.
 
-Готовые анкеты появляются для проверки: выберите персонажей и главного героя, при необходимости поправьте текст и числа, затем нажмите **Сохранить выбранных**. Числа — оценка по истории; рядом видны объяснение и цитаты источников. Близость определяется по доверию и симпатии. Неизвестные факты не должны выдумываться. Заполненные ранее поля, изображения и значения с журналом и блокировками в сыгранных чатах сохраняются. Новые анкеты и стартовые значения доступны во всех чатах мира; текущий прогресс остаётся отдельным для каждого чата.
+Готовые анкеты появляются для проверки: выберите персонажей и главного героя, при необходимости поправьте текст и числа, затем нажмите **Сохранить выбранных**. Числа — оценка по истории; рядом видны объяснение и цитаты источников. Близость определяется по доверию и симпатии. Неизвестные факты не должны выдумываться. Заполненные ранее поля, изображения и значения с журналом и блокировками в сыгранных чатах сохраняются. Новые анкеты, стартовые настройки и текущий прогресс принадлежат игре этого лора. Смена чата не сбрасывает сыгранные значения.
 
 Мини-окно палочки появляется справа от панели персонажей, на уровне её верхнего края. Если места мало — оно остаётся в пределах экрана. Потяните за заголовок, чтобы переместить его, или используйте стрелки при фокусе на заголовке; кнопка со стрелкой возврата снова ставит его рядом с панелью. Показываются реальные этапы, лёгкая анимация ожидания и меняющиеся подсказки — без выдуманных процентов. Системная настройка уменьшения движения учитывается.
 
@@ -91,7 +181,7 @@ The new service chat receives lore from the selected world, not from the story t
 Откройте персонажа и выберите вкладку:
 
 - **Анкета** — постоянные сведения для всех чатов этого мира.
-- **В сцене** — действие, состояние, цель, отношения и показатели только этого чата.
+- **В сцене** — действие, состояние, цель, отношения и показатели общей игры этого лора.
 - **Отношения** — отдельные числовые доверие и симпатия, исходное отношение, границы, условия сближения и журнал. [Как настроить систему](RELATIONSHIPS.ru.md).
 - **Изображения** — портреты, действия и библиотека. Загрузите пачку, выделите картинки и назначьте действия. Небольшие пачки выделяются сразу.
 
@@ -243,11 +333,15 @@ DeepSeek получает персональный разрешённый спи
 
 ### Загрузить пачку и назначить действия позже
 
-В карточке персонажа откройте **Изображения → Библиотека изображений → Загрузить в библиотеку**. Выберите сразу несколько файлов. Они появятся в разделе **Без действия** — заранее распределять их не нужно.
+В карточке персонажа откройте **Изображения → Библиотека изображений → Загрузить в библиотеку**. Выберите сразу несколько файлов. Они появятся в разделе **Без назначения** — заранее распределять их не нужно.
 
 Нажмите нужные миниатюры, выберите действие внизу и нажмите **Назначить действия**. Для другой действия можно выбрать другие картинки или повторно использовать те же из вкладки **Все**. Чтобы оставить распределение на потом, просто нажмите **Сохранить персонажа**: неназначенные картинки тоже сохранятся. Без этой кнопки изменения остаются черновиком.
 
 Библиотека отдельная у каждого персонажа. Она переносится с экспортом мира и полной копией. Картинки не отправляются DeepSeek. Ограничений DeepRole на общий размер, число файлов и вариаций действия нет. Удаление вариации оставляет картинку в библиотеке; окончательно убрать неназначенную картинку можно корзиной.
+
+Поле **«Найти эмоцию или действие»** перед назначением фильтрует основной список и **«Ещё действия для этих картинок»**. Можно вводить часть названия, стандартное русское/английское имя или своё название; регистр, лишние пробелы и `ё/е` не мешают поиску. Поиск не меняет назначения и не снимает выбор картинок или дополнительных действий. Уже выбранное основное действие остаётся в списке с пояснением, если не совпало с поиском; строка **«К назначению»** показывает весь набор. При отсутствии результатов очистите поиск кнопкой ×. Enter в поиске не сохраняет анкету; Escape сначала очищает непустой поиск.
+
+**Image assignment search:** use **Find an emotion or action** to filter the primary action list and extra-action checkboxes. Partial custom names and standard Russian/English labels are matched without case sensitivity, extra spaces or the Russian `ё/е` distinction. Filtering preserves picked images and hidden selected actions; **Assigning to** lists all targets. A selected primary action remains explicitly marked when outside the search results. Clear × restores the list; Enter in search does not submit the character form and Escape clears a nonempty query first.
 
 ### Несколько изображений для одному действию
 
@@ -345,7 +439,7 @@ You can select **My protagonist** and upload action portraits before pressing **
 
 In a character sheet, choose **Portrait action → Add images**, select one or several PNG/JPG/WebP files, then **Save character**. There is no application image-count quota. Thumbnails preview variations without changing the action; each trash button removes just that image. Uploading again adds to the set instead of replacing it.
 
-Each accepted scene update advances a shuffled cycle without repeating an image until all have been used. A new round avoids repeating the last image immediately. Each action has its own cycle; missing action images use the neutral set. Opening the gallery, dragging, refreshing and rereading the same reply do not advance it. The saved cycle belongs to the chat, not to the shared world profile. World exports and full backups include every image; full backups also include the current chat cycle. Older single-image files still work.
+Each accepted scene update advances a shuffled cycle without repeating an image until all have been used. A new round avoids repeating the last image immediately. Each action has its own cycle; missing action images use the neutral set. Opening the gallery, dragging, refreshing and rereading the same reply do not advance it. The saved cycle follows this lore’s shared game across continuation chats; the original profile is unchanged. World exports and full backups include every image; full backups also include the current game’s cycle. Older single-image files still work.
 
 ### Panel controls and automatic states
 
@@ -365,9 +459,9 @@ Sheets are enabled by default. Connect a world and continue chatting, or use **+
 
 All scene participants have separate floating portraits, outside the reply options’ background. Portraits stay visible in their current positions while DeepSeek generates the next reply; their states update after the reply. The small eye button beside the panel controls hides or shows all floating portraits without deleting any images or positions. The same setting remains under **Settings → Characters**. The default gap from the choices is 24 px where side placement fits. Drag the **name handle** anywhere on screen, including outside the chat column; resize from the **lower-right corner**, or select the **image** to open the sheet. Images stay 3:4. Moving portraits never creates a gap between the reply and its options. Positions and sizes are saved separately for each chat and world; moving them never changes memory or sends a request. Saved positions stay pinned while scrolling and fit inside a resized viewport. **Reset layout** restores the current chat; **Settings → Characters** offers an all-chat reset. Arrow keys move the focused handle or resize the focused corner; Shift gives larger steps, Esc cancels dragging. Legacy layouts remain readable; the next move stores a viewport position.
 
-The portrait editor starts on the current action. **Portrait action** previews an image without changing the character’s action or requiring a save. Change the actual action under **Now in this chat**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
+The portrait editor starts on the current action. **Portrait action** previews an image without changing the character’s action or requiring a save. Change the actual action under **Now in this game**. A missing or unreadable image falls back to the default portrait, then a silhouette; stored images are not deleted.
 
-Shared profiles belong to the world; automatically updated states belong only to the current chat. Existing profiles are not overwritten by model replies. The first two filled stats appear below the portraits, in sheet order; open a portrait to see or edit all six. Unknown values stay empty. This uses saved scene data with no extra requests or tokens, not an independent check of the story. Images stay local; the model receives only allowed action names. You can configure up to 32 active actions, including neutral. Sheets can retain up to 64 image sets, including retired actions; removing a name from the active list does not delete its portraits. Upload portraits in each sheet and edit the action list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports exclude chat states. See ROADMAP for automated and live-account verification status.
+Profiles and automatically updated states belong to the lore’s shared game. Only its current chat writes progress; other chats can resume from the latest state. Existing profiles are not overwritten by model replies. The first two filled stats appear below the portraits, in sheet order; open a portrait to see or edit all six. Unknown values stay empty. This uses saved scene data with no extra requests or tokens, not an independent check of the story. Images stay local; the model receives only allowed action names. You can configure up to 32 active actions, including neutral. Sheets can retain up to 64 image sets, including retired actions; removing a name from the active list does not delete its portraits. Upload portraits in each sheet and edit the action list in Settings. A missing or invalid update leaves saved states unchanged. Full backups include states and images; world exports contain the current effective roster and exclude played game state. See ROADMAP for automated and live-account verification status.
 # Диагностика подготовки / Preparation diagnostics
 
 В окне подготовки раздел «Подробности ошибки» сохраняет последние 24 события, включая предыдущие попытки: ID, шаг, этап проверки, время, код, длину ответа, число готовых анкет и конкретные пути ошибочных полей с требованиями и типом/длиной значения. «Скопировать диагностику» готовит отчёт для разбора; если буфер недоступен, появляется поле для ручного копирования. История доступна после удаления чата и сохранения анкет. Полный ответ, лор и API-ключи не включаются; раскрытие и копирование не отправляют запрос. Старые события остаются с прежними общими подсказками.

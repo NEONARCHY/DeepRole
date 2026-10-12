@@ -1,0 +1,40 @@
+.dr-story-world-name { display: flex; gap: var(--dr-space-2); align-items: center; color: var(--dr-muted); overflow-wrap: anywhere; }
+.dr-story-empty { padding: var(--dr-space-4); }
+.dr-story-empty p { color: var(--dr-muted); line-height: 1.6; max-width: 60ch; }
+.dr-story-advanced > summary { font-weight: 600; cursor: pointer; }
+.dr-story-advanced > .settings-card { margin-top: var(--dr-space-3); border: 0; padding-inline: 0; }
+.dr-story-state { margin-bottom: var(--dr-space-3); padding: var(--dr-space-3); background: var(--dr-panel); border-radius: var(--dr-radius); }
+.dr-story-state strong { display: flex; align-items: center; gap: var(--dr-space-2); }
+.dr-story-state strong::before { content: ""; width: 8px; height: 8px; flex: none; background: var(--dr-muted); border-radius: 50%; }
+.dr-story-state[data-state="active"] strong::before { background: var(--dr-success); }
+.dr-story-state[data-state="paused"] strong::before { background: var(--dr-warning); }
+.dr-story-state p { margin: var(--dr-space-2) 0 0; max-width: 60ch; }
+.dr-story-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--dr-space-1); margin-block: var(--dr-space-4); padding: var(--dr-space-1); background: var(--dr-panel); border-radius: var(--dr-radius); }
+.dr-story-sections button { min-width: 0; padding: var(--dr-space-2); min-height: 44px; border: 0; border-radius: 7px; background: transparent; color: var(--dr-muted); font: inherit; font-weight: 600; font-size: 12px; cursor: pointer; }
+.dr-story-sections button[aria-pressed="true"] { background: var(--dr-raised); color: var(--dr-text); }
+.dr-story-sections button:hover { color: var(--dr-text); }
+.dr-story-tool { margin-block: var(--dr-space-3); }
+.dr-story-tool > summary, .dr-candidate-detail > summary { cursor: pointer; min-height: 40px; padding-block: var(--dr-space-2); font-weight: 600; }
+.dr-story-tools { width: 100%; }
+.dr-story-tools > summary { font-weight: 600; cursor: pointer; padding-block: var(--dr-space-2); }
+.dr-story-review.is-guided .dr-story-review-preview { border: 0; padding: 0; background: transparent; }
+.dr-story-review.is-guided .dr-story-review-entry { padding: var(--dr-space-3); background: var(--dr-panel); border: 0; border-radius: var(--dr-radius); }
+.dr-story-review.is-guided > div > button { margin-bottom: var(--dr-space-2); }
+.dr-story-candidate-header { display: flex; align-items: start; justify-content: space-between; gap: var(--dr-space-2); }
+.dr-story-candidate-header h4 { margin: 0; }
+.dr-story-candidate-status { color: var(--dr-muted); font-size: 12px; margin-block: var(--dr-space-1); }
+.dr-character-discovery label.checkbox-row { display: flex; align-items: center; gap: var(--dr-space-2); margin-block: var(--dr-space-2); min-height: 44px; }
+.dr-story-review .dr-draft-conflict { padding: var(--dr-space-3); border-left: 3px solid var(--dr-warning); margin-block: var(--dr-space-2); }
+.dr-cast-progress-toggle { margin-left: var(--dr-space-2); }
+.dr-world-game-panel > details > summary { cursor: pointer; padding-block: var(--dr-space-2); font-weight: 600; }
+.dr-world-game-panel .checkbox-row { display: flex; align-items: flex-start; gap: var(--dr-space-2); margin-block: var(--dr-space-3); line-height: 1.5; }
+.dr-world-game-panel .checkbox-row input { flex: none; margin: 2px 0 0; }
+.dr-world-game-panel .checkbox-row span { min-width: 0; }
+.dr-world-game-panel button { margin-block: var(--dr-space-1); }
+.dr-story-inbox-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--dr-space-2, 8px); }
+.dr-story-inbox-heading h2 { display: flex; gap: 8px; align-items: center; }
+.dr-story-inbox-count { min-width: 20px; padding: 2px 6px; border-radius: 8px; font-size: 11px; background: var(--surface-raised, #364852); color: var(--text, #ecf2f5); text-align: center; }
+.dr-story-inbox-fields { margin: 12px 0; padding: 12px; border: 1px solid var(--border, #41505a); border-radius: 12px; min-width: 0; }
+.dr-story-inbox-fields label { display: flex; align-items: center; gap: 8px; }
+.dr-story-inbox-fields p, .dr-story-automation-inbox p { overflow-wrap: anywhere; white-space: pre-wrap; }
+.dr-story-inbox-search { display: grid; gap: 8px; margin-bottom: 12px; }

@@ -64,7 +64,8 @@ for (const locale of ["ru", "en"] as const) test(`past validation attempts do no
 for (const locale of ["ru", "en"] as const) test(`operation report is wired into real Files and security settings in ${locale}`, async ({ page }) => {
  await page.setViewportSize({ width: 320, height: 850 }); await page.goto("/tests/fixtures/sidepanel.html");
  await page.getByRole("button", { name: "Настройки", exact: true }).click(); if (locale === "en") await setEnglish(page);
- await page.getByRole("button", { name: locale === "ru" ? "Файлы и защита" : "Files & security", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Файлы и защита" : "Files & security", exact: true }).click();
+  await page.getByText(locale === "ru" ? "Проверка работы" : "Troubleshooting", { exact: true }).click();
  const section = page.getByRole("region", { name: locale === "ru" ? "Диагностика палочек и подготовки персонажей" : "Wand and character preparation diagnostics", exact: true });
  await expect(section).toBeVisible(); await section.getByRole("button", { name: locale === "ru" ? "Прочитать отчёт операций" : "Read operation report" }).click();
  await expect(section.getByText(locale === "ru" ? /Зарегистрированных операций/ : /No registered operations/)).toBeVisible();

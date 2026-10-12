@@ -1,4 +1,5 @@
 @import "../shared/design-system.css";
+@import "../shared/settings-help.css";
 @import "../shared/characters.css";
 @import "../shared/cast.css";
 :root {
@@ -111,7 +112,7 @@ select:focus, .input:focus, .textarea:focus, .field-label input:focus { border-c
 .toast { position: fixed; z-index: 200; left: 50%; bottom: 83px; display: flex; align-items: center; gap: 7px; max-width: calc(100% - 28px); padding: 9px 12px; border: 1px solid rgba(255, 255, 255, .25); border-radius: 11px; background: rgba(33, 33, 33, .95); color: var(--dr-success); box-shadow: var(--shadow); font-size: 10px; transform: translateX(-50%); animation: rise .2s ease; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
-.bottom-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .bottom-nav button { min-height: 46px; gap: 5px; color: var(--dr-muted); }
 .bottom-nav button span { font-size: 11px; }
 .play-world-card { position: relative; display: grid; gap: 16px; padding: 20px; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--dr-surface); }

@@ -3,6 +3,7 @@ import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { EMPTY_STATUS } from "../../src/core/characters";
 import { storyReviewText } from "../../src/core/story-review-i18n";
+import { storyUxText } from "../../src/core/story-ux-i18n";
 async function rows(panel: Page) {
   return panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
     const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -36,6 +37,11 @@ for (const locale of ["ru", "en"] as const) test(`installed playable story ${loc
     const game = (operation: string, manual = "stop", targetUrl = f.binding.chatUrl!) => panel.evaluate(async ({ operation, manual, targetUrl }) => { const api = (globalThis as any).chrome, [tab] = await api.tabs.query({ url: targetUrl, active: true }); if (!tab) throw Error("no active chat"); return api.tabs.sendMessage(tab.id, { type: "DR_STORY_GAME", operation, manual }); }, { operation, manual, targetUrl });
     const display = (page: Page, id: number, content: string) => page.evaluate(({ id, content }) => { const article = document.createElement("article"), body = document.createElement("div"); article.dataset.role = "assistant"; article.dataset.messageId = String(id); body.className = "ds-markdown"; body.textContent = content; article.append(body); document.querySelector("#story")!.replaceChildren(article); }, { id, content });
     const condition = async () => (await rows(panel)).find(r => r.kind === "binding").data.characterScenes[f.world.id].states["person-1"].condition;
+    for (const scope of [{ chatId: f.binding.chatId, worldId: "wrong-world" }, { chatId: "wrong-chat", worldId: f.world.id }]) {
+      const denied = await panel.evaluate(async ({ scope, url }) => { const api = (globalThis as any).chrome, [tab] = await api.tabs.query({ url }); return api.tabs.sendMessage(tab.id, { type: "DR_STORY_GAME", operation: "restart", manual: "stop", scope }); }, { scope, url: f.binding.chatUrl! });
+      expect(denied).toMatchObject({ ok: false, error: "story-binding-conflict" });
+    }
+    expect((await rows(panel)).filter(r => r.kind === "story")).toHaveLength(0);
     expect(await game("start")).toMatchObject({ ok: true });
     messages.push(message(42, 41, "USER", "Choose"), message(43, 42, "ASSISTANT", turn("A")), message(44, 42, "ASSISTANT", turn("B")), message(45, 42, "ASSISTANT", turn("C")));
     selected = 43; await display(chat, 43, turn("A")); await expect.poll(condition, { timeout: 12000 }).toBe("A");
@@ -69,6 +75,13 @@ for (const locale of ["ru", "en"] as const) test(`installed playable story ${loc
     expect((await rows(panel)).filter(r => r.kind === "dispatch").some(r => r.data.originalDraft === "My edited story" && r.data.wire.link?.userMessageKey === '["message","52"]')).toBe(true);
     const review = await panel.evaluate(async () => { const api = (globalThis as any).chrome, [tab] = await api.tabs.query({ url: "https://chat.deepseek.com/chat/s/synthetic-a", active: true }); return api.tabs.sendMessage(tab.id, { type: "DR_STORY_REVIEW_READ", cursor: null }); });
     expect(review).toMatchObject({ ok: true, data: { managed: true } }); expect(JSON.stringify(review.data.entries)).not.toContain("<deeprole_characters>");
+    await panel.reload(); await panel.setViewportSize({ width: 320, height: 1000 }); await second.bringToFront();
+    await panel.locator(".bottom-nav").getByRole("button", { name: storyUxText(locale, "nav"), exact: true }).click();
+    await expect(panel.getByText(storyUxText(locale, "active"), { exact: true })).toBeVisible({ timeout: 12000 });
+    await panel.getByRole("button", { name: storyUxText(locale, "timeline"), exact: true }).click();
+    await expect(panel.getByText(storyUxText(locale, "timelineHint"), { exact: true })).toBeVisible();
+    expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await panel.screenshot({ path: info.outputPath(`story-hub-native-${locale}.png`), fullPage: true });
     await second.screenshot({ path: info.outputPath(`working-story-${locale}.png`), fullPage: true }); expect(posts).toBe(3); expect(errors).toEqual([]);
   } finally { await context.close(); }
 });

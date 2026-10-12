@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Automatic memory fixture</title></head><body><main id="app"></main><script type="module">
+import React,{useState} from "react";import {createRoot} from "react-dom/client";
+import {StoryAutomationPanel} from "/src/entrypoints/shared/StoryAutomationPanel.tsx";
+import {StoryAutomationInbox} from "/src/entrypoints/shared/StoryAutomationInbox.tsx";
+import {ProfileProtection} from "/src/entrypoints/shared/ProfileProtection.tsx";
+import {EMPTY_CHARACTER} from "/src/core/characters.ts";
+import "/src/entrypoints/sidepanel/styles.css";import "/src/entrypoints/shared/design-system.css";import "/src/entrypoints/shared/characters.css";import "/src/entrypoints/shared/story-workspace.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;
+const scope={chatId:"synthetic-a",worldId:"synthetic-world"},url="https://chat.deepseek.com/a/chat/s/synthetic-a";
+let proposals=[{id:"f1",type:"fact",name:"",text:"The traveler returned the borrowed lantern.",quote:"The traveler returned the borrowed lantern.",reason:"conflict",fields:{}},{id:"p1",type:"person",name:"Neri",text:"",quote:"Neri repairs clocks.",reason:"identity",fields:{background:"repairs clocks."}},{id:"s1",type:"profile",name:"Resident 2",text:"",quote:"Resident 2 keeps a journal.",reason:"protected",fields:{background:"keeps a journal."}}];
+window.decisions=[];window.calls=[];
+const tabs={query:async()=>[{id:7,url:window.changedTab?"https://chat.deepseek.com/a/chat/s/other":url}],sendMessage:async(id,m)=>{
+ window.calls.push(m); if(m.type==="DR_AUTOMATION_READ")return {ok:true,data:{...scope,guard:{branchId:"branch-a",headRevisionId:"head-a",selectionVersion:0,revisionCount:2},gameRevision:"game-a",ready:true,total:proposals.length,people:[{id:"person-2",name:"Resident 2"}],items:proposals}};
+ if(window.failDecision)return {ok:false,error:"story-review-stale"};window.decisions.push(m.input);proposals=proposals.filter(p=>p.id!==m.input.eventId);return {ok:true,data:{changed:true}};
+}};
+function App(){const [policy,setPolicy]=useState({mode:"review",revision:"policy-a"}),[recording,setRecording]=useState(false),[sheet,setSheet]=useState({...EMPTY_CHARACTER});
+ window.sheet=sheet;window.policy=policy;return React.createElement("div",{className:"dr-root view-stack",style:{padding:12,maxWidth:600,margin:"auto"}},
+ React.createElement("h1",null,locale==="ru"?"Проверка сопровождения":"Accompaniment fixture"),
+ React.createElement(StoryAutomationPanel,{locale,policy,recording,onChange:async mode=>{setPolicy({mode,revision:"policy-b"});setRecording(true);}}),
+ React.createElement(StoryAutomationInbox,{locale,tabs,scope,revision:policy.revision}),
+ React.createElement(ProfileProtection,{locale,sheet,onChange:setSheet}));}
+createRoot(document.querySelector("#app")).render(React.createElement(App));
+</script></body></html>

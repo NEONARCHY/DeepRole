@@ -1,11 +1,13 @@
 import { assertStoryGraph, type StoryProjection } from "../core/story-records";
 import { StoryProjectionError } from "../core/story-projection";
 import type { ChatBinding, DataRecord } from "../core/types";
+import { assertWorldGameWriter } from "../core/world-game";
 
 /** One scene has at most one replay writer. A checkpoint alone owns no effects.
  * Must run under the same repository lock as the proposed scene write.
  */
 export function storySceneOwner(all: DataRecord[], binding: ChatBinding, worldId: string, branchId?: string): StoryProjection | null {
+  assertWorldGameWriter(all, binding, worldId);
   assertStoryGraph(all);
   const bindings = all.filter(row => row.kind === "binding" && (row.data as ChatBinding).chatId === binding.chatId);
   if (bindings.length !== 1 || bindings[0]!.id !== binding.id || binding.worldId !== worldId) throw new StoryProjectionError("story-binding-conflict");

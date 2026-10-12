@@ -26,12 +26,15 @@ import type { CharacterCopyKey } from "../../core/characters";
 import { chatCapacity } from "../../core/context-capacity";
 import { continuationText } from "../../core/continuation-i18n";
 import { ContextCapacityWarning } from "../shared/ContextCapacityWarning";
+import { OldChatNoticeCard } from "../shared/OldChatNotice";
+import type { OldChatNotice } from "../../core/old-chat-notice";
 
 import type { ContinuationFlow } from "../../core/continuation-flow";
 
 import type { CharacterTextRequestGenerator } from "../../core/character-text";
 
 export interface WidgetState {
+  oldChatNotice?: OldChatNotice | null;
   continuation?: ContinuationFlow | null;
   chatContextCapacity?: number;
   contextCapacityWarning?: { level: number; percent: number } | null;
@@ -74,6 +77,7 @@ export interface WidgetState {
 }
 
 export function PageWidget(props: {
+  onStayInOldChat?: () => Promise<void>;
   onContinueStory?: () => void;
   onCancelContinuation?: () => void;
   onKeepContinuationMemory?: () => Promise<void>;
@@ -287,6 +291,7 @@ export function PageWidget(props: {
   return <HelpLocale.Provider value={props.state.locale}><div className="dr-root">
     <button className="dr-launcher" onClick={() => setMenuOpen(!menuOpen)} aria-label={t("openDeepRole")} aria-expanded={menuOpen}><span className="dr-orb" /><span>DeepRole</span></button>
     {props.state.startupError && <div className="dr-toast" role="alert">{x("startupError")}</div>}
+    {!props.state.vaultLocked && props.state.oldChatNotice && !props.state.oldChatNotice.dismissed && props.onStayInOldChat && <OldChatNoticeCard key={props.state.oldChatNotice.snapshotId} locale={props.state.locale} notice={props.state.oldChatNotice} onStay={props.onStayInOldChat}/>}
     {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton nativeTooltip className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisHelp} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={props.menuUrl} title="DeepRole" /></aside></div>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}

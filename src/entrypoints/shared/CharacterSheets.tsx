@@ -1,3 +1,6 @@
+import { SettingsHelp } from "./SettingsHelp";
+import { CharacterUpdateNotice } from "./CharacterUpdateNotice";
+import { ProfileProtection } from "./ProfileProtection";
 import { CastSetup } from "./CastSetup";
 import { profileSupplementText } from "../../core/profile-supplement-i18n";
 import { CharacterPagination, CHARACTER_PAGE_SIZE, characterPage } from "./CharacterPagination";
@@ -29,7 +32,7 @@ import { PortraitLibrary, portraitLibraryFull } from "./PortraitLibrary";
 import { readPortraitFiles } from "./portrait-file";
 import { usePortraitUploadChoice } from "./PortraitUploadChoice";
 import { portraitUploadError } from "../../core/portrait-upload-i18n";
-import { ActionList, NewAction, actionControlCopy } from "./ActionControls";
+import { ActionList, NewAction, actionControlCopy, actionRenameHint } from "./ActionControls";
 import { RelationshipEditor, RelationshipSettings, RelationshipSummary } from "./Relationships";
 import { AttributeEditor, AttributeSummary } from "./Attributes";
 import { ProgressFeedback } from "./ProgressFeedback";
@@ -41,8 +44,8 @@ import { ActionAvailability } from "./ActionAvailability";
 import type { ActionRenames } from "../../core/action-renames";
 
 const editorCopy = (locale: Locale) => ({
-  ru: { profile: "Анкета", scene: "В сцене", images: "Изображения", profileHint: "Постоянные сведения для всех чатов этого мира.", sceneHint: "Только этот чат. DeepSeek обновляет эти поля после ответа, если прислал изменения.", imagesHint: "Референс сохраняет внешность для генерации. Портреты и готовые селфи можно загрузить отдельно и назначить действиям или подборкам.", pending: "Есть несохранённые изменения", required: "Заполните отмеченное поле перед сохранением.", preview: "Портрет для действия", noImages: "Для этого действия пока нет изображений. Загрузите их или выберите в библиотеке ниже.", quickUpload: "Загрузить сразу для этого действия", library: "Библиотека изображений", previewHelp: "Настроить портрет", silhouette: "Силуэт без изображения" },
-  en: { profile: "Profile", scene: "In scene", images: "Images", profileHint: "Lasting details shared by all chats in this world.", sceneHint: "This chat only. DeepSeek updates these fields after a reply if it sends changes.", imagesHint: "A reference keeps appearance consistent during generation. Upload portraits and ready selfies separately for actions or collections.", pending: "Unsaved changes", required: "Fill in the highlighted field before saving.", preview: "Portrait for action", noImages: "No images for this action yet. Upload them or choose from the library below.", quickUpload: "Upload directly to this action", library: "Image library", previewHelp: "Set up portrait", silhouette: "Silhouette without an image" },
+  ru: { profile: "Анкета", scene: "В сцене", images: "Изображения", profileHint: "Постоянные сведения для всех чатов этого мира.", sceneHint: "Общий прогресс этого лора. DeepSeek обновляет поля после ответа в активном чате; при продолжении в другом чате значения сохраняются.", imagesHint: "Референс сохраняет внешность для генерации. Портреты и готовые селфи можно загрузить отдельно и назначить действиям или подборкам.", pending: "Есть несохранённые изменения", required: "Заполните отмеченное поле перед сохранением.", preview: "Портрет для действия", noImages: "Для этого действия пока нет изображений. Загрузите их или выберите в библиотеке ниже.", quickUpload: "Загрузить сразу для этого действия", library: "Библиотека изображений", previewHelp: "Настроить портрет", silhouette: "Силуэт без изображения" },
+  en: { profile: "Profile", scene: "In scene", images: "Images", profileHint: "Lasting details shared by all chats in this world.", sceneHint: "Shared progress for this lore. DeepSeek updates fields after a reply in the active chat; values stay when you continue in another chat.", imagesHint: "A reference keeps appearance consistent during generation. Upload portraits and ready selfies separately for actions or collections.", pending: "Unsaved changes", required: "Fill in the highlighted field before saving.", preview: "Portrait for action", noImages: "No images for this action yet. Upload them or choose from the library below.", quickUpload: "Upload directly to this action", library: "Image library", previewHelp: "Set up portrait", silhouette: "Silhouette without an image" },
 }[locale]);
 
 function CharacterPortrait({ sheet, action, variation = 0, preview = false, locale, ...attributes }: Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & { sheet?: CharacterSheet; action?: string; variation?: number; preview?: boolean; locale: Locale }) {
@@ -66,20 +69,20 @@ export function CharacterSettings({ settings, onSettings, worldActions, onAction
   useEffect(() => { setDraft(actionsFor(worldActions ?? settings.characterActions).join("\n")); setRenames({}); }, [worldActions?.join("\n"), settings.characterActions?.join("\n")]);
   const actions = draft.split("\n").map(s => s.trim()).filter(Boolean);
   return <section className="dr-character-settings">
-    <label className="toggle-row"><span>{t("enable")}</span><input type="checkbox" checked={!!settings.characterSheetsEnabled} onChange={e => void onSettings({ ...settings, characterSheetsEnabled: e.target.checked })} /></label>
-    <p className="setting-copy">{t("enableHint")}</p>
+    <div className="toggle-row"><SettingsHelp locale={settings.locale} title={t("enable")} text={t("enableHint")}/><input aria-label={t("enable")} type="checkbox" checked={!!settings.characterSheetsEnabled} onChange={e => void onSettings({ ...settings, characterSheetsEnabled: e.target.checked })} /></div>
+
     <RelationshipSettings settings={settings} onSettings={onSettings} />
     {settings.characterSheetsEnabled && <>
-      <label className="toggle-row"><span>{t("sprites")}</span><input type="checkbox" checked={settings.characterSpritesEnabled !== false} onChange={e => void onSettings({ ...settings, characterSpritesEnabled: e.target.checked })} /></label>
-      <p className="setting-copy">{t("floatingSettingHint")}</p>
+      <div className="toggle-row"><SettingsHelp locale={settings.locale} title={t("sprites")} text={t("floatingSettingHint")}/><input aria-label={t("sprites")} type="checkbox" checked={settings.characterSpritesEnabled !== false} onChange={e => void onSettings({ ...settings, characterSpritesEnabled: e.target.checked })} /></div>
+
       <button type="button" className="button secondary" disabled={busy} onClick={() => {
         setBusy(true); setLayoutError(false);
         void Promise.resolve(onSettings({ ...settings, portraitLayoutResetAt: Math.max(Date.now(), (settings.portraitLayoutResetAt ?? 0) + 1) })).catch(() => setLayoutError(true)).finally(() => setBusy(false));
       }}>{t("layoutResetAll")}</button>
       {layoutError && <p role="alert" className="error-text">{t("layoutFailed")}</p>}
-      <div className="dr-action-settings"><strong>{t("actions")} · {actions.length}/{MAX_ACTIVE_ACTIONS}</strong>
-      <p className="setting-copy">{actionControlCopy(settings.locale).hint}</p>
-      <ActionList locale={settings.locale} actions={actions} disabled={busy} onChange={next => { setDraft(next.join("\n")); setError(false); setSaved(false); }} onRename={onActions ? (from, to) => {
+      <div className="dr-action-settings"><SettingsHelp locale={settings.locale} title={t("actions") + " · " + actions.length + "/" + MAX_ACTIVE_ACTIONS} text={[actionControlCopy(settings.locale).hint, actionControlCopy(settings.locale).keepImages, actionRenameHint(settings.locale), t("actionKeys")].join("\n\n")}/>
+
+      <ActionList hideHint locale={settings.locale} actions={actions} disabled={busy} onChange={next => { setDraft(next.join("\n")); setError(false); setSaved(false); }} onRename={onActions ? (from, to) => {
         const original = Object.entries(renames).find(([, current]) => current === from)?.[0] ?? from;
         const next = { ...renames };
         if (original === to) delete next[original]; else next[original] = to;
@@ -87,7 +90,7 @@ export function CharacterSettings({ settings, onSettings, worldActions, onAction
       } : undefined} />
       <NewAction locale={settings.locale} actions={actions} disabled={busy} onAdd={async name => { setDraft([...actions, name].join("\n")); setError(false); setSaved(false); }} />
       <details className="dr-action-help"><summary>{actionControlCopy(settings.locale).bulk}</summary><label className="field-label" htmlFor={actionsId}>{t("actions")}</label><textarea id={actionsId} rows={6} maxLength={MAX_ACTIVE_ACTIONS * 33} value={draft.split("\n").map(key => actionOptionLabel(settings.locale,key)).join("\n")} disabled={busy} onChange={e => { const known=[...new Set([...actions,...actionsFor(worldActions ?? settings.characterActions)])];setDraft(e.target.value.split("\n").map(key => matchCharacterAction(key,known) ?? key).join("\n")); setError(false); setSaved(false); }} aria-describedby={`${actionsId}-help`} /><p id={`${actionsId}-help`} className="setting-copy">{t("actionsHint")}</p></details>
-      <p className="setting-copy">{actionControlCopy(settings.locale).keepImages}</p><details className="dr-action-help"><summary>{t("actionNames")}</summary><p className="setting-copy">{t("actionKeys")}</p></details>
+
       {error && <p role="alert" className="error-text">{detachFull ? actionPolicyText(settings.locale, "detachFull") : t(validActions(actions) ? "actionSaveFailed" : "actionError")}</p>}
       <button className="button primary" disabled={busy} onClick={() => { setDetachFull(false); if (!validActions(actions)) { setError(true); return; } setBusy(true); setSaved(false); void Promise.resolve(onActions ? onActions(actions, Object.fromEntries(Object.entries(renames).filter(([, to]) => actions.includes(to)))) : onSettings({ ...settings, characterActions: actions })).then(() => { setError(false); setSaved(true); }).catch(error => { setDetachFull(error instanceof Error && error.message === "portrait-library-full"); setError(true); }).finally(() => setBusy(false)); }}>{t("saveActions")}</button>{saved && <small role="status">{t("saveDone")}</small>}
       </div>
@@ -247,19 +250,20 @@ export function CharacterEditor(props: { hasStoryProfile?: boolean; generationSc
     {uploadChoice.dialog}
     <form noValidate onChange={e => { const target = e.target as HTMLElement; if (!target.hasAttribute("data-portrait-preview") && !target.hasAttribute("data-fact-request") && target.getAttribute("type") !== "file") setDirty(true); }} onSubmit={e => { e.preventDefault(); if (busy || uploading) return; const invalid = e.currentTarget.querySelector<HTMLInputElement | HTMLTextAreaElement>("input:invalid, textarea:invalid, select:invalid"); if (invalid) { const section = invalid.closest<HTMLElement>("[data-editor-section]")?.dataset.editorSection as typeof tab; setTab(section ?? "profile"); setFieldError(ui.required); requestAnimationFrame(() => invalid.focus()); return; } setFieldError(""); setBusy(true); setSaved(false); setError(null); setLibraryError(""); void props.onSave({ name, sheet, state, present, ...(interlocutor !== null ? { interlocutor } : {}) }).then(snapshot => { if (!mounted.current) return; setName(snapshot.name); setSheet(structuredClone(snapshot.sheet)); setState(structuredClone(snapshot.state)); setPresent(snapshot.present); setInterlocutor(snapshot.interlocutor); setDirty(false); setSaved(true); }).catch(error => { if (mounted.current) setError(characterSaveError(error)); }).finally(() => { if (mounted.current) setBusy(false); }); }}>
       <div className="dr-character-editor-body">
-        <section data-editor-section="profile" id={tabsId + "-panel-profile"} role="tabpanel" aria-labelledby={tabsId + "-profile"} hidden={tab !== "profile"}><p className="dr-character-hint">{props.hasStoryProfile ? profileSupplementText(props.locale, "editorHint") : ui.profileHint}</p>
+        <section data-editor-section="profile" id={tabsId + "-panel-profile"} role="tabpanel" aria-labelledby={tabsId + "-profile"} hidden={tab !== "profile"}><CharacterUpdateNotice locale={props.locale} kind="profile" />{props.hasStoryProfile && <p className="dr-character-hint">{profileSupplementText(props.locale, "editorHint")}</p>}
         <fieldset disabled={busy}><legend>{t("profile")}</legend>
           <label>{t("name")}<input required value={name} maxLength={80} onChange={e => setName(e.target.value)} /></label>
           <label className="dr-character-check"><input type="checkbox" checked={sheet.protagonist} onChange={e => { setSheet({ ...sheet, protagonist: e.target.checked }); if (e.target.checked && selectedPartner) setInterlocutor(false); }} />{t("protagonist")}</label>
           {generateText && <CharacterProfileGenerator locale={props.locale} name={name} values={sheet} disabled={busy || uploading} scope={props.generationScope} onGenerate={generateText} onApply={changes => { setSheet(previous => { const next = { ...previous }; for (const change of changes) if (previous[change.key] === change.expected) next[change.key] = change.text; return next; }); setDirty(true); }} />}
           {(["appearance", "personality", "goals", "background"] as const).map(key => <CharacterTextField key={key} field={{ key, label: t(key), maxLength: 1200, scope: "profile" }} locale={props.locale} value={sheet[key]} onChange={value => { setSheet(previous => ({ ...previous, [key]: value })); setDirty(true); }} onGenerate={generateText} disabled={busy} />)}
+          <ProfileProtection locale={props.locale} sheet={sheet} disabled={busy} onChange={next => { setSheet(next); setDirty(true); }} />
           {props.entity?.description && <details><summary>{t("background")}</summary><p className="dr-character-original">{props.entity.description}</p></details>}
         </fieldset>
         <ActionAvailability locale={props.locale} sheet={sheet} actions={localActions} disabled={busy || uploading} onChange={next => { setSheet(next); setDirty(true); }} />
         {props.entity && props.onRequestFactChange && <details className="dr-character-fact-request"><summary>{props.locale === "ru" ? "Изменить постоянный факт" : "Correct a lasting fact"}</summary><p className="dr-character-hint">{props.locale === "ru" ? "DeepRole проверит весь лор этого мира. DeepSeek предложит замены; вы увидите «было → станет» до сохранения." : "DeepRole checks this world's lore. DeepSeek suggests replacements; you review before saving."}</p><label>{props.locale === "ru" ? "Что должно быть теперь?" : "What should be true now?"}<textarea data-fact-request rows={3} maxLength={6000} disabled={factBusy || busy} value={factBrief} onChange={event => setFactBrief(event.target.value)} placeholder={props.locale === "ru" ? "Например: теперь у Элис чёрные волосы вместо рыжих" : "For example: Alice now has black hair instead of red hair"} /></label><button type="button" disabled={factBusy || busy || uploading || !factBrief.trim()} onClick={() => { if (dirty) { setFactError(props.locale === "ru" ? "Сначала сохраните правки карточки." : "Save your profile edits first."); return; } setFactBusy(true); setFactError(""); void props.onRequestFactChange!(props.entity!.id, factBrief.trim()).then(() => { if (mounted.current) (props.onExit ?? props.onClose)(); }).catch(cause => { if (mounted.current) { const code = cause instanceof Error ? cause.message : ""; setFactError(code === "character-world-too-large" ? props.locale === "ru" ? "Лор слишком велик для одной безопасной проверки. Ничего не изменено." : "This world is too large for one safe review. Nothing changed." : code === "busy" ? props.locale === "ru" ? "Дождитесь окончания ответа DeepSeek." : "Wait for DeepSeek to finish." : props.locale === "ru" ? "Не удалось начать проверку. Память не изменена." : "Could not start the review. Memory is unchanged."); } }).finally(() => { if (mounted.current) setFactBusy(false); }); }}>{factBusy ? props.locale === "ru" ? "Готовим запрос…" : "Preparing…" : props.locale === "ru" ? "Попросить DeepSeek" : "Ask DeepSeek"}</button>{factError && <p role="alert">{factError}</p>}</details>}
-        </section><section data-editor-section="scene" id={tabsId + "-panel-scene"} role="tabpanel" aria-labelledby={tabsId + "-scene"} hidden={tab !== "scene"}><p className="dr-character-hint">{ui.sceneHint}</p>
+        </section><section data-editor-section="scene" id={tabsId + "-panel-scene"} role="tabpanel" aria-labelledby={tabsId + "-scene"} hidden={tab !== "scene"}>
         <fieldset disabled={busy}><legend>{t("state")}</legend>
-          <details className="dr-character-hint"><summary>{t("stateHelp")}</summary><p>{t("stateAuto")}</p></details>
+          <CharacterUpdateNotice locale={props.locale} kind="scene" />
           <label className="dr-character-check"><input type="checkbox" checked={present} onChange={e => { setPresent(e.target.checked); if (!e.target.checked && selectedPartner) setInterlocutor(false); }} />{t("present")}</label>
           <small className="dr-character-hint">{t("presentHint")}</small>
           {!sheet.protagonist && <div className="dr-character-partner-control"><label className="dr-character-check"><input type="checkbox" aria-describedby={partnerHelp} checked={selectedPartner} onChange={e => { setInterlocutor(e.target.checked); if (e.target.checked) setPresent(true); }} />{t("interlocutor")}</label><small id={partnerHelp} className="dr-character-hint">{t("interlocutorHint")}</small></div>}

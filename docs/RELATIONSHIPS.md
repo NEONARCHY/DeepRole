@@ -12,7 +12,7 @@ Add personality and boundaries, then choose how quickly this character's attitud
 
 Use **What this character responds to** for personal reactions: one character values directness, another needs promises kept. DeepSeek receives this guidance and a short reminder of recent consequences so attitude does not start over every turn.
 
-Starting values and boundaries belong to the world. **Now in this chat** holds the actual progress for this conversation and protagonist. Changing a starting value does not reset saved progress. You can edit current scores, mark events manually, or **Lock values in this chat** to prevent model updates.
+Starting values and boundaries belong to the world. **Now in this game** holds actual progress for this lore’s shared game and protagonist. Changing a starting value does not reset saved progress. You can edit current scores, mark events manually, or **Lock values in this game** to prevent model updates.
 
 ## Numbers and stages
 
@@ -28,9 +28,9 @@ Expand **Current state** in the character panel to see what saved values mean, c
 
 Romantic closeness is off for each character until you explicitly configure it. Its conditions use trust, affinity and required events; there is no separate age-confirmation flag. Written ages in the lore are preserved.
 
-For a configured character, set required trust and affinity. Add important events as achievements, and enable **Required for closeness** only for actual prerequisites. Older events remain required. For example, keeping a promise may be essential for Mira, while visiting a harbor can remain a standalone achievement. Completion is remembered for this chat; optional achievements never block closeness.
+For a configured character, set required trust and affinity. Add important events as achievements, and enable **Required for closeness** only for actual prerequisites. Older events remain required. For example, keeping a promise may be essential for Mira, while visiting a harbor can remain a standalone achievement. Completion is remembered for this lore’s game; optional achievements never block closeness.
 
-Renaming an event creates a new condition. Its previous completion is not reused in this or another chat; mark the new event manually if it has already happened.
+Renaming an event creates a new condition. Its previous completion is not reused for the new condition; mark the new event manually if it has already happened.
 
 Meeting the conditions is not consent, a guaranteed outcome, or permission to override someone's personality. The instructions respect established lore, willingness and personal boundaries; romantic partners must be unrelated. DeepRole supplies this context to DeepSeek; it cannot override the model's own limits or enforce every narrative decision.
 
@@ -58,7 +58,7 @@ Open **Character → In scene → Characteristics**. You can add energy and reso
 
 **State boundaries** defines when these meanings apply. Low includes 30 and below by default, high starts at 70, and the middle applies neither extreme. You can change both boundaries without changing a saved value. DeepRole calculates the current state locally, so an energy value below your low boundary consistently carries the meaning you wrote for exhaustion. This guides the model, rather than enforcing a dice roll or an automatic refusal.
 
-Current values are 0–100 and belong to this chat. Lock each scale independently or edit it manually. Its separate journal records the latest 20 changes. Existing text stats are preserved and are not automatically converted into numbers. Renaming preserves progress; for a different meaning, create a new scale. Removing a scale excludes it from active context without erasing its historical record.
+Current values are 0–100 and belong to this lore’s shared game. Lock each scale independently or edit it manually. Its separate journal records the latest 20 changes. Existing text stats are preserved and are not automatically converted into numbers. Renaming preserves progress; for a different meaning, create a new scale. Removing a scale excludes it from active context without erasing its historical record.
 
 Changes need evidence in the completed story, not an unchosen option. Values cannot jump past the configured limit. Recovery needs a played recovery/rest event; simply sending a message is not an automatic refill. DeepRole checks the quoted words, not whether the model interpreted the event correctly.
 
@@ -76,6 +76,6 @@ Other world rules still apply to reply choices. Keep essential style rules, such
 
 Use **Settings → Characters → Relationships, characteristics and boundaries** to turn both numeric systems off without deleting values. A world also has its own tracking switch. Character sheets must be enabled for synchronization.
 
-A world export contains character policies, characteristic definitions, starting values and images, not each chat's played progress. Use a **full backup** to transfer chat progress as well. **Continue in a new chat** carries the locally saved character scene, relationships and characteristics into an empty branch of the same world; it never overwrites an already played branch. An ordinary new chat starts from the world's initial settings.
+A world export contains the effective roster, policies, characteristic definitions, starting values and images, excluding played scores and game history. Use a **full backup** to transfer the whole game to another device. Selecting the same lore in a new chat connects its current progress. **Continue in a new chat** also reviews memory and prepares a scene recap. **Start game over** explicitly resets progress and archives the previous game; undo is available before the first new changes. [One lore, one game](WORLD-GAME.md).
 
 [Русская справка](RELATIONSHIPS.ru.md)

@@ -29,6 +29,7 @@ for (const locale of ["ru", "en"] as const) for (const protocol of ["legacy", "n
     await expect(chat.locator("deeprole-page-widget")).toBeAttached();
     await panel.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
     await panel.getByRole("button", { name: locale === "ru" ? "Файлы и защита" : "Files & security", exact: true }).click();
+    await panel.getByText(locale === "ru" ? "Проверка работы" : "Troubleshooting", { exact: true }).click();
     await worker.evaluate(async () => { const tabs = await (globalThis as any).chrome.tabs.query({ url: "https://chat.deepseek.com/*" }); await (globalThis as any).chrome.tabs.update(tabs[0].id, { active: true }); });
     const before = historyReads;
     await panel.getByRole("button", { name: locale === "ru" ? "Проверить текущий чат" : "Check current chat", exact: true }).click();

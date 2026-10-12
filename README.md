@@ -11,7 +11,7 @@ Photos are stored separately from profiles: name/text saves do not resend the im
 
 **New: automatic reply recovery with conversation continuity.** A captured reply replaced by DeepSeek's refusal reappears with a **Restored** label. Send your next message: DeepRole includes the recovered fragment automatically, with no extra recovery button. [How it works ↓](#restore-a-hidden-reply-and-continue-the-scene)
 
-You decide what becomes lasting memory. DeepSeek can suggest lore changes, but **they are saved only after you review and approve them**. Scene actions and configured progress update separately after story replies.
+**Automatic game accompaniment:** choose **Story → Game accompaniment → Automatic** to save supported played facts, find new people and append profile details during normal play. Conflicts and protected fields await review; original author lore stays intact. Existing installations retain review mode until you choose. Explicit lore-rewrite proposals still need approval. [Modes, examples and limits](docs/AUTOMATIC-MEMORY.md).
 
 > Early version 0.1.0. Independent project, not affiliated with DeepSeek. Make a [full backup](#backups-and-moving-to-another-computer) before uninstalling, replacing your data or moving to another computer.
 
@@ -85,7 +85,7 @@ An **action** describes what a character is doing, their pose, expression or rea
 
 The wand's progress window opens beside Characters, aligned at the top. Drag its heading to move it; the reset icon docks it again. Small activity animations and rotating hints show that DeepSeek is still responding, not a made-up percentage. If DeepSeek replaces a **complete character-data reply already received** with a refusal, DeepRole keeps that data for validation and review, including after a service-tab reload. Incomplete or never-received data cannot be recovered; a refusal without a complete reply leaves profiles unchanged. This does not resend a prompt to bypass a refusal or alter the server's saved answer.
 
-The editor has four tabs: **Profile**, **In scene**, **Relationships** and **Images**. The profile belongs to the world; current actions, goals and played progress belong to the chat. Switching tabs keeps your draft, and saving leaves the editor open.
+The editor has four tabs: **Profile**, **In scene**, **Relationships** and **Images**. The profile belongs to the world; current actions, goals and played progress are shared by the lore’s game. Selecting the same lore in another chat continues that game; only the current chat updates it. See [One lore, one game](docs/WORLD-GAME.md). Switching tabs keeps your draft, and saving leaves the editor open.
 
 Upload a batch to the **Image library**, then select pictures and assign actions without reopening the file picker each time. You can assign the same picture to several actions, or give one action several portraits. Portraits cycle without repeating until the set has been shown.
 
@@ -163,9 +163,9 @@ Set each character's starting values, personality, boundaries and pace of change
 
 - After a played scene, DeepSeek proposes small changes with a reason and a quote. DeepRole checks the reply, scope, pace and repeated evidence before saving. Showing options or preparing lore does not award points.
 - **Turn consequences** shows what actually changed and why. **Current state** explains scores and unmet conditions, so progress is not just a number.
-- Edit current values, mark events manually or lock progress for this chat. The last 20 changes are kept in a journal. Undoing the latest model change opens a correction in the editor; review and save it yourself.
+- Edit current values, mark events manually or lock progress for this game. The last 20 changes are kept in a journal. Undoing the latest model change opens a correction in the editor; review and save it yourself.
 - Add up to six **Characteristics**, such as energy, resolve or courage. Each has its own 0–100 scale, starting value, low/high meanings, change limit and lock. Existing text stats are not silently converted.
-- Starting settings belong to the world; played values belong to this chat and protagonist. Ordinary new chats start from their configured defaults. **Continue in a new chat** carries the actual progress forward instead.
+- Starting settings belong to the world; played values belong to its shared game and protagonist. Selecting the same lore in a new chat keeps current progress. **Continue in a new chat** also reviews memory and prepares a scene recap. **Start game over** explicitly resets progress and archives the previous game; you can undo before new progress is saved.
 
 The system is **on by default** and can be disabled in **Settings → Characters** without deleting scores or history. Older characters without configured scores keep their existing lore.
 
@@ -260,18 +260,20 @@ Near the configured chat capacity, an optional warning appears at about **90% an
 
 ### One JSON file. Your whole visual world.
 
+Large exports store each saved photo once, even when it is assigned to several actions. The file is assembled in parts and large imports are read record by record. Quality and assignments stay unchanged. Older files remain supported; update both installations before transferring the new photo-table format. [Large files and troubleshooting](docs/PORTABLE-FILES.md).
+
 **The pictures really travel inside the JSON.** Action portraits and their variations, unassigned library images, uploaded selfie collections and the images behind permanent references are embedded as image data, not external links. Saved illustrations travel too. It feels like a little magic: import one file and the cast has its faces again — no separate image folder or cloud account required.
 
 1. Open **Settings → Files & security → Export**.
 2. Choose **This world**, select the world and click **Download file**.
 3. On another installation, use **Lore → Import existing lore** or **Settings → Files & security → Import**, choose the JSON and confirm the world import.
 
-The file contains the stored versions, not discarded original upload files. Unsaved character edits must be saved first. More pictures make a larger JSON. Treat it as private: an ordinary world export is not password-encrypted. API keys/connections are not included, and exporting a world is not exporting the full DeepSeek conversation. For saved chat progress and all extension settings, choose **Full backup** below.
+The file contains the stored versions, not discarded original upload files. Unsaved character edits must be saved first. More pictures make a larger JSON. Treat it as private: an ordinary world export is not password-encrypted. API keys/connections are not included, and exporting a world is not exporting the full DeepSeek conversation. For shared lore games, their archives and all extension settings, choose **Full backup** below.
 
 | What to save | What it carries |
 | --- | --- |
-| **Export world** | That world's lore, character profiles, images, actions, personal action rules, relationship settings and starting characteristic values. Not the played progress of individual chats. |
-| **Full backup** | All worlds, records, settings, saved chat states and played character progress. Use this when moving to another computer. |
+| **Export world** | That world's lore, effective roster and names, images, action rules, relationship settings and starting characteristic values. Excludes played scores and game history. |
+| **Full backup** | All worlds, records, settings, shared lore games, archives, saved history and played character progress. Use this when moving to another computer. |
 
 Choose **Settings → Files & security → Export → Full backup**, keep the downloaded file somewhere safe, then import it into DeepRole on the other computer. Both **Settings → Files & security → Import** and **Lore → Import existing lore** recognize full backups, including password-protected files. Both open the same preview: add missing records without overwriting existing ones, or restore the full library and settings after explicit confirmation. World exports retain their separate world-import flow.
 

@@ -4,7 +4,7 @@ import { nativeStoryMessageKey, validNativeStoryId, validNativeStoryKey, validNa
 export interface StoryGameSnapshot { chatId: string; selectedNativeKey: string | null; messages: NativeStorySample[] }
 export interface StoryGameOutcome { active: boolean; changed: boolean; preparedParentKey?: string | null; update?: import("./story-update").StoryUpdateDiagnostic; revisionId?: string; repairAttempted?: boolean }
 export interface StoryGameInput {
-  chatId: string; worldId: string; expectedBase: string; operation: "start" | "restart" | "sync" | "resume" | "undo" | "parent" | "edit";
+  chatId: string; worldId: string; expectedBase: string; operation: "start" | "restart" | "reset" | "restore" | "sync" | "resume" | "undo" | "parent" | "edit";
   snapshot: StoryGameSnapshot; nativeParentKey: string | null; manual: "stop" | "keep";
 }
 export function validStoryGameSnapshot(v: unknown): v is StoryGameSnapshot {
@@ -21,7 +21,7 @@ export function validStoryGameInput(v: unknown): v is StoryGameInput {
   const s = v as StoryGameInput;
   return Object.keys(s).length === 7 && ["chatId", "worldId", "expectedBase", "operation", "snapshot", "nativeParentKey", "manual"].every(k => Object.hasOwn(s, k))
     && validNativeStoryId(s.chatId) && typeof s.worldId === "string" && !!s.worldId && s.worldId.length <= 160 && typeof s.expectedBase === "string" && !!s.expectedBase && s.expectedBase.length <= 160
-    && ["start", "restart", "sync", "resume", "undo", "parent", "edit"].includes(s.operation) && ["stop", "keep"].includes(s.manual)
+    && ["start", "restart", "reset", "restore", "sync", "resume", "undo", "parent", "edit"].includes(s.operation) && ["stop", "keep"].includes(s.manual)
     && (s.nativeParentKey === null || validNativeStoryKey(s.nativeParentKey)) && validStoryGameSnapshot(s.snapshot) && s.snapshot.chatId === s.chatId;
 }
 /** Canonical site schema only. Text excludes THINK, controls and files. The current

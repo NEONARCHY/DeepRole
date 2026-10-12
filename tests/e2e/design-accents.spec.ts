@@ -64,7 +64,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.goto("/tests/fixtures/sidepanel.html");
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
     if (locale === "en") await setEnglish(page);
-    await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+    await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
     const save = page.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });
     await expectAccent(save);
     const secondary = page.locator(".app-main .button.secondary").first();

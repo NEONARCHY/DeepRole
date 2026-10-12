@@ -64,7 +64,7 @@ export interface StoryCheckpointAnchor {
 export async function anchorStoryCheckpoint(branchId: string, input: StoryCheckpointAnchor, repo: DeepRoleRepository = repository): Promise<StoryBaseline> {
   input = structuredClone(input);
   if (!validStoryTransportIdentity(input.identity) || input.completion !== "complete" || (input.identity.nativeParentKey === null ? input.role !== null : input.role !== "assistant")) throw new Error("story-anchor-invalid");
-  return repo.updateRecords(all => planStoryCheckpointAnchor(all, branchId, input), undefined, ["story", "world", "binding"]);
+  return repo.updateRecords(all => planStoryCheckpointAnchor(all, branchId, input), undefined, ["story", "world", "binding", "entity"]);
 }
 
 export function planStoryCheckpointAnchor(all: DataRecord[], branchId: string, input: StoryCheckpointAnchor) {

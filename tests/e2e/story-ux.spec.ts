@@ -1,0 +1,77 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { storyUxText as ux } from "../../src/core/story-ux-i18n";
+import { storyUpdateText as facts } from "../../src/core/story-update-i18n";
+import { characterDiscoveryText as people } from "../../src/core/character-discovery-i18n";
+
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test(`story hub ${locale} ${width}: actual App navigation, drafts and keyboard`, async ({ page }, info) => {
+  const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto(`/tests/fixtures/sidepanel.html?world&story&locale=${locale}`);
+  const nav = page.locator(".bottom-nav").getByRole("button", { name: ux(locale, "nav"), exact: true });
+  await expect(nav).toBeVisible();
+  await nav.focus(); await page.keyboard.press("Enter");
+  await expect(nav).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText(ux(locale, "active"), { exact: true })).toBeVisible();
+  const field = page.getByRole("textbox", { name: facts(locale, "text"), exact: true });
+  await field.fill("My manually reviewed fact");
+  await page.getByRole("button", { name: ux(locale, "timeline"), exact: true }).click();
+  await expect(page.getByText(ux(locale, "timelineHint"))).toBeVisible(); await expect(field).toBeHidden();
+  await page.getByRole("button", { name: ux(locale, "memory"), exact: true }).click(); await expect(field).toHaveValue("My manually reviewed fact");
+  await page.getByRole("button", { name: ux(locale, "refresh"), exact: true }).click(); await expect(field).toBeEnabled(); await expect(field).toHaveValue("My manually reviewed fact");
+  await page.getByRole("button", { name: ux(locale, "people"), exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Courier 0", exact: true })).toBeVisible();
+  const first = page.locator(".dr-character-discovery .dr-story-review-entry").first();
+  await expect(first.getByRole("button", { name: people(locale, "approve"), exact: true })).toBeHidden();
+  await first.getByText(ux(locale, "details"), { exact: true }).click();
+  await first.getByText(people(locale, "edit"), { exact: true }).click();
+  await first.getByRole("textbox", { name: people(locale, "background"), exact: true }).fill("Page-one draft");
+  await page.getByRole("button", { name: people(locale, "next"), exact: true }).click(); await expect(page.getByRole("heading", { name: "Courier 20", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: people(locale, "prev"), exact: true }).click();
+  await first.getByText(ux(locale, "details"), { exact: true }).click(); await first.getByText(people(locale, "edit"), { exact: true }).click();
+  await expect(first.getByRole("textbox", { name: people(locale, "background"), exact: true })).toHaveValue("Page-one draft");
+  await page.locator(".bottom-nav").getByRole("button", { name: locale === "ru" ? "Игра" : "Play", exact: true }).click();
+  await nav.click(); await expect(first.getByRole("textbox", { name: people(locale, "background"), exact: true })).toHaveValue("Page-one draft");
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+  await first.getByText(ux(locale, "details"), { exact: true }).click();
+  await first.scrollIntoViewIfNeeded();
+  if (info.project.name === "chromium") await page.screenshot({ path: info.outputPath(`people-${locale}-${width}.png`) });
+  await page.getByRole("button", { name: ux(locale, "memory"), exact: true }).click(); await expect(field).toHaveValue("My manually reviewed fact");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => (window as any).storyUX.messages.filter((m: any) => m.type === "DR_STORY_GAME" || m.type === "DR_CHARACTER_DISCOVERY" && m.action !== "read"))).toEqual([]);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  if (info.project.name === "chromium") await page.screenshot({ path: info.outputPath(`story-${locale}-${width}.png`) });
+  expect(errors).toEqual([]);
+});
+
+for (const locale of ["ru", "en"] as const) test(`story hub ${locale}: unknown, off, paused, error and scope change`, async ({ page }) => {
+  await page.goto(`/tests/fixtures/sidepanel.html?world&story&inactive&locale=${locale}`);
+  await page.locator(".bottom-nav").getByRole("button", { name: ux(locale, "nav"), exact: true }).click();
+  await expect(page.getByText(ux(locale, "inactive"), { exact: true })).toBeVisible();
+  await expect(page.getByText(ux(locale, "inactiveHint"), { exact: true })).toBeVisible();
+  await page.evaluate(() => { (window as any).storyUX.story.managed = true; (window as any).storyUX.story.paused = true; });
+  await page.getByRole("button", { name: ux(locale, "refresh"), exact: true }).click();
+  await expect(page.getByRole("button", { name: ux(locale, "resume"), exact: true })).toBeVisible();
+  await page.getByRole("button", { name: ux(locale, "resume"), exact: true }).click(); await expect(page.getByText(ux(locale, "active"), { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as any).storyUX.messages.filter((m: any) => m.type === "DR_STORY_GAME"))).toEqual([{ type: "DR_STORY_GAME", operation: "sync", manual: "stop", scope: { chatId: "test", worldId: "world-a" } }]);
+  await page.evaluate(() => (window as any).storyUX.fail = true);
+  await page.getByRole("button", { name: ux(locale, "refresh"), exact: true }).click();
+  await expect(page.getByText(ux(locale, "unavailable"), { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: ux(locale, "start"), exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as any).storyUX.fail = false);
+  await page.getByRole("button", { name: ux(locale, "refresh"), exact: true }).click();
+  await expect(page.getByText(ux(locale, "active"), { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).setPageState({ scene: { worldId: null, bookId: null, focusIds: [] } }));
+  await expect(page.getByRole("heading", { name: ux(locale, "connectTitle") })).toBeVisible();
+});
+
+for (const locale of ["ru", "en"] as const) test(`story hub ${locale}: no chat explains the next action`, async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto(`/tests/fixtures/sidepanel.html?locale=${locale}`);
+  await page.locator(".bottom-nav").getByRole("button", { name: ux(locale, "nav"), exact: true }).click();
+  await expect(page.getByRole("heading", { name: ux(locale, "chatTitle"), exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: ux(locale, "backToPlay"), exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: ux(locale, "start"), exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

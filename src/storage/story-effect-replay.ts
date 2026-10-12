@@ -2,6 +2,7 @@ import { captureStoryBaselineEffects, matchStoryBaselineEffects, type StoryBasel
 import { sameStoryValue } from "../core/story-value";
 import type { StoryBaseline, StoryEvent, StoryRecord } from "../core/story-records";
 import type { ChatBinding, DataRecord, SceneEntity, ScenePhoto } from "../core/types";
+const sameCreatedProfile = (a: SceneEntity, b: SceneEntity) => { const left = { ...a }, right = { ...b }; delete left.sharedInWorld; delete right.sharedInWorld; return sameStoryValue(left, right); };
 
 export function storyEffectsAt(records: StoryRecord[], baseline: StoryBaseline, applied: string[]) {
   let value: StoryBaselineEffects = structuredClone(baseline.legacyEffects ?? { algorithmVersion: 1, scene: {}, photos: [] });
@@ -23,14 +24,14 @@ export function planStoryEffects(all: DataRecord[], binding: ChatBinding, baseli
   for (const [id, original] of old.created) if (!next.created.has(id)) {
     const current = all.find(r => r.kind === "entity" && r.id === id)?.data as SceneEntity | undefined;
     const referenced = all.some(r => ["entry", "entity", "binding"].includes(r.kind) && r.id !== binding.id && r.id !== id && JSON.stringify(r.data).includes(JSON.stringify(id)));
-    if (current && (!sameStoryValue(current, original) || referenced)) {
+    if (current && (!sameCreatedProfile(current, original) || referenced)) {
       if (!keepManual) throw Error("story-profile-conflict");
     } else if (current) removed.push({ kind: "entity", id });
   }
   for (const [id, person] of next.created) {
     const current = all.find(r => r.kind === "entity" && r.id === id);
     if (!current) records.push({ kind: "entity", id, data: structuredClone(person) });
-    else if (!old.created.has(id) && !sameStoryValue(current.data, person) && !keepManual) throw Error("story-profile-conflict");
+    else if (!old.created.has(id) && !sameCreatedProfile(current.data as SceneEntity, person) && !keepManual) throw Error("story-profile-conflict");
   }
   const identity = (p: ScenePhoto) => { const { generation: _generation, ...fields } = p; return fields; };
   const archived = stored.flatMap(e => e.type === "event" ? e.effects?.createdPhotos ?? [] : []);

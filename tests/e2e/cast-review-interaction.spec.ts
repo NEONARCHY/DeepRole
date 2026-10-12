@@ -37,6 +37,10 @@ for (const surface of ["chat", "sidepanel"]) for (const locale of ["ru", "en"]) 
   // from a surviving dialog control, as the modal's key handler is scoped to it.
   await headerClose.focus(); await page.keyboard.press("Escape"); await expect(dialog).toHaveCount(0); await expect(review).toBeFocused();
   await review.click();
+  await expect(dialog.getByRole("spinbutton", { name: text("Доверие: Mira", "Trust: Mira"), exact: true })).toHaveValue("88");
+  await mira.locator("summary").first().click();
+  await expect(appearance).toHaveValue("Edited coat");
+  await expect(mira.getByRole("spinbutton", { name: "Energy: Mira", exact: true })).toHaveCount(0);
   await dialog.locator("footer").getByRole("button", { name: text("Закрыть", "Close"), exact: true }).click();
   await expect(dialog).toHaveCount(0); await expect(review).toBeFocused();
   expect((await page.evaluate(() => (window as any).castSnapshot())).job.draft).toEqual(before.job.draft);

@@ -18,7 +18,7 @@ export interface SupplementBrief {
   canonical: ProfileSupplement["canonical"]; versions: ProfileSupplement["versions"];
   source: DiscoveryProfileBrief["source"];
 }
-const view = (f: ReturnType<typeof scopedDiscovery>) => storyProfileEntities(f.people, f.stored, f.projection.appliedEventIds, f.binding.worldId!, f.binding.chatId, f.baseline.profileSeeds);
+const view = (f: ReturnType<typeof scopedDiscovery>) => storyProfileEntities(f.people, f.stored, f.projection.appliedEventIds, f.binding.worldId!, f.binding.chatId, f.baseline.profileSeeds, f.baseline.identitySeeds);
 function unambiguous(f: ReturnType<typeof scopedDiscovery>, entity: ReturnType<typeof scopedDiscovery>["people"][number]) {
   const names = new Set([entity.name, ...entity.aliases].map(discoveryName));
   if (f.people.some(p => p.id !== entity.id && [p.name, ...p.aliases].some(n => names.has(discoveryName(n))))) throw Error("profile-ambiguous");
@@ -86,7 +86,7 @@ export async function approveProfileSupplement(input: SupplementApproval, repo: 
       if (!visible.characterSheet[k].includes(input.additions[k]!.trim())) values[k] = appendProfileText(visible.characterSheet[k], input.additions[k]!);
     }
     if (input.accept && !Object.keys(values).length) return { records: [], removed: [], result: { entityId: entity.id, applied: 0, skipped } };
-    const updated = { ...event, ...(input.accept ? { profileUpdate: values } : {}), updatedAt: Date.now() };
+    const updated = { ...event, ...(input.accept ? { profileUpdate: values } : {}), ...(event.automation ? { automation: { ...event.automation, status: input.accept ? "saved" as const : "dismissed" as const, reason: "manual" as const, at: Date.now() } } : {}), updatedAt: Date.now() };
     const changed = [...all.filter(r => !(r.kind === "story" && r.id === event.id)), storyRow(updated)], accepted = f.projection.acceptedEventIds.filter(id => id !== event.id); if (input.accept) accepted.push(event.id);
     const selection = planStorySelection(changed, f.branch.id, { headRevisionId: f.branch.headRevisionId, expectedHeadRevisionId: f.branch.headRevisionId, expectedSelectionVersion: f.branch.selectionVersion, acceptedEventIds: accepted });
     return { records: [storyRow(updated), ...selection.records], removed: selection.removed, result: { entityId: entity.id, applied: Object.keys(values).length, skipped } };

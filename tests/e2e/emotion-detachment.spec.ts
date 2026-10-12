@@ -67,13 +67,13 @@ for (const locale of ["ru", "en"] as const) for (const scope of ["world", "globa
     await area.set({ deeprole_settings: { ...settings, locale, characterActions: actions } }); return images;
   }, { locale, scope, actions: DEFAULT_ACTIONS, sheet: EMPTY_CHARACTER, state: EMPTY_STATUS });
   await page.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
-  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
   const settings = page.locator(".dr-character-settings");
-  await settings.getByRole("button", { name: (locale === "ru" ? "Убрать из списка" : "Remove from list") + ": happy", exact: true }).click();
+  await settings.getByRole("button", { name: (locale === "ru" ? "Убрать из списка" : "Remove from list") + ": " + actionOptionLabel(locale, "happy"), exact: true }).click();
   const save = settings.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });
   await save.click(); await expect(settings.getByRole("status").last()).toHaveText(locale === "ru" ? "Сохранено" : "Saved");
   const stored = await page.evaluate(async () => {
-    const { repository } = await import("/src/storage/repository.ts" as string); const rows: any[] = await repository.rawRecords();
+    const { repository } = await import("/src/storage/repository.ts" as string); const rows: any[] = await repository.portableRecords();
     return { person: rows.find(row => row.kind === "entity" && row.id === "mira-world-a").data, other: rows.find(row => row.kind === "entity" && row.id === "mira-world-b").data, scene: rows.find(row => row.kind === "binding" && row.id === "binding:action").data.characterScenes["world-a"] };
   });
   expect(stored.person.characterSheet.sprites).toEqual({ neutral: images[0] }); expect(stored.person.characterSheet.portraitLibrary).toEqual([images[1]]);

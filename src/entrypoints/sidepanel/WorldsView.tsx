@@ -1,6 +1,9 @@
 import { CastSetup } from "../shared/CastSetup";
+import { CharacterUpdateNotice } from "../shared/CharacterUpdateNotice";
+import { ProfileProtection } from "../shared/ProfileProtection";
 import { BackupRestore } from "../shared/BackupRestore";
 import { translate } from "../../core/i18n";
+import { readJsonFile } from "../../core/read-json-file";
 import { parseBackupData, restoreBackup } from "../../storage/backup";
 import { InvalidEncryptedPayloadError } from "../../storage/crypto";
 import type { BackupPayload } from "../../core/types";
@@ -22,7 +25,8 @@ import type { DataRecord, Locale, MemoryBook, MemoryEntry, SceneEntity, SceneSta
 import { repository } from "../../storage/repository";
 import { saveEditorRecord } from "../../storage/editing";
 import { changeMapActivations, changeMapCategory, changeMapLink, confirmMapPerson, placeMapEntry, removeMapBranch, saveMapLayout } from "../../storage/lore-map";
-import { assignBookWorld, cloneWorldPackage, duplicateEntity, exportWorld, parseWorldPackageData, removeEntity, removeWorld, type WorldPackage } from "../../storage/worlds";
+import { assignBookWorld, cloneWorldPackage, duplicateEntity, createWorldContent, parseWorldPackageData, removeEntity, removeWorld, type WorldPackage } from "../../storage/worlds";
+import { portableContentFile } from "../../storage/export-file";
 import { HelpButton } from "../shared/Help";
 import { LoreMap } from "./LoreMap";
 import { MapWorkspace } from "./MapWorkspace";
@@ -55,7 +59,9 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
   const mounted = useRef(false);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   async function downloadWhenUnlocked(pack: WorldPackage) {
-    if (mounted.current && !await repository.isLocked() && mounted.current) downloadWorld(pack);
+    if (!mounted.current || await repository.isLocked()) return;
+    const file = await portableContentFile(pack);
+    if (mounted.current && !await repository.isLocked() && mounted.current) downloadWorld(file);
   }
   const world = props.worlds.find((w) => w.id === props.selectedWorld);
   const worldConnected = Boolean(world && props.connected && props.activeWorldId === world.id);
@@ -137,7 +143,7 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
       <section className="rp-card"><header><h2>{world.name}</h2></header><div className="button-row">
         <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "world", id: world.id })}>{t("edit")}</HelpButton>
         <button type="button" className="button secondary small danger" disabled={busy} onClick={() => { if(window.confirm(t("deleteWorldAllConfirm",{name:world.name}))) void act(async()=>{await removeWorld(world.id,repository,{deleteLore:true});props.onWorld(null);setEditor(null);}); }}>{t("deleteWorldAll")}</button>
-        </div><p className="rp-hint">{t("deleteWorldAllHint")}</p><details><summary>{uiText(props.locale, "worldTools")}</summary><div className="button-row"><HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const copy = cloneWorldPackage(await exportWorld(world.id), t("copyName", { name: world.name })); await repository.mergeRecords(copy); props.onWorld(copy.find((r) => r.kind === "world")!.id); })}>{t("duplicate")}</HelpButton>
+        </div><p className="rp-hint">{t("deleteWorldAllHint")}</p><details><summary>{uiText(props.locale, "worldTools")}</summary><div className="button-row"><HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const copy = cloneWorldPackage(await createWorldContent(world.id,repository,false), t("copyName", { name: world.name })); await repository.mergeRecords(copy); props.onWorld(copy.find((r) => r.kind === "world")!.id); })}>{t("duplicate")}</HelpButton>
         <HelpButton className="button secondary small" disabled={busy} onClick={() => props.onExport(world.id)}>{t("export")}</HelpButton>
         <HelpButton className="button secondary small danger" disabled={busy} onClick={() => { if (window.confirm(t("deleteWorld"))) void act(async () => { await removeWorld(world.id); props.onWorld(null); }); }}>{t("deleteWorldKeep")}</HelpButton>
       </div><p className="rp-hint">{t("importHint")}</p></details></section>
@@ -161,7 +167,7 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
           <HelpButton className="button primary small" onClick={() => void props.onTemplate(v.id)}>{t("useTemplate")}</HelpButton>
           <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "template", id: v.id })}>{t("edit")}</HelpButton>
           <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(() => repository.put("template", { ...v, id: createId("template"), name: t("copyName", { name: v.name }), createdAt: Date.now(), updatedAt: Date.now() }))}>{t("duplicate")}</HelpButton>
-          <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const pack = await exportWorld(world.id); pack.records = pack.records.filter((r) => r.kind !== "template" || r.id === v.id); await downloadWhenUnlocked(pack); })}>{t("export")}</HelpButton>
+          <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const pack = await createWorldContent(world.id,repository,false); pack.records = pack.records.filter((r) => r.kind !== "template" || r.id === v.id); await downloadWhenUnlocked(pack); })}>{t("export")}</HelpButton>
           <HelpButton className="button secondary small danger" disabled={busy} onClick={() => { if (!props.confirmDeletions || window.confirm(t("confirmDelete"))) void act(() => repository.delete("template", v.id)); }}>{t("delete")}</HelpButton>
         </div></article>)}
       </section>
@@ -261,8 +267,10 @@ function EntityEditor(props: { locale: Locale; actions: string[]; worldId: strin
   return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, characterSheet: sheet, id: base?.id ?? createId("entity"), worldId: props.worldId, name: name.trim(), description, useDescriptionInContext: useDescription, kind, aliases: aliases.split(",").map((s) => s.trim()).filter(Boolean), memberIds: kind === "group" ? members : [], createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, links, base, baseEntries); }}>
     <Field name={t("name")} help={t("entityHint")}><input className="input" aria-label={t("name")} required value={name} onChange={(e) => setName(e.target.value)} autoFocus /></Field>
     <Select aria-label={t("entities")} value={kind} onChange={(e) => setKind(e.target.value as SceneEntity["kind"])}>{(["character","location","group"] as const).map((v) => <option key={v} value={v}>{t(v)}</option>)}</Select>
+    {kind === "character" && <CharacterUpdateNotice locale={props.locale} kind="profile" />}
     <Field name={t("description")} help={t("entityHint")}><textarea className="textarea" aria-label={t("description")} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
     {sheet && kind === "character" && (["appearance", "personality", "goals", "background"] as const).map(key => <Field key={key} name={characterText(props.locale, key)}><textarea className="textarea" aria-label={characterText(props.locale, key)} maxLength={1200} value={sheet[key]} onChange={e => setSheet({ ...sheet, [key]: e.target.value })} /></Field>)}
+    {kind === "character" && <ProfileProtection locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} disabled={props.busy} onChange={setSheet} />}
     {kind === "character" && <ActionAvailability locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} actions={props.actions} disabled={props.busy} onChange={setSheet} />}
     {kind === "character" && <details className="dr-bond-history"><summary>{relationshipText(props.locale, "title")}</summary><RelationshipEditor profileOnly locale={props.locale} entity={props.entity ?? null} sheet={sheet ?? EMPTY_CHARACTER} state={EMPTY_STATUS} disabled={props.busy} onSheet={setSheet} onState={() => undefined} /></details>}
     {kind === "character" && <details className="dr-bond-history" onInvalidCapture={event => { event.currentTarget.open = true; }}><summary>{progressText(props.locale, "title")}</summary><AttributeEditor profileOnly locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} state={EMPTY_STATUS} disabled={props.busy} onSheet={setSheet} onState={() => undefined} /></details>}
@@ -337,8 +345,8 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     let fullBackup = false, encrypted = false;
     try {
       if (importFileTooLarge(file.size, "backup")) throw new Error("backupTooLarge");
-      const text = await file.text(); if (!current()) return;
-      const data = JSON.parse(text.replace(/^\uFEFF/, ""));
+      const data = await readJsonFile(file,current); if (!current()) return;
+
       encrypted = data?.format === "deeprole-encrypted";
       fullBackup = encrypted || data?.format === "deeprole-backup";
       if (fullBackup) {
@@ -347,7 +355,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
         const payload = await parseBackupData(data, file.size, password);
         if (current() && !await repository.isLocked() && current()) props.onBackup(payload, file.name);
       } else if (data?.format === "deeprole-world") { const value = parseWorldPackageData(data, file.size); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
-      else { if (file.size > 10_000_000) throw new Error("fileInvalid"); const value = parseLoreImport(text); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
+      else { if (file.size > 10_000_000) throw new Error("fileInvalid"); const value = parseLoreImport(await file.text()); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
     } catch (error) {
       if (!current()) return;
       const code = error instanceof Error ? error.message : "";
@@ -356,7 +364,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     }
     finally { if (current()) setBusy(false); }
   }
-  async function importRecords(build: () => DataRecord[], attachToChat: boolean) {
+  async function importRecords(build: () => DataRecord[], attachToChat: boolean, photos?: import("../../core/portable-photos").PortablePhoto[]) {
     if (committing.current || busy || committedImport) return;
     committing.current = true; setSavingImport(true); setBusy(true); setError("");
     let saved = false;
@@ -364,7 +372,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       const records = build(); const id = worldId || records.find(record => record.kind === "world")!.id;
       const worldRow = records.find(r => r.kind === "world" && r.id === id);
       if (worldRow) (worldRow.data as WorldProfile).autoPrepareCharacters = prepareCast;
-      await repository.mergeRecords(records); saved = true;
+      await repository.mergeRecords(records,photos); saved = true;
       if (!worldRow) await repository.updateRecords(current => {
         const existing = current.find(r => r.kind === "world" && r.id === id);
         return { records: existing ? [{ ...existing, data: { ...existing.data as WorldProfile, autoPrepareCharacters: prepareCast } }] : [], removed: [], result: undefined };
@@ -425,7 +433,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       </div>
       {!committedImport && (pack || items.length > 0) && <footer className="rp-import-footer">
         <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => {
-          if (pack) void importRecords(() => cloneWorldPackage(pack, name.trim()), attach && props.canAttach);
+          if (pack) void importRecords(() => cloneWorldPackage(pack, name.trim()), attach && props.canAttach,pack.photos);
           else if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach && props.canAttach);
         }}>{t("confirmImport")}</HelpButton>
       </footer>}
@@ -434,9 +442,9 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
 }
 
 function toggle(values: string[], id: string, checked: boolean) { return checked ? [...values, id] : values.filter((v) => v !== id); }
-function downloadWorld(pack: WorldPackage) { const url = URL.createObjectURL(new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" })); const a = document.createElement("a"); a.href = url; a.download = `deeprole-world-${Date.now()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+function downloadWorld(file: Blob) { const url = URL.createObjectURL(file); const a = document.createElement("a"); a.href = url; a.download = `deeprole-world-${Date.now()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 async function exportProfile(worldId: string, entityId: string): Promise<WorldPackage> {
-  const pack = await exportWorld(worldId);
+  const pack = await createWorldContent(worldId,repository,false);
   const selected = new Set([entityId]);
   const entities = pack.records.filter((r) => r.kind === "entity").map((r) => r.data as SceneEntity);
   const visit = (id: string) => { for (const member of entities.find((e) => e.id === id)?.memberIds ?? []) { if (!selected.has(member)) { selected.add(member); visit(member); } } };

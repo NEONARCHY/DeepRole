@@ -1,5 +1,5 @@
-import { isPhotoAddress, isPhotoData, mapRecordPhotos, PHOTO_PREFIX } from "../core/photo-assets";
-import { uncachedSelfieImageKey } from "../core/selfies";
+import { isPhotoAddress, isPhotoData, mapRecordPhotos } from "../core/photo-assets";
+import { portablePhotoId } from "../core/portable-photos";
 import type { DeepRoleDatabase, StoredPhoto } from "./database";
 import { decryptJsonWithKey, encryptJsonWithKey, importKey, decodeSalt } from "./crypto";
 import { getSessionKey, getVaultConfig } from "./settings";
@@ -7,12 +7,12 @@ import { getSessionKey, getVaultConfig } from "./settings";
 /** No unbounded in-memory image cache. The caller releases each requested image. */
 export class PhotoAssets {
   constructor(private readonly db: DeepRoleDatabase) {}
-  async store(image: string): Promise<string> {
+  async store(image: string,expectedId?: string): Promise<string> {
     if (isPhotoAddress(image)) { if (!await this.db.photos.where("id").equals(image).count()) throw new Error("photo-missing"); return image; }
     if (!isPhotoData(image)) throw new Error("photo-invalid");
-    const bytes = new TextEncoder().encode(image);
-    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
-    const id = PHOTO_PREFIX + hash + ":" + uncachedSelfieImageKey(image);
+    const id = await portablePhotoId(image);
+    if (expectedId && id !== expectedId) throw Error("photo-invalid");
+
     if (await this.db.photos.where("id").equals(id).count()) return id;
     const config = await getVaultConfig();
     let row: StoredPhoto;

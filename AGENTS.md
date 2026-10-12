@@ -1,5 +1,13 @@
 # DeepRole project conventions
 
+## Continuation between computers
+
+- At the start of work on this repository, read `CODEX-HANDOFF.md` before choosing the next implementation task. It contains the latest completed work, user decisions, verification limits, and the concrete next RP-04 task.
+- When the user asks to continue after pulling or changing computers, follow that handoff and the newest ROADMAP sections. Older historical "next steps" are not current instructions. Do not overwrite uncommitted work when synchronizing Git.
+- Update the handoff when finishing a meaningful milestone, so another Codex can continue without this chat history.
+
+## Project conventions
+
 - Explain changes to the user in short, plain Russian. Do not assume coding knowledge.
 - Preserve user lore, ages, events and imported text. Interface changes do not authorize rewriting stored stories.
 - Update ROADMAP.md after each implementation iteration, distinguishing automated tests from live-account checks.

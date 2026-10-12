@@ -2,6 +2,22 @@
 
 Version 0.1.0 is an early build installed manually. [Русская инструкция](../INSTALL.md)
 
+The latest build adds **emotion/action search when assigning images**: filter the primary action and extra-action lists by partial standard or custom names, while keeping selected images and assignments. [Character guide](../docs/CHARACTERS.md). [Current Edge archive](DeepRole-Edge-emotion-search-20261012.zip?raw=true).
+
+It also fixes **large world/backup exports**: each photo travels once, files are assembled in parts, and large imports are read incrementally. Pixels and action assignments are preserved. A synthetic 280 MiB library with 24 characters and 40 photos was exported and restored in Edge. [File guide](../docs/PORTABLE-FILES.md). [Previous dated archive](DeepRole-Edge-large-export-20261012.zip?raw=true).
+
+It also includes **Story → Game accompaniment**: automatic source-backed memory, new character discovery and protected profile additions during normal play. A durable review queue follows the lore across continuation chats; routine turns need no extra model request. [Modes and limits](../docs/AUTOMATIC-MEMORY.md). [Previous dated archive](DeepRole-Edge-automatic-memory-20261012.zip?raw=true).
+
+The shared-game build shares one game per lore: progress, relationships, merged characters, aliases and memory selection follow the current chat. **Continue here** resumes older chats from the latest state; **Start game over** archives progress with undo before new changes. Character header icons are square. [Guide](../docs/WORLD-GAME.md). [Dated shared-game archive](DeepRole-Edge-shared-game-20261012.zip?raw=true).
+
+The earlier character-guidance build adds visible guidance beside current character state, relationships, characteristics and event marks. Notices reflect locked values and disabled tracking; lasting profile fields are explained separately. [Character guide](../docs/CHARACTERS.md). [Dated guidance archive](DeepRole-Edge-character-guidance-20261012.zip?raw=true).
+
+The earlier settings build keeps titles and controls visible and places explanations behind **?** buttons. Click or use the keyboard to expand them; Escape closes them. [Dated settings archive](DeepRole-Edge-settings-help-20261012.zip?raw=true).
+
+The current October 12 build adds **Story → Characters → Names and aliases / Merge duplicate characters**. Merges now follow the lore’s shared game across continuation chats, keep source profiles for history and require explicit data sources; undo protects manual edits. [Behaviour and checkpoint limits](../docs/CHARACTERS.md). [Dated merge UI archive](DeepRole-Edge-story-merge-20261012.zip?raw=true).
+
+The October 12 UX build adds **Story** to the main menu: scene recording status, memory, characters and saved scenes. Reviews keep edits during normal panel navigation. [UX changes and limits](../docs/UX-AUDIT-2026-10-12.md). [Dated Edge archive](DeepRole-Edge-story-ux-20261012.zip?raw=true).
+
 | Browser | Download | Installation |
 | --- | --- | --- |
 | Chrome, Brave, Edge | [Chromium ZIP](deeprole-0.1.0-chrome.zip?raw=true) | Unpack and load the folder as an extension. |

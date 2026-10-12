@@ -23,7 +23,7 @@ for (const locale of ["ru", "en"] as const) for (const scope of ["world", "globa
     await area.set({ deeprole_settings: { ...stored, locale, characterActions: actions } }); return images;
   }, { locale, scope, sheet: EMPTY_CHARACTER, state: EMPTY_STATUS });
   await page.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
-  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
   const settings = page.locator(".dr-character-settings");
   await settings.locator('.dr-action-help').first().locator('summary').click();
   const bulk = settings.getByLabel(locale === "ru" ? "Действия для портретов" : "Portrait actions", { exact: true });

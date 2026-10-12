@@ -1,0 +1,20 @@
+import { test,expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { storyAutomationText } from "../../src/core/story-automation-i18n";
+for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`automatic accompaniment ${locale} ${width}: modes, review, identity, locks and accessibility`,async({page},info)=>{
+ await page.setViewportSize({width,height:1000});await page.goto("/tests/fixtures/story-automation.html?locale="+locale);const t=storyAutomationText(locale);
+ await page.getByRole("button",{name:t.start,exact:true}).click();await expect(page.getByRole("combobox",{name:t.mode,exact:true})).toHaveText(t.automatic+t.review+t.off);
+ await page.getByRole("combobox",{name:t.mode,exact:true}).selectOption("off");expect(await page.evaluate(()=>(window as any).policy.mode)).toBe("off");await page.getByRole("combobox",{name:t.mode,exact:true}).selectOption("automatic");
+ const inbox=page.getByRole("region",{name:t.inbox,exact:true});await expect(inbox.getByRole("article")).toHaveCount(3);await inbox.getByRole("article").first().getByRole("button",{name:t.accept,exact:true}).click();await expect(inbox.getByRole("article")).toHaveCount(2);
+ const person=inbox.getByRole("article").filter({has:page.getByRole("heading",{name:"Neri",exact:true})});await person.getByRole("combobox",{name:t.personTarget,exact:true}).selectOption("person-2");
+ await person.getByRole("heading",{name:"Neri",exact:true}).click();await person.getByText(t.personTarget,{exact:true}).click();await expect(person.getByRole("combobox")).not.toBeFocused();
+ if(info.project.name==="chromium")await page.screenshot({path:info.outputPath(`pending-review-${locale}-${width}.png`),fullPage:true});
+ await page.evaluate(()=>{(window as any).failDecision=true;});await person.getByRole("button",{name:t.accept,exact:true}).click();await expect(inbox.getByRole("alert")).toBeVisible();await expect(person.getByRole("combobox")).toHaveValue("person-2");
+ await page.evaluate(()=>{(window as any).failDecision=false;});await person.getByRole("button",{name:t.accept,exact:true}).click();await expect(inbox.getByRole("article")).toHaveCount(1);
+ expect(await page.evaluate(()=>(window as any).decisions[1])).toMatchObject({entityId:"person-2",name:"",fields:["background"]});
+ await inbox.getByRole("article").getByRole("button",{name:t.decline,exact:true}).click();await expect(inbox.getByText(t.empty)).toBeVisible();
+ await page.getByText(t.protect,{exact:true}).click();await page.locator(".dr-profile-protection").getByRole("checkbox").first().check();expect(await page.evaluate(()=>(window as any).sheet.protectedProfileFields)).toEqual(["appearance"]);
+ expect(await page.locator("main").evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+ if(info.project.name==="chromium")await page.screenshot({path:info.outputPath(`accompaniment-${locale}-${width}.png`)});
+ expect(await page.evaluate(()=>(window as any).calls.every((m:any)=>m.type==="DR_AUTOMATION_READ"||m.type==="DR_AUTOMATION_RESOLVE"))).toBe(true);
+});

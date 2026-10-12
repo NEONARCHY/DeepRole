@@ -1,7 +1,8 @@
 import { profileField, characterProfilePrompt, readProfileProposal, PROFILE_FIELDS } from "../core/character-profile";
 import { isolatedFieldResult } from "../core/isolated-character-text";
-import { validDiscoveryProfileInput, type DiscoveryProfileInput } from "../core/story-character-discovery";
+import { discoveryName, validDiscoveryProfileInput, type DiscoveryProfileInput } from "../core/story-character-discovery";
 import { mentionsCharacter } from "../core/character-context";
+import { uniqueIdentityReferences } from "../core/story-character-identity";
 import { storyReplyProse } from "../core/story-update";
 import { storyRow, type StoryEvent, type StoryRevision } from "../core/story-records";
 import type { DiscoveryProfile } from "../core/discovery-profile";
@@ -10,16 +11,19 @@ import type { FieldSource } from "../core/field-history";
 import type { Locale } from "../core/types";
 import { scopedDiscovery, discoveryGuard } from "./story-character-discovery";
 import { repository, type DeepRoleRepository } from "./repository";
+import { sameStoryValue } from "../core/story-value";
 
 export interface DiscoveryProfileBrief {
   input: DiscoveryProfileInput; requestId: string; prompt: string; draft: CharacterTextRequest;
   sources: (FieldSource & { revisionId: string })[]; partial: boolean;
   source: { worldId: string; chatId: string; chatUrl: string; bookId: string | null };
 }
-function target(f: ReturnType<typeof scopedDiscovery>, input: Pick<DiscoveryProfileInput, "guard" | "eventId">) {
+function target(f: ReturnType<typeof scopedDiscovery>, input: Pick<DiscoveryProfileInput, "guard" | "eventId" | "queueId">) {
   discoveryGuard(f.guard, input.guard);
   const event = f.stored.find((e): e is StoryEvent => e.type === "event" && e.id === input.eventId && !!e.characterCandidate && !e.characterCandidate.dismissed && f.projection.revisionIds.includes(e.revisionId));
-  if (!event || event.effects || !f.branch.headRevisionId || !f.selected.some(r => r.id === f.branch.headRevisionId)) throw Error("scene-changed");
+  if (!event || event.effects || event.characterIdentity || !f.branch.headRevisionId || !f.selected.some(r => r.id === f.branch.headRevisionId)) throw Error("scene-changed");
+  if (input.queueId && (event.characterProfileTask?.id !== input.queueId || !sameStoryValue(event.characterProfileTask.guard, input.guard))) throw Error("scene-changed");
+  if (input.queueId && f.people.some(p => [p.name, ...p.aliases].some(n => discoveryName(n) === discoveryName(event.characterProfileTask!.name)))) throw Error("scene-changed");
   return event;
 }
 /** Literal name/alias retrieval with bounded windows, not semantic or exhaustive search. */
@@ -59,20 +63,26 @@ export async function prepareDiscoveryProfile(input: DiscoveryProfileInput, requ
   input = structuredClone(input); if (!validDiscoveryProfileInput(input) || !/^field_[0-9a-f-]{36}$/u.test(requestId)) throw Error("invalid-brief");
   return repo.updateRecords(all => {
     const f = scopedDiscovery(all, input), event = target(f, input);
-    const { sources, partial } = profileExcerpts(f.selected, [input.name, event.characterCandidate!.name], event);
-    const draft = { field: profileField(locale, "history"), currentText: JSON.stringify(input.values), reference: { name: input.name, aliases: [event.characterCandidate!.name], ...input.values } };
+    if (input.queueId && (event.characterProfileTask!.status !== "pending" || event.characterProfileTask!.name !== input.name || !sameStoryValue(event.characterProfileTask!.values, input.values))) throw Error("busy");
+    const references = uniqueIdentityReferences(f.people, [input.name, event.characterCandidate!.name]);
+    const { sources, partial: clipped } = profileExcerpts(f.selected, references, event), partial = clipped || references.length < 2;
+    if (!references.includes(event.characterCandidate!.name)) sources.splice(1);
+    const draft = { field: profileField(locale, "history"), currentText: JSON.stringify(input.values), reference: { name: input.name, aliases: references.filter(n => n !== input.name), ...input.values } };
     const prompt = characterProfilePrompt(draft, sources.map(({ id, text }) => ({ id, text })), locale, requestId)
-      + "\nThese are bounded excerpts of the SELECTED recorded story, not the entire chat. Omitted information is unknown. Do not add creative fallback. Output only established, lasting profile facts; temporary scene state does not belong in personality or goals.";
-    return { records: [], removed: [], result: { input, requestId, prompt, draft, sources, partial, source: { worldId: input.worldId, chatId: input.chatId, chatUrl: f.binding.chatUrl, bookId: f.binding.bookId } } };
+      + "\nThese are bounded excerpts of the SELECTED recorded story, not the entire chat. Omitted information is unknown. Do not add creative fallback. Output only established, lasting profile facts; temporary scene state does not belong in personality or goals."
+      + (references.includes(event.characterCandidate!.name) ? "" : "\nThis is a potentially different person with a shared name. ONLY the seed quote is supplied. Do not import facts about any other person; verify identity from this quote alone. Missing details stay not-found.");
+    const records = input.queueId ? [storyRow({ ...event, characterProfileTask: { ...event.characterProfileTask!, status: "preparing", requestId }, updatedAt: Date.now() })] : [];
+    return { records, removed: [], result: { input, requestId, prompt, draft, sources, partial, source: { worldId: input.worldId, chatId: input.chatId, chatUrl: f.binding.chatUrl, bookId: f.binding.bookId } } };
   });
 }
-export async function discoveryProfileCurrent(input: Pick<DiscoveryProfileInput, "worldId" | "chatId" | "guard" | "eventId">, repo: DeepRoleRepository = repository) {
+export async function discoveryProfileCurrent(input: Pick<DiscoveryProfileInput, "worldId" | "chatId" | "guard" | "eventId" | "queueId">, repo: DeepRoleRepository = repository) {
   try { return await repo.updateRecords(all => { target(scopedDiscovery(all, input), input); return { records: [], removed: [], result: true }; }); } catch { return false; }
 }
 export async function applyDiscoveryProfile(brief: DiscoveryProfileBrief, raw: string, repo: DeepRoleRepository = repository) {
   const proposal = readProfileProposal(isolatedFieldResult(raw, brief.draft, { requestId: brief.requestId, sources: brief.sources }), [...PROFILE_FIELDS]);
   return repo.updateRecords(all => {
     const f = scopedDiscovery(all, brief.input), event = target(f, brief.input);
+    if (brief.input.queueId && (event.characterProfileTask!.status !== "preparing" || event.characterProfileTask!.requestId !== brief.requestId)) throw Error("scene-changed");
     const proofs: DiscoveryProfile["proofs"] = [];
     for (const k of PROFILE_FIELDS) for (const quote of proposal[k]!.evidence) {
       const source = brief.sources.find(s => s.text.includes(quote))!;
@@ -80,6 +90,9 @@ export async function applyDiscoveryProfile(brief: DiscoveryProfileBrief, raw: s
       if (!proofs.some(p => p.quote === quote && p.revisionId === source.revisionId)) proofs.push({ revisionId: source.revisionId, quote });
     }
     const profile: DiscoveryProfile = { headRevisionId: brief.input.guard.headRevisionId!, name: brief.input.name, values: brief.input.values, proposal, proofs, partial: brief.partial };
-    return { records: [storyRow({ ...event, characterProfile: profile, updatedAt: Date.now() })], removed: [], result: undefined };
+    const next = { ...event, characterProfile: profile, updatedAt: Date.now() };
+    if (brief.input.queueId) next.characterProfileTask = { ...event.characterProfileTask!, status: "ready" };
+    else delete next.characterProfileTask;
+    return { records: [storyRow(next)], removed: [], result: undefined };
   });
 }

@@ -1,4 +1,5 @@
 import { validNativeStoryId } from "./story-transport";
+import { validStoryAutomationDecision } from "./story-automation";
 import { validStorySnapshot, type StorySnapshot } from "./story-records";
 import { validStoryCheckpointScope, type StoryCheckpointScope } from "./story-checkpoint";
 import { validStoryFact, validStoryUpdateDiagnostic, type StoryFact, type StoryUpdateDiagnostic } from "./story-update";
@@ -17,7 +18,7 @@ export interface StoryReviewPage extends StoryCheckpointScope {
   managed?: boolean;
   paused?: boolean;
   nextOutOfCharacter?: boolean;
-  facts?: (StoryFact & { eventId: string; accepted: boolean; edited: boolean })[];
+  facts?: (StoryFact & { eventId: string; accepted: boolean; edited: boolean; superseded?: true; automation?: import("./story-automation").StoryAutomationDecision })[];
   update?: StoryUpdateDiagnostic;
   currentRevisionId?: string;
   repair?: { id: string; status: "requested" | "done" | "failed" | "cancelled"; at: number; cleanup?: "pending" | "done" | "failed" };
@@ -42,7 +43,7 @@ export function validStoryReviewPage(v: unknown): v is StoryReviewPage {
   if (!obj(v) || !exact(v, ["chatId", "worldId", "bindingId", "worldName", "baselineAt", "guard", "offset", "entries", "next", ...["managed", "paused", "nextOutOfCharacter", "facts", "update", "currentRevisionId", "repair"].filter(k => Object.hasOwn(v, k))]) || ["managed", "paused", "nextOutOfCharacter"].some(k => v[k] !== undefined && typeof v[k] !== "boolean")
     || !validNativeStoryId(v.chatId) || !id(v.worldId) || !id(v.bindingId) || typeof v.worldName !== "string" || !count(v.offset)
     || !Array.isArray(v.entries) || v.entries.length > 8 || v.baselineAt !== null && (typeof v.baselineAt !== "number" || !Number.isFinite(v.baselineAt) || v.baselineAt < 0)) return false;
-  if (v.facts !== undefined && (!Array.isArray(v.facts) || v.facts.length > 24 || !v.facts.every(f => obj(f) && exact(f, ["text", "kind", "quote", "eventId", "accepted", "edited"]) && validStoryFact({ text: f.text, kind: f.kind, quote: f.quote }) && id(f.eventId) && typeof f.accepted === "boolean" && typeof f.edited === "boolean"))) return false;
+  if (v.facts !== undefined && (!Array.isArray(v.facts) || v.facts.length > 24 || !v.facts.every(f => obj(f) && exact(f, ["text", "kind", "quote", "eventId", "accepted", "edited", ...["claim", "automation", "superseded"].filter(k => Object.hasOwn(f, k))]) && validStoryFact({ text: f.text, kind: f.kind, quote: f.quote, ...(f.claim !== undefined ? { claim: f.claim } : {}) }) && (f.automation === undefined || validStoryAutomationDecision(f.automation)) && (f.superseded === undefined || f.superseded === true) && id(f.eventId) && typeof f.accepted === "boolean" && typeof f.edited === "boolean"))) return false;
   if (v.update !== undefined && !validStoryUpdateDiagnostic(v.update) || v.currentRevisionId !== undefined && !id(v.currentRevisionId)) return false;
   if (v.repair !== undefined && (!obj(v.repair) || !exact(v.repair, ["id", "status", "at", ...(Object.hasOwn(v.repair, "cleanup") ? ["cleanup"] : [])]) || !id(v.repair.id) || !["requested", "done", "failed", "cancelled"].includes(String(v.repair.status)) || !count(v.repair.at) || v.repair.cleanup !== undefined && !["pending", "done", "failed"].includes(String(v.repair.cleanup)))) return false;
   if (!v.entries.every(e => obj(e) && exact(e, ["id", "role", "completion", "content", "parentExcerpt", "observedAt", "selected", "candidateCount", "appliedCount"])

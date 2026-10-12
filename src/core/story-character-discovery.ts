@@ -3,21 +3,26 @@ import { validNativeStoryId } from "./story-transport";
 import { mentionsCharacter } from "./character-context";
 import { validDiscoveryProfile, validDiscoveryValues, type DiscoveryProfile } from "./discovery-profile";
 import type { ProfileValues } from "./character-profile";
+import { validIdentityLookup, validIdentityOptions, validIdentitySelection, type IdentityLookup, type IdentityOptions, type IdentitySelection } from "./story-character-identity";
+import { validDiscoveryProfileTask, validProfileQueueId, type DiscoveryProfileTask, type DiscoveryQueueInput } from "./discovery-profile-queue";
 
 /** Per-request bounds, never a limit on saved characters or history. */
 export const DISCOVERY_CHUNK = 12000;
 export const DISCOVERY_OVERLAP = 1000;
 export const DISCOVERY_PAGE = 20;
-export interface CharacterCandidate { name: string; quote: string; dismissed: boolean }
+export interface CharacterCandidate { name: string; quote: string; dismissed: boolean; distinct?: true }
 export interface CharacterDiscoveryProgress { offset: number; request: { id: string; status: "requested" | "done" | "failed" | "cancelled"; end: number; at: number } }
 export interface CharacterDiscoveryScope { worldId: string; chatId: string }
 export interface CharacterDiscoveryInput extends CharacterDiscoveryScope { guard: StoryReviewGuard }
-export interface CharacterDiscoveryRead extends CharacterDiscoveryScope { offset: number; guard?: StoryReviewGuard }
-export interface CharacterDiscoveryApproval extends CharacterDiscoveryInput { eventId: string; name: string; background: string; accept: boolean; values?: ProfileValues }
-export interface DiscoveryProfileInput extends CharacterDiscoveryInput { eventId: string; name: string; values: ProfileValues }
+export interface CharacterDiscoveryRead extends CharacterDiscoveryScope { offset: number; guard?: StoryReviewGuard; identity?: IdentityLookup }
+export interface CharacterDiscoveryApproval extends CharacterDiscoveryInput { eventId: string; name: string; background: string; accept: boolean; values?: ProfileValues; identity?: IdentitySelection }
+export interface DiscoveryProfileInput extends CharacterDiscoveryInput { eventId: string; name: string; values: ProfileValues; queueId?: string }
+export interface DiscoveryQueueSummary { total: number; ready: number; pending: number; stale: number; next: DiscoveryProfileInput | null }
 export interface CharacterDiscoveryPage extends CharacterDiscoveryInput {
   sources: number; completed: number; remaining: number; total: number; offset: number; next: number | null;
-  candidates: { eventId: string; name: string; quote: string; background: string; added: boolean; profile?: DiscoveryProfile }[];
+  candidates: { eventId: string; name: string; quote: string; background: string; added: boolean; identityName?: string; identityActive?: boolean; distinct?: true; profile?: DiscoveryProfile; task?: DiscoveryProfileTask }[];
+  queue?: DiscoveryQueueSummary;
+  identity?: IdentityOptions;
 }
 const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const keys = (v: Record<string, unknown>, names: string[]) => Object.keys(v).length === names.length && names.every(k => Object.hasOwn(v, k));
@@ -25,7 +30,7 @@ const num = (v: unknown): v is number => typeof v === "number" && Number.isSafeI
 const name = (v: unknown): v is string => typeof v === "string" && !!v.trim() && v === v.trim() && v.length <= 80 && !["__proto__", "prototype", "constructor"].includes(v);
 export const discoveryName = (v: string) => v.normalize("NFKC").trim().replace(/\s+/gu, " ").toLocaleLowerCase();
 export function validCharacterCandidate(v: unknown): v is CharacterCandidate {
-  return obj(v) && keys(v, ["name", "quote", "dismissed"]) && name(v.name) && typeof v.quote === "string" && !!v.quote.trim() && v.quote.length <= 1000 && mentionsCharacter(v.quote, { name: v.name, aliases: [] }) && typeof v.dismissed === "boolean";
+  return obj(v) && keys(v, ["name", "quote", "dismissed", ...(Object.hasOwn(v, "distinct") ? ["distinct"] : [])]) && name(v.name) && typeof v.quote === "string" && !!v.quote.trim() && v.quote.length <= 1000 && mentionsCharacter(v.quote, { name: v.name, aliases: [] }) && typeof v.dismissed === "boolean" && (v.distinct === undefined || v.distinct === true);
 }
 export function validCharacterDiscoveryProgress(v: unknown): v is CharacterDiscoveryProgress {
   return obj(v) && keys(v, ["offset", "request"]) && num(v.offset) && v.offset <= 250000 && obj(v.request) && keys(v.request, ["id", "status", "end", "at"])
@@ -34,24 +39,27 @@ export function validCharacterDiscoveryProgress(v: unknown): v is CharacterDisco
 }
 const scope = (v: Record<string, unknown>) => validNativeStoryId(v.worldId) && validNativeStoryId(v.chatId);
 export const validCharacterDiscoveryInput = (v: unknown): v is CharacterDiscoveryInput => obj(v) && keys(v, ["worldId", "chatId", "guard"]) && scope(v) && validStoryReviewGuard(v.guard);
-export const validCharacterDiscoveryRead = (v: unknown): v is CharacterDiscoveryRead => obj(v) && keys(v, ["worldId", "chatId", "offset", ...(Object.hasOwn(v, "guard") ? ["guard"] : [])]) && scope(v) && num(v.offset) && (v.guard === undefined || validStoryReviewGuard(v.guard)) && (v.offset === 0 || v.guard !== undefined);
-export const validCharacterDiscoveryApproval = (v: unknown): v is CharacterDiscoveryApproval => obj(v) && keys(v, ["worldId", "chatId", "guard", "eventId", "name", "background", "accept", ...(Object.hasOwn(v, "values") ? ["values"] : [])]) && scope(v) && validStoryReviewGuard(v.guard) && validNativeStoryId(v.eventId) && name(v.name) && typeof v.background === "string" && v.background.length <= 1600 && typeof v.accept === "boolean" && (v.values === undefined || validDiscoveryValues(v.values) && v.values.background === v.background);
-export const validDiscoveryProfileInput = (v: unknown): v is DiscoveryProfileInput => obj(v) && keys(v, ["worldId", "chatId", "guard", "eventId", "name", "values"]) && scope(v) && validStoryReviewGuard(v.guard) && validNativeStoryId(v.eventId) && name(v.name) && validDiscoveryValues(v.values);
+export const validCharacterDiscoveryRead = (v: unknown): v is CharacterDiscoveryRead => obj(v) && keys(v, ["worldId", "chatId", "offset", ...(Object.hasOwn(v, "guard") ? ["guard"] : []), ...(Object.hasOwn(v, "identity") ? ["identity"] : [])]) && scope(v) && num(v.offset) && (v.guard === undefined || validStoryReviewGuard(v.guard)) && (v.offset === 0 || v.guard !== undefined) && (v.identity === undefined || v.guard !== undefined && validIdentityLookup(v.identity));
+export const validCharacterDiscoveryApproval = (v: unknown): v is CharacterDiscoveryApproval => obj(v) && keys(v, ["worldId", "chatId", "guard", "eventId", "name", "background", "accept", ...(Object.hasOwn(v, "values") ? ["values"] : []), ...(Object.hasOwn(v, "identity") ? ["identity"] : [])]) && scope(v) && validStoryReviewGuard(v.guard) && validNativeStoryId(v.eventId) && name(v.name) && typeof v.background === "string" && v.background.length <= 1600 && typeof v.accept === "boolean" && (v.values === undefined || validDiscoveryValues(v.values) && v.values.background === v.background) && (v.identity === undefined || v.accept === true && v.values === undefined && validIdentitySelection(v.identity));
+export const validDiscoveryProfileInput = (v: unknown): v is DiscoveryProfileInput => obj(v) && keys(v, ["worldId", "chatId", "guard", "eventId", "name", "values", ...(Object.hasOwn(v, "queueId") ? ["queueId"] : [])]) && scope(v) && validStoryReviewGuard(v.guard) && validNativeStoryId(v.eventId) && name(v.name) && validDiscoveryValues(v.values) && (v.queueId === undefined || validProfileQueueId(v.queueId));
 export function validCharacterDiscoveryPage(v: unknown): v is CharacterDiscoveryPage {
-  if (!obj(v) || !keys(v, ["worldId", "chatId", "guard", "sources", "completed", "remaining", "total", "offset", "next", "candidates"]) || !scope(v) || !validStoryReviewGuard(v.guard) || !num(v.sources) || !num(v.completed) || !num(v.remaining) || !num(v.total) || !num(v.offset) || v.completed + v.remaining !== v.sources || !Array.isArray(v.candidates) || v.candidates.length > DISCOVERY_PAGE) return false;
-  return v.candidates.every(c => obj(c) && keys(c, ["eventId", "name", "quote", "background", "added", ...(Object.hasOwn(c, "profile") ? ["profile"] : [])]) && validNativeStoryId(c.eventId) && name(c.name) && typeof c.quote === "string" && !!c.quote.trim() && c.quote.length <= 1000 && typeof c.background === "string" && c.background.length <= 1600 && typeof c.added === "boolean" && (c.profile === undefined || validDiscoveryProfile(c.profile)))
+  if (!obj(v) || !keys(v, ["worldId", "chatId", "guard", "sources", "completed", "remaining", "total", "offset", "next", "candidates", ...(Object.hasOwn(v, "queue") ? ["queue"] : []), ...(Object.hasOwn(v, "identity") ? ["identity"] : [])]) || !scope(v) || !validStoryReviewGuard(v.guard) || !num(v.sources) || !num(v.completed) || !num(v.remaining) || !num(v.total) || !num(v.offset) || v.completed + v.remaining !== v.sources || !Array.isArray(v.candidates) || v.candidates.length > DISCOVERY_PAGE) return false;
+  if (v.queue !== undefined && (!obj(v.queue) || !keys(v.queue, ["total", "ready", "pending", "stale", "next"]) || !num(v.queue.total) || !num(v.queue.ready) || !num(v.queue.pending) || !num(v.queue.stale) || v.queue.ready + v.queue.pending !== v.queue.total || v.queue.stale > v.queue.pending || v.queue.next !== null && (!validDiscoveryProfileInput(v.queue.next) || !v.queue.next.queueId || v.queue.next.worldId !== v.worldId || v.queue.next.chatId !== v.chatId))) return false;
+  const identity = v.identity;
+  if (identity !== undefined && (!validIdentityOptions(identity) || !v.candidates.some(c => obj(c) && c.eventId === identity.eventId))) return false;
+  return v.candidates.every(c => obj(c) && keys(c, ["eventId", "name", "quote", "background", "added", ...(Object.hasOwn(c, "profile") ? ["profile"] : []), ...(Object.hasOwn(c, "task") ? ["task"] : []), ...(Object.hasOwn(c, "identityName") ? ["identityName"] : []), ...(Object.hasOwn(c, "identityActive") ? ["identityActive"] : []), ...(Object.hasOwn(c, "distinct") ? ["distinct"] : [])]) && validNativeStoryId(c.eventId) && name(c.name) && typeof c.quote === "string" && !!c.quote.trim() && c.quote.length <= 1000 && typeof c.background === "string" && c.background.length <= 1600 && typeof c.added === "boolean" && (c.identityName === undefined || name(c.identityName) && c.added === true) && (c.identityActive === undefined || typeof c.identityName === "string" && typeof c.identityActive === "boolean") && (c.distinct === undefined || c.distinct === true) && (c.profile === undefined || validDiscoveryProfile(c.profile)) && (c.task === undefined || validDiscoveryProfileTask(c.task)))
     && new Set(v.candidates.map(c => c.eventId)).size === v.candidates.length && v.offset + v.candidates.length <= v.total
     && (v.next === null ? v.offset + v.candidates.length === v.total : num(v.next) && v.next === v.offset + v.candidates.length && v.next < v.total);
 }
-export type CharacterDiscoveryAction = { action: "read"; input: CharacterDiscoveryRead } | { action: "run"; input: CharacterDiscoveryInput } | { action: "profile"; input: DiscoveryProfileInput } | { action: "approve"; input: CharacterDiscoveryApproval } | { action: "cancel"; input: CharacterDiscoveryScope };
+export type CharacterDiscoveryAction = { action: "read"; input: CharacterDiscoveryRead } | { action: "run"; input: CharacterDiscoveryInput } | { action: "profile"; input: DiscoveryProfileInput } | { action: "queue"; input: DiscoveryQueueInput } | { action: "approve"; input: CharacterDiscoveryApproval } | { action: "cancel"; input: CharacterDiscoveryScope };
 export function parseDiscoveryReply(raw: string, id: string, sources: { id: string; text: string }[]) {
   if (typeof raw !== "string" || raw.length > 64000) throw Error("invalid-result");
   let v: unknown; try { v = JSON.parse(raw.trim().replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/u, "$1")); } catch { throw Error("invalid-result"); }
   if (!obj(v) || !keys(v, ["requestId", "people", "more"]) || v.requestId !== id || !Array.isArray(v.people) || v.people.length > 32 || typeof v.more !== "boolean") throw Error("invalid-result");
   const people = v.people.map(p => {
-    if (!obj(p) || !keys(p, ["source", "name", "quote"]) || !name(p.name) || typeof p.quote !== "string" || !p.quote.trim() || p.quote.length > 1000) throw Error("invalid-result");
+    if (!obj(p) || !keys(p, ["source", "name", "quote", ...(Object.hasOwn(p, "distinct") ? ["distinct"] : [])]) || !name(p.name) || typeof p.quote !== "string" || !p.quote.trim() || p.quote.length > 1000 || p.distinct !== undefined && p.distinct !== true) throw Error("invalid-result");
     if (!sources.some(s => s.id === p.source && s.text.includes(p.quote as string)) || !mentionsCharacter(p.quote, { name: p.name, aliases: [] })) throw Error("invalid-evidence");
-    return { source: p.source as string, name: p.name, quote: p.quote };
+    return { source: p.source as string, name: p.name, quote: p.quote, ...(p.distinct === true ? { distinct: true as const } : {}) };
   });
   return { people, more: v.more };
 }

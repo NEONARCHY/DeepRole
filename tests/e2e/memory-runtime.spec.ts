@@ -45,7 +45,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     // Context actions act on the active DeepSeek tab, not this extension tab.
     await chat.bringToFront();
     
-    await optional.getByRole("button", { name: "Always here", exact: true }).click();
+    await optional.getByRole("button", { name: "Always in game", exact: true }).click();
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /OLD_CANON/);
     await optional.getByRole("button", { name: "Edit", exact: true }).click();
     await panel.getByRole("textbox", { name: "What should be remembered", exact: true }).fill("PRECISE_NEW_CANON");

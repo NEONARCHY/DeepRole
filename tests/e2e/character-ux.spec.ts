@@ -49,7 +49,7 @@ test("saving reveals an invalid field in another tab without losing the draft", 
 
 for (const locale of ["ru", "en"] as const) test(`character settings are discoverable and world-scoped ${locale}`, async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 }); await page.goto("/tests/fixtures/sidepanel.html?world=1"); await page.getByRole("button", { name: "Настройки", exact: true }).click(); if (locale === "en") await setEnglish(page);
-  await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
   const settings = page.locator(".dr-character-settings"); await expect(settings.locator("textarea")).toBeHidden(); await expect(settings.locator(".dr-action-list")).toBeVisible();
   await settings.getByLabel(locale === "ru" ? "Название нового действия" : "New action name").fill("Focused"); await settings.getByRole("button", { name: locale === "ru" ? "Добавить действие" : "Add action", exact: true }).click();
   await settings.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true }).click(); await expect(settings.getByRole("status").last()).toHaveText(locale === "ru" ? "Сохранено" : "Saved");

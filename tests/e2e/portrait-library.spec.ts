@@ -21,7 +21,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk p
   await library.locator("input[type=file]").setInputFiles(images.map((image, i) => ({ name: `library-${i}.png`, mimeType: "image/png", buffer: Buffer.from(image, "base64") }))); await chooseImageCompression(page);
   await expect(library).toHaveAttribute("aria-busy", "true");
   await characterTab(dialog, "profile", locale);
-  await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Green coat edited during upload");
+  await dialog.getByRole("textbox", { name: locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", exact: true }).fill("Green coat edited during upload");
   await page.waitForFunction(() => typeof (window as any).finishLibraryDecode === "function"); await page.evaluate(() => (window as any).finishLibraryDecode());
   await characterTab(dialog, "images", locale);
   await expect(library.locator(".dr-library-image")).toHaveCount(49);

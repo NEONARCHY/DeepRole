@@ -1,5 +1,6 @@
 import { parseCastDraft, validateCastDraftValue, type CastDraft, type CastJob, type CastSource } from "./cast-initialization";
 import { castCheck, CastValidationError } from "./cast-validation";
+import { acceptLargeCastReply } from "./cast-large-lore";
 function payload(raw: string): Record<string, unknown> {
   const body = /<deeprole_cast>\s*([\s\S]*?)\s*<\/deeprole_cast>/u.exec(raw)?.[1] ?? raw.trim();
   try { return JSON.parse(body.replace(/^```(?:json)?\s*|\s*```$/gu, "")) as Record<string, unknown>; }
@@ -34,6 +35,9 @@ export function mergeCastBatches(previous: CastDraft | undefined, incoming: Cast
 export function interruptedCastJob(job: CastJob, error: string): CastJob {
   let draft = job.draft;
   const saved = job.replyCheckpoint;
+  if (job.large && job.awaiting && saved && saved.step === job.step && saved.repair === job.repair && saved.chatId === job.chatId) {
+    try { return { ...acceptLargeCastReply(job, saved.raw), phase: "error", error }; } catch { /* Invalid catalogue/profile checkpoints never advance progress. */ }
+  }
   if (job.awaiting && saved && saved.step === job.step && saved.repair === job.repair && saved.chatId === job.chatId) {
     try {
       const received = job.batchSize ? parseCastBatch(saved.raw, job.id, job.sources, job.batchSize, job.draft).draft : parseCastDraft(saved.raw, job.id, job.sources);

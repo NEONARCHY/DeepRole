@@ -22,8 +22,8 @@ export class StoryGameClient {
     if (!initial.chatId || !initial.worldId || initial.locked || initial.generating && !preparation) throw Error("story-checkpoint-busy");
     const same = () => { const now = this.scope(); return now.url === initial.url && now.chatId === initial.chatId && now.worldId === initial.worldId && now.base === initial.base && !now.locked; };
     const work = async () => {
-      if (operation !== "start" && operation !== "restart" && initial.managed === false) return { active: false, changed: false };
-      if (operation !== "start" && operation !== "restart" && !await this.store.storyGameStatus(initial.chatId!, initial.worldId!, initial.url)) return { active: false, changed: false };
+      if (operation !== "start" && operation !== "restart" && operation !== "reset" && operation !== "restore" && initial.managed === false) return { active: false, changed: false };
+      if (operation !== "start" && operation !== "restart" && operation !== "reset" && operation !== "restore" && !await this.store.storyGameStatus(initial.chatId!, initial.worldId!, initial.url)) return { active: false, changed: false };
       // Undo acts on the already saved head. It does not need a readable newest
       // site reply and must remain available after an interrupted answer.
       if (operation === "undo") return this.store.runStoryGame({ chatId: initial.chatId!, worldId: initial.worldId!, expectedBase: initial.base, operation, snapshot: { chatId: initial.chatId!, selectedNativeKey: null, messages: [] }, nativeParentKey: null, manual }, initial.url);

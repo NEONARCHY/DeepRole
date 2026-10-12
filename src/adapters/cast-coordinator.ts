@@ -14,9 +14,10 @@ import { beginCastServiceOperation } from "../storage/service-operations";
 import { ServiceAuditOutbox } from "../storage/service-outbox";
 import { reconcileCastServiceJobs } from "../storage/cast-service";
 import { recordCastServiceValidation } from "../storage/service-validation";
+import { acceptLargeCastReply } from "../core/cast-large-lore";
 
 export type CastMessage =
- | { type: "DR_CAST"; action: "start"; worldId: string; locale: Locale; retry?: boolean }
+ | { type: "DR_CAST"; action: "start"; worldId: string; locale: Locale; retry?: boolean; restart?: boolean }
  | { type: "DR_CAST"; action: "status"; worldId: string }
  | { type: "DR_CAST"; action: "apply"; id: string; draft: CastDraft; selected: string[]; hero: string }
  | { type: "DR_CAST"; action: "cancel" | "cleanup" | "hide" | "show" | "confirm-cleanup" | "open"; id: string }
@@ -31,13 +32,13 @@ export type CastMessage =
  | { type: "DR_CAST_WORKER"; action: "cleaned"; id: string; chatId?: string; ok: boolean }
  | { type: "DR_CAST_RETRY_CLEANUP" }
  | { type: "DR_CAST_REVEAL" };
-export type CastView = Omit<CastJob, "sources" | "signature" | "replyCheckpoint"> & { sourceCount: number; partCount: number; titles: Record<string,string> };
+export type CastView = Omit<CastJob, "sources" | "signature" | "replyCheckpoint" | "large"> & { sourceCount: number; partCount: number; titles: Record<string,string>; large?: Omit<NonNullable<CastJob["large"]>, "candidates"> & { found: number } };
 interface Ownership { id: string; tabId: number; chatId?: string; audit?: ServiceOperationProgress }
 const OWNERS = "deeprole_cast_owners";
 const active = (job: CastJob) => ["opening", "reading", "analyzing"].includes(job.phase);
 export function castView(job: CastJob): CastView {
-  const { sources, signature: _signature, replyCheckpoint: _checkpoint, ...rest } = job;
-  return { ...rest, sourceCount: sources.length, partCount: sources.length ? castParts(sources).length : 0, titles: Object.fromEntries(sources.map(s => [s.id, s.title])) };
+  const { sources, signature: _signature, replyCheckpoint: _checkpoint, large, ...rest } = job;
+  return { ...rest, sourceCount: sources.length, partCount: large ? 0 : sources.length ? castParts(sources).length : 0, titles: Object.fromEntries(sources.map(s => [s.id, s.title])), ...(large ? { large: { stage: large.stage, source: large.source, offset: large.offset, prepared: large.prepared, found: large.candidates.length } } : {}) };
 }
 export class CastCoordinator {
   private starts: Promise<unknown> = Promise.resolve();
@@ -203,16 +204,17 @@ export class CastCoordinator {
           await this.audit(await mutateCastJob(job.id, j => ({ ...j, chatId: message.chatId, chatUrl: currentChat!.url }), this.repo));
         } else if (message.action === "sent") {
           if (job.step !== message.step || job.awaiting || !active(job)) throw new Error("stale-step");
-          await this.audit(await mutateCastJob(job.id, j => ({ ...j, phase: j.step < castParts(j.sources).length ? "reading" : "analyzing", awaiting: true, replyCheckpoint: undefined }), this.repo));
+          await this.audit(await mutateCastJob(job.id, j => ({ ...j, phase: j.large ? j.large.stage === "scan" ? "reading" : "analyzing" : j.step < castParts(j.sources).length ? "reading" : "analyzing", awaiting: true, replyCheckpoint: undefined }), this.repo));
         } else if (message.action === "checkpoint") {
           if (own.chatId !== message.chatId || currentId !== message.chatId) throw new Error("chat-changed");
-          if (!active(job) || !job.awaiting || job.step !== message.step || job.repair !== message.repair || job.step < castParts(job.sources).length) throw new Error("stale-step");
+          if (!active(job) || !job.awaiting || job.step !== message.step || job.repair !== message.repair || !job.large && job.step < castParts(job.sources).length) throw new Error("stale-step");
           if (typeof message.replyIdentity !== "string" || message.replyIdentity.length > 512 || typeof message.raw !== "string") throw new Error("invalid-result");
           let identity: unknown; try { identity = JSON.parse(message.replyIdentity); } catch { throw new Error("invalid-result"); }
           if (!Array.isArray(identity) || identity.length !== 2 || !["message", "virtual"].includes(identity[0]) || typeof identity[1] !== "string" || !identity[1]) throw new Error("invalid-result");
           // Checkpoints can contain a complete batch or finished character objects.
           // Missing batch completion does not authorize another request.
-          if (job.batchSize) parseCastBatch(message.raw, job.id, job.sources, job.batchSize, job.draft);
+          if (job.large) acceptLargeCastReply(job, message.raw);
+          else if (job.batchSize) parseCastBatch(message.raw, job.id, job.sources, job.batchSize, job.draft);
           else parseCastDraft(message.raw, job.id, job.sources);
           await mutateCastJob(job.id, j => {
             if (!active(j) || !j.awaiting || j.step !== message.step || j.repair !== message.repair) throw new Error("stale-step");
@@ -245,12 +247,24 @@ export class CastCoordinator {
             const latest = await this.api.tabs.get(own.tabId).catch(() => undefined);
             if (latest?.url && new URL(latest.url).origin === "https://chat.deepseek.com" && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
           }
+          if (message.ok && job.phase === "ready" && job.large && job.large.stage !== "done") {
+            try {
+              if (await this.api.tabs.get(own.tabId).catch(() => undefined)) throw Error("user-interrupted");
+              const next = () => this.start(job.worldId, job.locale, true, undefined, job.id);
+              const work = this.starts.then(next, next); this.starts = work.catch(() => undefined); await work;
+            } catch (error) {
+              const code = error instanceof Error ? error.message : "interrupted";
+              const stopped = await mutateCastJob(job.id, j => j.phase === "ready" ? { ...j, phase: "error", error: code } : j, this.repo).catch(() => undefined);
+              if (stopped) await this.audit(stopped);
+            }
+          }
         }
         return { ok: true };
       }
       if (message.type !== "DR_CAST") return { ok: false };
       if (message.action === "start") {
-        const start = () => this.start(message.worldId, message.locale, !!message.retry, sender.tab?.id);
+        if (message.restart !== undefined && typeof message.restart !== "boolean") throw Error("invalid-request");
+        const start = () => this.start(message.worldId, message.locale, !!message.retry, sender.tab?.id, undefined, !!message.restart);
         const result = this.starts.then(start, start); this.starts = result.catch(() => undefined);
         return { ok: true, job: await result };
       }
@@ -307,12 +321,12 @@ export class CastCoordinator {
     // prompts or automatically delete the conversation on load.
     await this.api.tabs.create({ url, active: true });
   }
-  private async start(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number): Promise<CastView> {
+  private async start(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false): Promise<CastView> {
     if (!["ru", "en"].includes(locale) || !worldId) throw new Error("invalid-request");
     await this.reconcilePending().catch(() => undefined);
     const jobs = await this.repo.list<CastJob>("cast");
     if (jobs.some(j => j.worldId !== worldId && active(j))) throw new Error("busy");
-    const job = await createCastJob(worldId, locale, retry, this.repo);
+    const job = await createCastJob(worldId, locale, retry, this.repo, continuationOf, restart);
     if (!active(job) || await this.owner(job.id)) return castView(job);
     if (jobs.some(j => j.id === job.id)) {
       // A stored active job without its owner is not permission to open/send again.
@@ -326,7 +340,9 @@ export class CastCoordinator {
     const workerUrl = "https://chat.deepseek.com/?deeprole_cast_job=" + encodeURIComponent(job.id) + "&deeprole_cast_locale=" + locale;
     try {
       const source = sourceTabId === undefined ? await this.api.windows.getLastFocused().catch(() => undefined) : await this.api.tabs.get(sourceTabId).catch(() => undefined);
-      const window = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!source?.incognito });
+      const incognito = job.incognito ?? !!source?.incognito;
+      await mutateCastJob(job.id, j => ({ ...j, incognito }), this.repo);
+      const window = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito });
       tabId = window?.tabs?.[0]?.id;
       if (tabId === undefined) throw new Error("tab-unavailable");
       await this.setOwner({ id: job.id, tabId, audit: castServiceProgress(job) });

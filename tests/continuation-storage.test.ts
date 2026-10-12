@@ -86,12 +86,15 @@ describe("atomic continuation capture", () => {
     expect(await repo.get("binding", "binding:b")).toBeNull();
     expect((await repo.get<HandoffSnapshot>("snapshot", snapshot.id))!.appliedAt).toBeUndefined();
   });
-  it("acknowledges an explicitly applied recap without replacing existing played progress", async () => {
+  it("archives an existing played segment and connects its chat to the shared source progress", async () => {
     const { repo } = await setup(), snapshot = await captureContinuation(input, repo);
-    const played = { ...structuredClone(binding), id: "binding:b", chatId: "b" };
+    const played = { ...structuredClone(binding), id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/a/chat/s/b" };
     played.characterScenes!.w!.states.mira!.bonds!.hero!.trust = 92;
     await repo.put("binding", played); await completeContinuation(snapshot, "b", repo);
-    expect(await repo.get("binding", played.id)).toEqual(played);
+    expect(await repo.get("binding", played.id)).toBeNull();
+    const target = (await repo.list<ChatBinding>("binding")).find(b => b.chatId === "b")!;
+    expect(target.characterScenes!.w!.states.mira!.bonds!.hero!.trust).toBe(binding.characterScenes!.w!.states.mira!.bonds!.hero!.trust);
+    expect((await repo.list<import("../src/core/story-records").StoryRecord>("story")).find(r => r.type === "baseline" && r.origin.bindingId === played.id)).toMatchObject({ snapshot: { states: { mira: { bonds: { hero: { trust: 92 } } } } } });
     expect((await repo.get<HandoffSnapshot>("snapshot", snapshot.id))!.appliedAt).toBeTruthy();
   });
   it("honors the vault lock and encrypts the entire local story checkpoint", async () => {

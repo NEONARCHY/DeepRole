@@ -17,6 +17,7 @@ test("installed Edge exports a full backup and restores the same file through th
       const rows = [
         { kind: "world", id: "w", data: { id: "w", name: "Observatory", description: "", color: "#58a6ff", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 } },
         { kind: "entry", id: "e", data: { id: "e", worldId: "w", bookId: null, title: "Key", content: "  The key is in the observatory.\n", keywords: ["key"], activation: "always", priority: "normal", enabled: true, source: { type: "manual" }, createdAt: 1, updatedAt: 1 } },
+        { kind: "entity", id: "p", data: { id: "p", worldId: "w", name: "Mira", kind: "character", description: "Unchanged", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { gender: "neutral", protagonist: false, appearance: "", personality: "", goals: "", background: "", sprites: { neutral: "data:image/png;base64,YQ==", happy: ["data:image/png;base64,YQ=="] }, portraitLibrary: ["data:image/png;base64,YQ=="] } } },
       ];
       await new Promise<void>((resolve, reject) => {
         const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -36,9 +37,11 @@ test("installed Edge exports a full backup and restores the same file through th
     await exportDialog.getByRole("button", { name: "Скачать файл", exact: true }).click();
     const download = await event, file = (await download.path())!, original = JSON.parse(await readFile(file, "utf8"));
     expect(original.format).toBe("deeprole-backup");
+    expect(original.version).toBe(5);
+    expect(original.photos).toHaveLength(1);
     await panel.evaluate(() => new Promise<void>((resolve, reject) => {
       const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
-      open.onsuccess = () => { const db = open.result, tx = db.transaction("records", "readwrite"); tx.objectStore("records").clear();
+       open.onsuccess = () => { const db = open.result, tx = db.transaction(["records", "photos"], "readwrite"); tx.objectStore("records").clear(); tx.objectStore("photos").clear();
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
     }));
     await panel.reload(); await panel.getByRole("button", { name: "Лор", exact: true }).click();
@@ -55,6 +58,11 @@ test("installed Edge exports a full backup and restores the same file through th
         query.onsuccess = () => { db.close(); resolve(query.result.map(({ kind, id, data }: any) => ({ kind, id, data }))); }; query.onerror = () => reject(query.error); };
     }));
     expect(rows).toEqual(original.records);
+    const savedImage = await panel.evaluate(() => new Promise<string>((resolve,reject) => {
+      const open=indexedDB.open("deeprole");open.onerror=()=>reject(open.error);
+      open.onsuccess=()=>{const db=open.result,q=db.transaction("photos").objectStore("photos").getAll();q.onerror=()=>reject(q.error);q.onsuccess=async()=>{db.close();if(q.result.length!==1)return reject(Error("Expected one restored original"));resolve(await q.result[0].data.text());};};
+    }));
+    expect(savedImage).toBe(original.photos[0].image);
     await panel.getByRole("button", { name: "Лор", exact: true }).click();
     await panel.getByRole("button", { name: /^Библиотека мира:/ }).click();
     await panel.getByRole("menuitemradio", { name: "Observatory", exact: true }).click();

@@ -1,4 +1,5 @@
 import { createId } from "../core/id";
+import { localMergeProfile } from "../core/story-character-merge";
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { characterRevision, characterTurnKey, characterInterlocutors, characterInChat, DEFAULT_ACTIONS, EMPTY_CHARACTER, validCharacterSheet, validCharacterStatus, type CharacterTurn } from "../core/characters";
 import type { CharacterSheet, CharacterStatus, ChatBinding, DataRecord, SceneEntity, WorldProfile } from "../core/types";
@@ -15,6 +16,9 @@ import { selfieCategories, selfieGate, selfieImageKey, validSelfieEvents, GENERA
 import { storySceneOwner } from "./story-scene-owner";
 import { currentStoryProfileEntities } from "../core/story-profile-view";
 import { PROFILE_FIELDS } from "../core/character-profile";
+import { assertWorldGameWriter } from "../core/world-game";
+import { boundStory } from "../core/story-continuation";
+import { storyReplyProse } from "../core/story-update";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string; replyIdentity?: string; replyCompletedAt?: number }
 export interface CharacterEdit extends CharacterScope {
@@ -29,6 +33,7 @@ function current(all: DataRecord[], scope: CharacterScope, checkRevision = true)
   const binding = bindings.length === 1 ? bindings[0]!.data as ChatBinding : undefined;
   const entities = all.filter(r => r.kind === "entity" && (r.data as SceneEntity).worldId === scope.worldId && (r.data as SceneEntity).kind === "character" && characterInChat(r.data as SceneEntity, scope.chatId)).map(r => r.data as SceneEntity);
   if (!binding || binding.worldId !== scope.worldId || !isSameDeepSeekChat(binding.chatUrl, scope.chatUrl, scope.chatId) || !all.some(r => r.kind === "world" && r.id === scope.worldId)) throw new Error("character-scope");
+  assertWorldGameWriter(all, binding, scope.worldId);
   const scene = binding.characterScenes?.[scope.worldId];
   if (checkRevision && characterRevision(entities, scene) !== scope.base) throw new Error("character-conflict");
   return { binding, entities, scene };
@@ -80,10 +85,10 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
       for (const k of authored) entity.profileFieldRevisions[k] = createId("profile");
     }
     // Explicit manual save adopts the customised profile as world canon.
-    delete entity.playthroughChatId;
+    if (!localMergeProfile(entity.id, stored)) delete entity.playthroughChatId;
     const changes: DataRecord[] = [record("entity", entity)];
     // Only one protagonist per world. Do not touch any original description.
-    if (entity.characterSheet!.protagonist) for (const e of entities) if (e.id !== entity.id && e.characterSheet?.protagonist) changes.push(record("entity", { ...e, characterSheet: { ...e.characterSheet, protagonist: false }, updatedAt: Math.max(now, e.updatedAt + 1) }));
+    if (entity.characterSheet!.protagonist && !localMergeProfile(entity.id, stored)) for (const e of entities) if (e.id !== entity.id && e.characterSheet?.protagonist) changes.push(record("entity", { ...e, characterSheet: { ...e.characterSheet, protagonist: false }, updatedAt: Math.max(now, e.updatedAt + 1) }));
     const presentIds = (scene?.presentIds ?? []).filter(id => id !== entity.id);
     if (edit.present) presentIds.push(entity.id);
     if (presentIds.length > 12) throw new Error("character-limit");
@@ -107,7 +112,10 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
 export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, actions: string[] = DEFAULT_ACTIONS, repo: DeepRoleRepository = repository, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false): Promise<void> {
   if (turn.world !== scope.worldId || turn.chat !== scope.chatId || turn.base !== scope.base) throw new Error("character-scope");
   await repo.updateRecords(all => {
-    return planCharacterTurn(all, scope, turn, actions, namedIds, relationshipsEnabled, generatedSelfiesEnabled);
+    const plan = planCharacterTurn(all, scope, turn, actions, namedIds, relationshipsEnabled, generatedSelfiesEnabled);
+    const world = all.find(r => r.kind === "world" && r.id === scope.worldId)?.data as WorldProfile | undefined;
+    if (plan.records.length && world?.sharedGame && scope.replyText?.trim()) plan.records.push({ kind: "world", id: world.id, data: { ...world, sharedGame: { ...world.sharedGame, recentStory: boundStory([...(world.sharedGame.recentStory?.turns ?? []), { role: "assistant", text: storyReplyProse(scope.replyText) }], "page", true, world.sharedGame.recentStory?.omittedTurns ?? 0), recentChatId: scope.chatId } } });
+    return plan;
   });
 }
 
@@ -118,9 +126,10 @@ export function planCharacterTurn(all: DataRecord[], scope: CharacterScope, turn
     // A replay-owned scene must not be overwritten by the legacy DOM writer.
     // An unselected checkpoint does not disable ordinary roleplay updates.
     if (!chronicle && storySceneOwner(all, binding, scope.worldId)) throw new Error("character-story-managed");
-    const now = Date.now(); const revision = createId("rev"); const changes: DataRecord[] = []; const mapping = new Map(entities.map(e => [e.id, e.id]));
+    const roster = currentStoryProfileEntities(entities, all.filter(r => r.kind === "story").map(r => r.data as import("../core/story-records").StoryRecord), scope.worldId, scope.chatId, binding.id);
+    const now = Date.now(); const revision = createId("rev"); const changes: DataRecord[] = []; const mapping = new Map(roster.map(e => [e.id, e.id]));
     const names = new Map<string, string | null>();
-    for (const entity of entities) for (const name of [entity.name, ...entity.aliases]) {
+    for (const entity of roster) for (const name of [entity.name, ...entity.aliases]) {
       const key = name.trim().toLocaleLowerCase();
       if (!key) continue;
       names.set(key, names.has(key) && names.get(key) !== entity.id ? null : entity.id);
@@ -163,7 +172,7 @@ export function planCharacterTurn(all: DataRecord[], scope: CharacterScope, turn
     const partnerId = turn.partner ? resolve(turn.partner) : turn.partner;
     if (turn.partner && (!partnerId || !presentIds.includes(partnerId))) throw new Error("character-unknown");
     const partnerIds = turn.partners?.map(resolve);
-    const allPeople = [...entities, ...changes.map(r => r.data as SceneEntity)];
+    const allPeople = [...roster, ...changes.map(r => r.data as SceneEntity)];
     let relationshipNotice: "unverified" | "limited" | undefined;
     let rejected = 0; let changed = false;
     const hero = allPeople.find(e => e.characterSheet?.protagonist);

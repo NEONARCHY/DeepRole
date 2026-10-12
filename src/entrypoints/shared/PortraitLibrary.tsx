@@ -1,11 +1,12 @@
 import { Select } from "./Select";
 import { usePortraitUploadChoice } from "./PortraitUploadChoice";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Trash2, Upload, Maximize2 } from "lucide-react";
+import { Check, Trash2, Upload, Maximize2, X } from "lucide-react";
 import type { CharacterSheet, Locale } from "../../core/types";
 import { actionLabel, actionOptionLabel } from "../../core/characters";
 import { assignLibraryActions, libraryImages, withPortraitLibrary } from "../../core/portrait-library";
 import { portraitVariations } from "../../core/portrait-variations";
+import { searchPortraitActions } from "../../core/portrait-action-search";
 import { readPortraitFiles } from "./portrait-file";
 import { getSettings, updateSettings } from "../../storage/settings";
 import { DEFAULT_PORTRAIT_PREVIEW_SIZE, validPortraitPreviewSize } from "../../core/portrait-upload";
@@ -20,8 +21,8 @@ const copy = {
 export const portraitLibraryTitle = (locale: Locale) => copy[locale].title;
 export const portraitLibraryFull = (locale: Locale) => copy[locale].full;
 const selectionCopy = (locale: Locale) => ({
-  ru: { all: "Выбрать видимые", ready: "Картинки загружены. Выберите действие и нажмите «Назначить действия».", selection: "Выбранные изображения", assigned: "Уже с действиями", formats: "PNG, JPG, WebP" },
-  en: { all: "Select visible", ready: "Images uploaded. Choose an action, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP" },
+  ru: { search: "Найти эмоцию или действие", clearSearch: "Сбросить поиск эмоций", noMatches: "Ничего не найдено", matches: "Найдено", targets: "К назначению", kept: "уже выбрано", all: "Выбрать видимые", ready: "Картинки загружены. Выберите действие и нажмите «Назначить действия».", selection: "Выбранные изображения", assigned: "Уже с действиями", formats: "PNG, JPG, WebP" },
+  en: { search: "Find an emotion or action", clearSearch: "Clear emotion search", noMatches: "No matches", matches: "Matches", targets: "Assigning to", kept: "already selected", all: "Select visible", ready: "Images uploaded. Choose an action, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP" },
 }[locale]);
 
 export function PortraitLibrary({ sheet, locale, actions, action, onAction, onChange, onBusy }: { sheet: CharacterSheet; locale: Locale; actions: string[]; action: string; onAction: (value: string) => void; onChange: (sheet: CharacterSheet) => void; onBusy: (busy: boolean) => void }) {
@@ -33,6 +34,11 @@ export function PortraitLibrary({ sheet, locale, actions, action, onAction, onCh
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [extraActions, setExtraActions] = useState<string[]>([]);
   const targets = [...new Set([action, ...extraActions])].filter(value => actions.includes(value));
+  const [actionQuery, setActionQuery] = useState("");
+  const searchInput = useRef<HTMLInputElement>(null);
+  const matchedActions = useMemo(() => searchPortraitActions(actions, actionQuery), [actions, actionQuery]);
+  // A filter must not silently choose a different action or remove hidden choices.
+  const assignmentOptions = actions.includes(action) && !matchedActions.includes(action) ? [...matchedActions, action] : matchedActions;
   const [error, setError] = useState(""); const [status, setStatus] = useState("");
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { void getSettings().then(settings => {
@@ -85,11 +91,20 @@ export function PortraitLibrary({ sheet, locale, actions, action, onAction, onCh
       const index = images.indexOf(image); const names = assignments(image); const active = picked.includes(image);
       return <article key={image}><button type="button" className="dr-library-image" aria-label={`${t.select} ${index + 1}`} aria-pressed={active} onClick={() => { setSelected(active ? picked.filter(value => value !== image) : [...picked, image]); setError(""); setStatus(""); }}><img src={image} alt="" loading="lazy" />{active && <span><Check size={16} /></span>}</button><button type="button" className="dr-library-view" aria-label={`${photoCopy(locale).open} ${index + 1}`} onClick={event => openPortraitViewer(event.currentTarget.ownerDocument, image, names.join(", ") || t.title, locale)}><Maximize2 size={14} />{portraitUploadText(locale, "view")}</button><small title={names.join(", ")}>{names.length ? names.join(", ") : t.unassigned}</small>{!names.length && <button type="button" aria-label={`${t.remove} ${index + 1}`} onClick={() => { onChange(withPortraitLibrary(sheet, images.filter(value => value !== image))); setSelected(picked.filter(value => value !== image)); }}><Trash2 size={14} /></button>}</article>;
     })}{!shown.length && <p className="dr-character-hint">{filter && images.length ? t.unassigned + ": 0" : t.empty}</p>}</div>
-    <div className="dr-library-assign" role="group" aria-label={ui.selection}><span>{t.selected(picked.length)}</span><button type="button" disabled={!picked.length} onClick={() => setSelected([])}>{t.clear}</button><label>{t.action}<Select data-portrait-preview value={action} onChange={event => { onAction(event.target.value); setError(""); }}>{actions.map(value => <option key={value} value={value}>{actionOptionLabel(locale, value)}</option>)}</Select></label><button type="button" className={picked.length ? "dr-library-primary" : undefined} disabled={!picked.length} onClick={() => {
+    <div className="dr-library-action-search">
+      <input ref={searchInput} type="search" data-portrait-preview aria-label={ui.search} placeholder={ui.search} value={actionQuery} maxLength={80} onChange={event => setActionQuery(event.target.value)} onKeyDown={event => {
+        if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); }
+        if (event.key === "Escape" && actionQuery) { event.preventDefault(); event.stopPropagation(); setActionQuery(""); }
+      }} />
+      <button type="button" aria-label={ui.clearSearch} title={ui.clearSearch} disabled={!actionQuery} onClick={() => { setActionQuery(""); searchInput.current?.focus({ preventScroll: true }); }}><X size={16} aria-hidden="true" /></button>
+    </div>
+    {actionQuery.trim() && <p className="dr-character-hint" role="status">{matchedActions.length ? `${ui.matches}: ${matchedActions.length}` : ui.noMatches}</p>}
+    <div className="dr-library-assign" role="group" aria-label={ui.selection}><span>{t.selected(picked.length)}</span><button type="button" disabled={!picked.length} onClick={() => setSelected([])}>{t.clear}</button><label>{t.action}<Select data-portrait-preview value={action} onChange={event => { onAction(event.target.value); setError(""); }}>{assignmentOptions.map(value => <option key={value} value={value}>{actionOptionLabel(locale, value)}{!matchedActions.includes(value) ? ` · ${ui.kept}` : ""}</option>)}</Select></label><button type="button" className={picked.length ? "dr-library-primary" : undefined} disabled={!picked.length} onClick={() => {
       try { if (!targets.length) return; onChange(assignLibraryActions(sheet, targets, picked)); setSelected([]); setError(""); setStatus(t.assigned(picked.length, targets.map(value => actionLabel(locale, value)).join(", "))); }
       catch (error) { setError(error instanceof Error && error.message === "portrait-actions-full" ? t.actionFull : t.noRoom); }
     }}>{t.assign}</button></div>
-    <details className="dr-library-actions"><summary>{t.more}{targets.length > 1 ? ` · ${targets.length}` : ""}</summary><p className="dr-character-hint">{t.shared}</p><div>{actions.filter(value => value !== action).map(value => <label key={value} className="dr-character-check"><input type="checkbox" data-portrait-preview checked={extraActions.includes(value)} onChange={event => { setExtraActions(event.target.checked ? [...extraActions, value] : extraActions.filter(item => item !== value)); setError(""); setStatus(""); }} />{actionOptionLabel(locale, value)}</label>)}</div></details>
+    {(actionQuery.trim() || targets.length > 1) && <p className="dr-character-hint dr-library-targets">{ui.targets}: {targets.map(value => actionLabel(locale, value)).join(", ")}</p>}
+    <details className="dr-library-actions"><summary>{t.more}{targets.length > 1 ? ` · ${targets.length}` : ""}</summary><p className="dr-character-hint">{t.shared}</p><div>{matchedActions.filter(value => value !== action).map(value => <label key={value} className="dr-character-check"><input type="checkbox" data-portrait-preview checked={extraActions.includes(value)} onChange={event => { setExtraActions(event.target.checked ? [...extraActions, value] : extraActions.filter(item => item !== value)); setError(""); setStatus(""); }} />{actionOptionLabel(locale, value)}</label>)}</div></details>
     {error && <p className="error-text" role="alert">{error}</p>}
     <p className="dr-character-hint" role="status">{progress ? t.progress(progress.done, progress.total) : status}</p>
   </section>;

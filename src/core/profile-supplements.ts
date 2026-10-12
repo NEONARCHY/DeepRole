@@ -3,7 +3,7 @@ import { validDiscoveryProfile, type DiscoveryProfile } from "./discovery-profil
 import { validNativeStoryId } from "./story-transport";
 import { validStoryReviewGuard, type StoryReviewGuard } from "./story-review";
 import { validProfileVersions } from "./story-profile-view";
-export { validProfileVersions, storyProfileEntities, currentStoryProfileEntities, appendProfileText } from "./story-profile-view";
+export { validProfileVersions, storyProfileEntities, currentStoryProfileEntities, storyProfileRecords, appendProfileText } from "./story-profile-view";
 import type { ProfileFieldRevisions } from "./story-profile-view";
 export type { ProfileFieldRevisions } from "./story-profile-view";
 

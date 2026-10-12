@@ -52,8 +52,10 @@ describe("published bilingual feature pages", () => {
       expect(markdown).toContain("200");
       expect(markdown).toContain("360");
     }
-    expect(readFileSync("README.md", "utf8")).toContain("saved only after you review and approve");
-    expect(readFileSync("docs/README.ru.md", "utf8")).toContain("после вашей проверки и подтверждения");
+    expect(readFileSync("README.md", "utf8")).toContain("Explicit lore-rewrite proposals still need approval");
+    expect(readFileSync("README.md", "utf8")).toContain("Automatic game accompaniment");
+    expect(readFileSync("docs/README.ru.md", "utf8")).toContain("Предложения переписать исходный лор по-прежнему требуют согласия");
+    expect(readFileSync("docs/README.ru.md", "utf8")).toContain("Автоматическое сопровождение игры");
   });
   it("describes automatic recovery delivery, its transfer limit and the distinction from rewriting old turns", () => {
     const en = readFileSync("README.md", "utf8"), ru = readFileSync("docs/README.ru.md", "utf8");

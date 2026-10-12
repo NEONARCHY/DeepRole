@@ -73,7 +73,7 @@
 .app-shell .action-card.primary { border-color: var(--dr-primary); background: var(--dr-surface); }
 .app-shell .action-card strong { font-size: 14px; }
 .app-shell .action-card small { font-size: 12px; line-height: 1.45; color: var(--dr-muted); }
-.app-shell .bottom-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 16px; }
+.app-shell .bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 8px 16px; }
 .app-shell .bottom-nav button { min-height: 48px; font-size: 12px; }
 .app-shell .dr-section-guide, .dr-root .dr-section-guide { margin: 0; padding: 0; border: 0; }
 .app-shell .dr-section-guide p, .dr-root .dr-section-guide p { margin: 0; color: var(--dr-muted); font-size: 13px; line-height: 1.55; }

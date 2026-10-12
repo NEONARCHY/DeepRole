@@ -8,6 +8,7 @@ import { getSettings, saveSettings } from "./settings";
 import { validDataRecord, parseBackupSettings } from "../core/record-validation";
 import { importFileTooLarge } from "../core/import-limits";
 import { assertStoryGraph, canonicalStoryValue } from "../core/story-records";
+import { validPortablePhotos } from "../core/portable-photos";
 import { ServiceAuditOutbox } from "./service-outbox";
 import { assertDispatchCaptureGraph } from "./story-dispatch-capture";
 
@@ -15,10 +16,15 @@ export async function createBackup(
   password?: string,
   repo: DeepRoleRepository = repository,
 ): Promise<BackupPayload | EncryptedEnvelope> {
+  const payload = await createBackupContent(repo,true);
+  return password ? encryptJson(payload,password) : payload;
+}
+export async function createBackupContent(repo: DeepRoleRepository = repository,expandPhotos = true): Promise<BackupPayload> {
   // Pending metadata is not itself exported as authority/executable work.
   // Drain accessible outcomes first; unresolved bindings remain explicitly pending.
   await new ServiceAuditOutbox(repo).flush();
-  const records = await repo.portableRecords((await repo.rawRecords()).filter(record => record.kind !== "cast"));
+  const raw = (await repo.rawRecords()).filter(record => record.kind !== "cast");
+  const records = expandPhotos ? await repo.portableRecords(raw) : raw;
   assertStoryGraph(records);
   assertDispatchCaptureGraph(records);
   const payload: BackupPayload = {
@@ -28,9 +34,9 @@ export async function createBackup(
     records,
     settings: await getSettings(),
   };
-  const bytes = new Blob([JSON.stringify(payload)]).size;
-  if (importFileTooLarge(bytes, "backup")) throw new Error("backupTooLarge");
-  return password ? encryptJson(payload, password) : payload;
+  // No application size quota; avoid constructing a second giant JSON string.
+
+  return payload;
 }
 
 export async function parseBackup(text: string, password?: string): Promise<BackupPayload> {
@@ -56,11 +62,14 @@ export async function restoreBackup(
   mode: "merge" | "replace",
   repo: DeepRoleRepository = repository,
 ): Promise<void> {
-  payload = structuredClone(payload);
+  // Strings are immutable. Snapshot metadata and table entries without copying
+  // hundreds of megabytes of image text a second time during restoration.
+  const { photos, ...metadata } = payload;
+  payload = { ...structuredClone(metadata), ...(photos ? { photos: photos.map(photo => ({ ...photo })) } : {}) };
   payload = { ...payload, records: payload.records.map(normalizeActionRecord) };
   validateBackup(payload);
   const incomingRecords = payload.records.map(record => record.kind === "service" || record.kind === "dispatch" ? { ...record, data: { ...(record.data as import("../core/service-operations").ServiceOperation | import("../core/story-dispatch-capture").StoryDispatchCapture), origin: "restored" as const } } : record);
-  if (mode === "replace") await repo.replaceRecords(incomingRecords, () => saveSettings(parseBackupSettings(payload.settings)));
+  if (mode === "replace") await repo.replaceRecords(incomingRecords, () => saveSettings(parseBackupSettings(payload.settings)),payload.photos);
   else await repo.updateRecords((existing) => {
     for (const record of payload.records.filter(r => r.kind === "service" || r.kind === "dispatch")) {
       const previous = existing.find(r => r.kind === record.kind && r.id === record.id);
@@ -78,7 +87,7 @@ export async function restoreBackup(
     assertStoryGraph([...existing, ...incoming]);
     assertDispatchCaptureGraph([...existing, ...incoming]);
     return { records: incoming, removed: [], result: undefined };
-  });
+  },undefined,undefined,payload.photos);
 }
 
 export function backupFileName(encrypted: boolean): string {
@@ -89,18 +98,19 @@ export function backupFileName(encrypted: boolean): string {
 function validateBackup(value: BackupPayload): void {
   if (
     value?.format !== "deeprole-backup" ||
-    ![1, 2, 3, 4].includes(value.version) ||
+    ![1, 2, 3, 4, 5].includes(value.version) ||
     !Array.isArray(value.records) ||
     typeof value.exportedAt !== "string" || !Number.isFinite(Date.parse(value.exportedAt))
   ) {
     throw new Error("Invalid DeepRole backup");
   }
   parseBackupSettings(value.settings);
+  if (value.version === 5 && !validPortablePhotos(value.photos,value.records) || value.version !== 5 && value.photos !== undefined) throw Error("Invalid DeepRole backup");
   const keys = new Set<string>();
   for (const record of value.records) {
     if (value.version === 1 && record.kind === "story") throw new Error("Invalid DeepRole backup");
-    if (value.version < 3 && record.kind === "service" || value.version !== 4 && record.kind === "dispatch") throw new Error("Invalid DeepRole backup");
-    if (!validDataRecord(record) || hasInternalPhotoAddresses(record.kind, record.data)) throw new Error("Invalid DeepRole backup");
+    if (value.version < 3 && record.kind === "service" || value.version < 4 && record.kind === "dispatch") throw new Error("Invalid DeepRole backup");
+    if (!validDataRecord(record) || value.version !== 5 && hasInternalPhotoAddresses(record.kind, record.data)) throw new Error("Invalid DeepRole backup");
     const key = `${record.kind}:${record.id}`;
     if (keys.has(key)) throw new Error("Invalid DeepRole backup");
     keys.add(key);

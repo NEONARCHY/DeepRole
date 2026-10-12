@@ -9,13 +9,17 @@ import { StoryDiagnosticsClient } from "../adapters/story-diagnostics-client";
 import { StoryDispatchCaptureClient } from "../adapters/story-dispatch-capture-client";
 import { StoryDispatchReplyClient } from "../adapters/story-dispatch-reply-client";
 import { StoryGameClient } from "../adapters/story-game-client";
+import { worldGameBinding, worldGamePeople, type WorldGameActivation } from "../core/world-game";
 import { storyUpdateInstruction, type StoryFact } from "../core/story-update";
+import { storyAutomationInstruction } from "../core/story-automation";
 import { storyFactContext } from "../core/story-fact-context";
 import { storyUpdateText } from "../core/story-update-i18n";
 import { StoryRepairClient } from "../adapters/story-repair-client";
 import { CharacterDiscoveryClient } from "../adapters/character-discovery-client";
+import { runDiscoveryProfileQueue } from "../adapters/discovery-profile-queue";
+import { validDiscoveryQueueInput, type DiscoveryQueueInput } from "../core/discovery-profile-queue";
 import { validCharacterDiscoveryInput, validDiscoveryProfileInput, type CharacterDiscoveryInput, type DiscoveryProfileInput } from "../core/story-character-discovery";
-import { validSupplementInput, currentStoryProfileEntities, type SupplementInput } from "../core/profile-supplements";
+import { validSupplementInput, currentStoryProfileEntities, storyProfileRecords, type SupplementInput } from "../core/profile-supplements";
 import { storyReviewError, storyReviewText } from "../core/story-review-i18n";
 import { relationshipNarrative } from "../core/relationships";
 import { observePhotoImages } from "../adapters/photo-loader";
@@ -49,9 +53,10 @@ import { getImageSettings, IMAGE_SETTINGS_KEY } from "../storage/image-settings"
 import { DEFAULT_IMAGE_SETTINGS, MAX_IMAGE_PLAN_TEXT, type Illustration, type ImageSettings } from "../core/image-generation";
 import { imageText, imageErrorKey } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
+import { oldChatNotice, oldChatNoticePrompt, type OldChatNoticeEdit } from "../core/old-chat-notice";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
 import { continuationKey, continuationScopeMatches, recentSceneReference, type ContinuationFlow } from "../core/continuation-flow";
-import { boundStory } from "../core/story-continuation";
+import { boundStory, continuationContext } from "../core/story-continuation";
 import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
 import type { StoryContinuation } from "../core/types";
@@ -95,6 +100,7 @@ import { PageWidget, type WidgetState } from "./content/PageWidget";
 import { pendingActivity, serviceActivity, SERVICE_TIMEOUT_MS, type ServiceActivity } from "../core/memory-experience";
 import "./content/page-widget.css";
 import "./shared/help.css";
+import "./shared/settings-help.css";
 import { contentRepository as repository } from "../storage/content-repository";
 import { getSettings, updateSettings, storageKeys } from "../storage/settings";
 import { LIBRARY_CHANGE_KEY } from "../storage/changes";
@@ -145,6 +151,7 @@ export default defineContentScript({
 
 interface PageScope { url: string; chatId: string | null }
 interface ContextDelivery {
+  oldChatNotice?: OldChatNoticeEdit;
   recoveredReply?: RecoveredReplyEdit;
   targetChatId?: string;
   characterRequest?: CharacterRequestReceipt;
@@ -175,7 +182,7 @@ class PageController {
   private readonly dispatchReplies = new StoryDispatchReplyClient(window, () => ({ chatId: this.adapter.getChatId(), worldId: this.currentScene().worldId, url: location.href, locked: this.state.vaultLocked }), repository);
   private readonly storyGame = new StoryGameClient(window, () => {
     const worldId = this.currentScene().worldId;
-    return { chatId: this.adapter.getChatId(), worldId, managed: this.trackedBindings.has(this.currentBinding()?.id ?? ""), base: characterRevision(this.entities.filter(e => e.worldId === worldId && e.kind === "character" && characterInChat(e, this.adapter.getChatId())), worldId ? this.currentBinding()?.characterScenes?.[worldId] : undefined), url: location.href, locked: this.state.vaultLocked, generating: this.adapter.isGenerating() };
+    return { chatId: this.adapter.getChatId(), worldId, managed: this.sharedGameActive() && this.trackedBindings.has(this.currentBinding()?.id ?? ""), base: characterRevision(this.entities.filter(e => e.worldId === worldId && e.kind === "character" && characterInChat(e, this.adapter.getChatId())), worldId ? this.currentBinding()?.characterScenes?.[worldId] : undefined), url: location.href, locked: this.state.vaultLocked, generating: this.adapter.isGenerating() };
   }, repository);
   private storyGameScanKey: string | null = null;
   private trackedBindings = new Set<string>();
@@ -270,6 +277,7 @@ class PageController {
   private serviceRetryTimer = 0;
   private updateTimer = 0;
   private processingService = false;
+  private oldChatNoticeReceiptTask: Promise<void> = Promise.resolve();
   private contextIndicatorPosition: { xRatio: number; yRatio: number } | null = null;
   private anchorRenderFrame = 0;
 
@@ -390,7 +398,14 @@ class PageController {
     });
     if (generation !== this.reloadGeneration) return false;
     if (!loaded) { this.clearPrivateState(); await this.updateContext(); return true; }
-    const [records, pending] = loaded;
+    let [records, pending] = loaded;
+    const current = libraryRecords<ChatBinding>(records, "binding").find(b => b.chatId === this.adapter.getChatId());
+    const currentWorld = libraryRecords<WorldProfile>(records, "world").find(w => w.id === current?.worldId);
+    if (current && currentWorld && !currentWorld.sharedGame && !pending?.service) {
+      try { await repository.activateWorldGame({ chatId: current.chatId, chatUrl: location.href, worldId: currentWorld.id, expectedRevision: null, mode: "initialize" }); } catch (error) { if (!(error instanceof Error && error.message === "story-game-stale")) throw error; }
+      records = await repository.rawRecords();
+      if (generation !== this.reloadGeneration) return false;
+    }
     this.illustrations = libraryRecords<Illustration>(records, "illustration");
     for (const record of pending?.contextWarnings ?? (pending?.contextWarning ? [pending.contextWarning] : [])) {
       const seen = this.seenContextWarnings.find(v => v.chatId === record.chatId && v.capacity === record.capacity);
@@ -403,7 +418,7 @@ class PageController {
     this.bindings = libraryRecords<ChatBinding>(records, "binding"); this.snapshots = libraryRecords<HandoffSnapshot>(records, "snapshot");
     this.replyRecovery.configure(this.adapter.getChatId(), location.href, this.settings.replyRecoveryEnabled !== false && !this.adapter.isAuthenticationPage(), this.state.locale, this.currentBinding()?.recoveredReplies);
     this.worlds = libraryRecords<WorldProfile>(records, "world"); this.entities = libraryRecords<SceneEntity>(records, "entity");
-    this.storyRecords = records.filter(r => r.kind === "story").map(r => r.data as import("../core/story-records").StoryRecord).filter(r => ["baseline", "branch", "projection"].includes(r.type) || r.type === "event" && !!r.profileSupplement);
+    this.storyRecords = storyProfileRecords(records);
     const gameBranches = new Set(records.flatMap(r => r.kind === "story" && (r.data as import("../core/story-records").StoryRecord).type === "branch" && (r.data as import("../core/story-records").StoryBranch).gameManaged ? [r.id] : []));
     this.trackedBindings = new Set(records.flatMap(r => r.kind === "story" && (r.data as import("../core/story-records").StoryRecord).type === "baseline" && gameBranches.has((r.data as import("../core/story-records").StoryBaseline).branchId) ? [(r.data as import("../core/story-records").StoryBaseline).origin.bindingId] : []));
     const revisions = new Map(records.flatMap(r => r.kind === "story" && (r.data as import("../core/story-records").StoryRecord).type === "revision" ? [[r.id, r.data as import("../core/story-records").StoryRevision] as const] : []));
@@ -573,6 +588,7 @@ class PageController {
     this.scenePhotos.clear(); this.imagePresenter.clear(); this.illustrations = []; closePortraitViewer(); clearSelfieImageCache();
     this.replyRecovery.reset();
     this.state.contextCapacityWarning = null;
+    this.state.oldChatNotice = null;
     this.storyRead?.resolve(null); this.storyRead = null;
     window.clearTimeout(this.historyRefreshTimer);
     this.historyRefreshTimer = 0;
@@ -605,7 +621,7 @@ class PageController {
     this.state.selectionText = ""; this.state.selectionPosition = null;
   }
 
-  private overrides(): MemoryOverrides { return this.adapter.getChatId() ? this.currentBinding()?.memoryOverrides ?? EMPTY_OVERRIDES : this.draftOverrides; }
+  private overrides(): MemoryOverrides { return this.adapter.getChatId() ? this.sharedBinding()?.memoryOverrides ?? EMPTY_OVERRIDES : this.draftOverrides; }
 
   private async overrideMemory(id: string, action: "include" | "exclude" | "reset") {
     const scope = this.pageScope();
@@ -630,6 +646,23 @@ class PageController {
   private currentBinding(): ChatBinding | undefined {
     const chatId = this.adapter.getChatId();
     return chatId ? this.bindings.find((binding) => binding.chatId === chatId) : undefined;
+  }
+  private sharedBinding(): ChatBinding | undefined {
+    const binding = this.currentBinding();
+    return worldGameBinding(binding, this.worlds.find(w => w.id === binding?.worldId));
+  }
+  private sharedGameActive(): boolean {
+    const binding = this.currentBinding(), game = this.worlds.find(w => w.id === binding?.worldId)?.sharedGame;
+    return !game || game.activeBindingId === binding?.id;
+  }
+  private async activateGame(mode: WorldGameActivation["mode"] = "resume") {
+    const scope = this.pageScope(), binding = this.currentBinding(), world = this.worlds.find(w => w.id === binding?.worldId);
+    if (!binding || !world) return;
+    await repository.activateWorldGame({ chatId: binding.chatId, chatUrl: scope.url, worldId: world.id, expectedRevision: world.sharedGame?.revision ?? null, mode });
+    this.assertScope(scope); await this.reload();
+    if (this.worlds.find(w => w.id === world.id)?.sharedGame?.managed && !this.trackedBindings.has(this.currentBinding()?.id ?? "")) {
+      await this.storyGame.run("start"); await this.reload();
+    }
   }
 
   private currentScene(): SceneState {
@@ -666,8 +699,10 @@ class PageController {
     if (chatId) {
       const existing = this.currentBinding();
       const binding: ChatBinding = withHandoffCharacters({ ...existing, memoryOverrides: changedWorld ? EMPTY_OVERRIDES : this.overrides(), id: existing?.id ?? `binding:${chatId}`, chatId, chatUrl: location.href, messageCountAtAnalysis: existing?.messageCountAtAnalysis ?? 0, createdAt: existing?.createdAt ?? Date.now(), ...scene, updatedAt: Date.now() }, carry ?? this.appliedSnapshot);
+      if (!existing && scene.worldId && this.worlds.find(w => w.id === scene.worldId)?.sharedGame) delete binding.characterScenes;
       await repository.putIfUnchanged("binding", binding, existing ?? null);
       this.bindings = [...this.bindings.filter((b) => b.chatId !== chatId), binding];
+      if (scene.worldId && (changedWorld || !existing)) await this.activateGame("attach");
     } else {
       this.draftScene = scene;
       await browser.runtime.sendMessage({ type: "DR_SAVE_DRAFT_SCENE", scene } satisfies DeepRoleMessage).catch(() => undefined);
@@ -687,28 +722,36 @@ class PageController {
   }
 
   private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string, requestChatId?: string) {
+    this.state.oldChatNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
     const scene = this.currentScene();
     const world = this.worlds.find((w) => w.id === scene.worldId);
     const chatId = this.adapter.getChatId();
-    const tracked = this.trackedBindings.has(this.currentBinding()?.id ?? "");
+    const tracked = this.sharedGameActive() && this.trackedBindings.has(this.currentBinding()?.id ?? "");
     const gameMode = tracked ? "active" : "";
     if (document.documentElement.dataset.deeproleStoryGame !== gameMode) document.documentElement.dataset.deeproleStoryGame = gameMode;
     const strictMode = this.settings.strictMemorySending && !this.pendingService ? "active" : "";
     if (document.documentElement.dataset.deeproleStrictMemory !== strictMode) document.documentElement.dataset.deeproleStrictMemory = strictMode;
     const recentMessages = tracked ? (this.trackedHistory.get(this.currentBinding()!.id) ?? []).slice(-this.settings.recentMessageCount) : this.adapter.getRecentMessages(this.settings.recentMessageCount);
-    const contextualEntities = scene.worldId && chatId ? currentStoryProfileEntities(this.entities, this.storyRecords, scene.worldId, chatId, this.currentBinding()?.id) : this.entities;
+    const contextualEntities = world?.sharedGame ? worldGamePeople(this.entities, world, this.storyRecords) : scene.worldId && chatId ? currentStoryProfileEntities(this.entities, this.storyRecords, scene.worldId, chatId, this.currentBinding()?.id) : this.entities;
     const canonicalEntities = new Map(this.entities.map(e => [e.id, e]));
     const characterEntities = contextualEntities.filter(e => e.worldId === scene.worldId && e.kind === "character" && characterInChat(e, chatId));
-    const characterScene = world ? this.currentBinding()?.characterScenes?.[world.id] ?? handoffCharacterScene(this.appliedSnapshot, world.id) : undefined;
+    const characterScene = world ? this.sharedBinding()?.characterScenes?.[world.id] ?? world.sharedGame?.scene ?? handoffCharacterScene(this.appliedSnapshot, world.id) : undefined;
     const profilesEnabled = !!(world && this.settings.characterSheetsEnabled && !this.state.vaultLocked);
     const sheetsEnabled = profilesEnabled && !!chatId;
-    const characterContext = profilesEnabled ? characterInstruction(world!.id, chatId ?? requestChatId ?? "", characterEntities, characterScene, actionsFor(world?.characterActions ?? this.settings.characterActions), scene.focusIds, [draft, ...recentMessages.slice(-2)].join("\n"), characterRequestId, this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, !!this.pendingService || this.currentBinding()?.nextStoryMessageMode === "out-of-character", this.imageSettings.enabled && isSelfieRequest(draft)) : "";
+    let characterContext = profilesEnabled ? characterInstruction(world!.id, chatId ?? requestChatId ?? "", characterEntities, characterScene, actionsFor(world?.characterActions ?? this.settings.characterActions), scene.focusIds, [draft, ...recentMessages.slice(-2)].join("\n"), characterRequestId, this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, !!this.pendingService || this.currentBinding()?.nextStoryMessageMode === "out-of-character", this.imageSettings.enabled && isSelfieRequest(draft)) : "";
+    if (world?.sharedGame?.restartPending && !this.pendingService) characterContext += "\n<deeprole_context version=\"1\">A new game of this lore has been explicitly started. Previous chat events belong to the archived game. Use the world lore and initial character values, and begin a new scene following the user. Do not continue the previous game or mention this technical block.</deeprole_context>";
+    const recentGame = world?.sharedGame;
+    if (!this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId) {
+      const limit = Math.max(240, Math.min(2400, world!.contextBudget));
+      const excerpt = boundStory(recentGame.recentStory.turns.slice(-2).map(t => ({ ...t, text: t.text.slice(-Math.floor(limit / 2)) })), recentGame.recentStory.source, true, recentGame.recentStory.omittedTurns);
+      characterContext += "\n" + continuationContext(excerpt);
+    }
     const gameBranch = this.trackedBranches.get(this.currentBinding()?.id ?? "");
     const storyContext = tracked && gameBranch && world && chatId && !this.pendingService && this.currentBinding()?.nextStoryMessageMode !== "out-of-character"
-      ? [storyFactContext(this.trackedFacts.get(this.currentBinding()!.id) ?? [], Math.min(600, Math.max(0, (world ?? this.settings).contextBudget / 4))), storyUpdateInstruction(world.id, chatId, gameBranch), !this.settings.characterSheetsEnabled ? "Character sheet updates are disabled: omit updates/present/partners/attributes/bonds/selfies; propose evidenced facts only." : ""].filter(Boolean).join("\n\n") : "";
+      ? [storyFactContext(world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [], Math.min(600, Math.max(0, (world ?? this.settings).contextBudget / 4)), draft), storyUpdateInstruction(world.id, chatId, gameBranch), storyAutomationInstruction(world), !this.settings.characterSheetsEnabled ? "Character sheet updates are disabled: omit updates/present/partners/attributes/bonds/selfies; propose evidenced facts only." : ""].filter(Boolean).join("\n\n") : "";
     const characterScope = `${scene.worldId}:${chatId}`;
     if (this.characterScan && this.characterScan.scope !== characterScope) { this.characterScan = null; this.characterStatus = "idle"; }
-    this.state.characters = sheetsEnabled ? { storyProfileIds: characterEntities.filter(e => e !== canonicalEntities.get(e.id)).map(e => e.id), relationshipsEnabled: this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, relationshipDisplay: this.settings.relationshipDisplay, worldId: world!.id, chatId: chatId!, base: characterRevision(characterEntities, characterScene), entities: characterEntities, scene: characterScene, actions: actionsFor(world?.characterActions ?? this.settings.characterActions), status: this.characterStatus, openId: this.state.characters?.openId } : undefined;
+    this.state.characters = sheetsEnabled ? { storyProfileIds: characterEntities.filter(e => e !== canonicalEntities.get(e.id)).map(e => e.id), relationshipsEnabled: this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, relationshipDisplay: this.settings.relationshipDisplay, worldId: world!.id, chatId: chatId!, base: characterRevision(this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character" && characterInChat(e, chatId)), characterScene), entities: characterEntities, scene: characterScene, actions: actionsFor(world?.characterActions ?? this.settings.characterActions), status: this.characterStatus, openId: this.state.characters?.openId } : undefined;
     const overrides = this.overrides();
     const compiled = compileMemoryWorkspace({
       draft,
@@ -879,6 +922,12 @@ class PageController {
     this.state.contextPosition = this.resolveContextIndicatorPosition();
     this.root?.render(<PageWidget
       state={{ ...this.state, selection: this.selection }}
+      onStayInOldChat={async () => {
+        const notice = this.state.oldChatNotice, binding = this.currentBinding();
+        if (!notice || !binding) return;
+        await repository.acknowledgeOldChatNotice({ chatId: binding.chatId, chatUrl: location.href, worldId: binding.worldId ?? null, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "dismissed" });
+        await this.reload(); if (!this.sharedGameActive()) await this.activateGame("resume");
+      }}
       onContinueStory={() => void this.continueStory().then(result => { if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : result.error === "busy" ? "waiting" : result.error === "continuation-world-too-large" ? "tooLarge" : "failed")); })}
       onDismissCapacityWarning={() => void this.dismissCapacityWarning()}
       onDisableCapacityWarnings={() => void updateSettings({ contextWarningsEnabled: false }).then(() => this.reload())}
@@ -1052,6 +1101,7 @@ class PageController {
   }
 
   private async scanStoryWithoutCards() {
+    if (!this.sharedGameActive()) return;
     if (!this.trackedBindings.has(this.currentBinding()?.id ?? "") || this.state.vaultLocked || this.adapter.isGenerating() || this.pendingService) return;
     const response = latestCharacterResponse(); if (!response) return;
     const key = JSON.stringify([this.adapter.getChatId(), this.currentScene().worldId, nativeMessageIdentity(response.row), response.signature]);
@@ -1091,8 +1141,8 @@ class PageController {
     try { await task; } finally { if (this.metadataRepairTask === task) { this.metadataRepairTask = null; this.metadataRepairAbort = null; } this.scheduleScan(); }
   }
 
-  private async searchStoryCharacters(input: CharacterDiscoveryInput | DiscoveryProfileInput) {
-    if (!(validCharacterDiscoveryInput(input) || validDiscoveryProfileInput(input)) || input.chatId !== this.adapter.getChatId() || input.worldId !== this.currentScene().worldId) throw Error("story-binding-conflict");
+  private async searchStoryCharacters(input: CharacterDiscoveryInput | DiscoveryProfileInput | DiscoveryQueueInput) {
+    if (!(validCharacterDiscoveryInput(input) || validDiscoveryProfileInput(input) || validDiscoveryQueueInput(input)) || input.chatId !== this.adapter.getChatId() || input.worldId !== this.currentScene().worldId) throw Error("story-binding-conflict");
     if (this.characterDiscoveryTask || this.metadataRepairTask || this.state.vaultLocked || this.pendingService || this.preparingService || this.adapter.isGenerating() || this.adapter.getDraft().trim()) throw Error("story-checkpoint-busy");
     const url = location.href, anchor = fieldHistoryAnchor(document, true), abort = new AbortController(); this.characterDiscoveryAbort = abort;
     const current = () => !abort.signal.aborted && !this.state.vaultLocked && location.href === url && this.adapter.getChatId() === input.chatId && this.currentScene().worldId === input.worldId && fieldHistoryAnchor(document, true) === anchor && !this.adapter.isGenerating() && !this.adapter.getDraft().trim();
@@ -1100,6 +1150,11 @@ class PageController {
       const synced = await this.storyGame.run();
       if (!synced.active) throw Error("story-checkpoint-busy");
       let page = await repository.readCharacterDiscovery({ chatId: input.chatId, worldId: input.worldId, offset: 0, guard: input.guard }, url);
+      if ("operation" in input) return runDiscoveryProfileQueue(input, {
+        current, read: () => repository.readCharacterDiscovery({ chatId: input.chatId, worldId: input.worldId, offset: 0 }, url),
+        edit: async value => { const result = await browser.runtime.sendMessage({ type: "DR_FIELD", action: "discovery-queue", input: value }); if (!result?.ok) throw Error(result?.error ?? "request-failed"); },
+        prepare: value => this.characterDiscoveryClient.run(value, current, abort.signal),
+      });
       if ("eventId" in input) {
         await this.characterDiscoveryClient.run(input, current, abort.signal);
         return repository.readCharacterDiscovery({ chatId: input.chatId, worldId: input.worldId, offset: 0 }, url);
@@ -1126,6 +1181,7 @@ class PageController {
   }
 
   private async scanCharacterTurn() {
+    if (!this.sharedGameActive()) return;
     // Metadata repairs run in a separate owned worker lane.
     await this.characterReceiptTask;
     await this.dispatchCaptures.flush();
@@ -1945,6 +2001,7 @@ class PageController {
           await this.sceneQueue.catch(() => undefined);
           await this.replyRecovery.flush();
           await this.recoveryReceiptTask;
+          await this.oldChatNoticeReceiptTask;
           let task = this.reload();
           let loaded = await task;
           // Follow the newest in-flight snapshot instead of starting competing reads.
@@ -1952,6 +2009,16 @@ class PageController {
             task = this.reloadTask; loaded = await task;
           }
           if (!loaded || location.href !== url) throw new Error("context-changed");
+          const oldNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
+          if (!this.pendingService && requestChatId === this.adapter.getChatId() && !this.sharedGameActive() && oldNotice && (oldNotice.sent || oldNotice.dismissed)) {
+            await this.activateGame("resume"); loaded = await this.reload();
+            if (!loaded || location.href !== url) throw Error("context-changed");
+          }
+          const shared = this.worlds.find(w => w.id === this.currentScene().worldId)?.sharedGame;
+          if (!this.pendingService && requestChatId === this.adapter.getChatId() && this.sharedGameActive() && shared?.managed && !this.trackedBindings.has(this.currentBinding()?.id ?? "")) {
+            await this.storyGame.run("start"); loaded = await this.reload();
+            if (!loaded || location.href !== url) throw Error("context-changed");
+          }
           if ((storyIdentity || typeof event.data.editNativeKey === "string") && !this.pendingService) {
             const synced = await this.storyGame.run(storyIdentity ? "parent" : "edit", storyIdentity?.nativeParentKey ?? event.data.editNativeKey);
             if (synced.active && typeof event.data.editNativeKey === "string" && synced.preparedParentKey !== undefined && requestChatId) {
@@ -1981,14 +2048,17 @@ class PageController {
           const reply = this.settings.replyRecoveryEnabled !== false && !this.adapter.isAuthenticationPage() && currentChatId && requestChatId === currentChatId
             ? pendingRecoveredReply(this.currentBinding()?.recoveredReplies ?? [], parentMessageId) : undefined;
           const recoveryContext = reply ? recoveredReplyContext(reply) : "";
-          const context = [normalContext, recoveryContext].filter(Boolean).join("\n\n");
-          if (reply && recoveryContext) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
+          const notice = !this.pendingService && currentChatId && requestChatId === currentChatId ? oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds) : null;
+          const reminder = notice && !notice.sent && !notice.dismissed ? oldChatNoticePrompt(notice, this.state.locale) : "";
+          const context = reminder || [normalContext, recoveryContext].filter(Boolean).join("\n\n");
+          if (reminder && notice) delivery.oldChatNotice = { chatId: currentChatId!, chatUrl: url, worldId: scene.worldId, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "sent" };
+          if (reply && recoveryContext && !reminder) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
           if (await repository.isLocked()) { this.publishContext(""); throw new Error("vault-locked"); }
           this.assertScope(delivery.scope);
           if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
-          if (scene.worldId && characterChatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked) {
+          if (!reminder && scene.worldId && characterChatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked) {
             const entities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character" && characterInChat(e, characterChatId));
-            const characterScene = this.currentBinding()?.characterScenes?.[scene.worldId] ?? handoffCharacterScene(this.appliedSnapshot, scene.worldId);
+            const characterScene = this.currentBinding()?.characterScenes?.[scene.worldId] ?? this.worlds.find(w => w.id === scene.worldId)?.sharedGame?.scene ?? handoffCharacterScene(this.appliedSnapshot, scene.worldId);
             delivery.characterRequest = { id, worldId: scene.worldId, chatId: characterChatId, base: characterRevision(entities, characterScene), createdAt: Date.now(), accepted: false, generatedSelfiesEnabled: !this.pendingService && this.imageSettings.enabled && isSelfieRequest(draft), relationshipsEnabled: !this.pendingService && this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === scene.worldId)?.relationshipsEnabled !== false };
             if (storyIdentity) delivery.characterRequest.storyIdentity = storyIdentity;
             if (!await this.saveTabState({ characterRequest: delivery.characterRequest })) throw new Error("context-changed");
@@ -2017,6 +2087,11 @@ class PageController {
     const delivery = this.deliveries.get(event.data.id);
     this.deliveries.delete(event.data.id);
     if (event.data.ok && delivery) {
+      if (delivery.oldChatNotice) {
+        const edit = delivery.oldChatNotice;
+        this.oldChatNoticeReceiptTask = this.oldChatNoticeReceiptTask.then(() => repository.acknowledgeOldChatNotice(edit))
+          .then(async () => { if (delivery.scope.url === location.href) await this.reload(); }).catch(() => undefined);
+      }
       if (delivery.recoveredReply) {
         const edit = delivery.recoveredReply;
         this.recoveryReceiptTask = this.recoveryReceiptTask.then(() => repository.acknowledgeRecoveredReply(edit))
@@ -2059,6 +2134,28 @@ class PageController {
   }
 
   private async handleRuntimeMessage(message: DeepRoleMessage): Promise<unknown> {
+    if (message.type === "DR_STORY_MERGE") {
+      try {
+        const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId, url = location.href;
+        if (!chatId || !worldId || message.input?.chatId !== chatId || message.input?.worldId !== worldId) throw Error("story-binding-conflict");
+        if (message.action !== "read" && (this.characterDiscoveryTask || this.adapter.isGenerating() || this.pendingService)) throw Error("story-checkpoint-busy");
+        const data = message.action === "read" ? await repository.readStoryMerge(message.input, url) : message.action === "approve" ? await repository.approveStoryMerge(message.input, url) : await repository.undoStoryMerge(message.input, url);
+        if (message.action !== "read") await this.reload();
+        if (location.href !== url || chatId !== this.adapter.getChatId() || worldId !== this.currentScene().worldId) throw Error("story-binding-conflict");
+        return { ok: true, data };
+      } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "story-review-invalid" }; }
+    }
+    if (message.type === "DR_STORY_IDENTITIES") {
+      try {
+        const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId, url = location.href;
+        if (!chatId || !worldId || message.input?.chatId !== chatId || message.input?.worldId !== worldId) throw Error("story-binding-conflict");
+        if (message.action === "approve" && (this.characterDiscoveryTask || this.adapter.isGenerating() || this.pendingService)) throw Error("story-checkpoint-busy");
+        const data = message.action === "read" ? await repository.readStoryIdentities(message.input, url) : await repository.approveStoryIdentity(message.input, url);
+        if (message.action === "approve") await this.reload();
+        if (location.href !== url || chatId !== this.adapter.getChatId() || worldId !== this.currentScene().worldId) throw Error("story-binding-conflict");
+        return { ok: true, data };
+      } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "story-review-invalid" }; }
+    }
     if (message.type === "DR_STORY_PROFILE") {
       try {
         const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId, url = location.href;
@@ -2080,7 +2177,7 @@ class PageController {
         const chatId = this.adapter.getChatId(), worldId = this.currentScene().worldId, url = location.href;
         if (!chatId || !worldId || message.input?.chatId !== chatId || message.input?.worldId !== worldId) throw Error("story-binding-conflict");
         if (message.action === "cancel") { this.characterDiscoveryAbort?.abort(); return { ok: true, data: { cancelled: true } }; }
-        if (message.action === "run" || message.action === "profile") return { ok: true, data: await this.searchStoryCharacters(message.input) };
+        if (message.action === "run" || message.action === "profile" || message.action === "queue") return { ok: true, data: await this.searchStoryCharacters(message.input) };
         if (message.action === "approve") { if (this.characterDiscoveryTask || this.adapter.isGenerating() || this.pendingService) throw Error("story-checkpoint-busy"); await this.storyGame.run(); await repository.approveCharacterDiscovery(message.input, url); await this.reload(); }
         const data = await repository.readCharacterDiscovery(message.action === "read" ? message.input : { chatId, worldId, offset: 0 }, url);
         if (location.href !== url || chatId !== this.adapter.getChatId() || worldId !== this.currentScene().worldId) throw Error("story-binding-conflict");
@@ -2091,15 +2188,35 @@ class PageController {
       try { if (message.cancel) this.metadataRepairAbort?.abort(); else await this.startMetadataRepair(message.input); return { ok: true, data: { active: true, changed: true } }; }
       catch (error) { return { ok: false, error: error instanceof Error ? error.message : "request-failed" }; }
     }
+    if (message.type === "DR_AUTOMATION_READ" || message.type === "DR_AUTOMATION_RESOLVE") {
+      try {
+        const url = location.href;
+        if (message.input.chatId !== this.adapter.getChatId() || message.input.worldId !== this.currentScene().worldId) throw Error("story-binding-conflict");
+        if (message.type === "DR_AUTOMATION_RESOLVE" && (this.adapter.isGenerating() || this.pendingService)) throw Error("story-checkpoint-busy");
+        if (message.type === "DR_AUTOMATION_RESOLVE") await this.storyGame.run();
+        const data = message.type === "DR_AUTOMATION_READ" ? await repository.readAutomationReview(message.input,url) : await repository.resolveAutomationReview(message.input,url);
+        if (url !== location.href) throw Error("story-binding-conflict");
+        if (message.type === "DR_AUTOMATION_RESOLVE") await this.reload();
+        return { ok: true, data };
+      } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "story-review-invalid" }; }
+    }
     if (message.type === "DR_STORY_FACT") {
       try { await this.storyGame.run(); const data = await repository.approveStoryFact(message.input, location.href); await this.reload(); return { ok: true, data }; }
       catch (error) { return { ok: false, error: error instanceof Error ? error.message : "story-review-invalid" }; }
     }
+    if (message.type === "DR_RESUME_WORLD_GAME") {
+      try {
+        if (message.chatId !== this.adapter.getChatId() || message.worldId !== this.currentScene().worldId || this.pendingService || this.adapter.isGenerating()) throw Error("story-binding-conflict");
+        await this.reload(); await this.activateGame("resume"); this.characterScan = null; this.scheduleScan(); return { ok: true };
+      } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "story-game-inactive" }; }
+    }
     if (message.type === "DR_STORY_GAME") {
       try {
         if (this.pendingService || this.adapter.isGenerating()) throw Error("story-checkpoint-busy");
+        const storyUrl = location.href;
         await this.reload();
         const scope = this.currentScene();
+        if (message.scope && (location.href !== storyUrl || message.scope.worldId !== scope.worldId || message.scope.chatId !== this.adapter.getChatId())) throw Error("story-binding-conflict");
         const data = message.operation === "out-of-character" ? await repository.markNonStoryMessage(this.adapter.getChatId()!, scope.worldId!, location.href) : await this.storyGame.run(message.operation === "sync" ? "resume" : message.operation, null, message.manual);
         if (message.operation === "out-of-character") this.state.warning = "marked" in data && data.marked ? storyReviewText(this.state.locale, "nonStoryOn") : "";
         await this.reload(); this.characterScan = null; this.scheduleScan();

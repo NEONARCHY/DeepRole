@@ -8,6 +8,7 @@ export const actionControlCopy = (locale: Locale) => ({
   ru: { add: "Добавить действие", name: "Название нового действия", example: "Например: Сидит, Смеётся, Даёт себя обнять", hint: "Действие, поза или реакция: «Сидит», «Смущается», «Спокойствие». Стандартные названия — на языке расширения, свои можно написать на любом языке. Одну картинку можно назначить нескольким действиям.", duplicate: "Такое действие уже есть. Выберите его в списке.", invalid: "До 32 действий, название — до 32 символов. «Спокойствие» остаётся вариантом по умолчанию.", failed: "Не удалось добавить действие. Список и изображения не изменены. Попробуйте снова.", added: "Действие добавлено", remove: "Убрать из списка", default: "По умолчанию", bulk: "Редактировать списком", keepImages: "После сохранения удалённое действие отвяжется от портретов. Картинки останутся в библиотеке персонажей или в других назначенных действиях.", scope: "Новое действие сразу добавится в этот мир. Изображения сохраняются кнопкой «Сохранить персонажа»." },
   en: { add: "Add action", name: "New action name", example: "For example: Sitting, Laughing, Accepting a hug", hint: "An action, pose or reaction: Sitting, Blushing, Calm. Standard names use the extension’s language; custom names can use any language. An image can belong to several actions.", duplicate: "This action already exists. Choose it from the list.", invalid: "Up to 32 actions, with names up to 32 characters. Keep Calm as the default.", failed: "Couldn’t add the action. Your list and images are unchanged. Try again.", added: "Action added", remove: "Remove from list", default: "Default", bulk: "Edit as a list", keepImages: "Saving a removed action detaches its portraits. Images stay in the characters’ libraries or their other assigned actions.", scope: "A new action is added to this world immediately. Save images with Save character." },
 }[locale]);
+export const actionRenameHint = (locale: Locale) => locale === "ru" ? "Стандартные действия показаны на языке расширения. Ваши названия не переводятся. При переименовании фотографии и состояния перейдут на новое название после «Сохранить действия». «Спокойствие» всегда остаётся вариантом по умолчанию." : "Standard actions use the extension’s language. Custom names stay as written. Renaming moves images and states to the new name after Save actions. Calm always remains the default.";
 
 export function NewAction({ locale, actions, onAdd, disabled = false }: { locale: Locale; actions: string[]; disabled?: boolean; onAdd: (name: string) => Promise<void> }) {
   const t = actionControlCopy(locale); const id = useId(); const input = useRef<HTMLInputElement>(null);
@@ -28,7 +29,7 @@ export function NewAction({ locale, actions, onAdd, disabled = false }: { locale
   </div>;
 }
 
-export function ActionList({ locale, actions, onChange, onRename, disabled }: { locale: Locale; actions: string[]; onChange: (next: string[]) => void; onRename?: (from: string, to: string) => void; disabled?: boolean }) {
+export function ActionList({ locale, actions, onChange, onRename, disabled, hideHint = false }: { locale: Locale; actions: string[]; onChange: (next: string[]) => void; onRename?: (from: string, to: string) => void; disabled?: boolean; hideHint?: boolean }) {
   const t = actionControlCopy(locale);
   const [editing, setEditing] = useState<string | null>(null), [name, setName] = useState(""), [error, setError] = useState("");
   const inputId = useId();
@@ -50,5 +51,5 @@ export function ActionList({ locale, actions, onChange, onRename, disabled }: { 
     <button type="button" disabled={disabled} aria-label={`${t.remove}: ${actionOptionLabel(locale,action)}`} title={`${t.remove}: ${actionOptionLabel(locale,action)}`} onClick={() => onChange(actions.filter((_, at) => at !== index))}><X size={14} /></button></>}</span>)}</div>
     {editing && <div className="dr-action-rename" role="group" aria-label={ui.rename}><label htmlFor={inputId}>{ui.name}</label><div><input id={inputId} autoFocus maxLength={32} value={name} disabled={disabled} onChange={event => { setName(event.target.value); setError(""); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); apply(); } else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(editing); } }} />
     <button type="button" disabled={disabled || !name.trim()} onClick={apply}><Check size={14} />{ui.apply}</button><button type="button" disabled={disabled} onClick={() => close(editing)}>{ui.cancel}</button></div>{error && <p className="error-text" role="alert">{error}</p>}</div>}
-    {onRename && <p className="setting-copy">{ui.hint}</p>}</>;
+    {onRename && !hideHint && <p className="setting-copy">{ui.hint}</p>}</>;
 }

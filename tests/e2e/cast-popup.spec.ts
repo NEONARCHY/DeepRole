@@ -90,8 +90,7 @@ for (const locale of ["ru", "en"]) test(`hidden preparation keeps running and a 
   await page.evaluate(() => (window as any).castUpdate("ready"));
   await expect.poll(async () => (await page.evaluate(() => (window as any).castSnapshot())).job.phase).toBe("ready");
   await expect.poll(() => page.evaluate(() => (window as any).castMessages.filter((m: any) => m.action === "status").length)).toBeGreaterThanOrEqual(2);
-  await expect(popup).toHaveCount(0); await wand.click(); await expect(popup).toBeVisible();
-  await popup.getByRole("button", { name: ru ? "Проверить персонажей" : "Review characters", exact: true }).click();
+  await expect(popup).toHaveCount(0); await expect(wand).toHaveAccessibleName(ru ? "Проверить персонажей" : "Review characters"); await wand.click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(await page.evaluate(() => (window as any).castMessages.filter((m: any) => ["start", "cancel", "cleanup", "apply"].includes(m.action)))).toEqual([]);
 });

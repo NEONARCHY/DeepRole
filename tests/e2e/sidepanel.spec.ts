@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 test("section guidance explains the workflow without per-button question marks", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await expect(page.locator(".bottom-nav button")).toHaveCount(3);
+  await expect(page.locator(".bottom-nav button")).toHaveCount(4);
   await expect(page.locator(".app-main .dr-help, .bottom-nav .dr-help")).toHaveCount(0);
   await expect(page.locator(".dr-memory-status")).toContainText("Откройте чат DeepSeek");
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
