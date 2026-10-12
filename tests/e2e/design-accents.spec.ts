@@ -65,7 +65,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
     if (locale === "en") await setEnglish(page);
     await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
-    const save = page.getByRole("button", { name: locale === "ru" ? "Сохранить эмоции" : "Save emotions", exact: true });
+    const save = page.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });
     await expectAccent(save);
     const secondary = page.locator(".app-main .button.secondary").first();
     expect((await decoration(secondary)).image).toBe("none");

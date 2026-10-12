@@ -15,6 +15,7 @@ function makeRow(id, fallback=false){
   } return row;
 }
 document.querySelector("#chat").append(makeRow("first"),makeRow("fallback",true));
+if(params.get('markdown')==='1') for(const node of document.querySelectorAll('.ds-think-content')) node.innerHTML='<div class="ds-markdown"><p>Formatted reasoning during streaming.</p></div>';
 let modeClicks=0;document.querySelector("#deepthink").onclick=()=>modeClicks++;
 const controller=new ReasoningPresentation(document);controller.configure(false,locale);
 window.thoughtsTest={controller,setShow:show=>controller.configure(show,locale),stream:()=>{document.querySelector("#first .ds-think-content").append(" More streamed test thoughts.");},replace:()=>{document.querySelector("#first").replaceWith(makeRow("first"));},add:()=>{document.querySelector("#chat").append(makeRow("new-reply"));},newChat:()=>{history.pushState({},"","?locale="+locale+"&chat=new");document.querySelector("#chat").replaceChildren(makeRow("first"));controller.sync();},modeClicks:()=>modeClicks};

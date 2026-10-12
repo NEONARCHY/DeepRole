@@ -29,7 +29,7 @@ import { ContextCapacityWarning } from "../shared/ContextCapacityWarning";
 
 import type { ContinuationFlow } from "../../core/continuation-flow";
 
-import type { CharacterTextRequest } from "../../core/character-text";
+import type { CharacterTextRequestGenerator } from "../../core/character-text";
 
 export interface WidgetState {
   continuation?: ContinuationFlow | null;
@@ -37,7 +37,7 @@ export interface WidgetState {
   contextCapacityWarning?: { level: number; percent: number } | null;
   transferring?: boolean;
   widgetLayout?: WidgetLayout;
-  characters?: { relationshipsEnabled?: boolean; relationshipDisplay?: "both" | "numbers" | "stages"; worldId: string; chatId: string; base: string; entities: SceneEntity[]; scene?: CharacterScene; emotions: string[]; status: CharacterCopyKey; openId?: string | null };
+  characters?: { storyProfileIds?: string[]; relationshipsEnabled?: boolean; relationshipDisplay?: "both" | "numbers" | "stages"; worldId: string; chatId: string; base: string; entities: SceneEntity[]; scene?: CharacterScene; actions: string[]; status: CharacterCopyKey; openId?: string | null };
   pageReady: boolean;
   startupError?: boolean;
   pendingHandoff?: string;
@@ -80,11 +80,11 @@ export function PageWidget(props: {
   onDismissCapacityWarning?: () => void;
   onDisableCapacityWarnings?: () => void;
   state: WidgetState;
-  onAddCharacterEmotion?: (worldId: string, name: string) => Promise<string[]>;
+  onAddCharacterAction?: (worldId: string, name: string) => Promise<string[]>;
   onPanelWidthChange?: (width: number) => Promise<void>;
   onAskSelfie?: (entityId: string) => Promise<void>;
   onSaveCharacter?: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>;
-  onGenerateCharacterText?: (request: CharacterTextRequest) => Promise<string>;
+  onGenerateCharacterText?: CharacterTextRequestGenerator;
   onRequestCharacterFact?: (entityId: string, brief: string) => Promise<void>;
   onRetryCharacters?: () => void;
   onCharacterOpened?: () => void;
@@ -318,7 +318,7 @@ export function PageWidget(props: {
           {proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length + Number(!!batch.profileChange), 0)}</button>}
           {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
         </WidgetTile>}
-        {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAskSelfie={props.onAskSelfie} onAddEmotion={props.onAddCharacterEmotion} onGenerateText={props.onGenerateCharacterText} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
+{props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAskSelfie={props.onAskSelfie} onAddAction={props.onAddCharacterAction} onGenerateText={props.onGenerateCharacterText} generationScope={props.state.scene?.bookId ?? ""} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
         {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} /></WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}

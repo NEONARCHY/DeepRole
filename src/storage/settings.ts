@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { DEFAULT_SETTINGS } from "../core/defaults";
+import { normalizeActionSettings } from "../core/action-compat";
 import type { DeepRoleSettings, VaultConfig } from "../core/types";
 
 const SETTINGS_KEY = "deeprole_settings";
@@ -8,11 +9,11 @@ const SESSION_KEY = "deeprole_vault_session_key";
 
 export async function getSettings(): Promise<DeepRoleSettings> {
   const result = await browser.storage.local.get(SETTINGS_KEY);
-  return { ...DEFAULT_SETTINGS, ...(result[SETTINGS_KEY] as Partial<DeepRoleSettings> | undefined) };
+  return { ...DEFAULT_SETTINGS, ...(normalizeActionSettings(result[SETTINGS_KEY]) as Partial<DeepRoleSettings> | undefined) };
 }
 
 export async function saveSettings(settings: DeepRoleSettings): Promise<void> {
-  await browser.storage.local.set({ [SETTINGS_KEY]: settings });
+  await browser.storage.local.set({ [SETTINGS_KEY]: normalizeActionSettings(settings) });
 }
 
 export async function updateSettings(patch: Partial<DeepRoleSettings>): Promise<DeepRoleSettings> {

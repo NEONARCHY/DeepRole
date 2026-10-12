@@ -13,7 +13,7 @@ it("keeps the opening baseline and draft when the live scene changes", async () 
   const entity: SceneEntity = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "", aliases: [], memberIds: [], characterSheet: EMPTY_CHARACTER, createdAt: 1, updatedAt: 1 };
   const scene = { revision: "1", presentIds: ["mira"], states: { mira: EMPTY_STATUS }, updatedAt: 1 };
   const onSave = vi.fn(savedEdit);
-  const props = { locale: "en" as const, entities: [entity], scene, emotions: ["neutral"], base: "old", worldId: "w", chatId: "a", status: "updated" as const, onSave, onRetry: vi.fn() };
+  const props = { locale: "en" as const, entities: [entity], scene, actions: ["neutral"], base: "old", worldId: "w", chatId: "a", status: "updated" as const, onSave, onRetry: vi.fn() };
   const view = render(<CharacterPanel {...props} />);
   fireEvent.click(view.getByRole("button", { name: /Mira/ }));
   fireEvent.click(view.getByRole("checkbox", { name: "My protagonist" }));
@@ -39,7 +39,7 @@ it("returns focus to a portrait in another shadow root after closing its editor"
   const portrait = document.createElement("button"); portrait.textContent = "Mira"; cast.append(portrait);
   document.body.append(widget, choices);
   const entity: SceneEntity = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "", aliases: [], memberIds: [], characterSheet: EMPTY_CHARACTER, createdAt: 1, updatedAt: 1 };
-  const props = { locale: "en" as const, entities: [entity], scene: { revision: "1", presentIds: ["mira"], states: { mira: EMPTY_STATUS }, updatedAt: 1 }, emotions: ["neutral"], base: "v", worldId: "w", chatId: "a", status: "updated" as const, onSave: vi.fn(savedEdit), onRetry: vi.fn() };
+  const props = { locale: "en" as const, entities: [entity], scene: { revision: "1", presentIds: ["mira"], states: { mira: EMPTY_STATUS }, updatedAt: 1 }, actions: ["neutral"], base: "v", worldId: "w", chatId: "a", status: "updated" as const, onSave: vi.fn(savedEdit), onRetry: vi.fn() };
   const panel = render(<CharacterPanel {...props} />, { container });
   portrait.focus(); expect(cast.activeElement).toBe(portrait);
   panel.rerender(<CharacterPanel {...props} openId="mira" />);
@@ -52,7 +52,7 @@ it("returns focus to a portrait in another shadow root after closing its editor"
 it("does not claim an unsaved edit when an invalid upload changed no portrait", async () => {
   const container = document.createElement("div"); document.body.append(container);
   const entity: SceneEntity = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "", aliases: [], memberIds: [], characterSheet: EMPTY_CHARACTER, createdAt: 1, updatedAt: 1 };
-  render(<CharacterPanel locale="en" entities={[entity]} emotions={["neutral"]} base="v" worldId="w" chatId="a" status="updated" onSave={vi.fn(savedEdit)} onRetry={vi.fn()} openId="mira" />, { container });
+  render(<CharacterPanel locale="en" entities={[entity]} actions={["neutral"]} base="v" worldId="w" chatId="a" status="updated" onSave={vi.fn(savedEdit)} onRetry={vi.fn()} openId="mira" />, { container });
   const dialog = container.querySelector<HTMLElement>("[role=dialog]")!;
   const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
   fireEvent.change(dialog.querySelector("input[type=file]")!, { target: { files: [new File(["<svg/>"], "bad.svg", { type: "image/svg+xml" })] } });
@@ -64,7 +64,7 @@ it("does not claim an unsaved edit when an invalid upload changed no portrait", 
 
 it("keeps filled field names separate from their saved values and the compact list has no images", () => {
   const entity: SceneEntity = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, appearance: "Blue coat" }, createdAt: 1, updatedAt: 1 };
-  const view = render(<CharacterPanel locale="en" entities={[entity]} scene={{ revision: "v", presentIds: ["mira"], states: { mira: { ...EMPTY_STATUS, condition: "Safe", goal: "Find a key", relationship: "Trusted" } }, updatedAt: 1 }} emotions={["neutral"]} base="v" worldId="w" chatId="a" status="updated" onSave={vi.fn(savedEdit)} onRetry={vi.fn()} />);
+  const view = render(<CharacterPanel locale="en" entities={[entity]} scene={{ revision: "v", presentIds: ["mira"], states: { mira: { ...EMPTY_STATUS, condition: "Safe", goal: "Find a key", relationship: "Trusted" } }, updatedAt: 1 }} actions={["neutral"]} base="v" worldId="w" chatId="a" status="updated" onSave={vi.fn(savedEdit)} onRetry={vi.fn()} />);
   expect(view.container.querySelectorAll(".dr-character-row img")).toHaveLength(0);
   fireEvent.click(view.getByRole("button", { name: /Mira/ }));
   expect(view.getByRole("textbox", { name: "Appearance and clothing" })).toHaveValue("Blue coat");

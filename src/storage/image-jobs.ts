@@ -76,7 +76,7 @@ export class ImageJobs {
         const person = records.find(r => r.kind === "entity" && r.id === reference.entityId)?.data as SceneEntity | undefined;
         if (person?.worldId !== input.worldId) throw new ImageApiError("changed");
         const image = imageReferences(person.characterSheet).find(r => r.key === reference.key)?.image;
-        if (!image) throw new ImageApiError("changed"); images.push(await normalizeImage(dataImageBlob(image), true));
+        if (!image) throw new ImageApiError("changed"); images.push(await normalizeImage(dataImageBlob(await this.repo.readPhoto(image)), true));
       }
       const aspectRatio = input.aspectRatio ?? "16:9";
       const frozen: ImageReplay = options.replay ?? { input: structuredClone({ ...input, aspectRatio }), config: structuredClone(config), images, contentLevel };

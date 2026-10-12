@@ -4,6 +4,7 @@ import type {
   RecordValue,
   VaultConfig,
 } from "../core/types";
+import { normalizeActionRecordData } from "../core/action-compat";
 import {
   decodeSalt,
   decryptJsonWithKey,
@@ -25,6 +26,8 @@ import {
 import { announceLibraryChange } from "./changes";
 import type { DataRecord } from "../core/types";
 import { withLibraryLock } from "./library-lock";
+import { PhotoAssets } from "./photo-assets";
+import { photoAddresses } from "../core/photo-assets";
 
 export class MemoryConflictError extends Error {
   constructor() { super("memory-conflict"); this.name = "MemoryConflictError"; }
@@ -38,7 +41,41 @@ export class VaultLockedError extends Error {
 }
 
 export class DeepRoleRepository {
-  constructor(private readonly db: DeepRoleDatabase = database) {}
+  private readonly photos: PhotoAssets;
+  constructor(private readonly db: DeepRoleDatabase = database, private readonly compactPhotos = false) { this.photos = new PhotoAssets(db); }
+
+  async readPhoto(id: string): Promise<string> { return withLibraryLock("shared", async () => { await this.requireUnlocked(); return this.photos.read(id); }); }
+  async storePhoto(image: string): Promise<string> { return withLibraryLock("exclusive", async () => { await this.requireUnlocked(); return this.photos.store(image); }); }
+  private async encodeRecords(records: DataRecord[], config: VaultConfig): Promise<StoredRecord[]> {
+    const rows: StoredRecord[] = [];
+    for (const record of records) rows.push(await this.encode(record.kind, record.id, record.data, config));
+    return rows;
+  }
+
+  /** Explicit startup migration, one record at a time; timestamps and image bytes stay unchanged. */
+  async migratePhotos(): Promise<void> {
+    return withLibraryLock("exclusive", async () => {
+      await this.requireUnlocked();
+      const keys = await this.db.records.where("kind").equals("entity").primaryKeys();
+      const config = await getVaultConfig();
+      for (const pk of keys) {
+        const row = await this.db.records.get(pk); if (!row || row.photosVersion === 1) continue;
+        const data = await this.decode<RecordValue>(row, false);
+        const compact = await this.photos.compact(row.kind, data);
+        const next = await this.encode(row.kind, row.id, compact, config);
+        next.updatedAt = row.updatedAt; await this.db.records.put(next);
+      }
+    });
+  }
+
+  async portableRecords(records?: DataRecord[]): Promise<DataRecord[]> {
+    const values = records ?? await this.rawRecords();
+    return withLibraryLock("shared", async () => {
+      await this.requireUnlocked(); const result: DataRecord[] = [];
+      for (const row of values) result.push({ ...row, data: await this.photos.expand(row.kind, row.data) });
+      return result;
+    });
+  }
 
   async list<T extends RecordValue>(kind: RecordKind): Promise<T[]> {
     return withLibraryLock("shared", async () => {
@@ -81,7 +118,7 @@ export class DeepRoleRepository {
   async clear(): Promise<void> {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
-      await this.db.records.clear();
+      await this.db.transaction("rw", this.db.records, this.db.photos, async () => { await this.db.records.clear(); await this.db.photos.clear(); });
       await announceLibraryChange();
     });
   }
@@ -112,7 +149,7 @@ export class DeepRoleRepository {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
       const config = await getVaultConfig();
-      const rows = await Promise.all(records.map((record) => this.encode(record.kind, record.id, record.data, config)));
+      const rows = await this.encodeRecords(records, config);
       const before = finish ? await this.db.records.toArray() : [];
       await this.db.transaction("rw", this.db.records, async () => {
         await this.db.records.clear();
@@ -133,18 +170,43 @@ export class DeepRoleRepository {
   /** Pure transform of the current library under one cross-window write lock.
    * Do not call repository methods inside the transform (they acquire this lock).
    */
-  async updateRecords<T>(transform: (current: DataRecord[]) => { records: DataRecord[]; removed: { kind: RecordKind; id: string }[]; result: T }): Promise<T> {
+  async updateRecords<T>(transform: (current: DataRecord[]) => { records: DataRecord[]; removed: { kind: RecordKind; id: string }[]; result: T; deleteOrphanedPhotos?: boolean }, finish?: () => Promise<void>, readKinds?: RecordKind[]): Promise<T> {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
-      const stored = await this.db.records.toArray();
+      const stored = readKinds ? await this.db.records.where("kind").anyOf(readKinds).toArray() : await this.db.records.toArray();
       const current = await Promise.all(stored.map(async (row) => ({ kind: row.kind, id: row.id, data: await this.decode<RecordValue>(row) })));
       const plan = transform(current);
+      if (readKinds && [...plan.records, ...plan.removed].some(row => !readKinds.includes(row.kind))) throw new Error("repository-scope");
       const config = await getVaultConfig();
-      const rows = await Promise.all(plan.records.map((r) => this.encode(r.kind, r.id, r.data, config)));
-      await this.db.transaction("rw", this.db.records, async () => {
+      const rows = await this.encodeRecords(plan.records, config);
+      let photoRemovals: string[] = [];
+      if (plan.deleteOrphanedPhotos) {
+        if (finish || readKinds) throw new Error("repository-scope");
+        const before = new Set<string>(), kept = new Set<string>();
+        const removedKeys = new Set(plan.removed.map(r => recordKey(r.kind,r.id)));
+        const replacements = new Map(rows.map(r => [r.pk,r]));
+        for (const old of stored) {
+          const data = await this.decode<RecordValue>(old,false);
+          for (const id of photoAddresses(data)) before.add(id);
+          if (!removedKeys.has(old.pk) && !replacements.has(old.pk)) for(const id of photoAddresses(data)) kept.add(id);
+        }
+        for(const row of rows) for(const id of photoAddresses(await this.decode<RecordValue>(row,false))) kept.add(id);
+        photoRemovals = [...before].filter(id => !kept.has(id));
+      }
+      await this.db.transaction("rw", this.db.records, this.db.photos, async () => {
         await this.db.records.bulkDelete(plan.removed.map((r) => recordKey(r.kind, r.id)));
         await this.db.records.bulkPut(rows);
+        if(photoRemovals.length) await this.db.photos.bulkDelete(photoRemovals);
       });
+      try { await finish?.(); }
+      catch (error) {
+        const touched = new Set([...rows.map(row => row.pk), ...plan.removed.map(row => recordKey(row.kind, row.id))]);
+        await this.db.transaction("rw", this.db.records, async () => {
+          await this.db.records.bulkDelete([...touched]);
+          await this.db.records.bulkPut(stored.filter(row => touched.has(row.pk)));
+        });
+        throw error;
+      }
       if (plan.records.length || plan.removed.length) await announceLibraryChange([...plan.records, ...plan.removed].map((r) => r.kind));
       return plan.result;
     });
@@ -153,7 +215,7 @@ export class DeepRoleRepository {
   async mergeRecords(records: Array<{ kind: RecordKind; id: string; data: RecordValue }>): Promise<void> {
     return withLibraryLock("exclusive", async () => {
       const config = await getVaultConfig();
-      const rows = await Promise.all(records.map((record) => this.encode(record.kind, record.id, record.data, config)));
+      const rows = await this.encodeRecords(records, config);
       await this.db.transaction("rw", this.db.records, () => this.db.records.bulkPut(rows));
       await announceLibraryChange(records.map((r) => r.kind));
     });
@@ -163,7 +225,7 @@ export class DeepRoleRepository {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
       const config = await getVaultConfig();
-      const rows = await Promise.all(records.map((record) => this.encode(record.kind, record.id, record.data, config)));
+      const rows = await this.encodeRecords(records, config);
       await this.db.transaction("rw", this.db.records, async () => {
         await this.db.records.bulkDelete(removed.map((record) => recordKey(record.kind, record.id)));
         await this.db.records.bulkPut(rows);
@@ -182,7 +244,7 @@ export class DeepRoleRepository {
       const decoded = await Promise.all(before.map((row) => row ? this.decode<RecordValue>(row) : null));
       if (decoded.some((value, i) => JSON.stringify(value) !== JSON.stringify(expected[i]!.data))) throw new MemoryConflictError();
       const config = await getVaultConfig();
-      const rows = await Promise.all(records.map((r) => this.encode(r.kind, r.id, r.data, config)));
+      const rows = await this.encodeRecords(records, config);
       await this.db.transaction("rw", this.db.records, async () => {
         if (membership) {
           const ids = (await this.db.records.where("kind").equals(membership.kind).toArray()).map((row) => row.id).sort();
@@ -209,12 +271,8 @@ export class DeepRoleRepository {
       const key = await deriveVaultKey(password, salt, DEFAULT_KDF_ITERATIONS);
       const verifier = await encryptJsonWithKey({ ok: true }, key, salt, DEFAULT_KDF_ITERATIONS);
       const rows = await this.db.records.toArray();
-      const encryptedRows = await Promise.all(
-        rows.map(async (row) => {
-          const data = row.data as RecordValue;
-          return this.encodeWithKey(row.kind, row.id, data, key, salt, DEFAULT_KDF_ITERATIONS);
-        }),
-      );
+      const encryptedRows: StoredRecord[] = [];
+      for (const row of rows) encryptedRows.push(await this.encodeWithKey(row.kind, row.id, row.data as RecordValue, key, salt, DEFAULT_KDF_ITERATIONS));
       const config: VaultConfig = {
         enabled: true,
         salt: encodeSalt(salt),
@@ -223,10 +281,12 @@ export class DeepRoleRepository {
       };
       await saveSessionKey(await exportKey(key));
       try {
+        await this.photos.prepareEncryption(key, salt, DEFAULT_KDF_ITERATIONS);
         await saveVaultConfig(config);
-        await this.db.transaction("rw", this.db.records, () => this.db.records.bulkPut(encryptedRows));
+        await this.db.transaction("rw", this.db.records, this.db.photos, async () => { await this.db.records.bulkPut(encryptedRows); await this.photos.finalizeMode(true); });
       } catch (error) {
         await saveVaultConfig(current);
+        await this.photos.finalizeMode(false);
         await clearSessionKey();
         throw error;
       }
@@ -266,10 +326,14 @@ export class DeepRoleRepository {
         data: decoded[index],
         updatedAt: Date.now(),
       } satisfies StoredRecord));
-      await this.db.transaction("rw", this.db.records, () => this.db.records.bulkPut(plainRows));
-      try { await saveVaultConfig({ enabled: false }); }
+      await this.photos.preparePlaintext();
+      try {
+        await saveVaultConfig({ enabled: false });
+        await this.db.transaction("rw", this.db.records, this.db.photos, async () => { await this.db.records.bulkPut(plainRows); await this.photos.finalizeMode(false); });
+      }
       catch (error) {
-        await this.db.transaction("rw", this.db.records, () => this.db.records.bulkPut(rows));
+        await saveVaultConfig(config);
+        await this.photos.finalizeMode(true);
         throw error;
       }
       await clearSessionKey();
@@ -294,8 +358,10 @@ export class DeepRoleRepository {
     data: RecordValue,
     config: VaultConfig,
   ): Promise<StoredRecord> {
+    data = normalizeActionRecordData(kind, data) as RecordValue;
     if (!config.enabled) {
-      return { pk: recordKey(kind, id), kind, id, data, updatedAt: Date.now() };
+      if (this.compactPhotos) data = await this.photos.compact(kind, data);
+      return { pk: recordKey(kind, id), kind, id, data, ...(this.compactPhotos ? { photosVersion: 1 as const } : {}), updatedAt: Date.now() };
     }
     if (!config.salt || !config.iterations) throw new VaultLockedError();
     const rawKey = await getSessionKey();
@@ -312,17 +378,23 @@ export class DeepRoleRepository {
     salt: Uint8Array,
     iterations: number,
   ): Promise<StoredRecord> {
+    data = normalizeActionRecordData(kind, data) as RecordValue;
+    if (this.compactPhotos) data = await this.photos.compact(kind, data);
     const encrypted = await encryptJsonWithKey(data, key, salt, iterations);
-    return { pk: recordKey(kind, id), kind, id, encrypted, updatedAt: Date.now() };
+    return { pk: recordKey(kind, id), kind, id, encrypted, ...(this.compactPhotos ? { photosVersion: 1 as const } : {}), updatedAt: Date.now() };
   }
 
-  private async decode<T extends RecordValue>(row: StoredRecord): Promise<T> {
-    if (row.data !== undefined) return row.data as T;
+  private async decode<T extends RecordValue>(row: StoredRecord, expand = !this.compactPhotos): Promise<T> {
+    if (row.data !== undefined) {
+      const data = normalizeActionRecordData(row.kind, row.data) as T;
+      return expand ? this.photos.expand(row.kind, data) : data;
+    }
     if (!row.encrypted) throw new Error("Invalid DeepRole record");
     const rawKey = await getSessionKey();
     if (!rawKey) throw new VaultLockedError();
-    return decryptJsonWithKey<T>(row.encrypted as EncryptedEnvelope, await importKey(rawKey));
+    const data = normalizeActionRecordData(row.kind, await decryptJsonWithKey<T>(row.encrypted as EncryptedEnvelope, await importKey(rawKey))) as T;
+    return expand ? this.photos.expand(row.kind, data) : data;
   }
 }
 
-export const repository = new DeepRoleRepository();
+export const repository = new DeepRoleRepository(database, true);

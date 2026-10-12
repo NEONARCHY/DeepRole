@@ -27,7 +27,7 @@ async function setup() {
 }
 async function request(repo: DeepRoleRepository, change: RelationshipPatch = patch, replyText = quote, enabled = true) {
   const people = await repo.list<SceneEntity>("entity"); const scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes?.[world.id];
-  const base = characterRevision(people, scene); const turn = { world: world.id, chat: "a", base, request: "request_123456", present: ["Leon", "Mira"], partners: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }], bonds: [change] };
+  const base = characterRevision(people, scene); const turn = { world: world.id, chat: "a", base, request: "request_123456", present: ["Leon", "Mira"], partners: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, action: "happy" } }], bonds: [change] };
   await applyCharacterTurn({ worldId: world.id, chatId: "a", chatUrl: binding.chatUrl, base, replyText }, turn, undefined, repo, true, enabled);
   return { scene: (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes![world.id]!, base, turn };
 }
@@ -103,7 +103,7 @@ describe("atomic sync and persistence", () => {
     const repo = await setup(); if (mode === "world-disabled") await repo.put("world", { ...world, relationshipsEnabled: false });
     const changed = mode === "wrong-hero" ? { ...patch, hero: "Mira" } : mode === "unknown-event" ? { ...patch, milestones: ["missing"] } : mode === "big-step" ? { ...patch, trust: 8 } : patch;
     const { scene } = await request(repo, changed, mode === "no-quote" ? "Unrelated text" : quote, mode !== "disabled");
-    expect(scene.states.mira!.emotion).toBe("happy"); expect(scene.states.mira!.bonds).toBeUndefined();
+    expect(scene.states.mira!.action).toBe("happy"); expect(scene.states.mira!.bonds).toBeUndefined();
   });
   it("preserves locks and logs across regular model state replacement", async () => {
     const repo = await setup(); const first = await request(repo);

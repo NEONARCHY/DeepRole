@@ -1,35 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_CHARACTER, EMPTY_STATUS, validCharacterSheet, characterInstruction, portraitSource, emotionOptionLabel, validEmotions } from "../src/core/characters";
-import { assignLibraryImages, assignLibraryEmotions, libraryImages, unassignPortrait, validPortraitLibrary, withPortraitLibrary } from "../src/core/portrait-library";
+import { EMPTY_CHARACTER, EMPTY_STATUS, validCharacterSheet, characterInstruction, portraitSource, actionOptionLabel, validActions } from "../src/core/characters";
+import { assignLibraryImages, assignLibraryActions, libraryImages, unassignPortrait, validPortraitLibrary, withPortraitLibrary } from "../src/core/portrait-library";
 const images = Array.from({ length: 513 }, (_, i) => `data:image/png;base64,${btoa(`image-${i}`)}`);
 
 describe("local portrait library", () => {
-  it("assigns one image to multiple exact emotion names atomically", () => {
+  it("assigns one image to multiple exact action names atomically", () => {
     const first = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 14));
     const names = ["screaming", "shouting", "scarry", "смех"];
-    const next = assignLibraryEmotions(first, names, [images[0]!]);
+    const next = assignLibraryActions(first, names, [images[0]!]);
     for (const name of names) expect(next.sprites[name]).toEqual([images[0]]);
     expect(next.portraitLibrary).toHaveLength(13); expect(first.sprites).toEqual({});
     const capacity = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 49));
     const full = assignLibraryImages(capacity, "shouting", images.slice(0, 48));
-    expect(assignLibraryEmotions(full, ["screaming", "shouting"], [images[48]!]).sprites.shouting).toHaveLength(49);
+    expect(assignLibraryActions(full, ["screaming", "shouting"], [images[48]!]).sprites.shouting).toHaveLength(49);
     expect(full.sprites.screaming).toBeUndefined();
-    expect(() => assignLibraryEmotions(first, ["screaming", "__proto__"], [images[0]!])).toThrow();
-    for (const emotion of names) expect(portraitSource({ id: "mira", worldId: "w", name: "Mira", kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: next }, { ...EMPTY_STATUS, emotion })).toBe(images[0]);
+    expect(() => assignLibraryActions(first, ["screaming", "__proto__"], [images[0]!])).toThrow();
+    for (const action of names) expect(portraitSource({ id: "mira", worldId: "w", name: "Mira", kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: next }, { ...EMPTY_STATUS, action })).toBe(images[0]);
   });
-  it("shows translated built-in labels alongside exact keys without translating custom names", () => {
-    expect(emotionOptionLabel("ru", "happy")).toBe("Радость · happy");
-    expect(emotionOptionLabel("en", "happy")).toBe("Happy · happy");
-    expect(emotionOptionLabel("en", "смех")).toBe("смех");
-    expect(emotionOptionLabel("ru", "screaming")).toBe("screaming");
-    expect(validEmotions(["neutral", "screaming/shouting"])).toBe(true); // one literal key, not aliases
+  it("shows built-in labels only in the selected language without translating custom names", () => {
+    expect(actionOptionLabel("ru", "happy")).toBe("Радость");
+    expect(actionOptionLabel("en", "happy")).toBe("Happy");
+    expect(actionOptionLabel("en", "смех")).toBe("смех");
+    expect(actionOptionLabel("ru", "screaming")).toBe("screaming");
+    expect(validActions(["neutral", "screaming/shouting"])).toBe(true); // one literal key, not aliases
   });
   it("accepts an optional bounded collection and rejects unsafe, duplicate and oversized images", () => {
     expect(validCharacterSheet(EMPTY_CHARACTER)).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, portraitLibrary: images })).toBe(true);
     for (const value of [null, "x", [images[0], images[0]], ["https://test/image.png"], ["data:image/svg+xml;base64,AAAA"]]) expect(validPortraitLibrary(value)).toBe(false);
   });
-  it("stores batches without emotion assignments, deduplicates and reuses assigned images", () => {
+  it("stores batches without action assignments, deduplicates and reuses assigned images", () => {
     const first = withPortraitLibrary(EMPTY_CHARACTER, images.slice(0, 20));
     expect(first.sprites).toEqual({}); expect(first.portraitLibrary).toHaveLength(20);
     const duplicate = withPortraitLibrary(first, [...libraryImages(first), ...images.slice(0, 5)]);

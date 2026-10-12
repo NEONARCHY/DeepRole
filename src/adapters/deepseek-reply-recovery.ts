@@ -219,7 +219,7 @@ export class DeepSeekReplyRecovery {
       host.style.cssText = "min-width:0;max-width:100%;overflow-wrap:anywhere;";
       const badge = doc.createElement("div");
       badge.dataset.deeproleRecoveryLabel = "true";
-      badge.style.cssText = "font:500 11px/1.5 system-ui,sans-serif;color:inherit;opacity:.62;text-align:right;margin:0 0 8px;user-select:none;";
+      badge.style.cssText = "display:table;margin:0 0 10px auto;padding:4px 10px;border:1px solid #cbe8ff66;border-radius:999px;background:linear-gradient(135deg,#8acfff18,#5279db12),#171e29cc;box-shadow:inset 0 1px 0 #ffffff35,inset 0 -1px 0 #93c7ff18,0 0 9px #9acfff12;font:400 12px/1.5 system-ui,sans-serif;color:#ffffff!important;opacity:1;user-select:none;";
       const body = doc.createElement("div"); body.className = "ds-markdown";
       const template = doc.createElement("template"); template.innerHTML = reply.html;
       body.append(safeNodes(template.content, doc));

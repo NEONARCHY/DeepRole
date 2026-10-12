@@ -20,6 +20,11 @@ export function nativeMessageIdentity(row: HTMLElement): string | undefined {
   const id = row.getAttribute('data-message-id');
   return virtual ? JSON.stringify(['virtual', virtual]) : id ? JSON.stringify(['message', id]) : undefined;
 }
+/** Equivalent explicit native IDs, not a text/signature fallback. */
+export function canonicalNativeMessageIdentity(value: string): string {
+  try { const key: unknown = JSON.parse(value); if (Array.isArray(key) && key.length === 2 && ["virtual", "message"].includes(key[0]) && typeof key[1] === "string" && /^[\w-]{1,120}$/u.test(key[1])) return JSON.stringify(["message", key[1]]); } catch { /* Older turn-key fallback stays unchanged. */ }
+  return value;
+}
 
 export function isUserMessage(element: HTMLElement): boolean {
   const row = nativeMessageRow(element) ?? element;

@@ -23,7 +23,7 @@
         state.conversationEstimate={estimatedTokens:5000,messageCount:10,source:"history",atLeast:false};
         state.worlds=[{id:"w",name:"Observatory",description:"",color:"#888888",contextBudget:2000,relevanceThreshold:6,createdAt:1,updatedAt:1}];
         state.scene={worldId:"w",bookId:null,focusIds:[]};state.sceneChoicesEnabled=true;
-        state.characters={worldId:"w",chatId:"a",base:"1",status:"updated",emotions:["neutral"],entities:[{id:"mira",name:"Mira",kind:"character",worldId:"w",description:"",aliases:[],memberIds:[],createdAt:1,updatedAt:1}],scene:{revision:"1",presentIds:["mira"],states:{mira:{emotion:"neutral",condition:"Safe",goal:"Find the key",relationship:"Trusts Noah",stats:[]}},updatedAt:1}};
+        state.characters={worldId:"w",chatId:"a",base:"1",status:"updated",actions:["neutral"],entities:[{id:"mira",name:"Mira",kind:"character",worldId:"w",description:"",aliases:[],memberIds:[],createdAt:1,updatedAt:1}],scene:{revision:"1",presentIds:["mira"],states:{mira:{action:"neutral",condition:"Safe",goal:"Find the key",relationship:"Trusts Noah",stats:[]}},updatedAt:1}};
       }
       if (new URLSearchParams(location.search).has("assistant")) state.proposals = [{ id: "batch", worldId: null, bookId: null, chatId: "chat", focusIds: [], requestType: "memory-analysis", createdAt: 1, updatedAt: 1, items: [{ id: "c", title: "Mira's oath", content: "The promise now expires at noon.", keywords: [], activation: "smart", priority: "normal", bookId: null, selected: true, targetEntryId: entry.id, expectedEntry: entry }] }];
       const noop = () => {};

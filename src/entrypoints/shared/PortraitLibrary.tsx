@@ -3,8 +3,8 @@ import { usePortraitUploadChoice } from "./PortraitUploadChoice";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Trash2, Upload, Maximize2 } from "lucide-react";
 import type { CharacterSheet, Locale } from "../../core/types";
-import { emotionLabel, emotionOptionLabel } from "../../core/characters";
-import { assignLibraryEmotions, libraryImages, withPortraitLibrary } from "../../core/portrait-library";
+import { actionLabel, actionOptionLabel } from "../../core/characters";
+import { assignLibraryActions, libraryImages, withPortraitLibrary } from "../../core/portrait-library";
 import { portraitVariations } from "../../core/portrait-variations";
 import { readPortraitFiles } from "./portrait-file";
 import { getSettings, updateSettings } from "../../storage/settings";
@@ -14,25 +14,25 @@ import { openPortraitViewer, photoCopy } from "../../adapters/portrait-viewer";
 import type { CSSProperties } from "react";
 
 const copy = {
-  ru: { more: "Ещё эмоции для этих картинок", shared: "Отметьте дополнительные эмоции — выбранные картинки будут доступны для каждой. Новые названия можно добавить здесь, выше.", title: "Библиотека изображений", upload: "Загрузить в библиотеку", hint: "Загрузите пачку, выберите картинки и назначьте эмоцию. Сохраняется вместе с карточкой.", empty: "Здесь будут все портреты персонажа. Можно загрузить несколько файлов сразу.", all: "Все", unassigned: "Без эмоции", select: "Выбрать изображение", remove: "Удалить из библиотеки", clear: "Снять выбор", assign: "Назначить эмоции", emotion: "Назначить эмоцию", noRoom: "Не удалось назначить изображения. Проверьте выбранную эмоцию.", full: "Не удалось обновить библиотеку.", emotionFull: "Не удалось создать набор изображений для эмоции.", badImage: "Не удалось загрузить пачку. Проверьте файлы: PNG, JPG или WebP. Прежние изображения сохранены.", selected: (n: number) => `Выбрано: ${n}`, progress: (n: number, total: number) => `Загружаем: ${n}/${total}`, assigned: (n: number, emotion: string) => `Назначено: ${n} · ${emotion}` },
-  en: { more: "More emotions for these images", shared: "Choose extra emotions to use these images for each one. Add new names above.", title: "Image library", upload: "Upload to library", hint: "Upload a batch, select images, then assign an emotion. Saved with the character sheet.", empty: "All this character’s portraits will appear here. Upload several files at once.", all: "All", unassigned: "Unassigned", select: "Select image", remove: "Delete from library", clear: "Clear selection", assign: "Assign to emotion", emotion: "Assign emotion", noRoom: "Could not assign images. Check the selected emotion.", full: "Could not update the library.", emotionFull: "Could not create the emotion image set.", badImage: "Couldn’t load the batch. Check the files: PNG, JPG or WebP. Existing images are unchanged.", selected: (n: number) => `Selected: ${n}`, progress: (n: number, total: number) => `Uploading: ${n}/${total}`, assigned: (n: number, emotion: string) => `Assigned: ${n} · ${emotion}` },
+  ru: { more: "Ещё действия для этих картинок", shared: "Отметьте дополнительные действия — выбранные картинки будут доступны для каждого из них. Новые названия можно добавить здесь, выше.", title: "Библиотека изображений", upload: "Загрузить в библиотеку", hint: "Загрузите пачку, выберите картинки и назначьте действие. Сохраняется вместе с карточкой.", empty: "Здесь будут все портреты персонажа. Можно загрузить несколько файлов сразу.", all: "Все", unassigned: "Без назначения", select: "Выбрать изображение", remove: "Удалить из библиотеки", clear: "Снять выбор", assign: "Назначить действия", action: "Назначить действие", noRoom: "Не удалось назначить изображения. Проверьте выбранное действие.", full: "Не удалось обновить библиотеку.", actionFull: "Не удалось создать набор изображений для действия.", badImage: "Не удалось загрузить пачку. Проверьте файлы: PNG, JPG или WebP. Прежние изображения сохранены.", selected: (n: number) => `Выбрано: ${n}`, progress: (n: number, total: number) => `Загружаем: ${n}/${total}`, assigned: (n: number, action: string) => `Назначено: ${n} · ${action}` },
+  en: { more: "More actions for these images", shared: "Choose extra actions to use these images for each one. Add new names above.", title: "Image library", upload: "Upload to library", hint: "Upload a batch, select images, then assign an action. Saved with the character sheet.", empty: "All this character’s portraits will appear here. Upload several files at once.", all: "All", unassigned: "Unassigned", select: "Select image", remove: "Delete from library", clear: "Clear selection", assign: "Assign to action", action: "Assign action", noRoom: "Could not assign images. Check the selected action.", full: "Could not update the library.", actionFull: "Could not create the action image set.", badImage: "Couldn’t load the batch. Check the files: PNG, JPG or WebP. Existing images are unchanged.", selected: (n: number) => `Selected: ${n}`, progress: (n: number, total: number) => `Uploading: ${n}/${total}`, assigned: (n: number, action: string) => `Assigned: ${n} · ${action}` },
 };
 export const portraitLibraryTitle = (locale: Locale) => copy[locale].title;
 export const portraitLibraryFull = (locale: Locale) => copy[locale].full;
 const selectionCopy = (locale: Locale) => ({
-  ru: { all: "Выбрать видимые", ready: "Картинки загружены. Выберите эмоцию и нажмите «Назначить эмоции».", selection: "Выбранные изображения", assigned: "Уже с эмоциями", formats: "PNG, JPG, WebP" },
-  en: { all: "Select visible", ready: "Images uploaded. Choose an emotion, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP" },
+  ru: { all: "Выбрать видимые", ready: "Картинки загружены. Выберите действие и нажмите «Назначить действия».", selection: "Выбранные изображения", assigned: "Уже с действиями", formats: "PNG, JPG, WebP" },
+  en: { all: "Select visible", ready: "Images uploaded. Choose an action, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP" },
 }[locale]);
 
-export function PortraitLibrary({ sheet, locale, emotions, emotion, onEmotion, onChange, onBusy }: { sheet: CharacterSheet; locale: Locale; emotions: string[]; emotion: string; onEmotion: (value: string) => void; onChange: (sheet: CharacterSheet) => void; onBusy: (busy: boolean) => void }) {
+export function PortraitLibrary({ sheet, locale, actions, action, onAction, onChange, onBusy }: { sheet: CharacterSheet; locale: Locale; actions: string[]; action: string; onAction: (value: string) => void; onChange: (sheet: CharacterSheet) => void; onBusy: (busy: boolean) => void }) {
   const t = copy[locale]; const input = useRef<HTMLInputElement>(null); const mounted = useRef(true);
   const ui = selectionCopy(locale);
   const uploadChoice = usePortraitUploadChoice(locale);
   const [selected, setSelected] = useState<string[]>([]); const [filter, setFilter] = useState(false);
   const [previewSize, setPreviewSize] = useState(DEFAULT_PORTRAIT_PREVIEW_SIZE), previewSaved = useRef(DEFAULT_PORTRAIT_PREVIEW_SIZE), previewSaving = useRef(false), previewTouched = useRef(false), previewPending = useRef<number | undefined>(undefined);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [extraEmotions, setExtraEmotions] = useState<string[]>([]);
-  const targets = [...new Set([emotion, ...extraEmotions])].filter(value => emotions.includes(value));
+  const [extraActions, setExtraActions] = useState<string[]>([]);
+  const targets = [...new Set([action, ...extraActions])].filter(value => actions.includes(value));
   const [error, setError] = useState(""); const [status, setStatus] = useState("");
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { void getSettings().then(settings => {
@@ -54,7 +54,7 @@ export function PortraitLibrary({ sheet, locale, emotions, emotion, onEmotion, o
   const images = useMemo(() => libraryImages(sheet), [sheet.sprites, sheet.portraitLibrary]);
   const assignedNames = useMemo(() => {
     const names = new Map<string, string[]>();
-    for (const [name, value] of Object.entries(sheet.sprites)) for (const image of portraitVariations(value)) names.set(image, [...(names.get(image) ?? []), emotionLabel(locale, name)]);
+    for (const [name, value] of Object.entries(sheet.sprites)) for (const image of portraitVariations(value)) names.set(image, [...(names.get(image) ?? []), actionLabel(locale, name)]);
     return names;
   }, [sheet.sprites, locale]);
   const assignments = (image: string) => assignedNames.get(image) ?? [];
@@ -85,11 +85,11 @@ export function PortraitLibrary({ sheet, locale, emotions, emotion, onEmotion, o
       const index = images.indexOf(image); const names = assignments(image); const active = picked.includes(image);
       return <article key={image}><button type="button" className="dr-library-image" aria-label={`${t.select} ${index + 1}`} aria-pressed={active} onClick={() => { setSelected(active ? picked.filter(value => value !== image) : [...picked, image]); setError(""); setStatus(""); }}><img src={image} alt="" loading="lazy" />{active && <span><Check size={16} /></span>}</button><button type="button" className="dr-library-view" aria-label={`${photoCopy(locale).open} ${index + 1}`} onClick={event => openPortraitViewer(event.currentTarget.ownerDocument, image, names.join(", ") || t.title, locale)}><Maximize2 size={14} />{portraitUploadText(locale, "view")}</button><small title={names.join(", ")}>{names.length ? names.join(", ") : t.unassigned}</small>{!names.length && <button type="button" aria-label={`${t.remove} ${index + 1}`} onClick={() => { onChange(withPortraitLibrary(sheet, images.filter(value => value !== image))); setSelected(picked.filter(value => value !== image)); }}><Trash2 size={14} /></button>}</article>;
     })}{!shown.length && <p className="dr-character-hint">{filter && images.length ? t.unassigned + ": 0" : t.empty}</p>}</div>
-    <div className="dr-library-assign" role="group" aria-label={ui.selection}><span>{t.selected(picked.length)}</span><button type="button" disabled={!picked.length} onClick={() => setSelected([])}>{t.clear}</button><label>{t.emotion}<Select data-portrait-preview value={emotion} onChange={event => { onEmotion(event.target.value); setError(""); }}>{emotions.map(value => <option key={value} value={value}>{emotionOptionLabel(locale, value)}</option>)}</Select></label><button type="button" className={picked.length ? "dr-library-primary" : undefined} disabled={!picked.length} onClick={() => {
-      try { if (!targets.length) return; onChange(assignLibraryEmotions(sheet, targets, picked)); setSelected([]); setError(""); setStatus(t.assigned(picked.length, targets.map(value => emotionLabel(locale, value)).join(", "))); }
-      catch (error) { setError(error instanceof Error && error.message === "portrait-emotions-full" ? t.emotionFull : t.noRoom); }
+    <div className="dr-library-assign" role="group" aria-label={ui.selection}><span>{t.selected(picked.length)}</span><button type="button" disabled={!picked.length} onClick={() => setSelected([])}>{t.clear}</button><label>{t.action}<Select data-portrait-preview value={action} onChange={event => { onAction(event.target.value); setError(""); }}>{actions.map(value => <option key={value} value={value}>{actionOptionLabel(locale, value)}</option>)}</Select></label><button type="button" className={picked.length ? "dr-library-primary" : undefined} disabled={!picked.length} onClick={() => {
+      try { if (!targets.length) return; onChange(assignLibraryActions(sheet, targets, picked)); setSelected([]); setError(""); setStatus(t.assigned(picked.length, targets.map(value => actionLabel(locale, value)).join(", "))); }
+      catch (error) { setError(error instanceof Error && error.message === "portrait-actions-full" ? t.actionFull : t.noRoom); }
     }}>{t.assign}</button></div>
-    <details className="dr-library-emotions"><summary>{t.more}{targets.length > 1 ? ` · ${targets.length}` : ""}</summary><p className="dr-character-hint">{t.shared}</p><div>{emotions.filter(value => value !== emotion).map(value => <label key={value} className="dr-character-check"><input type="checkbox" data-portrait-preview checked={extraEmotions.includes(value)} onChange={event => { setExtraEmotions(event.target.checked ? [...extraEmotions, value] : extraEmotions.filter(item => item !== value)); setError(""); setStatus(""); }} />{emotionOptionLabel(locale, value)}</label>)}</div></details>
+    <details className="dr-library-actions"><summary>{t.more}{targets.length > 1 ? ` · ${targets.length}` : ""}</summary><p className="dr-character-hint">{t.shared}</p><div>{actions.filter(value => value !== action).map(value => <label key={value} className="dr-character-check"><input type="checkbox" data-portrait-preview checked={extraActions.includes(value)} onChange={event => { setExtraActions(event.target.checked ? [...extraActions, value] : extraActions.filter(item => item !== value)); setError(""); setStatus(""); }} />{actionOptionLabel(locale, value)}</label>)}</div></details>
     {error && <p className="error-text" role="alert">{error}</p>}
     <p className="dr-character-hint" role="status">{progress ? t.progress(progress.done, progress.total) : status}</p>
   </section>;

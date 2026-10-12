@@ -88,6 +88,20 @@ it("an unchanged scan produces no layout or DOM changes", () => {
   imageTurns(); hideCharacterTextServices(); const before = document.body.innerHTML;
   hideCharacterTextServices(); expect(document.body.innerHTML).toBe(before);
 });
+it("rehides a Sorry service reply after reload and request virtualization, not an unrelated refusal", () => {
+  imageTurns(); document.getElementById("reply")!.dataset.messageId = "owned-reply";
+  document.querySelector(".ds-assistant-message-main-content")!.textContent = "Sorry, that's beyond my current scope.";
+  const saved = hideCharacterTextServices(); expect(saved).toHaveLength(1);
+  // A fresh DOM models a reload: no hidden attributes or inline styles survive.
+  imageTurns(); document.getElementById("reply")!.dataset.messageId = "owned-reply";
+  document.querySelector(".ds-assistant-message-main-content")!.textContent = "Sorry, that's beyond my current scope.";
+  document.getElementById("request-shell")!.remove();
+  document.getElementById("story")!.textContent = "Sorry, I cannot help with that.";
+  hideCharacterTextServices(document, saved);
+  expect(document.getElementById("reply-shell")!.style.display).toBe("none");
+  expect(document.getElementById("story")!.style.display).toBe("");
+  expect(document.getElementById("reply")!.textContent).toContain("Sorry");
+});
 it("preserves a real SVG illustration next to a concealed payload", () => {
   document.body.innerHTML = '<main><article data-role="assistant" id="art"><div class="ds-markdown"></div><svg aria-label="Star map"><circle cx="12" cy="12" r="6"/></svg></article></main>';
   document.querySelector(".ds-markdown")!.textContent = "<deeprole_choices>" + JSON.stringify(options) + "</deeprole_choices>";

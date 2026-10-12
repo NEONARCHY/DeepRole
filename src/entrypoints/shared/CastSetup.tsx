@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WandSparkles, X } from "lucide-react";
 import { browser } from "wxt/browser";
@@ -8,10 +8,14 @@ import type { CastDraft, CastMember } from "../../core/cast-initialization";
 import type { CastMessage, CastView } from "../../adapters/cast-coordinator";
 import type { Locale } from "../../core/types";
 import { CastStatus } from "./CastStatus";
+import { CastDiagnostics } from "./CastDiagnostics";
+import { castNotices } from "../../core/cast-notices";
+import { castReviewReason } from "../../core/cast-review";
 
 
 export function CastSetup({ worldId, locale, compact = false }: { worldId: string; locale: Locale; compact?: boolean }) {
  const t = (key: CastCopyKey) => castText(locale, key);
+ const reviewId = useId();
  const [job, setJob] = useState<CastView | null>(null), [draft, setDraft] = useState<CastDraft | null>(null);
  const [selected, setSelected] = useState<string[]>([]), [hero, setHero] = useState("");
  const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
@@ -64,22 +68,25 @@ export function CastSetup({ worldId, locale, compact = false }: { worldId: strin
  const review = () => { if (!job?.draft) return; setDraft(structuredClone(job.draft)); setSelected(job.draft.characters.map(c => c.key)); setHero(job.draft.characters.find(c => c.sheet.protagonist)?.key ?? ""); setError(""); setOpen(true); };
  const change = (key: string, update: (member: CastMember) => CastMember) => setDraft(old => old ? { ...old, characters: old.characters.map(c => c.key === key ? update(c) : c) } : old);
  const preparing = !!job && ["opening", "reading", "analyzing"].includes(job.phase);
+ const notices = draft ? castNotices(draft) : { review: [], notes: [] };
  const hidden = !!job && (visibility?.id === job.id ? visibility.hidden : !!job.statusHidden);
- const hasStatus = !!job && (!compact || preparing || job.phase === "ready" || job.phase === "error" || job.cleanup === "pending" || job.cleanup === "failed");
+ const hasDiagnostics = !!job?.diagnostics?.length;
+ const hasStatus = !!job && (!compact || hasDiagnostics || preparing || job.phase === "ready" || job.phase === "error" || job.cleanup === "pending" || job.cleanup === "failed");
  const statusVisible = hasStatus && !hidden;
- const togglesStatus = hasStatus && (hidden || preparing || job?.phase === "ready" || job?.phase === "error" || job?.cleanup === "pending" || job?.cleanup === "failed");
+ const togglesStatus = hasStatus && (hasDiagnostics || hidden || preparing || job?.phase === "ready" || job?.phase === "error" || job?.cleanup === "pending" || job?.cleanup === "failed");
  const label = togglesStatus ? t(hidden ? "showStatus" : "hide") : job?.phase === "ready" ? t("review") : t("start");
  return <div ref={root} className={compact ? "dr-cast-setup is-compact" : "dr-cast-setup"}>
-   {!compact && <><strong>{t("title")}</strong><p>{t("hint")}</p></>}
+   {!compact && <><strong>{t("title")}</strong><p>{t("hint")}</p><p className="dr-cast-notice-hint">{t("sequentialHint")}</p></>}
    <button className={compact ? "icon-button dr-cast-trigger" : "button secondary small dr-cast-trigger"} type="button" title={label} aria-label={label} disabled={busy && !togglesStatus} onClick={() => togglesStatus ? void setStatusVisible(hidden) : job?.phase === "ready" ? review() : void act({ type: "DR_CAST", action: "start", worldId, locale, retry: !!job })}><WandSparkles size={16}/>{!compact && <span>{label}</span>}</button>
    {job && statusVisible && <CastStatus key={job.id} job={job} locale={locale} compact={compact} anchor={root} onHide={() => void setStatusVisible(false)}>
      {preparing && <button type="button" className="button secondary small" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cancel", id: job.id })}>{t("cancel")}</button>}
-     {job.phase === "ready" && <><button type="button" className="button primary small" disabled={busy} onClick={review}>{t("review")}</button><button type="button" className="button secondary small" disabled={busy || job.cleanup === "pending" || job.cleanup === "failed"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t("reprepare")}</button></>}
-     {job.phase === "error" && <><p>{job.draft?.characters.length ? t("partialHint") : castError(locale, job.error ?? "")}</p>{!!job.draft?.characters.length && <button type="button" className="button primary small" disabled={busy} onClick={review}>{t("review")} · {job.draft.characters.length}</button>}<button type="button" className="button secondary small" disabled={busy || job.cleanup === "pending" || job.cleanup === "failed"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t(job.draft?.characters.length ? "resume" : "retry")}</button></>}
+     {job.phase === "ready" && <><button type="button" className="button primary small dr-cast-review-ready" disabled={busy} onClick={review}>{t("review")}</button><button type="button" className="button secondary small" disabled={busy || job.cleanup === "pending" || job.cleanup === "failed"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t("reprepare")}</button></>}
+     {job.phase === "error" && <><p>{castError(locale, job.error ?? "")}</p>{!!job.draft?.characters.length && <button type="button" className="button primary small" disabled={busy} onClick={review}>{t("review")} · {job.draft.characters.length}</button>}<button type="button" className="button secondary small dr-retry-action" disabled={busy || job.cleanup === "pending" || job.cleanup === "failed"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t(job.draft?.characters.length ? "resume" : "retry")}</button></>}
      {job.cleanup === "pending" && !preparing && <small>{t("cleanup")}</small>}
      {job.cleanup === "failed" && <><small>{t("cleanupFailed")}</small><div className="button-row"><button className="button secondary small" type="button" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cleanup", id: job.id })}>{t("cleanupRetry")}</button><button className="dr-cast-open-chat" type="button" disabled={busy || !castChatLink(job.chatId, job.chatUrl)} onClick={() => void act({ type: "DR_CAST", action: "open", id: job.id })}>{t("openChat")}</button></div>{!castChatLink(job.chatId, job.chatUrl) && <small>{t("openMissing")}</small>}</>}
      {!preparing && (job.cleanup === "pending" || job.cleanup === "failed") && <div className="dr-cast-cleanup-confirm"><button type="button" className="button secondary small" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "confirm-cleanup", id: job.id })}>{t("cleanupConfirm")}</button><small>{t("cleanupConfirmHint")}</small></div>}
      {error && <p role="alert" className="error-text">{error}</p>}
+     {hasDiagnostics && <CastDiagnostics job={job} locale={locale}/>}
    </CastStatus>}
    {error && !statusVisible && <p role="alert" className={compact ? "error-text dr-cast-trigger-error" : "error-text"}>{error}</p>}
    {open && draft && createPortal(<div className="dr-cast-layer" onKeyDown={e => {
@@ -92,18 +99,20 @@ export function CastSetup({ worldId, locale, compact = false }: { worldId: strin
      }
    }}><div ref={dialog} className="dr-cast-dialog" role="dialog" aria-modal="true" aria-labelledby="dr-cast-title">
      <header><div><h2 id="dr-cast-title">{t("title")}</h2><small>{t("source")}: {job?.sourceCount ?? 0} · {t("count")}: {draft.characters.length}</small></div><button type="button" className="icon-button" aria-label={t("close")} disabled={busy} onClick={() => setOpen(false)}><X size={18}/></button></header>
-     <div className="dr-cast-body"><p>{t("estimates")}</p>{draft.warnings.map((w,i) => <p className="dr-cast-warning" key={i}>{w}</p>)}
+     <div className="dr-cast-body"><p>{t("estimates")}</p>
+     {!!notices.review.length && <section className="dr-cast-review-notices"><strong>{t("modelReview")}</strong><p className="dr-cast-notice-hint">{t("modelReviewHint")}</p>{notices.review.map((w,i) => <p className="dr-cast-warning" key={i}>{w}</p>)}</section>}
+     {!!notices.notes.length && <details className="dr-cast-notes"><summary>{t("loreNotes")} · {notices.notes.length}</summary><p className="dr-cast-notice-hint">{t("loreNotesHint")}</p><ul>{notices.notes.map((w,i) => <li key={i}>{w}</li>)}</ul></details>}
      {!hero && <p className="dr-cast-warning">{t("chooseHero")}</p>}
-     {draft.characters.map(c => <article key={c.key} className="dr-cast-member"><div className="dr-cast-member-heading">
+     {draft.characters.map((c, memberIndex) => <article key={c.key} className="dr-cast-member"><div className="dr-cast-member-heading">
        <input aria-label={t("select") + ": " + c.name} type="checkbox" checked={selected.includes(c.key)} disabled={busy} onChange={e => { setSelected(old => e.target.checked ? [...old,c.key] : old.filter(k => k !== c.key)); if (!e.target.checked && hero === c.key) setHero(""); }}/>
        <strong>{c.name}</strong><label><input type="radio" name="cast-hero" checked={hero === c.key} disabled={busy || !selected.includes(c.key)} onChange={() => setHero(c.key)}/>{t("hero")}</label>
-     </div><p className="dr-cast-reason">{c.reason}</p>
+     </div><p className="dr-cast-reason">{castReviewReason(c, locale)}</p>
        {c.sheet.relationships && <div className="dr-cast-scores">{(["trust","affinity"] as const).map(field => <div key={field}><span>{t(field)} / 100</span><input type="number" aria-label={t(field) + ": " + c.name} min={0} max={100} value={c.sheet.relationships!.initial[field]} disabled={busy || !selected.includes(c.key)} onChange={e => change(c.key, item => ({ ...item, sheet: { ...item.sheet, relationships: { ...item.sheet.relationships!, initial: { ...item.sheet.relationships!.initial, [field]: Math.max(0,Math.min(100,Math.round(Number(e.target.value)))) } } } }))}/></div>)}</div>}
-       {!!c.sheet.attributes?.length && <div className="dr-cast-scores">{c.sheet.attributes.map((a,index) => <div key={a.id}><span>{a.label} / 100</span><input type="number" aria-label={a.label + ": " + c.name} min={0} max={100} value={a.initial} disabled={busy || !selected.includes(c.key)} onChange={e => change(c.key, item => ({ ...item, sheet: { ...item.sheet, attributes: item.sheet.attributes!.map((attribute,i) => i === index ? { ...attribute, initial: Math.max(0,Math.min(100,Math.round(Number(e.target.value)))) } : attribute) } }))}/></div>)}</div>}
+       {!!c.sheet.attributes?.length && <div className="dr-cast-scores dr-cast-attributes">{c.sheet.attributes.map((a,index) => <div key={a.id}><div className="dr-cast-attribute-heading"><span>{a.label} / 100</span><button type="button" className="icon-button" aria-label={t("removeAttribute") + ": " + a.label} disabled={busy || !selected.includes(c.key)} onClick={() => change(c.key, item => ({ ...item, sheet: { ...item.sheet, attributes: item.sheet.attributes!.filter(attribute => attribute.id !== a.id) } }))}><X size={14}/></button></div><input type="number" aria-label={a.label + ": " + c.name} aria-describedby={`${reviewId}-${memberIndex}-${index}`} min={0} max={100} value={a.initial} disabled={busy || !selected.includes(c.key)} onChange={e => change(c.key, item => ({ ...item, sheet: { ...item.sheet, attributes: item.sheet.attributes!.map((attribute,i) => i === index ? { ...attribute, initial: Math.max(0,Math.min(100,Math.round(Number(e.target.value)))) } : attribute) } }))}/><small className="dr-cast-attribute-meaning" id={`${reviewId}-${memberIndex}-${index}`}>{a.low.trim() && <span>{t("attributeLow")}: {a.low}</span>}{a.high.trim() && <span>{t("attributeHigh")}: {a.high}</span>}{!a.low.trim() && !a.high.trim() && <span>{t("attributeMeaningMissing")}</span>}</small></div>)}</div>}
        <details><summary>{t("review")}</summary>{(["appearance","personality","goals","background"] as const).map(field => <div className="dr-cast-field" key={field}><span>{t(field)}</span><textarea aria-label={t(field) + ": " + c.name} value={c.sheet[field]} maxLength={1200} rows={3} disabled={busy || !selected.includes(c.key)} onChange={e => change(c.key,item => ({ ...item,sheet:{ ...item.sheet,[field]:e.target.value } }))}/></div>)}
          <p><strong>{t("condition")}:</strong> {c.state.condition || "—"}</p><p><strong>{t("relationship")}:</strong> {c.state.relationship || "—"}</p>
          {c.sheet.relationships && <><p>{c.sheet.relationships.boundaries}</p>{c.sheet.relationships.milestones.map(m => <p key={m.id}>{c.completed.includes(m.id) ? "✓ " : "○ "}{m.label}</p>)}</>}
-         <details><summary>{t("evidence")}</summary>{c.evidence.map((e,i) => <blockquote key={i}><small>{job?.titles[e.source] ?? e.source}</small><p>{e.quote}</p></blockquote>)}</details>
+         <details><summary>{t("evidence")}</summary>{c.evidence.map((e,i) => <blockquote key={i}><small>{job?.titles[e.source] || `${t("sourceFallback")} ${i + 1}`}</small><p>{e.quote}</p></blockquote>)}</details>
        </details></article>)}
        {error && <p role="alert" className="error-text">{error}</p>}
      </div><footer><button className="button secondary" type="button" disabled={busy} onClick={() => setOpen(false)}>{t("close")}</button><button className="button primary" type="button" disabled={busy || !hero || !selected.includes(hero)} onClick={async () => {

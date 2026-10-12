@@ -1,0 +1,17 @@
+.dr-story-review, .dr-story-review > div { min-width: 0; }
+.dr-story-review h2, .dr-story-review h3, .dr-story-review p, .dr-story-review summary { overflow-wrap: anywhere; }
+.dr-story-review .button { min-height: 40px; white-space: normal; max-width: 100%; }
+.dr-story-review p, .dr-story-review h3, .dr-story-review summary, .dr-story-review [role="status"] { font-size: 12px; line-height: 1.6; }
+.dr-story-review [role="status"]:empty { display: none; }
+.dr-story-review-entry, .dr-story-review-preview { background: var(--dr-surface); border: 1px solid var(--dr-border); border-radius: var(--dr-radius); padding: var(--dr-space-3); margin-block: var(--dr-space-3); }
+.dr-story-review-meta { color: var(--dr-muted); }
+.dr-story-review-source { white-space: pre-wrap; }
+.dr-story-review-full { max-height: 240px; overflow: auto; }
+.dr-story-review-actions { display: flex; flex-wrap: wrap; gap: var(--dr-space-2); }
+.dr-story-review ul { padding-inline-start: 20px; }
+.dr-story-review textarea { width: 100%; box-sizing: border-box; min-height: 88px; padding: var(--dr-space-2); border: 1px solid var(--dr-border-strong); border-radius: var(--dr-radius); background: var(--dr-raised); color: var(--dr-text); font: inherit; resize: vertical; }
+.dr-character-discovery h4 { overflow-wrap: anywhere; margin-block: var(--dr-space-2); }
+.dr-character-discovery label { display: grid; gap: var(--dr-space-2); margin-block: var(--dr-space-3); min-width: 0; }
+.dr-character-discovery input:not([type="checkbox"]) { width: 100%; box-sizing: border-box; min-height: 44px; padding: var(--dr-space-2); background: var(--dr-raised); color: var(--dr-text); border: 1px solid var(--dr-border-strong); border-radius: var(--dr-radius); font: inherit; }
+.dr-character-discovery label.dr-character-check { display:flex; align-items:center; min-height:44px; }
+.dr-profile-supplements select { width:100%; min-height:44px; background:var(--dr-raised); color:var(--dr-text); border:1px solid var(--dr-border-strong); border-radius:var(--dr-radius); font:inherit; padding:var(--dr-space-2); }

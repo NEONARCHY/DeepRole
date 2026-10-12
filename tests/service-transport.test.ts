@@ -35,6 +35,29 @@ describe("service transport lifecycle", () => {
     vi.restoreAllMocks(); vi.unstubAllGlobals();
   });
   const failures = () => posted.mock.calls.map((args: unknown[]) => args[0]).filter((value: any) => value?.type === "SERVICE_REQUEST_FAILED");
+  function answerContext() {
+    const message = posted.mock.calls.map((args: any[]) => args[0]).find((value: any) => value.type === "REQUEST_CONTEXT");
+    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "FRESH_RECORD" } }));
+    return message;
+  }
+  it.each([null, 0, 42])("forwards explicit parent %s and HTTP status without reading the response stream", async parent => {
+    const original = JSON.stringify({ prompt: "Mira", chat_session_id: "synthetic-chat", parent_message_id: parent });
+    const pending = fetch("/api/v0/chat/completion", { method: "POST", body: original }), message = answerContext();
+    expect(message.storyIdentity).toEqual({ chatId: "synthetic-chat", nativeParentKey: parent === null ? null : JSON.stringify(["message", String(parent)]) });
+    const response = await pending; expect(response.bodyUsed).toBe(false); expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(posted.mock.calls.map((args: unknown[]) => args[0])).toContainEqual(expect.objectContaining({ type: "INJECTION_STATUS", id: message.id, ok: true, httpStatus: 200 }));
+  });
+  it("does not present a missing native parent as an explicit root", async () => {
+    const pending = fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira", chat_session_id: "synthetic-chat" }) }), message = answerContext();
+    expect(message.storyIdentity).toBeNull(); await pending;
+  });
+  it("forwards the same metadata through XHR while waiting only for fresh context", async () => {
+    const xhr = new XMLHttpRequest() as unknown as MockXHR; xhr.open("POST", "/api/v0/chat/completion");
+    xhr.send(JSON.stringify({ prompt: "Mira", chat_session_id: "synthetic-chat", parent_message_id: "native-parent" }));
+    const message = answerContext(); expect(message.storyIdentity.nativeParentKey).toBe('["message","native-parent"]');
+    await vi.waitFor(() => expect(xhr.sent).toHaveLength(1)); xhr.headers();
+    expect(posted.mock.calls.map((args: unknown[]) => args[0])).toContainEqual(expect.objectContaining({ type: "INJECTION_STATUS", id: message.id, ok: true, httpStatus: 200 })); xhr.finish();
+  });
 
   it("waits for a fresh context arriving after a slow storage read without sending twice", async () => {
     vi.useFakeTimers();

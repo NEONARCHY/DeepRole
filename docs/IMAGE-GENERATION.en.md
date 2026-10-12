@@ -6,7 +6,7 @@ An optional feature for story illustrations. Off by default. DeepSeek prepares a
 
 There are two independent paths: **upload ready pictures** (no image API needed), or **generate new pictures inside DeepRole** (your own provider connection and possible charges).
 
-For ready avatars, use your own art or download portraits from a web image tool such as [Adobe Firefly](https://helpx.adobe.com/firefly/web/work-with-images/generate-images/generate-images-from-text-descriptions.html). Keep a base portrait and use it as a reference when making emotion variants. Then open **Character → Images → Image library**, upload your PNG/JPG/WebP files, assign emotions and **Save character**. This organizes existing pictures; it does not train a model or regenerate them. Set upload quality in **Settings → Appearance**, and enlarge the library’s **Preview size** to inspect faces.
+For ready avatars, use your own art or download portraits from a web image tool such as [Adobe Firefly](https://helpx.adobe.com/firefly/web/work-with-images/generate-images/generate-images-from-text-descriptions.html). Keep a base portrait and use it as a reference when making action variants. Then open **Character → Images → Image library**, upload your PNG/JPG/WebP files, assign actions and **Save character**. This organizes existing pictures; it does not train a model or regenerate them. Set upload quality in **Settings → Appearance**, and enlarge the library’s **Preview size** to inspect faces.
 
 ### Venice: a straightforward native connection
 

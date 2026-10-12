@@ -3,6 +3,11 @@ import { DEFAULT_PORTRAIT_MAX_EDGE, portraitUploadDimensions, validPortraitMaxEd
 import { getSettings } from "../../storage/settings";
 
 export type PortraitUploadMode = "original" | "configured" | "compact";
+let photoStorage: ((image: string) => Promise<string>) | undefined;
+/** Production mounts install storage; standalone UI previews stay self-contained. */
+export function setPortraitPhotoStorage(store: (image: string) => Promise<string>): () => void {
+  photoStorage = store; return () => { if (photoStorage === store) photoStorage = undefined; };
+}
 async function decodePortrait(file: File, maxEdge: number, mode: PortraitUploadMode): Promise<string> {
   if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) throw new Error("image-invalid");
   const url = URL.createObjectURL(file);
@@ -25,13 +30,13 @@ async function decodePortrait(file: File, maxEdge: number, mode: PortraitUploadM
 }
 
 async function maxEdge() { const setting = (await getSettings()).portraitMaxEdge; return validPortraitMaxEdge(setting) ? setting : DEFAULT_PORTRAIT_MAX_EDGE; }
-export async function readPortrait(file: File, mode: PortraitUploadMode = "configured"): Promise<string> { return decodePortrait(file, await maxEdge(), mode); }
+export async function readPortrait(file: File, mode: PortraitUploadMode = "configured"): Promise<string> { const image = await decodePortrait(file, await maxEdge(), mode); return photoStorage ? photoStorage(image) : image; }
 /** Capture preferences once per batch, not on every image or asynchronous step. */
 export async function readPortraitFiles(files: File[], onProgress?: (done: number) => void, mode: PortraitUploadMode = "configured"): Promise<string[]> {
   const edge = await maxEdge(), images: string[] = [];
   for (const file of files) {
     const image = await decodePortrait(file, edge, mode);
-    images.push(image); onProgress?.(images.length);
+    images.push(photoStorage ? await photoStorage(image) : image); onProgress?.(images.length);
   }
   return images;
 }

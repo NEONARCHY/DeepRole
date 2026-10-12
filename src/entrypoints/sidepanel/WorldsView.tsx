@@ -11,8 +11,8 @@ import { Check, ChevronDown, Plus, Upload, X } from "lucide-react";
 import { formatRecordCount, menuText } from "../../core/menu-i18n";
 import { uiText } from "../../core/ui-i18n";
 import { experienceText } from "../../core/experience-i18n";
-import { characterDescription, characterText, EMPTY_CHARACTER, EMPTY_STATUS, emotionsFor } from "../../core/characters";
-import { EmotionAvailability } from "../shared/EmotionAvailability";
+import { characterDescription, characterText, EMPTY_CHARACTER, EMPTY_STATUS, actionsFor } from "../../core/characters";
+import { ActionAvailability } from "../shared/ActionAvailability";
 import { BOOK_COLORS } from "../../core/defaults";
 import { createId } from "../../core/id";
 import { importFileTooLarge } from "../../core/import-limits";
@@ -38,7 +38,7 @@ import { progressText } from "../../core/progress-i18n";
 import { relationshipText } from "../../core/relationship-i18n";
 
 type T = (key: SceneKey, vars?: Record<string, string | number>) => string;
-export function WorldsView(props: { defaultEmotions?: string[]; onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
+export function WorldsView(props: { defaultActions?: string[]; onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
   const mt = (key: Parameters<typeof menuText>[1]) => menuText(props.locale, key);
   const x = (key: Parameters<typeof experienceText>[1]) => experienceText(props.locale, key);
@@ -136,9 +136,10 @@ export function WorldsView(props: { defaultEmotions?: string[]; onExport: (world
       {world && view === "manage" && <>
       <section className="rp-card"><header><h2>{world.name}</h2></header><div className="button-row">
         <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "world", id: world.id })}>{t("edit")}</HelpButton>
-        </div><details><summary>{uiText(props.locale, "worldTools")}</summary><div className="button-row"><HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const copy = cloneWorldPackage(await exportWorld(world.id), t("copyName", { name: world.name })); await repository.mergeRecords(copy); props.onWorld(copy.find((r) => r.kind === "world")!.id); })}>{t("duplicate")}</HelpButton>
+        <button type="button" className="button secondary small danger" disabled={busy} onClick={() => { if(window.confirm(t("deleteWorldAllConfirm",{name:world.name}))) void act(async()=>{await removeWorld(world.id,repository,{deleteLore:true});props.onWorld(null);setEditor(null);}); }}>{t("deleteWorldAll")}</button>
+        </div><p className="rp-hint">{t("deleteWorldAllHint")}</p><details><summary>{uiText(props.locale, "worldTools")}</summary><div className="button-row"><HelpButton className="button secondary small" disabled={busy} onClick={() => void act(async () => { const copy = cloneWorldPackage(await exportWorld(world.id), t("copyName", { name: world.name })); await repository.mergeRecords(copy); props.onWorld(copy.find((r) => r.kind === "world")!.id); })}>{t("duplicate")}</HelpButton>
         <HelpButton className="button secondary small" disabled={busy} onClick={() => props.onExport(world.id)}>{t("export")}</HelpButton>
-        <HelpButton className="button secondary small danger" disabled={busy} onClick={() => { if (window.confirm(t("deleteWorld"))) void act(async () => { await removeWorld(world.id); props.onWorld(null); }); }}>{t("delete")}</HelpButton>
+        <HelpButton className="button secondary small danger" disabled={busy} onClick={() => { if (window.confirm(t("deleteWorld"))) void act(async () => { await removeWorld(world.id); props.onWorld(null); }); }}>{t("deleteWorldKeep")}</HelpButton>
       </div><p className="rp-hint">{t("importHint")}</p></details></section>
       <section className="rp-card"><header><h2>{t("books")}</h2></header>
         <p className="rp-hint">{uiText(props.locale, "booksHint")}</p>
@@ -146,7 +147,7 @@ export function WorldsView(props: { defaultEmotions?: string[]; onExport: (world
         <details><summary>{t("advanced")}</summary><label className="field-label">{t("moveBook")}<Select aria-label={t("moveBook")} value="" disabled={busy} onChange={(e) => { const book = props.books.find((b) => b.id === e.target.value); if (book) void act(() => assignBookWorld(book, world.id)); }}><option value="">{t("chooseBook")}</option>{props.books.filter((b) => !b.worldId).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label></details>
       </section>
       <section className="rp-card"><header><h2>{t("entities")}</h2></header><HelpButton className="button primary small" onClick={() => setEditor({ kind: "entity" })}>{t("newEntity")}</HelpButton>
-        {editor?.kind === "entity" && <EntityEditor emotions={emotionsFor(world.characterEmotions ?? props.defaultEmotions)} locale={props.locale} key={editor.id ?? "new-entity"} worldId={world.id} entity={entities.find((e) => e.id === editor.id)} entities={entities} entries={entries} t={t} busy={busy} onSave={saveEntity} onCancel={() => setEditor(null)} />}
+        {editor?.kind === "entity" && <EntityEditor actions={actionsFor(world.characterActions ?? props.defaultActions)} locale={props.locale} key={editor.id ?? "new-entity"} worldId={world.id} entity={entities.find((e) => e.id === editor.id)} entities={entities} entries={entries} t={t} busy={busy} onSave={saveEntity} onCancel={() => setEditor(null)} />}
         {entities.map((entity) => <article key={entity.id} className="rp-item"><small>{t(entity.kind)}</small><h3>{entity.name}</h3><p>{characterDescription(entity, props.locale)}</p><small>{t("linkedMemory")}: {entries.filter((e) => e.entityIds?.includes(entity.id)).length}</small><div className="button-row">
           <HelpButton className="button secondary small" onClick={() => setEditor({ kind: "entity", id: entity.id })}>{t("edit")}</HelpButton>
           <HelpButton className="button secondary small" disabled={busy} onClick={() => void act(() => duplicateEntity(entity, t("copyName", { name: entity.name })))}>{t("duplicate")}</HelpButton>
@@ -245,7 +246,7 @@ function WorldEditor(props: { locale: Locale; world?: WorldProfile; t: T; busy: 
   </form>;
 }
 
-function EntityEditor(props: { locale: Locale; emotions: string[]; worldId: string; entity?: SceneEntity; entities: SceneEntity[]; entries: MemoryEntry[]; t: T; busy: boolean; onSave: (v: SceneEntity, links: string[], expected: SceneEntity | null, baseEntries: MemoryEntry[]) => Promise<void>; onCancel: () => void }) {
+function EntityEditor(props: { locale: Locale; actions: string[]; worldId: string; entity?: SceneEntity; entities: SceneEntity[]; entries: MemoryEntry[]; t: T; busy: boolean; onSave: (v: SceneEntity, links: string[], expected: SceneEntity | null, baseEntries: MemoryEntry[]) => Promise<void>; onCancel: () => void }) {
   const [sheet, setSheet] = useState(props.entity?.characterSheet);
   const [base] = useState(props.entity ?? null); const [baseEntries] = useState(props.entries);
   const [useDescription, setUseDescription] = useState(props.entity?.useDescriptionInContext ?? !props.entity);
@@ -262,7 +263,7 @@ function EntityEditor(props: { locale: Locale; emotions: string[]; worldId: stri
     <Select aria-label={t("entities")} value={kind} onChange={(e) => setKind(e.target.value as SceneEntity["kind"])}>{(["character","location","group"] as const).map((v) => <option key={v} value={v}>{t(v)}</option>)}</Select>
     <Field name={t("description")} help={t("entityHint")}><textarea className="textarea" aria-label={t("description")} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
     {sheet && kind === "character" && (["appearance", "personality", "goals", "background"] as const).map(key => <Field key={key} name={characterText(props.locale, key)}><textarea className="textarea" aria-label={characterText(props.locale, key)} maxLength={1200} value={sheet[key]} onChange={e => setSheet({ ...sheet, [key]: e.target.value })} /></Field>)}
-    {kind === "character" && <EmotionAvailability locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} emotions={props.emotions} disabled={props.busy} onChange={setSheet} />}
+    {kind === "character" && <ActionAvailability locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} actions={props.actions} disabled={props.busy} onChange={setSheet} />}
     {kind === "character" && <details className="dr-bond-history"><summary>{relationshipText(props.locale, "title")}</summary><RelationshipEditor profileOnly locale={props.locale} entity={props.entity ?? null} sheet={sheet ?? EMPTY_CHARACTER} state={EMPTY_STATUS} disabled={props.busy} onSheet={setSheet} onState={() => undefined} /></details>}
     {kind === "character" && <details className="dr-bond-history" onInvalidCapture={event => { event.currentTarget.open = true; }}><summary>{progressText(props.locale, "title")}</summary><AttributeEditor profileOnly locale={props.locale} sheet={sheet ?? EMPTY_CHARACTER} state={EMPTY_STATUS} disabled={props.busy} onSheet={setSheet} onState={() => undefined} /></details>}
     <label className="rp-check"><input type="checkbox" aria-label={t("useDescription")} checked={useDescription} onChange={(e) => setUseDescription(e.target.checked)} />{t("useDescription")}</label>

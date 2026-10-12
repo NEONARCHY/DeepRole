@@ -1,0 +1,35 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`plain cast explanation and editable proposals ${locale} ${width}`, async ({ page }) => {
+ await page.setViewportSize({ width, height: 950 });
+ await page.goto(`/tests/fixtures/cast.html?locale=${locale}&technical=1`);
+ await expect(page.locator('.dr-cast-setup')).toContainText(locale === 'ru' ? 'по одному персонажу' : 'one character per request');
+ await page.getByRole('button', { name: locale === 'ru' ? 'Проверить персонажей' : 'Review characters', exact: true }).click();
+ const dialog = page.getByRole('dialog'), person = dialog.locator('.dr-cast-member').first();
+ await expect(person.locator('.dr-cast-reason')).not.toContainText('entity_');
+ await expect(person.locator('.dr-cast-reason')).not.toContainText('protagonist');
+ await expect(person.locator('.dr-cast-reason')).not.toContainText('state');
+ const score = person.getByRole('spinbutton', { name: locale === 'ru' ? 'Самоконтроль: Leon' : 'Self-control: Leon', exact: true });
+ await expect(score).toHaveAccessibleDescription(new RegExp(locale === 'ru' ? 'Сохраняет спокойствие' : 'Stays calm'));
+ await expect(person).toContainText(locale === 'ru' ? 'Смысл шкалы не указан' : 'This scale has no description');
+ await person.getByRole('button', { name: locale === 'ru' ? 'Убрать характеристику: Физформа' : 'Remove attribute: Fitness', exact: true }).click();
+ await expect(person.getByRole('spinbutton', { name: locale === 'ru' ? 'Физформа: Leon' : 'Fitness: Leon', exact: true })).toHaveCount(0);
+ await score.fill('71');
+ await person.locator('.dr-cast-reason').scrollIntoViewIfNeeded();
+ await page.screenshot({ path: test.info().outputPath(`cast-review-copy-${locale}-${width}.png`) });
+ await person.locator('details > summary').first().click();
+ await person.getByText(locale === 'ru' ? 'На основании лора' : 'Based on lore', { exact: true }).click();
+ await expect(person.locator('blockquote')).toContainText('Test story');
+ await expect(person.locator('blockquote')).toContainText('Leon is the protagonist.');
+ expect(await dialog.evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);
+ const audit = await new AxeBuilder({ page }).include('.dr-cast-dialog').withTags(['wcag2a','wcag2aa']).analyze();
+ expect(audit.violations).toEqual([]);
+ await page.screenshot({ path: test.info().outputPath(`cast-review-sources-${locale}-${width}.png`) });
+ await dialog.getByRole('button', { name: locale === 'ru' ? 'Сохранить выбранных · 2' : 'Save selected · 2', exact: true }).click();
+ await expect(dialog).toHaveCount(0);
+ const snapshot = await page.evaluate(async () => ({ saved: (window as any).saved, snapshot: await (window as any).castSnapshot() }));
+ expect(snapshot.saved.find((p:any) => p.name === 'Leon').characterSheet.attributes).toEqual([{ id:'self_control',label:locale === 'ru' ? 'Самоконтроль' : 'Self-control',initial:71,low:locale === 'ru' ? 'Легко выходит из себя' : 'Loses composure easily',high:locale === 'ru' ? 'Сохраняет спокойствие под давлением' : 'Stays calm under pressure',cap:3 }]);
+ expect(snapshot.snapshot.job.draft.characters[0].reason).toContain('entity_example-123');
+ expect(snapshot.snapshot.records.find((r:any) => r.kind === 'world').data.description).toContain('Leon is the protagonist.');
+});

@@ -10,3 +10,8 @@ export function castDraft(request:string): CastDraft {
  const hero=member("p1","Leon",true), mira=member("p2","Mira",false);
  return {version:1,request,characters:[hero,{...mira,completed:["promise"],sheet:{...mira.sheet,relationships:{...structuredClone(DEFAULT_RELATIONSHIP),initial:{trust:82,affinity:71},boundaries:"Needs honesty",reactions:"Values promises",milestones:[{id:"promise",label:"Kept a promise",required:false}]}}}],present:["p1","p2"],partners:["p2"],warnings:[]};
 }
+/** New one-person protocol; scene references may include earlier validated people. */
+export function castBatch(request: string, index: 0 | 1, more = index === 0) {
+ const draft = castDraft(request);
+ return { ...draft, characters: [draft.characters[index]!], present: draft.present.slice(0, index + 1), partners: index ? draft.partners : [], more };
+}

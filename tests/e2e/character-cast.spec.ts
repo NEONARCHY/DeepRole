@@ -29,29 +29,29 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 760]) {
 }
 
 for (const locale of ["ru", "en"] as const) {
-  test(`viewing portrait emotions is not an edit ${locale}`, async ({ page }) => {
+  test(`viewing portrait actions is not an edit ${locale}`, async ({ page }) => {
     await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
     await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
     const dialog = page.getByRole("dialog");
-    const preview = dialog.getByLabel(locale === "ru" ? "Эмоция портрета" : "Portrait emotion", { exact: true });
+    const preview = dialog.getByLabel(locale === "ru" ? "Действие портрета" : "Portrait action", { exact: true });
     await characterTab(dialog, "images", locale);
     await expect(preview).toHaveValue("happy");
     let confirmations = 0;
     page.on("dialog", async event => { confirmations++; await event.dismiss(); });
     await preview.selectOption("angry");
     await characterTab(dialog, "scene", locale);
-    await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("happy");
+    await expect(dialog.getByLabel(locale === "ru" ? "Действие" : "Action", { exact: true })).toHaveValue("happy");
     await dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).first().click();
     await expect(dialog).toHaveCount(0); expect(confirmations).toBe(0);
     await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
     await characterTab(dialog, "scene", locale);
-    await dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true }).selectOption("sad");
+    await dialog.getByLabel(locale === "ru" ? "Действие" : "Action", { exact: true }).selectOption("sad");
     await dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).first().click();
     await expect(dialog).toBeVisible(); expect(confirmations).toBe(1);
-    await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("sad");
+    await expect(dialog.getByLabel(locale === "ru" ? "Действие" : "Action", { exact: true })).toHaveValue("sad");
     await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click(); await closeSavedCharacter(dialog, locale);
     await expect(dialog).toHaveCount(0);
-    expect(await page.evaluate(() => (window as any).saved.state.emotion)).toBe("sad");
+    expect(await page.evaluate(() => (window as any).saved.state.action)).toBe("sad");
   });
 }
 
@@ -76,7 +76,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await portrait.scrollIntoViewIfNeeded();
     await page.locator("[data-deeprole-choices-host]").screenshot({ path: info.outputPath(`portrait-stats-${locale}-${width}.png`) });
     await page.locator(".dr-characters").screenshot({ path: info.outputPath(`panel-stats-${locale}-${width}.png`) });
-    await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "2", states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, emotion: "worried", stats: [{ label: "Keys", value: "0" }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }] } } } }); });
+    await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "2", states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, action: "worried", stats: [{ label: "Keys", value: "0" }, { label: "Signal", value: "<img src=x onerror=alert(1)>" }] } } } }); });
     await expect(portrait).toBeFocused(); await expect(portrait.locator("small")).toHaveText(locale === "ru" ? "Тревога" : "Worried");
     await expect(portrait.locator(".dr-cast-highlights>span")).toHaveText(["Keys: 0", "Signal: <img src=x onerror=alert(1)>"]);
     await expect(tile).toContainText(locale === "ru" ? "Тревога" : "Worried");
@@ -105,7 +105,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     await tile.click(); await characterTab(dialog, "scene", locale); await expect(partner).not.toBeChecked(); const present = dialog.getByRole("checkbox", { name: presentName, exact: true });
     await expect(present).not.toBeChecked(); await partner.focus(); await partner.press("Space");
     await expect(partner).toBeChecked(); await expect(present).toBeChecked(); await expect(partner).toBeFocused();
-    await expect(dialog.getByLabel(locale === "ru" ? "Настроение" : "Mood", { exact: true })).toHaveValue("happy");
+    await expect(dialog.getByLabel(locale === "ru" ? "Действие" : "Action", { exact: true })).toHaveValue("happy");
     await expect(partner).toHaveAccessibleDescription(/(Можно отметить нескольких|Select several people)/);
     await present.uncheck(); await expect(partner).not.toBeChecked(); await partner.check();
     await page.evaluate(() => { (window as any).rejectSave = true; });
@@ -116,7 +116,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
     expect((await new AxeBuilder({ page }).include(".dr-character-dialog").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await save.click(); await closeSavedCharacter(dialog, locale); await expect(dialog).toHaveCount(0);
-    expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: true, present: true, state: { emotion: "happy" }, chatId: "a" });
+    expect(await page.evaluate(() => (window as any).saved)).toMatchObject({ interlocutor: true, present: true, state: { action: "happy" }, chatId: "a" });
     await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, partnerId: "mira", presentIds: ["hero", "mira"] } }); });
     await page.locator(".dr-cast-portrait.right").click(); await characterTab(dialog, "scene", locale); await expect(partner).toBeChecked(); await partner.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath(`manual-partner-${locale}-${width}.png`) });
@@ -152,11 +152,11 @@ test("scene, scope and aliases update without leaking the previous roster filter
   expect(await page.evaluate(() => (window as any).saved)).toBeUndefined();
 });
 
-test("live emotion changes preserve portrait focus and recover corrupt local images", async ({ page }) => {
+test("live action changes preserve portrait focus and recover corrupt local images", async ({ page }) => {
   await page.goto("/tests/fixtures/characters.html?locale=en");
   const right = page.locator(".dr-cast-portrait.right");
   await expect(right).toBeVisible(); await right.focus();
-  await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "2", states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, emotion: "worried" } } } }); });
+  await page.evaluate(() => { const cast = (window as any).getCast(); (window as any).setCast({ scene: { ...cast.scene, revision: "2", states: { ...cast.scene.states, mira: { ...cast.scene.states.mira, action: "worried" } } } }); });
   await expect(right).toBeFocused(); await expect(right.locator("small")).toHaveText("Worried");
   const neutral = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 120; canvas.height = 160; canvas.getContext("2d")!.fillRect(0, 0, 120, 160); return canvas.toDataURL("image/png"); });
   await page.evaluate(value => { const cast = (window as any).getCast(); (window as any).setCast({ entities: cast.entities.map((e: any) => e.id === "mira" ? { ...e, updatedAt: 2, characterSheet: { ...e.characterSheet, sprites: { worried: "data:image/png;base64,AAAA", neutral: value } } } : e) }); }, neutral);

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { closeSavedCharacter } from "./character-helpers";
 for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
-  test("character field wand and direct control activation, " + locale + ", " + width, async ({ page }, info) => {
+  test("character field wand and direct control activation, " + locale + ", " + width, async ({ page }) => {
     await page.setViewportSize({ width, height: 860 }); await page.goto("/tests/fixtures/characters.html?locale=" + locale);
     await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const editor = page.locator(".dr-character-dialog");
     const name = locale === "ru" ? "Характер" : "Personality", ask = locale === "ru" ? "Попросить дипсик сгенерировать" : "Ask DeepSeek to generate";
@@ -11,24 +11,25 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     expect(await editor.locator(".dr-character-generate:visible").count()).toBe(4);
     const wand = area.getByRole("button", { name: ask + ": " + name, exact: true });
     const box = await wand.boundingBox(); expect(box!.width).toBeLessThanOrEqual(32); expect(box!.height).toBeLessThanOrEqual(32);
-    await wand.click(); await expect(field).toHaveValue(locale === "ru" ? "Спокойная и внимательная." : "Calm and observant.");
+    const choose = async () => { await wand.click(); await area.getByRole("button", { name: locale === "ru" ? "Предложить новое описание" : "Suggest a new description" }).click(); };
+    await choose(); await expect(field).toHaveValue(locale === "ru" ? "Спокойная и внимательная." : "Calm and observant.");
     expect(await page.evaluate(() => (window as any).getCast().entities.find((e: any) => e.id === "mira").characterSheet.personality)).toBe("");
     expect(await page.evaluate(() => (window as any).textRequests[0].field.key)).toBe("personality");
     const bounds = await area.boundingBox(); expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
-    await page.screenshot({ path: info.outputPath("character-wand-" + locale + "-" + width + ".png") });
+    expect((await page.screenshot()).length).toBeGreaterThan(1000);
     await page.evaluate(() => { (window as any).manualText = true; });
-    await wand.click(); await expect(wand).toHaveAttribute("aria-busy", "true");
+    await choose(); await expect(wand).toHaveAttribute("aria-busy", "true");
     const goals = editor.getByRole("textbox", { name: locale === "ru" ? "Цели" : "Goals", exact: true });
     await goals.fill("My existing goal.");
     await page.evaluate(() => (window as any).finishText("Generated while another field changed."));
     await expect(field).toHaveValue("Generated while another field changed."); await expect(goals).toHaveValue("My existing goal.");
-    await wand.click(); await expect(wand).toHaveAttribute("aria-busy", "true");
+    await choose(); await expect(wand).toHaveAttribute("aria-busy", "true");
     await field.fill("My edited personality.");
     await page.evaluate(() => (window as any).finishText("Another suggestion."));
     await expect(field).toHaveValue("My edited personality.");
     await expect(area.getByRole("textbox", { name: (locale === "ru" ? "Предложенный текст" : "Suggested text") + ": " + name, exact: true })).toHaveValue("Another suggestion.");
     await page.evaluate(() => { (window as any).manualText = false; (window as any).rejectText = "draft-not-empty"; });
-    await wand.click(); await expect(area.getByRole("alert")).toContainText(locale === "ru" ? "черновик" : "draft");
+    await choose(); await expect(area.getByRole("alert")).toContainText(locale === "ru" ? "черновик" : "draft");
     await expect(field).toHaveValue("My edited personality.");
     await editor.getByRole("tab", { name: locale === "ru" ? "Отношения" : "Relationships", exact: true }).click();
     await editor.getByRole("button", { name: locale === "ru" ? "Настроить отношения" : "Set up relationships", exact: true }).click();
@@ -46,7 +47,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.evaluate(() => { (window as any).rejectText = ""; });
     await editor.getByRole("button", { name: locale === "ru" ? "Добавить событие" : "Add event", exact: true }).click();
     const eventField = editor.locator('[data-character-text-field="milestone:0"]');
-    await eventField.getByRole("button").click(); await expect(eventField.getByRole("textbox")).toHaveValue(locale === "ru" ? "Спокойная и внимательная." : "Calm and observant.");
+    await eventField.getByRole("button").click(); await eventField.getByRole("button", { name: locale === "ru" ? "Предложить новое описание" : "Suggest a new description" }).click(); await expect(eventField.getByRole("textbox")).toHaveValue(locale === "ru" ? "Спокойная и внимательная." : "Calm and observant.");
     expect(await page.evaluate(() => (window as any).textRequests.at(-1).field.scope)).toBe("milestone");
     await editor.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
     await closeSavedCharacter(editor, locale);

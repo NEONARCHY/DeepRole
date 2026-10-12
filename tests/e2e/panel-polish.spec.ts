@@ -48,16 +48,16 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1280]) test(`brande
   await page.setViewportSize({ width, height: 800 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");
   await dialog.getByRole("tab", { name: locale === "ru" ? "В сцене" : "In scene", exact: true }).click();
-  const mood = dialog.getByRole("combobox", { name: locale === "ru" ? "Настроение" : "Mood", exact: true }); const before = await mood.inputValue();
-  await mood.click(); const menu = dialog.getByRole("listbox"); await expect(menu).toBeVisible(); await expect(mood).toBeFocused();
-  await mood.press("End"); expect(await mood.inputValue()).toBe(before); await mood.press("Escape"); await expect(menu).toHaveCount(0); await expect(dialog).toBeVisible(); expect(await mood.inputValue()).toBe(before);
-  await mood.press("ArrowDown"); await mood.press("Home"); await mood.press("ArrowDown"); await mood.press("Enter"); await expect(mood).toHaveValue("happy");
-  await mood.click(); const rect = (await menu.boundingBox())!; expect(rect.x).toBeGreaterThanOrEqual(8); expect(rect.x + rect.width).toBeLessThanOrEqual(width - 8); expect(rect.y).toBeGreaterThanOrEqual(8); expect(rect.y + rect.height).toBeLessThanOrEqual(792);
+  const action = dialog.getByRole("combobox", { name: locale === "ru" ? "Действие" : "Action", exact: true }); const before = await action.inputValue();
+  await action.click(); const menu = dialog.getByRole("listbox"); await expect(menu).toBeVisible(); await expect(action).toBeFocused();
+  await action.press("End"); expect(await action.inputValue()).toBe(before); await action.press("Escape"); await expect(menu).toHaveCount(0); await expect(dialog).toBeVisible(); expect(await action.inputValue()).toBe(before);
+  await action.press("ArrowDown"); await action.press("Home"); await action.press("ArrowDown"); await action.press("Enter"); await expect(action).toHaveValue("happy");
+  await action.click(); const rect = (await menu.boundingBox())!; expect(rect.x).toBeGreaterThanOrEqual(8); expect(rect.x + rect.width).toBeLessThanOrEqual(width - 8); expect(rect.y).toBeGreaterThanOrEqual(8); expect(rect.y + rect.height).toBeLessThanOrEqual(792);
   const axe = await new AxeBuilder({ page }).include('[role="dialog"]').withTags(["wcag2a", "wcag2aa"]).analyze(); expect(axe.violations).toEqual([]);
   await page.screenshot({ path: info.outputPath("editor-dropdown.png") });
-  await mood.press("Escape"); await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
+  await action.press("Escape"); await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
   await expect(dialog.locator("footer [role=status]")).toContainText(locale === "ru" ? "Сохранено" : "Saved");
-  expect(await page.evaluate(() => (window as any).saved.state.emotion)).toBe("happy");
+  expect(await page.evaluate(() => (window as any).saved.state.action)).toBe("happy");
 });
 
 for (const locale of ["ru", "en"]) test(`long dropdown works inside a shadow root without moving the chat ${locale}`, async ({ page }, info) => {

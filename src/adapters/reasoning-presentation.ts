@@ -132,8 +132,12 @@ export class ReasoningPresentation {
       if (body.closest(EXCLUDED) || body.matches("button,[role=button]")) continue;
       // Prefer one wrapper, but never take final prose with the reasoning.
       const wrapper = body.closest<HTMLElement>(".ds-think-content-wrapper");
-      if (wrapper && !wrapper.querySelector(".ds-markdown,.ds-assistant-message-main-content,button,[role=button],summary")) body = wrapper;
-      if (body.querySelector(".ds-markdown,.ds-assistant-message-main-content") || seen.has(body)) continue;
+      // Markdown inside a dedicated thinking body is reasoning, not the answer.
+      // A mixed wrapper remains visible; only its dedicated thinking child folds.
+      if (wrapper && !wrapper.querySelector(".ds-assistant-message-main-content,button,[role=button],summary")
+        && [...wrapper.querySelectorAll(".ds-markdown")].every(markdown => !!markdown.closest(".ds-think-content,[data-testid='thinking-content'],[data-testid='reasoning-content']"))) body = wrapper;
+      if (body.querySelector(".ds-assistant-message-main-content") || body.matches(".ds-think-content-wrapper")
+        && [...body.querySelectorAll(".ds-markdown")].some(markdown => !markdown.closest(".ds-think-content,[data-testid='thinking-content'],[data-testid='reasoning-content']")) || seen.has(body)) continue;
       seen.add(body);
       const row = nativeMessageRow(body) ?? body;
       if (isUserMessage(row)) continue;

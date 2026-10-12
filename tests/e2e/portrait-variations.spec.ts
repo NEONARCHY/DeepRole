@@ -2,7 +2,7 @@ import { chooseImageCompression } from "./image-upload-helpers";
 import { closeSavedCharacter, characterTab } from "./character-helpers";
 import { test, expect } from "@playwright/test";
 
-for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multiple emotion images ${locale} ${width}`, async ({ page }, info) => {
+for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`multiple action images ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 900 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   const images = await page.evaluate(() => ["#4a68b9", "#d3a36a", "#83bba7"].map(color => { const canvas = document.createElement("canvas"); canvas.width = 120; canvas.height = 160; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 120, 160); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(60, 54, 22, 0, 2 * Math.PI); ctx.fill(); return canvas.toDataURL("image/png").split(",")[1]!; }));
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");

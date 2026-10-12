@@ -17,22 +17,23 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     // Wait for the repository schema: page navigation alone doesn't initialize IndexedDB.
     await expect(panel.locator(".onboarding")).toBeVisible();
     const variations = await panel.evaluate(() => ["#486db0", "#84b79c"].map(color => { const canvas = document.createElement("canvas"); canvas.width = 12; canvas.height = 16; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 12, 16); return canvas.toDataURL("image/png"); }));
-    const state = { emotion: "neutral", condition: "Safe", goal: "Find the key", relationship: "", stats: [{ label: "Energy", value: "Rested" }] };
+    const state = { action: "neutral", condition: "Safe", goal: "Find the key", relationship: "", stats: [{ label: "Energy", value: "Rested" }] };
     const people = ["Noah", "Mira", "Leon", "Guard"].map((name, index) => ({ id: name.toLowerCase(), worldId: "w", name, kind: "character", description: "ORIGINAL", aliases: [], memberIds: [], characterSheet: { gender: "neutral", protagonist: index === 0, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
     people[0]!.characterSheet.sprites = { neutral: variations[0]!, "Разговаривает": variations[1]! };
     people[1]!.characterSheet.sprites = { neutral: variations };
-    people[2]!.characterSheet.sprites = Object.fromEntries(["neutral", "retired-mood", ...Array.from({ length: 10 }, (_, i) => `mood-${i}`)].map(name => [name, variations]));
-    const emotions = ["neutral", "happy", "worried", "Разговаривает", ...Array.from({ length: 28 }, (_, i) => `emotion-${i}`)];
+    people[2]!.characterSheet.sprites = Object.fromEntries(["neutral", "retired-action", ...Array.from({ length: 10 }, (_, i) => `action-${i}`)].map(name => [name, variations]));
+    const actions = ["neutral", "happy", "worried", "Разговаривает", ...Array.from({ length: 28 }, (_, i) => `action-${i}`)];
     const initial = { revision: "v", presentIds: people.map(p => p.id), partnerIds: ["mira", "leon"], partnerId: "mira", states: Object.fromEntries(people.map(p => [p.id, state])), updatedAt: 1 };
     const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", bookId: null, focusIds: [], messageCountAtAnalysis: 0, characterScenes: { w: initial }, createdAt: 1, updatedAt: 1 };
     await panel.evaluate(async rows => {
       await new Promise<void>((resolve, reject) => { const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error); open.onsuccess = () => { const db = open.result; const tx = db.transaction("records", "readwrite"); for (const [kind, data] of rows) tx.objectStore("records").put({ pk: `${kind}:${data.id}`, kind, id: data.id, data, updatedAt: 1 }); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); }; });
-      await (window as any).chrome.storage.local.set({ deeprole_settings: { locale: "en", onboardingComplete: true, characterSheetsEnabled: true, portraitLayoutResetAt: 0 } });
-    }, [["world", { id: "w", name: "Observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, characterEmotions: emotions, createdAt: 1, updatedAt: 1 }], ...people.map(p => ["entity", p]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]] as Array<[string, any]>);
+      // This scenario checks independent manual positions; grouped adaptive layout has separate tests.
+      await (window as any).chrome.storage.local.set({ deeprole_settings: { locale: "en", onboardingComplete: true, characterSheetsEnabled: true, portraitLayoutResetAt: 0, adaptiveLayout: false } });
+    }, [["world", { id: "w", name: "Observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, characterActions: actions, createdAt: 1, updatedAt: 1 }], ...people.map(p => ["entity", p]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]] as Array<[string, any]>);
     const records = () => panel.evaluate(() => new Promise<any[]>(resolve => { const open = indexedDB.open("deeprole"); open.onsuccess = () => { const db = open.result; const request = db.transaction("records").objectStore("records").getAll(); request.onsuccess = () => { resolve(request.result); db.close(); }; }; }));
     const chat = await context.newPage(); await chat.goto(binding.chatUrl); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
     await expect.poll(async () => { const rect = (await chat.locator('[data-widget="scene"]').boundingBox())!; return Math.round(rect.y + rect.height); }).toBeLessThanOrEqual(720);
-    const append = (payload?: any) => chat.evaluate(payload => { const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "scene"; const options = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })); row.textContent = "Mira, Leon and the guard stay in the observatory.\n" + (payload ? `<deeprole_characters>${JSON.stringify(payload)}</deeprole_characters>\n` : "") + `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`; document.querySelector("#conversation")!.replaceChildren(row); }, payload);
+    const append = (payload?: any, narrative = "Mira, Leon and the guard stay in the observatory.") => chat.evaluate(({ payload, narrative }) => { const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "scene"; const options = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })); row.textContent = narrative + "\n" + (payload ? `<deeprole_characters>${JSON.stringify(payload)}</deeprole_characters>\n` : "") + `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`; document.querySelector("#conversation")!.replaceChildren(row); }, { payload, narrative });
     await append(); await expect(chat.locator(".dr-cast-widget")).toHaveCount(4); await expect(chat.locator('.dr-cast-widget[data-talking="true"]')).toHaveCount(2);
     const mira = chat.locator('.dr-cast-widget[data-character-id="mira"]'); const handle = mira.locator(".dr-cast-move");
     await expect(mira.locator("img")).toHaveAttribute("src", variations[0]!);
@@ -45,8 +46,8 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: 'Noah says: "I found the key." Leon addresses Noah. Mira stays beside the guard.' }) }));
     expect(schema.partners).toEqual([]); expect(prompts[0]).toContain("A change of addressee is not a departure"); expect(prompts[0]).not.toContain("portraitLayouts");
     expect(schema.updates[0]).toEqual({ id: "Noah", name: "Noah", state });
-    expect(JSON.parse(prompts[0]!.match(/Player avatar: (.+)\n/)![1]!)).toEqual({ id: "Noah", portraitEmotions: ["neutral", "Разговаривает"] });
-    const payload = { request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Noah", name: "Noah", state: { ...state, emotion: "Разговаривает" } }, { id: "Leon", name: "Leon", state: { ...state, emotion: "worried" } }] };
+    expect(JSON.parse(prompts[0]!.match(/Player avatar: (.+)\n/)![1]!)).toEqual({ id: "Noah", portraitActions: ["neutral", "Разговаривает"] });
+    const payload = { request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Noah", name: "Noah", state: { ...state, action: "Разговаривает" } }, { id: "Leon", name: "Leon", state: { ...state, action: "worried" } }] };
     await append(payload); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);
     const protagonist = chat.locator('.dr-cast-widget[data-character-id="noah"]');
@@ -91,31 +92,33 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await expect(chat.locator(".dr-characters")).toBeHidden();
     await chat.locator('[data-restore-widget="characters"]').click(); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
     await append(); await expect(protagonist.locator("img")).toHaveAttribute("src", variations[1]!); await expect(protagonist.locator("small")).toHaveText("Разговаривает");
-    // A new protagonist must accept emotion images in the same save, and again after reopening.
+    // A new protagonist must accept action images in the same save, and again after reopening.
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await dialog.getByRole("checkbox", { name: "My protagonist", exact: true }).check();
     await characterTab(dialog, "images");
-    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
+    await dialog.getByLabel("Portrait action", { exact: true }).selectOption("happy");
     await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero.png", mimeType: "image/png", buffer: Buffer.from(variations[0]!.split(",")[1]!, "base64") }); await chooseImageCompression(chat);
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);
     // A reply can finish while the portrait picker/editor is open.
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon notices the telescope is unlocked." }) }));
-    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: "happy", goal: "Open the telescope" } }] });
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, action: "happy", goal: "Open the telescope" } }] });
     await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Open the telescope");
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
     await expect(dialog).toHaveCount(0);
     let hero = (await records()).find(r => r.id === "leon").data;
     expect(hero.characterSheet.protagonist).toBe(true);
     expect(hero.characterSheet.sprites.happy).toHaveLength(1);
-    expect(Object.keys(hero.characterSheet.sprites)).toHaveLength(13);
-    expect(hero.characterSheet.sprites["retired-mood"]).toEqual(variations);
+    expect(Object.keys(hero.characterSheet.sprites)).toHaveLength(12);
+    expect(hero.characterSheet.sprites["retired-action"]).toBeUndefined();
+    // Retiring an action detaches it; shared image bytes remain in other assignments.
+    expect(hero.characterSheet.sprites.neutral).toEqual(variations);
     expect((await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Open the telescope");
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await characterTab(dialog, "images");
-    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
+    await dialog.getByLabel("Portrait action", { exact: true }).selectOption("happy");
     await dialog.locator('.dr-portrait-upload').setInputFiles({ name: "hero2.png", mimeType: "image/png", buffer: Buffer.from(variations[1]!.split(",")[1]!, "base64") }); await chooseImageCompression(chat);
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
-    await chat.screenshot({ path: info.outputPath("protagonist-emotion-portraits.png") });
+    await chat.screenshot({ path: info.outputPath("protagonist-action-portraits.png") });
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
     await expect(dialog).toHaveCount(0);
     hero = (await records()).find(r => r.id === "leon").data;
@@ -126,19 +129,20 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.locator(".dr-character-row").filter({ hasText: "Leon" }).click();
     await expect(dialog.getByRole("checkbox", { name: "My protagonist", exact: true })).toBeChecked();
     await characterTab(dialog, "images");
-    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("happy");
+    await dialog.getByLabel("Portrait action", { exact: true }).selectOption("happy");
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
     await expect(dialog.getByLabel("Current goal", { exact: true })).toHaveValue("Open the telescope");
-    await expect(dialog.getByLabel("Mood", { exact: true }).locator("option")).toHaveCount(32);
-    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("retired-mood");
+    await expect(dialog.getByLabel("Action", { exact: true }).locator("option")).toHaveCount(32);
+    await expect(dialog.getByLabel("Portrait action", { exact: true }).locator('option[value="retired-action"]')).toHaveCount(0);
+    await dialog.getByLabel("Portrait action", { exact: true }).selectOption("neutral");
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(2);
     await dialog.getByRole("button", { name: "Close", exact: true }).first().click();
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon studies the stars." }) }));
-    expect(prompts.at(-1)).toContain(emotions[31]!);
-    expect(prompts.at(-1)).not.toContain("retired-mood");
-    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: emotions[31] } }] });
-    await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.emotion).toBe(emotions[31]);
-    // Bulk images are persisted locally before any emotion is assigned.
+    expect(prompts.at(-1)).toContain(actions[31]!);
+    expect(prompts.at(-1)).not.toContain("retired-action");
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, action: actions[31] } }] });
+    await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.action).toBe(actions[31]);
+    // Bulk images are persisted locally before any action is assigned.
     const inbox = await chat.evaluate(() => ["#934156", "#976319", "#387784"].map(color => {
       const canvas = document.createElement("canvas"); canvas.width = 90; canvas.height = 120; const ctx = canvas.getContext("2d")!;
       ctx.fillStyle = color; ctx.fillRect(0, 0, 90, 120); return canvas.toDataURL("image/png").split(",")[1]!;
@@ -156,16 +160,16 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await expect(dialog.locator(".dr-portrait-library")).toBeVisible();
     await library.getByRole("button", { name: /^Unassigned ·/ }).click(); await expect(library.locator(".dr-library-image")).toHaveCount(3);
     for (let i = 0; i < 3; i++) await library.locator(".dr-library-image").nth(i).click();
-    await library.locator("select").selectOption(emotions[31]!);
-    await library.locator(".dr-library-emotions summary").click();
-    for (const emotion of [emotions[29]!, emotions[30]!]) await library.getByRole("checkbox", { name: emotion, exact: true }).check();
-    await library.getByRole("button", { name: "Assign to emotion", exact: true }).click();
+    await library.locator("select").selectOption(actions[31]!);
+    await library.locator(".dr-library-actions summary").click();
+    for (const action of [actions[29]!, actions[30]!]) await library.getByRole("checkbox", { name: action, exact: true }).check();
+    await library.getByRole("button", { name: "Assign to action", exact: true }).click();
     await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(3);
     await chat.screenshot({ path: info.outputPath("installed-portrait-library.png") });
     await dialog.getByRole("button", { name: "Save character", exact: true }).click();
     await expect(dialog.locator("footer [role=status]")).toHaveText("Saved"); await expect(dialog).toBeVisible();
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon smiles at the stars." }) }));
-    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, emotion: emotions[29], goal: "Map the stars" } }] });
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Mira"], updates: [{ id: "Leon", name: "Leon", state: { ...state, action: actions[29], goal: "Map the stars" } }] });
     await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.goal).toBe("Map the stars");
     await characterTab(dialog, "profile");
     await dialog.getByLabel("Appearance and clothing", { exact: true }).fill("Grey coat");
@@ -174,12 +178,40 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await expect(dialog.getByLabel("Current goal", { exact: true })).toHaveValue("Map the stars");
     await closeSavedCharacter(dialog); await expect(dialog).toHaveCount(0);
     hero = (await records()).find(r => r.id === "leon").data;
-    expect(hero.characterSheet.portraitLibrary).toBeUndefined(); expect(hero.characterSheet.sprites[emotions[31]!]).toHaveLength(3);
-    for (const emotion of [emotions[29]!, emotions[30]!]) expect(hero.characterSheet.sprites[emotion]).toEqual(hero.characterSheet.sprites[emotions[31]!]);
+    expect(hero.characterSheet.portraitLibrary).toBeUndefined(); expect(hero.characterSheet.sprites[actions[31]!]).toHaveLength(3);
+    for (const action of [actions[29]!, actions[30]!]) expect(hero.characterSheet.sprites[action]).toEqual(hero.characterSheet.sprites[actions[31]!]);
     expect(hero.characterSheet.appearance).toBe("Grey coat");
     await chat.reload(); await expect(chat.locator(".dr-character-row")).toHaveCount(4);
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Leon looks through the telescope." }) }));
     expect(prompts.at(-1)).not.toContain("portraitLibrary"); expect(prompts.at(-1)).not.toContain("data:image");
-    expect((await records()).find(r => r.id === "leon").data.characterSheet.sprites[emotions[31]!]).toEqual(hero.characterSheet.sprites[emotions[31]!]);
+    expect((await records()).find(r => r.id === "leon").data.characterSheet.sprites[actions[31]!]).toEqual(hero.characterSheet.sprites[actions[31]!]);
+    // Exercise the real panel -> background -> content bridge, not a fixture callback.
+    await chat.locator(".dr-character-row").filter({ hasText: "Noah" }).click(); await characterTab(dialog, "profile");
+    await dialog.getByRole("checkbox", { name: "My protagonist", exact: true }).check();
+    await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
+    await panel.reload(); await panel.getByRole("button", { name: "Settings", exact: true }).click();
+    await panel.getByRole("button", { name: "Characters", exact: true }).click();
+    const settings = panel.locator(".dr-character-settings");
+    for (const [from, to] of [[actions[31]!, "Даёт себя обнять"], ["Разговаривает", "Обнимает"]] as const) {
+      await settings.getByRole("button", { name: "Rename action: " + from, exact: true }).click();
+      const renameInput = settings.getByLabel("Rename to", { exact: true }); await renameInput.fill(to); await renameInput.press("Enter");
+    }
+    await settings.getByRole("button", { name: "Save actions", exact: true }).click();
+    await expect(settings.getByRole("status").last()).toHaveText("Saved");
+    await expect.poll(async () => (await records()).find(r => r.id === "leon").data.characterSheet.sprites["Даёт себя обнять"]).toEqual(hero.characterSheet.sprites[actions[31]!]);
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "*я обнимаю Леона*" }) }));
+    expect(prompts.at(-1)).toContain("Interactions update BOTH participants"); expect(prompts.at(-1)).not.toContain('"emotion":');
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Leon", name: "Leon", state: { ...state, action: "Даёт себя обнять" } }, { id: "Noah", name: "Noah", state: { ...state, action: "Обнимает" } }] }, "Noah hugs Leon. Leon accepts and stays in the embrace.");
+    await expect(chat.locator('.dr-cast-widget[data-character-id="leon"] small')).toHaveText("Даёт себя обнять");
+    await expect(protagonist.locator("small")).toHaveText("Обнимает"); await expect(protagonist.locator("img")).toHaveAttribute("src", variations[1]!);
+    await chat.reload(); await append(); await expect(protagonist.locator("small")).toHaveText("Обнимает");
+    // A later scene ends the interaction, and old wire fields are still readable.
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "We release the hug and stand apart." }) }));
+    const { action: _oldAction, ...legacyState } = state;
+    await append({ request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Leon", name: "Leon", state: { ...legacyState, emotion: "neutral" } }, { id: "Noah", name: "Noah", state: { ...state, action: "neutral" } }] }, "Leon pulls away and they release the hug, standing apart.");
+    await expect(chat.locator('.dr-cast-widget[data-character-id="leon"] small')).toHaveText("Calm");
+    await expect(protagonist.locator("img")).toHaveAttribute("src", variations[0]!);
+    await expect.poll(async () => (await records()).find(r => r.id === binding.id).data.characterScenes.w.states.leon.action).toBe("neutral");
+    expect((await records()).filter(r => r.kind === "entity").every(row => row.data.description === "ORIGINAL")).toBe(true);
   } finally { await context.close(); }
 });

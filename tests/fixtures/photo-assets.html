@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Photo storage fixture</title><style>body{background:#181818;color:#eee;margin:0}#app{padding:12px;max-width:900px}</style></head><body><div id="app" class="dr-root"></div><script src="/tests/fixtures/portrait-storage.js"></script><script type="module">
+import React,{useState} from "react"; import {createRoot} from "react-dom/client";
+import {DeepRoleDatabase} from "/src/storage/database.ts"; import {DeepRoleRepository} from "/src/storage/repository.ts";
+import {CharacterPanel} from "/src/entrypoints/shared/CharacterSheets.tsx";
+import {EMPTY_CHARACTER,EMPTY_STATUS,DEFAULT_ACTIONS,characterRevision} from "/src/core/characters.ts";
+import {saveCharacter} from "/src/storage/characters.ts";
+import {exportWorld} from "/src/storage/worlds.ts";
+import {observePhotoImages} from "/src/adapters/photo-loader.ts";
+import {setPortraitPhotoStorage} from "/src/entrypoints/shared/portrait-file.ts";
+import "/src/entrypoints/shared/design-system.css"; import "/src/entrypoints/shared/characters.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en"; document.documentElement.lang=locale;
+const session=new Map();window.chrome.storage.session={async get(keys){return Object.fromEntries((Array.isArray(keys)?keys:[keys]).filter(key=>session.has(key)).map(key=>[key,session.get(key)]))},async set(values){Object.entries(values).forEach(([key,value])=>session.set(key,value))},async remove(keys){(Array.isArray(keys)?keys:[keys]).forEach(key=>session.delete(key))}};
+const db=new DeepRoleDatabase("photo-assets-fixture"),repo=new DeepRoleRepository(db,true);
+const state={...EMPTY_STATUS},scene={revision:"first",presentIds:["p"],states:{p:state},updatedAt:1};
+const binding={id:"b",chatId:"c",chatUrl:"https://chat.deepseek.com/a/chat/s/c",worldId:"w",focusIds:[],bookId:null,messageCountAtAnalysis:0,characterScenes:{w:scene},createdAt:1,updatedAt:1};
+if(!await db.records.get("entity:p")) {
+ const images=[]; for(let i=0;i<60;i++){const canvas=document.createElement("canvas");canvas.width=i?256:1024;canvas.height=i?384:1440;const c=canvas.getContext("2d");c.fillStyle=`hsl(${i*23},45%,35%)`;c.fillRect(0,0,canvas.width,canvas.height);c.fillStyle="white";c.font="48px sans-serif";c.fillText(String(i),30,100);images.push(canvas.toDataURL("image/png"));}
+ const world={id:"w",name:"Photo world",description:"Original lore",color:"#123456",contextBudget:1000,relevanceThreshold:6,createdAt:1,updatedAt:1};
+ const person={id:"p",name:"Mira",worldId:"w",kind:"character",description:"Original lore",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,sprites:{neutral:images[0]},portraitLibrary:images.slice(1)},createdAt:1,updatedAt:1};
+ await db.records.bulkPut([...[['world',world],['entity',person],['binding',binding]].map(([kind,data])=>({pk:`${kind}:${data.id}`,kind,id:data.id,data,updatedAt:1}))]);
+}
+await repo.migratePhotos();
+window.photoFixture={repo,db,reads:0,export:()=>exportWorld("w",repo)};
+observePhotoImages(document,id=>{window.photoFixture.reads++;return repo.readPhoto(id)});setPortraitPhotoStorage(image=>repo.storePhoto(image));
+function App(){const[person,setPerson]=useState(null),[scene,setScene]=useState(null);const refresh=async()=>{setPerson(await repo.get("entity","p"));setScene((await repo.get("binding","b")).characterScenes.w)};React.useEffect(()=>{refresh()},[]);return person&&React.createElement(CharacterPanel,{locale,entities:[person],scene,actions:DEFAULT_ACTIONS,base:characterRevision([person],scene),worldId:"w",chatId:"c",status:"idle",onRetry(){},onSave:async edit=>{const saved=await saveCharacter({...edit,chatUrl:binding.chatUrl},repo);await refresh();return saved}})}
+createRoot(document.getElementById("app")).render(React.createElement(App));window.photoFixture.ready=true;
+</script></body></html>

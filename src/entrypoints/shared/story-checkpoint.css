@@ -1,0 +1,15 @@
+.dr-story-checkpoint, .dr-story-checkpoint > div { min-width: 0; }
+.dr-story-checkpoint h2, .dr-story-checkpoint p, .dr-story-checkpoint span, .dr-story-checkpoint summary { overflow-wrap: anywhere; }
+.dr-story-checkpoint .button { white-space: normal; min-height: 40px; max-width: 100%; }
+.dr-story-checkpoint [role="status"]:empty { display: none; }
+.dr-story-checkpoint [role="status"] { font-size: 12px; line-height: 1.6; }
+.dr-story-checkpoint fieldset { min-width: 0; padding: 0; border: 0; margin-block: var(--dr-space-3); }
+.dr-story-checkpoint legend { font-weight: 600; font-size: 13px; margin-block-end: var(--dr-space-2); }
+.dr-story-checkpoint-candidate { background: var(--dr-surface); border: 1px solid var(--dr-border); border-radius: var(--dr-radius); padding: var(--dr-space-3); margin-block: var(--dr-space-2); }
+.dr-story-checkpoint-candidate label, .dr-story-checkpoint-confirm { display: flex; align-items: start; gap: var(--dr-space-2); font-size: 12px; line-height: 1.6; }
+.dr-story-checkpoint input { flex: 0 0 auto; margin-block-start: 4px; }
+.dr-story-checkpoint p, .dr-story-checkpoint summary, .dr-story-checkpoint h3 { font-size: 12px; line-height: 1.6; }
+.dr-story-checkpoint-source, .dr-story-checkpoint-excerpt { white-space: pre-wrap; }
+.dr-story-checkpoint-source { max-height: 240px; overflow: auto; }
+.dr-story-checkpoint-confirm { margin-block: var(--dr-space-3); }
+.dr-story-checkpoint ul { padding-inline-start: 20px; }

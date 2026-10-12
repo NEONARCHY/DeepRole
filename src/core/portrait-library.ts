@@ -17,35 +17,35 @@ export function withPortraitLibrary(sheet: CharacterSheet, images: string[]): Ch
   return next;
 }
 
-export function assignLibraryImages(sheet: CharacterSheet, emotion: string, images: string[]): CharacterSheet {
-  if (!emotion || emotion.length > 32 || ["__proto__", "prototype", "constructor"].includes(emotion)) throw new Error("character-invalid");
-  if (emotion !== "neutral" && sheet.blockedEmotions?.includes(emotion)) throw new Error("portrait-emotion-blocked");
+export function assignLibraryImages(sheet: CharacterSheet, action: string, images: string[]): CharacterSheet {
+  if (!action || action.length > 32 || ["__proto__", "prototype", "constructor"].includes(action)) throw new Error("character-invalid");
+  if (action !== "neutral" && sheet.blockedActions?.includes(action)) throw new Error("portrait-action-blocked");
   const library = libraryImages(sheet);
   if (images.some(image => !library.includes(image))) throw new Error("character-invalid");
-  const variations = [...new Set([...portraitVariations(sheet.sprites[emotion]), ...images])];
+  const variations = [...new Set([...portraitVariations(sheet.sprites[action]), ...images])];
   if (!variations.length) return sheet;
-  return withPortraitLibrary({ ...sheet, sprites: { ...sheet.sprites, [emotion]: variations } }, library);
+  return withPortraitLibrary({ ...sheet, sprites: { ...sheet.sprites, [action]: variations } }, library);
 }
 
-export function unassignPortrait(sheet: CharacterSheet, emotion: string, index: number): CharacterSheet {
+export function unassignPortrait(sheet: CharacterSheet, action: string, index: number): CharacterSheet {
   const library = libraryImages(sheet); const sprites = { ...sheet.sprites };
-  const images = portraitVariations(sprites[emotion]).filter((_, i) => i !== index);
-  if (images.length) sprites[emotion] = images; else delete sprites[emotion];
+  const images = portraitVariations(sprites[action]).filter((_, i) => i !== index);
+  if (images.length) sprites[action] = images; else delete sprites[action];
   return withPortraitLibrary({ ...sheet, sprites }, library);
 }
 
-/** Remove whole assignments atomically, retaining each image in another emotion
+/** Remove whole assignments atomically, retaining each image in another action
  * or the unassigned library. Never partially detach an overfull library. */
-export function unassignPortraitEmotions(sheet: CharacterSheet, emotions: string[]): CharacterSheet {
-  const removed = emotions.filter(key => Object.hasOwn(sheet.sprites, key));
+export function unassignPortraitActions(sheet: CharacterSheet, actions: string[]): CharacterSheet {
+  const removed = actions.filter(key => Object.hasOwn(sheet.sprites, key));
   if (!removed.length) return sheet;
   const images = libraryImages(sheet), sprites = { ...sheet.sprites };
   for (const key of removed) delete sprites[key];
   return withPortraitLibrary({ ...sheet, sprites }, images);
 }
 
-/** Validate the whole multi-emotion assignment before returning any changes. */
-export function assignLibraryEmotions(sheet: CharacterSheet, emotions: string[], images: string[]): CharacterSheet {
-  if (!emotions.length) throw new Error("character-invalid");
-  return [...new Set(emotions)].reduce((next, emotion) => assignLibraryImages(next, emotion, images), sheet);
+/** Validate the whole multi-action assignment before returning any changes. */
+export function assignLibraryActions(sheet: CharacterSheet, actions: string[], images: string[]): CharacterSheet {
+  if (!actions.length) throw new Error("character-invalid");
+  return [...new Set(actions)].reduce((next, action) => assignLibraryImages(next, action, images), sheet);
 }

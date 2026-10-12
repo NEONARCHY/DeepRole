@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const topics = ["choices", "portraits", "images", "emotions", "relationships", "new-world", "characteristics", "progress", "map", "memory", "review", "settings", "continuation", "warning", "recovery", "quality", "library-large", "zoom"];
+const topics = ["choices", "portraits", "images", "actions", "relationships", "new-world", "characteristics", "progress", "map", "memory", "review", "settings", "continuation", "warning", "recovery", "quality", "library-large", "zoom"];
 const pages = [{ locale: "en", file: "README.md" }, { locale: "ru", file: "docs/README.ru.md" }] as const;
 
 describe("published bilingual feature pages", () => {

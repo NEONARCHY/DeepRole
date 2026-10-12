@@ -11,7 +11,7 @@ import type { ChatBinding, HandoffSnapshot, WorldProfile } from "../src/core/typ
 const world: WorldProfile = { id: "w", name: "Harbor", description: "Exact world canon", contextBudget: 2000, relevanceThreshold: 6, color: "#aaa", createdAt: 1, updatedAt: 1 };
 const binding: ChatBinding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/a/chat/s/a", worldId: "w", bookId: null, focusIds: ["mira"], createdAt: 1, updatedAt: 1, messageCountAtAnalysis: 1,
   memoryOverrides: { includedIds: ["promise"], excludedIds: ["old"] },
-  characterScenes: { w: { revision: "fresh", presentIds: ["mira"], partnerIds: ["mira"], lastReply: "source-reply", updatedAt: 2, states: { mira: { ...EMPTY_STATUS, emotion: "happy", condition: "Reached the harbor", bonds: { hero: { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 87, affinity: 63, locked: true, completed: ["oath"] } }, attributes: { values: { energy: 34 }, locked: ["energy"], history: [] } } } } } };
+  characterScenes: { w: { revision: "fresh", presentIds: ["mira"], partnerIds: ["mira"], lastReply: "source-reply", updatedAt: 2, states: { mira: { ...EMPTY_STATUS, action: "happy", condition: "Reached the harbor", bonds: { hero: { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 87, affinity: 63, locked: true, completed: ["oath"] } }, attributes: { values: { energy: 34 }, locked: ["energy"], history: [] } } } } } };
 const input = { chatId: "a", chatUrl: binding.chatUrl, scene: { worldId: "w", bookId: null, focusIds: ["mira"] }, overrides: { includedIds: [], excludedIds: [] }, story: boundStory([{ role: "assistant", text: "Mira has reached the harbor." }], "history") };
 describe("atomic continuation capture", () => {
   const databases: DeepRoleDatabase[] = [];

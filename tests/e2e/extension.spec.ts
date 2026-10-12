@@ -81,20 +81,20 @@ test("installed extension shares its private library with chat and remembers wor
     await chat.reload();
     await expect(world.locator("option:checked")).toHaveText("Runtime World");
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /Only this world/);
-    // Exercise the new additive emotion request through the real background,
+    // Exercise the new additive action request through the real background,
     // not just a React fixture. This profile contains only synthetic data.
     await chat.locator(".dr-character-row").filter({ hasText: "Мира" }).click();
     const character = chat.getByRole("dialog");
     await character.getByRole("tab", { name: "Изображения", exact: true }).click();
-    await character.locator("summary").filter({ hasText: /^Добавить эмоцию$/ }).click();
-    await character.getByLabel("Название новой эмоции", { exact: true }).fill("Focused");
-    await character.getByRole("button", { name: "Добавить эмоцию", exact: true }).click();
-    await expect(character.getByLabel("Эмоция портрета", { exact: true })).toHaveValue("Focused");
+    await character.locator("summary").filter({ hasText: /^Добавить действие$/ }).click();
+    await character.getByLabel("Название нового действия", { exact: true }).fill("Focused");
+    await character.getByRole("button", { name: "Добавить действие", exact: true }).click();
+    await expect(character.getByLabel("Действие портрета", { exact: true })).toHaveValue("Focused");
     await character.getByRole("button", { name: "Закрыть", exact: true }).first().click();
     await chat.reload();
     await chat.locator(".dr-character-row").filter({ hasText: "Мира" }).click();
     await character.getByRole("tab", { name: "Изображения", exact: true }).click();
-    await expect(character.getByLabel("Эмоция портрета", { exact: true }).locator('option[value="Focused"]')).toHaveCount(1);
+    await expect(character.getByLabel("Действие портрета", { exact: true }).locator('option[value="Focused"]')).toHaveCount(1);
     await character.getByRole("button", { name: "Закрыть", exact: true }).first().click();
     await chat.getByRole("button", { name: "Ширина всех панелей", exact: true }).click();
     await chat.getByRole("slider", { name: "Ширина всех панелей", exact: true }).press("End");

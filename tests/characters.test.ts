@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { bindCharacterTurn, characterTurnKey, characterInstruction, characterRevision, characterHighlights, characterInterlocutor, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, validCharacterSheet, validEmotions, portraitSource, silhouetteSource, type CharacterTurn } from "../src/core/characters";
+import { bindCharacterTurn, characterTurnKey, characterInstruction, characterRevision, characterHighlights, characterInterlocutor, EMPTY_CHARACTER, EMPTY_STATUS, parseCharacterTurn, validCharacterSheet, validActions, portraitSource, silhouetteSource, type CharacterTurn } from "../src/core/characters";
 import { validDataRecord, parseBackupSettings } from "../src/core/record-validation";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
@@ -23,7 +23,7 @@ async function setup() {
 }
 afterEach(async () => { await Promise.all(databases.map(db => db.delete())); databases.length = 0; });
 const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base: characterRevision([entity]) });
-const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
+const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, action: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
 
 it("returns a fresh editing baseline for repeated saves, including new characters and intervening scene updates", async () => {
@@ -72,7 +72,7 @@ describe("manual portrait edits alongside live updates", () => {
   const images = { happy: ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"] };
   const opened = () => ({ ...scope(), original: characterEditBaseline(entity, [entity]), entityId: entity.id, name: entity.name, sheet: structuredClone(entity.characterSheet!), state: structuredClone(EMPTY_STATUS), present: false });
 
-  it("saves a new protagonist and emotion images without rolling back a reply received while editing", async () => {
+  it("saves a new protagonist and action images without rolling back a reply received while editing", async () => {
     const repo = await setup(); const edit = opened();
     edit.sheet.protagonist = true; edit.sheet.sprites = images;
     await applyCharacterTurn(scope(), turn(), undefined, repo);
@@ -97,7 +97,7 @@ describe("manual portrait edits alongside live updates", () => {
     expect(scene.states.mira).toMatchObject({ ...turn().updates[0]!.state, goal: edit.state.goal });
   });
 
-  it("merges separate emotions uploaded in two editors", async () => {
+  it("merges separate actions uploaded in two editors", async () => {
     const repo = await setup(); const first = opened(), second = opened();
     first.sheet.sprites.happy = images.happy; second.sheet.sprites.neutral = images.happy[0]!;
     await saveCharacter(first, repo); await saveCharacter(second, repo);
@@ -167,21 +167,21 @@ it("preserves portrait variations through saves, automatic updates and portable/
   expect(rows.find(r => r.kind === "entity")!.data).toEqual(expect.objectContaining({ description: entity.description }));
 });
 
-it("detaches a retired portrait emotion when saving its replacement, including reopening and exports", async () => {
+it("detaches a retired portrait action when saving its replacement, including reopening and exports", async () => {
   const repo = await setup();
-  const names = ["neutral", "retired-mood", ...Array.from({ length: 10 }, (_, i) => `mood-${i}`)];
+  const names = ["neutral", "retired-action", ...Array.from({ length: 10 }, (_, i) => `action-${i}`)];
   const images = ["data:image/png;base64,AAAA", "data:image/png;base64,BBBB"];
   const retired = ["data:image/png;base64,CCCC", "data:image/png;base64,DDDD"];
-  let person = { ...entity, characterSheet: { ...entity.characterSheet!, sprites: Object.fromEntries(names.map(name => [name, name === "retired-mood" ? retired : images])) } };
+  let person = { ...entity, characterSheet: { ...entity.characterSheet!, sprites: Object.fromEntries(names.map(name => [name, name === "retired-action" ? retired : images])) } };
   await repo.put("entity", person);
-  const active = [...names.filter(name => name !== "retired-mood"), "happy"];
-  await repo.put("world", { ...world, characterEmotions: active });
+  const active = [...names.filter(name => name !== "retired-action"), "happy"];
+  await repo.put("world", { ...world, characterActions: active });
   const opened = () => ({ ...scope(), original: characterEditBaseline(person, [person]), entityId: person.id, name: person.name, sheet: structuredClone(person.characterSheet!), state: structuredClone(EMPTY_STATUS), present: false });
   let edit = opened(); edit.sheet.sprites.happy = images;
   await saveCharacter(edit, repo);
   person = (await repo.get<SceneEntity>("entity", entity.id))! as typeof person;
   expect(Object.keys(person.characterSheet.sprites)).toHaveLength(12);
-  expect(person.characterSheet.sprites["retired-mood"]).toBeUndefined();
+  expect(person.characterSheet.sprites["retired-action"]).toBeUndefined();
   expect(person.characterSheet).toMatchObject({ portraitLibrary: retired });
   // Reopening and exporting must not restore a retired image assignment.
   edit = opened(); edit.sheet.protagonist = true; edit.sheet.appearance = "Green coat";
@@ -189,28 +189,28 @@ it("detaches a retired portrait emotion when saving its replacement, including r
   const pack = await exportWorld("w", repo);
   const copied = cloneWorldPackage(pack).find(r => r.kind === "entity")!.data as SceneEntity;
   expect(copied.characterSheet).toMatchObject({ protagonist: true, appearance: "Green coat", sprites: { happy: images }, portraitLibrary: retired });
-  expect(copied.characterSheet!.sprites["retired-mood"]).toBeUndefined();
+  expect(copied.characterSheet!.sprites["retired-action"]).toBeUndefined();
   expect(Object.keys(copied.characterSheet!.sprites)).toHaveLength(12);
-  expect((pack.records.find(r => r.kind === "world")!.data as WorldProfile).characterEmotions).toEqual(active);
+  expect((pack.records.find(r => r.kind === "world")!.data as WorldProfile).characterActions).toEqual(active);
   expect(pack.records.every(validDataRecord)).toBe(true);
   const rows = await repo.rawRecords();
   expect((await parseBackup(JSON.stringify(await createBackup(undefined, repo)))).records).toEqual(rows);
   expect(rows.find(r => r.kind === "entity")!.data).toMatchObject({ description: entity.description });
 });
 
-it("preserves 32 active emotions through settings, world transfer and a model update", async () => {
+it("preserves 32 active actions through settings, world transfer and a model update", async () => {
   const repo = await setup();
-  const emotions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `emotion-${i}`)];
-  expect(parseBackupSettings({ characterEmotions: emotions }).characterEmotions).toEqual(emotions);
-  await repo.put("world", { ...world, characterEmotions: emotions });
+  const actions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `action-${i}`)];
+  expect(parseBackupSettings({ characterActions: actions }).characterActions).toEqual(actions);
+  await repo.put("world", { ...world, characterActions: actions });
   const pack = await exportWorld("w", repo);
-  expect((cloneWorldPackage(pack).find(r => r.kind === "world")!.data as WorldProfile).characterEmotions).toEqual(emotions);
+  expect((cloneWorldPackage(pack).find(r => r.kind === "world")!.data as WorldProfile).characterActions).toEqual(actions);
   expect(parseWorldPackage(JSON.stringify(pack)).records.every(validDataRecord)).toBe(true);
-  const reply = { ...turn(), updates: [{ id: "mira", state: { ...EMPTY_STATUS, emotion: emotions[31]! } }] };
-  const prompt = characterInstruction("w", "a", [entity], undefined, emotions, [], "Mira");
-  expect(prompt).toContain(emotions[31]!);
-  await applyCharacterTurn(scope(), reply, emotions, repo);
-  expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.emotion).toBe(emotions[31]);
+  const reply = { ...turn(), updates: [{ id: "mira", state: { ...EMPTY_STATUS, action: actions[31]! } }] };
+  const prompt = characterInstruction("w", "a", [entity], undefined, actions, [], "Mira");
+  expect(prompt).toContain(actions[31]!);
+  await applyCharacterTurn(scope(), reply, actions, repo);
+  expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.action).toBe(actions[31]);
 });
 
 describe("portrait stat highlights", () => {
@@ -285,14 +285,14 @@ describe("locally bound character replies", () => {
     const extras = ["Leon", "Noah"].map(name => ({ ...entity, id: name.toLowerCase(), name, aliases: ["navigator"] }));
     await repo.mergeRecords(extras.map(data => ({ kind: "entity" as const, id: data.id, data })));
     const base = characterRevision([entity, ...extras]);
-    await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, present: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }] }, undefined, repo, true);
+    await applyCharacterTurn({ ...scope(), base }, { ...turn(), base, present: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, action: "happy" } }] }, undefined, repo, true);
     const saved = (await repo.list<ChatBinding>("binding")).find(b => b.id === binding.id)!;
     expect(saved.characterScenes?.w?.presentIds).toEqual([entity.id]);
-    expect(saved.characterScenes?.w?.states.mira?.emotion).toBe("happy");
+    expect(saved.characterScenes?.w?.states.mira?.action).toBe("happy");
   });
   it("rejects two aliases updating the same character without saving either state", async () => {
     const repo = await setup();
-    await expect(applyCharacterTurn(scope(), { ...turn(), present: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }, { id: "new:Mira", name: "Mira", state: { ...EMPTY_STATUS, emotion: "sad" } }] }, undefined, repo, true)).rejects.toThrow("character-unknown");
+    await expect(applyCharacterTurn(scope(), { ...turn(), present: ["Mira"], updates: [{ id: "Mira", state: { ...EMPTY_STATUS, action: "happy" } }, { id: "new:Mira", name: "Mira", state: { ...EMPTY_STATUS, action: "sad" } }] }, undefined, repo, true)).rejects.toThrow("character-unknown");
     expect((await repo.list<ChatBinding>("binding")).find(b => b.id === binding.id)?.characterScenes).toBeUndefined();
     expect(await repo.list<SceneEntity>("entity")).toHaveLength(1);
   });
@@ -410,7 +410,7 @@ describe("character protocol", () => {
     expect(prompt).toContain(`LOOK_${count - 1}`);
     expect(prompt.match(/LOOK_/g)).toHaveLength(6);
     const roster = JSON.parse(prompt.match(/Roster: (.*)\nCurrent profiles/)![1]!);
-    expect(roster).toHaveLength(Math.min(count, 40)); expect(roster.at(-1).player).toBe(true);
+    expect(roster.length).toBeGreaterThan(0); expect(roster.length).toBeLessThanOrEqual(count); expect(JSON.stringify(roster).length).toBeLessThanOrEqual(6000); expect(roster.find((p: any) => p.id === `actor${count - 1}`).player).toBe(true);
   });
   it("accepts a complete neutral update with an ordinary scene around it", () => expect(parseCharacterTurn("Mira smiles.\n" + block(turn()))).toEqual(turn()));
   it.each(["{}", "<deeprole_characters>{}", block(turn()) + block(turn()), block({ ...turn(), present: ["mira", "mira"] }), block({ ...turn(), updates: [turn().updates[0], turn().updates[0]] }), block({ ...turn(), updates: [{ id: "__proto__", state: EMPTY_STATUS }] })])("rejects malformed, duplicate or prototype data: %s", text => expect(parseCharacterTurn(text)).toBeNull());
@@ -418,23 +418,23 @@ describe("character protocol", () => {
     expect(parseCharacterTurn(block({ ...turn(), updates: [{ id: "mira", state: { ...EMPTY_STATUS, stats: Array(7).fill({ label: "a", value: "b" }) } }] }))).toBeNull();
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, appearance: "x".repeat(1201) })).toBe(false);
   });
-  it("uses custom emotions and excludes all image bytes from context", () => {
+  it("uses custom actions and excludes all image bytes from context", () => {
     const e = { ...entity, characterSheet: { ...entity.characterSheet!, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA" } } };
     const prompt = characterInstruction("w", "a", [e], undefined, ["neutral", "Focused"], [], "");
     expect(prompt).toContain("Focused"); expect(prompt).toContain("Blue coat"); expect(prompt).not.toContain("base64"); expect(prompt).not.toContain("sprites"); expect(prompt).not.toContain("ORIGINAL LORE");
     // Includes the player-specific speech/action contract, still bounded for context costs.
-    expect(prompt.length).toBeLessThan(3400);
+    expect(prompt.length).toBeLessThan(6500); // Includes role-aware actions for both sides of interactions.
   });
   it.each(["Разговаривает", "speaking"])("explains the player avatar and preserves the known state for %s", speaking => {
-    const hero: SceneEntity = { ...entity, id: "hero", name: "Leon", characterSheet: { ...EMPTY_CHARACTER, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA", [speaking]: "data:image/png;base64,BBBB", retired: "data:image/png;base64,CCCC", angry: "data:image/png;base64,DDDD" }, blockedEmotions: ["angry"] } };
+    const hero: SceneEntity = { ...entity, id: "hero", name: "Leon", characterSheet: { ...EMPTY_CHARACTER, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA", [speaking]: "data:image/png;base64,BBBB", retired: "data:image/png;base64,CCCC", angry: "data:image/png;base64,DDDD" }, blockedActions: ["angry"] } };
     const state = { ...EMPTY_STATUS, condition: "Safe", goal: "Find the key", stats: [{ label: "Energy", value: "Rested" }] };
     const scene = { revision: "current", presentIds: ["hero", "mira"], partnerIds: ["mira"], states: { hero: state }, updatedAt: 1 };
     const prompt = characterInstruction("w", "a", [entity, hero], scene, ["neutral", speaking, "angry"], [], 'I say: "I found the key."', "player-request-123");
     const avatar = JSON.parse(prompt.match(/Player avatar: (.+)\n/)![1]!);
-    expect(avatar).toEqual({ id: "Leon", portraitEmotions: ["neutral", speaking] });
+    expect(avatar).toEqual({ id: "Leon", portraitActions: ["neutral", speaking] });
     expect(prompt).toContain("latest user message"); expect(prompt).toContain("EVERY story reply");
     expect(prompt).toContain("not every message means speaking"); expect(prompt).toContain("The player is never a partners entry");
-    expect(prompt).not.toContain("base64"); expect(prompt).not.toContain("Only neutral mood");
+    expect(prompt).not.toContain("base64"); expect(prompt).not.toContain("Only neutral action");
     const schema = JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)![1]!);
     expect(schema.updates).toEqual([{ id: "Leon", name: "Leon", state }]);
     expect(scene.states.hero).toEqual(state);
@@ -443,16 +443,16 @@ describe("character protocol", () => {
     const hero = { ...entity, characterSheet: { ...EMPTY_CHARACTER, protagonist: true } };
     for (const prompt of [characterInstruction("w", "", [hero], undefined, ["neutral"], [], ""), characterInstruction("w", "a", [hero], undefined, ["neutral"], [], "", "service-request", false, true), characterInstruction("w", "a", [entity], undefined, ["neutral"], [], "")]) expect(prompt).not.toContain("Player avatar:");
   });
-  it("uses an allowed schema mood for a retired player mood without changing other fields", () => {
-    const hero = { ...entity, characterSheet: { ...EMPTY_CHARACTER, protagonist: true, initialStatus: { ...EMPTY_STATUS, emotion: "retired", goal: "Known goal", stats: [{ label: "Energy", value: "Rested" }] } } };
+  it("uses an allowed schema action for a retired player action without changing other fields", () => {
+    const hero = { ...entity, characterSheet: { ...EMPTY_CHARACTER, protagonist: true, initialStatus: { ...EMPTY_STATUS, action: "retired", goal: "Known goal", stats: [{ label: "Energy", value: "Rested" }] } } };
     const prompt = characterInstruction("w", "a", [hero], undefined, ["neutral"], [], "");
     const schema = JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)![1]!);
-    expect(schema.updates[0].state).toEqual({ ...hero.characterSheet.initialStatus, emotion: "neutral" });
-    expect(hero.characterSheet.initialStatus.emotion).toBe("retired");
+    expect(schema.updates[0].state).toEqual({ ...hero.characterSheet.initialStatus, action: "neutral" });
+    expect(hero.characterSheet.initialStatus.action).toBe("retired");
   });
-  it("accepts custom emotion names but rejects duplicate, reserved and missing defaults", () => {
-    expect(validEmotions(["neutral", "Смущение"])).toBe(true);
-    for (const v of [["happy"], ["neutral", "neutral"], ["neutral", "__proto__"], ["neutral", "x".repeat(33)]]) expect(validEmotions(v)).toBe(false);
+  it("accepts custom action names but rejects duplicate, reserved and missing defaults", () => {
+    expect(validActions(["neutral", "Смущение"])).toBe(true);
+    for (const v of [["happy"], ["neutral", "neutral"], ["neutral", "__proto__"], ["neutral", "x".repeat(33)]]) expect(validActions(v)).toBe(false);
   });
   it("never renders remote URLs or user SVG", () => {
     for (const image of ["https://example.test/a.png", "data:image/svg+xml;base64,PHN2Zz4=", "javascript:alert(1)"]) {
@@ -460,7 +460,7 @@ describe("character protocol", () => {
       expect(portraitSource({ ...entity, characterSheet: { ...EMPTY_CHARACTER, sprites: { neutral: image } } })).toBeNull();
     }
   });
-  it("falls back to the neutral portrait", () => expect(portraitSource({ ...entity, characterSheet: { ...EMPTY_CHARACTER, sprites: { neutral: "data:image/png;base64,AAAA" } } }, { ...EMPTY_STATUS, emotion: "happy" })).toBe("data:image/png;base64,AAAA"));
+  it("falls back to the neutral portrait", () => expect(portraitSource({ ...entity, characterSheet: { ...EMPTY_CHARACTER, sprites: { neutral: "data:image/png;base64,AAAA" } } }, { ...EMPTY_STATUS, action: "happy" })).toBe("data:image/png;base64,AAAA"));
   it.each(["male", "female", "neutral"] as const)("uses a native 3:4 %s placeholder with a full portrait background", gender => {
     const svg = new DOMParser().parseFromString(decodeURIComponent(silhouetteSource(gender).split(",")[1]!), "image/svg+xml").documentElement;
     expect(svg.getAttribute("viewBox")).toBe("0 0 120 160");
@@ -479,16 +479,16 @@ describe("character storage and isolation", () => {
     const repo = await setup(); const speech = "Разговаривает";
     const hero: SceneEntity = { ...entity, id: "hero", name: "Leon", characterSheet: { ...EMPTY_CHARACTER, protagonist: true, sprites: { neutral: "data:image/png;base64,AAAA", [speech]: "data:image/png;base64,BBBB" } } };
     await repo.put("entity", hero); const entities = [entity, hero]; const base = characterRevision(entities);
-    const incoming = { ...turn(), base, present: ["hero", "mira"], partners: ["mira"], updates: [{ id: "hero", state: { ...EMPTY_STATUS, emotion: speech } }, ...turn().updates] };
+    const incoming = { ...turn(), base, present: ["hero", "mira"], partners: ["mira"], updates: [{ id: "hero", state: { ...EMPTY_STATUS, action: speech } }, ...turn().updates] };
     await applyCharacterTurn({ ...scope(), base }, incoming, ["neutral", "happy", speech], repo);
     let scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
     expect(portraitSource(hero, scene.states.hero)).toBe(hero.characterSheet!.sprites[speech]);
-    expect(scene.partnerIds).toEqual(["mira"]); expect(scene.states.mira!.emotion).toBe("happy");
+    expect(scene.partnerIds).toEqual(["mira"]); expect(scene.states.mira!.action).toBe("happy");
     const nextBase = characterRevision(entities, scene);
     await applyCharacterTurn({ ...scope(), base: nextBase }, { ...incoming, base: nextBase, updates: [{ id: "hero", state: EMPTY_STATUS }] }, ["neutral", "happy", speech], repo);
     scene = (await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!;
     expect(portraitSource(hero, scene.states.hero)).toBe(hero.characterSheet!.sprites.neutral);
-    expect(scene.states.mira!.emotion).toBe("happy"); expect(await repo.get("entity", "hero")).toEqual(hero);
+    expect(scene.states.mira!.action).toBe("happy"); expect(await repo.get("entity", "hero")).toEqual(hero);
     expect((await repo.get<ChatBinding>("binding", "binding:b"))!.characterScenes).toBeUndefined();
   });
   it("accepts the same DeepSeek chat at /chat and /a/chat without accepting another chat or origin", async () => {
@@ -498,7 +498,7 @@ describe("character storage and isolation", () => {
     expect(isSameDeepSeekChat(canonical, alternative, "a")).toBe(true);
     for (const other of ["https://chat.deepseek.com/a/chat/s/b", "https://other.example/chat/s/a", "https://chat.deepseek.com/not-chat/a", "not a url"]) expect(isSameDeepSeekChat(canonical, other, "a")).toBe(false);
     await applyCharacterTurn({ ...scope(), chatUrl: alternative }, turn(), undefined, repo);
-    expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.emotion).toBe("happy");
+    expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.action).toBe("happy");
   });
   it("uses the explicit new:Name when the model omits the redundant name field", async () => {
     const repo = await setup();
@@ -511,7 +511,7 @@ describe("character storage and isolation", () => {
   it("saves the chat state without rewriting source lore or other chats", async () => {
     const repo = await setup(); await applyCharacterTurn(scope(), turn(), undefined, repo);
     expect(await repo.get("entity", "mira")).toEqual(entity);
-    expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.emotion).toBe("happy");
+    expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.action).toBe("happy");
     expect((await repo.get<ChatBinding>("binding", "binding:b"))!.characterScenes).toBeUndefined();
     await expect(applyCharacterTurn(scope(), turn(), undefined, repo)).rejects.toThrow("character-conflict");
   });
@@ -532,9 +532,11 @@ describe("character storage and isolation", () => {
     for (const t of [{ ...turn(), chat: "b" }, { ...turn(), world: "other" }, { ...turn(), present: ["missing"] }, { ...turn(), updates: [{ id: "missing", state: EMPTY_STATUS }] }]) await expect(applyCharacterTurn(scope(), t, undefined, repo)).rejects.toThrow();
     expect(await repo.rawRecords()).toEqual(before);
   });
-  it("accepts configured emotions only", async () => {
-    const repo = await setup(); await expect(applyCharacterTurn(scope(), turn(), ["neutral"], repo)).rejects.toThrow("character-invalid");
-    const t = turn(); t.updates[0]!.state.emotion = "Focused"; await applyCharacterTurn(scope(), t, ["neutral", "Focused"], repo);
+  it("accepts configured actions only", async () => {
+    const repo = await setup(); await applyCharacterTurn(scope(), turn(), ["neutral"], repo);
+    expect((await repo.get<ChatBinding>("binding", binding.id))!.characterScenes!.w!.states.mira!.action).toBe("neutral");
+    await repo.delete("binding", binding.id); await repo.put("binding", structuredClone(binding));
+    const t = turn(); t.updates[0]!.state.action = "Focused"; await applyCharacterTurn(scope(), t, ["neutral", "Focused"], repo);
   });
   it("persists sprites and states through full backup validation", async () => {
     const repo = await setup(); await saveCharacter({ ...scope(), entityId: "mira", name: "Mira", sheet: { ...entity.characterSheet!, sprites: { neutral: "data:image/png;base64,AAAA" } }, state: EMPTY_STATUS, present: true }, repo);

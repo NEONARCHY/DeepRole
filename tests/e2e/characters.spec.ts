@@ -39,22 +39,22 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   await settings.getByText(locale === "ru" ? "Редактировать списком" : "Edit as a list", { exact: true }).click();
   await expect(settings.locator("textarea")).toBeVisible();
   await expect(settings.getByRole("checkbox")).toHaveCount(2);
-  const emotions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `emotion-${i}`)];
-  const saveEmotions = settings.getByRole("button", { name: locale === "ru" ? "Сохранить эмоции" : "Save emotions", exact: true });
-  await settings.locator("textarea").fill(emotions.join("\n")); await saveEmotions.click();
+  const actions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `action-${i}`)];
+  const saveActions = settings.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });
+  await settings.locator("textarea").fill(actions.join("\n")); await saveActions.click();
   await expect(settings.getByRole("alert")).toHaveCount(0);
   // This preview intentionally reseeds storage on reload; verify persistence
   // directly and remount the settings section. MV3 tests cover browser reload.
   await expect.poll(() => page.evaluate(async () => {
     const { repository } = await import("/src/storage/repository.ts" as string);
-    return (await repository.get("world", "world-a"))?.characterEmotions;
-  })).toEqual(emotions);
+    return (await repository.get("world", "world-a"))?.characterActions;
+  })).toEqual(actions);
   await page.getByRole("button", { name: locale === "ru" ? "Память" : "Memory", exact: true }).click();
   await page.getByRole("button", { name: locale === "ru" ? "Персонажи" : "Characters", exact: true }).click();
-  await expect(settings.locator("textarea")).toHaveValue(emotions.join("\n"));
-  await settings.locator("textarea").fill([...emotions, "extra"].join("\n")); await saveEmotions.click();
+  await expect(settings.locator("textarea")).toHaveValue(actions.join("\n"));
+  await settings.locator("textarea").fill([...actions, "extra"].join("\n")); await saveActions.click();
   await expect(settings.getByRole("alert")).toContainText("32");
-  await settings.locator("textarea").fill(emotions.join("\n")); await saveEmotions.click();
+  await settings.locator("textarea").fill(actions.join("\n")); await saveActions.click();
   expect((await new AxeBuilder({ page }).include(".dr-character-settings").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await settings.screenshot({ path: info.outputPath(`character-settings-${locale}.png`) });
@@ -116,7 +116,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
   });
 }
 
-test("upload fallback, failed save keeps draft, custom emotions validation", async ({ page }) => {
+test("upload fallback, failed save keeps draft, custom actions validation", async ({ page }) => {
   await page.goto("/tests/fixtures/characters.html?locale=en");
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
   const dialog = page.getByRole("dialog");
@@ -133,9 +133,9 @@ test("upload fallback, failed save keeps draft, custom emotions validation", asy
   await expect(dialog.getByRole("alert")).toContainText("Couldn’t reach storage"); await expect(dialog.getByLabel("Name", { exact: true })).toHaveValue("Mira edited");
   await page.evaluate(() => { (window as any).rejectSave = false; }); await dialog.getByRole("button", { name: "Save character" }).click(); await closeSavedCharacter(dialog);
   await page.getByText("Edit as a list", { exact: true }).click();
-  await page.getByLabel("Portrait emotions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save emotions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep neutral");
-  await page.getByLabel("Portrait emotions", { exact: true }).fill("neutral\nFocused"); await page.getByRole("button", { name: "Save emotions" }).click();
-  expect(await page.evaluate(() => (window as any).settings.characterEmotions)).toEqual(["neutral", "Focused"]);
+  await page.getByLabel("Portrait actions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save actions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep neutral");
+  await page.getByLabel("Portrait actions", { exact: true }).fill("neutral\nFocused"); await page.getByRole("button", { name: "Save actions" }).click();
+  expect(await page.evaluate(() => (window as any).settings.characterActions)).toEqual(["neutral", "Focused"]);
 });
 
 for (const count of [1, 40]) test(`portrait grid stays usable with ${count} characters`, async ({ page }) => {
@@ -153,7 +153,7 @@ for (const count of [1, 40]) test(`portrait grid stays usable with ${count} char
     await expect(page.getByRole("dialog")).toBeVisible();
   } else {
     expect(await list.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
-    await tiles.last().getByRole("button").scrollIntoViewIfNeeded(); await tiles.last().getByRole("button").click();
+    await tiles.last().getByRole("button", { name: /^Edit character:/ }).scrollIntoViewIfNeeded(); await tiles.last().getByRole("button", { name: /^Edit character:/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
   }
 });

@@ -7,6 +7,10 @@
   --dr-primary: #bfdfeb; --dr-action: #bfdfeb; --dr-action-hover: #d9f1f8; --dr-on-action: #18303b;
   --dr-selected: #344b55; --dr-border-strong: #ffffff28; --dr-primary-soft: #304752;
   --dr-success: #a5d6ba; --dr-warning: #eac08c; --dr-danger: #f4a7ac;
+  --dr-button-neutral: #363e46; --dr-button-neutral-hover: #414a53;
+  --dr-button-glow: 0 0 0 1px #d8dfe733, 0 0 16px #d8dfe72b;
+  --dr-retry: #e6b9bb; --dr-retry-hover: #f0ccce; --dr-on-retry: #46292d;
+  --dr-retry-glow: 0 0 0 1px #f0ccce44, 0 0 18px #e6b9bb55;
   --dr-danger-soft: #392933; --dr-warning-soft: #3b3340;
   /* Low-chroma pastels share a lightness; labels also identify each choice. */
   --dr-choice-positive: oklch(82% 0.065 160);

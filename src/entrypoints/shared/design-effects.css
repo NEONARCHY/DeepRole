@@ -1,4 +1,27 @@
 /* AXIS-inspired accents, not a new theme. Shared with standalone chat shadow roots. */
+/* Ordinary controls stay neutral; selected, primary and destructive controls retain meaning. */
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button,.icon-button):not(.primary,.accent,.danger,.danger-button,.dr-retry-action,.active,.is-active,.selected,[aria-pressed=true],[aria-selected=true]) {
+  position:relative; isolation:isolate; background:var(--dr-button-neutral); color:var(--dr-text);
+}
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button,.icon-button):not(.primary,.accent,.danger,.danger-button,.dr-retry-action,.active,.is-active,.selected,[aria-pressed=true],[aria-selected=true])::after,
+button.dr-retry-action::after {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  box-shadow:var(--dr-button-glow); opacity:0; transition:opacity 160ms var(--dr-ease-out);
+}
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button.button.dr-retry-action {
+  position:relative; isolation:isolate; background:var(--dr-retry); border-color:var(--dr-retry); color:var(--dr-on-retry);
+  --dr-button-glow:var(--dr-retry-glow);
+}
+@media(hover:hover) and (pointer:fine) {
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button,.icon-button):not(.primary,.accent,.danger,.danger-button,.dr-retry-action,.active,.is-active,.selected,[aria-pressed=true],[aria-selected=true]):hover:not(:disabled):not([aria-disabled=true]) { background:var(--dr-button-neutral-hover); }
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button,.icon-button):not(.primary,.accent,.danger,.danger-button,.active,.is-active,.selected,[aria-pressed=true],[aria-selected=true]):hover:not(:disabled):not([aria-disabled=true])::after { opacity:1; }
+  :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button.button.dr-retry-action:hover:not(:disabled) { background:var(--dr-retry-hover); border-color:var(--dr-retry-hover); }
+}
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button,.icon-button):not(.primary,.accent,.danger,.danger-button,.active,.is-active,.selected,[aria-pressed=true],[aria-selected=true]):focus-visible:not(:disabled)::after { opacity:1; transition:none; }
+:is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button.button.dr-retry-action:focus-visible { outline:2px solid var(--dr-retry); outline-offset:3px; }
+.app-shell[data-motion=off] button::after { transition:none!important; }
+@media(prefers-reduced-motion:reduce) { button::after { transition:none!important; } }
+@media(forced-colors:active) { button::after { display:none!important; } }
 :is(.app-shell,.dr-root,.dr-loremap,.onboarding,.center-screen) button:is(.button.primary,.icon-button.accent,.dr-assistant-primary,.dr-character-primary),
 button.dr-accent-action {
   position:relative;

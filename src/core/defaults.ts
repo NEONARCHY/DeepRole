@@ -1,7 +1,10 @@
 import type { DeepRoleSettings } from "./types";
 import { DEFAULT_PORTRAIT_MAX_EDGE, DEFAULT_PORTRAIT_PREVIEW_SIZE } from "./portrait-upload";
+import { DEFAULT_ACTIONS } from "./character-actions";
 
 export const DEFAULT_SETTINGS: DeepRoleSettings = {
+  strictMemorySending: false,
+  automaticMetadataRepair: false,
   portraitMaxEdge: DEFAULT_PORTRAIT_MAX_EDGE,
   portraitPreviewSize: DEFAULT_PORTRAIT_PREVIEW_SIZE,
   referencePreviewSize: DEFAULT_PORTRAIT_PREVIEW_SIZE,
@@ -19,7 +22,7 @@ export const DEFAULT_SETTINGS: DeepRoleSettings = {
   relationshipDisplay: "both",
   characterSpritesEnabled: true,
   portraitLayoutResetAt: 0,
-  characterEmotions: ["neutral", "happy", "sad", "angry", "surprised", "worried"],
+  characterActions: [...DEFAULT_ACTIONS],
   sceneChoicesEnabled: true,
   pinSceneChoices: false,
   pinPortraitLeft: false,

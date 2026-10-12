@@ -1,0 +1,24 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { storyReviewText as text } from "../../src/core/story-review-i18n";
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test(`read-only saved story ${locale} ${width}px`, async ({ page }, info) => {
+  const t = (key: Parameters<typeof text>[1]) => text(locale, key), errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.setViewportSize({ width, height: 1100 }); await page.goto(`/tests/fixtures/story-review.html?locale=${locale}`);
+  const read = page.getByRole("button", { name: t("read"), exact: true }); await expect(read).toBeVisible(); expect(await page.evaluate(() => (window as any).storyReviewFixture.reads)).toBe(0);
+  await page.keyboard.press("Tab"); await expect(read).toBeFocused(); await page.keyboard.press("Enter"); await expect(page.locator(".dr-story-review-entry")).toHaveCount(2);
+  await page.getByText(t("full"), { exact: true }).last().click();
+  const preview = page.getByRole("button", { name: t("preview"), exact: true }); await preview.focus(); await page.keyboard.press("Enter"); await expect(page.getByRole("heading", { name: t("previewTitle") })).toBeVisible();
+  await expect(page.getByRole("heading", { name: t("previewTitle") })).toBeFocused();
+  await page.getByText(t("snapshot"), { exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+  expect(await page.locator("main").textContent()).not.toMatch(/review-branch|review-assistant|person-1|synthetic-a/);
+  if (info.project.name === "chromium" && (locale === "ru" && width === 320 || locale === "en" && width === 900)) await page.screenshot({ fullPage: true, path: info.outputPath("story-review.png") });
+  await page.getByRole("button", { name: t("next"), exact: true }).click(); await expect(preview).toBeDisabled(); await expect(page.getByRole("heading", { name: t("previewTitle") })).toHaveCount(0);
+  await page.getByRole("button", { name: t("refresh"), exact: true }).click(); await expect(preview).toBeEnabled();
+  await page.evaluate(() => { (window as any).storyReviewFixture.mode = "delay"; }); await preview.click(); await expect(page.getByRole("status")).toHaveText(t("checking")); await expect(preview).toBeDisabled();
+  await page.evaluate(() => (window as any).storyReviewFixture.release()); await expect(page.getByRole("heading", { name: t("previewTitle") })).toBeVisible();
+  await page.evaluate(() => { (window as any).storyReviewFixture.mode = "normal"; }); await page.getByRole("button", { name: t("baseline"), exact: true }).click(); await expect(page.getByText(t("conflict"))).toBeVisible();
+  await page.evaluate(() => { (window as any).storyReviewFixture.mode = "conflict"; }); await preview.click(); await expect(page.getByRole("status")).toHaveText(t("stale")); await expect(page.locator(".dr-story-review-entry")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(errors).toEqual([]);
+});

@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepRole diagnostic fixture</title></head><body>
+<main class="app-shell" style="min-height:100vh;padding:12px"><h1 style="font-size:20px;margin:0 0 16px">DeepRole</h1><div id="diagnostics"></div><article data-message-id="2" data-role="assistant" aria-label="Native message fixture">Native message fixture</article></main>
+<script type="module">
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { StoryDiagnostics } from "/src/entrypoints/shared/StoryDiagnostics.tsx";
+import { StoryDiagnosticsClient } from "/src/adapters/story-diagnostics-client.ts";
+import "/src/entrypoints/sidepanel/styles.css";
+const locale=new URL(location.href).searchParams.get("locale")==="ru"?"ru":"en";
+const nativeDemo=new URL(location.href).searchParams.get("native")==="1";
+document.documentElement.lang=locale; history.replaceState(null,"","/a/chat/s/diagnostic-fixture");
+localStorage.setItem("userToken",JSON.stringify({value:"PRIVATE_TOKEN"}));
+const fixture={calls:[],copied:[],clipboardFails:false,payload:{data:{biz_data:{chat_session_id:"diagnostic-fixture",messages:[{id:1,parent_id:null,role:"USER",content:"PRIVATE_LORE"},{id:2,parent_id:1,role:"ASSISTANT",status:"FINISHED",content:"PRIVATE_REPLY",thoughts:"PRIVATE_THOUGHTS"}]}}}};
+if(nativeDemo)fixture.payload={code:0,data:{biz_code:0,biz_data:{chat_session:{id:"diagnostic-fixture",current_message_id:2},chat_messages:[{message_id:1,parent_id:null,role:"USER",status:"FINISHED",has_pending_fragment:false},{message_id:2,parent_id:1,role:"ASSISTANT",status:"FINISHED",has_pending_fragment:false}]}}};
+const originalFetch=window.fetch.bind(window);
+window.fetch=async (url,options)=>{if(!String(url).startsWith("/api/v0/chat/"))return originalFetch(url,options);fixture.calls.push({url:String(url),method:options?.method});if(!String(url).startsWith("/api/v0/chat/history_messages?"))throw Error("No model requests allowed");if(fixture.delay)await new Promise(resolve=>{fixture.release=resolve;});return new Response(JSON.stringify(fixture.payload),{headers:{"content-type":"application/json"}});};
+Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText:async text=>{if(fixture.clipboardFails)throw Error("PRIVATE_CLIPBOARD_ERROR");fixture.copied.push(text);}}});
+window.defineUnlistedScript=install=>install;
+const bridge=await import("/src/entrypoints/injected.ts"); bridge.default();
+const client=new StoryDiagnosticsClient(window,()=>({chatId:location.pathname.endsWith("/diagnostic-fixture")?"diagnostic-fixture":"other",url:location.href,generating:false,locked:false}));
+createRoot(document.querySelector("#diagnostics")).render(React.createElement(StoryDiagnostics,{locale,onCheck:()=>client.check()}));
+window.diagnosticFixture=fixture;
+</script></body></html>

@@ -11,7 +11,7 @@ export function validPortraitPose(value: unknown): value is PortraitPose {
     && finite(value.y, 0, value.space === "viewport" ? 1 : 1200) && finite(value.width, 96, PORTRAIT_MAX_WIDTH);
 }
 export function validPortraitLayout(value: unknown): value is PortraitLayout {
-  return object(value) && finite(value.resetAt, 0, Number.MAX_SAFE_INTEGER) && object(value.positions) && Object.keys(value.positions).length <= 40
+  return object(value) && finite(value.resetAt, 0, Number.MAX_SAFE_INTEGER) && object(value.positions)
     && Object.entries(value.positions).every(([id, pose]) => portraitKey(id) && validPortraitPose(pose));
 }
 export function validPortraitLayouts(value: unknown): boolean {

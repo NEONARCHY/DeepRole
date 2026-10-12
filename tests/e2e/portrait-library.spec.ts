@@ -29,11 +29,11 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`bulk p
   await save(); expect(await page.evaluate(() => (window as any).saved.sheet.portraitLibrary.length)).toBe(49);
   expect(await page.evaluate(() => (window as any).saved.sheet.appearance)).toBe("Green coat edited during upload");
   await open(); await expect(library.locator(".dr-library-image")).toHaveCount(49);
-  const assign = library.getByRole("button", { name: locale === "ru" ? "Назначить эмоции" : "Assign to emotion", exact: true });
+  const assign = library.getByRole("button", { name: locale === "ru" ? "Назначить действия" : "Assign to action", exact: true });
   for (let i = 0; i < 3; i++) await library.locator(".dr-library-image").nth(i).click();
   await library.locator("select").selectOption("happy"); await assign.click();
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(3);
-  await library.getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Без эмоции" : "Unassigned"} ·`) }).click();
+  await library.getByRole("button", { name: new RegExp(`^${locale === "ru" ? "Без назначения" : "Unassigned"} ·`) }).click();
   await expect(library.locator(".dr-library-image")).toHaveCount(46);
   await library.scrollIntoViewIfNeeded(); await page.screenshot({ path: info.outputPath(`library-${locale}-${width}.png`) });
   // A broken batch does not change the prior library.

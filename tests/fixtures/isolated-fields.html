@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Isolated field fixture</title><style>body{margin:0;background:#181818;color:#eee;font:14px system-ui}#app{max-width:680px;margin:16px auto;padding:16px}#worker{padding:16px}button{font:inherit}[hidden]{display:none!important}</style></head><body><main id="app" class="dr-root"></main><div id="worker" hidden><aside><div id="owned-row"><a href="https://chat.deepseek.com/chat/s/owned">Temporary field</a><button type="button" id="more" aria-label="More">…</button></div><div id="foreign-row"><a href="https://chat.deepseek.com/chat/s/personal">Personal chat</a><button type="button" id="foreign-more" aria-label="More">…</button></div></aside><main id="turns"></main><form><textarea aria-label="Message"></textarea><button type="submit">Send</button><button type="button" data-testid="stop-generation" hidden>Stop</button></form><button id="intervene">Human intervention</button></div>
+<script>const area=()=>{const values=new Map();return{get:async key=>key?{[key]:values.get(key)}:Object.fromEntries(values),set:async v=>{for(const[k,val]of Object.entries(v))values.set(k,val);},remove:async keys=>keys.forEach(k=>values.delete(k))}};const listeners=new Set();window.chrome={runtime:{id:"fixture",sendMessage:async()=>{},onMessage:{addListener(fn){listeners.add(fn)},removeListener(fn){listeners.delete(fn)}}},storage:{local:area(),session:area(),onChanged:{addListener(){},removeListener(){}}}};window.cleanupListeners=listeners;</script>
+<script type="module">
+import React,{useState} from "react";import{createRoot}from"react-dom/client";
+import{CharacterTextField}from"/src/entrypoints/shared/CharacterTextField.tsx";
+import{CharacterEditor}from"/src/entrypoints/shared/CharacterSheets.tsx";
+import{startIsolatedFieldWorker}from"/src/adapters/isolated-field-worker.ts";
+import{bootstrapFieldServiceScreen}from"/src/adapters/field-service-screen.ts";
+import{IsolatedFieldCoordinator}from"/src/adapters/isolated-field-coordinator.ts";
+import{IsolatedFieldClient}from"/src/adapters/isolated-field-client.ts";
+import{repository}from"/src/storage/repository.ts";
+import{castRecords}from"/tests/fixtures/cast-data.ts";
+import{DEFAULT_SETTINGS}from"/src/core/defaults.ts";
+import{characterTextRequest}from"/src/core/character-text.ts";
+import{profileField,profileValues,PROFILE_FIELDS}from"/src/core/character-profile.ts";
+import{EMPTY_CHARACTER,EMPTY_STATUS}from"/src/core/characters.ts";
+import"/src/entrypoints/shared/design-system.css";import"/src/entrypoints/shared/characters.css";
+const query=new URLSearchParams(location.search),locale=query.get("locale")??"en",scenario=query.get("scenario")??"done",mode=query.get("mode")??"worker";document.documentElement.lang=locale;
+const fullProfile=query.get("fullProfile")==="true";
+const field=fullProfile?profileField(locale,query.get("fieldMode")==="history"?"history":"suggest"):{key:"appearance",label:locale==="ru"?"Внешность":"Appearance",scope:"profile",maxLength:1200,...(query.get("fieldMode")==="history"?{mode:"history"}:{})};
+window.mainDraft="Untouched manual game message";window.sentPrompts=[];window.removedTabs=[];window.cleanupCount=0;window.foreignClicks=0;window.workerFinished=false;window.submitted=false;window.fieldRequests=[];
+document.getElementById("foreign-more").onclick=()=>window.foreignClicks++;
+function App(){return React.createElement(CharacterEditor,{locale,entity:{id:"mira",worldId:"w",kind:"character",name:"Mira",description:"",aliases:[],memberIds:[],characterSheet:EMPTY_CHARACTER,createdAt:1,updatedAt:1},actions:["neutral"],onClose:()=>{},onSave:async()=>{throw Error("fixture-do-not-save")},onGenerateText:async draft=>{window.fieldRequests.push(draft);await new Promise(r=>setTimeout(r,150));if(scenario==="missing")throw Error("facts-not-found");return{text:locale==="ru"?"Синее пальто и короткие тёмные волосы.":"Blue coat and short dark hair.",cleanup:scenario==="failed"?"failed":"done",cleanupUrl:"https://chat.deepseek.com/chat/s/owned",partialContext:scenario==="failed",mode:draft.field.mode,historyOrigin:"visible"}}});}
+if(mode==="ui")createRoot(document.getElementById("app")).render(React.createElement(App));
+else{
+ document.getElementById("worker").hidden=false;await repository.clear();await repository.mergeRecords(castRecords());
+ const tabs=new Map([[1,{id:1,url:"https://chat.deepseek.com/chat/s/game"}]]),api={runtime:{id:"fixture"},storage:window.chrome.storage,tabs:{get:async id=>{if(!tabs.has(id))throw Error("missing");return tabs.get(id)},create:async v=>{const t={id:2,...v};tabs.set(2,t);return t},update:async(id,v)=>{const t={...tabs.get(id),...v};tabs.set(id,t);return t},remove:async id=>{window.removedTabs.push(id);tabs.delete(id)},sendMessage:async(id,message)=>{if(id===2)for(const fn of window.cleanupListeners)await fn(message);return{ok:true}}}};
+ api.windows={create:async value=>{window.serviceWindowRequest=value;window.activeServicePage=value.focused===true;return{id:3,tabs:[await api.tabs.create({url:value.url,active:true,windowId:3})]}}};
+ const coordinator=new IsolatedFieldCoordinator(repository,api,async()=>DEFAULT_SETTINGS);
+ const source={id:"fixture",tab:{id:1},frameId:0,url:tabs.get(1).url};
+ const profileFacts={appearance:"Mira wears a blue coat and has short dark hair.",personality:"Mira is patient.",goals:"Mira wants to study maps.",background:"Mira lives by the sea."};
+ const input={scope:{chatId:"game",chatUrl:source.url,worldId:"w",bookId:null},locale,draft:characterTextRequest(field,fullProfile?JSON.stringify(profileValues(EMPTY_CHARACTER)):"","Mira",null,EMPTY_CHARACTER,EMPTY_STATUS),sceneReference:"Mira waits by the gate.",...(field.mode==="history"?{historyReference:{origin:"native",partial:true,sources:[{id:"h0",role:"user",text:fullProfile?Object.values(profileFacts).join(" "):profileFacts.appearance}]}}:{})};
+ const client=new IsolatedFieldClient(m=>coordinator.handle(m,source));
+ const promise=client.generate(input,()=>true);promise.then(v=>{window.outcome=v},e=>{window.error=e.message}).finally(()=>{window.workerFinished=true});
+ while(!tabs.has(2))await new Promise(r=>setTimeout(r,20));while(!tabs.get(2).url.includes("deeprole_field_job"))await new Promise(r=>setTimeout(r,20));
+ const serviceUrl=new URL(tabs.get(2).url);history.replaceState({},"",serviceUrl.pathname+serviceUrl.search);
+ const screen=bootstrapFieldServiceScreen();window.revealNativeForTest=()=>screen.dispose();
+ window.chrome.runtime.sendMessage=async m=>{tabs.set(2,{id:2,url:"https://chat.deepseek.com"+location.pathname+location.search});return coordinator.handle(m,{id:"fixture",tab:{id:2},frameId:0,url:tabs.get(2).url})};
+ const form=document.querySelector("form"),composer=document.querySelector("textarea"),stop=document.querySelector("[data-testid=stop-generation]");
+ form.onsubmit=e=>{e.preventDefault();window.submitted=true;const prompt=composer.value;composer.value="";window.sentPrompts.push(prompt);history.replaceState({},"","/chat/s/owned");stop.hidden=false;
+  const u=document.createElement("article");u.dataset.messageRole="user";u.dataset.messageId="field-request";u.textContent=prompt;
+  const a=document.createElement("article");a.dataset.messageRole="assistant";a.dataset.messageId="field-reply";a.innerHTML='<div class="ds-think-content">PRIVATE_SYNTHETIC_REASONING</div><div class="ds-assistant-message-main-content"></div>';document.getElementById("turns").append(u,a);
+  const renderReply=()=>{a.lastElementChild.textContent=scenario==="refusal"?"Sorry, that's beyond my current scope. Let's talk about something else.":fullProfile?JSON.stringify({requestId:prompt.match(/\[Request ID: ([^\]]+)\]/)[1],field:"character-profile",fields:Object.fromEntries(PROFILE_FIELDS.map(key=>[key,{status:field.mode==="history"?"found":"suggested",text:profileFacts[key],evidence:field.mode==="history"?[{source:"h0",quote:profileFacts[key]}]:[]}]))}):field.mode==="history"?JSON.stringify({requestId:prompt.match(/\[Request ID: ([^\]]+)\]/)[1],field:"appearance",status:scenario==="missing"?"not-found":"found",text:scenario==="missing"?"":"Blue coat and short dark hair.",evidence:scenario==="missing"?[]:[{source:"h0",quote:scenario==="bad-evidence"?"Mira wears a RED coat.":"Mira wears a blue coat and has short dark hair."}]}):"Blue coat and short dark hair.";stop.hidden=true};
+  if(query.get("renderGate")==="true"){if(window.activeServicePage)requestAnimationFrame(renderReply)}else setTimeout(renderReply,scenario==="hold"?5000:400);
+ };
+ stop.onclick=()=>{stop.hidden=true};
+document.getElementById("more").onclick=()=>{if(scenario==="failed")return;const menu=document.createElement("div");menu.setAttribute("role","menu");const option=document.createElement("button");option.setAttribute("role","menuitem");option.textContent="Delete chat";menu.append(option);document.body.append(menu);option.onclick=()=>{menu.remove();const dialog=document.createElement(query.get("topLayer")==="true"?"dialog":"div");dialog.setAttribute("role","dialog");dialog.innerHTML='<p>Delete chat?</p><button>Delete</button>';document.body.append(dialog);if(dialog instanceof HTMLDialogElement)dialog.showModal();dialog.querySelector("button").onclick=()=>{window.cleanupCount++;document.getElementById("owned-row").remove();document.getElementById("turns").replaceChildren();dialog.remove();history.replaceState({},"","/")}}};
+ await startIsolatedFieldWorker();
+}
+</script></body></html>

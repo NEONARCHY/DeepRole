@@ -18,6 +18,12 @@ for (const locale of ["ru", "en"] as const) test("installed appearance preferenc
     const chat = await context.newPage(); await chat.setViewportSize({ width: 1280, height: 950 }); await chat.goto("https://chat.deepseek.com/a/chat/thoughts-runtime");
     const header = chat.locator("#thoughts-one .thought-heading"), body = chat.locator("#thoughts-one .ds-think-content-wrapper");
     await expect(header).toHaveAttribute("aria-expanded", "false"); await expect(body).toBeHidden(); await expect(chat.locator(".ds-markdown")).toBeVisible();
+    await chat.evaluate(()=>{
+      document.querySelector('#thoughts-one .ds-think-content')!.innerHTML='<div class="ds-markdown"><p>Private test thoughts with Markdown.</p></div>';
+      document.querySelector<HTMLElement>('#thoughts-one .ds-think-content-wrapper')!.style.display='block';
+      document.querySelector('#thoughts-one .thought-heading')!.setAttribute('aria-expanded','true');
+    });
+    await expect(body).toBeHidden();await expect(chat.locator('#thoughts-one>.ds-assistant-message-main-content')).toBeVisible();
     expect(await body.textContent()).toContain("Private test thoughts"); await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("Unsent draft.");
     await header.click(); await expect(body).toBeVisible(); await chat.evaluate(() => (window as any).nativeThoughts.stream()); await expect(body).toBeVisible();
     await chat.evaluate(() => (window as any).nativeThoughts.replace()); await expect(body).toBeVisible();

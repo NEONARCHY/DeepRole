@@ -1,13 +1,13 @@
 export type Locale = "ru" | "en";
 export type ActivationMode = "always" | "smart" | "manual";
 export type MemoryPriority = "low" | "normal" | "high";
-export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration" | "cast";
+export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration" | "cast" | "story" | "service" | "dispatch";
 
 export interface WorldProfile {
   /** User opted into one preparation when this world first has lore. */
   autoPrepareCharacters?: boolean;
   relationshipsEnabled?: boolean;
-  characterEmotions?: string[];
+  characterActions?: string[];
   useDescriptionInContext?: boolean;
   mapLayout?: LoreMapLayout;
   id: string;
@@ -28,6 +28,10 @@ export interface LoreMapLayout {
 }
 
 export interface SceneEntity {
+  /** Manual text-field versions invalidate older story supplements, not portraits or scores. */
+  profileFieldRevisions?: import("./profile-supplements").ProfileFieldRevisions;
+  /** Auto-created in one playthrough; not shared world canon until manually saved. */
+  playthroughChatId?: string;
   characterSheet?: CharacterSheet;
   useDescriptionInContext?: boolean;
   id: string;
@@ -49,8 +53,8 @@ export interface CharacterSheet {
   selfieCategories?: SelfieCategory[];
   /** Access to generated selfies; existing collections keep their own rules. */
   selfieAccess?: { minTrust: number; minAffinity: number };
-  /** Player-edited world-wide exclusions. New world emotions are allowed by default. */
-  blockedEmotions?: string[];
+  /** Player-edited world-wide exclusions. New world actions are allowed by default. */
+  blockedActions?: string[];
   attributes?: CharacterAttribute[];
   relationships?: RelationshipProfile;
   gender: "male" | "female" | "neutral";
@@ -59,7 +63,7 @@ export interface CharacterSheet {
   personality: string;
   goals: string;
   background: string;
-  /** A string is the legacy single portrait; arrays are emotion variations. */
+  /** A string is the legacy single portrait; arrays are action variations. */
   sprites: Record<string, string | string[]>;
   /** Unassigned local images. Assigned images are reused from sprites. */
   portraitLibrary?: string[];
@@ -100,7 +104,7 @@ export interface CharacterStatus {
   attributes?: AttributeState;
   /** This character's attitude to each protagonist, scoped to the current chat. */
   bonds?: Record<string, RelationshipState>;
-  emotion: string;
+  action: string;
   condition: string;
   goal: string;
   relationship: string;
@@ -144,7 +148,7 @@ export interface StoryTemplate {
   updatedAt: number;
 }
 
-export type RecordValue = MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot | WorldProfile | SceneEntity | StoryTemplate | MemoryProposalBatch | LoreChange | import("./image-generation").Illustration | import("./cast-initialization").CastJob;
+export type RecordValue = MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot | WorldProfile | SceneEntity | StoryTemplate | MemoryProposalBatch | LoreChange | import("./image-generation").Illustration | import("./cast-initialization").CastJob | import("./story-records").StoryRecord | import("./service-operations").ServiceOperation | import("./story-dispatch-capture").StoryDispatchCapture;
 export type DataRecord = { kind: RecordKind; id: string; data: RecordValue };
 
 export interface MemoryBook {
@@ -185,6 +189,7 @@ export interface MemoryEntry {
 }
 
 export interface ChatBinding {
+  nextStoryMessageMode?: "out-of-character";
   illustrationAttempts?: import("./image-plan").ImageAttempt[];
   /** Local references to photos attached to specific native replies. */
   scenePhotos?: ScenePhoto[];
@@ -233,6 +238,8 @@ export interface HandoffSnapshot {
 }
 
 export interface DeepRoleSettings {
+  strictMemorySending?: boolean;
+  automaticMetadataRepair?: boolean;
   /** Long edge for future uploaded portraits; never rewrites stored images. */
   portraitMaxEdge?: number;
   /** Preferred library tile size; narrow layouts still fit their container. */
@@ -250,7 +257,7 @@ export interface DeepRoleSettings {
   portraitLayoutResetAt?: number;
   characterSheetsEnabled?: boolean;
   characterSpritesEnabled?: boolean;
-  characterEmotions?: string[];
+  characterActions?: string[];
   locale: Locale;
   onboardingComplete: boolean;
   sceneChoicesEnabled?: boolean;
@@ -415,7 +422,7 @@ export interface DeepSeekAdapter {
 
 export interface BackupPayload {
   format: "deeprole-backup";
-  version: 1;
+  version: 1 | 2 | 3 | 4;
   exportedAt: string;
   records: Array<{
     kind: RecordKind;

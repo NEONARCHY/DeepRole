@@ -1,26 +1,34 @@
-import { parseCastDraft, type CastDraft, type CastJob, type CastSource } from "./cast-initialization";
+import { parseCastDraft, validateCastDraftValue, type CastDraft, type CastJob, type CastSource } from "./cast-initialization";
+import { castCheck, CastValidationError } from "./cast-validation";
 function payload(raw: string): Record<string, unknown> {
   const body = /<deeprole_cast>\s*([\s\S]*?)\s*<\/deeprole_cast>/u.exec(raw)?.[1] ?? raw.trim();
-  return JSON.parse(body.replace(/^```(?:json)?\s*|\s*```$/gu, "")) as Record<string, unknown>;
+  try { return JSON.parse(body.replace(/^```(?:json)?\s*|\s*```$/gu, "")) as Record<string, unknown>; }
+  catch { throw new CastValidationError([{path:"$",rule:"complete valid JSON object",actual:"invalid JSON"}]); }
 }
-export function parseCastBatch(raw: string, request: string, sources: CastSource[], size: number): { draft?: CastDraft; more: boolean; partial: boolean } {
+export function parseCastBatch(raw: string, request: string, sources: CastSource[], size: number, previous?: CastDraft): { draft?: CastDraft; more: boolean; partial: boolean } {
+  castCheck(raw.length <= 180000, "$", "reply length <=180000", raw);
+  castCheck([...raw.matchAll(/<deeprole_cast>/gu)].length <= 1, "$", "at most one deeprole_cast block", raw);
   const value = payload(raw);
-  if (!value || value.version !== 1 || value.request !== request || !Array.isArray(value.characters) || value.characters.length > size) throw Error("invalid-result");
+  castCheck(value && typeof value === "object" && !Array.isArray(value), "$", "object", value);
+  castCheck(value.version === 1, "version", "version must equal 1", value.version);
+  castCheck(value.request === request, "request", "must match current request ID", value.request);
+  castCheck(Array.isArray(value.characters) && value.characters.length <= size, "characters", "batch array <=" + size, value.characters);
   const partial = value.partial === true;
-  if (!partial && typeof value.more !== "boolean") throw Error("invalid-result");
+  castCheck(partial || typeof value.more === "boolean", "more", "boolean unless partial reply", value.more);
   if (!value.characters.length) {
-    if (value.more !== false || partial || !Array.isArray(value.present) || value.present.length || !Array.isArray(value.partners) || value.partners.length || !Array.isArray(value.warnings) || value.warnings.length) throw Error("invalid-result");
+    castCheck(value.more === false && !partial, "characters", "empty batch requires more=false and no partial flag", value.characters);
+    for (const field of ["present", "partners", "warnings"]) castCheck(Array.isArray(value[field]) && value[field].length === 0, field, "empty array for empty final batch", value[field]);
     return { more: false, partial: false };
   }
-  return { draft: parseCastDraft(JSON.stringify(value), request, sources), more: value.more === true, partial };
+  return { draft: parseCastDraft(JSON.stringify(value), request, sources, previous?.characters), more: value.more === true, partial };
 }
 export function mergeCastBatches(previous: CastDraft | undefined, incoming: CastDraft | undefined, request: string, sources: CastSource[]): CastDraft {
-  if (!incoming && !previous) throw Error("invalid-result");
+  castCheck(incoming || previous, "characters", "at least one prepared profile across batches");
   if (!previous) return incoming!;
   if (!incoming) return { ...previous, request };
   const known = new Set(previous.characters.flatMap(c => [c.name, ...c.aliases]).map(s => s.toLocaleLowerCase()));
-  if (incoming.characters.some(c => [c.name, ...c.aliases].some(s => known.has(s.toLocaleLowerCase())))) throw Error("duplicate-character");
-  return parseCastDraft(JSON.stringify({ version: 1, request, characters: [...previous.characters, ...incoming.characters], present: [...new Set([...previous.present, ...incoming.present])].slice(0, 12), partners: [...new Set([...previous.partners, ...incoming.partners])].slice(0, 12), warnings: [...new Set([...previous.warnings, ...incoming.warnings])].slice(0, 12) }), request, sources);
+  incoming.characters.forEach((c, i) => castCheck(![c.name, ...c.aliases].some(s => known.has(s.toLocaleLowerCase())), `characters[${i}].name/aliases`, "must not repeat an earlier batch", c.aliases, "duplicate-character"));
+  return validateCastDraftValue({ version: 1, request, characters: [...previous.characters, ...incoming.characters], present: [...new Set([...previous.present, ...incoming.present])].slice(0, 12), partners: [...new Set([...previous.partners, ...incoming.partners])].slice(0, 12), warnings: [...new Set([...previous.warnings, ...incoming.warnings])].slice(0, 12) }, request, sources);
 }
 /** Keep already validated data on a closed tab or lost worker; never commit profiles here. */
 export function interruptedCastJob(job: CastJob, error: string): CastJob {
@@ -28,7 +36,7 @@ export function interruptedCastJob(job: CastJob, error: string): CastJob {
   const saved = job.replyCheckpoint;
   if (job.awaiting && saved && saved.step === job.step && saved.repair === job.repair && saved.chatId === job.chatId) {
     try {
-      const received = job.batchSize ? parseCastBatch(saved.raw, job.id, job.sources, job.batchSize).draft : parseCastDraft(saved.raw, job.id, job.sources);
+      const received = job.batchSize ? parseCastBatch(saved.raw, job.id, job.sources, job.batchSize, job.draft).draft : parseCastDraft(saved.raw, job.id, job.sources);
       draft = mergeCastBatches(draft, received, job.id, job.sources);
     } catch { /* A stale or invalid checkpoint is never a draft. */ }
   }

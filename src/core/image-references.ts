@@ -10,7 +10,7 @@ export interface ImageReferenceChoice { entityId: string; reference: "neutral" |
 export const validImageReferencePolicy = (v: unknown): v is ImageReferencePolicy => IMAGE_REFERENCE_POLICIES.includes(v as ImageReferencePolicy);
 const safeId = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 160 && !["__proto__", "prototype", "constructor"].includes(v);
 export function validImageReferenceOverrides(v: unknown): v is ImageReferenceOverrides {
-  return !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length <= 40 && Object.entries(v).every(([id, policy]) => safeId(id) && validImageReferencePolicy(policy));
+  return !!v && typeof v === "object" && !Array.isArray(v) && Object.entries(v).every(([id, policy]) => safeId(id) && validImageReferencePolicy(policy));
 }
 export function validImageReferenceChoices(v: unknown): v is ImageReferenceChoice[] {
   return Array.isArray(v) && v.length <= 40 && v.every(c => c && safeId(c.entityId) && ["neutral", "suggestive", "none"].includes(c.reference)) && new Set(v.map(c => c.entityId)).size === v.length;

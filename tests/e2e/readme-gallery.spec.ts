@@ -2,8 +2,8 @@ import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { setEnglish } from "./helpers/settings";
 import { characterTab } from "./character-helpers";
-import { emotionPolicyText } from "../../src/core/emotion-policy-i18n";
-import { emotionOptionLabel } from "../../src/core/characters";
+import { actionPolicyText } from "../../src/core/action-policy-i18n";
+import { actionOptionLabel } from "../../src/core/characters";
 import { progressText } from "../../src/core/progress-i18n";
 import { relationshipText } from "../../src/core/relationship-i18n";
 import { mapText } from "../../src/core/map-i18n";
@@ -62,7 +62,7 @@ for (const locale of ["en", "ru"] as const) {
     await page.screenshot({ path: info.outputPath(`portraits-${locale}.png`), clip: sceneBox, animations: "disabled" });
   });
 
-  test(`README image library and personal emotions ${locale}`, async ({ page }, info) => {
+  test(`README image library and personal actions ${locale}`, async ({ page }, info) => {
     await page.setViewportSize({ width: 960, height: 1000 });
     await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
     await expect(page.locator(".dr-character-row")).toHaveCount(2);
@@ -86,19 +86,19 @@ for (const locale of ["en", "ru"] as const) {
     const library = dialog.locator(".dr-portrait-library");
     await library.locator("input[type=file]").setInputFiles(samples.map((data, i) => ({ name: `sample-${i + 1}.png`, mimeType: "image/png", buffer: Buffer.from(data, "base64") }))); await chooseImageCompression(page);
     await expect(library.locator(".dr-library-image[aria-pressed=true]")).toHaveCount(3);
-    await library.locator(".dr-library-emotions summary").click();
-    await library.getByRole("checkbox", { name: emotionOptionLabel(locale, "surprised"), exact: true }).check();
+    await library.locator(".dr-library-actions summary").click();
+    await library.getByRole("checkbox", { name: actionOptionLabel(locale, "surprised"), exact: true }).check();
     await expect(dialog).toHaveJSProperty("scrollWidth", await dialog.evaluate(node => node.clientWidth));
     await capture(page, dialog, info, `images-${locale}.png`);
-    await library.getByRole("button", { name: locale === "ru" ? "Назначить эмоции" : "Assign to emotion", exact: true }).click();
+    await library.getByRole("button", { name: locale === "ru" ? "Назначить действия" : "Assign to action", exact: true }).click();
     await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();
     await expect(dialog.locator("footer [role=status]")).toHaveText(locale === "ru" ? "Сохранено" : "Saved");
     await characterTab(dialog, "profile", locale);
-    const policy = dialog.locator(".dr-emotion-policy");
+    const policy = dialog.locator('[data-editor-section="profile"] .dr-action-policy');
     await policy.locator("summary").first().click();
-    await policy.getByRole("switch", { name: emotionPolicyText(locale, "allow", { emotion: emotionOptionLabel(locale, "angry") }), exact: true }).uncheck();
+    await policy.getByRole("switch", { name: actionPolicyText(locale, "allow", { action: actionOptionLabel(locale, "angry") }), exact: true }).uncheck();
     await expect(policy.getByRole("switch").first()).toBeDisabled();
-    await capture(page, policy, info, `emotions-${locale}.png`, 0);
+    await capture(page, policy, info, `actions-${locale}.png`, 0);
   });
 
   test(`README relationships and new world ${locale}`, async ({ page }, info) => {

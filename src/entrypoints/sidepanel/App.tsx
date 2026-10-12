@@ -1,4 +1,14 @@
 import { Select } from "../shared/Select";
+import { StoryDiagnostics } from "../shared/StoryDiagnostics";
+import { ActiveStoryCheckpoint } from "../shared/StoryCheckpoint";
+import { ActiveStoryReviewCard } from "../shared/StoryReview";
+import { StoryUpdateSettings } from "../shared/StoryUpdateSettings";
+import { ServiceDiagnostics } from "../shared/ServiceDiagnostics";
+import { readServiceDiagnostics } from "../../storage/service-diagnostics";
+import { checkActiveStoryDiagnostics } from "../../adapters/story-diagnostics-client";
+import { observePhotoImages } from "../../adapters/photo-loader";
+import { closePortraitViewer } from "../../adapters/portrait-viewer";
+import { setPortraitPhotoStorage } from "../shared/portrait-file";
 import { ImageSettings } from "./ImageSettings";
 import { PortraitUploadSettings } from "../shared/PortraitUploadSettings";
 import { portraitUploadText } from "../../core/portrait-upload-i18n";
@@ -7,7 +17,7 @@ import { requestImagePermission } from "../../storage/image-permissions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelWidthControl } from "../shared/PanelWidthControl";
 import { CharacterSettings } from "../shared/CharacterSheets";
-import { detachDefaultEmotionImages, saveWorldEmotionList } from "../../storage/emotion-settings";
+import { saveDefaultActionList, saveWorldActionList } from "../../storage/action-settings";
 import { MemoryGuide } from "../shared/MemoryGuide";
 import { characterText } from "../../core/characters";
 import { sceneChoiceText } from "../../core/scene-choices";
@@ -114,6 +124,11 @@ interface PageState {
 const EMPTY_PAGE: PageState = { chatId: null, chatUrl: "", messageCount: 0, compatible: false };
 
 export function App() {
+  useEffect(() => {
+    const stop = observePhotoImages(document, id => repository.readPhoto(id));
+    const clear = setPortraitPhotoStorage(image => repository.storePhoto(image));
+    return () => { stop(); clear(); };
+  }, []);
   const [settings, setSettingsState] = useState<DeepRoleSettings>(DEFAULT_SETTINGS);
   const [books, setBooks] = useState<MemoryBook[]>([]);
   const [worlds, setWorlds] = useState<WorldProfile[]>([]);
@@ -154,6 +169,7 @@ export function App() {
   const embeddedMenu = new URLSearchParams(window.location.search).get("embedded") === "1";
 
   const clearPrivateState = useCallback(() => {
+    closePortraitViewer();
     ++pageGeneration.current;
     setLocked(true);
     setBooks([]); setEntries([]); setSnapshots([]); setWorlds([]); setEntities([]); setTemplates([]);
@@ -192,6 +208,7 @@ export function App() {
         setLoading(false);
         return;
       }
+      await repository.migratePhotos();
       await startupDeadline(browser.runtime.sendMessage({ type: "DR_MIGRATE_LEGACY" } satisfies DeepRoleMessage), 2000).catch(() => undefined);
       const records = await startupDeadline(repository.rawRecords());
       if (generation !== refreshGeneration.current) return;
@@ -477,7 +494,7 @@ export function App() {
         {relevantProposals.length > 0 && <section className="dr-assistant"><header><strong>{at("proposals")}</strong></header>{relevantProposals.map((batch) => <button key={batch.id} onClick={() => setReviewId(batch.id)}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}</section>}
         {activeReview && <MemoryReview key={activeReview.id} locale={settings.locale} batch={activeReview} onClose={() => setReviewId(null)} onDiscard={async () => { await discardMemoryProposals(activeReview.id); await refresh(); }} onSave={async (items, profileChoice) => { await applyMemoryProposals(activeReview.id, items, undefined, profileChoice); const count = items.filter((item) => item.selected && !item.issue).length + Number(!!profileChoice); setToast(at("memoryUpdated").replace("{count}", String(count))); await refresh(); await refreshPage(); }} />}
         {activeTab === "overview" && lastChange && <div className="button-row"><button className="button secondary small" onClick={() => void undoLoreChange(lastChange.id).then(() => refresh()).catch(() => setToast(at("conflict")))}>{at("undo")}</button></div>}
-        {activeTab === "worlds" && <WorldsView defaultEmotions={settings.characterEmotions} onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
+        {activeTab === "worlds" && <WorldsView defaultActions={settings.characterActions} onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
         {activeTab === "overview" && (
           <Overview
             t={t}
@@ -844,10 +861,10 @@ function SettingsView(props: {
       </div>
       <div className="dr-settings-page" hidden={section !== "characters"}>
       <SettingsCard icon={<BrainCircuit />} title={characterText(props.settings.locale, "title")}>
-        {props.world && <p className="setting-copy">{exportText(props.settings.locale, "emotionScope").replace("{name}", props.world.name)}</p>}
-        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldEmotions={props.world?.characterEmotions} onSettings={props.onSettings} onEmotions={async emotions => {
-          if (props.world) await saveWorldEmotionList(props.world, emotions);
-          else { await detachDefaultEmotionImages(props.settings.characterEmotions ?? DEFAULT_SETTINGS.characterEmotions!, emotions); await props.onSettings({ ...props.settings, characterEmotions: emotions }); }
+        {props.world && <p className="setting-copy">{exportText(props.settings.locale, "actionScope").replace("{name}", props.world.name)}</p>}
+        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldActions={props.world?.characterActions} onSettings={props.onSettings} onActions={async (actions, renames) => {
+          if (props.world) await saveWorldActionList(props.world, actions, undefined, renames, props.settings.characterActions);
+          else { await saveDefaultActionList(props.settings, actions, renames); }
           props.onRefresh();
         }} />
       </SettingsCard>
@@ -881,6 +898,11 @@ function SettingsView(props: {
       </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "data"}>
+      <StoryUpdateSettings settings={props.settings} onSave={settings => void props.onSettings(settings)} />
+      <ActiveStoryCheckpoint locale={props.settings.locale} tabs={browser.tabs} />
+      <ActiveStoryReviewCard locale={props.settings.locale} tabs={browser.tabs} />
+      <StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(browser.tabs)} />
+      <ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} />
       <SettingsCard icon={<FileKey2 />} title={u("backup")}>
         <p className="setting-copy">{u("backupHint")}</p>
         <label className="field-label"><span className="help-field-title">{u("backupPassword")}</span><input className="input" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>

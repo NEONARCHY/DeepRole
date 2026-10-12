@@ -1,0 +1,11 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepRole — story memory review</title></head><body><main id="root"></main><script type="module">
+import React from "react";
+import {createRoot} from "react-dom/client";
+import {StoryReview} from "/src/entrypoints/shared/StoryReview.tsx";
+import {storyReviewPage,storyReviewPreview} from "/tests/fixtures/story-review.ts";
+import "/src/entrypoints/sidepanel/styles.css";
+const locale=new URL(location.href).searchParams.get("locale")==="en"?"en":"ru";document.documentElement.lang=locale;
+let page={...storyReviewPage(locale),managed:true,currentRevisionId:"review-assistant",facts:[{eventId:"fact-one",text:locale==="ru"?"Мира передала медный ключ":"Mira handed over a copper key",kind:"event",quote:locale==="ru"?"Мира передала медный ключ.":"Mira handed over a copper key.",accepted:false,edited:false},{eventId:"fact-two",text:locale==="ru"?"Мира обещала ремонт":"Mira promised a repair",kind:"promise",quote:locale==="ru"?"Я починю ворота завтра.":"I will repair the gate tomorrow.",accepted:false,edited:false}],update:{version:1,status:"partial",accepted:1,skipped:1,facts:2,issues:[{path:"updates[0].state.goal",rule:"field",actual:"number"}]}};
+window.storyMemoryFixture={calls:[],copied:[],clipboardFails:false};Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText:async text=>{if(window.storyMemoryFixture.clipboardFails)throw Error("denied");window.storyMemoryFixture.copied.push(text)}}});
+createRoot(document.getElementById("root")).render(React.createElement(StoryReview,{locale,onRead:async()=>structuredClone(page),onPreview:async()=>storyReviewPreview(locale),onGame:async()=>{},onFact:async(_page,id,text,accept)=>{window.storyMemoryFixture.calls.push({id,text,accept});const version=page.guard.selectionVersion+1;page={...page,guard:{...page.guard,selectionVersion:version},next:page.next?{...page.next,selectionVersion:version}:null,facts:page.facts.map(f=>f.eventId===id?{...f,text,accepted:accept,edited:text!==f.text}:f)}},onRepair:async()=>{page={...page,repair:{id:"repair_00000000-0000-4000-8000-000000000001",status:"done",at:10}}}}));
+</script></body></html>

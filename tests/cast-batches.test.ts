@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { receivedCastCharacters, parseCastBatch, mergeCastBatches } from "../src/core/cast-batches";
+import { receivedCastCharacters, parseCastBatch, mergeCastBatches, interruptedCastJob } from "../src/core/cast-batches";
 import { castSources, castPrompt, type CastDraft } from "../src/core/cast-initialization";
 import { createCastJob, mutateCastJob, acceptCastReply, applyCastDraft } from "../src/storage/cast-initialization";
 import { DeepRoleDatabase } from "../src/storage/database";
@@ -35,10 +35,64 @@ it("persists each batch, asks only for remaining people and waits for explicit c
  const { repo, job } = await setup();
  const a = await acceptCastReply(job.id, 1, JSON.stringify({ ...first(job.id), more: true }), repo);
  expect(a.phase).toBe("analyzing"); expect(a.draft?.characters).toHaveLength(1); expect(a.step).toBe(2);
- expect(castPrompt(a)).toContain('Previously prepared people'); expect(castPrompt(a)).toContain('Leon'); expect(castPrompt(a)).toContain('at most TWO');
+ expect(castPrompt(a)).toContain('Previously prepared people'); expect(castPrompt(a)).toContain('Leon'); expect(castPrompt(a)).toContain('at most ONE');
  await mutateCastJob(job.id, j => ({ ...j, awaiting: true }), repo);
  const b = await acceptCastReply(job.id, 2, JSON.stringify({ ...second(job.id), more: false }), repo);
  expect(b.phase).toBe("ready"); expect(b.draft?.characters).toHaveLength(2); expect(await repo.list("entity")).toHaveLength(0);
+});
+it("accepts only known earlier scene references while keeping incoming profiles separate", () => {
+ const a = first("x"), b = { ...second("x"), present: ["p1", "p2"], more: false };
+ const parsed = parseCastBatch(JSON.stringify(b), "x", sources, 1, a).draft!;
+ expect(parsed.characters.map(c => c.key)).toEqual(["p2"]);
+ expect(parsed.present).toEqual(["p1", "p2"]);
+ expect(mergeCastBatches(a, parsed, "x", sources).characters).toHaveLength(2);
+ for (const present of [["unknown"], ["Leon"], ["w"]]) expect(() => parseCastBatch(JSON.stringify({ ...b, present }), "x", sources, 1, a)).toThrow("invalid-result");
+ expect(() => parseCastBatch(JSON.stringify({ ...b, partners: ["p1"] }), "x", sources, 1, a)).toThrow("invalid-result");
+ expect(() => parseCastBatch(JSON.stringify({ ...b, characters: [{ ...b.characters[0]!, key: "p1" }] }), "x", sources, 1, a)).toThrow("invalid-result");
+ b.characters[0]!.evidence[0]!.quote = "Not in the story";
+ expect(() => parseCastBatch(JSON.stringify(b), "x", sources, 1, a)).toThrow("invalid-evidence");
+});
+it("new jobs prepare one person per request, persist each profile and stop only on completion", async () => {
+ const { repo, job } = await setup(); expect(job.batchSize).toBe(1);
+ expect(castPrompt({ ...job, step: 1 })).toContain("at most ONE character");
+ const a = await acceptCastReply(job.id, 1, JSON.stringify({ ...first(job.id), more: true }), repo);
+ const prompt = castPrompt(a);
+ expect(prompt).toContain("OR the previously prepared people");
+ expect(prompt).not.toContain("only keys from THIS batch");
+ expect(prompt).toContain("reason is USER-FACING");
+ expect(prompt).toContain("Do not turn an age, occupation, body description");
+ await mutateCastJob(job.id, j => ({ ...j, awaiting: true }), repo);
+ const b = await acceptCastReply(job.id, 2, JSON.stringify({ ...second(job.id), present: ["p1", "p2"], more: true }), repo);
+ expect(b).toMatchObject({ phase: "analyzing", repair: false, step: 3 });
+ expect(b.draft?.characters).toHaveLength(2); expect(await repo.list("entity")).toEqual([]);
+ await mutateCastJob(job.id, j => ({ ...j, awaiting: true }), repo);
+ const ready = await acceptCastReply(job.id, 3, JSON.stringify({ version: 1, request: job.id, characters: [], present: [], partners: [], warnings: [], more: false }), repo);
+ expect(ready.phase).toBe("ready"); expect(ready.draft?.characters).toHaveLength(2);
+ expect(ready.diagnostics).toBeUndefined();
+});
+it("rejects a multi-person response for a new sequential job and repairs only once", async () => {
+ const { repo, job } = await setup();
+ const repair = await acceptCastReply(job.id, 1, JSON.stringify({ ...castDraft(job.id), more: false }), repo);
+ expect(repair.repair).toBe(true); expect(castPrompt(repair)).toContain("at most 1 profiles per batch");
+ await mutateCastJob(job.id, j => ({ ...j, awaiting: true }), repo);
+ const corrected = await acceptCastReply(job.id, 1, JSON.stringify({ ...first(job.id), more: true }), repo);
+ expect(corrected.phase).toBe("analyzing"); expect(corrected.draft?.characters).toHaveLength(1);
+});
+it("restores a checkpoint containing references to an earlier validated profile", async () => {
+ const { repo, job } = await setup();
+ const a = await acceptCastReply(job.id, 1, JSON.stringify({ ...first(job.id), more: true }), repo);
+ const raw = JSON.stringify({ ...second(job.id), present: ["p1", "p2"], more: false });
+ const interrupted = interruptedCastJob({ ...a, awaiting: true, chatId: "owned", replyCheckpoint: { step: 2, repair: false, chatId: "owned", replyIdentity: '["message","r2"]', raw } }, "tab-closed");
+ expect(interrupted.draft?.characters.map(c => c.key)).toEqual(["p1", "p2"]);
+ expect(interrupted.draft?.partners).toEqual(["p2"]);
+ expect(interrupted.replyCheckpoint).toBeUndefined();
+});
+it("continues an old two-person job without changing its parser limit", async () => {
+ const { repo, job } = await setup();
+ await mutateCastJob(job.id, j => ({ ...j, batchSize: 2 }), repo);
+ const ready = await acceptCastReply(job.id, 1, JSON.stringify({ ...castDraft(job.id), more: false }), repo);
+ expect(ready.phase).toBe("ready"); expect(ready.draft?.characters).toHaveLength(2);
+ expect(castPrompt(ready)).toContain("at most TWO");
 });
 it("retains a partial answer for review and resumes after cleanup with a new scoped request", async () => {
  const { repo, job } = await setup();

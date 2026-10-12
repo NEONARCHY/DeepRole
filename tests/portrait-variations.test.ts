@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles } from "../src/core/portrait-variations";
-import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes, validEmotions } from "../src/core/characters";
+import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes, validActions } from "../src/core/characters";
 import { parseWidgetLayout } from "../src/entrypoints/content/WidgetDeck";
 import type { CharacterScene, PortraitCycle, SceneEntity } from "../src/core/types";
 
@@ -9,18 +9,18 @@ const person: SceneEntity = { id: "mira", name: "Mira", kind: "character", world
 const scene = (): CharacterScene => ({ revision: "1", presentIds: ["mira"], states: { mira: { ...EMPTY_STATUS } }, updatedAt: 1 });
 
 describe("portrait variation cycles", () => {
-  it("keeps archived portrait emotions independently of the 32 active model emotions", () => {
-    const names = ["neutral", ...Array.from({ length: 63 }, (_, i) => `mood-${i}`)];
+  it("keeps archived portrait actions independently of the 32 active model actions", () => {
+    const names = ["neutral", ...Array.from({ length: 63 }, (_, i) => `action-${i}`)];
     const sprites = Object.fromEntries(names.map(name => [name, images]));
     const cycles = Object.fromEntries(names.map(name => [name, nextPortraitCycle(images)]));
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites })).toBe(true);
     expect(validPortraitCycles({ mira: cycles })).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { ...sprites, extra: images } })).toBe(true);
     expect(validPortraitCycles({ mira: { ...cycles, extra: nextPortraitCycle(images) } })).toBe(true);
-    expect(validEmotions(names.slice(0, 32))).toBe(true);
-    expect(validEmotions(names.slice(0, 33))).toBe(false);
+    expect(validActions(names.slice(0, 32))).toBe(true);
+    expect(validActions(names.slice(0, 33))).toBe(false);
     const prompt = characterInstruction("w", "a", [{ ...person, characterSheet: { ...EMPTY_CHARACTER, sprites } }], scene(), ["neutral", "happy"], [], "Mira");
-    expect(prompt).not.toContain("mood-"); expect(prompt).not.toContain("base64");
+    expect(prompt).not.toContain("action-"); expect(prompt).not.toContain("base64");
   });
   it("accepts legacy portraits and large image arrays, rejects unsafe or duplicate images", () => {
     expect(validCharacterSheet(person.characterSheet)).toBe(true);
@@ -52,13 +52,13 @@ describe("portrait variation cycles", () => {
     const next = { ...current, portraitCycles: advancePortraitCycles([person], current, current) };
     expect(scenePortraitIndex(person, next)).not.toBe(selected); expect(current).toEqual(before);
   });
-  it("retains separate emotion cycles and shares the default fallback cycle", () => {
+  it("retains separate action cycles and shares the default fallback cycle", () => {
     let current = scene(); current.portraitCycles = advancePortraitCycles([person], current);
     const neutral = structuredClone(current.portraitCycles.mira!.neutral);
-    const happy = { ...current, states: { mira: { ...EMPTY_STATUS, emotion: "happy" } } };
+    const happy = { ...current, states: { mira: { ...EMPTY_STATUS, action: "happy" } } };
     happy.portraitCycles = advancePortraitCycles([person], happy, current, true);
     expect(happy.portraitCycles.mira!.neutral).toEqual(neutral); expect(happy.portraitCycles.mira!.happy).toBeDefined();
-    const fallback = { ...happy, states: { mira: { ...EMPTY_STATUS, emotion: "worried" } } };
+    const fallback = { ...happy, states: { mira: { ...EMPTY_STATUS, action: "worried" } } };
     fallback.portraitCycles = advancePortraitCycles([person], fallback, happy);
     expect(fallback.portraitCycles.mira!.neutral!.cursor).toBe(1);
     expect(portraitSources(person.characterSheet, "worried", scenePortraitIndex(person, fallback))[0]).toBe(images[fallback.portraitCycles.mira!.neutral!.order[1]!]);

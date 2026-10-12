@@ -1,10 +1,11 @@
-import { characterCast, characterHighlights, characterInterlocutors, characterText, emotionLabel, syncPortraitImage } from "../core/characters";
-import { resolveCharacterEmotion } from "../core/character-emotions";
+import { characterCast, characterHighlights, characterInterlocutors, characterText, actionLabel, syncPortraitImage } from "../core/characters";
+import { resolveCharacterAction } from "../core/character-actions";
 import { clamp, PORTRAIT_MAX_WIDTH, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
 import { openPortraitViewer, photoCopy } from "./portrait-viewer";
+import { photoImageSource } from "../core/photo-assets";
 import { validPortrait } from "../core/portrait-variations";
 import { scenePortraitIndex } from "../core/portrait-variations";
 import { fitScene } from "../core/adaptive-layout";
@@ -520,8 +521,8 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         const open = doc.createElement("button"); open.type = "button"; open.className = "dr-cast-portrait"; open.dataset.characterId = entity.id;
         const image = doc.createElement("img"); image.alt = ""; image.draggable = false;
         const name = doc.createElement("span"); name.className = "dr-cast-name";
-        const mood = doc.createElement("small"); const role = doc.createElement("span"); role.className = "dr-cast-role";
-        open.append(image, name, mood, role);
+        const action = doc.createElement("small"); const role = doc.createElement("span"); role.className = "dr-cast-role";
+        open.append(image, name, action, role);
         const resize = doc.createElement("button"); resize.type = "button"; resize.className = "dr-cast-resize"; resize.textContent = "⤡";
         box.append(move, open, resize); slot.append(box);
         widget = { slot, box, move, open, resize }; stage.widgets.set(entity.id, widget);
@@ -536,9 +537,9 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       text(widget.move, `⠿ ${entity.name}`); attr(widget.move, "aria-label", `${characterText(locale, "layoutMove")}: ${entity.name}`); attr(widget.move, "title", characterText(locale, "layoutKeys"));
       attr(widget.resize, "aria-label", `${characterText(locale, "layoutResize")}: ${entity.name}`); attr(widget.resize, "title", characterText(locale, "layoutResizeKeys"));
       attr(widget.open, "aria-label", `${characterText(locale, "edit")}: ${entity.name}`);
-      const state = scene?.states[entity.id]; syncPortraitImage(widget.open.querySelector("img")!, entity.characterSheet, state?.emotion, scenePortraitIndex(entity, scene));
+      const state = scene?.states[entity.id]; syncPortraitImage(widget.open.querySelector("img")!, entity.characterSheet, state?.action, scenePortraitIndex(entity, scene));
       const name = widget.open.querySelector(".dr-cast-name")!; if (name.textContent !== entity.name) name.textContent = entity.name;
-      const label = state ? emotionLabel(locale, resolveCharacterEmotion(entity.characterSheet, state.emotion)) : characterText(locale, "noState"); const mood = widget.open.querySelector("small")!; if (mood.textContent !== label) mood.textContent = label;
+      const label = state ? actionLabel(locale, resolveCharacterAction(entity.characterSheet, state.action)) : characterText(locale, "noState"); const action = widget.open.querySelector("small")!; if (action.textContent !== label) action.textContent = label;
       attr(widget.open, "title", `${entity.name} · ${label}`);
       const role = widget.open.querySelector<HTMLElement>(".dr-cast-role")!; const roleText = characterText(locale, entity.id === hero?.id ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : "portraitPresent"); if (role.textContent !== roleText) role.textContent = roleText;
       attr(widget.box, "data-talking", String(partners.has(entity.id)));
@@ -552,8 +553,8 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         widget.statsKey = key;
       }
       const image = widget.open.querySelector("img")!;
-      const view = () => openPortraitViewer(host.ownerDocument, image.getAttribute("src") ?? "", entity.name, locale);
-      const noImage = !validPortrait(image.getAttribute("src"));
+      const view = () => openPortraitViewer(host.ownerDocument, photoImageSource(image), entity.name, locale);
+      const noImage = !validPortrait(photoImageSource(image));
       attr(image, "data-viewable", String(!noImage));
       if (noImage) {
         image.removeAttribute("title"); widget.open.removeAttribute("aria-keyshortcuts"); widget.open.removeAttribute("aria-description");

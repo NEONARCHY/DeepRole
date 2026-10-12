@@ -5,6 +5,7 @@ import { resolveImageReferences, validImageReferenceOverrides, validImageReferen
 import { imageReferences } from "./image-prompt";
 import { validImageDiagnostic, type ImageDiagnostic } from "./image-diagnostics";
 import { validImageHeaders, type ImageResponseHeaders } from "./image-generation";
+import { FieldValidationError, fieldShape, type FieldValidationIssue } from "./field-validation";
 
 export interface ImageScenePlan { scene: string; characters: { id: string; reference: "neutral" | "suggestive" | "none"; appearance: string; look?: "ordinary" | "alternate" | "unknown"; referenceReason?: string; action?: string; position?: string; focus?: "primary" | "supporting" | "background" }[] }
 export interface ImageReplay { input: ImageJobInput; config: ImageProviderConfig; images: string[]; contentLevel: import("./image-generation").ImageContentLevel }
@@ -19,8 +20,32 @@ export function validImageScenePlan(v: unknown): v is ImageScenePlan {
 }
 export function parseImageScenePlan(raw: string): ImageScenePlan {
   const clean = raw.trim().replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/u, "$1").trim();
-  let value: unknown; try { value = JSON.parse(clean); } catch { throw new Error("invalidPlan"); }
-  if (!validImageScenePlan(value)) throw new Error("invalidPlan"); return value;
+  let value: unknown; try { value = JSON.parse(clean); } catch { throw new FieldValidationError([{ path: "plan", rule: "complete valid JSON object", actual: "invalid JSON" }], "invalidPlan"); }
+  if (!validImageScenePlan(value)) throw new FieldValidationError(imageScenePlanIssues(value), "invalidPlan"); return value;
+}
+/** Explain the same existing image-plan checks; do not change acceptance rules. */
+export function imageScenePlanIssues(value: unknown): FieldValidationIssue[] {
+ const issues: FieldValidationIssue[] = [], check = (ok: unknown, path: string, rule: FieldValidationIssue["rule"], received: unknown) => { if (!ok && issues.length < 60) issues.push({ path, rule, actual: fieldShape(received) }); };
+ try { check((JSON.stringify(value)?.length ?? 0) <= MAX_IMAGE_PLAN_TEXT, "plan", "JSON-serializable plan <=12000", value); }
+ catch { check(false, "plan", "JSON-serializable plan <=12000", value); }
+ check(object(value), "plan", "object", value); if (!object(value)) return issues;
+ check(text(value.scene, 12, 1200), "plan.scene", "scene text 12..1200", value.scene);
+ check(Array.isArray(value.characters) && value.characters.length <= MAX_IMAGE_SCENE_CHARACTERS, "plan.characters", "character array <=40", value.characters);
+ if (Array.isArray(value.characters)) {
+  for (const [index, person] of value.characters.slice(0, MAX_IMAGE_SCENE_CHARACTERS).entries()) {
+   const path = `plan.characters[${index}]`; check(object(person), path, "object", person); if (!object(person)) continue;
+   check(imageKey(person.id), `${path}.id`, "safe nonempty character ID <=160", person.id);
+   check(["neutral", "suggestive", "none"].includes(String(person.reference)), `${path}.reference`, "enum neutral|suggestive|none", person.reference);
+   check(text(person.appearance, 0, 600), `${path}.appearance`, "appearance text <=600", person.appearance);
+   check(person.look === undefined || ["ordinary", "alternate", "unknown"].includes(String(person.look)), `${path}.look`, "enum ordinary|alternate|unknown", person.look);
+   check(person.referenceReason === undefined || text(person.referenceReason, 0, 240), `${path}.referenceReason`, "reference reason text <=240", person.referenceReason);
+   check(person.action === undefined || text(person.action, 0, 320), `${path}.action`, "action text <=320", person.action);
+   check(person.position === undefined || text(person.position, 0, 240), `${path}.position`, "position text <=240", person.position);
+   check(person.focus === undefined || ["primary", "supporting", "background"].includes(String(person.focus)), `${path}.focus`, "enum primary|supporting|background", person.focus);
+  }
+  if (value.characters.every(object)) check(new Set(value.characters.map(person => person.id)).size === value.characters.length, "plan.characters", "unique character IDs", value.characters);
+ }
+ return issues;
 }
 export function imagePlanRoster(entities: SceneEntity[]) {
   return entities.filter(e => e.kind === "character").slice(0, MAX_IMAGE_SCENE_CHARACTERS).map(e => ({ id: e.id, name: e.name, protagonist: !!e.characterSheet?.protagonist, appearance: (e.characterSheet?.imageGeneration?.canonical || e.characterSheet?.appearance || "").slice(0, 600), description: e.description.slice(0, 300),

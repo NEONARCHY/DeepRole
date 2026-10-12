@@ -110,6 +110,54 @@ function snapshot(id: string) { return { id, worldId: null, bookId: null, title:
 
 test.beforeEach(({}, info) => { test.skip(info.project.name !== "chromium", "Installed MV3 bridge; shared adapter/UI tested in Firefox separately"); });
 
+test("installed request bridge preserves exact parent metadata and never treats HTTP success as story completion", async () => {
+  const world = { id: "native-world", name: "Observatory", description: "", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const hero = { id: "native-hero", worldId: world.id, kind: "character", name: "Leon", description: "Synthetic observer", aliases: [], memberIds: [], characterSheet: { ...EMPTY_CHARACTER, protagonist: true }, createdAt: 1, updatedAt: 1 };
+  const scene = { revision: "synthetic-before", presentIds: [hero.id], partnerIds: [], states: { [hero.id]: { ...EMPTY_STATUS, condition: "At the observatory" } }, updatedAt: 1 };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: world.id, bookId: null, focusIds: [], characterScenes: { [world.id]: scene }, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ["entity", hero], ["binding", binding]]);
+  try {
+    await expect(chat.locator(".dr-character-row")).toHaveCount(1);
+    let posts = 0, status = 200;
+    await context.route("**/api/v0/chat/completion", route => { posts++; return route.fulfill({ status, contentType: "application/json", body: "{}" }); });
+    const receipt = () => panel.evaluate(async () => {
+      const values = await (globalThis as any).chrome.storage.session.get(null);
+      return Object.values(values).map((value: any) => value?.characterRequest).find((value: any) => value?.chatId === "a") ?? null;
+    });
+    await chat.evaluate(() => {
+      (window as any).storyDispatchPackets = [];
+      window.addEventListener("message", event => { if (event.source === window && event.data?.type === "NATIVE_STORY_DISPATCH") (window as any).storyDispatchPackets.push(event.data); });
+    });
+    for (const parent of [null, 0, "native-42", undefined]) {
+      const response = await chat.evaluate(async parent => {
+        const body = JSON.stringify({ prompt: "Synthetic move", chat_session_id: "a", ...(parent !== undefined ? { parent_message_id: parent } : {}) });
+        const response = await fetch("/api/v0/chat/completion", { method: "POST", body }); return { ok: response.ok, bodyUsed: response.bodyUsed };
+      }, parent);
+      expect(response).toEqual({ ok: true, bodyUsed: false });
+      await expect.poll(receipt).toMatchObject({ accepted: true, worldId: world.id, httpStatus: 200 });
+      const current = await receipt();
+      expect(current.storyIdentity).toEqual(parent === undefined ? undefined : { chatId: "a", nativeParentKey: parent === null ? null : JSON.stringify(["message", String(parent)]) });
+    }
+    status = 503;
+    const previous = (await receipt()).id;
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Synthetic failure", chat_session_id: "a", parent_message_id: null }) }));
+    await expect.poll(async () => (await receipt())?.id).not.toBe(previous); expect((await receipt()).accepted).toBe(false);
+    await expect.poll(() => chat.evaluate(() => (window as any).storyDispatchPackets.length)).toBe(8);
+    const packets = await chat.evaluate(() => (window as any).storyDispatchPackets as any[]);
+    expect(packets.filter(packet => packet.phase === "settled").map(packet => [packet.identity.nativeParentKey, packet.delivery])).toEqual([
+      [null, { status: "accepted", httpStatus: 200 }], ['["message","0"]', { status: "accepted", httpStatus: 200 }],
+      ['["message","native-42"]', { status: "accepted", httpStatus: 200 }], [null, { status: "failed", code: "http", httpStatus: 503 }],
+    ]);
+    expect(new Set(packets.map(packet => packet.requestId)).size).toBe(4);
+    expect(JSON.stringify(packets)).not.toMatch(/Synthetic move|Synthetic failure|completion|replyId|token/);
+    await chat.reload(); await expect(chat.locator(".dr-character-row")).toHaveCount(1); expect((await receipt()).accepted).toBe(false);
+    const records = await databaseRecords(panel);
+    expect(records.filter(row => row.kind === "story")).toEqual([]);
+    expect(records.find(row => row.kind === "binding" && row.id === binding.id).data.characterScenes).toEqual(binding.characterScenes);
+    expect(posts).toBe(5);
+  } finally { await context.close(); }
+});
+
 test("reviewed continuation preserves exact progress before consuming an accepted retry", async () => {
   test.setTimeout(75000);
   const world = { id: "world", name: "Harbor", description: "Harbor canon", color: "#123456", contextBudget: 8000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
@@ -117,7 +165,7 @@ test("reviewed continuation preserves exact progress before consuming an accepte
   const mira = { ...hero, id: "mira", name: "Mira", description: "Mira is 24", characterSheet: { ...EMPTY_CHARACTER, relationships: structuredClone(DEFAULT_RELATIONSHIP) } };
   const progress = { revision: "played", lastReply: "old-reply", presentIds: ["hero", "mira"], partnerIds: ["mira"], states: {
     hero: { ...EMPTY_STATUS, attributes: { values: { energy: 41 }, locked: ["energy"], history: [] } },
-    mira: { ...EMPTY_STATUS, emotion: "happy", condition: "At the harbor", bonds: { hero: { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 87, affinity: 68, locked: true, completed: ["oath"] } } },
+    mira: { ...EMPTY_STATUS, action: "happy", condition: "At the harbor", bonds: { hero: { ...relationshipState(DEFAULT_RELATIONSHIP), trust: 87, affinity: 68, locked: true, completed: ["oath"] } } },
   }, updatedAt: 2 };
   const sourceBinding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "world", focusIds: ["hero", "mira"], bookId: null, memoryOverrides: { includedIds: ["promise"], excludedIds: [] }, characterScenes: { world: progress }, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 2 };
   const promise = { ...entry("promise"), worldId: "world", activation: "manual", content: "The oath must be honored." };
@@ -207,7 +255,7 @@ test("reviewed continuation waits for the latest validated relationship update a
     await expect.poll(() => prompt).toContain("\nSchema: ");
     const schema = JSON.parse(prompt.match(/\nSchema: (.+)\nRoster:/)![1]!);
     const quote = "Mira thanked Leon for keeping his promise.";
-    const turn = { request: schema.request, present: ["Leon", "Mira"], partners: ["Mira"], updates: [{ id: "Mira", name: "Mira", state: { ...EMPTY_STATUS, emotion: "happy" } }], bonds: [{ id: "Mira", hero: "Leon", trust: 3, affinity: 2, reason: "A kept promise", quote }] };
+    const turn = { request: schema.request, present: ["Leon", "Mira"], partners: ["Mira"], updates: [{ id: "Mira", name: "Mira", state: { ...EMPTY_STATUS, action: "happy" } }], bonds: [{ id: "Mira", hero: "Leon", trust: 3, affinity: 2, reason: "A kept promise", quote }] };
     await chat.evaluate(({ quote, turn }) => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="1">Mira, I kept the promise.</article><article data-role="assistant" data-message-id="2"><div class="ds-markdown"></div></article>'; document.querySelector(".ds-markdown")!.textContent = quote + "\n<deeprole_characters>" + JSON.stringify(turn) + "</deeprole_characters>"; }, { quote, turn });
     await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
     await enableContinuationComposer(chat);
@@ -767,7 +815,7 @@ for (const navigation of ["direct", "SPA"] as const) test(`character sheets: emp
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /new:Character name/);
     const text = await chat.locator("html").getAttribute("data-deeprole-context");
     const schema = JSON.parse(text!.match(/Schema: (.*)\nRoster:/)![1]!);
-    const payload = { ...schema, present: ["new:Noah"], partner: null, updates: [{ id: "new:Noah", state: { emotion: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
+    const payload = { ...schema, present: ["new:Noah"], partner: null, updates: [{ id: "new:Noah", state: { action: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
     const append = async (value: any) => chat.evaluate(value => {
       const row = document.createElement("article"); row.dataset.role = "assistant";
       row.dataset.messageId = "reply-" + document.querySelectorAll("article").length;
@@ -807,7 +855,7 @@ test("character sheets: a verified local request ignores obsolete scope tags and
     });
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Technical check, outside the story." }) }));
     expect(schema.request).toBeTruthy(); expect(schema.world).toBeUndefined();
-    const payload = { ...schema, world: "another-browser-world", chat: "obsolete-chat", base: "obsolete-version", present: ["Noah", "new:Mira"], partners: ["new:Mira"], updates: [{ id: "Noah", state: { emotion: "neutral", condition: "", goal: "", relationship: "", stats: [] } }, { id: "new:Mira", name: "Mira", state: { emotion: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
+    const payload = { ...schema, world: "another-browser-world", chat: "obsolete-chat", base: "obsolete-version", present: ["Noah", "new:Mira"], partners: ["new:Mira"], updates: [{ id: "Noah", state: { action: "neutral", condition: "", goal: "", relationship: "", stats: [] } }, { id: "new:Mira", name: "Mira", state: { action: "happy", condition: "", goal: "", relationship: "", stats: [] } }] };
     const append = (value: any) => chat.evaluate(value => {
       const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "request-" + document.querySelectorAll("article").length;
       const choices = ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the letter." }));
@@ -852,7 +900,7 @@ test("character sheets: independent browser libraries never adopt each other's r
       await instance.chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Neutral technical check." }) }));
     }
     expect(schemas[0].request).not.toBe(schemas[1].request);
-    const result = (index: number) => ({ request: schemas[index].request, present: ["new:Mira"], partner: "new:Mira", updates: [{ id: "new:Mira", name: "Mira", state: { emotion: "neutral", condition: "", goal: "", relationship: "", stats: [] } }] });
+    const result = (index: number) => ({ request: schemas[index].request, present: ["new:Mira"], partner: "new:Mira", updates: [{ id: "new:Mira", name: "Mira", state: { action: "neutral", condition: "", goal: "", relationship: "", stats: [] } }] });
     const append = (instance: typeof first, payload: any) => instance.chat.evaluate(payload => {
       const row = document.createElement("article"); row.dataset.role = "assistant";
       row.textContent = "Technical reply.\n<deeprole_characters>" + JSON.stringify(payload) + "</deeprole_characters>";
@@ -883,7 +931,7 @@ test("character sheets: real extension sync, manual edits, return and chat isola
     const getPayload = async () => {
       const text = await chat.locator("html").getAttribute("data-deeprole-context");
       const schema = JSON.parse(text!.match(/Schema: (.*)\nRoster:/)![1]!);
-      return { ...schema, present: ["mira"], updates: [{ id: "mira", state: { emotion: "happy", condition: "Safe at the station", goal: "Find the key", relationship: "Trusts Noah", stats: [{ label: "Energy", value: "Rested" }] } }] };
+      return { ...schema, present: ["mira"], updates: [{ id: "mira", state: { action: "happy", condition: "Safe at the station", goal: "Find the key", relationship: "Trusts Noah", stats: [{ label: "Energy", value: "Rested" }] } }] };
     };
     const payload = await getPayload();
     await chat.evaluate(value => {
@@ -930,7 +978,7 @@ test("character stats: installed final payload ignores thinking, survives reopen
     const sent: string[] = []; const schemas: any[] = [];
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { const prompt = route.request().postDataJSON().prompt; sent.push(prompt); schemas.push(JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)[1])); return route.fulfill({ contentType: "application/json", body: "{}" }); });
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, examine the sealed letter." }) }));
-    const makePayload = (request: string, value = "Rested", emotion = "happy") => ({ request, present: ["Noah", "Mira"], partner: "Mira", updates: [{ id: "Mira", state: { emotion, condition: "Safe", goal: "Find the key", relationship: "Cautious", stats: [{ label: "Energy", value }, { label: "Keys", value: "0" }, { label: "Clues", value: "2" }] } }] });
+    const makePayload = (request: string, value = "Rested", action = "happy") => ({ request, present: ["Noah", "Mira"], partner: "Mira", updates: [{ id: "Mira", state: { action, condition: "Safe", goal: "Find the key", relationship: "Cautious", stats: [{ label: "Energy", value }, { label: "Keys", value: "0" }, { label: "Clues", value: "2" }] } }] });
     const append = (payload: any) => chat.evaluate(payload => {
       const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "stats-answer";
       const thinking = document.createElement("div"); thinking.className = "ds-think-content"; thinking.textContent = "Considering an example: <deeprole_characters>" + JSON.stringify({ ...payload, present: ["Noah"], partner: null, updates: [] }) + "</deeprole_characters>";
@@ -978,7 +1026,7 @@ test("manual interlocutor: installed selection, consumed replies and new scenes 
     const schemas: any[] = []; const prompts: string[] = [];
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { const prompt = route.request().postDataJSON().prompt; prompts.push(prompt); schemas.push(JSON.parse(prompt.match(/Schema: (.*)\nRoster:/)[1])); return route.fulfill({ contentType: "application/json", body: "{}" }); });
     const send = () => chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira examines the sealed letter." }) }));
-    const makePayload = (request: string, condition = "Safe") => ({ request, present: ["Noah", "Mira"], partner: "Mira", updates: [{ id: "Mira", state: { emotion: "happy", condition, goal: "Find the key", relationship: "Cautious", stats: [{ label: "Energy", value: "Rested" }] } }] });
+    const makePayload = (request: string, condition = "Safe") => ({ request, present: ["Noah", "Mira"], partner: "Mira", updates: [{ id: "Mira", state: { action: "happy", condition, goal: "Find the key", relationship: "Cautious", stats: [{ label: "Energy", value: "Rested" }] } }] });
     const append = (payload: any) => chat.evaluate(payload => { const row = document.createElement("article"); row.dataset.role = "assistant"; row.dataset.messageId = "manual-partner-scene"; const choices = { version: 1, options: ["positive", "neutral", "negative", "surprise"].map(kind => ({ kind, label: kind, text: "Ask about the key." })) }; row.textContent = "Mira raises the lamp.\n<deeprole_characters>" + JSON.stringify(payload) + "</deeprole_characters>\n<deeprole_choices>" + JSON.stringify(choices) + "</deeprole_choices>"; document.querySelector("#conversation")!.replaceChildren(row); }, payload);
     await send(); const initial = makePayload(schemas[0].request); await append(initial);
     const status = chat.locator(".dr-character-status"); const portrait = chat.locator(".dr-cast-portrait.right");
@@ -1001,18 +1049,18 @@ test("manual interlocutor: installed selection, consumed replies and new scenes 
     await send(); expect(prompts).toHaveLength(2); expect(prompts[1]).not.toContain("data:image"); await append(makePayload(schemas[1].request, "At the doorway"));
     await expect(portrait).toHaveAccessibleName("Open character: Mira"); await expect(status).toHaveText("Updated after reply");
     expect((await databaseRecords(panel)).find(r => r.id === binding.id).data.characterScenes.w.presentIds).toEqual(["noah", "mira"]);
-    await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(chat.locator(".dr-character-row-mood")).toHaveText(["No updates yet", "No updates yet", "No updates yet"]);
+    await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(chat.locator(".dr-character-row-action")).toHaveText(["No updates yet", "No updates yet", "No updates yet"]);
     expect((await databaseRecords(panel)).find(r => r.id === "binding:b")).toEqual(before.find(r => r.id === "binding:b"));
     await chat.goto("https://chat.deepseek.com/chat/s/a"); await append(makePayload(schemas[1].request, "At the doorway")); await expect(portrait).toHaveAccessibleName("Open character: Mira");
     expect(prompts).toHaveLength(2);
   } finally { await context.close(); }
 });
 
-test("character cast: installed roster, preview, focus and outgoing mood stay synchronized", async ({}, info) => {
+test("character cast: installed roster, preview, focus and outgoing action stay synchronized", async ({}, info) => {
   test.setTimeout(60000);
   const world = { id: "w", name: "Test observatory", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const people = Array.from({ length: 40 }, (_, i) => ({ id: i === 0 ? "hero" : i === 1 ? "mira" : `extra-${i}`, worldId: "w", name: i === 0 ? "Noah" : i === 1 ? "Mira" : `Character ${i}`, kind: "character", description: "ORIGINAL", aliases: i === 1 ? ["Engineer"] : [], memberIds: [], characterSheet: { gender: "neutral", protagonist: i === 0, appearance: "", personality: "", goals: "", background: "", sprites: {} }, createdAt: 1, updatedAt: 1 }));
-  const state = { emotion: "happy", condition: "Safe", goal: "Find the key", relationship: "", stats: [] };
+  const state = { action: "happy", condition: "Safe", goal: "Find the key", relationship: "", stats: [] };
   const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: "w", focusIds: [], bookId: null, messageCountAtAnalysis: 0, characterScenes: { w: { revision: "v", presentIds: ["hero", "mira"], partnerId: "mira", states: { mira: state }, updatedAt: 1 } }, createdAt: 1, updatedAt: 1 };
   const { context, panel, chat } = await setup([["world", world], ...people.map(person => ["entity", person] as [string, any]), ["binding", binding], ["binding", { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b", characterScenes: {} }]]);
   try {
@@ -1025,17 +1073,17 @@ test("character cast: installed roster, preview, focus and outgoing mood stay sy
     const portrait = chat.locator(".dr-cast-portrait.right"); await expect(portrait).toHaveAccessibleName("Open character: Mira");
     await portrait.focus(); await portrait.press("Enter"); const dialog = chat.getByRole("dialog");
     await characterTab(dialog, "images");
-    await expect(dialog.getByLabel("Portrait emotion", { exact: true })).toHaveValue("happy");
-    await dialog.getByLabel("Portrait emotion", { exact: true }).selectOption("angry");
+    await expect(dialog.getByLabel("Portrait action", { exact: true })).toHaveValue("happy");
+    await dialog.getByLabel("Portrait action", { exact: true }).selectOption("angry");
     await dialog.getByRole("button", { name: "Close", exact: true }).first().click(); await expect(dialog).toHaveCount(0); await expect(portrait).toBeFocused();
-    await portrait.press("Enter"); await characterTab(dialog, "scene"); await dialog.getByLabel("Mood", { exact: true }).selectOption("worried");
+    await portrait.press("Enter"); await characterTab(dialog, "scene"); await dialog.getByLabel("Action", { exact: true }).selectOption("worried");
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog); await expect(dialog).toHaveCount(0);
     await expect(portrait).toBeFocused(); await expect(portrait.locator("small")).toHaveText("Worried");
-    const rows = await databaseRecords(panel); expect(rows.find(r => r.id === "binding:a").data.characterScenes.w.states.mira.emotion).toBe("worried");
+    const rows = await databaseRecords(panel); expect(rows.find(r => r.id === "binding:a").data.characterScenes.w.states.mira.action).toBe("worried");
     expect(rows.filter(r => r.kind === "entity")).toHaveLength(40); expect(rows.find(r => r.id === "mira").data.description).toBe("ORIGINAL");
     const sent: string[] = []; await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => { sent.push(route.request().postDataJSON().prompt); return route.fulfill({ contentType: "application/json", body: "{}" }); });
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, shall we examine the key?" }) }));
-    expect(sent).toHaveLength(1); expect(sent[0]).toContain('"emotion":"worried"'); expect(sent[0]).not.toContain("data:image");
+    expect(sent).toHaveLength(1); expect(sent[0]).toContain('"action":"worried"'); expect(sent[0]).not.toContain("data:image");
     await chat.screenshot({ path: info.outputPath("installed-cast.png") });
     await chat.goto("https://chat.deepseek.com/chat/s/b"); await expect(tiles).toHaveCount(40); await expect(search).toHaveCount(0);
     await expect(chat.locator(".dr-characters")).toContainText("showing everyone");
@@ -1418,7 +1466,7 @@ for (const destinationKnown of [false, true]) test(`continuing into a fresh chat
             history.pushState({}, "", "/chat/s/world-continued");
             const request = document.documentElement.dataset.lastCharacterRequest;
             document.querySelector("#conversation")!.innerHTML = '<article data-role="assistant" data-message-id="fresh-answer"><div class="ds-markdown"></div></article>';
-            document.querySelector(".ds-markdown")!.textContent = "Noah waits in the tower." + (request ? '<deeprole_characters>' + JSON.stringify({ request, present: ["Noah"], partner: null, updates: [{ id: "Noah", name: "Noah", state: { emotion: "happy", condition: "Safe", goal: "Find the key", relationship: "", stats: [] } }] }) + '</deeprole_characters>' : "");
+            document.querySelector(".ds-markdown")!.textContent = "Noah waits in the tower." + (request ? '<deeprole_characters>' + JSON.stringify({ request, present: ["Noah"], partner: null, updates: [{ id: "Noah", name: "Noah", state: { action: "happy", condition: "Safe", goal: "Find the key", relationship: "", stats: [] } }] }) + '</deeprole_characters>' : "");
           });
         });
       }, { once: true });
@@ -1445,7 +1493,7 @@ for (const destinationKnown of [false, true]) test(`continuing into a fresh chat
     expect(records.find(row => row.kind === "binding" && row.id === "a").data.memoryOverrides).toEqual(binding.memoryOverrides);
     if (destinationKnown) {
       expect(prompt).toContain("Schema:");
-      await expect.poll(async () => (await databaseRecords(panel)).find(row => row.kind === "binding" && row.data.chatId === "world-continued")?.data.characterScenes?.[world.id]?.states?.[hero.id]).toMatchObject({ emotion: "happy", condition: "Safe" });
+      await expect.poll(async () => (await databaseRecords(panel)).find(row => row.kind === "binding" && row.data.chatId === "world-continued")?.data.characterScenes?.[world.id]?.states?.[hero.id]).toMatchObject({ action: "happy", condition: "Safe" });
     } else expect(prompt).not.toContain("Schema:");
     await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /TRANSFER_SCENE/);
     await chat.reload();

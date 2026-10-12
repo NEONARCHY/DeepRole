@@ -21,11 +21,22 @@ export interface TabSessionState {
 export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
+  | ({ type: "DR_STORY_PROFILE" } & import("./profile-supplements").SupplementAction)
+  | import("../adapters/isolated-field-coordinator").FieldMessage
   | import("./image-messages").ImageMessage
   | { type: "DR_PING" }
   | RepositoryRequest
   | { type: "DR_MIGRATE_LEGACY" }
   | { type: "DR_GET_PAGE_STATE" }
+  | { type: "DR_STORY_DIAGNOSTICS" }
+  | { type: "DR_STORY_GAME"; operation: "start" | "restart" | "sync" | "undo" | "out-of-character"; manual: "stop" | "keep" }
+  | { type: "DR_STORY_FACT"; input: import("../storage/story-facts").StoryFactApproval }
+  | { type: "DR_STORY_REPAIR"; input: import("../storage/story-repair").StoryRepairInput; cancel?: boolean }
+  | ({ type: "DR_CHARACTER_DISCOVERY" } & import("./story-character-discovery").CharacterDiscoveryAction)
+  | { type: "DR_STORY_CHECKPOINT_READ" }
+  | { type: "DR_STORY_REVIEW_READ"; cursor: import("./story-review").StoryReviewCursor | null }
+  | { type: "DR_STORY_REVIEW_PREVIEW"; input: import("./story-review").StoryPreviewInput }
+  | { type: "DR_STORY_CHECKPOINT_SAVE"; choice: import("./story-checkpoint").StoryCheckpointChoice }
   | { type: "DR_PAGE_STATE"; chatId: string | null; chatUrl: string; messageCount: number; status: AdapterStatus; scene?: SceneState; selection?: ContextSelection; overrides?: MemoryOverrides; activity?: ServiceActivity | null; generating?: boolean; warning?: string; pendingHandoff?: string }
   | { type: "DR_MEMORY_OVERRIDE"; id: string; action: "include" | "exclude" | "reset" }
   | { type: "DR_REVIEW_MEMORY"; operation: "apply"; batchId: string; items: MemoryCandidate[]; profileChoice?: { description: string; appearance: string; personality: string; goals: string; background: string } }

@@ -51,7 +51,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`stale 
   const ru = locale === "ru", popup = page.locator(".dr-cast-status.is-floating"), wand = page.locator(".dr-cast-trigger");
   await expect(popup).toBeVisible();
   const before = await page.evaluate(() => (window as any).castSnapshot());
-  const retry = popup.getByRole("button", { name: ru ? "Повторить" : "Retry", exact: true });
+  const retry = popup.getByRole("button", { name: ru ? "Продолжить подготовку" : "Continue preparation", exact: true });
   await expect(retry).toBeDisabled();
   await popup.getByRole("button", { name: ru ? "Повторить удаление" : "Retry deletion", exact: true }).click();
   await expect(popup.getByRole("alert")).toContainText(ru ? "Служебная вкладка недоступна" : "The service tab is unavailable");

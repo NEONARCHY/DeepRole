@@ -62,7 +62,7 @@ describe("local selfie categories", () => {
     expect(validSelfieCategories([{ ...regular, images: ["https://example.com/image.png"] }])).toBe(false);
     expect(validSelfieCategories([{ ...regular, minTrust: 101 }])).toBe(false);
   });
-  it("recognizes legacy selfie emotions without altering their assignments", () => {
+  it("recognizes legacy selfie actions without altering their assignments", () => {
     const sheet = { ...EMPTY_CHARACTER, sprites: { "Селфи": [image], "Селфи: дома": [other], neutral: image } };
     const before = structuredClone(sheet); expect(selfieCategories(sheet).map(c => [c.name, c.default])).toEqual([["Селфи", true], ["Селфи: дома", false]]);
     expect(sheet).toEqual(before);

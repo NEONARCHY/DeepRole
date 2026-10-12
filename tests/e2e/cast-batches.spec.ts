@@ -7,9 +7,10 @@ for (const scenario of ["full", "partial"]) test("cast worker saves streamed " +
  expect(job.draft.characters.map((c: any) => c.name)).toEqual(scenario === "full" ? ["Leon", "Mira"] : ["Leon"]);
  expect(job.phase).toBe(scenario === "full" ? "ready" : "error");
  expect(prompts).toHaveLength(scenario === "full" ? 3 : 2);
- expect(prompts[1]).toContain("at most TWO");
+ expect(prompts[1]).toContain("at most ONE");
  if(scenario === "full") expect(prompts[2]).toContain('Previously prepared people (do NOT repeat them');
- else { expect(job.error).toBe("partial-reply"); await expect(page.locator("[data-deeprole-cast-recovery]")).toBeVisible(); }
+ else { expect(job.error).toBe("partial-reply"); await expect(page.locator("[data-deeprole-cast-recovery]")).toHaveCount(1); expect(await page.locator("body").evaluate(e=>getComputedStyle(e).opacity)).toBe("0"); expect(await page.locator("html").ariaSnapshot()).not.toContain("deeprole_cast"); }
+ expect(job.cleanup).toBe("done"); expect(await page.evaluate(()=>(window as any).cleanupCount)).toBe(1);
 });
 for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test("partial cast review " + locale + " " + width, async ({ page }) => {
  await page.setViewportSize({ width, height: 900 });

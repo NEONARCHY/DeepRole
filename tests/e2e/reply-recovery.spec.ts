@@ -10,6 +10,8 @@ for (const locale of ["ru", "en"]) for (const width of [360, 1280]) test(`automa
   const host = page.locator("[data-deeprole-recovered-reply]");
   await expect(host).toBeVisible(); await expect(host).toContainText("Mira examines the compass.");
   await expect(host.locator("[data-deeprole-recovery-label]")).toHaveText(locale === "ru" ? "Восстановлено" : "Restored");
+  await expect(host.locator("[data-deeprole-recovery-label]")).toHaveCSS('color','rgb(255, 255, 255)');
+  await expect(host.locator("[data-deeprole-recovery-label]")).toHaveCSS('opacity','1');
   await expect(page.locator("#reply")).toBeHidden(); await expect(page.locator("textarea")).toHaveValue("My unsent draft");
   await expect.poll(() => page.evaluate(() => (window as any).replyTest.archive().length)).toBe(1);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

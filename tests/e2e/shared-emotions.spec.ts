@@ -2,19 +2,19 @@ import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test } from "@playwright/test";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
 
-for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`shared emotion images and continuous editing ${locale} ${width}`, async ({ page }, info) => {
+for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`shared action images and continuous editing ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 950 }); await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
-  await page.locator(".dr-emotion-settings > .dr-emotion-help > summary").first().click();
+  await page.locator(".dr-action-settings > .dr-action-help > summary").first().click();
   const names = ["neutral", "happy", "sad", "screaming", "shouting", "scarry", "смех"];
-  await page.getByLabel(locale === "ru" ? "Эмоции для портретов" : "Portrait emotions", { exact: true }).fill(names.join("\n"));
-  await page.getByRole("button", { name: locale === "ru" ? "Сохранить эмоции" : "Save emotions", exact: true }).click();
-  expect(await page.evaluate(() => (window as any).settings.characterEmotions)).toEqual(names);
-  await page.locator(".dr-emotion-settings > .dr-emotion-help").last().locator("summary").click(); await expect(page.locator(".dr-emotion-settings > .dr-emotion-help").last()).toContainText(locale === "ru" ? "не объединяют синонимы" : "do not create aliases");
+  await page.getByLabel(locale === "ru" ? "Действия для портретов" : "Portrait actions", { exact: true }).fill(names.join("\n"));
+  await page.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true }).click();
+  expect(await page.evaluate(() => (window as any).settings.characterActions)).toEqual(names);
+  await page.locator(".dr-action-settings > .dr-action-help").last().locator("summary").click(); await expect(page.locator(".dr-action-settings > .dr-action-help").last()).toContainText(locale === "ru" ? "на языке расширения" : "Standard actions");
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); const dialog = page.getByRole("dialog");
   await characterTab(dialog, "images", locale);
-  const portraitEmotion = dialog.getByLabel(locale === "ru" ? "Эмоция портрета" : "Portrait emotion", { exact: true });
-  await expect(portraitEmotion.locator('option[value="happy"]')).toHaveText(locale === "ru" ? "Радость · happy" : "Happy · happy");
-  await expect(portraitEmotion.locator('option[value="смех"]')).toHaveText("смех");
+  const portraitAction = dialog.getByLabel(locale === "ru" ? "Действие портрета" : "Portrait action", { exact: true });
+  await expect(portraitAction.locator('option[value="happy"]')).toHaveText(locale === "ru" ? "Радость" : "Happy");
+  await expect(portraitAction.locator('option[value="смех"]')).toHaveText("смех");
   const png = await page.evaluate(() => { const c = document.createElement("canvas"); c.width = 120; c.height = 160; const ctx = c.getContext("2d")!; ctx.fillStyle = "#728aa1"; ctx.fillRect(0, 0, 120, 160); return c.toDataURL("image/png").split(",")[1]!; });
   await dialog.locator(".dr-portrait-upload").setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") }); await chooseImageCompression(page);
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(1);
@@ -24,13 +24,13 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`shared
   await dialog.evaluate(node => { (window as any).sameEditor = node; });
   await expect(dialog.locator(".dr-portrait-library")).toBeVisible();
   const library = dialog.locator(".dr-portrait-library"); await library.locator(".dr-library-image").click();
-  await library.locator("select").selectOption("screaming"); await library.locator(".dr-library-emotions summary").click();
+  await library.locator("select").selectOption("screaming"); await library.locator(".dr-library-actions summary").click();
   for (const name of ["shouting", "scarry", "смех"]) await library.getByRole("checkbox", { name, exact: true }).check();
-  await page.screenshot({ path: info.outputPath(`shared-emotions-${locale}-${width}.png`) });
-  await library.getByRole("button", { name: locale === "ru" ? "Назначить эмоции" : "Assign to emotion", exact: true }).click();
+  await page.screenshot({ path: info.outputPath(`shared-actions-${locale}-${width}.png`) });
+  await library.getByRole("button", { name: locale === "ru" ? "Назначить действия" : "Assign to action", exact: true }).click();
   await save.click(); await expect(saved).toBeVisible();
   expect(await dialog.evaluate(node => node === (window as any).sameEditor)).toBe(true);
-  await expect(library).toBeVisible(); await expect(portraitEmotion).toHaveValue("screaming");
+  await expect(library).toBeVisible(); await expect(portraitAction).toHaveValue("screaming");
   const sprites = await page.evaluate(() => (window as any).saved.sheet.sprites);
   for (const name of ["screaming", "shouting", "scarry", "смех"]) expect(sprites[name]).toEqual(sprites.happy);
   // A live update between saves remains authoritative for fields left untouched.

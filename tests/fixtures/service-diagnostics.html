@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepRole service diagnostic fixture</title></head><body>
+<main class="app-shell" style="min-height:100vh;padding:12px"><h1 style="font-size:20px;margin:0 0 16px">DeepRole</h1><div id="diagnostics"></div></main>
+<script src="/tests/fixtures/portrait-storage.js"></script>
+<script type="module">
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { ServiceDiagnostics } from "/src/entrypoints/shared/ServiceDiagnostics.tsx";
+import { readServiceDiagnostics } from "/src/storage/service-diagnostics.ts";
+import { DeepRoleDatabase } from "/src/storage/database.ts";
+import { DeepRoleRepository } from "/src/storage/repository.ts";
+import { beginServiceOperation, beginCastServiceOperation, updateServiceOperation } from "/src/storage/service-operations.ts";
+import { SERVICE_OUTBOX_PREFIX, servicePending } from "/src/core/service-outbox.ts";
+import { castServiceValidation, fieldServiceValidation } from "/src/core/service-validation.ts";
+import { FieldValidationError } from "/src/core/field-validation.ts";
+import { recordFieldServiceValidation, recordFieldWorkerRuntime } from "/src/storage/field-service-validation.ts";
+import { castRecords } from "/tests/fixtures/cast-data.ts";
+import "/src/entrypoints/sidepanel/styles.css";
+const query = new URL(location.href).searchParams, locale = query.get("locale") === "ru" ? "ru" : "en";
+document.documentElement.lang = locale;
+const session = new Map();
+chrome.storage.session = { get: async key => ({ [key]: session.get(key) }), set: async values => { for (const [key, value] of Object.entries(values)) session.set(key, value); }, remove: async key => { session.delete(key); } };
+const db = new DeepRoleDatabase(query.get("db") ?? "diagnostic-synthetic-" + crypto.randomUUID()), repo = new DeepRoleRepository(db);
+const fixture = { db, repo, checks: 0, copied: [], clipboardFails: false, mode: "normal", rpc: 0, tabWrites: 0 };
+chrome.runtime.sendMessage = async () => { fixture.rpc++; throw Error("No diagnostic RPC allowed"); };
+chrome.tabs = { create: async () => { fixture.tabWrites++; throw Error("No diagnostic tab creation allowed"); }, remove: async () => { fixture.tabWrites++; throw Error("No diagnostic tab removal allowed"); } };
+Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async text => { if (fixture.clipboardFails) throw Error("PRIVATE_CLIPBOARD"); fixture.copied.push(text); } } });
+if (!(await repo.list("service")).length) {
+ await repo.mergeRecords(castRecords());
+ const fieldId = "field_" + crypto.randomUUID(), castId = "cast_" + crypto.randomUUID();
+ await beginServiceOperation({ id: fieldId, worldId: "w", sourceChatId: "PRIVATE_GAME", mode: "suggest", fieldScope: "profile", createdAt: 1 }, repo);
+ await updateServiceOperation(fieldId, { phase: "result", workerChatId: "PRIVATE_WORKER", cleanup: "done", error: null, at: 2 }, repo);
+ await beginCastServiceOperation({ id: castId, worldId: "w", createdAt: 3 }, repo);
+ await updateServiceOperation(castId, { phase: "failed", workerChatId: "PRIVATE_CAST", cleanup: "failed", error: "partial-reply", at: 4 }, repo);
+ const validation = castServiceValidation({ id: castId, diagnostics: [
+  { requestId: castId, step: 2, repair: false, code: "invalid-evidence", stage: "parse", at: 3, replyLength: 145, issues: ["PRIVATE_QUOTE"], details: [{ path: "characters[1].evidence[1].quote", rule: "exact substring of source text", actual: "string(length=145)" }] },
+  { requestId: castId, step: 2, repair: true, code: "invalid-result", stage: "parse", at: 4, replyLength: 400, issues: ["PRIVATE_NAME"], details: [{ path: "present[0]", rule: "key from this batch or previously validated roster (not a character name or source ID)", actual: "string(length=2)" }] },
+ ] });
+ await repo.updateRecords(records => {
+  const previous = records.find(r => r.kind === "service" && r.id === castId).data;
+  return { records: [{ kind: "service", id: castId, data: { ...previous, contractVersion: 2, validation, ...(query.get("success") === "true" ? { phase: "result", cleanup: "done", error: null } : {}) } }], removed: [], result: undefined };
+ }, undefined, ["service"]);
+ await chrome.storage.local.set({ [SERVICE_OUTBOX_PREFIX + fieldId]: servicePending(fieldId, { phase: "failed", workerChatId: "PRIVATE_WORKER", cleanup: "done", error: "vault-locked", at: 5 }), privateSetting: "PRIVATE_TOKEN" });
+}
+if (query.get("field") === "true" && (await repo.list("service")).length === 2) {
+ const id = "field_" + crypto.randomUUID(), binding = { id, worldId: "w", sourceChatId: "PRIVATE_GAME", mode: "history", fieldScope: "profile", createdAt: 6, workerChatId: "PRIVATE_FIELD_CHAT" };
+ await beginServiceOperation({ id, worldId: binding.worldId, sourceChatId: binding.sourceChatId, mode: binding.mode, fieldScope: binding.fieldScope, createdAt: binding.createdAt }, repo);
+ await updateServiceOperation(id, { phase: "failed", workerChatId: binding.workerChatId, cleanup: "done", error: "invalid-evidence", at: 7 }, repo);
+ await recordFieldServiceValidation(binding, fieldServiceValidation(new FieldValidationError([{ path: "evidence[0].quote", rule: "exact substring of source text", actual: "string(length=23)" }], "invalid-evidence"), 200, 7), repo);
+ await recordFieldWorkerRuntime(binding, { stage: "waiting-reply", visibility: "hidden", at: 7 }, repo);
+}
+createRoot(document.querySelector("#diagnostics")).render(React.createElement(ServiceDiagnostics, { locale, onCheck: async () => {
+ fixture.checks++;
+ if (fixture.mode === "failure") throw Error("PRIVATE_ERROR");
+ if (fixture.mode === "empty") return { diagnosticVersion: 1, journal: { status: "read", total: 0, invalid: 0, omitted: 0, entries: [] }, pending: { status: "read", total: 0, invalid: 0, omitted: 0, entries: [] } };
+ return readServiceDiagnostics(repo);
+} }));
+window.serviceDiagnosticFixture = fixture;
+</script></body></html>

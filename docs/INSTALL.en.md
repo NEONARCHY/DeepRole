@@ -25,4 +25,4 @@ To correct an established detail, open a character sheet and choose **Correct a 
 
 Before updating, save unfinished edits and choose **Settings → Files & security → Export → Full backup**. Do not uninstall the extension just to update it: browser storage may be removed with it. Replace the files in the exact folder your browser loaded, click the extension's reload button on the extensions page, then refresh the DeepSeek tab. Rebuilding the source tree does not automatically update a separately unpacked folder.
 
-For a move to another computer, export a full backup. A single-world export carries lore, character sheets, portraits and emotion settings, but not every chat's current state or portrait layout.
+For a move to another computer, export a full backup. A single-world export carries lore, character sheets, portraits and action settings, but not every chat's current state or portrait layout.

@@ -1,0 +1,27 @@
+import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { storyCheckpointText as text } from "../../src/core/story-checkpoint-i18n";
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test(`manual starting point ${locale} ${width}px`, async ({ page }, info) => {
+  const t = (key: Parameters<typeof text>[1]) => text(locale, key), errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.setViewportSize({ width, height: 1100 }); await page.goto(`/tests/fixtures/story-checkpoint.html?locale=${locale}`);
+  const read = page.getByRole("button", { name: t("read"), exact: true }); await expect(read).toBeVisible(); expect(await page.evaluate(() => (window as any).checkpointFixture.reads)).toBe(0);
+  await page.keyboard.press("Tab"); await expect(read).toBeFocused(); await page.keyboard.press("Enter");
+  const radios = page.getByRole("radio"), confirm = page.getByRole("checkbox"), save = page.getByRole("button", { name: t("save"), exact: true }); await expect(radios).toHaveCount(2);
+  await expect(radios.nth(0)).not.toBeChecked(); await expect(radios.nth(1)).not.toBeChecked(); await expect(confirm).toBeDisabled(); await expect(save).toBeDisabled();
+  await radios.first().focus(); await page.keyboard.press("Space"); await expect(radios.first()).toBeChecked(); await expect(page.getByText(t("different"))).toBeVisible(); await expect(save).toBeDisabled();
+  await confirm.focus(); await page.keyboard.press("Space"); await expect(save).toBeEnabled();
+  await page.getByText(t("full"), { exact: true }).first().click(); await expect(page.getByRole("heading", { name: t("draft"), exact: true })).toBeVisible();
+  await page.getByText(t("sceneDetails"), { exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+  expect(await page.locator("main").textContent()).not.toMatch(/synthetic-a|person-1|request-first|legacy-scene-a/);
+  const shot = await page.screenshot({ fullPage: true }); expect(shot.byteLength).toBeGreaterThan(1000);
+  if (info.project.name === "chromium" && (locale === "ru" && width === 320 || locale === "en" && width === 900)) await page.screenshot({ fullPage: true, path: info.outputPath("checkpoint-review.png") });
+  await page.evaluate(() => { (window as any).checkpointFixture.mode = "delay"; }); await save.click(); await expect(page.getByRole("button", { name: t("saving"), exact: true })).toBeDisabled(); await expect(page.getByRole("status")).toHaveText(t("saving"));
+  await page.evaluate(() => (window as any).checkpointFixture.release()); await expect(page.getByRole("status")).toHaveText(t("saved"));
+  const saved = await page.evaluate(() => (window as any).checkpointFixture.saves); expect(saved).toHaveLength(1); expect(saved[0].requestId).toBe("request-first"); expect(saved[0].review.snapshot.presentIds).toEqual(["person-1", "person-2"]);
+  await page.evaluate(() => { (window as any).checkpointFixture.mode = "existing"; }); await page.getByRole("button", { name: t("again"), exact: true }).click(); await expect(page.getByText(t("existing"))).toBeVisible(); await expect(radios).toHaveCount(0);
+  await page.evaluate(() => { (window as any).checkpointFixture.mode = "empty"; }); await page.getByRole("button", { name: t("again"), exact: true }).click(); await expect(page.getByText(t("empty"))).toBeVisible();
+  await page.evaluate(() => { (window as any).checkpointFixture.mode = "conflict"; }); await page.getByRole("button", { name: t("again"), exact: true }).click(); await radios.first().check(); await confirm.check(); await save.click(); await expect(page.getByRole("status")).toHaveText(t("changed")); await expect(radios).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(errors).toEqual([]);
+});

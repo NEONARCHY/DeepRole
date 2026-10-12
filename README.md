@@ -7,13 +7,15 @@
 
 DeepRole is a browser extension for long-running roleplay stories in [DeepSeek](https://chat.deepseek.com/). Keep lore in a local library, give characters portraits and relationships, and choose your next move without losing track of what happened.
 
+Photos are stored separately from profiles: name/text saves do not resend the image collection, the library loads visible previews, and the full-size viewer opens the original. Existing images migrate automatically without losing assignments. Portable world JSON and backups still include the photos themselves. [Photo storage and memory](docs/CHARACTERS.md#separate-photo-storage).
+
 **New: automatic reply recovery with conversation continuity.** A captured reply replaced by DeepSeek's refusal reappears with a **Restored** label. Send your next message: DeepRole includes the recovered fragment automatically, with no extra recovery button. [How it works ↓](#restore-a-hidden-reply-and-continue-the-scene)
 
-You decide what becomes lasting memory. DeepSeek can suggest lore changes, but **they are saved only after you review and approve them**. Scene moods and configured progress update separately after story replies.
+You decide what becomes lasting memory. DeepSeek can suggest lore changes, but **they are saved only after you review and approve them**. Scene actions and configured progress update separately after story replies.
 
 > Early version 0.1.0. Independent project, not affiliated with DeepSeek. Make a [full backup](#backups-and-moving-to-another-computer) before uninstalling, replacing your data or moving to another computer.
 
-The current build adds relationship stages, numeric characteristics, visible consequences, personal emotion rules, one-click story continuation and a cleaner, adaptive interface. The examples below show the current UI in English; the [Russian page](docs/README.ru.md) has its own Russian screenshots. All examples use fictional demo data and built-in silhouettes, not a player's private lore.
+The current build adds relationship stages, numeric characteristics, visible consequences, personal action rules, one-click story continuation and a cleaner, adaptive interface. The examples below show the current UI in English; the [Russian page](docs/README.ru.md) has its own Russian screenshots. All examples use fictional demo data and built-in silhouettes, not a player's private lore.
 
 ## Start a story
 
@@ -73,22 +75,26 @@ The fragment may be incomplete. A reply the extension never saw cannot be recove
 
 The original server reply is not rewritten: the excerpt is added to your new request. This gives DeepSeek the text to reference, but does not guarantee its interpretation or prevent another refusal. Recovered copies and delivery markers are included in a full DeepRole backup and protected by the vault when enabled. The example above uses a fictional scene in an automated browser check, not a live DeepSeek account.
 
-## Characters, images and emotions
+## Characters, images and actions
 
-**Prepare characters from lore** is enabled in the world creation and import dialog. DeepRole sends the saved story to a separate temporary DeepSeek chat, asks for the full roster including the protagonist, profiles, attributes, trust and affinity, then offers a review before saving. Scores include a rationale and source quotations. Existing profile text, images and played chat progress are preserved; unknown facts stay empty. The temporary chat is deleted through DeepSeek’s own controls after the result is received. A failed deletion is reported with a retry button. Existing worlds have **Create characters from lore** in Lore and a wand button in Characters. An empty world waits for its first lore records. Current limits: 40 characters, six numeric characteristics per character and 220,000 source characters per preparation. This uses your signed-in DeepSeek session, with no separate API key.
+An **action** describes what a character is doing, their pose, expression or reaction: **Sitting, Laughing, Blushing, Calm** all work. It also includes receiving an interaction. After “I hug her,” DeepSeek can choose her configured **Accepting a hug** action if the completed reply establishes that she accepts and remains in the embrace. A refusal or an ended hug must not select that portrait. Changes happen after the completed story reply, not while typing or selecting a suggested option. The model must return the matching action; this is not a forced keyword trigger.
+
+**Rename without reuploading:** in **Settings → Characters**, click the pencil beside an action, enter a new name, choose **Done**, then **Save actions**. Assigned portrait variations, exclusions and saved character states in this world's chats move together. Duplicate names are rejected; `neutral` stays the required fallback. Removing and adding a name through the bulk list is deletion, not renaming. Old worlds, backups and emotion-based replies remain readable, with their names and images preserved.
+
+**Prepare characters from lore** is enabled in the world creation and import dialog. DeepRole sends the saved story to a separate temporary DeepSeek chat, asks for the full roster including the protagonist, profiles, attributes, trust and affinity, then offers a review before saving. Scores include a rationale and source quotations. Existing profile text, images and played chat progress are preserved; unknown facts stay empty. The temporary chat is deleted through DeepSeek’s own controls after the result is received. A failed deletion is reported with a retry button. Existing worlds have **Create characters from lore** in Lore and a wand button in Characters. An empty world waits for its first lore records. There is no fixed total roster cap. One scene supports up to 12 participants, each profile up to six numeric characteristics, and one preparation up to 220,000 source characters. Larger source archives still need incremental processing; this is not a promise of unlimited model context. This uses your signed-in DeepSeek session, with no separate API key.
 
 The wand's progress window opens beside Characters, aligned at the top. Drag its heading to move it; the reset icon docks it again. Small activity animations and rotating hints show that DeepSeek is still responding, not a made-up percentage. If DeepSeek replaces a **complete character-data reply already received** with a refusal, DeepRole keeps that data for validation and review, including after a service-tab reload. Incomplete or never-received data cannot be recovered; a refusal without a complete reply leaves profiles unchanged. This does not resend a prompt to bypass a refusal or alter the server's saved answer.
 
-The editor has four tabs: **Profile**, **In scene**, **Relationships** and **Images**. The profile belongs to the world; current moods, goals and played progress belong to the chat. Switching tabs keeps your draft, and saving leaves the editor open.
+The editor has four tabs: **Profile**, **In scene**, **Relationships** and **Images**. The profile belongs to the world; current actions, goals and played progress belong to the chat. Switching tabs keeps your draft, and saving leaves the editor open.
 
-Upload a batch to the **Image library**, then select pictures and assign emotions without reopening the file picker each time. You can assign the same picture to several emotions, or give one emotion several portraits. Portraits cycle without repeating until the set has been shown.
+Upload a batch to the **Image library**, then select pictures and assign actions without reopening the file picker each time. You can assign the same picture to several actions, or give one action several portraits. Portraits cycle without repeating until the set has been shown.
 
-<img src="docs/images/readme/images-en.png" width="420" alt="Character image library with three selected sample images and assignment to multiple emotions">
+<img src="docs/images/readme/images-en.png" width="420" alt="Character image library with three selected sample images and assignment to multiple actions">
 
-- Add a custom emotion directly in **Images**, or manage the world's list in **Settings → Characters**. Up to 32 active model emotions; local image collections have no size or count quota.
-- Built-in emotions show both their label and key, such as **Happy · happy**. Custom names are not automatically translated. Use the extra-emotion switches to share an image across names; commas and slashes in a name are not a shortcut for separate emotions.
-- **Available emotions** lets you turn off specific moods for one character. All world emotions are allowed by default, and Calm remains available. DeepSeek receives the personal list. If it returns a forbidden mood, DeepRole keeps a valid previous mood or uses Calm; other valid changes still apply.
-- Quick switches are immediately visible under **Images → Available emotions**. Turning one off detaches all its portraits when you save the character. Images remain in the library or their other assigned emotions; enabling it again does not restore old assignments. Removing an emotion from the world list and saving also detaches its portraits across that world. A missing portrait alone is not an emotion ban. Local mood checks cannot guarantee what DeepSeek writes in the story text.
+- Add a custom action directly in **Images**, or manage the world's list in **Settings → Characters**. Up to 32 active model actions; local image collections have no size or count quota.
+- Built-in actions show both their label and key, such as **Happy · happy**. Custom names are not automatically translated. Use the extra-action switches to share an image across names; commas and slashes in a name are not a shortcut for separate actions.
+- **Available actions** lets you turn off specific actions for one character. All world actions are allowed by default, and Calm remains available. DeepSeek receives the personal list. If it returns a forbidden action, DeepRole keeps a valid previous action or uses Calm; other valid changes still apply.
+- Quick switches are immediately visible under **Images → Available actions**. Turning one off detaches all its portraits when you save the character. Images remain in the library or their other assigned actions; enabling it again does not restore old assignments. Removing an action from the world list and saving also detaches its portraits across that world. A missing portrait alone is not an action ban. Local action checks cannot guarantee what DeepSeek writes in the story text.
 - Drag portraits near either edge of the options to snap them into place, or move and resize them freely. Scrolling away from the options keeps their last screen position. Conversation partners use the main size; other present characters sit to their right, about 15% smaller and bottom-aligned. Multiple speaking partners use the same main size.
 - Drag a portrait's corner to enlarge the full card up to the window height. That card becomes independent of automatic grouping and pinning; its manual size survives scene updates and refresh. Narrow windows fit it temporarily without overwriting the saved size. Reset layout restores the automatic group.
 - The small **eye button** beside the panel controls hides or shows all portraits without deleting images or resetting positions. The same setting remains in **Settings → Characters**.
@@ -101,7 +107,7 @@ Connect your own image API in **Settings → Images**, grant access and load its
 
 An alternative is the [OpenAI Images API](https://developers.openai.com/api/docs/guides/image-generation), using DeepRole’s **OpenAI Images API** format. A service advertising “OpenAI-compatible chat” does not necessarily support image generation or editing. [Step-by-step setup and troubleshooting →](docs/IMAGE-GENERATION.en.md#where-to-get-images-and-an-api)
 
-**No API needed for avatars.** Create and download portraits in a web image tool such as [Adobe Firefly](https://helpx.adobe.com/firefly/web/work-with-images/generate-images/generate-images-from-text-descriptions.html), or use your own artwork. Upload PNG, JPG or WebP into the character’s library and assign emotions. For a consistent face, keep one base portrait and create expression variants from that reference; consistency still depends on the image tool. Ready uploaded photos are displayed locally, not regenerated.
+**No API needed for avatars.** Create and download portraits in a web image tool such as [Adobe Firefly](https://helpx.adobe.com/firefly/web/work-with-images/generate-images/generate-images-from-text-descriptions.html), or use your own artwork. Upload PNG, JPG or WebP into the character’s library and assign actions. For a consistent face, keep one base portrait and create expression variants from that reference; consistency still depends on the image tool. Ready uploaded photos are displayed locally, not regenerated.
 
 Click **Create illustration** below a completed story reply: a loading card appears immediately, DeepSeek privately describes that exact scene and selects its characters, then the image service creates the picture. No editor opens. Set optional **Image style** once in **Settings → Images**. Illustrations request **16:9** and generated selfies **9:16** by default; explicit connection sizing parameters are preserved. Provider results retain their pixel dimensions without local downscaling or cropping. Actual pixels appear below the preview; the full viewer offers 100% zoom. Older downscaled pictures cannot be automatically restored. **Try again** reuses the saved description, model, parameters and reference pixels, even after settings change. It makes a new paid attempt only when clicked. Retries replace the visible result in the same card. Back/forward browses saved generations for that reply, including while waiting or after a failure, without making API calls. History survives reload; deleting removes only the selected result. Keys stay separate and are not exported; illustrations and their retry snapshots are included in backups and world packages. [Setup, formats, limits and privacy →](docs/IMAGE-GENERATION.en.md)
 
@@ -117,11 +123,11 @@ With image generation enabled, a current selfie request and a verified, willingl
 
 DeepRole supports two selfie sources. **Uploaded selfie collections** show ready photos, **not AI-generated images**: you manually ask with **Ask for a selfie** or a message in the chat, and DeepSeek roleplays agreement/refusal and chooses the collection. **AI generation** creates a new photo through your separately enabled image service; provider charges may apply. Suitable ready photos are used first.
 
-In **Character → Images → Uploaded selfie collections**, create collections with a name, context description and photos. Use **Add photos** to upload files, or **Choose from library** to select several of this character’s existing images, including assigned portraits and permanent references. **Add selected**, then **Save character**. Existing emotion/reference assignments stay unchanged; duplicates are skipped. Removing a collection photo does not remove its library source. Mark one collection as **Default collection**. DeepSeek chooses a category for the played scene; if none matches, it uses ordinary selfies. Images stay local: only collection names, context rules and availability are supplied to the model.
+In **Character → Images → Uploaded selfie collections**, create collections with a name, context description and photos. Use **Add photos** to upload files, or **Choose from library** to select several of this character’s existing images, including assigned portraits and permanent references. **Add selected**, then **Save character**. Existing action/reference assignments stay unchanged; duplicates are skipped. Removing a collection photo does not remove its library source. Mark one collection as **Default collection**. DeepSeek chooses a category for the played scene; if none matches, it uses ordinary selfies. Images stay local: only collection names, context rules and availability are supplied to the model.
 
 Each category has minimum trust and closeness (the affinity score), initially **40 / 30**. With relationship tracking set up for the protagonist, low saved scores block the attachment; high scores still do not guarantee consent. The character can refuse or defer according to personality, boundaries and the scene. Without numeric tracking, willingness is decided in the story. A refused, deferred or merely suggested action does not attach a photo.
 
-After a completed reply with a valid photo event, the local image appears in that reply after about **1.5 seconds**. It is saved against that reply and restored after reload in the same browser and library. Removing the source image leaves a missing-photo notice. Local collections have no application size or image-count quota. Older **Selfie / Селфи** emotion assignments are supported.
+After a completed reply with a valid photo event, the local image appears in that reply after about **1.5 seconds**. It is saved against that reply and restored after reload in the same browser and library. Removing the source image leaves a missing-photo notice. Local collections have no application size or image-count quota. Older **Selfie / Селфи** action assignments are supported.
 
 Click an avatar, selfie or illustration to open the image viewer. Use the **wheel** or **+/−** to zoom up to **128×**, drag to pan, or choose **100% / Fit to window**. Zoom-out stops at the fit scale. Keyboard: **+/−**, **0** for 100%, **F** to fit, **Escape** to close. Zoom enlarges the saved pixels; it does not invent missing detail. On floating portraits, the name still opens the character sheet.
 
@@ -141,9 +147,9 @@ In **Character → Images → Image library**, move **Preview size** to enlarge 
 </details>
 
 <details>
-<summary>Example: a character's personal emotion list</summary>
+<summary>Example: a character's personal action list</summary>
 
-<p><img src="docs/images/readme/emotions-en.png" width="480" alt="Searchable personal emotion list with Angry turned off and Calm always available"></p>
+<p><img src="docs/images/readme/actions-en.png" width="480" alt="Searchable personal action list with Angry turned off and Calm always available"></p>
 
 </details>
 
@@ -254,7 +260,7 @@ Near the configured chat capacity, an optional warning appears at about **90% an
 
 ### One JSON file. Your whole visual world.
 
-**The pictures really travel inside the JSON.** Emotion portraits and their variations, unassigned library images, uploaded selfie collections and the images behind permanent references are embedded as image data, not external links. Saved illustrations travel too. It feels like a little magic: import one file and the cast has its faces again — no separate image folder or cloud account required.
+**The pictures really travel inside the JSON.** Action portraits and their variations, unassigned library images, uploaded selfie collections and the images behind permanent references are embedded as image data, not external links. Saved illustrations travel too. It feels like a little magic: import one file and the cast has its faces again — no separate image folder or cloud account required.
 
 1. Open **Settings → Files & security → Export**.
 2. Choose **This world**, select the world and click **Download file**.
@@ -264,7 +270,7 @@ The file contains the stored versions, not discarded original upload files. Unsa
 
 | What to save | What it carries |
 | --- | --- |
-| **Export world** | That world's lore, character profiles, images, emotions, personal emotion rules, relationship settings and starting characteristic values. Not the played progress of individual chats. |
+| **Export world** | That world's lore, character profiles, images, actions, personal action rules, relationship settings and starting characteristic values. Not the played progress of individual chats. |
 | **Full backup** | All worlds, records, settings, saved chat states and played character progress. Use this when moving to another computer. |
 
 Choose **Settings → Files & security → Export → Full backup**, keep the downloaded file somewhere safe, then import it into DeepRole on the other computer. Both **Settings → Files & security → Import** and **Lore → Import existing lore** recognize full backups, including password-protected files. Both open the same preview: add missing records without overwriting existing ones, or restore the full library and settings after explicit confirmation. World exports retain their separate world-import flow.

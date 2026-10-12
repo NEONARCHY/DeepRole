@@ -7,11 +7,11 @@ beforeEach(() => { vi.stubGlobal("ResizeObserver", class { observe() {} disconne
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 function Picker({ disabled = false }: { disabled?: boolean }) {
   const [value, setValue] = useState("a");
-  return <div className="app-shell"><label>Mood<Select value={value} disabled={disabled} onChange={e => setValue(e.target.value)}><option value="a">Calm</option><option value="b" disabled>Angry</option><option value="c">Focused</option><option value="d">Joy</option></Select></label></div>;
+  return <div className="app-shell"><label>Action<Select value={value} disabled={disabled} onChange={e => setValue(e.target.value)}><option value="a">Calm</option><option value="b" disabled>Angry</option><option value="c">Focused</option><option value="d">Joy</option></Select></label></div>;
 }
 
 it("explores without editing, skips disabled options, commits once and preserves native labels", () => {
-  render(<Picker />); const picker = screen.getByRole("combobox", { name: "Mood" });
+  render(<Picker />); const picker = screen.getByRole("combobox", { name: "Action" });
   picker.focus(); fireEvent.keyDown(picker, { key: "ArrowDown" });
   expect(picker).toHaveAttribute("aria-expanded", "true"); expect(screen.getByRole("listbox")).toBeVisible();
   fireEvent.keyDown(picker, { key: "ArrowDown" }); expect(screen.getByRole("option", { name: "Focused", selected: true })).toBeVisible();

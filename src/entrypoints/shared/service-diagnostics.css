@@ -1,0 +1,11 @@
+.dr-service-diagnostics h3 { font-size: 13px; overflow-wrap: anywhere; }
+.dr-service-diagnostics-list { list-style: none; padding: 0 !important; margin: 0; }
+.dr-service-diagnostics-list > li { padding-block: var(--dr-space-3); border-top: 1px solid var(--dr-border); }
+.dr-service-diagnostics-list small { display: block; margin-block: var(--dr-space-2); }
+.dr-service-diagnostics .dr-story-diagnostics-counts > div { flex-wrap: wrap; }
+.dr-service-diagnostics > div > .dr-story-diagnostics-counts > div { flex-wrap: nowrap; }
+.dr-service-diagnostics > div > .dr-story-diagnostics-counts dt { min-width: 0; overflow-wrap: anywhere; }
+.dr-service-diagnostics dd { margin-inline-start: auto; max-width: 100%; overflow-wrap: anywhere; }
+.dr-service-validation { border-inline-start: 2px solid var(--dr-border); padding-inline-start: var(--dr-space-3); margin-block: var(--dr-space-3); }
+.dr-service-validation h4 { margin-block: var(--dr-space-2); font-size: 13px; }
+.dr-service-validation li { margin-block: var(--dr-space-3); }

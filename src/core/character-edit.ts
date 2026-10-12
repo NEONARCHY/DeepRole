@@ -50,11 +50,11 @@ export function mergeCharacterEdit(original: CharacterEditBaseline, draft: Omit<
     if (image === undefined) delete sheet.sprites[key]; else sheet.sprites[key] = image;
   }
   const library = mergeField(original.sheet.portraitLibrary ?? [], draft.sheet.portraitLibrary ?? [], current.sheet.portraitLibrary ?? []);
-  const blocked = [...new Set([...(original.sheet.blockedEmotions ?? []), ...(draft.sheet.blockedEmotions ?? []), ...(current.sheet.blockedEmotions ?? [])])]
-    .filter(key => mergeField(!!original.sheet.blockedEmotions?.includes(key), !!draft.sheet.blockedEmotions?.includes(key), !!current.sheet.blockedEmotions?.includes(key)));
-  if (blocked.length) sheet.blockedEmotions = blocked; else delete sheet.blockedEmotions;
+  const blocked = [...new Set([...(original.sheet.blockedActions ?? []), ...(draft.sheet.blockedActions ?? []), ...(current.sheet.blockedActions ?? [])])]
+    .filter(key => mergeField(!!original.sheet.blockedActions?.includes(key), !!draft.sheet.blockedActions?.includes(key), !!current.sheet.blockedActions?.includes(key)));
+  if (blocked.length) sheet.blockedActions = blocked; else delete sheet.blockedActions;
   const mergedSheet = withPortraitLibrary(sheet, library);
-  for (const key of ["emotion", "condition", "goal", "relationship", "stats"] as const) {
+  for (const key of ["action", "condition", "goal", "relationship", "stats"] as const) {
     Object.assign(state, { [key]: mergeField(original.state[key], draft.state[key], current.state[key]) });
   }
   if (same(original.state.attributes, draft.state.attributes) || !draft.state.attributes) {

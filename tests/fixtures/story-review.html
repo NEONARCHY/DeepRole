@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepRole saved story fixture</title></head><body>
+<main class="app-shell" style="min-height:100vh;padding:12px"><h1 style="font-size:20px;margin:0 0 16px">DeepRole</h1><div id="story"></div></main>
+<script type="module">
+import React from "react"; import { createRoot } from "react-dom/client";
+import { StoryReview } from "/src/entrypoints/shared/StoryReview.tsx";
+import { storyReviewPage, storyReviewLastPage, storyReviewPreview } from "/tests/fixtures/story-review.ts";
+import "/src/entrypoints/sidepanel/styles.css";
+const locale = new URL(location.href).searchParams.get("locale") === "ru" ? "ru" : "en"; document.documentElement.lang = locale;
+const fixture = { reads: 0, previews: [], mode: "normal" }; window.storyReviewFixture = fixture;
+createRoot(document.querySelector("#story")).render(React.createElement(StoryReview, { locale,
+  onRead: async previous => { fixture.reads++; if (fixture.mode === "empty") { const p = storyReviewPage(locale); return { ...p, guard: { ...p.guard, revisionCount: 0 }, entries: [], next: null }; } return previous ? storyReviewLastPage(locale) : storyReviewPage(locale); },
+  onPreview: async (page, head) => { fixture.previews.push(head); if (fixture.mode === "conflict") throw Error("story-review-stale"); if (fixture.mode === "delay") await new Promise(resolve => { fixture.release = resolve; }); return { ...storyReviewPreview(locale, head), manualConflict: head === null }; },
+}));
+</script></body></html>

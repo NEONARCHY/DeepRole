@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><title>DeepRole neutral live protocol check</title></head><body>
+<h1>Neutral live protocol check</h1>
+<label>Source request<textarea id="source" rows="8" cols="100" readonly></textarea></label>
+<label>Profile request<textarea id="prompt" rows="20" cols="100" readonly></textarea></label>
+<label>Received reply<textarea id="reply" rows="12" cols="100"></textarea></label>
+<button id="check">Validate reply</button><pre id="result" role="status"></pre>
+<script type="module">
+import {castParts,castPrompt} from '../../src/core/cast-initialization';
+import {parseCastBatch,mergeCastBatches} from '../../src/core/cast-batches';
+const sources=[{id:'neutral-lore',title:'The lighthouse',text:'Leon, 28, is the protagonist and a photographer. Mira, 29, is a patient lighthouse keeper. Nora, 31, is a friendly guide. Leon wears a blue coat. Mira wears a green jacket. Nora wears a yellow raincoat. Leon and Mira are at the lighthouse gate; Nora is in the village. Leon kept his promise to help Mira repair the gate. They are friends. No other events or relationships are established.',at:1}];
+const job={id:'cast-neutral-live-20261010',worldId:'test',locale:'en',createdAt:1,updatedAt:1,phase:'reading',step:0,awaiting:false,repair:false,sources,signature:'test',cleanup:'pending',batchSize:1,actions:['neutral','happy','worried']};
+document.querySelector('#source').value=castPrompt(job);
+job.step=castParts(sources).length; document.querySelector('#prompt').value=castPrompt(job);
+document.querySelector('#check').onclick=()=>{try{const value=parseCastBatch(document.querySelector('#reply').value,job.id,sources,job.batchSize,job.draft);job.draft=mergeCastBatches(job.draft,value.draft,job.id,sources);document.querySelector('#result').textContent=JSON.stringify({valid:true,more:value.more,characters:job.draft.characters.map(c=>c.name)},null,2);if(value.more){job.step++;document.querySelector('#prompt').value=castPrompt(job);}}catch(error){document.querySelector('#result').textContent=String(error);}};
+</script></body></html>

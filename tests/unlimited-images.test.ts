@@ -30,9 +30,9 @@ it("preserves a >50 MB image collection through world, backup, encryption and re
   } finally { await repo.clear(); db.close(); await db.delete(); }
 }, 120_000);
 
-it("accepts more than 512 library photos, 64 stored emotion sets and 32 selfie collections", () => {
+it("accepts more than 512 library photos, 64 stored action sets and 32 selfie collections", () => {
   const images = Array.from({ length: 600 }, (_, index) => "data:image/png;base64," + btoa("image-" + index));
-  const sprites = Object.fromEntries(Array.from({ length: 80 }, (_, index) => ["mood-" + index, images]));
+  const sprites = Object.fromEntries(Array.from({ length: 80 }, (_, index) => ["action-" + index, images]));
   expect(validCharacterSheet({ ...EMPTY_CHARACTER, portraitLibrary: images, sprites })).toBe(true);
   const categories = Array.from({ length: 40 }, (_, index) => ({ id: "selfie-" + index, name: "Collection " + index, description: "", minTrust: 0, minAffinity: 0, images }));
   expect(validSelfieCategories(categories)).toBe(true);

@@ -5,9 +5,9 @@ const host=document.querySelector("#fixture");const shadow=host.attachShadow({mo
 const locale=new URLSearchParams(location.search).get("locale")||"en";document.documentElement.lang=locale;
 function Fixture(){
   const[value,setValue]=useState("0");const[disabled,setDisabled]=useState(false);
-  const options=Array.from({length:100},(_,i)=>React.createElement("option",{key:i,value:String(i),disabled:i===1},(locale==="ru"?"Эмоция ":"Emotion ")+String(i).padStart(2,"0")+(i===50?" — "+"long_unbroken_name_".repeat(8):"")));
-  const picker=React.createElement(Select,{"aria-label":locale==="ru"?"Эмоция":"Emotion",value,disabled,onChange:e=>{setValue(e.target.value);window.picked=e.target.value}},options);
-  return React.createElement("div",{className:"dr-root"},React.createElement("label",null,locale==="ru"?"Эмоция":"Emotion",picker),React.createElement("button",{onClick:()=>setDisabled(!disabled)},locale==="ru"?"Выключить":"Disable"));
+  const options=Array.from({length:100},(_,i)=>React.createElement("option",{key:i,value:String(i),disabled:i===1},(locale==="ru"?"Действие ":"Action ")+String(i).padStart(2,"0")+(i===50?" — "+"long_unbroken_name_".repeat(8):"")));
+  const picker=React.createElement(Select,{"aria-label":locale==="ru"?"Действие":"Action",value,disabled,onChange:e=>{setValue(e.target.value);window.picked=e.target.value}},options);
+  return React.createElement("div",{className:"dr-root"},React.createElement("label",null,locale==="ru"?"Действие":"Action",picker),React.createElement("button",{onClick:()=>setDisabled(!disabled)},locale==="ru"?"Выключить":"Disable"));
 }
 createRoot(root).render(React.createElement(Fixture));
 </script></body></html>

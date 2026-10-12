@@ -131,6 +131,7 @@ describe("organizational actions never restore stale lore", () => {
     expect((await repo.get<MemoryEntry>("entry", entry.id))?.entityIds).toEqual([]);
     await repo.lockVault();
     await expect(removeWorld(world.id, repo)).rejects.toThrow();
+    await expect(removeWorld(world.id, repo, { deleteLore: true })).rejects.toThrow();
     await repo.unlockVault("secret");
     expect(await repo.get("world", world.id)).toEqual(world);
   });

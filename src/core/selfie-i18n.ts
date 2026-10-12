@@ -15,7 +15,7 @@ const strings = {
   manualHint: ["Вы сами просите фото: кнопкой «Попросить селфи» или сообщением в чате. DeepSeek отыгрывает согласие или отказ и выбирает подборку; готовые снимки он не рисует.", "You request a photo yourself: use Ask for a selfie or ask in the chat. DeepSeek roleplays agreement or refusal and chooses a collection; it does not draw the uploaded photos."],
   library: ["Библиотека персонажа", "Character’s library"],
   libraryPhoto: ["Фото", "Photo"],
-  libraryHint: ["Выберите несколько фото и добавьте в эту подборку. Назначения эмоциям и постоянные референсы останутся на месте.", "Select photos to add to this collection. Emotion assignments and permanent references stay unchanged."],
+  libraryHint: ["Выберите несколько фото и добавьте в эту подборку. Назначения действиям и постоянные референсы останутся на месте.", "Select photos to add to this collection. Action assignments and permanent references stay unchanged."],
   libraryEmpty: ["В библиотеке этого персонажа пока нет фото. Загрузите их в «Библиотеку изображений» выше или нажмите «Добавить фото» в подборке.", "This character’s library has no photos yet. Upload them in Image library above, or use Add photos in the collection."],
   libraryMissing: ["Фото или подборка изменились. Откройте библиотеку ещё раз и повторите выбор.", "The photos or collection changed. Reopen the library and select again."],
   alreadyAdded: ["Уже в подборке", "Already in collection"],

@@ -1,0 +1,27 @@
+import { expect, test } from "@playwright/test";
+import { characterTab, closeSavedCharacter } from "./character-helpers";
+for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`lazy separate portraits ${locale} ${width}`, async ({ page }, info) => {
+  test.setTimeout(60000); await page.setViewportSize({ width, height: 900 });
+  await page.goto(`/tests/fixtures/photo-assets.html?locale=${locale}`);
+  await expect(page.locator(".dr-character-row")).toBeVisible();
+  expect(await page.evaluate(async () => { const f=(window as any).photoFixture; return { count:await f.db.photos.count(),json:JSON.stringify(await f.repo.rawRecords()) }; })).toMatchObject({ count:60,json:expect.not.stringContaining("data:image") });
+  await page.locator(".dr-character-row").click(); const dialog=page.getByRole("dialog"); await characterTab(dialog,"images",locale);
+  const grid=dialog.locator(".dr-portrait-library-grid"); await grid.scrollIntoViewIfNeeded();
+  await expect.poll(()=>grid.locator('img[src^="blob:"]').count()).toBeGreaterThan(0);
+  expect(await grid.locator('img[src^="blob:"]').count()).toBeLessThan(60);
+  await grid.locator(".dr-library-view").last().click();
+  const viewer=page.locator('[data-deeprole-photo-viewer]'); await expect(viewer.getByRole("dialog")).toBeVisible();
+  await expect.poll(()=>viewer.locator("img").evaluate(image=>(image as HTMLImageElement).naturalHeight)).toBe(1440);
+  await viewer.getByRole("button",{name:locale==="ru"?"Закрыть изображение":"Close image",exact:true}).click();
+  await grid.evaluate(element=>element.scrollTop=element.scrollHeight);
+  await expect.poll(()=>grid.locator('img[src^="blob:"]').count()).toBeGreaterThan(0);
+  await characterTab(dialog,"profile",locale); await dialog.getByLabel(locale==="ru"?"Имя":"Name",{exact:true}).fill("Mira renamed");
+  await dialog.getByRole("button",{name:locale==="ru"?"Сохранить персонажа":"Save character",exact:true}).click(); await closeSavedCharacter(dialog,locale);
+  const result=await page.evaluate(async()=>{const f=(window as any).photoFixture,rows=await f.repo.rawRecords(),pack=await f.export();return {name:rows.find((r:any)=>r.id==="p").data.name,count:await f.db.photos.count(),internal:JSON.stringify(rows).includes("data:image"),portable:JSON.stringify(pack).includes("deeprole-photo:")}});
+  expect(result).toEqual({name:"Mira renamed",count:60,internal:false,portable:false});
+  const vault=await page.evaluate(async()=>{const f=(window as any).photoFixture,person=await f.repo.get("entity","p"),address=person.characterSheet.sprites.neutral,original=await f.repo.readPhoto(address);await f.repo.enableVault("photo-vault");const encrypted=await f.db.photos.get(address);await f.repo.lockVault();let denied=false;try{await f.repo.readPhoto(address)}catch{denied=true}await f.repo.unlockVault("photo-vault");const same=await f.repo.readPhoto(address)===original;await f.repo.disableVault();const plain=await f.db.photos.get(address);return {denied,same,encrypted:!!encrypted.encrypted&&!encrypted.data,plain:!!plain.data&&!plain.encrypted}});
+  expect(vault).toEqual({denied:true,same:true,encrypted:true,plain:true});
+  await page.reload(); await expect(page.locator(".dr-character-row")).toContainText("Mira renamed");
+  await page.screenshot({path:info.outputPath(`photos-${locale}-${width}.png`),fullPage:true});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+});

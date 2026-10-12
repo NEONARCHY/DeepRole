@@ -5,6 +5,7 @@ import type { Illustration } from "../core/image-generation";
 import { generatedSelfieCategory, selfieGate } from "../core/selfies";
 import { ImageApiError } from "../adapters/image/transport";
 import type { DeepRoleRepository } from "./repository";
+import { archiveStoryPhoto } from "./story-effect-replay";
 
 const approvalKey = (target: ImageTarget, photo: ScenePhoto) => "deeprole_selfie_approval_" + JSON.stringify([target.worldId, target.chatId, photo.imageKey]);
 export const selfieIllustrationId = (photo: ScenePhoto) => "selfie:" + photo.imageKey;
@@ -59,6 +60,7 @@ export async function finishSelfie(repo: DeepRoleRepository, target: ImageTarget
       if (p.worldId !== target.worldId || p.messageKey !== target.messageKey || p.entityId !== photo.entityId || p.turnKey !== photo.turnKey || !p.generation) return p;
       changed = true; return { ...p, generation: { ...p.generation, ...patch, updatedAt: Date.now() } };
     });
-    return { records: changed ? [{ kind: "binding" as const, id: current.id, data: { ...current, scenePhotos } }] : [], removed: [], result: undefined };
+    const archived = changed ? (scenePhotos ?? []).filter(p => p.worldId === target.worldId && p.messageKey === target.messageKey && p.entityId === photo.entityId && p.turnKey === photo.turnKey).flatMap(p => archiveStoryPhoto(records, p)) : [];
+    return { records: changed ? [{ kind: "binding" as const, id: current.id, data: { ...current, scenePhotos } }, ...archived] : [], removed: [], result: undefined };
   });
 }

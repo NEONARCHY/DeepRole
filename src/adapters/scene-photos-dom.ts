@@ -1,6 +1,6 @@
 import type { ChatBinding, Locale, SceneEntity, ScenePhoto } from "../core/types";
 import { SELFIE_DELAY, resolveScenePhoto } from "../core/selfies";
-import { nativeMessageIdentity, nativeMessageRows, isUserMessage } from "./deepseek-message-dom";
+import { nativeMessageIdentity, nativeMessageRows, isUserMessage, canonicalNativeMessageIdentity } from "./deepseek-message-dom";
 import { isReplacedReply } from "../core/reply-recovery";
 import { characterTurnKey, parseCharacterTurn } from "../core/characters";
 import { openPortraitViewer, photoCopy } from "./portrait-viewer";
@@ -26,17 +26,17 @@ export class ScenePhotosPresenter {
     const records = enabled && binding && worldId ? (binding.scenePhotos ?? []).filter(p => p.worldId === worldId) : [];
     if (!records.length) { this.clear(); return; }
     const resolveImage = (photo: ScenePhoto, person?: SceneEntity) => photo.generation ? options.illustrations?.find(image => image.id === photo.generation?.illustrationId && image.entityId === photo.entityId && image.worldId === photo.worldId && image.chatId === binding?.chatId && image.messageKey === photo.messageKey)?.image : resolveScenePhoto(photo, person);
-    const byMessage = new Map<string, typeof records>(); for (const photo of records) byMessage.set(photo.messageKey, [...(byMessage.get(photo.messageKey) ?? []), photo]);
+    const byMessage = new Map<string, typeof records>(); for (const photo of records) { const key = canonicalNativeMessageIdentity(photo.messageKey); byMessage.set(key, [...(byMessage.get(key) ?? []), photo]); }
     const hasFallback = records.some(photo => photo.messageKey.startsWith("turn:"));
     const wanted = new Set<Element>(); let wait = Infinity;
     for (const row of nativeMessageRows(this.doc).filter(row => !isUserMessage(row) && !row.hasAttribute("data-deeprole-service-reply"))) {
-      const identity = nativeMessageIdentity(row); if (identity && !byMessage.has(identity) && !hasFallback) continue;
+      const identity = nativeMessageIdentity(row); if (identity && !byMessage.has(canonicalNativeMessageIdentity(identity)) && !hasFallback) continue;
       const raw = row.cloneNode(true) as HTMLElement;
       raw.querySelectorAll("[data-deeprole-scene-photos], .ds-think-content, .ds-think-content-wrapper, [data-testid*='thinking'], [data-testid*='reasoning']").forEach(n => n.remove());
       if (isReplacedReply(raw.textContent ?? "")) continue;
       const turn = parseCharacterTurn(raw.textContent ?? ""); const turnKey = turn ? characterTurnKey(turn) : undefined;
       const key = nativeMessageIdentity(row) ?? (turnKey ? "turn:" + turnKey : undefined);
-      const photos = (byMessage.get(key ?? "") ?? []).filter(p => !turnKey || p.turnKey === turnKey);
+      const photos = (byMessage.get(canonicalNativeMessageIdentity(key ?? "")) ?? []).filter(p => !turnKey || p.turnKey === turnKey);
       if (!photos.length) continue;
       let host = row.querySelector<HTMLElement>(":scope > [data-deeprole-scene-photos]");
       const signature = JSON.stringify(photos.map(photo => {

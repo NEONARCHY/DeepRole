@@ -8,7 +8,7 @@ export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   vite: () => ({ define: { "import.meta.env.VITE_BUILD_TIME": JSON.stringify(new Date().toISOString()) } }),
   zip: {
-    excludeSources: ["coverage/**", "test-results/**", "test-results-*/**", "test-results-*.png", "playwright-report/**", "tests/**", ".lazyweb/**", "private-assets/**", "downloads/*.zip"],
+    excludeSources: ["coverage/**", ".vitest/**", "test-results/**", "test-results-*/**", "test-results-*.png", "playwright-report/**", "tests/**", ".lazyweb/**", "private-assets/**", "downloads/*.zip"],
   },
   manifest: ({ browser }) => ({
     name: "__MSG_extName__",

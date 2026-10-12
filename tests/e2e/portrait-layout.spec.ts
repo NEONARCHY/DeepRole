@@ -7,7 +7,7 @@ async function cast(page: Page, count = 4) {
     const current = (window as any).getCast();
     const others = Array.from({ length: count - 2 }, (_, index) => ({ ...current.entities[1], id: `extra-${index}`, name: index === 0 ? "Leon" : `Visitor ${index}`, characterSheet: { ...current.entities[1].characterSheet, sprites: {} } }));
     const entities = [...current.entities, ...others];
-    (window as any).setCast({ entities, scene: { ...current.scene, presentIds: entities.map((p: any) => p.id), partnerIds: ["mira", "extra-0"], partnerId: "mira", states: { ...current.scene.states, "extra-0": { ...current.scene.states.mira, emotion: "worried", stats: [{ label: "Energy", value: "Tired" }, { label: "Clues", value: "2" }] } } } });
+    (window as any).setCast({ entities, scene: { ...current.scene, presentIds: entities.map((p: any) => p.id), partnerIds: ["mira", "extra-0"], partnerId: "mira", states: { ...current.scene.states, "extra-0": { ...current.scene.states.mira, action: "worried", stats: [{ label: "Energy", value: "Tired" }, { label: "Clues", value: "2" }] } } } });
   }, count);
 }
 async function drag(page: Page, handle: Locator, dx: number, dy: number) {
@@ -42,7 +42,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   await page.evaluate(speech => {
     const current = (window as any).getCast();
     (window as any).setCast({ scene: { ...current.scene, states: { ...current.scene.states,
-      hero: { ...current.scene.states.hero, emotion: speech } } } });
+      hero: { ...current.scene.states.hero, action: speech } } } });
   }, speech);
   await expect(hero.locator("img")).toHaveAttribute("src", images.talking);
   await expect(hero.locator("small")).toHaveText(speech);
@@ -54,7 +54,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   await page.evaluate(() => {
     const current = (window as any).getCast();
     (window as any).setCast({ scene: { ...current.scene, states: { ...current.scene.states,
-      hero: { ...current.scene.states.hero, emotion: "neutral" } } } });
+      hero: { ...current.scene.states.hero, action: "neutral" } } } });
   });
   await expect(hero.locator("img")).toHaveAttribute("src", images.neutral);
   await expect(mira.locator("small")).toHaveText(npcBefore);

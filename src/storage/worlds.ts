@@ -1,9 +1,11 @@
 import { createId } from "../core/id";
+import { normalizeActionRecord } from "../core/action-compat";
+import { hasInternalPhotoAddresses } from "../core/photo-assets";
 import { validDataRecord } from "../core/record-validation";
 import { memoryWorld } from "../core/scene";
 import type { DataRecord, MemoryBook, MemoryEntry, SceneEntity, ChatBinding, HandoffSnapshot, WorldProfile } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
-import { emotionsFor } from "../core/characters";
+import { actionsFor } from "../core/characters";
 import { getSettings } from "./settings";
 import { importFileTooLarge } from "../core/import-limits";
 import type { Illustration } from "../core/image-generation";
@@ -13,12 +15,15 @@ export interface WorldPackage { format: "deeprole-world"; version: 1; records: D
 export async function exportWorld(worldId: string, repo: DeepRoleRepository = repository): Promise<WorldPackage> {
   const all = await repo.rawRecords();
   const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
-  const records = all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
+  const records = await repo.portableRecords(all.filter((r) => r.kind === "world" ? r.id === worldId : r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : ["book", "entity", "template", "illustration"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId));
+  // An explicit world export is a reusable canon package, not a live playthrough.
+  // Full backups retain this origin; a portable world must work in a new chat.
+  for (const row of records) if (row.kind === "entity") delete (row.data as SceneEntity).playthroughChatId;
   if (!records.some((r) => r.kind === "world")) throw new Error("invalidBackup");
   const entryIds = new Set(records.filter((r) => r.kind === "entry").map((r) => r.id));
   const world = records.find(r => r.kind === "world")!.data as WorldProfile;
-  const emotions = emotionsFor(world.characterEmotions ?? (await getSettings()).characterEmotions);
-  return { format: "deeprole-world", version: 1, records: records.map((r) => r.kind === "world" ? { ...r, data: { ...r.data, characterEmotions: [...emotions] } } : r.kind === "entry" ? { ...r, data: { ...r.data, worldId, links: (r.data as MemoryEntry).links?.filter((link) => entryIds.has(link.targetId) && link.targetId !== r.id) } } : r) };
+  const actions = actionsFor(world.characterActions ?? (await getSettings()).characterActions);
+  return { format: "deeprole-world", version: 1, records: records.map((r) => r.kind === "world" ? { ...r, data: { ...r.data, characterActions: [...actions] } } : r.kind === "entry" ? { ...r, data: { ...r.data, worldId, links: (r.data as MemoryEntry).links?.filter((link) => entryIds.has(link.targetId) && link.targetId !== r.id) } } : r) };
 }
 
 export function parseWorldPackage(text: string): WorldPackage {
@@ -30,9 +35,10 @@ export function parseWorldPackage(text: string): WorldPackage {
 /** The file picker already parsed the format once; validate it without reparsing large image JSON. */
 export function parseWorldPackageData(input: unknown, bytes: number): WorldPackage {
   if (importFileTooLarge(bytes, "world")) throw new Error("worldTooLarge");
-  const value = input as WorldPackage;
+  const raw = input as WorldPackage;
+  const value = raw && Array.isArray(raw.records) ? { ...raw, records: raw.records.map(normalizeActionRecord) } : raw;
   if (value?.format !== "deeprole-world" || value.version !== 1 || !Array.isArray(value.records)) throw new Error("invalidBackup");
-  if (value.records.some((r) => !validDataRecord(r))) throw new Error("invalidBackup");
+  if (value.records.some((r) => !validDataRecord(r) || hasInternalPhotoAddresses(r.kind, r.data))) throw new Error("invalidBackup");
   const worldRecords = value.records.filter((r) => r.kind === "world");
   if (worldRecords.length !== 1) throw new Error("invalidBackup");
   const worldId = worldRecords[0]!.id;
@@ -94,12 +100,20 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
   });
 }
 
-// Deleting organizational metadata never deletes or rewrites lore.
-export async function removeWorld(worldId: string, repo: DeepRoleRepository = repository) {
+// Default: remove the organization, retain lore. Explicit deleteLore purges its scope.
+export async function removeWorld(worldId: string, repo: DeepRoleRepository = repository, options: { deleteLore?: boolean } = {}) {
   await repo.updateRecords((all) => {
     const books = all.filter((r) => r.kind === "book").map((r) => r.data as MemoryBook);
-    const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : ["entity","template", "proposal", "change", "illustration", "cast"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
-    const changed = all.filter((r) => !removed.includes(r) && (r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : "worldId" in r.data && r.data.worldId === worldId)).map((r) => ({ ...r, data: { ...(r.data as MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot), worldId: null, entityIds: [], focusIds: [], updatedAt: Date.now() } }));
+    if(options.deleteLore && !all.some(r => r.kind === "world" && r.id === worldId)) throw new Error("memory-conflict");
+    const bookIds = new Set(books.filter(b => b.worldId === worldId).map(b => b.id));
+    const removed = all.filter((r) => r.kind === "world" ? r.id === worldId : options.deleteLore && r.kind !== "binding"
+      ? r.kind === "entry" ? memoryWorld(r.data as MemoryEntry,books) === worldId
+        : "worldId" in r.data && r.data.worldId === worldId || "bookId" in r.data && !!r.data.bookId && bookIds.has(r.data.bookId)
+      : ["entity","template", "proposal", "change", "illustration", "cast"].includes(r.kind) && "worldId" in r.data && r.data.worldId === worldId);
+    const changed: DataRecord[] = all.filter((r) => !removed.includes(r) && (r.kind === "entry" ? memoryWorld(r.data as MemoryEntry, books) === worldId : "worldId" in r.data && r.data.worldId === worldId)).map((r) => r.kind === "story" || r.kind === "service" || r.kind === "dispatch"
+      // Detach the immutable historical scope; never erase historical participants.
+      ? { ...r, data: { ...(r.data as import("../core/story-records").StoryRecord | import("../core/service-operations").ServiceOperation | import("../core/story-dispatch-capture").StoryDispatchCapture), worldId: null, updatedAt: Math.max((r.data as { updatedAt: number }).updatedAt, Date.now()) } }
+      : { ...r, data: { ...(r.data as MemoryBook | MemoryEntry | ChatBinding | HandoffSnapshot), worldId: null, entityIds: [], focusIds: [], updatedAt: Date.now() } });
     for (const r of all.filter(r => r.kind === "binding")) {
       const binding = r.data as ChatBinding;
       if (!binding.characterScenes?.[worldId] && !binding.portraitLayouts?.[worldId] && !binding.illustrationAttempts?.some(a => a.worldId === worldId) && !binding.scenePhotos?.some(p => p.worldId === worldId)) continue;
@@ -112,7 +126,32 @@ export async function removeWorld(worldId: string, repo: DeepRoleRepository = re
       if (binding.scenePhotos) (target.data as ChatBinding).scenePhotos = binding.scenePhotos.filter(p => p.worldId !== worldId);
       if (!changed.some(c => c.id === r.id)) changed.push(target as typeof changed[number]);
     }
-    return { records: changed, removed, result: undefined };
+    if(options.deleteLore) {
+      const entryIds = new Set(removed.filter(r=>r.kind==='entry').map(r=>r.id));
+      const entityIds = new Set(removed.filter(r=>r.kind==='entity').map(r=>r.id));
+      const snapshotIds = new Set(removed.filter(r=>r.kind==='snapshot').map(r=>r.id));
+      for(const record of all.filter(r=>!removed.includes(r))) {
+        const target = changed.find(r=>r.kind===record.kind && r.id===record.id) ?? { ...record, data: { ...record.data } };
+        let dirty = changed.includes(target);
+        if(record.kind==='entry') {
+          const e=target.data as MemoryEntry;
+          if(e.links?.some(l=>entryIds.has(l.targetId))) { e.links=e.links.filter(l=>!entryIds.has(l.targetId));dirty=true; }
+          if(e.entityIds?.some(id=>entityIds.has(id))) { e.entityIds=e.entityIds.filter(id=>!entityIds.has(id));dirty=true; }
+        }
+        if(record.kind==='binding') {
+          const b=target.data as ChatBinding;
+          if(b.bookId && bookIds.has(b.bookId)) { b.bookId=null;dirty=true; }
+          if(b.focusIds?.some(id=>entityIds.has(id))) { b.focusIds=b.focusIds.filter(id=>!entityIds.has(id));dirty=true; }
+          if(b.continuationSnapshotId && snapshotIds.has(b.continuationSnapshotId)) { delete b.continuationSnapshotId;dirty=true; }
+          if(b.memoryOverrides) {
+            const ids=[...b.memoryOverrides.includedIds,...b.memoryOverrides.excludedIds];
+            if(ids.some(id=>entryIds.has(id))) { b.memoryOverrides={includedIds:b.memoryOverrides.includedIds.filter(id=>!entryIds.has(id)),excludedIds:b.memoryOverrides.excludedIds.filter(id=>!entryIds.has(id))};dirty=true; }
+          }
+        }
+        if(dirty) { if('updatedAt' in target.data) target.data.updatedAt=Date.now(); if(!changed.includes(target)) changed.push(target); }
+      }
+    }
+    return { records: changed, removed, result: undefined, deleteOrphanedPhotos:options.deleteLore === true };
   });
 }
 

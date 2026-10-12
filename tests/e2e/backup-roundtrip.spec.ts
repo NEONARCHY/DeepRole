@@ -33,7 +33,7 @@ async function exportedCopy(page: Page, locale: "ru" | "en", encrypted = false) 
   return { file, text: await readFile(file, "utf8") };
 }
 async function records(page: Page) {
-  return page.evaluate(async () => (await import("/src/storage/repository.ts" as string)).repository.rawRecords());
+  return page.evaluate(async () => (await import("/src/storage/repository.ts" as string)).repository.portableRecords());
 }
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) for (const route of ["settings", "lore"] as const) {

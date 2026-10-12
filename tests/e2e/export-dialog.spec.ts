@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { setEnglish } from "./helpers/settings";
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
-  test(`unified export transfers emotions and images ${locale} ${width}`, async ({ page }, info) => {
+  test(`unified export transfers actions and images ${locale} ${width}`, async ({ page }, info) => {
     const l = (ru: string, en: string) => locale === "ru" ? ru : en;
     await page.setViewportSize({ width, height: 560 });
     await page.goto("/tests/fixtures/sidepanel.html?world");
@@ -12,7 +12,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
       const { repository } = await import("/src/storage/repository.ts" as string);
       const { EMPTY_CHARACTER } = await import("/src/core/characters.ts" as string);
       const world = (await repository.list("world"))[0]!;
-      await repository.put("world", { ...world, characterEmotions: ["neutral", "ухмылка", "laugh"] });
+      await repository.put("world", { ...world, characterActions: ["neutral", "ухмылка", "laugh"] });
       await repository.put("entity", { id: "export-person", worldId: world.id, name: "Mira", kind: "character", description: "Original", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, sprites: { laugh: "data:image/png;base64,YQ==" } } });
     });
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
@@ -32,7 +32,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     const download = await downloadPromise;
     const pack = JSON.parse(await readFile((await download.path())!, "utf8"));
     expect(pack.format).toBe("deeprole-world");
-    expect(pack.records.find((r: any) => r.kind === "world").data.characterEmotions).toEqual(["neutral", "ухмылка", "laugh"]);
+    expect(pack.records.find((r: any) => r.kind === "world").data.characterActions).toEqual(["neutral", "ухмылка", "laugh"]);
     expect(pack.records.find((r: any) => r.id === "export-person").data.characterSheet.sprites.laugh).toBe("data:image/png;base64,YQ==");
     expect(pack.records.some((r: any) => r.kind === "binding")).toBe(false);
     await expect(dialog).toHaveCount(0);

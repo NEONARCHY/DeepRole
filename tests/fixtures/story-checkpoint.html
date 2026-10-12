@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepRole starting point fixture</title></head><body>
+<main class="app-shell" style="min-height:100vh;padding:12px"><h1 style="font-size:20px;margin:0 0 16px">DeepRole</h1><div id="checkpoint"></div></main>
+<script type="module">
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { StoryCheckpoint } from "/src/entrypoints/shared/StoryCheckpoint.tsx";
+import { checkpointReview, savedCheckpointReview } from "/tests/fixtures/story-checkpoint.ts";
+import "/src/entrypoints/sidepanel/styles.css";
+const locale = new URL(location.href).searchParams.get("locale") === "ru" ? "ru" : "en"; document.documentElement.lang = locale;
+const fixture = { reads: 0, saves: [], mode: "normal", review: checkpointReview(locale) }; window.checkpointFixture = fixture;
+createRoot(document.querySelector("#checkpoint")).render(React.createElement(StoryCheckpoint, { locale,
+  onRead: async () => { fixture.reads++; if (fixture.mode === "empty") return { ...fixture.review, candidates: [], availableCount: 0 }; if (fixture.mode === "existing") return savedCheckpointReview(locale); return fixture.review; },
+  onSave: async (review, requestId) => { fixture.saves.push({ review, requestId }); if (fixture.mode === "conflict") throw Error("story-manual-conflict"); if (fixture.mode === "delay") await new Promise(resolve => { fixture.release = resolve; }); },
+}));
+</script></body></html>

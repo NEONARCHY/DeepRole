@@ -15,7 +15,7 @@ export function completeCastReply(raw: string, request: string): boolean {
   if (body.startsWith(fence) && body.endsWith(fence)) body = body.slice(body.indexOf("\n") + 1, -3).trim();
   try {
     const data = JSON.parse(body);
-    return !!data && data.version === 1 && data.request === request && Array.isArray(data.characters) && data.characters.length > 0 && data.characters.length <= 40 && Array.isArray(data.present) && Array.isArray(data.partners) && Array.isArray(data.warnings);
+    return !!data && data.version === 1 && data.request === request && Array.isArray(data.characters) && data.characters.length > 0 && Array.isArray(data.present) && Array.isArray(data.partners) && Array.isArray(data.warnings);
   } catch { return false; }
 }
 

@@ -10,10 +10,19 @@ import {mutateCastJob} from "/src/storage/cast-initialization.ts";
 import {CastCoordinator} from "/src/adapters/cast-coordinator.ts";
 import "/src/entrypoints/sidepanel/styles.css";
 const qs=new URLSearchParams(location.search),locale=qs.get("locale")??"ru";
+const inChat=qs.get("surface")==="chat";
+if(inChat){
+ await import("/src/entrypoints/content/page-widget.css");
+ const native=document.createElement("button");native.id="native-chat";native.textContent="Native chat";native.style.cssText="position:fixed;inset:0;width:100%;height:100%;z-index:0";
+ window.castOutsideClicks=0;native.onclick=()=>window.castOutsideClicks++;document.body.prepend(native);
+}
 if(qs.get("persist")!=="1"||!await repository.get("cast","cast-fixture")){
  await repository.clear();await repository.mergeRecords(castRecords());const records=await repository.rawRecords();
- const job={id:"cast-fixture",worldId:"w",locale,createdAt:Date.now(),updatedAt:Date.now(),phase:qs.get("phase")??"ready",error:"model-refusal",step:1,awaiting:false,repair:false,sources:castSources(records,"w"),signature:castSignature(records,"w"),draft:castDraft("cast-fixture"),cleanup:qs.get("cleanup")??"done",chatId:qs.get("chatId")??(qs.get("cleanup")?"already-deleted":undefined),chatUrl:qs.get("chatUrl")??undefined};
+ const job={id:"cast-fixture",worldId:"w",locale,createdAt:Date.now(),updatedAt:Date.now(),phase:qs.get("phase")??"ready",error:qs.get("error")??"partial-reply",step:1,awaiting:false,repair:false,sources:castSources(records,"w"),signature:castSignature(records,"w"),draft:castDraft("cast-fixture"),cleanup:qs.get("cleanup")??"done",chatId:qs.get("chatId")??(qs.get("cleanup")?"already-deleted":undefined),chatUrl:qs.get("chatUrl")??undefined};
  await repository.put("cast",job);
+ if(qs.get("technical")==="1")await mutateCastJob(job.id,j=>({...j,draft:{...j.draft,characters:j.draft.characters.map((person,index)=>index?person:{...person,reason:"Протагонист по флагу protagonist:true в entity_example-123 и entry_example-456. Отношения null; связи описаны в state.",sheet:{...person.sheet,attributes:[{id:"self_control",label:locale==="ru"?"Самоконтроль":"Self-control",initial:78,low:locale==="ru"?"Легко выходит из себя":"Loses composure easily",high:locale==="ru"?"Сохраняет спокойствие под давлением":"Stays calm under pressure",cap:3},{id:"fitness",label:locale==="ru"?"Физформа":"Fitness",initial:75,low:"",high:"",cap:3}]}})}}));
+ if(qs.get("notices")==="1")await mutateCastJob(job.id,j=>({...j,draft:{...j.draft,warnings:locale==="ru"?["Mira ещё не подготовлена; она остаётся на следующий батч.","Ремонт ворот запланирован, но не выполнен.","Ремонт ворот только запланирован и не выполнен.","Романтических отношений в лоре нет.","Возраст персонажа неоднозначен."]:["Mira is not yet prepared.","Gate repair is planned but not completed.","The gate repair is only planned and not done.","There are no romantic relationships in the lore.","Character age is ambiguous."]}}));
+ if(qs.get("diagnostics")==="1")await mutateCastJob(job.id,j=>({...j,reasoning:"unverified",diagnostics:[{requestId:j.id,step:1,repair:false,code:"invalid-result",stage:"parse",at:1791583200000,prepared:0,replyLength:2400,reasoning:"unverified",details:[{path:"characters[1].state",rule:"required object",actual:"missing"}],issues:["characters[1].state is required."]}]}));
 }
 const coordinator=new CastCoordinator(repository);window.castMessages=[];
 window.castOpened=[];window.chrome.tabs={get:async()=>{throw new Error("missing");},create:async options=>{window.castOpened.push(options);return{id:50,url:options.url};}};
@@ -26,5 +35,5 @@ window.chrome.runtime.sendMessage=async m=>{
 const compact=qs.get("compact")==="1";
 window.castUpdate=async phase=>mutateCastJob("cast-fixture",job=>({...job,phase}));
 window.castSnapshot=async()=>({job:await repository.get("cast","cast-fixture"),records:(await repository.rawRecords()).filter(r=>r.kind!=="cast")});
-createRoot(document.getElementById("root")).render(React.createElement("main",{className:"dr-root",style:{minHeight:"100vh",padding:12}},compact?React.createElement("section",{className:"dr-characters",style:{position:"absolute",left:qs.get("left")??"40px",top:qs.get("top")??"180px",width:224,minHeight:300,boxSizing:"border-box"}},React.createElement("header",null,React.createElement("strong",null,locale==="ru"?"Персонажи":"Characters"),React.createElement(CastSetup,{worldId:"w",locale,compact})),React.createElement("p",null,"Leon · Mira")):React.createElement(CastSetup,{worldId:"w",locale})));
+createRoot(document.getElementById("root")).render(React.createElement("main",{className:"dr-root",style:inChat?undefined:{minHeight:"100vh",padding:12}},compact?React.createElement("section",{className:"dr-characters",style:{position:inChat?"fixed":"absolute",left:qs.get("left")??"40px",top:qs.get("top")??"180px",width:224,minHeight:300,boxSizing:"border-box"}},React.createElement("header",null,React.createElement("strong",null,locale==="ru"?"Персонажи":"Characters"),React.createElement(CastSetup,{worldId:"w",locale,compact})),React.createElement("p",null,"Leon · Mira")):React.createElement(CastSetup,{worldId:"w",locale})));
 </script></body></html>

@@ -39,7 +39,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   await characterTab(dialog, "images", locale);
   await library.locator("select").selectOption("neutral");
   await library.getByRole("button", { name: locale === "ru" ? "Выбрать видимые" : "Select visible", exact: true }).click();
-  await library.getByRole("button", { name: locale === "ru" ? "Назначить эмоции" : "Assign to emotion", exact: true }).click();
+  await library.getByRole("button", { name: locale === "ru" ? "Назначить действия" : "Assign to action", exact: true }).click();
   await expect(dialog.locator(".dr-portrait-variations img")).toHaveCount(65);
   await expect(library.getByRole("alert")).toHaveCount(0);
   // The upload control remains enabled beyond the former 48-image limit.

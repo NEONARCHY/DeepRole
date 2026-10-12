@@ -63,6 +63,16 @@ it("never folds the answer when a wrapper interleaves final Markdown", () => {
   document.body.innerHTML = '<article data-role="assistant"><div class="ds-think-content-wrapper"><div class="ds-think-content">Private test thoughts.</div><div class="ds-assistant-message-main-content">Visible story.</div></div></article>';
   start(); expect(document.querySelector<HTMLElement>(".ds-think-content-wrapper")!.style.display).toBe(""); expect(document.querySelector<HTMLElement>(".ds-assistant-message-main-content")!.style.display).toBe("");
 });
+it("folds Markdown reasoning during streaming but preserves the separate final answer", async () => {
+  const { row, body, button } = reply();
+  row.querySelector('.ds-think-content')!.innerHTML = '<div class="ds-markdown"><p>Formatted test thoughts</p></div>';
+  start(); expect(body.style.display).toBe('none');
+  expect(row.querySelector<HTMLElement>(':scope>.ds-markdown')!.style.display).toBe('');
+  body.style.display='block';button.setAttribute('aria-expanded','true');
+  row.querySelector('.ds-think-content .ds-markdown')!.append(' More streamed thoughts');
+  await new Promise(resolve=>setTimeout(resolve,0));expect(body.style.display).toBe('none');
+  button.click();controller.sync();expect(body.style.display).toBe('block');
+});
 it("restores the native view and disconnects observation on disposal", async () => {
   const { button, body } = reply(); start(); controller.dispose(); expect(body.style.display).toBe("block");
   button.setAttribute("aria-expanded", "true"); body.style.display = "grid"; await new Promise(resolve => setTimeout(resolve, 0)); expect(body.style.display).toBe("grid");
