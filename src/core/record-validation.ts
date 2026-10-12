@@ -1,6 +1,7 @@
 import { validOldChatNoticeReceipt, chatId as validNoticeChatId } from "./old-chat-notice";
 import { validWorldGame } from "./world-game";
 import { validStoryAutomationPolicy } from "./story-automation";
+import { validMemoryBatchPolicy } from "./story-memory-batch";
 import { validateLoreMapLayout } from "./lore-categories";
 import { validLoreChange, validMemoryEntry, validMemoryProposal } from "./proposal-validation";
 import type { DataRecord, DeepRoleSettings } from "./types";
@@ -45,6 +46,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
     case "story": return validStoryRecord(d);
     case "illustration": return validIllustration(d);
     case "world":
+      if (d.storyMemoryBatch !== undefined && !validMemoryBatchPolicy(d.storyMemoryBatch)) return false;
       if (d.storyAutomation !== undefined && !validStoryAutomationPolicy(d.storyAutomation)) return false;
       if (d.sharedGame !== undefined && !validWorldGame(d.sharedGame) || d.sharedGameArchives !== undefined && (!Array.isArray(d.sharedGameArchives) || !d.sharedGameArchives.every(validWorldGame))) return false;
       if (d.autoPrepareCharacters !== undefined && typeof d.autoPrepareCharacters !== "boolean") return false;

@@ -30,7 +30,7 @@ export async function approveStoryFact(input: StoryFactApproval, repo: DeepRoleR
     if (!event?.memory || !revision || revision.storyPurpose === "out-of-character" || !projection.revisionIds.includes(revision.id)) throw Error("story-binding-conflict");
     const memory = { ...event.memory, text: input.text.trim(), ...(event.memory.text !== input.text.trim() ? { edited: true } : {}) };
     if (memory.claim && event.memory.text !== input.text.trim()) memory.claim = { ...memory.claim, value: input.text.trim() };
-    if (!validStoryFact({ text: memory.text, quote: memory.quote, kind: memory.kind, ...(memory.claim ? { claim: memory.claim } : {}) })) throw Error("story-review-invalid");
+    if (!validStoryFact({ text: memory.text, quote: memory.quote, kind: memory.kind, ...(memory.task ? {task:memory.task} : {}), ...(memory.replaces ? {replaces:memory.replaces} : {}), ...(memory.claim ? { claim: memory.claim } : {}) })) throw Error("story-review-invalid");
     const updated: StoryEvent = { ...event, memory, ...(event.automation ? { automation: { ...event.automation, status: input.accept ? "saved" as const : "dismissed" as const, reason: "manual" as const, at: Date.now() } } : {}), updatedAt: Date.now() };
     const changed = [...all.filter(r => !(r.kind === "story" && r.id === event.id)), storyRow(updated)];
     // Removing an explicitly resolved old proposal is a durable dismissal.

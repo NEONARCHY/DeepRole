@@ -1,7 +1,8 @@
 import { createId } from "../core/id";
 import { EMPTY_CHARACTER, EMPTY_STATUS } from "../core/characters";
 import { profileValues, PROFILE_FIELDS, type ProfileValues } from "../core/character-profile";
-import { automationReviews, normalizedFact } from "../core/story-automation";
+import { automationReviews, normalizedFact, storyFactConflicts } from "../core/story-automation";
+import { storyFactIdentity } from "../core/story-memory-lifecycle";
 import { validAutomationReviewRead, validAutomationReviewDecision, type AutomationReviewRead, type AutomationReviewDecision, type AutomationReviewPage } from "../core/story-automation-review";
 import { storyRow, type StoryEvent } from "../core/story-records";
 import { storyProfileEntities, appendProfileText } from "../core/story-profile-view";
@@ -24,7 +25,8 @@ function page(f: ReturnType<typeof scope>, query: string): AutomationReviewPage 
     items: f.reviews.pending.slice(0,8).map(id => {
       const e = f.stored.find(r => r.id === id) as StoryEvent, profile = e.profileSupplement?.profile ?? e.characterProfile;
       return { id, type: e.memory ? "fact" : e.profileSupplement ? "profile" : "person", name: e.characterCandidate?.name ?? profile?.name ?? "", text: e.memory?.text ?? "", quote: e.quote, reason: e.automation!.reason,
-        fields: Object.fromEntries(PROFILE_FIELDS.flatMap(k => profile?.proposal[k]?.status === "found" ? [[k, profile.proposal[k]!.text]] : [])) as Partial<ProfileValues> };
+        fields: Object.fromEntries(PROFILE_FIELDS.flatMap(k => profile?.proposal[k]?.status === "found" ? [[k, profile.proposal[k]!.text]] : [])) as Partial<ProfileValues>,
+        ...(e.memory && e.automation?.reason !== "new" ? {conflicts:storyFactConflicts(e.memory,f.world.sharedGame!.facts).map(p => ({key:storyFactIdentity(p),text:p.text,quote:p.quote}))} : {}) };
     }) };
 }
 export async function readAutomationReview(input: AutomationReviewRead, repo: DeepRoleRepository = repository): Promise<AutomationReviewPage> {
@@ -41,10 +43,12 @@ export async function resolveAutomationReview(input: AutomationReviewDecision, r
     const head = f.selected.find(r => r.id === f.branch.headRevisionId);
     if (!head || head.role !== "assistant" || Object.hasOwn(f.branch,"pausedAtRevisionId")) throw Error("story-checkpoint-busy");
     const origin = f.stored.find(r => r.id === input.eventId) as StoryEvent, now = Date.now();
+    if (input.replaceKeys?.length && (!input.accept || !origin.memory || input.replaceKeys.some(k => !storyFactConflicts(origin.memory!,f.world.sharedGame!.facts).some(p => storyFactIdentity(p) === k)))) throw Error("story-review-stale");
     const e: StoryEvent = { format: "deeprole-story", contractVersion: 1, type: "event", id: createId("event"), worldId: f.world.id, playthroughId: f.branch.playthroughId, branchId: f.branch.id, revisionId: head.id, ordinal: Math.max(-1,...f.stored.flatMap(r => r.type === "event" && r.revisionId === head.id ? [r.ordinal] : [])) + 1, disposition: "candidate", label: origin.label, quote: origin.quote, participantIds: [], changes: [], originEventId: origin.id, automation: { mode: "review", status: input.accept ? "saved" : "dismissed", reason: "manual", at: now }, createdAt: now, updatedAt: now };
     if (input.accept && origin.memory) {
       if (input.fields.length || input.entityId || input.name) throw Error("story-review-invalid");
       e.memory = structuredClone(origin.memory);
+      if (input.replaceKeys?.length) e.memory.replaces = [...input.replaceKeys];
     } else if (input.accept) {
       const profile = origin.profileSupplement?.profile ?? origin.characterProfile;
       if (!profile || input.fields.some(k => profile.proposal[k]?.status !== "found")) throw Error("story-review-invalid");

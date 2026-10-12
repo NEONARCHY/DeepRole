@@ -21,6 +21,8 @@ export interface TabSessionState {
 export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
+  | { type: "DR_MEMORY_BATCH_IDLE"; worldId: string; chatId: string }
+  | { type: "DR_MEMORY_BATCH"; action: "status" | "run" | "policy" | "cancel"; input: import("./story-memory-batch").MemoryBatchInput; mode?: import("./story-memory-batch").MemoryBatchPolicy["mode"] }
   | { type: "DR_RESUME_WORLD_GAME"; chatId: string; worldId: string }
   | ({ type: "DR_STORY_IDENTITIES" } & import("./story-identity-management").IdentityAction)
   | ({ type: "DR_STORY_MERGE" } & import("./story-character-merge").MergeAction)

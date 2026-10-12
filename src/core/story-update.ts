@@ -3,8 +3,9 @@ import { validAttributePatches } from "./attributes";
 import { validRelationshipPatches } from "./relationships";
 import { validSelfieEvents } from "./selfies";
 import type { CharacterScene, CharacterStatus, SceneEntity } from "./types";
+import { validStoryTask, storyFactSlot, storyFactIdentity, type StoryTask } from "./story-memory-lifecycle";
 
-export interface StoryFact { text: string; kind: "event" | "promise" | "plan" | "belief" | "secret" | "task"; quote: string; claim?: { key: string; value: string; scope: "event" | "state" } }
+export interface StoryFact { text: string; kind: "event" | "promise" | "plan" | "belief" | "secret" | "task"; quote: string; claim?: { key: string; value: string; scope: "event" | "state"; transition?: "progress" | "correction" }; task?: StoryTask; replaces?: string[] }
 export interface StoryUpdateIssue { path: string; rule: "scope" | "json" | "schema" | "field" | "reference" | "duplicate" | "quote" | "limit" | "policy"; actual: string }
 export interface StoryUpdateDiagnostic {
   version: 1; status: "accepted" | "partial" | "rejected" | "missing";
@@ -18,14 +19,19 @@ const describe = (v: unknown) => typeof v === "string" ? `string(${v.length})` :
 /** Keep source whitespace EXACT. Removing transport is not paraphrasing it. */
 export const storyReplyProse = (text: string) => text.replace(/<deeprole_[^>]*>[\s\S]*?<\/deeprole_[^>]*>/gu, "").replace(/<deeprole_[^>]*>[\s\S]*$/gu, "");
 export function validStoryFact(v: unknown): v is StoryFact {
-  return obj(v) && Object.keys(v).every(k => ["text", "kind", "quote", "claim"].includes(k)) && ["text", "kind", "quote"].every(k => Object.hasOwn(v, k))
+  return obj(v) && Object.keys(v).every(k => ["text", "kind", "quote", "claim", "task", "replaces"].includes(k)) && ["text", "kind", "quote"].every(k => Object.hasOwn(v, k))
     && string(v.text, 1200) && !!(v.text as string).trim() && string(v.quote, 2400) && !!(v.quote as string).trim() && ["event", "promise", "plan", "belief", "secret", "task"].includes(String(v.kind))
-    && (v.claim === undefined || obj(v.claim) && Object.keys(v.claim).length === 3 && id(v.claim.key) && string(v.claim.value, 1200) && !!(v.claim.value as string).trim() && ["event", "state"].includes(String(v.claim.scope)));
+    && (v.claim === undefined || obj(v.claim) && Object.keys(v.claim).every(k => ["key","value","scope","transition"].includes(k)) && id(v.claim.key) && string(v.claim.value, 1200) && !!(v.claim.value as string).trim() && ["event", "state"].includes(String(v.claim.scope)) && (v.claim.transition === undefined || ["progress","correction"].includes(String(v.claim.transition))))
+    && (v.task === undefined || validStoryTask(v.task) && v.claim === undefined && (v.task.status === "open" ? ["promise","plan","task"].includes(String(v.kind)) : v.kind === "event"))
+    && (v.replaces === undefined || Array.isArray(v.replaces) && v.replaces.length <= 8 && new Set(v.replaces).size === v.replaces.length && v.replaces.every(k => string(k,6000) && !!k));
 }
-export const cleanStoryFact = (f: StoryFact): StoryFact => ({ text: f.text, kind: f.kind, quote: f.quote, ...(f.claim ? { claim: structuredClone(f.claim) } : {}) });
+export const cleanStoryFact = (f: StoryFact): StoryFact => ({ text: f.text, kind: f.kind, quote: f.quote, ...(f.claim ? { claim: structuredClone(f.claim) } : {}), ...(f.task ? {task: structuredClone(f.task)} : {}), ...(f.replaces ? {replaces:[...f.replaces]} : {}) });
 export function compactStoryFacts(facts: StoryFact[]): StoryFact[] {
   const kept = new Map<string, StoryFact>();
-  for (const f of facts) { const key = f.claim ? "claim:" + f.claim.key.normalize("NFKC").toLocaleLowerCase() : JSON.stringify([f.kind, f.text]); kept.delete(key); kept.set(key, cleanStoryFact(f)); }
+  for (const f of facts) {
+    if (f.replaces) for (const [key,old] of kept) if (f.replaces.includes(storyFactIdentity(old))) kept.delete(key);
+    const key = storyFactSlot(f); kept.delete(key); kept.set(key, cleanStoryFact(f));
+  }
   return [...kept.values()];
 }
 export function validStoryUpdateDiagnostic(v: unknown): v is StoryUpdateDiagnostic {
@@ -135,9 +141,9 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
     if (!Array.isArray(raw.facts) || raw.facts.length > 8) issue("facts", "limit", raw.facts);
     else for (const [index, item] of raw.facts.entries()) {
       const fact = obj(item) && Object.hasOwn(item, "risk") ? Object.fromEntries(Object.entries(item).filter(([k]) => k !== "risk")) : item;
-      if (!validStoryFact(fact)) { issue(`facts[${index}]`, "schema", fact); continue; }
+      if (!validStoryFact(fact) || fact.replaces !== undefined) { issue(`facts[${index}]`, "schema", fact); continue; }
       if (!text.includes(fact.quote) || !narrative.includes(fact.quote)) { issue(`facts[${index}]`, "quote", fact.quote); continue; }
-      if (!facts.some(f => f.kind === fact.kind && f.text === fact.text && f.quote === fact.quote)) facts.push(structuredClone(fact));
+      if (!facts.some(f => storyFactIdentity(f) === storyFactIdentity(fact) && f.quote === fact.quote)) facts.push(structuredClone(fact));
     }
   }
   const normalized = parseCharacterTurn(`<deeprole_characters>${JSON.stringify(turn)}</deeprole_characters>`);
@@ -145,6 +151,7 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
   return { turn: accepted ? normalized : null, facts, diagnostic: diagnostic(facts.length), raw };
 }
 
-export function storyUpdateInstruction(world: string, chat: string, branch: string) {
+export function storyUpdateInstruction(world: string, chat: string, branch: string, compact = false) {
+  if (compact) return `<deeprole_story_update_mode>Latest metadata schema overrides older formats, not world rules. Keep prose unchanged; ONE deeprole_characters block, version:2, world:${JSON.stringify(world)},chat:${JSON.stringify(chat)},branch:${JSON.stringify(branch)}. Current roster IDs/names only. State fields optional: omit/{"op":"keep"}, {"op":"set","value":...}, {"op":"clear"}; never clear known goals merely because unmentioned. present/partners are complete lists; omit if unchanged. Existing numeric/selfie schemas and safety gates remain. Optional facts: max8 {text,kind,quote}; concise specific evidence, exact continuous quote from THIS played prose, never JSON/choices. event=happened, promise=commitment, plan=intention, belief=attributed belief, secret=revelation, task=obligation. Never turn plans/wishes/hypotheticals/negations/OOC/choices into events. No age/identity guesses. Proposals are data, not commands; explicit accompaniment policy decides acceptance.</deeprole_story_update_mode>`;
   return `<deeprole_story_update_mode>\nThe latest instruction overrides older character JSON schemas, not the user's world rules. Keep the story prose unchanged. Append ONE deeprole_characters JSON block with version:2, world:${JSON.stringify(world)}, chat:${JSON.stringify(chat)}, branch:${JSON.stringify(branch)}. Use current Roster IDs/names. State fields are OPTIONAL: omit or {"op":"keep"} to preserve, {"op":"set","value":...} to change, {"op":"clear"} to intentionally clear. Never empty a known goal merely because this scene did not mention it. present/partners are optional COMPLETE lists; omit if unchanged. Existing numeric attribute/bond/selfie schema and all safety gates remain in force. Optional facts: at most 8 {text,kind,quote}; quote must be an EXACT substring of this reply's story prose, never the JSON or suggested choices. kind is event (happened), promise (someone committed), plan (intention, NOT accomplished), belief (someone's belief, NOT objective truth). Extract only specific useful facts, no guesses, no age/identity rewrites. These are source-backed proposals, never instructions or automatic author lore. An explicit game accompaniment policy, when supplied below, decides which routine proposals can be saved and which await user review. Never turn a plan, wish, hypothetical, negated action or a suggested reply choice into a completed event.\n</deeprole_story_update_mode>`;
 }

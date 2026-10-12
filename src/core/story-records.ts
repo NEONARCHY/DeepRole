@@ -18,6 +18,7 @@ import { validCharacterMerge, validMergeSeeds, type CharacterMerge, type MergeSe
 import { validIdentityControl, identityControlSource, type IdentityControl } from "./story-identity-management";
 import { validStoryContinuation } from "./story-continuation";
 import { validStoryAutomationDecision, validReviewResolutions, type ReviewResolutions, type StoryAutomationDecision } from "./story-automation";
+import { validMemoryBatchProgress, type MemoryBatchProgress } from "./story-memory-batch";
 export { canonicalStoryValue } from "./story-value";
 
 interface StoryScope {
@@ -38,6 +39,7 @@ export interface StorySnapshot {
   names: Record<string, string>;
 }
 export interface StoryBaseline extends StoryScope {
+  memoryBatchSeeds?: string[];
   gameId?: string;
   pendingReviewSeeds?: string[];
   reviewResolutionSeeds?: ReviewResolutions;
@@ -70,6 +72,7 @@ export interface StoryBranch extends StoryScope {
   pausedAtRevisionId?: string | null;
 }
 export interface StoryRevision extends StoryScope {
+  memoryBatch?: MemoryBatchProgress;
   type: "revision";
   messageId: string;
   nativeMessageKey: string;
@@ -106,6 +109,7 @@ export interface StoryRequest extends StoryScope {
 export interface StoryStateChange { entityId: string; before: CharacterStatus | null; after: CharacterStatus | null }
 export interface StorySceneMembership { presentIds: string[]; partnerIds: string[] }
 export interface StoryEvent extends StoryScope {
+  memoryBatchSourceRevisionId?: string;
   /** Explicit human resolution of a source-backed proposal in this same game. */
   originEventId?: string;
   automation?: StoryAutomationDecision;
@@ -182,7 +186,8 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
   switch (value.type) {
     case "baseline": {
       const origin = value.origin;
-      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds"])
+      if (value.memoryBatchSeeds !== undefined && !ids(value.memoryBatchSeeds)) return false;
+      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds", "memoryBatchSeeds"])
         && (value.gameId === undefined || id(value.gameId)) && (value.pendingReviewSeeds === undefined || ids(value.pendingReviewSeeds)) && (value.reviewResolutionSeeds === undefined || validReviewResolutions(value.reviewResolutionSeeds))
          && value.historyBeforeBaseline === "unknown" && value.legacyEntryScope === "unclassified"
         && object(origin) && keys(origin, ["bindingId", "chatId", "worldId", "sceneRevision", "nativeAnchor"]) && id(origin.bindingId) && id(origin.chatId) && id(origin.worldId) && optionalId(origin.sceneRevision)
@@ -193,12 +198,13 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
     case "branch": return keys(value, [...common, "baselineId", "parentBranchId", "forkRevisionId", "headRevisionId", "selectionVersion", "projectionId", "gameManaged", "pausedAtRevisionId"])
       && value.branchId === value.id && id(value.baselineId) && optionalId(value.parentBranchId) && optionalId(value.forkRevisionId) && optionalId(value.headRevisionId) && integer(value.selectionVersion)
       && (value.parentBranchId === null) === (value.forkRevisionId === null) && (value.projectionId === undefined || id(value.projectionId)) && (value.gameManaged === undefined || typeof value.gameManaged === "boolean") && (value.pausedAtRevisionId === undefined || value.gameManaged === true && optionalId(value.pausedAtRevisionId) && value.pausedAtRevisionId === value.headRevisionId);
-    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery"])
+    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch"])
       && id(value.messageId) && id(value.nativeMessageKey) && optionalId(value.requestId) && optionalId(value.parentRevisionId) && ["user", "assistant"].includes(String(value.role)) && ["complete", "partial", "interrupted"].includes(String(value.completion)) && text(value.content, 250_000) && (value.storyPurpose === undefined || ["game", "out-of-character"].includes(String(value.storyPurpose)))
       && (value.requestProof === undefined || id(value.requestId) && validNativeStoryKey(value.nativeMessageKey) && object(value.requestProof) && keys(value.requestProof, ["nativeParentKey"]) && (value.requestProof.nativeParentKey === null || validNativeStoryKey(value.requestProof.nativeParentKey)))
       && (value.updateDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.updateDiagnostic))
       && (value.repairDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.repairDiagnostic))
       && (value.metadataRepair === undefined || value.role === "assistant" && object(value.metadataRepair) && Object.keys(value.metadataRepair).length === 3 && keys(value.metadataRepair, ["id", "status", "at"]) && id(value.metadataRepair.id) && ["requested", "done", "failed", "cancelled"].includes(String(value.metadataRepair.status)) && time(value.metadataRepair.at))
+      && (value.memoryBatch === undefined || value.completion === "complete" && value.storyPurpose !== "out-of-character" && validMemoryBatchProgress(value.memoryBatch) && value.memoryBatch.request.end <= storyReplyProse(value.content as string).length)
       && (value.characterDiscovery === undefined || value.completion === "complete" && value.storyPurpose !== "out-of-character" && validCharacterDiscoveryProgress(value.characterDiscovery) && value.characterDiscovery.request.end <= storyReplyProse(value.content as string).length);
     case "request": return keys(value, [...common, "purpose", "bindingId", "chatId", "nativeParentKey", "parentRevisionId", "selectedHeadRevisionId", "selectionVersion", "sceneRevision", "delivery", "context"])
       && ["user-turn", "assistant-retry"].includes(String(value.purpose)) && id(value.bindingId) && id(value.chatId) && (value.nativeParentKey === null || validNativeStoryKey(value.nativeParentKey))
@@ -206,14 +212,15 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
       && (value.delivery.status === "prepared" || value.delivery.at >= value.createdAt && value.delivery.at <= value.updatedAt)
       && (value.context === undefined || object(value.context) && keys(value.context, ["algorithmVersion", "acceptedEventIds"]) && value.context.algorithmVersion === 1 && ids(value.context.acceptedEventIds)
         && value.context.acceptedEventIds.every((item, index, list) => index === 0 || list[index - 1]! < item));
-    case "event": return keys(value, [...common, "revisionId", "ordinal", "disposition", "label", "quote", "participantIds", "changes", "sceneChange", "effects", "memory", "characterCandidate", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate", "characterIdentity", "identityControl", "characterMerge", "automation", "originEventId"])
+    case "event": return keys(value, [...common, "revisionId", "ordinal", "disposition", "label", "quote", "participantIds", "changes", "sceneChange", "effects", "memory", "characterCandidate", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate", "characterIdentity", "identityControl", "characterMerge", "automation", "originEventId", "memoryBatchSourceRevisionId"])
+      && (value.memoryBatchSourceRevisionId === undefined || id(value.memoryBatchSourceRevisionId))
       && (value.automation === undefined || validStoryAutomationDecision(value.automation) && (value.memory !== undefined || value.characterCandidate !== undefined || value.profileSupplement !== undefined || value.originEventId !== undefined))
        && (value.originEventId === undefined || id(value.originEventId) && value.originEventId !== value.id && value.automation !== undefined && (value.automation as StoryAutomationDecision).reason === "manual")
        && id(value.revisionId) && integer(value.ordinal) && value.disposition === "candidate" && text(value.label, 240) && !!value.label.trim() && text(value.quote, 4000) && !!value.quote.trim() && ids(value.participantIds)
       && Array.isArray(value.changes) && value.changes.every(change => object(change) && keys(change, ["entityId", "before", "after"]) && id(change.entityId) && (value.participantIds as string[]).includes(change.entityId) && state(change.before) && state(change.after))
       && new Set(value.changes.map(change => change.entityId)).size === value.changes.length
       && (value.effects === undefined || validStoryTurnEffects(value.effects, value.worldId as string | null))
-      && (value.memory === undefined || object(value.memory) && keys(value.memory, ["text", "kind", "quote", "edited", "claim"]) && validStoryFact({ text: value.memory.text, kind: value.memory.kind, quote: value.memory.quote, ...(value.memory.claim !== undefined ? { claim: value.memory.claim } : {}) }) && value.memory.quote === value.quote && (value.memory.edited === undefined || typeof value.memory.edited === "boolean") && value.changes.length === 0 && value.effects === undefined && value.sceneChange === undefined)
+      && (value.memory === undefined || object(value.memory) && keys(value.memory, ["text", "kind", "quote", "edited", "claim", "task", "replaces"]) && validStoryFact({ text: value.memory.text, kind: value.memory.kind, quote: value.memory.quote, ...(value.memory.task ? {task: value.memory.task} : {}), ...(value.memory.replaces ? {replaces: value.memory.replaces} : {}), ...(value.memory.claim !== undefined ? { claim: value.memory.claim } : {}) }) && (value.memory.replaces === undefined || value.automation !== undefined && (value.automation as StoryAutomationDecision).reason === "manual") && value.memory.quote === value.quote && (value.memory.edited === undefined || typeof value.memory.edited === "boolean") && value.changes.length === 0 && value.effects === undefined && value.sceneChange === undefined)
       && (value.characterCandidate === undefined || validCharacterCandidate(value.characterCandidate) && value.characterCandidate.quote === value.quote && value.memory === undefined && value.sceneChange === undefined && (value.effects === undefined ? value.changes.length === 0 && (value.participantIds as string[]).length === 0 : validDiscoveryEffect(value.effects as import("./story-turn-effects").StoryTurnEffects, value.changes)))
       && (value.characterProfile === undefined || value.characterCandidate !== undefined && validDiscoveryProfile(value.characterProfile))
       && (value.characterProfileTask === undefined || value.characterCandidate !== undefined && validDiscoveryProfileTask(value.characterProfileTask) && (value.characterProfileTask.status !== "ready" || value.characterProfile !== undefined && (value.characterProfile as DiscoveryProfile).headRevisionId === value.characterProfileTask.guard.headRevisionId))
@@ -256,6 +263,7 @@ export function assertStoryGraph(records: DataRecord[]): void {
     return target;
   };
   const proposalOrigin = (item: StoryEvent, owner: StoryBranch) => {
+    // Batch evidence may come from a checkpoint's explicitly inherited selected game.
     if (!item.originEventId) return undefined;
     const origin = all.get(item.originEventId), base = all.get(owner.baselineId);
     const oldBranch = origin?.type === "event" ? all.get(origin.branchId) : undefined;
@@ -265,11 +273,21 @@ export function assertStoryGraph(records: DataRecord[]): void {
     return origin;
   };
   const eventSlots = new Set<string>(), legacyRoots = new Set<string>();
+  const inheritedBatchSource = (item: StoryEvent, source: StoryRecord | undefined) => {
+    if (!item.memoryBatchSourceRevisionId || source?.type !== "revision" || source.completion !== "complete" || source.storyPurpose === "out-of-character" || source.worldId !== item.worldId) return false;
+    const base = all.get(branch(item).baselineId), oldBase = all.get(branch(source).baselineId);
+    return base?.type === "baseline" && oldBase?.type === "baseline" && !!base.gameId && base.gameId === oldBase.gameId && !!base.memoryBatchSeeds?.includes(source.id);
+  };
   const messages = new Map<string, string>();
   for (const item of all.values()) {
     if (item.worldId !== null && !worlds.has(item.worldId)) throw new Error("story-world-missing");
     const owner = branch(item);
     if (item.type === "baseline") {
+      for (const sourceId of item.memoryBatchSeeds ?? []) {
+        const source = all.get(sourceId), sourceBranch = source && all.get(source.branchId), sourceBase = sourceBranch?.type === "branch" ? all.get(sourceBranch.baselineId) : undefined;
+        const sourceProjection = sourceBranch?.type === "branch" ? all.get(sourceBranch.projectionId ?? "") : undefined;
+        if (!item.gameId || source?.type !== "revision" || source.worldId !== item.worldId || source.completion !== "complete" || source.storyPurpose === "out-of-character" || sourceBase?.type !== "baseline" || sourceBase.gameId !== item.gameId || !(sourceProjection?.type === "projection" && sourceProjection.revisionIds.includes(sourceId) || sourceBase.memoryBatchSeeds?.includes(sourceId))) throw Error("story-evidence-invalid");
+      }
       if (owner.baselineId !== item.id || owner.parentBranchId !== null || item.worldId !== null && item.origin.worldId !== item.worldId) throw new Error("story-link-invalid");
       const key = JSON.stringify([item.origin.bindingId, item.origin.worldId]);
       if (legacyRoots.has(key)) throw new Error("story-baseline-conflict");
@@ -340,8 +358,13 @@ export function assertStoryGraph(records: DataRecord[]): void {
       }
       if (revision?.type !== "revision" || !compatible(item, revision) || item.branchId !== revision.branchId) throw new Error("story-link-invalid");
       const origin = proposalOrigin(item, owner);
-      const quoteSource = origin ? all.get(origin.characterSourceRevisionId ?? origin.revisionId) : item.characterSourceRevisionId ? all.get(item.characterSourceRevisionId) : revision;
-      if (quoteSource?.type !== "revision" || (!origin && !compatible(item, quoteSource)) || !!origin && (quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character") || !quoteSource.content.includes(item.quote)) throw new Error("story-evidence-invalid");
+      const quoteSource = origin ? all.get(origin.memoryBatchSourceRevisionId ?? origin.characterSourceRevisionId ?? origin.revisionId) : item.memoryBatchSourceRevisionId ? all.get(item.memoryBatchSourceRevisionId) : item.characterSourceRevisionId ? all.get(item.characterSourceRevisionId) : revision;
+      if (quoteSource?.type !== "revision" || (!origin && (!compatible(item, quoteSource) && !inheritedBatchSource(item, quoteSource))) || !!origin && (quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character") || !quoteSource.content.includes(item.quote)) throw new Error("story-evidence-invalid");
+      if (!origin && item.memoryBatchSourceRevisionId) {
+        const ancestors = new Set<string>(); let cursor: StoryRecord | undefined = revision;
+        while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
+        if (quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character" || !storyReplyProse(quoteSource.content).includes(item.quote) || !ancestors.has(quoteSource.id) && !inheritedBatchSource(item, quoteSource)) throw Error("story-evidence-invalid");
+      }
       const candidateBaseline = item.characterCandidate ? all.get(owner.baselineId) : undefined;
       if (item.characterCandidate && (candidateBaseline?.type !== "baseline" || revision.completion !== "complete" || revision.storyPurpose === "out-of-character" || quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character" || !storyReplyProse(quoteSource.content).includes(item.quote) || item.effects?.createdEntities.some(e => e.playthroughChatId !== candidateBaseline.origin.chatId))) throw new Error("story-evidence-invalid");
       if (item.characterIdentity) {
@@ -360,8 +383,8 @@ export function assertStoryGraph(records: DataRecord[]): void {
         const head = all.get(profile.headRevisionId), ancestors = new Set<string>();
         let cursor = head;
         while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
-        if (head?.type !== "revision" || !compatible(item, head) || head.branchId !== item.branchId || head.completion !== "complete" || head.storyPurpose === "out-of-character" || !origin && !ancestors.has(quoteSource.id)
-          || profile.proofs.some(p => { const source = all.get(p.revisionId); return source?.type !== "revision" || !origin && !compatible(item, source) || source.completion !== "complete" || source.storyPurpose === "out-of-character" || (origin ? !(origin.characterProfile ?? origin.profileSupplement?.profile)?.proofs.some(proof => proof.revisionId === p.revisionId && proof.quote === p.quote) : !ancestors.has(source.id)) || !storyReplyProse(source.content).includes(p.quote); })) throw Error("story-evidence-invalid");
+        if (head?.type !== "revision" || !compatible(item, head) || head.branchId !== item.branchId || head.completion !== "complete" || head.storyPurpose === "out-of-character" || !origin && !ancestors.has(quoteSource.id) && !inheritedBatchSource(item, quoteSource)
+          || profile.proofs.some(p => { const source = all.get(p.revisionId); return source?.type !== "revision" || !origin && (!compatible(item, source) && !inheritedBatchSource(item, source)) || source.completion !== "complete" || source.storyPurpose === "out-of-character" || (origin ? !(origin.characterProfile ?? origin.profileSupplement?.profile)?.proofs.some(proof => proof.revisionId === p.revisionId && proof.quote === p.quote) : !ancestors.has(source.id) && !inheritedBatchSource(item, source)) || !storyReplyProse(source.content).includes(p.quote); })) throw Error("story-evidence-invalid");
         if (item.profileSupplement) {
           const person = entityProfiles.get(item.profileSupplement.entityId);
           const baseline = all.get(owner.baselineId);

@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Story tasks fixture</title></head><body><main id="app"></main><script>
+const area=()=>{const values={};return {get:async()=>values,set:async data=>Object.assign(values,data),remove:async()=>{}}};window.browser={runtime:{id:"synthetic"},storage:{local:area(),session:area()}};
+</script><script type="module">
+import "fake-indexeddb/auto";import React,{useState} from "react";import {createRoot} from "react-dom/client";
+import {StoryTaskPanel} from "/src/entrypoints/shared/StoryTaskPanel.tsx";import {StoryAutomationInbox} from "/src/entrypoints/shared/StoryAutomationInbox.tsx";
+import {lifecycleFixture,taskFact} from "/tests/fixtures/story-lifecycle.ts";import {readAutomationReview,resolveAutomationReview} from "/src/storage/story-automation-review.ts";
+import "/src/entrypoints/sidepanel/styles.css";import "/src/entrypoints/shared/design-system.css";import "/src/entrypoints/shared/story-workspace.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;const f=await lifecycleFixture(),url=(await f.binding()).chatUrl;
+const task=locale==="ru"?{text:"Мира обещала починить ворота.",quote:"Мира обещала починить ворота.",kind:"promise",risk:"ordinary",task:{key:"mira.gate",title:"починить ворота",status:"open"}}:taskFact("Mira will repair the gate.");
+const old=locale==="ru"?"Красный ключ открывает подвал.":"The red key opens the cellar.",next=locale==="ru"?"Синий ключ открывает подвал.":"The blue key opens the cellar.";
+await f.send([task,{text:old,quote:old,kind:"event",risk:"ordinary"}]);await f.send([{text:next,quote:next,kind:"event",risk:"conflict"}]);
+window.lifecycle={f,task,next,calls:[]};let update;
+const tabs={query:async()=>[{id:7,url}],sendMessage:async(_,m)=>{
+ window.lifecycle.calls.push(m.type);if(m.type==="DR_AUTOMATION_READ")return {ok:true,data:await readAutomationReview(m.input,f.repo)};
+ await resolveAutomationReview(m.input,f.repo);await update();return {ok:true,data:{changed:true}};
+}};
+function App(){const [game,setGame]=useState();update=async()=>setGame((await f.world()).sharedGame);React.useEffect(()=>{update()},[]);
+ return React.createElement("div",{className:"dr-root view-stack",style:{padding:12,maxWidth:650,margin:"auto"}},
+ React.createElement("h1",null,locale==="ru"?"История":"Story"),
+ game&&React.createElement(StoryTaskPanel,{locale,facts:game.facts}),
+ game&&React.createElement(StoryAutomationInbox,{locale,tabs,scope:{chatId:f.input.chatId,worldId:f.input.worldId},revision:game.revision}));}
+window.lifecycle.complete=async()=>{await f.send([{...task,text:locale==="ru"?"Мира починила ворота.":"Mira repaired the gate.",quote:locale==="ru"?"Мира починила ворота.":"Mira repaired the gate.",kind:"event",task:{...task.task,status:"completed"}}]);await update()};
+createRoot(document.querySelector("#app")).render(React.createElement(App));
+</script></body></html>

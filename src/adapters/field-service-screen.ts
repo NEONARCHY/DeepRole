@@ -1,4 +1,4 @@
-import { castServiceScreenCopy, fieldServiceScreenCopy, profileServiceScreenCopy, repairServiceScreenCopy, discoveryServiceScreenCopy, validFieldServicePresentation, type FieldServicePresentation, type FieldServiceScreenStage } from "../core/field-service-screen";
+import { memoryServiceScreenCopy, castServiceScreenCopy, fieldServiceScreenCopy, profileServiceScreenCopy, repairServiceScreenCopy, discoveryServiceScreenCopy, validFieldServicePresentation, type FieldServicePresentation, type FieldServiceScreenStage } from "../core/field-service-screen";
 import type { Locale } from "../core/types";
 import tokens from "../entrypoints/shared/design-tokens.css?inline";
 
@@ -84,7 +84,7 @@ export class FieldServiceScreen {
  focus() { if (!this.disposed) (!this.button.hidden && !this.button.disabled ? this.button : !this.reveal.hidden ? this.reveal : this.status).focus({ preventScroll: true }); }
  update(stage: FieldServiceScreenStage) { if (this.disposed || this.stage === stage) return; this.stage = stage; this.render(); if (["cleanup", "done", "failed", "cleanup-failed"].includes(stage)) this.focus(); }
  private render() {
-  const t = this.kind === "cast" ? castServiceScreenCopy(this.locale) : this.presentation?.kind === "profile" ? profileServiceScreenCopy(this.locale) : this.presentation?.kind === "repair" ? repairServiceScreenCopy(this.locale) : this.presentation?.kind === "discovery" ? discoveryServiceScreenCopy(this.locale) : fieldServiceScreenCopy(this.locale), terminal = ["done", "failed", "cleanup-failed"].includes(this.stage);
+  const t = this.presentation?.kind === "memory" ? memoryServiceScreenCopy(this.locale) : this.kind === "cast" ? castServiceScreenCopy(this.locale) : this.presentation?.kind === "profile" ? profileServiceScreenCopy(this.locale) : this.presentation?.kind === "repair" ? repairServiceScreenCopy(this.locale) : this.presentation?.kind === "discovery" ? discoveryServiceScreenCopy(this.locale) : fieldServiceScreenCopy(this.locale), terminal = ["done", "failed", "cleanup-failed"].includes(this.stage);
   this.root.querySelector<HTMLElement>(".screen")!.dataset.terminal = String(terminal);
   this.host.lang = this.locale;
   this.heading.textContent = t.title; this.requestLabel.textContent = t.request; this.responseLabel.textContent = t.response;

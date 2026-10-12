@@ -1,5 +1,39 @@
 # DeepRole контракт данных длительной истории
 
+## RP225 Shared added context budget
+
+compileGameContext is a pure runtime compiler, not a storage migration. Candidate discovery uses candidateOnly to avoid rendering the entire ranked library; origin/scope/exclusion/disabled-book rules remain. Required protocol/scene/protected fields/forced entries/snapshot summary/request-bound recovered reply survive overflow. Explicit draft fact matches reserve space before generic profile excerpts; recent narration is fallback only. Optional facts, entries and whole profile paragraphs share the same admission test; continuation is at most two whole turns. Linked neighbors need an actually selected seed.
+
+addedContextTokens estimates the final concatenation plus injection's User message separator. ContextSelection.contextReport includes only numeric category counts and limit/required/total. Component estimates are not exact native model token counts. Compact variants retain request/roster identity, completion/evidence, action/consent, stage/threshold/lock/cap and metadata-write constraints. Legacy/reference-only calls retain their old schemas and full profiles.
+
+profile_excerpts is partial reference, not writable canon or proof of a new event. No paragraph is sliced into a new assertion; absent data must not be inferred. The selected game facts preserve task/claim metadata and omit source quote/replaces from model hints. New fields are runtime-only; backup/export sources are unchanged. No native transcript deletion, external retrieval request, heavy embedding model, pronoun substitution or repeat-cache trust is introduced. Request-bound recovery is admitted intact as required data, not an unmetered suffix. Native parent/edit preparation runs only for a tracked active shared game; unbound ordinary chats still use exact recovery chat/parent checks.
+
+## RP224 Memory lifecycle
+
+StoryFact adds optional task {key,title,status:open|completed|cancelled}; exact task keys identify separate obligations. Open records require promise/plan/task; terminal records require event. New open titles must be literal source clauses. Unknown terminal linkage, renamed tasks and reopening are review-only. Explicit progress is claim.transition:progress; correction and differing state values without progress require review. Legacy stored facts remain valid.
+
+Human review may add replaces containing exact storyFactIdentity strings for at most eight comparable current game facts. Model inline/batch parsers reject replaces. Resolver checks selected head, writer, current game revision, pending origin and offered keys under the repository lock. compactStoryFacts folds selected events chronologically, removes explicitly superseded memory and retains latest task/claim slots. Historical sources remain; baseline/shared-game facts carry the same folded state across checkpoint/continuation/reset/backup.
+
+Review reads expose bounded old/new comparisons with quotes. Context and batch hints omit replaces and quotes; task keys/titles/status remain. Context still selects at most eight facts within its supplied token budget; task priority does not increase that budget. Earlier task changes cannot replace a later known task state during batch backfill. Protected author text and existing native dispatch/source guards remain intact. Model-supplied semantic keys and risk are not independent proof of interpretation.
+
+## Дополнение 223 Пакетная проверка новых сцен
+
+WorldProfile.storyMemoryBatch хранит mode automatic/paused/off и revision отдельно от inline-политики. По умолчанию отсутствует/off. Дополнительные native запросы требуют явного включения в актуальном чате. Inline220 остаётся без дополнительных запросов.
+
+StoryRevision.memoryBatch — offset + request(id, anchor, policy, end, status, at). Статусы requested/done/failed/cancelled. Offset продвигается атомарно с проверенным сохранением events/projection; неполный/невалидный JSON не продвигает sources. Receipt действует только при выбранном anchor или его закреплении в inherited seeds. Удаление anchor из варианта открывает ранние sources снова.
+
+WorldGame.memoryBatchSources / Baseline.memoryBatchSeeds — выбранные source IDs одной общей игры. Graph проверяет принадлежность игре/миру, завершённость и исходную выбранную projection. Checkpoint/новый чат сохраняют обработку; новый reset очищает её и архивирует прежнюю игру. В новом чате нужен completed обычный ход. Backup сохраняет progress; restore/cloneWorldPackage делают дополнительную policy paused с новым nonce. Импортированные jobs/audits не запускают native работу.
+
+Planner учитывает только пары завершённых выбранных user/assistant после исходной точки, без OOC/partial/невыбранных вариантов. Части: до 12 ходов / 24 sources / 12000 UTF-16 символов сериализованных частей; не токены и не квота библиотеки. Большой source продолжается с 600 символами перекрытия, без разрезания surrogate. Roster hints до 6000 символов, retained facts до 5000, prompt до 26000. Photos/image providers отсутствуют.
+
+Prepare/current/commit проверяют writer, activation, branch/head/selection/revision-count, обе policy revisions, исходный offset/end/text. Profile permissions заморожены перед отправкой; изменения автора/защита и конфликты используют inline220. Final commit проверяет активный source tab и пустой/свободный composer, без вложенного repository lock. Сырой JSON не является командой базе.
+
+Результат требует полного source envelope: requestId, unique source и complete:true, до 8 facts/4 people на source и точные цитаты своей выдержки. Batch events применяются на completed head с memoryBatchSourceRevisionId; graph проверяет источник и ancestry либо same-game inherited seed. Profile proofs сохраняют первоначальные источники. Старые state values и user event statements требуют review; обещание не становится выполнением. Цитата/complete:true не доказывают правильность смысла или отсутствие пропусков.
+
+Scheduler проверяет готовность в idle видимой вкладке не чаще 15 секунд. Ранний запуск — объём, незавершённая часть или смена состава сцены после четырёх ходов. Общий owned field coordinator/popup/mask/cleanup/ack; reservation с cast сериализована. Другая операция/очистка видна как service-busy. Потерянный background reconciles requested в failed, не восстанавливает prompt/не resends. Explicit retry создаёт новый request, готовые результаты не replay.
+
+Принятие зависит от automatic/review политики inline220. Рутина проходит прежние проверки дублей/конфликтов; сомнения/возраст/protected fields — общая очередь. Обычный игровой запрос получает ограниченный подбор памяти. Партии не очищают native историю DeepSeek и не заменяют общий бюджет RP-05.
+
 ## Дополнение 220 · автоматическое сопровождение
 
 WorldProfile.storyAutomation — необязательные mode (automatic/review/off) и revision. Старые данные остаются review; UI явно выбирает automatic. DispatchCapture.accompaniment замораживает режим, revision, profileVersions и protectedProfileFields перед локальной отправкой только при точном marker совпадении. Принятие требует local user-turn, accepted delivery, injection=context и неизменной policy revision. Restored captures, mid-flight enabling и импорт не дают automatic authority.

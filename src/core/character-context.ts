@@ -16,19 +16,20 @@ function mentionsFolded(lower: string, entity: Pick<SceneEntity, "name" | "alias
   });
 }
 export const mentionsCharacter = (text: string, entity: Pick<SceneEntity, "name" | "aliases">) => mentionsFolded(folded(text), entity);
-export function selectCharacterContext(entities: SceneEntity[], scene: CharacterScene | undefined, focusIds: string[], recent: string, budget = CHARACTER_ROSTER_BUDGET) {
+export function selectCharacterContext(entities: SceneEntity[], scene: CharacterScene | undefined, focusIds: string[], recent: string, budget = CHARACTER_ROSTER_BUDGET, relevantOnly = false) {
   const present = new Set(scene?.presentIds ?? []), talking = new Set(scene?.partnerIds ?? (scene?.partnerId ? [scene.partnerId] : [])), focus = new Set(focusIds);
   const lower = folded(recent);
   const players = entities.filter(e => e.characterSheet?.protagonist), uniquePlayer = players.length === 1 ? players[0]!.id : null;
   const ranked = entities.map((entity, index) => ({ entity, index, priority: entity.characterSheet?.protagonist ? 4 : talking.has(entity.id) || focus.has(entity.id) ? 3 : present.has(entity.id) ? 2 : mentionsFolded(lower, entity) ? 1 : 0 }));
   ranked.sort((a, b) => b.priority - a.priority || a.index - b.index);
   const roster: SceneEntity[] = []; let used = 2;
-  for (const { entity } of ranked) {
+  for (const { entity,priority } of ranked) {
+    if (relevantOnly && !priority) continue;
     const size = JSON.stringify({ id: entity.id, name: entity.name, player: !!entity.characterSheet?.protagonist }).length + 1;
     // A physically present participant cannot disappear because of optional
     // off-scene references. Physical scene cardinality is checked separately.
     if (used + size > budget && !present.has(entity.id) && !talking.has(entity.id) && entity.id !== uniquePlayer) continue;
     roster.push(entity); used += size;
   }
-  return { roster, active: ranked.filter(r => r.priority > 0 && roster.includes(r.entity)).slice(0, 6).map(r => r.entity) };
+  return { roster, active: ranked.filter(r => r.priority > 0 && roster.includes(r.entity)).slice(0, relevantOnly ? undefined : 6).map(r => r.entity) };
 }

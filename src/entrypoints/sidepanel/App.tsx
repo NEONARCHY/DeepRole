@@ -1,5 +1,6 @@
 import { readJsonFile } from "../../core/read-json-file";
 import { Select } from "../shared/Select";
+import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { StoryDiagnostics } from "../shared/StoryDiagnostics";
 import { StoryWorkspace } from "../shared/StoryWorkspace";
 import { storyUxText } from "../../core/story-ux-i18n";
@@ -635,6 +636,7 @@ function Overview(props: {
     <MemoryStatus key={props.page.chatUrl + props.worldId} locale={props.locale} connected={props.page.compatible} warning={props.page.warning} selection={props.page.selection} pendingHandoff={props.page.pendingHandoff} available={enabledEntries} onAdd={props.onNewMemory} />
     {!!props.page.selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {props.page.selection.omittedCount}</p>}
     {!!props.page.selection?.overBudgetTokens && <p className="dr-inline-note">{assistantText(props.locale, "overflow")}</p>}
+    <ContextBudgetSummary locale={props.locale} report={props.page.selection?.contextReport}/>
     <section className="quick-actions">
       <button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button>
       <button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button>

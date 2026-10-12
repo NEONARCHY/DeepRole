@@ -1,5 +1,8 @@
 .dr-story-world-name { display: flex; gap: var(--dr-space-2); align-items: center; color: var(--dr-muted); overflow-wrap: anywhere; }
 .dr-story-empty { padding: var(--dr-space-4); }
+.dr-memory-batch { overflow-wrap: anywhere; }
+.dr-memory-batch .button-row { flex-wrap: wrap; }
+.dr-memory-batch button { white-space: normal; max-width: 100%; }
 .dr-story-empty p { color: var(--dr-muted); line-height: 1.6; max-width: 60ch; }
 .dr-story-advanced > summary { font-weight: 600; cursor: pointer; }
 .dr-story-advanced > .settings-card { margin-top: var(--dr-space-3); border: 0; padding-inline: 0; }
@@ -38,3 +41,9 @@
 .dr-story-inbox-fields label { display: flex; align-items: center; gap: 8px; }
 .dr-story-inbox-fields p, .dr-story-automation-inbox p { overflow-wrap: anywhere; white-space: pre-wrap; }
 .dr-story-inbox-search { display: grid; gap: 8px; margin-bottom: 12px; }
+.dr-story-conflict { border-inline-start: 3px solid var(--warning, #c4a766); padding-inline-start: 12px; margin-block: 12px; }
+.dr-story-conflict h4 { margin-block: 8px; }
+.dr-story-tasks .dr-story-review-entry { margin-block: 12px; }
+.dr-story-tasks h3,.dr-story-tasks p,.dr-story-conflict p { overflow-wrap: anywhere; }
+.dr-story-task-status { font-size: 12px; color: var(--text-muted); }
+.dr-story-tasks .field-label { display: block; margin-block: 12px 6px; }

@@ -68,7 +68,7 @@ export async function restoreBackup(
   payload = { ...structuredClone(metadata), ...(photos ? { photos: photos.map(photo => ({ ...photo })) } : {}) };
   payload = { ...payload, records: payload.records.map(normalizeActionRecord) };
   validateBackup(payload);
-  const incomingRecords = payload.records.map(record => record.kind === "service" || record.kind === "dispatch" ? { ...record, data: { ...(record.data as import("../core/service-operations").ServiceOperation | import("../core/story-dispatch-capture").StoryDispatchCapture), origin: "restored" as const } } : record);
+  const incomingRecords = payload.records.map(record => record.kind === "service" || record.kind === "dispatch" ? { ...record, data: { ...(record.data as import("../core/service-operations").ServiceOperation | import("../core/story-dispatch-capture").StoryDispatchCapture), origin: "restored" as const } } : record.kind === "world" && (record.data as import("../core/types").WorldProfile).storyMemoryBatch ? { ...record, data: { ...record.data, storyMemoryBatch: { ...(record.data as import("../core/types").WorldProfile).storyMemoryBatch!, mode: "paused" as const, revision: "memory-restored-" + crypto.randomUUID() } } } : record);
   if (mode === "replace") await repo.replaceRecords(incomingRecords, () => saveSettings(parseBackupSettings(payload.settings)),payload.photos);
   else await repo.updateRecords((existing) => {
     for (const record of payload.records.filter(r => r.kind === "service" || r.kind === "dispatch")) {

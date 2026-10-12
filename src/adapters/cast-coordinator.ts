@@ -1,4 +1,6 @@
 import { browser } from "wxt/browser";
+import { nativeStartLane } from "./native-start-lane";
+import { FIELD_OWNERS_KEY } from "../core/isolated-character-text";
 import { repository, type DeepRoleRepository } from "../storage/repository";
 import { createCastJob, mutateCastJob, acceptCastReply, applyCastDraft } from "../storage/cast-initialization";
 import { castDiagnostic, castParts, castPrompt, parseCastDraft, type CastDraft, type CastJob } from "../core/cast-initialization";
@@ -322,6 +324,10 @@ export class CastCoordinator {
     await this.api.tabs.create({ url, active: true });
   }
   private async start(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false): Promise<CastView> {
+    return nativeStartLane(() => this.startInside(worldId, locale, retry, sourceTabId, continuationOf, restart));
+  }
+  private async startInside(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false): Promise<CastView> {
+    if (((await this.api.storage.session.get(FIELD_OWNERS_KEY))[FIELD_OWNERS_KEY] as { memoryBatch?: unknown; cleanup?: string }[] | undefined)?.some(o => o.memoryBatch && o.cleanup !== "done")) throw Error("busy");
     if (!["ru", "en"].includes(locale) || !worldId) throw new Error("invalid-request");
     await this.reconcilePending().catch(() => undefined);
     const jobs = await this.repo.list<CastJob>("cast");

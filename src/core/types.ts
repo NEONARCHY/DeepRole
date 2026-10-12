@@ -5,6 +5,7 @@ export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "
 
 export interface WorldProfile {
   storyAutomation?: import("./story-automation").StoryAutomationPolicy;
+  storyMemoryBatch?: import("./story-memory-batch").MemoryBatchPolicy;
   /** One live game per lore; chat branches remain historical checkpoints. */
   sharedGame?: import("./world-game").WorldGame;
   sharedGameArchives?: import("./world-game").WorldGame[];
@@ -393,6 +394,7 @@ export interface RankedMemory {
 }
 
 export interface ContextSelection {
+  contextReport?: import("./game-context").GameContextReport;
   overBudgetTokens?: number;
   entries: RankedMemory[];
   estimatedTokens: number;

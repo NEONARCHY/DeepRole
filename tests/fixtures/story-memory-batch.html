@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Memory batch fixture</title></head><body><main id="app"></main><script>
+const area=()=>{const values={};return {get:async keys=>Object.fromEntries((keys?(Array.isArray(keys)?keys:[keys]):Object.keys(values)).filter(k=>k in values).map(k=>[k,values[k]])),set:async data=>{Object.assign(values,data)},remove:async keys=>{for(const k of Array.isArray(keys)?keys:[keys])delete values[k]}}};
+window.browser={runtime:{id:"synthetic",sendMessage:async()=>({})},storage:{local:area(),session:area()}};
+</script><script type="module">
+import "fake-indexeddb/auto";
+import React from "react";import {createRoot} from "react-dom/client";
+import {StoryMemoryBatchPanel} from "/src/entrypoints/shared/StoryMemoryBatchPanel.tsx";
+import {batchFixture,batchReply} from "/tests/fixtures/story-memory-batch.ts";
+import {readMemoryBatch,changeMemoryBatch,applyMemoryBatch,finishMemoryBatch} from "/src/storage/story-memory-batch.ts";
+import "/src/entrypoints/sidepanel/styles.css";import "/src/entrypoints/shared/design-system.css";import "/src/entrypoints/shared/story-workspace.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;
+const f=await batchFixture();await changeMemoryBatch(f.input,"off",f.repo);window.batchFixture={calls:[],f,stall:false,fail:false};
+let active;
+const send=async m=>{window.batchFixture.calls.push(m.action);
+ if(m.action==="status")return {ok:true,data:await readMemoryBatch(f.input,f.repo)};
+ if(m.action==="policy"){await changeMemoryBatch(f.input,m.mode,f.repo);return {ok:true}};
+ if(m.action==="cancel"){if(active){await finishMemoryBatch(f.input,active.id,true,f.repo);active.resolve({ok:false});active=null;}return {ok:true}};
+ const b=await f.prepare();if(window.batchFixture.fail){await finishMemoryBatch(f.input,b.requestId,false,f.repo);return {ok:false}};
+ if(window.batchFixture.stall)return new Promise(resolve=>{active={id:b.requestId,resolve}});
+ await applyMemoryBatch(b,batchReply(b),f.repo);return {ok:true};
+};
+createRoot(document.querySelector("#app")).render(React.createElement("div",{className:"dr-root view-stack",style:{padding:12,maxWidth:700,margin:"auto"}},React.createElement("h1",null,locale==="ru"?"Проверка памяти":"Memory fixture"),React.createElement(StoryMemoryBatchPanel,{locale,scope:f.input,recording:true,blocked:false,send})));
+</script></body></html>

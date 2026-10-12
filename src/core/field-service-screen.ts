@@ -1,12 +1,12 @@
 import type { Locale } from "./types";
 
 /** Presentation only. Never used to authorize a request, reply or cleanup. */
-export interface FieldServicePresentation { locale: Locale; fieldLabel: string; characterName: string; kind?: "profile" | "repair" | "discovery" }
+export interface FieldServicePresentation { locale: Locale; fieldLabel: string; characterName: string; kind?: "profile" | "repair" | "discovery" | "memory" }
 export type FieldServiceScreenStage = "opening" | "preparing" | "reading" | "sending" | "waiting" | "thinking" | "generating" | "validating" | "repairing" | "cleanup" | "done" | "failed" | "cleanup-failed";
 export function validFieldServicePresentation(value: unknown): value is FieldServicePresentation {
  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
  const v = value as FieldServicePresentation;
- return Object.keys(v).length === (v.kind === "profile" || v.kind === "repair" || v.kind === "discovery" ? 4 : 3) && Object.keys(v).every(k => ["locale", "fieldLabel", "characterName", "kind"].includes(k)) && (v.kind === undefined || v.kind === "profile" || v.kind === "repair" || v.kind === "discovery") && ["ru", "en"].includes(v.locale)
+ return Object.keys(v).length === (v.kind === "profile" || v.kind === "repair" || v.kind === "discovery" || v.kind === "memory" ? 4 : 3) && Object.keys(v).every(k => ["locale", "fieldLabel", "characterName", "kind"].includes(k)) && (v.kind === undefined || v.kind === "profile" || v.kind === "repair" || v.kind === "discovery" || v.kind === "memory") && ["ru", "en"].includes(v.locale)
   && typeof v.fieldLabel === "string" && !!v.fieldLabel.trim() && v.fieldLabel.length <= 200
   && typeof v.characterName === "string" && !!v.characterName.trim() && v.characterName.length <= 80;
 }
@@ -48,6 +48,12 @@ export function discoveryServiceScreenCopy(locale: Locale) {
  const base = fieldServiceScreenCopy(locale);
  return locale === "ru" ? { ...base, title: "Поиск персонажей", generic: "Найди пропущенных персонажей в переписке", brief: (_field: string, _name: string) => "Найди пропущенных персонажей в выбранной истории", hint: "Оставьте окно видимым. После очистки оно закроется; найденные имена появятся для проверки в истории DeepRole.", failed: "Поиск остановлен. Сохранённый прогресс и анкеты не изменены.", stages: { ...base.stages, reading: "Читаем выдержки истории", generating: "Ищем персонажей", done: "Имена готовы к проверке" } }
  : { ...base, title: "Finding characters", generic: "Find missed characters in the conversation", brief: (_field: string, _name: string) => "Find missed characters in the selected story", hint: "Keep this window visible. It will close after cleanup; found names will be ready to review in DeepRole story history.", failed: "Search stopped. Saved progress and profiles are unchanged.", stages: { ...base.stages, reading: "Reading story excerpts", generating: "Finding characters", done: "Names ready for review" } };
+}
+
+export function memoryServiceScreenCopy(locale: Locale) {
+ const base = fieldServiceScreenCopy(locale);
+ return locale === "ru" ? { ...base, title: "Проверка памяти", generic: "Проверь новые сыгранные сцены", brief: (_field: string, _name: string) => "Проверь новые сыгранные сцены и дополни память", hint: "Это отдельный запрос DeepSeek. Оставьте окно видимым: после проверки и очистки оно закроется. Пригодные сведения сохранятся, спорные появятся в «Нужно проверить».", failed: "Разбор остановлен. Прежняя память сохранена; повтор доступен в разделе «История».", stages: { ...base.stages, reading: "Читаем новые сцены", generating: "Проверяем события и персонажей", done: "Память проверена" } }
+ : { ...base, title: "Checking memory", generic: "Review new played scenes", brief: (_field: string, _name: string) => "Review new played scenes and fill memory gaps", hint: "This is an extra DeepSeek request. Keep the window visible; it closes after validation and cleanup. Suitable details are saved; uncertain proposals appear under Review needed.", failed: "Analysis stopped. Existing memory is kept; retry in Story.", stages: { ...base.stages, reading: "Reading new scenes", generating: "Checking events and characters", done: "Memory reviewed" } };
 }
 
 /** The same surface, without field/name or per-profile promises for a roster. */

@@ -7,14 +7,15 @@ import type { SupplementInput } from "../core/profile-supplements";
 export class CharacterDiscoveryClient {
   private active = false;
   constructor(private send: (message: FieldMessage) => Promise<any> = m => browser.runtime.sendMessage(m), private wait = (ms: number) => new Promise<void>(r => setTimeout(r, ms)), private now = Date.now) {}
-  async run(input: CharacterDiscoveryInput | DiscoveryProfileInput | SupplementInput, current: () => boolean, signal?: AbortSignal) {
+  async run(input: CharacterDiscoveryInput | DiscoveryProfileInput | SupplementInput | import("../core/story-memory-batch").MemoryBatchInput, current: () => boolean, signal?: AbortSignal) {
     if (this.active) throw Error("busy"); this.active = true;
     let id: string | undefined, settled = false;
     try {
       if (!current() || signal?.aborted) throw Error("cancelled");
+      const batch = "force" in input;
       const profile = "eventId" in input;
       const enriching = "entityId" in input;
-      const start = await this.send(enriching ? { type: "DR_FIELD", action: "enrich-profile", input } : profile ? { type: "DR_FIELD", action: "discovery-profile", input } : { type: "DR_FIELD", action: "discover", input }); if (!start?.ok || typeof start.id !== "string") throw Error(start?.error ?? "request-failed");
+      const start = await this.send(batch ? { type: "DR_FIELD", action: "memory-batch", input } : enriching ? { type: "DR_FIELD", action: "enrich-profile", input } : profile ? { type: "DR_FIELD", action: "discovery-profile", input } : { type: "DR_FIELD", action: "discover", input }); if (!start?.ok || typeof start.id !== "string") throw Error(start?.error ?? "request-failed");
       id = start.id; const since = this.now();
       while (this.now() - since < FIELD_TIMEOUT) {
         if (!current() || signal?.aborted) throw Error("cancelled");
@@ -22,7 +23,7 @@ export class CharacterDiscoveryClient {
         if (result?.cleanup || result?.outcome?.cleanup) settled = true;
         if (!result?.ok) throw Error(result?.error ?? "request-failed");
         if (result.outcome) {
-          if (result.outcome.text !== (enriching ? "profile-supplement-prepared" : profile ? "profile-prepared" : "characters-discovered") || !["done", "failed"].includes(result.outcome.cleanup)) throw Error("invalid-result");
+          if (result.outcome.text !== (batch ? "memory-batch-saved" : enriching ? "profile-supplement-prepared" : profile ? "profile-prepared" : "characters-discovered") || !["done", "failed"].includes(result.outcome.cleanup)) throw Error("invalid-result");
           const ack = await this.send({ type: "DR_FIELD", action: "ack", id: id! }); if (!ack?.ok) throw Error(ack?.error ?? "request-failed");
           if (result.outcome.cleanup !== "done") throw Error("cleanup-pending");
           return;

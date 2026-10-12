@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+import { nativeStartLane } from "./native-start-lane";
 import { repository, type DeepRoleRepository } from "../storage/repository";
 import { getSettings } from "../storage/settings";
 import { TabSessionStore } from "../storage/tab-session";
@@ -28,8 +29,14 @@ import { recordFieldServiceValidation, recordFieldWorkerRuntime, type FieldValid
 import { FIELD_CLEANUP_WAIT, fieldWorkerStages, validFieldWorkerRuntime, type FieldWorkerRuntime, type FieldWorkerStage, type FieldWorkerVisibility } from "../core/field-runtime";
 import { validDiscoveryQueueInput, type DiscoveryQueueInput } from "../core/discovery-profile-queue";
 import { editDiscoveryQueue, failDiscoveryProfileTask } from "../storage/discovery-profile-queue";
+import { prepareMemoryBatch, applyMemoryBatch, finishMemoryBatch, reconcileMemoryBatch, memoryBatchCurrent, readMemoryBatch, changeMemoryBatch, type MemoryBatchBrief } from "../storage/story-memory-batch";
+import { validMemoryBatchInput, type MemoryBatchInput, type MemoryBatchPolicy } from "../core/story-memory-batch";
 
 export type FieldMessage =
+ | { type: "DR_FIELD"; action: "memory-batch"; input: MemoryBatchInput }
+ | { type: "DR_FIELD"; action: "memory-batch-status"; input: MemoryBatchInput }
+ | { type: "DR_FIELD"; action: "memory-batch-cancel"; input: MemoryBatchInput }
+ | { type: "DR_FIELD"; action: "memory-batch-policy"; input: MemoryBatchInput; mode: MemoryBatchPolicy["mode"] }
  | { type: "DR_FIELD"; action: "discovery-queue"; input: DiscoveryQueueInput }
  | { type: "DR_FIELD"; action: "enrich-profile"; input: SupplementInput }
  | { type: "DR_FIELD"; action: "discovery-profile"; input: DiscoveryProfileInput }
@@ -52,8 +59,9 @@ interface Owner {
  discovery?: CharacterDiscoveryInput;
   discoveryProfile?: Pick<DiscoveryProfileInput, "worldId" | "chatId" | "guard" | "eventId" | "queueId">;
  enrichment?: SupplementInput;
+ memoryBatch?: MemoryBatchInput;
 }
-interface Job { prompt: string; field: CharacterTextField; partialContext: boolean; sources: FieldSource[]; presentation: FieldServicePresentation; historyOrigin?: "native" | "visible"; text?: string; evidence?: string[]; repair?: StoryRepairBrief; discovery?: CharacterDiscoveryBrief; discoveryProfile?: DiscoveryProfileBrief; enrichment?: SupplementBrief }
+interface Job { memoryBatch?: MemoryBatchBrief; prompt: string; field: CharacterTextField; partialContext: boolean; sources: FieldSource[]; presentation: FieldServicePresentation; historyOrigin?: "native" | "visible"; text?: string; evidence?: string[]; repair?: StoryRepairBrief; discovery?: CharacterDiscoveryBrief; discoveryProfile?: DiscoveryProfileBrief; enrichment?: SupplementBrief }
 type Sender = import("wxt/browser").Browser.runtime.MessageSender;
 
 /** Text is ephemeral. Only ownership/dispatch metadata survives MV3 suspension.
@@ -72,6 +80,7 @@ export class IsolatedFieldCoordinator {
  private enqueue<T>(task: () => Promise<T>): Promise<T> { const next = this.tail.catch(() => undefined).then(task); this.tail = next.catch(() => undefined); return next; }
  private async owners(): Promise<Owner[]> { return (await this.api.storage.session.get(FIELD_OWNERS_KEY))[FIELD_OWNERS_KEY] as Owner[] ?? []; }
  private async audit(owner: Owner) {
+  if (owner.memoryBatch && owner.phase === "error") await finishMemoryBatch(owner.memoryBatch, owner.id, owner.error === "cancelled", this.repo).catch(() => undefined);
   if (owner.repair && owner.phase === "error") await finishStoryRepair(owner.repair, owner.id, owner.error === "cancelled" ? "cancelled" : "failed", this.repo).catch(() => undefined);
   if (owner.discovery && owner.phase === "error") await finishCharacterDiscovery(owner.discovery, owner.id, owner.error === "cancelled" ? "cancelled" : "failed", this.repo).catch(() => undefined);
   if (owner.discoveryProfile && owner.phase === "error") await failDiscoveryProfileTask(owner.discoveryProfile, owner.id, this.repo).catch(() => undefined);
@@ -111,15 +120,70 @@ export class IsolatedFieldCoordinator {
   } catch { return false; }
  }
  private async save(owner: Owner) { const all = await this.owners(); await this.api.storage.session.set({ [FIELD_OWNERS_KEY]: [...all.filter(o => o.id !== owner.id), owner] }); await this.audit(owner); }
- private async sourceValid(owner: Owner) { const tab = await this.api.tabs.get(owner.sourceTab).catch(() => undefined); return !!tab && fieldSourceUrl(tab.url, owner.source.chatId) && (!owner.repair || await storyRepairCurrent(owner.repair, owner.id, this.repo)) && (!owner.discovery || await characterDiscoveryCurrent(owner.discovery, owner.id, this.repo)) && (!owner.discoveryProfile || await discoveryProfileCurrent(owner.discoveryProfile, this.repo)) && (!owner.enrichment || await profileSupplementCurrent(owner.enrichment, this.repo)); }
+ private async sourceValid(owner: Owner) { const tab = await this.api.tabs.get(owner.sourceTab).catch(() => undefined); return (!owner.memoryBatch || owner.phase === "result" || !!this.jobs.get(owner.id)?.memoryBatch && await memoryBatchCurrent(this.jobs.get(owner.id)!.memoryBatch!, this.repo) && (await this.api.tabs.sendMessage(owner.sourceTab, { type: "DR_MEMORY_BATCH_IDLE", worldId: owner.memoryBatch.worldId, chatId: owner.memoryBatch.chatId }).catch(() => undefined))?.ok) && !!tab && fieldSourceUrl(tab.url, owner.source.chatId) && (!owner.repair || await storyRepairCurrent(owner.repair, owner.id, this.repo)) && (!owner.discovery || await characterDiscoveryCurrent(owner.discovery, owner.id, this.repo)) && (!owner.discoveryProfile || await discoveryProfileCurrent(owner.discoveryProfile, this.repo)) && (!owner.enrichment || await profileSupplementCurrent(owner.enrichment, this.repo)); }
  private stop(owner: Owner, error: string) { owner.phase = "error"; owner.error = safeFieldError(error); owner.settledAt ??= Date.now(); this.jobs.delete(owner.id); }
  private cleanupWaitExpired(owner: Owner) { return !owner.cleanup && owner.phase !== "running" && owner.settledAt !== undefined && Date.now() - owner.settledAt >= FIELD_CLEANUP_WAIT; }
  private wake(owner: Owner) { void this.api.tabs.sendMessage(owner.tabId, { type: "DR_FIELD_CLEANUP" }).catch(() => undefined); }
- handle(message: FieldMessage, sender: Sender): Promise<any> { return this.enqueue(async () => {
+ handle(message: FieldMessage, sender: Sender): Promise<any> { return this.enqueue(() => message.type === "DR_FIELD" && message.action === "memory-batch" ? nativeStartLane(() => this.dispatch(message, sender)) : this.dispatch(message, sender)); }
+ private async dispatch(message: FieldMessage, sender: Sender): Promise<any> {
   try {
    if (sender.id !== this.api.runtime.id || sender.tab?.id === undefined || sender.frameId && sender.frameId !== 0) throw new Error("untrusted");
    const tabId = sender.tab.id, tab = await this.api.tabs.get(tabId).catch(() => undefined);
     if (!tab?.url || new URL(tab.url).origin !== "https://chat.deepseek.com") throw new Error("untrusted");
+    if (message.type === "DR_FIELD" && ["memory-batch", "memory-batch-status", "memory-batch-policy", "memory-batch-cancel"].includes(message.action)) {
+     const batchMessage = message as Extract<FieldMessage, { action: "memory-batch" | "memory-batch-status" | "memory-batch-policy" | "memory-batch-cancel" }>;
+     if (!validMemoryBatchInput(batchMessage.input) || !fieldSourceUrl(tab.url, batchMessage.input.chatId) || !tab.active) throw Error("invalid-brief");
+     if (await this.repo.isLocked()) throw Error("vault-locked");
+     if (batchMessage.action === "memory-batch-cancel") {
+      await readMemoryBatch(batchMessage.input, this.repo); // Current writer, same lore/chat only.
+      for (const owner of await this.owners()) if (owner.memoryBatch?.worldId === batchMessage.input.worldId && owner.memoryBatch.chatId === batchMessage.input.chatId && owner.cleanup !== "done") {
+       if (owner.phase !== "result") { this.stop(owner, "cancelled"); await this.save(owner); } this.wake(owner);
+      }
+      return { ok: true };
+     }
+     const idle = async () => {
+      const source = await this.api.tabs.get(tabId);
+      if (!source.active || !fieldSourceUrl(source.url, batchMessage.input.chatId)) throw Error("scene-changed");
+      const reply = await this.api.tabs.sendMessage(tabId, { type: "DR_MEMORY_BATCH_IDLE", worldId: batchMessage.input.worldId, chatId: batchMessage.input.chatId });
+      if (!reply?.ok) throw Error("busy");
+     };
+     if (batchMessage.action === "memory-batch-status") {
+      for (const owner of await this.owners()) if (owner.memoryBatch && owner.phase === "running" && !this.jobs.has(owner.id)) { this.stop(owner, "interrupted"); await this.save(owner); this.wake(owner); }
+      await reconcileMemoryBatch(batchMessage.input, new Set(this.jobs.keys()), this.repo);
+      const data = await readMemoryBatch(batchMessage.input, this.repo);
+      const other = (await this.owners()).some(o => o.cleanup !== "done") || !!((await this.api.storage.session.get("deeprole_cast_owners")).deeprole_cast_owners as unknown[] | undefined)?.length;
+      return { ok: true, data: data.due && other ? { ...data, due: false, reason: "service-busy" } : data };
+     }
+     if (batchMessage.action === "memory-batch-policy") { await changeMemoryBatch(batchMessage.input, batchMessage.mode, this.repo, async () => { const source = await this.api.tabs.get(tabId); if (!source.active || !fieldSourceUrl(source.url, batchMessage.input.chatId)) throw Error("scene-changed"); }); return { ok: true }; }
+     await idle(); await this.flushPending().catch(() => undefined);
+     if (((await this.api.storage.session.get("deeprole_cast_owners")).deeprole_cast_owners as unknown[] | undefined)?.length) throw Error("busy");
+     if ((await this.owners()).some(o => o.cleanup !== "done")) throw Error("busy");
+     const id = "field_" + crypto.randomUUID(), settings = await this.settings(), createdAt = Date.now();
+     const brief = await prepareMemoryBatch(batchMessage.input, id, settings.locale, this.repo);
+     let worker: import("wxt/browser").Browser.tabs.Tab | undefined;
+     try {
+      await beginServiceOperation({ id, worldId: brief.input.worldId, sourceChatId: brief.input.chatId, createdAt, mode: "history", fieldScope: "profile" }, this.repo);
+      await idle();
+      const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!tab.incognito });
+      const tabs = popup?.tabs ?? (popup?.id !== undefined ? await this.api.tabs.query({ windowId: popup.id }) : []);
+      if (tabs.length !== 1 || tabs[0]?.id === undefined || tabs[0].id === tabId) throw Error("tab-unavailable");
+      worker = tabs[0];
+      const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", memoryBatch: brief.input, mode: "history", fieldScope: "profile", runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
+      await this.save(owner);
+      this.jobs.set(id, { prompt: brief.prompt, field: { key: "memory-batch", label: "Story memory", scope: "profile", mode: "history", maxLength: 64000 }, sources: [], partialContext: true, memoryBatch: brief, presentation: { locale: settings.locale, kind: "memory", characterName: "Story", fieldLabel: "Story memory" } });
+      await this.api.tabs.update(worker.id!, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
+      return { ok: true, id };
+     } catch {
+      await finishMemoryBatch(brief.input, id, false, this.repo).catch(() => undefined);
+      this.jobs.delete(id);
+      const latest = worker?.id !== undefined ? await this.api.tabs.get(worker.id).catch(() => undefined) : undefined;
+      const cleaned = !latest || latest.url === "about:blank" && await this.api.tabs.remove(worker!.id!).then(() => true, () => false);
+      const owned = (await this.owners()).find(o => o.id === id);
+      if (owned) { this.stop(owned, "tab-unavailable"); owned.cleanup = cleaned ? "done" : "failed"; await this.save(owned); if (!cleaned) this.wake(owned); }
+      await this.outbox.record(id, { phase: "failed", workerChatId: null, cleanup: cleaned ? "done" : "failed", error: "tab-unavailable", at: Date.now() }).catch(() => undefined);
+      throw Error("tab-unavailable");
+     }
+    }
     if (message.type === "DR_FIELD" && message.action === "discovery-queue") {
      if (!validDiscoveryQueueInput(message.input) || !fieldSourceUrl(tab.url, message.input.chatId) || !tab.active) throw Error("invalid-brief");
      if (await this.repo.isLocked()) throw Error("vault-locked");
@@ -263,6 +327,7 @@ export class IsolatedFieldCoordinator {
     }
     return { ok: true, id };
    }
+   if (message.type === "DR_FIELD" && !("id" in message)) throw Error("invalid-brief");
    const owner = (await this.owners()).find(o => message.type === "DR_FIELD_WORKER" ? o.tabId === tabId && (!message.id || o.id === message.id) : o.id === message.id && o.sourceTab === tabId);
    if (!owner) throw new Error("unowned-tab");
    if (owner.phase !== "error" && (!(owner.delivered && owner.phase === "result") && !this.jobs.has(owner.id) || !await this.sourceValid(owner) || await this.repo.isLocked() || owner.phase === "running" && !owner.cleanup && Date.now() - owner.createdAt >= FIELD_TIMEOUT)) {
@@ -274,9 +339,9 @@ export class IsolatedFieldCoordinator {
     // Only the source tab may inspect cleanup; never expose reply text after navigation.
     if (message.action === "cleanup") return { ok: true, cleanup: owner.cleanup ?? (this.cleanupWaitExpired(owner) ? "failed" : undefined), ...((owner.cleanup === "failed" || this.cleanupWaitExpired(owner)) && owner.chatUrl ? { cleanupUrl: owner.chatUrl } : {}) };
     if (message.action === "cancel") {
-     // A saved discovery/profile proposal is already a result. Cancelling while
+     // A saved discovery/profile/memory result is already durable. Cancelling while
      // waiting for cleanup must not rewrite that receipt as a failed generation.
-     if (owner.phase !== "result" || !owner.discovery && !owner.discoveryProfile && !owner.enrichment) { this.stop(owner, "cancelled"); await this.save(owner); }
+     if (owner.phase !== "result" || !owner.discovery && !owner.discoveryProfile && !owner.enrichment && !owner.memoryBatch) { this.stop(owner, "cancelled"); await this.save(owner); }
      this.wake(owner);
     }
     if (message.action === "ack") {
@@ -314,7 +379,7 @@ export class IsolatedFieldCoordinator {
    }
    if (message.action === "reply") {
     if (owner.phase !== "running" || !job || !owner.sent || owner.chatId !== message.chatId || currentChat?.id !== owner.chatId) throw new Error("chat-changed");
-    try { if (job.enrichment) { await applyProfileSupplement(job.enrichment, message.raw, this.repo); job.text = "profile-supplement-prepared"; } else if (job.discoveryProfile) { await applyDiscoveryProfile(job.discoveryProfile, message.raw, this.repo); job.text = "profile-prepared"; } else if (job.discovery) { await applyCharacterDiscovery(job.discovery, message.raw, this.repo); job.text = "characters-discovered"; } else if (job.repair) { await applyStoryRepair(job.repair, message.raw, await this.settings(), this.repo); job.text = "metadata-corrected"; } else job.text = isolatedFieldResult(message.raw, { field: job.field }, { requestId: owner.id, sources: job.sources }); }
+    try { if (job.memoryBatch) { await applyMemoryBatch(job.memoryBatch, message.raw, this.repo, async () => { const latest = await this.api.tabs.get(owner.sourceTab); if (!latest.active || !fieldSourceUrl(latest.url, owner.source.chatId) || !(await this.api.tabs.sendMessage(owner.sourceTab, { type: "DR_MEMORY_BATCH_IDLE", worldId: owner.source.worldId, chatId: owner.source.chatId }))?.ok) throw Error("scene-changed"); }); job.text = "memory-batch-saved"; } else if (job.enrichment) { await applyProfileSupplement(job.enrichment, message.raw, this.repo); job.text = "profile-supplement-prepared"; } else if (job.discoveryProfile) { await applyDiscoveryProfile(job.discoveryProfile, message.raw, this.repo); job.text = "profile-prepared"; } else if (job.discovery) { await applyCharacterDiscovery(job.discovery, message.raw, this.repo); job.text = "characters-discovered"; } else if (job.repair) { await applyStoryRepair(job.repair, message.raw, await this.settings(), this.repo); job.text = "metadata-corrected"; } else job.text = isolatedFieldResult(message.raw, { field: job.field }, { requestId: owner.id, sources: job.sources }); }
     catch (error) {
      if (error instanceof FieldValidationError && !this.validationAudits.has(owner.id)) {
       const validation = fieldServiceValidation(error, typeof message.raw === "string" ? message.raw.length : null, Date.now());
@@ -323,12 +388,12 @@ export class IsolatedFieldCoordinator {
      }
      throw error;
     }
-    if (!job.repair && !job.discovery && job.field.mode === "history" && job.field.key !== "character-profile") {
+    if (!job.memoryBatch && !job.repair && !job.discovery && job.field.mode === "history" && job.field.key !== "character-profile") {
      // Read only after the full schema/exact-quote check. Keep quotes ephemeral, without source IDs.
      const validated = JSON.parse(message.raw.trim().replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/u, "$1")) as { evidence: { quote: string }[] };
      job.evidence = [...new Set(validated.evidence.map(item => item.quote))];
     }
-    job.prompt = ""; job.sources = []; job.discovery = undefined; job.discoveryProfile = undefined; job.enrichment = undefined; owner.phase = "result"; owner.settledAt = Date.now(); await this.save(owner); return { ok: true };
+    job.memoryBatch = undefined; job.prompt = ""; job.sources = []; job.discovery = undefined; job.discoveryProfile = undefined; job.enrichment = undefined; owner.phase = "result"; owner.settledAt = Date.now(); await this.save(owner); return { ok: true };
    }
    if (message.action === "error") { if (owner.phase === "running") { this.stop(owner, message.error); await this.save(owner); } return { ok: true }; }
    if (message.action === "authorize-cleanup") {
@@ -357,7 +422,7 @@ export class IsolatedFieldCoordinator {
     const queueError = message.type === "DR_FIELD" && message.action === "discovery-queue" && ["cleanup-required", "story-review-stale", "character-discovery-known"].includes(String(code));
     return { ok: false, error: queueError ? code : safeFieldError(code) };
    }
- }); }
+ }
  removed(tabId: number) { return this.enqueue(async () => { for (const owner of await this.owners()) {
   if (owner.sourceTab === tabId) { this.stop(owner, "tab-closed"); await this.save(owner); this.wake(owner); }
   else if (owner.tabId === tabId && owner.cleanup !== "done") { if (owner.phase === "running") this.stop(owner, "tab-closed"); owner.cleanup = "failed"; await this.save(owner); }

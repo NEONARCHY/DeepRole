@@ -1,7 +1,12 @@
-import { chromium, expect, test } from "@playwright/test";
+import { chromium, expect as baseExpect, test } from "@playwright/test";
 import { mkdtemp } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
+import { estimateTokens } from "../../src/core/text";
+
+// Extension-worker/storage assertions include cold-process IPC, not a model
+// response deadline. Keep a finite bound; exact POST/scope checks stay unchanged.
+const expect=baseExpect.configure({timeout:15000});
 
 for (const locale of ["ru", "en"]) test(`installed automatic recovery persists across reload and stays in its chat ${locale}`, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Chrome MV3 runtime scenario"); test.setTimeout(60000);
@@ -18,14 +23,19 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
     await worker.evaluate(locale => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true, replyRecoveryEnabled: true } }), locale);
     await context.route("https://chat.deepseek.com/**", route => route.fulfill({ contentType:"text/html", body:`<!doctype html><html><head><meta charset="UTF-8"><title>Recovery demo</title></head><body><main><header><h1>Recovery demo</h1></header><section><article data-message-id="answer" data-role="assistant"><div class="ds-think-content">Never archive this reasoning.</div><div class="ds-assistant-message-main-content"><div class="ds-markdown" id="answer">${refusal}</div></div></article></section><form><textarea aria-label="Message"></textarea></form></main></body></html>` }));
     const requests: any[] = []; let responseStatus = 200;
+    const pageErrors:string[]=[];
+    context.on("page",page=>page.on("pageerror",error=>pageErrors.push(error.message)));
     await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
       requests.push(route.request().postDataJSON());
       return route.fulfill({ status: responseStatus, contentType: "text/event-stream", body: "data: [DONE]\n\n" });
     });
     const panel = await context.newPage(); await panel.goto(`chrome-extension://${id}/sidepanel.html`);
     const chat = await context.newPage(); await chat.goto("https://chat.deepseek.com/chat/s/recovery-runtime");
+    await chat.bringToFront();
     await expect(chat.locator("deeprole-page-widget")).toBeAttached();
-    await expect(chat.locator(".dr-launcher")).toBeVisible();
+    // The installed worker has bounded 8s cold reads; a 5s assertion can fail
+    // before its startup fallback. Test the active chat, not a background page.
+    await expect(chat.locator(".dr-launcher")).toBeVisible({timeout:12000});
     await chat.getByRole("textbox", { name:"Message", exact:true }).fill("Preserved draft");
     await chat.locator("#answer").evaluate((node, lines) => { node.replaceChildren(...lines.map(text => { const p = document.createElement("p"); p.textContent = text; return p; })); }, [compass, garden]);
     await expect(chat.locator("#answer")).toContainText(garden);
@@ -42,6 +52,7 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
     }));
     await expect.poll(archive).toHaveLength(1); expect((await archive())[0].html).not.toContain("reasoning");
     await chat.reload(); await expect(host).toBeVisible(); await expect(host).toContainText(garden);
+    await chat.evaluate(()=>{(window as any).budgetReplyProbes=[];window.addEventListener("message",event=>{if(event.data?.source==="deeprole-extension"&&event.data.type==="CONTEXT_READY")(window as any).budgetReplyProbes.push({ok:event.data.ok,length:event.data.context?.length??0});})});
     const send = (chatId = "recovery-runtime", parent = "answer", service = false) => chat.evaluate(async ({ chatId, parent, service }) => {
       const response = await fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ chat_session_id: chatId, parent_message_id: parent, prompt: service ? "[DeepRole Service]\n[Request ID: recovery-service]\nAnalyze." : "Mira, what about the compass?" }) });
       return response.status;
@@ -51,7 +62,9 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
     await send("recovery-runtime", "answer", true); expect(requests.at(-1).prompt).not.toContain("deeprole_recovered_reply");
     expect((await archive())[0].contextSentAt).toBeUndefined();
     responseStatus = 500; expect(await send()).toBe(500);
-    expect(requests.at(-1).prompt).toContain(compass); expect((await archive())[0].contextSentAt).toBeUndefined();
+    expect(requests.at(-1).prompt,JSON.stringify({pageErrors,probes:await chat.evaluate(()=>(window as any).budgetReplyProbes)})).toContain(compass); expect((await archive())[0].contextSentAt).toBeUndefined();
+    const added = requests.at(-1).prompt.split("[User message]")[0] + "[User message]\n";
+    expect(estimateTokens(added)).toBeLessThanOrEqual(2000);
     responseStatus = 200; expect(await send()).toBe(200);
     expect(requests.at(-1).prompt).toContain(garden); expect(requests.at(-1).prompt).toContain("[User message]\nMira, what about the compass?");
     await expect.poll(async () => (await archive())[0].contextSentAt).toEqual(expect.any(Number));

@@ -2,7 +2,13 @@
 
 Version 0.1.0 is an early build installed manually. [Русская инструкция](../INSTALL.md)
 
-The latest build adds **emotion/action search when assigning images**: filter the primary action and extra-action lists by partial standard or custom names, while keeping selected images and assignments. [Character guide](../docs/CHARACTERS.md). [Current Edge archive](DeepRole-Edge-emotion-search-20261012.zip?raw=true).
+The source tree includes an **unfinished shared added-context budget** (RP225): compact scene protocol, whole relevant profile paragraphs, accepted facts/tasks and lore selected within one estimated total. Required/pinned data is preserved with visible overflow. Final runtime verification and packaging are pending; there is no released RP225 archive yet. It does not erase native DeepSeek history or enable semantic/external search. [Guide](../docs/AUTOMATIC-MEMORY.md).
+
+The latest released build (RP224) adds **Story tasks and conflict resolution** during normal play: source-backed open/completed/cancelled obligations, old/new comparisons, reversible human replacement and bounded task memory in the next request. No new service requests are added; semantic linkage still depends on model output. [Guide](../docs/AUTOMATIC-MEMORY.md). [Current Edge archive](DeepRole-Edge-tasks-conflicts-20261013.zip?raw=true).
+
+The previous build added **optional extra memory review**: bounded new played-scene batches, durable progress, exact sources, automatic/review saves, and explicit interruption retry. Disabled by default; uses extra DeepSeek requests in a masked service window. [Guide](../docs/AUTOMATIC-MEMORY.md). [Previous Edge archive](DeepRole-Edge-memory-batches-20261013.zip?raw=true).
+
+Earlier updates include **emotion/action search when assigning images**: partial standard/custom names without losing image choices. [Character guide](../docs/CHARACTERS.md).
 
 It also fixes **large world/backup exports**: each photo travels once, files are assembled in parts, and large imports are read incrementally. Pixels and action assignments are preserved. A synthetic 280 MiB library with 24 characters and 40 photos was exported and restored in Edge. [File guide](../docs/PORTABLE-FILES.md). [Previous dated archive](DeepRole-Edge-large-export-20261012.zip?raw=true).
 

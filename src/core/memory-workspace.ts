@@ -57,7 +57,7 @@ export function compileMemoryWorkspace(input: RankMemoryInput & { worlds: WorldP
   }
   const selection = rankMemories({ ...input, scene, entries: documents, nameGroups: indexes.get(key) });
   selection.entries = selection.entries.map((item) => ({ ...item, origin: origins.get(item.entry.id) }));
-  selection.estimatedTokens = selection.entries.length ? estimateTokens(formatMemoryContext(selection)) : 0;
+  if (!input.candidateOnly) selection.estimatedTokens = selection.entries.length ? estimateTokens(formatMemoryContext(selection)) : 0;
   selection.overBudgetTokens = Math.max(0, selection.estimatedTokens - input.settings.contextBudget);
   return { selection, documents };
 }

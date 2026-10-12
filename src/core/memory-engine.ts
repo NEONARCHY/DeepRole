@@ -20,6 +20,8 @@ const PRIORITY_MULTIPLIER: Record<MemoryPriority, number> = {
 };
 
 export interface RankMemoryInput {
+  /** Internal candidate discovery: no aggregate prompt render or budget pruning. */
+  candidateOnly?: boolean;
   nameGroups?: ReturnType<typeof inferTitlePeople>;
   draft: string;
   recentMessages: string[];
@@ -101,7 +103,7 @@ export function rankMemories(input: RankMemoryInput): ContextSelection {
   for (const item of ranked) {
     const required = item.estimatedTokens;
     const forced = item.entry.activation === "always" || item.manuallySelected;
-    if (!forced && estimatedTokens + required > input.settings.contextBudget) {
+    if (!input.candidateOnly && !forced && estimatedTokens + required > input.settings.contextBudget) {
       omittedCount += 1;
       continue;
     }
@@ -123,11 +125,11 @@ export function rankMemories(input: RankMemoryInput): ContextSelection {
     if (!entry.enabled || entry.activation !== "smart" || excludedIds.has(entry.id)) continue;
     if (input.scene ? !isMemoryInScene(entry, input.scene, input.books ?? []) : entry.worldId || (entry.bookId && entry.bookId !== input.activeBookId)) continue;
     const required = estimateEntryTokens(entry);
-    if (estimatedTokens + required > input.settings.contextBudget) { if (!ranked.some((r) => r.entry.id === entry.id)) omittedCount += 1; continue; }
+    if (!input.candidateOnly && estimatedTokens + required > input.settings.contextBudget) { if (!ranked.some((r) => r.entry.id === entry.id)) omittedCount += 1; continue; }
     selected.push({ entry, score: 6, reasons: ["linked"], estimatedTokens: required, manuallySelected: false });
     estimatedTokens += required;
   }
-  if (selected.length) {
+  if (selected.length && !input.candidateOnly) {
     // Include relationship labels and instructions in the same budget, too.
     estimatedTokens = estimateTokens(formatMemoryContext({ entries: selected, estimatedTokens, omittedCount }));
     while (estimatedTokens > input.settings.contextBudget) {

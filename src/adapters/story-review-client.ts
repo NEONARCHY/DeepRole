@@ -94,7 +94,7 @@ export async function readActiveAutomation(tabs: StoryReviewTabs, scope: { chatI
   if (!validAutomationReviewPage(page) || page.worldId !== scope.worldId || page.chatId !== scope.chatId) throw Error("story-review-invalid");
   return page;
 }
-export async function resolveActiveAutomation(tabs: StoryReviewTabs, page: AutomationReviewPage, decision: Pick<AutomationReviewDecision,"eventId"|"accept"|"fields"|"entityId"|"name">) {
+export async function resolveActiveAutomation(tabs: StoryReviewTabs, page: AutomationReviewPage, decision: Pick<AutomationReviewDecision,"eventId"|"accept"|"fields"|"entityId"|"name"|"replaceKeys">) {
   const before = await active(tabs);
   if (!validAutomationReviewPage(page) || !isSameDeepSeekChat(before.url,before.url,page.chatId)) throw Error("story-binding-conflict");
   result(await tabs.sendMessage(before.tabId,{ type: "DR_AUTOMATION_RESOLVE", input: { chatId: page.chatId,worldId: page.worldId,guard: page.guard,gameRevision: page.gameRevision,...decision } }));

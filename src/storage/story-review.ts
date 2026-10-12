@@ -43,7 +43,8 @@ export async function readStoryReview(input: StoryReviewInput, repo: DeepRoleRep
     const repair = head?.metadataRepair ? { ...head.metadataRepair, ...(validServiceOperation(audit) && audit.operation === "story-repair" ? { cleanup: audit.cleanup } : {}) } : undefined;
     const factPage = input.cursor ? new Set(f.revisions.slice(offset, offset + 8).map(r => r.id)) : null;
     const currentFacts = [...f.baseline?.factSeeds ?? [],...events.filter(e => e.memory && applied.has(e.id)).sort((a,b) => (line?.revisionIds.indexOf(a.revisionId) ?? 0) - (line?.revisionIds.indexOf(b.revisionId) ?? 0) || a.ordinal-b.ordinal).map(e => e.memory!)];
-    const superseded = (e: StoryEvent) => !!e.memory?.claim && applied.has(e.id) && currentFacts.findLast(fact => fact.claim?.key.toLocaleLowerCase() === e.memory!.claim!.key.toLocaleLowerCase())?.claim?.value !== e.memory.claim.value;
+    const activeFacts = new Set(compactStoryFacts(currentFacts).map(storyFactIdentity));
+    const superseded = (e: StoryEvent) => !!e.memory && applied.has(e.id) && !activeFacts.has(storyFactIdentity(e.memory));
     const facts = f.branch?.gameManaged ? events.filter(e => e.memory && (!e.automation || e.automation.status === "saved") && selected.has(e.revisionId) && (!factPage || factPage.has(e.revisionId))).sort((a, b) => (line?.revisionIds.indexOf(a.revisionId) ?? 0) - (line?.revisionIds.indexOf(b.revisionId) ?? 0) || a.ordinal - b.ordinal).slice(-24).map(e => ({ ...e.memory!, edited: !!e.memory!.edited, eventId: e.id, accepted: applied.has(e.id), ...(superseded(e) ? { superseded: true as const } : {}), ...(e.automation ? { automation: e.automation } : {}) })) : undefined;
     const entries = f.revisions.slice(offset, offset + 8).map(r => {
       const related = events.filter(e => e.revisionId === r.id), parent = r.parentRevisionId === null ? null : byId.get(r.parentRevisionId);
@@ -72,3 +73,5 @@ export async function previewStoryReview(input: StoryPreviewInput, repo: DeepRol
       manualConflict: (scene?.revision ?? null) !== (f.projection?.bindingRevision ?? f.baseline.origin.sceneRevision) || !sameStoryValue(sceneValue, expected) }) };
   }, undefined, [...kinds]);
 }
+import { compactStoryFacts } from "../core/story-update";
+import { storyFactIdentity } from "../core/story-memory-lifecycle";

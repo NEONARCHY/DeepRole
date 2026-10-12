@@ -65,7 +65,7 @@ it.each(["event","promise","plan","belief","secret","task"])("automatically save
   const before=await f.repo.rawRecords(); await f.play(); f.db.close();await f.db.open();await f.play();expect(await f.repo.rawRecords()).toEqual(before);assertStoryGraph(before);
 });
 it("never counts a repeated fact again and keeps mutable claim progression",async()=>{
-  const f=await fixture();const a=fact("The door code is 123.","ordinary","event",{key:"door.code",value:"123",scope:"state"}),b=fact("The door code is 456.","ordinary","event",{key:"door.code",value:"456",scope:"state"});
+  const f=await fixture();const a=fact("The door code is 123.","ordinary","event",{key:"door.code",value:"123",scope:"state"}),b=fact("The door code is 456.","ordinary","event",{key:"door.code",value:"456",scope:"state",transition:"progress"});
   await f.send([a]);await f.send([a]);await f.send([b]);expect((await f.world()).sharedGame!.facts).toHaveLength(1);expect((await f.world()).sharedGame!.facts[0]!.text).toBe(b.text);
   expect((await f.repo.list<StoryEvent>("story")).filter(e=>e.automation?.status==="duplicate")).toHaveLength(1);
 });
@@ -166,7 +166,7 @@ it("removing an accepted review fact dismisses the original queue item permanent
  expect((await f.review()).total).toBe(0);expect((await f.world()).sharedGame!.facts).toHaveLength(0);assertStoryGraph(await f.repo.rawRecords());
 });
 it("relevant early memory is retrieved and old claim values are visibly superseded",async()=>{
- const f=await fixture();const a=fact("The door code is 123.","ordinary","event",{key:"door.code",value:"123",scope:"state"}),b=fact("The door code is 456.","ordinary","event",{key:"door.code",value:"456",scope:"state"});
+ const f=await fixture();const a=fact("The door code is 123.","ordinary","event",{key:"door.code",value:"123",scope:"state"}),b=fact("The door code is 456.","ordinary","event",{key:"door.code",value:"456",scope:"state",transition:"progress"});
  await f.send([a]);await f.send([b]);const p=await readStoryReview({...f.scope(),cursor:null},f.repo);
  expect(p.facts!.find(e=>e.text===a.text)).toMatchObject({superseded:true});expect(p.facts!.find(e=>e.text===b.text)!.superseded).toBeUndefined();
  const facts=Array.from({length:100},(_,i)=>({text:i===0?"Neri hid the antique compass in the attic.":"A visitor recorded landmark "+i,quote:"Source",kind:"event" as const}));

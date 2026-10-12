@@ -80,7 +80,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
     const data = structuredClone(r.data);
     data.id = ids.get(r.id)!;
     if (r.kind === "world") (data as WorldProfile).autoPrepareCharacters = false;
-    if (r.kind === "world") { delete (data as WorldProfile).sharedGame; delete (data as WorldProfile).sharedGameArchives; }
+    if (r.kind === "world") { (data as WorldProfile).storyMemoryBatch && ((data as WorldProfile).storyMemoryBatch = { ...(data as WorldProfile).storyMemoryBatch!, mode: "paused", revision: createId("memory-imported") }); delete (data as WorldProfile).sharedGame; delete (data as WorldProfile).sharedGameArchives; }
     if (r.kind === "world" && (data as WorldProfile).mapLayout) {
       const layout = (data as WorldProfile).mapLayout!;
       const remap = (key: string) => key.split(":").map((part) => ids.get(part) ?? part).join(":");

@@ -8,7 +8,8 @@ const START = "<deeprole_choices>";
 const END = "</deeprole_choices>";
 const KINDS: SceneChoiceKind[] = ["positive", "neutral", "negative", "surprise"];
 
-export function sceneChoiceInstruction(): string {
+export function sceneChoiceInstruction(compact = false): string {
+  if (compact) return `<deeprole_choice_mode version="1">For every in-character scene reply, Always offer four ways for the protagonist to reply or act. End with exactly ONE <deeprole_choices>{"version":1,"options":[{"kind":"positive","label":"short choice","text":"player reply/action"},{"kind":"neutral","label":"short choice","text":"player reply/action"},{"kind":"negative","label":"short choice","text":"player reply/action"},{"kind":"surprise","label":"short choice","text":"player reply/action"}]}</deeprole_choices>. Positive=warm/constructive, neutral=restrained/pragmatic, negative=harsh/selfish/confrontational, surprise=unexpected but plausible. Distinct specific options in world language/tone/emoji, ready to send as player-only actions/speech; no NPC reaction, predicted success, numbering or menu text. Respect personality, boundaries and numeric guidance; no automatic good/evil reward or guaranteed consequence. Never choose for the player or count options as events. No choices for OOC/summaries, no visible list/code fence/reasoning/explanation.</deeprole_choice_mode>`;
   return [
     "<deeprole_choice_mode version=\"1\">",
     "For every in-character scene reply, including a short dialogue exchange, end the final answer with exactly one <deeprole_choices> JSON block. Always offer four ways for the protagonist to reply or act. Do not add choices to out-of-character explanations or summaries.",
