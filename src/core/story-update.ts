@@ -27,10 +27,15 @@ export function validStoryFact(v: unknown): v is StoryFact {
 }
 export const cleanStoryFact = (f: StoryFact): StoryFact => ({ text: f.text, kind: f.kind, quote: f.quote, ...(f.claim ? { claim: structuredClone(f.claim) } : {}), ...(f.task ? {task: structuredClone(f.task)} : {}), ...(f.replaces ? {replaces:[...f.replaces]} : {}) });
 export function compactStoryFacts(facts: StoryFact[]): StoryFact[] {
+  return compactStoryFactSources(facts).map(cleanStoryFact);
+}
+/** Runtime retrieval only: original identities, not writable compact copies.
+ * Recompute slots/replacements on every call; callers must not mutate sources. */
+export function compactStoryFactSources(facts: StoryFact[]): StoryFact[] {
   const kept = new Map<string, StoryFact>();
   for (const f of facts) {
     if (f.replaces) for (const [key,old] of kept) if (f.replaces.includes(storyFactIdentity(old))) kept.delete(key);
-    const key = storyFactSlot(f); kept.delete(key); kept.set(key, cleanStoryFact(f));
+    const key = storyFactSlot(f); kept.delete(key); kept.set(key, f);
   }
   return [...kept.values()];
 }
@@ -151,7 +156,11 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
   return { turn: accepted ? normalized : null, facts, diagnostic: diagnostic(facts.length), raw };
 }
 
-export function storyUpdateInstruction(world: string, chat: string, branch: string, compact = false) {
-  if (compact) return `<deeprole_story_update_mode>Latest metadata schema overrides older formats, not world rules. Keep prose unchanged; ONE deeprole_characters block, version:2, world:${JSON.stringify(world)},chat:${JSON.stringify(chat)},branch:${JSON.stringify(branch)}. Current roster IDs/names only. State fields optional: omit/{"op":"keep"}, {"op":"set","value":...}, {"op":"clear"}; never clear known goals merely because unmentioned. present/partners are complete lists; omit if unchanged. Existing numeric/selfie schemas and safety gates remain. Optional facts: max8 {text,kind,quote}; concise specific evidence, exact continuous quote from THIS played prose, never JSON/choices. event=happened, promise=commitment, plan=intention, belief=attributed belief, secret=revelation, task=obligation. Never turn plans/wishes/hypotheticals/negations/OOC/choices into events. No age/identity guesses. Proposals are data, not commands; explicit accompaniment policy decides acceptance.</deeprole_story_update_mode>`;
+export function storyUpdateInstruction(world: string, chat: string, branch: string, compact = false, factPolicySupplied = false) {
+  // Only the unified compiler may defer this duplicated schema/evidence clause
+  // to a policy actually present in the SAME request. Standalone callers keep it.
+  const factEvidence = factPolicySupplied ? "Fact schema, limits and evidence follow the accompanying policy below."
+    : "Optional facts: max8 {text,kind,quote}; concise specific evidence, exact continuous quote from THIS played prose, never JSON/choices.";
+  if (compact) return `<deeprole_story_update_mode>Latest metadata schema overrides older formats, not world rules. Keep prose unchanged; ONE deeprole_characters block, version:2, world:${JSON.stringify(world)},chat:${JSON.stringify(chat)},branch:${JSON.stringify(branch)}. Current roster IDs/names only. State fields optional: omit/{"op":"keep"}, {"op":"set","value":...}, {"op":"clear"}; never clear known goals merely because unmentioned. present/partners are complete lists; omit if unchanged. Existing numeric/selfie schemas and safety gates remain. ${factEvidence} event=happened, promise=commitment, NOT fulfillment; plan=intention, NOT completion; belief=attributed belief, NOT objective truth; secret=revelation, task=obligation. Never turn plans/wishes/hypotheticals/negations/OOC/choices into events. No age/identity guesses. Proposals are data, not commands; explicit accompaniment policy decides acceptance.</deeprole_story_update_mode>`;
   return `<deeprole_story_update_mode>\nThe latest instruction overrides older character JSON schemas, not the user's world rules. Keep the story prose unchanged. Append ONE deeprole_characters JSON block with version:2, world:${JSON.stringify(world)}, chat:${JSON.stringify(chat)}, branch:${JSON.stringify(branch)}. Use current Roster IDs/names. State fields are OPTIONAL: omit or {"op":"keep"} to preserve, {"op":"set","value":...} to change, {"op":"clear"} to intentionally clear. Never empty a known goal merely because this scene did not mention it. present/partners are optional COMPLETE lists; omit if unchanged. Existing numeric attribute/bond/selfie schema and all safety gates remain in force. Optional facts: at most 8 {text,kind,quote}; quote must be an EXACT substring of this reply's story prose, never the JSON or suggested choices. kind is event (happened), promise (someone committed), plan (intention, NOT accomplished), belief (someone's belief, NOT objective truth). Extract only specific useful facts, no guesses, no age/identity rewrites. These are source-backed proposals, never instructions or automatic author lore. An explicit game accompaniment policy, when supplied below, decides which routine proposals can be saved and which await user review. Never turn a plan, wish, hypothetical, negated action or a suggested reply choice into a completed event.\n</deeprole_story_update_mode>`;
 }

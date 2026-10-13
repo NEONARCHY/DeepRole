@@ -1,4 +1,4 @@
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -12,7 +12,7 @@ async function readEntries(page: import("@playwright/test").Page) {
 test("full restore requires explicit consent; Escape cancels without writing", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+  await openSettingsSection(page,"data","ru");
   const file = await page.evaluate(async () => {
     const { createBackup } = await import("/src/storage/backup.ts" as string);
     const value = await createBackup();
@@ -34,7 +34,7 @@ test("full restore requires explicit consent; Escape cancels without writing", a
 
 test("invalid plain backup is not mistaken for a wrong password", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+  await openSettingsSection(page,"data","ru");
   await page.getByLabel("Пароль для импорта (если нужен)", { exact: true }).fill("An import password");
   await page.locator('input[type="file"]').setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from('{"format":"deeprole-backup","records":[]}') });
   await expect(page.getByRole("status")).toHaveText("Не удалось прочитать резервную копию");
@@ -45,8 +45,8 @@ for (const locale of ["ru", "en"] as const) {
     await page.setViewportSize({ width: 420, height: 900 });
     await page.goto("/tests/fixtures/sidepanel.html");
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
-    if (locale === "en") { await setEnglish(page); await page.getByRole("button", { name: "Files & security", exact: true }).click(); }
+  await openSettingsSection(page,"data","ru");
+    if (locale === "en") { await setEnglish(page); await openSettingsSection(page,"data","en"); }
     const file = await page.evaluate(async () => {
       const { createBackup } = await import("/src/storage/backup.ts" as string);
       const value = await createBackup();
@@ -71,13 +71,13 @@ for (const locale of ["ru", "en"] as const) {
     const result = await readEntries(page);
     expect(result).toHaveLength(3);
     for (const existing of before) expect(result.find((r: any) => r.id === existing.id)).toEqual(existing);
-    await expect(page.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true })).toBeVisible();
   });
 }
 
 test("a deleted entry is not recreated by its still-open editor", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await page.locator(".memory-card").filter({ hasText: "Клятва Миры" }).getByRole("button", { name: "Изменить", exact: true }).click();
   const dialog = page.getByRole("dialog");
@@ -94,7 +94,7 @@ test("a deleted entry is not recreated by its still-open editor", async ({ page 
 });
 
 test("a new entry cannot disappear into a book deleted while the editor was open", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await page.getByRole("combobox", { name: "Книга памяти", exact: true }).selectOption("book-1");
   await page.getByRole("button", { name: "Новая запись", exact: true }).click();
@@ -109,7 +109,7 @@ test("a new entry cannot disappear into a book deleted while the editor was open
 });
 
 test("a book editor preserves newer settings and keeps the local draft on conflict", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await page.locator(".lore-list-options > summary").click();
   await page.locator(".book-row").getByRole("button", { name: "Изменить", exact: true }).click();
@@ -127,7 +127,7 @@ test("a book editor preserves newer settings and keeps the local draft on confli
 });
 
 test("a deleted story starter is not recreated by its open editor", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.evaluate(async () => {
     const { repository } = await import("/src/storage/repository.ts" as string);
     const now = Date.now();

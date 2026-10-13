@@ -32,7 +32,7 @@ for (const locale of ["ru", "en"] as const) test("installed reference review rev
       await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true }, deeprole_image_settings: settings, deeprole_image_keys: { [config.id]: key } });
     }, { locale, config, key, settings: { ...DEFAULT_IMAGE_SETTINGS, enabled: true, contentLevel: "suggestive", reviewBeforeGeneration: true, profiles: [config], profileByLevel: { off: config.id, suggestive: config.id } } });
     await panel.reload();
-    await expect(panel.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true })).toBeVisible();
     const images = await panel.evaluate(() => ["#758c9a", "#af9471", "#64776a", "#9b738b"].map(color => {
       const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 192; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 128, 192); return canvas.toDataURL();
     }));

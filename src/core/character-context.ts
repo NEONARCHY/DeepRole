@@ -16,11 +16,14 @@ function mentionsFolded(lower: string, entity: Pick<SceneEntity, "name" | "alias
   });
 }
 export const mentionsCharacter = (text: string, entity: Pick<SceneEntity, "name" | "aliases">) => mentionsFolded(folded(text), entity);
-export function selectCharacterContext(entities: SceneEntity[], scene: CharacterScene | undefined, focusIds: string[], recent: string, budget = CHARACTER_ROSTER_BUDGET, relevantOnly = false) {
+export function selectCharacterContext(entities: SceneEntity[], scene: CharacterScene | undefined, focusIds: string[], recent: string, budget = CHARACTER_ROSTER_BUDGET, relevantOnly = false, mentionedIds?: Iterable<string>) {
   const present = new Set(scene?.presentIds ?? []), talking = new Set(scene?.partnerIds ?? (scene?.partnerId ? [scene.partnerId] : [])), focus = new Set(focusIds);
   const lower = folded(recent);
+  // A caller with the complete name registry can pass collision-safe IDs.
+  // Physical presence/player/partners/focus remain independent of name lookup.
+  const mentions = mentionedIds === undefined ? undefined : new Set(mentionedIds);
   const players = entities.filter(e => e.characterSheet?.protagonist), uniquePlayer = players.length === 1 ? players[0]!.id : null;
-  const ranked = entities.map((entity, index) => ({ entity, index, priority: entity.characterSheet?.protagonist ? 4 : talking.has(entity.id) || focus.has(entity.id) ? 3 : present.has(entity.id) ? 2 : mentionsFolded(lower, entity) ? 1 : 0 }));
+  const ranked = entities.map((entity, index) => ({ entity, index, priority: entity.characterSheet?.protagonist ? 4 : talking.has(entity.id) || focus.has(entity.id) ? 3 : present.has(entity.id) ? 2 : (mentions ? mentions.has(entity.id) : mentionsFolded(lower, entity)) ? 1 : 0 }));
   ranked.sort((a, b) => b.priority - a.priority || a.index - b.index);
   const roster: SceneEntity[] = []; let used = 2;
   for (const { entity,priority } of ranked) {

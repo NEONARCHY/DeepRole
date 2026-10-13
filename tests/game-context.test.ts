@@ -90,3 +90,38 @@ it("two explicitly queried facts take priority over generic profile paragraphs",
  const f=fixture(2000);f.input.draft="Which key opens the cellar and is the gate repaired?";f.input.story!.facts=[{text:"The blue key opens the cellar.",quote:"The blue key opens the cellar.",kind:"event"},{text:"Mira repaired the gate.",quote:"Mira repaired the gate.",kind:"event",task:{key:"mira.gate",title:"repair the gate",status:"completed"}}];
  const r=compileGameContext(f.input);expect(r.text).toContain("The blue key opens the cellar.");expect(r.text).toContain('"status":"completed"');expect(r.report.total).toBeLessThanOrEqual(2000);
 });
+it("unresolved personal requests preserve separate candidates and count the guard in the whole budget",()=>{
+ const f=fixture(4000);f.input.draft="What about her promise?";
+ f.input.story!.facts=[{text:"Mira agreed to repair the gate.",quote:"Mira agreed to repair the gate.",kind:"promise"},{text:"Nora agreed to return the book.",quote:"Nora agreed to return the book.",kind:"promise"}];
+ const before=structuredClone(f.input),r=compileGameContext(f.input);
+ expect(r.text).toContain("Personal reference in the current request is NOT resolved");
+ expect(r.text).toContain("Mira agreed");expect(r.text).toContain("Nora agreed");
+ expect(r.report.total).toBe(addedContextTokens(r.text));expect(r.report.total).toBeLessThanOrEqual(4000);
+ expect(f.input).toEqual(before);
+});
+it.each([ ["Anna Lee","What about Anna's promise?"], ["Анна Ли","Что с обещанием Анны?"] ])("a unique short name retrieves the off-scene profile and canonical fact: %s",(name,draft)=>{
+ const f=fixture(4000);f.entities[2]!.name=name;f.entities[2]!.aliases=[];f.entities[2]!.characterSheet!.background="UNIQUE SHORT-NAME PROFILE";
+ f.input.draft=draft;f.input.character![6]=draft;f.input.story!.facts=[{text:name+" agreed to repair the gate.",quote:name+" agreed to repair the gate.",kind:"promise"}];
+ const before=structuredClone(f.input),r=compileGameContext(f.input);
+ expect(r.text).toContain("UNIQUE SHORT-NAME PROFILE");expect(r.text).toContain(name+" agreed");expect(r.report.total).toBeLessThanOrEqual(4000);expect(f.input).toEqual(before);
+});
+it.each([ ["Ann","Ann Lee","Ann Lee's promise"], ["Анна","Анна Ли","Обещание Анна Ли"] ])("full-name requests omit a different off-scene short-name profile and description: %s",(short,full,draft)=>{
+ const f=fixture(5000,4);f.entities[2]!.name=short;f.entities[3]!.name=full;
+ for(const [at,label] of [[2,"WRONG PERSON"],[3,"RIGHT PERSON"]] as const){const e=f.entities[at]!;e.characterSheet!.background=label+" PROFILE";e.description=label+" DESCRIPTION";e.useDescriptionInContext=true;}
+ f.input.draft=draft;f.input.character![6]=draft;const before=structuredClone(f.input),r=compileGameContext(f.input);
+ expect(r.text).toContain("RIGHT PERSON PROFILE");expect(r.text).toContain("RIGHT PERSON DESCRIPTION");expect(r.text).not.toContain("WRONG PERSON");expect(f.input).toEqual(before);
+ f.binding.characterScenes![f.world.id]!.presentIds.push(f.entities[2]!.id);
+ expect(compileGameContext(f.input).text).toContain("WRONG PERSON PROFILE");
+});
+it("shared short names are guarded without selecting either off-scene profile",()=>{
+ const f=fixture(4000,4);f.entities[2]!.name="Anna Lee";f.entities[3]!.name="Anna Smith";
+ f.entities[2]!.characterSheet!.background="OFFSCENE LEE PROFILE";f.entities[3]!.characterSheet!.background="OFFSCENE SMITH PROFILE";
+ f.input.draft="Anna's promise";f.input.character![6]=f.input.draft;const r=compileGameContext(f.input);
+ expect(r.text).toContain("multiple possible owners");expect(r.text).not.toContain("OFFSCENE LEE PROFILE");expect(r.text).not.toContain("OFFSCENE SMITH PROFILE");expect(r.report.total).toBeLessThanOrEqual(4000);
+});
+it("named groups retain their descriptions and member context",()=>{
+ const f=fixture(4000,4);f.entities[3]!.characterSheet!.background="GROUP MEMBER PROFILE";
+ f.entities.push({id:"crew",worldId:f.world.id,kind:"group",name:"Clock crew",aliases:[],description:"GROUP DESCRIPTION",useDescriptionInContext:true,memberIds:[f.entities[3]!.id],createdAt:1,updatedAt:1});
+ f.input.draft="I ask the Clock crew.";f.input.character![6]=f.input.draft;const r=compileGameContext(f.input);
+ expect(r.text).toContain("GROUP DESCRIPTION");expect(r.text).toContain("GROUP MEMBER PROFILE");
+});

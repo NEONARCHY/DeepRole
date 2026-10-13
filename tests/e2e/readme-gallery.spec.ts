@@ -1,6 +1,6 @@
 import { chooseImageCompression } from "./image-upload-helpers";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 import { characterTab } from "./character-helpers";
 import { actionPolicyText } from "../../src/core/action-policy-i18n";
 import { actionOptionLabel } from "../../src/core/characters";
@@ -116,7 +116,7 @@ for (const locale of ["en", "ru"] as const) {
     page.once("dialog", prompt => prompt.accept());
     await dialog.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).last().click();
     await sidepanel(page, locale);
-    await page.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true }).click();
+    await page.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
     await page.getByRole("button", { name: locale === "ru" ? "Открыть карту мира" : "Open world map", exact: true }).click();
     const workspace = page.getByRole("dialog", { name: locale === "ru" ? "Карта мира" : "World map", exact: true });
     await workspace.getByRole("button", { name: locale === "ru" ? "Развернуть на весь экран" : "Expand to full screen", exact: true }).click();
@@ -165,7 +165,7 @@ for (const locale of ["en", "ru"] as const) {
       const entries = locale === "ru" ? [["Мира — хранительница", "Мира охраняет обсерваторию."], ["Латунный ключ", "Ключ открывает северную дверь."], ["Сумерки", "Ворота города закрываются на закате."], ["Правило обсерватории", "Не входите в башню в одиночку."]] : [["Mira — keeper", "Mira protects the observatory."], ["The brass key", "The key opens the north door."], ["Nightfall", "The city gates close at dusk."], ["Observatory rule", "Do not enter the tower alone."]];
       for (const [i, [title, content]] of entries.entries()) await repository.put("entry", { id: `demo-${i}`, worldId: "demo", bookId: null, title, content, mapCategory: ["characters", "locations", "timeline", "rules"][i], keywords: [], activation: "smart", priority: "normal", enabled: true, source: { type: "manual" }, createdAt: now, updatedAt: now });
     }, locale);
-    await page.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true }).click();
+    await page.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
     await page.getByRole("button", { name: locale === "ru" ? /^Библиотека мира:/ : /^World library:/ }).click();
     await page.getByRole("menuitemradio", { name: locale === "ru" ? "Обсерватория" : "The Observatory", exact: true }).click();
     await page.getByRole("button", { name: locale === "ru" ? "Открыть карту мира" : "Open world map", exact: true }).click();
@@ -208,7 +208,7 @@ for (const locale of ["en", "ru"] as const) {
   test(`README panel settings and continuation ${locale}`, async ({ page }, info) => {
     await page.setViewportSize({ width: 460, height: 980 });
     await sidepanel(page, locale);
-    await page.getByRole("button", { name: locale === "ru" ? "Приложение" : "App", exact: true }).click();
+    await openSettingsSection(page,"app",locale);
     const card = page.locator(".settings-card").filter({ hasText: locale === "ru" ? "Панели и сцена" : "Panels and scene" });
     await expect(card.getByRole("slider")).toHaveValue("224");
     await capture(page, card, info, `settings-${locale}.png`);

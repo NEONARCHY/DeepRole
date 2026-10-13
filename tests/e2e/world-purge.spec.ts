@@ -8,7 +8,7 @@ for(const locale of ['ru','en'])for(const width of [320,1100])test(`full world d
   await repository.put('book',{id:'purge-book',worldId:'world-a',name:'Imported lore',description:'',color:'#123456',active:true,createdAt:1,updatedAt:1});
   await repository.put('entry',{id:'purge-entry',bookId:'purge-book',title:'Imported fact',content:'Original neutral lore',keywords:[],activation:'smart',priority:'normal',enabled:true,source:{type:'manual'},createdAt:1,updatedAt:1});
  });
- await page.getByRole('button',{name:locale==='ru'?'Лор':'Lore',exact:true}).click();
+ await page.getByRole('button',{name:locale==='ru'?"Миры":"Worlds",exact:true}).click();
  await page.getByRole('button',{name:locale==='ru'?'Мир и профили':'World & profiles',exact:true}).click();
  const remove=page.getByRole('button',{name:locale==='ru'?'Удалить мир и весь лор':'Delete world and all lore',exact:true});await expect(remove).toBeVisible();
  await page.screenshot({path:info.outputPath(`world-delete-${locale}-${width}.png`),fullPage:true});

@@ -8,7 +8,9 @@ import type { ContextSelection, DataRecord, MemoryBook, MemoryEntry, MemoryOverr
 
 export const EMPTY_OVERRIDES: MemoryOverrides = { includedIds: [], excludedIds: [] };
 export const profileMemoryId = (kind: "world" | "entity", id: string) => `profile:${kind}:${id}`;
-const titleIndexes = new WeakMap<MemoryEntry[], Map<string, ReturnType<typeof inferTitlePeople>>>();
+type TitleSnapshot = Pick<MemoryEntry, "id" | "title" | "content"> & { keywords: string[] };
+type TitleIndex = { snapshot: TitleSnapshot[]; groups: ReturnType<typeof inferTitlePeople> };
+const titleIndexes = new WeakMap<MemoryEntry[], Map<string, TitleIndex>>();
 
 export function libraryRecords<T extends RecordValue>(records: DataRecord[], kind: RecordKind): T[] {
   return records.filter((r) => r.kind === kind).map((r) => r.data as T).sort((a, b) => ("updatedAt" in b ? b.updatedAt : b.createdAt) - ("updatedAt" in a ? a.updatedAt : a.createdAt));
@@ -22,13 +24,13 @@ export function changeMemoryOverride(current: MemoryOverrides, id: string, actio
 }
 
 /** Descriptions are projections of their original records, not saved entry copies. */
-export function runtimeMemoryDocuments(entries: MemoryEntry[], _books: MemoryBook[], worlds: WorldProfile[], entities: SceneEntity[], scene: NonNullable<RankMemoryInput["scene"]>, searchText: string) {
+export function runtimeMemoryDocuments(entries: MemoryEntry[], _books: MemoryBook[], worlds: WorldProfile[], entities: SceneEntity[], scene: NonNullable<RankMemoryInput["scene"]>, searchText: string, resolvedMentionIds?: Iterable<string>) {
   const origins = new Map<string, { kind: "entry" | "world" | "entity"; id: string }>();
   const documents = [...entries];
   entries.forEach((entry) => origins.set(entry.id, { kind: "entry", id: entry.id }));
   const world = worlds.find((w) => w.id === scene.worldId);
   const scopedEntities = entities.filter((e) => e.worldId === scene.worldId);
-  const relevant = expandFocus([...scene.focusIds, ...mentionedEntities(searchText, scopedEntities)], scopedEntities, scene.worldId);
+  const relevant = expandFocus([...scene.focusIds, ...(resolvedMentionIds ?? mentionedEntities(searchText, scopedEntities))], scopedEntities, scene.worldId);
   const add = (kind: "world" | "entity", source: WorldProfile | SceneEntity, always: boolean) => {
     if (!source.useDescriptionInContext || !source.description.trim()) return;
     const id = profileMemoryId(kind, source.id);
@@ -45,17 +47,25 @@ export function runtimeMemoryDocuments(entries: MemoryEntry[], _books: MemoryBoo
 /** The only runtime compiler, independent of the window that edits the source data. */
 export function compileMemoryWorkspace(input: RankMemoryInput & { worlds: WorldProfile[] }): { selection: ContextSelection; documents: MemoryEntry[] } {
   const scene = input.scene ?? { worldId: null, bookId: input.activeBookId, focusIds: [] };
+  const resolvedMentionIds = input.resolvedMentionIds === undefined ? undefined : [...input.resolvedMentionIds];
   const pinnedProfiles = [...input.manualIds ?? []].filter((id) => id.startsWith("profile:entity:")).map((id) => id.slice("profile:entity:".length));
-  const { documents, origins } = runtimeMemoryDocuments(input.entries, input.books ?? [], input.worlds, input.entities ?? [], { ...scene, focusIds: [...scene.focusIds, ...pinnedProfiles] }, [input.draft, ...input.recentMessages.slice(-4)].join("\n"));
+  const { documents, origins } = runtimeMemoryDocuments(input.entries, input.books ?? [], input.worlds, input.entities ?? [], { ...scene, focusIds: [...scene.focusIds, ...pinnedProfiles] }, [input.draft, ...input.recentMessages.slice(-4)].join("\n"), resolvedMentionIds);
   const key = JSON.stringify([scene.worldId, scene.bookId, (input.books ?? []).map((book) => [book.id, book.worldId, book.active])]);
-  const indexes = titleIndexes.get(input.entries) ?? new Map(); titleIndexes.set(input.entries, indexes);
-  if (!indexes.has(key)) {
+  const indexes = titleIndexes.get(input.entries) ?? new Map<string, TitleIndex>(); titleIndexes.set(input.entries, indexes);
+  const scopedEntries = input.entries.filter((entry) => entry.enabled && isMemoryInScene(entry, scene, input.books ?? []));
+  const previous = indexes.get(key);
+  const unchanged = previous?.snapshot.length === scopedEntries.length && previous.snapshot.every((old, index) => {
+    const current = scopedEntries[index]!;
+    return old.id === current.id && old.title === current.title && old.content === current.content
+      && old.keywords.length === current.keywords.length && old.keywords.every((word, at) => word === current.keywords[at]);
+  });
+  if (!unchanged) {
     if (indexes.size >= 4) indexes.clear();
     // A single clear character record is useful for retrieval; the map still
     // requires repeated evidence before offering an inferred profile cluster.
-    indexes.set(key, inferTitlePeople(input.entries.filter((entry) => entry.enabled && isMemoryInScene(entry, scene, input.books ?? [])), [], 1));
+    indexes.set(key, { snapshot: scopedEntries.map(entry => ({ id: entry.id, title: entry.title, content: entry.content, keywords: [...entry.keywords] })), groups: inferTitlePeople(scopedEntries, [], 1) });
   }
-  const selection = rankMemories({ ...input, scene, entries: documents, nameGroups: indexes.get(key) });
+  const selection = rankMemories({ ...input, resolvedMentionIds, scene, entries: documents, nameGroups: indexes.get(key)!.groups });
   selection.entries = selection.entries.map((item) => ({ ...item, origin: origins.get(item.entry.id) }));
   if (!input.candidateOnly) selection.estimatedTokens = selection.entries.length ? estimateTokens(formatMemoryContext(selection)) : 0;
   selection.overBudgetTokens = Math.max(0, selection.estimatedTokens - input.settings.contextBudget);

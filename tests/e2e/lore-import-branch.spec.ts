@@ -9,7 +9,7 @@ for (const locale of ["ru", "en"] as const) test(`JSON preview and branch modes 
   await page.setViewportSize({ width: 1320, height: 900 }); await page.goto("/tests/fixtures/sidepanel.html");
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
   const label = (ru: string, en: string) => locale === "ru" ? ru : en;
-  await page.getByRole("button", { name: label("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: label("Миры", "Worlds"), exact: true }).click();
   await page.getByRole("button", { name: label("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
   const data = { name: "Observatory", entries: [...entries, { title: "World_rules", content: "Preserve the calendar.", activation: "always" }], extraSetting: true };
   await page.getByLabel(label("Выбрать JSON", "Choose JSON"), { exact: true }).setInputFiles({ name: "Neutral.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(data)) });
@@ -59,7 +59,7 @@ for (const locale of ["ru", "en"] as const) test(`JSON preview and branch modes 
 });
 
 test("ambiguous JSON does not partly import or leave an old preview enabled", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   const file = page.getByLabel("Выбрать JSON", { exact: true });
   await file.setInputFiles({ name: "Valid.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Gate", content: "Closed" }])) });
   await expect(page.getByRole("button", { name: "Подтвердить импорт", exact: true })).toBeEnabled();

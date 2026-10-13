@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
@@ -67,7 +68,7 @@ for (const locale of ["ru", "en"] as const) for (const scope of ["world", "globa
     await area.set({ deeprole_settings: { ...settings, locale, characterActions: actions } }); return images;
   }, { locale, scope, actions: DEFAULT_ACTIONS, sheet: EMPTY_CHARACTER, state: EMPTY_STATUS });
   await page.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
-  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
+  await openSettingsSection(page,"characters",locale);
   const settings = page.locator(".dr-character-settings");
   await settings.getByRole("button", { name: (locale === "ru" ? "Убрать из списка" : "Remove from list") + ": " + actionOptionLabel(locale, "happy"), exact: true }).click();
   const save = settings.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });

@@ -2,7 +2,7 @@ import { chooseImageCompression } from "./image-upload-helpers";
 import { closeSavedCharacter, characterTab } from "./character-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 
 async function expectPortraitRatio(image: Locator, placeholder = true) {
   const bounds = await image.boundingBox();
@@ -32,7 +32,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   await page.goto("/tests/fixtures/sidepanel.html?world=1");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   if (locale === "en") await setEnglish(page);
-  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
+  await openSettingsSection(page,"characters",locale);
   const enable = page.getByRole("checkbox", { name: locale === "ru" ? "Карточки персонажей" : "Character sheets", exact: true });
   await expect(enable).toBeChecked(); await enable.uncheck(); await enable.check();
   const settings = page.locator(".dr-character-settings");
@@ -49,9 +49,9 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
     const { repository } = await import("/src/storage/repository.ts" as string);
     return (await repository.get("world", "world-a"))?.characterActions;
   })).toEqual(actions);
-  await page.getByRole("button", { name: locale === "ru" ? "Память" : "Memory", exact: true }).click();
-  await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
-  await expect(settings.locator("textarea")).toHaveValue(actions.join("\n"));
+  await openSettingsSection(page,"memory",locale);
+  await openSettingsSection(page,"characters",locale);
+  await expect(settings.locator("textarea")).toHaveValue([locale === "ru" ? "Спокойствие" : "Calm", ...actions.slice(1)].join("\n"));
   await settings.locator("textarea").fill([...actions, "extra"].join("\n")); await saveActions.click();
   await expect(settings.getByRole("alert")).toContainText("32");
   await settings.locator("textarea").fill(actions.join("\n")); await saveActions.click();

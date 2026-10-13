@@ -1,6 +1,7 @@
 import { browser } from "wxt/browser";
 import { DEFAULT_SETTINGS } from "../core/defaults";
 import { normalizeActionSettings } from "../core/action-compat";
+import { startupDeadline } from "../core/startup";
 import type { DeepRoleSettings, VaultConfig } from "../core/types";
 
 const SETTINGS_KEY = "deeprole_settings";
@@ -23,7 +24,9 @@ export async function updateSettings(patch: Partial<DeepRoleSettings>): Promise<
 }
 
 export async function getVaultConfig(): Promise<VaultConfig> {
-  const result = await browser.storage.local.get(VAULT_KEY);
+  // Bound this read inside repository operations, not the write/transaction.
+  // A failed read must reject and release its lock, never imply disabled vault.
+  const result = await startupDeadline(browser.storage.local.get(VAULT_KEY));
   return (result[VAULT_KEY] as VaultConfig | undefined) ?? { enabled: false };
 }
 
@@ -33,7 +36,7 @@ export async function saveVaultConfig(config: VaultConfig): Promise<void> {
 
 export async function getSessionKey(): Promise<string | null> {
   if (!browser.storage.session) return null;
-  const result = await browser.storage.session.get(SESSION_KEY);
+  const result = await startupDeadline(browser.storage.session.get(SESSION_KEY));
   return (result[SESSION_KEY] as string | undefined) ?? null;
 }
 

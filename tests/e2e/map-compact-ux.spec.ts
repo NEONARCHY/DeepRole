@@ -15,7 +15,7 @@ for (const locale of ["ru", "en"] as const) for (const [width, height] of [[320,
     ]);
   });
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
   await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
   const map = page.getByRole("dialog", { name: l("Карта мира", "World map"), exact: true });
   await map.getByRole("button", { name: l("Два мира рядом", "Two worlds"), exact: true }).click();

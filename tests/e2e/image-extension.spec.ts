@@ -37,7 +37,7 @@ for (const locale of ["ru", "en"] as const) test("installed MV3 worker generates
     await panel.evaluate(async ({ config, settings, key, locale }) => { await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true }, deeprole_image_settings: settings, deeprole_image_keys: { [config.id]: key } }); }, { config, key, locale, settings: { ...DEFAULT_IMAGE_SETTINGS, enabled: true, profiles: [config], profileByLevel: { off: config.id } } });
     const hdPng = await panel.evaluate(syntheticHDPng); expect(hdPng.length).toBeGreaterThan(300_000);
     await worker.evaluate(png => { (globalThis as any).providerPng = png; }, hdPng);
-    await panel.reload(); await expect(panel.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true })).toBeVisible();
+    await panel.reload(); await expect(panel.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true })).toBeVisible();
     const groupReferences = await panel.evaluate(() => ["#657b8b", "#7b656b", "#7a8960", "#616389", "#846f51", "#506c82"].map(color => {
       const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 768; const ctx = canvas.getContext("2d")!; ctx.fillStyle = color; ctx.fillRect(0, 0, 512, 768); return canvas.toDataURL();
     }));

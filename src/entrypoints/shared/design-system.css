@@ -203,8 +203,10 @@
   background-color: var(--dr-panel);
 }
 .dr-context-budget { margin-block: 10px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-.dr-context-budget summary { cursor: pointer; font-weight: 600; }
+.dr-context-budget summary { cursor: pointer; font-weight: 600; min-height: 24px; padding-block: 4px; }
+.dr-context-budget ul { padding-inline-start: 18px; }
 .dr-context-budget dl { display: grid; gap: 6px; }
 .dr-context-budget dl > div { display: flex; justify-content: space-between; gap: 12px; }
 .dr-context-budget dt { min-width: 0; }
 .dr-context-budget dd { margin: 0; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.dr-memory-delivery textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; resize: vertical; }

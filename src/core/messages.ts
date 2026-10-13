@@ -44,7 +44,7 @@ export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_STORY_REVIEW_READ"; cursor: import("./story-review").StoryReviewCursor | null }
   | { type: "DR_STORY_REVIEW_PREVIEW"; input: import("./story-review").StoryPreviewInput }
   | { type: "DR_STORY_CHECKPOINT_SAVE"; choice: import("./story-checkpoint").StoryCheckpointChoice }
-  | { type: "DR_PAGE_STATE"; chatId: string | null; chatUrl: string; messageCount: number; status: AdapterStatus; scene?: SceneState; selection?: ContextSelection; overrides?: MemoryOverrides; activity?: ServiceActivity | null; generating?: boolean; warning?: string; pendingHandoff?: string }
+  | { type: "DR_PAGE_STATE"; chatId: string | null; chatUrl: string; messageCount: number; status: AdapterStatus; scene?: SceneState; selection?: ContextSelection; memoryDelivery?: import("./memory-delivery-view").MemoryDeliveryView; overrides?: MemoryOverrides; activity?: ServiceActivity | null; generating?: boolean; warning?: string; pendingHandoff?: string }
   | { type: "DR_MEMORY_OVERRIDE"; id: string; action: "include" | "exclude" | "reset" }
   | { type: "DR_REVIEW_MEMORY"; operation: "apply"; batchId: string; items: MemoryCandidate[]; profileChoice?: { description: string; appearance: string; personality: string; goals: string; background: string } }
   | { type: "DR_REVIEW_MEMORY"; operation: "discard" | "undo"; id: string }

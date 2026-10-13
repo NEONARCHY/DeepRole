@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 import { stat } from "node:fs/promises";
 
@@ -24,7 +25,7 @@ test("a 280 MiB library exports once and the downloaded file restores all 24 cha
   });
   expect(original.legacyFails).toBe(true);
   await page.getByRole("button", { name:"Настройки",exact:true }).click();
-  await page.getByRole("button", { name:"Файлы и защита",exact:true }).click();
+  await openSettingsSection(page,"data","ru");
   await page.getByRole("button", { name:"Экспорт",exact:true }).click();
   const dialog=page.getByRole("dialog",{name:"Экспорт",exact:true});
   await dialog.getByRole("radio",{name:/^Полная резервная копия/}).check();
@@ -41,7 +42,7 @@ test("a 280 MiB library exports once and the downloaded file restores all 24 cha
     const { repository }=await import("/src/storage/repository.ts" as string);
     await repository.clear();
   });
-  await page.getByRole("button",{name:"Лор",exact:true}).click();
+  await page.getByRole("button",{name:"Миры",exact:true}).click();
   await page.getByRole("button",{name:"Загрузить готовый лор",exact:true}).click();
   await page.locator(".rp-import-input").setInputFiles(file);
   const preview=page.getByRole("dialog",{name:"Восстановление копии",exact:true});

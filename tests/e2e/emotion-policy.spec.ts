@@ -35,7 +35,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
 
 for (const locale of ["ru", "en"] as const) test(`world library action rules work without a connected chat ${locale}`, async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 }); await page.goto("/tests/fixtures/sidepanel.html"); if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
-  await page.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
   const world = { id: "w", name: "Harbor", description: "Keep all lore", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const person = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "Original profile", aliases: [], memberIds: [], characterSheet: EMPTY_CHARACTER, createdAt: 1, updatedAt: 1 };
   await page.getByRole("button", { name: locale === "ru" ? "Загрузить готовый лор" : "Import existing lore", exact: true }).click();

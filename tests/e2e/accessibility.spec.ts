@@ -31,7 +31,7 @@ test("tutorial preset dialog meets the automated WCAG 2.2 AA baseline", async ({
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await page.locator(".lore-list-options > summary").click();
   await page.getByRole("button", { name: "Посмотреть пример", exact: true }).click();

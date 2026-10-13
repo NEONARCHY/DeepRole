@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 
 test("sidebar keeps actual analysis progress and empty/error results visible", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html?world=1");
@@ -70,7 +70,7 @@ for (const locale of ["ru", "en"] as const) test(`compact settings keep help acc
   await page.keyboard.press("Escape");
   await expect(help).toBeFocused();
   await page.screenshot({ path: info.outputPath(`compact-settings-${locale}.png`), fullPage: true });
-  await page.getByRole("button", { name: l("Приложение", "App"), exact: true }).click();
+  await openSettingsSection(page,"app",locale);
   const chatIndicator = page.getByRole("checkbox", { name: l("Контекст чата", "Chat context"), exact: true });
   const memoryIndicator = page.getByRole("checkbox", { name: l("Контекст DeepRole", "DeepRole context"), exact: true });
   await expect(chatIndicator).toBeChecked();

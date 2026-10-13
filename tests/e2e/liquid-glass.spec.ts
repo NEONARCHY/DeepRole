@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { expect, test } from '@playwright/test';
 import { setEnglish } from './helpers/settings';
 for(const locale of ['ru','en']) for(const width of [320,1100]) {
@@ -14,7 +15,7 @@ for(const locale of ['ru','en']) for(const width of [320,1100]) {
     const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
     await page.setViewportSize({width,height:900});await page.goto('/tests/fixtures/sidepanel.html?persist');
     await page.getByRole('button',{name:'Настройки',exact:true}).click();if(locale==='en')await setEnglish(page);
-    await page.getByRole('button',{name:locale==='ru'?'Оформление':'Appearance',exact:true}).click();
+    await openSettingsSection(page,"appearance",locale);
     await expect(page.locator('.dr-glass-nav')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeVisible();
     const card=page.locator('.dr-settings-page:not([hidden]) .settings-card').first();await expect(card).toBeVisible();
     expect(await card.evaluate(e=>getComputedStyle(e).backdropFilter)).toBe('none');

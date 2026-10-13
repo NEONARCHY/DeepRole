@@ -1,9 +1,14 @@
 import {expect,test} from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {contextBudgetText} from "../../src/core/context-budget-i18n";
+import {memoryDeliveryText} from "../../src/core/memory-delivery-i18n";
 for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`context budget ${locale} ${width}: overflow, preserved required data, disclosure and accessibility`,async({page},info)=>{
- await page.setViewportSize({width,height:1000});await page.goto("/tests/fixtures/context-budget.html?locale="+locale);const t=contextBudgetText(locale),summary=page.locator("summary");
+ await page.setViewportSize({width,height:1000});await page.goto("/tests/fixtures/context-budget.html?locale="+locale);const t=contextBudgetText(locale),summary=page.locator(".dr-context-budget:not(.dr-memory-delivery) > summary");
  await expect(summary).toContainText(t.title);await summary.focus();await page.keyboard.press("Enter");await expect(page.getByText(t.overflow)).toBeVisible();await expect(page.getByText(t.required,{exact:true})).toBeVisible();
+ await expect(page.getByText(t.preview,{exact:true})).toBeVisible();await expect(page.getByText(t.previewHint)).toBeVisible();
+ const reasons=page.getByText(t.loreReasons,{exact:true});await reasons.focus();await page.keyboard.press("Enter");await expect(page.getByText(t.alwaysReason,{exact:true})).toBeVisible();
+ const d=memoryDeliveryText(locale),receipt=page.locator(".dr-memory-delivery > summary");await receipt.focus();await page.keyboard.press("Enter");await expect(page.getByText(d.accepted)).toBeVisible();await expect(page.getByText(d.historical)).toBeVisible();await expect(page.getByText(d.use)).toBeVisible();
+ const payload=page.getByText(d.payload,{exact:true});await payload.focus();await page.keyboard.press("Enter");await expect(page.getByRole("textbox",{name:d.payload})).toHaveValue(await page.evaluate(()=>(window as any).contextBudgetFixture.result.text));await expect(page.getByRole("textbox")).toHaveAttribute("readonly","");await expect(page.getByText(d.payloadHint)).toBeVisible();expect(await page.locator("body").textContent()).not.toContain("PRIVATE_DRAFT_NOT_SHOWN");
  expect(await page.evaluate(()=>{const r=(window as any).contextBudgetFixture.result;return r.text.includes("ALWAYS complete user rule.")&&r.text.includes("Protected author rule.")})).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);

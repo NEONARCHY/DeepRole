@@ -1,0 +1,33 @@
+const ru = {
+ title: "Последняя попытка отправки в этом чате",
+ historical: "Это запись для выбранного мира и этого чата. Она может относиться к прежней игре или варианту ответа; это не текущий предпросмотр памяти.",
+ prepared: "Подготовлено — отправка не подтверждена",
+ confirmed: "Состав запроса проверен — начало отправки не подтверждено",
+ started: "Отправка началась — приём сервером ещё не подтверждён",
+ accepted: "Сервер подтвердил приём запроса",
+ failed: "Приём запроса не подтверждён: отправка завершилась ошибкой",
+ unknown: "Не удалось подтвердить, была ли добавлена память. Подготовленный текст не показан как отправленный.",
+ none: "В проверенном составе запроса нет добавки памяти DeepRole.",
+ payload: "Посмотреть зафиксированную добавку памяти",
+ payloadHint: "Точный текст добавки из проверенного запроса, без вашей реплики и ответа модели. Содержит сведения вашего мира; это не безопасный диагностический отчёт.",
+ use: "Приём сервером не доказывает, что модель прочитала или использовала все сведения. Просмотр ничего не отправляет повторно.",
+ interrupted: "Чтение потока ответа прервано. Подтверждение приёма запроса не означает, что ответ завершён.",
+ date: "Попытка начата",
+};
+const en: Record<keyof typeof ru, string> = {
+ title: "Last send attempt in this chat",
+ historical: "A record for the selected world and this chat. It may belong to an earlier game or reply variant; it is not the current memory preview.",
+ prepared: "Prepared — sending not confirmed",
+ confirmed: "Request content verified — sending has not been confirmed",
+ started: "Sending started — server acceptance not yet confirmed",
+ accepted: "Server acknowledged the request",
+ failed: "Server acceptance not confirmed: sending failed",
+ unknown: "Could not confirm whether memory was added. Proposed text is not shown as sent.",
+ none: "The verified request content has no DeepRole memory addition.",
+ payload: "View the recorded memory addition",
+ payloadHint: "The exact addition from the verified request, without your message or the model's reply. Contains your world's information; this is not a safe diagnostic report.",
+ use: "Server acceptance does not prove the model read or used every detail. Viewing never resends anything.",
+ interrupted: "Reading the response stream was interrupted. Request acceptance does not mean the reply finished.",
+ date: "Attempt started",
+};
+export const memoryDeliveryText = (locale: import("./types").Locale) => locale === "ru" ? ru : en;

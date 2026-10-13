@@ -1,5 +1,41 @@
 # DeepRole контракт данных длительной истории
 
+## RP231 Selection explanation is not delivery evidence
+
+GameContextReport.explanation contains numeric selected-fact counts only, partitioned into direct-query match, recent-message match, open-task priority or recent fallback. Omitted candidates are excluded and the partition sums to selected.facts. Explanations are produced after rendering and do not change prefix text, ranking or canonical data. No user text, quotes, names, keywords or IDs are added to this report.
+
+ContextBudgetSummary renders local entry titles/reasons separately from the numeric report, bounded to eight preview rows without dropping selected data. Raw reason payloads are normalized to localized labels. This UI is explicitly a selection preview, not proof of a submitted/accepted request or model use. A separate delivery view must use matching request-bound dispatch evidence and validate scope; a compiled prefix or assistant response alone cannot confirm its delivery. Older runtime reports without explanation remain valid; no storage migration is introduced.
+
+## RP230 Collision safe character references
+
+The normal game compiler passes registry-resolved mention IDs to the character roster selector, entity-description projections and entity-linked retrieval boosts. Optional selectors no longer re-match a short name inside a different full name. World/focus checks still apply; physical cast, protagonist, partners and explicit focus remain independent of textual identity resolution. A named group expands reference members without creating played presence. Non-character lookup retains its existing local behavior.
+
+resolvedMentionIds is runtime-only, not a storage field or export migration. A one-shot iterable is materialized before projection and ranking. Legacy scalar/name selectors without the registry keep their previous behavior. Shared-name requests add a measured required ambiguity guard; no arbitrary roster-order owner is assigned and user text/aliases/canonical profiles remain unchanged. Independent title/keyword matches in free-form lore entries are still heuristic, not strict ownership evidence.
+
+## RP229 Query assistance and unresolved personal references
+
+The normal game compiler passes world-scoped entities to rankStoryFacts for the current draft. Exact whole unique aliases/names expand the local search query with a unique canonical name, never the actual draft. Shared aliases or canonical names do not expand. Known RU/EN topic nouns prioritize fact kinds and structured tasks; named-person mention prioritization is not ownership evidence. Latest accepted task status, claim, source quote and canonical data are untouched. Legacy rank calls without scope retain their lexical scores; recent-scene fallback is unchanged.
+
+Runtime retrieval also recognizes a unique given name from a conventional capitalized multi-part proper name, excluding common title prefixes, and standard short Russian name forms ending in а/я. Inferred forms participate in the same collision map as explicit names; they are not saved as canonical aliases. Longest full-name occurrences suppress nested short names in both queries and facts. A uniquely named subject's fact mentions may be boosted, but no speaker/owner is inferred. The query-only expansion is also used by the normal lore/profile selector; reference-only service mode is excluded. Unrecorded nicknames and unrestricted name morphology are not guessed.
+
+A personal reference plus a recognized topic adds a compact required reference guard to the measured prefix: no pronoun resolution is asserted, selected memory is candidate evidence, and obligations must not be merged. No genders, last-mentioned people or arbitrary scene order are used to bind a pronoun. This is deterministic local query assistance, not semantic search or new story events. Service/reference-only requests without story do not receive the guard. No additional model request is sent.
+
+## RP228 Played fact lexical projections
+
+compactStoryFactSources recomputes latest slots and human replacements, returning original object references for runtime retrieval only. compactStoryFacts still returns independent cleaned copies. rankStoryFacts indexes those sources and returns independent cleaned facts; task status/quote/metadata are read afresh. The WeakMap projection is invalidated by text, claim key or task title changes. No score, branch selection, completion status or quote is cached. Supplied facts remain the scope boundary. A library reload creates new objects and therefore new projections; no private text is persisted in a search index. Ranking weights, ordering and whole-context budgets remain unchanged.
+
+## RP227 Runtime lexical reuse
+
+memorySearchIndex caches normalized keywords and title/content tokens in a WeakMap keyed by the actual MemoryEntry object. Equality checks use current text and copied keyword values, not timestamps. Changed components are rebuilt; replacement objects do not inherit an index by ID. The index has no persisted state and does not cache query scores, selected entries or permission/scope decisions. Ranking weights, reasons and token budgets remain unchanged.
+
+Title-name inference snapshots scoped enabled record ID/title/content/keywords and invalidates even if the array identity and timestamps remain unchanged. Name classification is still rebuilt as a group after a relevant change. Story facts, semantic retrieval and repeated prompt suppression are not covered by this cache. No native history or canonical lore is rewritten.
+
+## RP226 Startup and vault read deadlines
+
+startupBudget owns one eight-second logical deadline across content startup phases. Independent initial reads run together; late results check an active lease before changing state or beginning a later phase. Timeout invalidates the load generation and clears private context. Image settings are applied only after the load generation is validated.
+
+Vault configuration and session-key storage reads are bounded individually inside repository operations. Timeout rejects: it never becomes a disabled-vault default or a successful unlock. Rejection unwinds the library lock; a later metadata response cannot resume the failed operation. Writes, encryption and IndexedDB transactions are not raced against a blanket deadline or force-unlocked while still running. No persisted data migration is introduced.
+
 ## RP225 Shared added context budget
 
 compileGameContext is a pure runtime compiler, not a storage migration. Candidate discovery uses candidateOnly to avoid rendering the entire ranked library; origin/scope/exclusion/disabled-book rules remain. Required protocol/scene/protected fields/forced entries/snapshot summary/request-bound recovered reply survive overflow. Explicit draft fact matches reserve space before generic profile excerpts; recent narration is fallback only. Optional facts, entries and whole profile paragraphs share the same admission test; continuation is at most two whole turns. Linked neighbors need an actually selected seed.
@@ -700,3 +736,32 @@ RP-02 вводит разные операции: оставить прежне�
 Репетиция записывает новые исходные точки и манифест, но не переключает приложение на хронику и не удаляет старые записи. Она не проверяет реальное завершение процесса браузера, заполненный диск, перенос байтов отдельного Blob-хранилища, внешнюю резервную копию или порционную миграцию большой базы. Эти сценарии остаются критериями следующих этапов. При подключении production-миграции тесты должны проверять её настоящий путь, а не только тестовый прототип.
 
 Запуск: `npm test -- tests/story-audit-baseline.test.ts tests/story-migration-rehearsal.test.ts`. На RP-01 сюда добавляются настоящие события, редакции, выбор линии и откат; текущие проверки происхождения и защиты назначения остаются обязательными.
+## Same request protocol definitions
+
+The unified compiler may defer a duplicate compact fact-schema/evidence clause only when a nonempty automatic/review accompaniment policy is included in the same render. Absent/off policies and standalone/full legacy callers retain complete clauses. The selected compact memory envelope may defer kind definitions only when its current story-update instruction is also included. Promise versus fulfillment, plan versus completion and belief versus objective truth stay explicit in that instruction; task statuses, source evidence/ref guides and attribution remain in the memory envelope.
+
+Scope, version2, field operations, protected/manual data, identity restrictions, risks, claim/task validation and numeric/selfie gates are not removed. These flags are runtime prompt construction options, not database fields, parser relaxations or permission to depend on older chat messages. Admission measures the entire final render.
+
+## Request local quote sharing
+
+storyFactPayload may replace repeated exact additional sourceQuote strings with sourceQuoteRef, a zero-based index of an earlier fact holding its full sourceQuote in the same outgoing array. References are rebuilt after every selection change/render, never written into canonical facts, never chained and never resolved against an earlier request. A historical dispatch receipt may preserve them inside its exact request string; it is not a reusable live source table. Facts, kinds, claims, task keys/statuses and original stored sources remain separate and unchanged. Identical quote values do not merge events or prove that they occurred at the same time.
+
+The shared encoding is used only when encoded JSON plus its explanation is cheaper than inline JSON under the current token estimate. Short, distinct or merely normalized-similar quotes stay inline. Whole-request admission measures the resulting encoding and guides; source evidence is neither shortened nor omitted behind a dangling reference. Protocol delimiter escaping and exact JSON reconstruction remain intact. This is local per-request compaction, not native context expansion, periodic omission of memory or transcript deletion.
+
+## Attribution evidence in outgoing selected facts
+
+Runtime storyFactHint adds sourceQuote only when the preserved exact fact quote differs from its concise text. Both full and compact memory envelopes include attribution guidance only for selections with extra source quotes. Evidence retains speaker/recipient, reported speech, negation and conditions; it is historical source data, not current dialogue or new fact authority. This is not a structured owner/speaker binding, and mention retrieval scores still do not prove ownership.
+
+Source text and guidance are counted by the existing full-render budget. A whole fact with its whole quote is admitted or omitted; quotes are not chopped to fit. Identical quote/text is not duplicated. No DB field, validation relaxation or model request is added. Serialized JSON hints escape angle brackets to prevent quotes from opening/closing memory protocol delimiters; JSON round-trip preserves exact strings. Quotes may contain private lore, so these outgoing hints are not safe diagnostic reports.
+
+## Named task retrieval after terminal events
+
+The local subject-mention boost considers accepted task titles as well as fact text. Text and title are matched independently using the current world's collision-safe name registry; opaque task keys and source quotes do not supply names for this boost. A completed/cancelled event may be impersonal while reusing the previously accepted named title. This improves retrieval, not speaker/owner authority. Existing literal-title evidence and exact task-key/title reuse validation are unchanged; aliases, profiles, facts, statuses and quotes are not rewritten.
+
+## Historical memory delivery view
+
+MemoryDeliveryView is an optional runtime projection, not a new persisted record or story authority. It selects valid local user-turn dispatch captures in the exact current world/binding/native-chat scope by creation time. Restored, OOC, service, invalid and foreign captures are excluded; indistinguishable creation times are unavailable rather than guessed. It does not identify the current game, selected branch or reply variant, and the UI labels the receipt historical.
+
+Stages prepared, source-confirmed, started, HTTP accepted and failed remain separate. The exact added context is exposed only when injection=context has whole outgoing-string equality evidence; unconfirmed proposed text and injection=none never expose it. Receipt fields omit the original draft, reply, native identities and wire payload, but the disclosed context itself can contain private lore and protocol identifiers. It is not a safe diagnostic report. HTTP acceptance and stream completion are not evidence of semantic use.
+
+The capture client emits an optional read-only update notification after successful writes. Content reads that one receipt with generation and URL/chat/world/binding/locked guards, without reloading editors or recomputing context. Display failures do not block source acknowledgment or retry the native send. Existing dispatch-only notification suppression stays intact. Locking clears loaded receipt data; navigation/scope checks reject late results. No post-hoc StoryRequest or branch authority is created.

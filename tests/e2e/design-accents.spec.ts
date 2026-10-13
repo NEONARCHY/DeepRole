@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 
 async function decoration(button: Locator) {
   return button.evaluate(el => {
@@ -64,7 +64,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.goto("/tests/fixtures/sidepanel.html");
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
     if (locale === "en") await setEnglish(page);
-    await page.getByRole("button", { name: locale === "ru" ? "Поведение персонажей" : "Character behaviour", exact: true }).click();
+    await openSettingsSection(page,"characters",locale);
     const save = page.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });
     await expectAccent(save);
     const secondary = page.locator(".app-main .button.secondary").first();

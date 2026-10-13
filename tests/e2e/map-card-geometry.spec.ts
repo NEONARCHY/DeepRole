@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 for (const height of [600, 700, 900]) test(`selected map card remains reachable in a 360x${height} window`, async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "QA geometry.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ entries: [{ title: "Mira_portrait", content: "Mira wears a blue coat." }, { title: "Mira_personality", content: "Mira is patient." }] })) });
   await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();

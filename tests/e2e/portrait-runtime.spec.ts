@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { chooseImageCompression } from "./image-upload-helpers";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
 import { chromium, expect, test } from "@playwright/test";
@@ -190,7 +191,7 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await dialog.getByRole("checkbox", { name: "My protagonist", exact: true }).check();
     await dialog.getByRole("button", { name: "Save character", exact: true }).click(); await closeSavedCharacter(dialog);
     await panel.reload(); await panel.getByRole("button", { name: "Settings", exact: true }).click();
-    await panel.getByRole("button", { name: "Character behaviour", exact: true }).click();
+    await openSettingsSection(panel,"characters","ru");
     const settings = panel.locator(".dr-character-settings");
     for (const [from, to] of [[actions[31]!, "Даёт себя обнять"], ["Разговаривает", "Обнимает"]] as const) {
       await settings.getByRole("button", { name: "Rename action: " + from, exact: true }).click();

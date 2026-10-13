@@ -24,7 +24,7 @@ test("split editing never mixes worlds and map profiles use the real chat scene"
     }); await panel.reload();
     const chat = await context.newPage(); await chat.goto("https://chat.deepseek.com/chat/s/split-test"); await chat.getByRole("combobox", { name: "World", exact: true }).selectOption("w1");
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /FIRST_WORLD_CANON/); await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /FOCUSED_PROFILE_CANON|SECOND_WORLD_CANON/);
-    await panel.getByRole("button", { name: "Lore", exact: true }).click();
+    await panel.getByRole("button", { name: "Worlds", exact: true }).click();
     await panel.getByRole("button", { name: /^World library:/ }).click();
     await panel.getByRole("menuitemradio", { name: "Observatory", exact: true }).click();
     await panel.getByRole("button", { name: "Open world map", exact: true }).click();

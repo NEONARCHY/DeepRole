@@ -4,7 +4,7 @@ import { setEnglish } from "./helpers/settings";
 
 test("imports a DeepRole world larger than the old 10 MB limit", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   const world = { id: "portable-world", name: "Перенесённый мир", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const pack = { format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }] };
@@ -24,7 +24,7 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
     await setEnglish(page);
   }
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
   await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
   const importDialog = page.getByRole("dialog", { name: l("Добавить из файла", "Add from file"), exact: true });
   await expect(importDialog).toBeVisible();
@@ -49,7 +49,7 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
 test("imports BDS only after preview, links a profile, and isolates the library", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   // The file chooser and the drag-and-drop path use the same preview and validation.
   const source = { "  Оригинал  ": { value: "  Текст\nс переносом.  ", importance: "called" }, "Правило": { value: "Сохранить", importance: "always" } };
@@ -70,7 +70,7 @@ test("imports BDS only after preview, links a profile, and isolates the library"
   await page.screenshot({ path: testInfo.outputPath("worlds-profiles.png"), fullPage: true });
   const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   expect(accessibility.violations).toEqual([]);
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await expect(page.getByText("Оригинал", { exact: true })).toBeVisible();
   await expect(page.getByText("Клятва Миры", { exact: true })).toHaveCount(0);
@@ -83,7 +83,7 @@ test("imports BDS only after preview, links a profile, and isolates the library"
 
 test("creates editable worlds and starters without sending anything", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Создать свой мир", exact: true }).click();
   await page.getByRole("textbox", { name: "Название", exact: true }).fill("Новый мир");
   await page.getByRole("button", { name: "Создать мир", exact: true }).click();
@@ -105,7 +105,7 @@ test("creates editable worlds and starters without sending anything", async ({ p
 test("world tree edits entry relationships without changing lore", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Древо.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Башня": { value: "Исходный текст башни", importance: "always" }, "Дверь": { value: "Исходный текст двери", importance: "called" } })) });
   await expect(page.getByText("Распознана память Better Deepseek (BDS)", { exact: true })).toBeVisible();
@@ -140,7 +140,7 @@ test("world tree edits entry relationships without changing lore", async ({ page
 
 test("same importer recognizes a DeepRole world and refuses unrelated JSON", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   const input = page.getByLabel("Выбрать JSON", { exact: true });
   await input.setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from('{"format":"deeprole-backup"}') });
@@ -156,7 +156,7 @@ test("same importer recognizes a DeepRole world and refuses unrelated JSON", asy
 test("RPG map supports window/full-screen, pan, zoom, search and node editing", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1200, height: 850 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   const world = { id: "w", name: "Лунная экспедиция", description: "Только тестовый мир", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const entry = (id: string, title: string, content: string) => ({ id, title, content, entityIds: id === "tower" ? ["character"] : [], worldId: "w", bookId: null, keywords: [], activation: "smart", priority: "normal", enabled: true, source: { type: "manual" }, createdAt: 1, updatedAt: 1 });

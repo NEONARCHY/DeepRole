@@ -8,7 +8,7 @@ for (const locale of ["ru", "en"] as const) for (const format of ["json", "exist
   await page.setViewportSize({ width: 320, height: 600 });
   await page.goto("/tests/fixtures/sidepanel.html?world");
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
   await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
   let payload: unknown = [{ title: "Recovery fact", content: "Exact source" }];
   if (format === "bds") payload = { "Recovery fact": { value: "Exact source", importance: "called" } };
@@ -47,7 +47,7 @@ for (const locale of ["ru", "en"] as const) for (const format of ["json", "exist
 
 test("a failed write can retry and a saved import survives closing the recovery window", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles({ name: "retry.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Retry fact", content: "Exact" }])) });
   await page.evaluate(async () => {

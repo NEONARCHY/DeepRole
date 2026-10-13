@@ -2,7 +2,8 @@
 
 ## Continuation between computers
 
-- At the start of work on this repository, read `CODEX-HANDOFF.md` before choosing the next implementation task. It contains the latest completed work, user decisions, verification limits, and the concrete next RP-04 task.
+- At the start of work on this repository, read the current section of `CODEX-HANDOFF.md` before choosing the next implementation task. It contains the latest completed work, user decisions, verification limits, and the next task; do not hardcode a historical RP number.
+- When continuing the 13 October 2026 work after a pull or computer change, also read `docs/HANDOFF-2026-10-13.md` and the newest UX/RP sections of `ROADMAP.md`. The day log maps RP223–RP238/UX238 to the actual implementation and tests. For UX work, read `docs/DESIGN-SYSTEM.md` before editing.
 - When the user asks to continue after pulling or changing computers, follow that handoff and the newest ROADMAP sections. Older historical "next steps" are not current instructions. Do not overwrite uncommitted work when synchronizing Git.
 - Update the handoff when finishing a meaningful milestone, so another Codex can continue without this chat history.
 

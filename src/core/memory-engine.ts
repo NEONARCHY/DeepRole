@@ -11,7 +11,8 @@ import type {
 import { expandFocus, isMemoryInScene, memoryWorld, mentionedEntities } from "./scene";
 import { estimateTokens, normalizeText, uniqueTokens } from "./text";
 import { formatMemoryContext } from "./context";
-import { inferTitlePeople, loreTitleParts } from "./lore-categories";
+import { inferTitlePeople } from "./lore-categories";
+import { memorySearchIndex } from "./memory-search-index";
 
 const PRIORITY_MULTIPLIER: Record<MemoryPriority, number> = {
   low: 0.85,
@@ -30,6 +31,8 @@ export interface RankMemoryInput {
   scene?: SceneState;
   books?: MemoryBook[];
   entities?: SceneEntity[];
+  /** Runtime-only collision-safe entity references; scope is still checked. */
+  resolvedMentionIds?: Iterable<string>;
   manualIds?: Iterable<string>;
   excludedIds?: Iterable<string>;
   settings: Pick<DeepRoleSettings, "contextBudget" | "relevanceThreshold">;
@@ -43,7 +46,7 @@ export function rankMemories(input: RankMemoryInput): ContextSelection {
   const haystackTokens = uniqueTokens(searchableText);
   const entities = (input.entities ?? []).filter((entity) => entity.worldId === input.scene?.worldId);
   const focus = expandFocus(input.scene?.focusIds ?? [], entities, input.scene?.worldId ?? null);
-  const mentions = expandFocus(mentionedEntities(searchableText, entities), entities, input.scene?.worldId ?? null);
+  const mentions = expandFocus(input.resolvedMentionIds ?? mentionedEntities(searchableText, entities), entities, input.scene?.worldId ?? null);
   const scoped = input.entries.filter((entry) => input.scene ? isMemoryInScene(entry, input.scene, input.books ?? []) : !entry.worldId && (!entry.bookId || entry.bookId === input.activeBookId));
   const titlePeople = (input.nameGroups ?? inferTitlePeople(scoped.filter((entry) => entry.enabled), [], 1)).map((group) => ({ id: group.token, worldId: input.scene?.worldId ?? "", kind: "character" as const, name: group.name, aliases: group.aliases ?? [], description: "", memberIds: [], createdAt: 0, updatedAt: 0, entryIds: group.entryIds }));
   const namedGroups = new Set(mentionedEntities(searchableText, titlePeople));
@@ -149,24 +152,25 @@ export function scoreMemory(
 ): { score: number; reasons: string[] } {
   let score = 0;
   const reasons: string[] = [];
+  const index = memorySearchIndex(entry);
 
-  for (const keyword of entry.keywords) {
-    const normalizedKeyword = normalizeText(keyword);
+  for (const keyword of index.keywords) {
+    const normalizedKeyword = keyword.normalized;
     if (!normalizedKeyword) continue;
     if ((" " + normalizedHaystack + " ").includes(" " + normalizedKeyword + " ")) {
       score += normalizedKeyword.includes(" ") ? 8 : 4;
-      reasons.push(`keyword:${keyword}`);
+      reasons.push(`keyword:${keyword.original}`);
       continue;
     }
-    const keywordTokens = uniqueTokens(keyword);
+    const keywordTokens = keyword.tokens;
     if ([...keywordTokens].some((token) => haystackTokens.has(token))) {
       score += 4;
-      reasons.push(`keyword:${keyword}`);
+      reasons.push(`keyword:${keyword.original}`);
     }
   }
 
   let titleHits = 0;
-  for (const token of uniqueTokens(loreTitleParts(entry.title).join(" "))) {
+  for (const token of index.titleTokens) {
     if (haystackTokens.has(token)) titleHits += 1;
   }
   if (titleHits > 0) {
@@ -175,7 +179,7 @@ export function scoreMemory(
   }
 
   let contentHits = 0;
-  for (const token of uniqueTokens(entry.content)) {
+  for (const token of index.contentTokens) {
     if (haystackTokens.has(token)) contentHits += 1;
   }
   if (contentHits > 0) {

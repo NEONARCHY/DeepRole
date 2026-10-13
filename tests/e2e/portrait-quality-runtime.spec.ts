@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { chooseImageCompression } from "./image-upload-helpers";
 import { chromium, expect, test } from "@playwright/test";
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
@@ -36,7 +37,7 @@ for(const locale of ["ru","en"] as const)test(`installed custom portrait quality
         };
       });
     });
-    await panel.reload();await panel.getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();await panel.getByRole("button",{name:locale==="ru"?"Оформление":"Appearance",exact:true}).click();
+    await panel.reload();await panel.getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();await openSettingsSection(panel,"appearance",locale);
     const quality=panel.locator(".settings-card").filter({hasText:portraitUploadText(locale,"title")});await expect(quality.getByRole("spinbutton")).toHaveValue("1920");await quality.getByRole("spinbutton").fill("1280");await quality.getByRole("button",{name:portraitUploadText(locale,"save"),exact:true}).click();await expect(quality.getByRole("status")).toContainText(portraitUploadText(locale,"saved"));await quality.screenshot({path:info.outputPath(`quality-installed-${locale}.png`)});
     await panel.reload();expect(await panel.evaluate(async()=>((await(window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.portraitMaxEdge))).toBe(1280);
     const source=await panel.evaluate(()=>{const canvas=document.createElement("canvas");canvas.width=1200;canvas.height=1800;const ctx=canvas.getContext("2d")!;ctx.fillStyle="#759aaa";ctx.fillRect(0,0,1200,1800);ctx.fillStyle="#182630";ctx.fillRect(300,400,600,900);return canvas.toDataURL("image/png").split(",")[1]!;});
@@ -51,7 +52,7 @@ for(const locale of ["ru","en"] as const)test(`installed custom portrait quality
     await expect.poll(()=>panel.evaluate(async()=>((await(window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.referencePreviewSize))).toBe(240);
     await library.locator("input[type=file]").setInputFiles(upload);await chooseImageCompression(chat);await expect(library.locator(".dr-library-image")).toHaveCount(6);
     await editor.getByRole("button",{name:locale==="ru"?"Сохранить персонажа":"Save character",exact:true}).click();await expect(editor.locator("footer [role=status]")).toHaveText(locale === "ru" ? "Сохранено" : "Saved", { timeout: 60000 });await closeSavedCharacter(editor,locale);await expect(chat.getByRole("textbox",{name:"Message"})).toHaveValue("Unsent draft.");
-    await panel.getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();await panel.getByRole("button",{name:locale==="ru"?"Файлы и защита":"Files & security",exact:true}).click();await panel.getByRole("button",{name:locale==="ru"?"Экспорт":"Export",exact:true}).click();
+    await panel.getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();await openSettingsSection(panel,"data",locale);await panel.getByRole("button",{name:locale==="ru"?"Экспорт":"Export",exact:true}).click();
     const exportDialog=panel.getByRole("dialog",{name:locale==="ru"?"Экспорт":"Export",exact:true});await exportDialog.getByRole("radio",{name:locale==="ru"?/^Этот мир/:/^This world/}).check();
     const event=panel.waitForEvent("download");await exportDialog.getByRole("button",{name:locale==="ru"?"Скачать файл":"Download file",exact:true}).click();const file=await(await event).path();if(!file)throw Error("missing download");
     const json=JSON.parse(await readFile(file,"utf8"));expect(json.format).toBe("deeprole-world");const person=json.records.find((row:any)=>row.kind==="entity").data;expect(person.description).toBe("ORIGINAL PROFILE");expect(person.characterSheet.portraitLibrary).toHaveLength(6); expect(person.characterSheet.portraitLibrary.reduce((sum:number,image:string)=>sum+image.length,0)).toBeGreaterThan(64_000_000);const saved=person.characterSheet.portraitLibrary.at(-1);

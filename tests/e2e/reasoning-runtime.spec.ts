@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { chromium, expect, test } from "@playwright/test";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
@@ -29,12 +30,12 @@ for (const locale of ["ru", "en"] as const) test("installed appearance preferenc
     await chat.evaluate(() => (window as any).nativeThoughts.replace()); await expect(body).toBeVisible();
     await chat.evaluate(() => (window as any).nativeThoughts.add()); await expect(chat.locator("#thoughts-two .ds-think-content-wrapper")).toBeHidden();
     await panel.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
-    await panel.getByRole("button", { name: locale === "ru" ? "Оформление" : "Appearance", exact: true }).click();
+    await openSettingsSection(panel,"appearance",locale);
     const toggle = panel.getByRole("checkbox", { name: locale === "ru" ? "Показывать размышления автоматически" : "Show thoughts automatically", exact: true });
     await expect(toggle).not.toBeChecked(); await panel.screenshot({ path: info.outputPath("installed-appearance.png") });
     await toggle.check(); await expect(chat.locator("#thoughts-two .ds-think-content-wrapper")).toBeVisible();
     await chat.reload(); await expect(header).toHaveAttribute("aria-expanded", "true"); await expect(body).toBeVisible();
-    await panel.reload(); await panel.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click(); await panel.getByRole("button", { name: locale === "ru" ? "Оформление" : "Appearance", exact: true }).click(); await expect(toggle).toBeChecked();
+    await panel.reload(); await panel.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click(); await openSettingsSection(panel,"appearance",locale); await expect(toggle).toBeChecked();
     await toggle.uncheck(); await expect(body).toBeHidden(); await expect(header).toHaveAttribute("aria-expanded", "false");
     await expect(chat.locator("#deepthink")).toHaveAttribute("aria-pressed", "true"); expect(await chat.evaluate(() => (window as any).nativeThoughts.modeClicks())).toBe(0); expect(requests).toBe(0);
     await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("Unsent draft.");

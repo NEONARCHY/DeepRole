@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { chromium, expect, test, type Page } from "@playwright/test";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import path from "node:path";
@@ -37,7 +38,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await chat.getByRole("combobox", { name: "World", exact: true }).selectOption("w");
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /World description is approved/);
     await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", /OLD_CANON/);
-    await panel.bringToFront(); await panel.getByRole("button", { name: "Lore", exact: true }).click();
+    await panel.bringToFront(); await panel.getByRole("button", { name: "Worlds", exact: true }).click();
     await panel.getByRole("button", { name: "Memory list", exact: true }).click();
     await panel.getByRole("button", { name: /^World library:/ }).click();
     await panel.getByRole("menuitemradio", { name: "Test World", exact: true }).click();
@@ -56,7 +57,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     expect(sent.at(-1)).toContain("PRECISE_NEW_CANON"); expect(sent.at(-1)).not.toContain("OLD_CANON");
     await chat.reload(); await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /PRECISE_NEW_CANON/);
     // Map and list share exactly the same activation and chat override.
-    await panel.getByRole("button", { name: "Lore", exact: true }).click();
+    await panel.getByRole("button", { name: "Worlds", exact: true }).click();
     await panel.getByRole("button", { name: /^World library:/ }).click();
     await panel.getByRole("menuitemradio", { name: "Test World", exact: true }).click();
     await panel.getByRole("button", { name: "World map", exact: true }).click();
@@ -158,7 +159,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await panel.keyboard.press("Escape");
     await expect(panel.locator(".dr-loremap")).toHaveCount(0);
     await panel.getByRole("button", { name: "Settings", exact: true }).click();
-    await panel.getByRole("button", { name: "Files & security", exact: true }).click();
+    await openSettingsSection(panel,"data","en");
     await panel.getByLabel("New vault password", { exact: true }).fill("runtime-test-password");
 
     await panel.getByRole("button", { name: "Enable local vault", exact: true }).click();

@@ -19,7 +19,7 @@ test("installed extension shares its private library with chat and remembers wor
     await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
     await panel.evaluate(async () => { await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru", onboardingComplete: true } }); });
     await panel.reload();
-    await panel.getByRole("button", { name: "Лор", exact: true }).click();
+    await panel.getByRole("button", { name: "Миры", exact: true }).click();
     await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
     await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Runtime World.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Runtime rule": { value: "Only this world", importance: "always" }, "Promise": { value: "A unique promise", importance: "called" } })) });
     const confirmImport = panel.getByRole("button", { name: "Подтвердить импорт", exact: true });
@@ -108,7 +108,7 @@ test("installed extension shares its private library with chat and remembers wor
     await chat.goto("https://chat.deepseek.com/");
     await chat.getByRole("button", { name: "Открыть меню DeepRole", exact: true }).click();
     const menu = chat.frameLocator("iframe");
-    await menu.getByRole("button", { name: "Лор", exact: true }).click();
+    await menu.getByRole("button", { name: "Миры", exact: true }).click();
     await menu.getByRole("button", { name: /^Библиотека мира:/ }).click();
     await menu.getByRole("menuitemradio", { name: "Runtime World", exact: true }).click();
     await menu.getByRole("button", { name: "Мир и профили", exact: true }).click();

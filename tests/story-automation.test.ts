@@ -170,7 +170,7 @@ it("relevant early memory is retrieved and old claim values are visibly supersed
  await f.send([a]);await f.send([b]);const p=await readStoryReview({...f.scope(),cursor:null},f.repo);
  expect(p.facts!.find(e=>e.text===a.text)).toMatchObject({superseded:true});expect(p.facts!.find(e=>e.text===b.text)!.superseded).toBeUndefined();
  const facts=Array.from({length:100},(_,i)=>({text:i===0?"Neri hid the antique compass in the attic.":"A visitor recorded landmark "+i,quote:"Source",kind:"event" as const}));
- const context=storyFactContext(facts,600,"Where is the antique compass?");expect(context).toContain(facts[0]!.text);expect(context).not.toContain("Source");
+ const context=storyFactContext(facts,600,"Where is the antique compass?");expect(context).toContain(facts[0]!.text);expect(context).toContain('"sourceQuote":"Source"');expect((context.match(/"sourceQuote"/g)??[]).length).toBeLessThanOrEqual(8);
 });
 it("an unanchored new chat can read inherited pending items but cannot resolve them",async()=>{
  const f=await fixture();await f.send([fact("The traveler returned the lantern.","conflict")]);await f.attach(false);

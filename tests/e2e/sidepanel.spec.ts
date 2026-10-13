@@ -1,4 +1,4 @@
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 
 test("section guidance explains the workflow without per-button question marks", async ({ page }) => {
@@ -11,16 +11,16 @@ test("section guidance explains the workflow without per-button question marks",
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await setEnglish(page);
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Lore", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Worlds", exact: true })).toBeVisible();
   await expect(page.locator(".dr-mode-guide, .dr-score-guide")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "How memory selection works" })).toBeVisible();
-  await expect(page.getByRole("spinbutton", { name: "Memory limit", exact: true })).toBeVisible();
+  await expect(page.getByRole("spinbutton", { name: "Added context budget", exact: true })).toBeVisible();
 });
 
 test("list keeps primary editing visible and secondary actions inside records", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await expect(page.getByText("Клятва Миры")).toBeVisible();
   await expect(page.getByText("Стиль диалога")).toBeVisible();
@@ -29,12 +29,14 @@ test("list keeps primary editing visible and secondary actions inside records", 
   await page.screenshot({ path: testInfo.outputPath("deeprole-memory.png"), fullPage: true, animations: "disabled" });
 });
 
-test("compact settings expose tuning without opening any disclosure", async ({ page }, testInfo) => {
+test("settings explain categories before exposing advanced tuning", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await expect(page.getByText("Резервная копия", { exact: true })).toBeHidden();
-  await expect(page.getByRole("spinbutton", { name: "Лимит памяти", exact: true })).toBeVisible();
+  await expect(page.getByRole("spinbutton", { name: "Лимит добавленного контекста", exact: true })).not.toBeVisible();
+  await openSettingsSection(page,"memory","ru");
+  await expect(page.getByRole("spinbutton", { name: "Лимит добавленного контекста", exact: true })).toBeVisible();
 
   await page.getByRole("combobox", { name: "Чувствительность поиска" }).selectOption("9");
   await page.getByRole("button", { name: "Сохранить подбор", exact: true }).click();
@@ -42,7 +44,7 @@ test("compact settings expose tuning without opening any disclosure", async ({ p
   expect(await page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.relevanceThreshold)).toBe(9);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("settings-ru-360.png"), fullPage: true });
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+  await openSettingsSection(page,"data","ru");
   await expect(page.getByRole("button", { name: "Экспорт", exact: true })).toBeVisible();
   await expect(page.getByText("Включить локальный сейф").first()).toBeVisible();
 });
@@ -51,7 +53,7 @@ test("scene pins use persistent switches in compact settings", async ({ page }, 
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Приложение", exact: true }).click();
+  await openSettingsSection(page,"app","ru");
   for (const label of ["Закрепить варианты на экране", "Закрепить оба портрета"]) {
     const control = page.getByRole("checkbox", { name: label });
     await expect(control).not.toBeChecked();
@@ -80,7 +82,7 @@ test("does not run analysis or handoff from an empty chat", async ({ page }) => 
 
 test("tutorial stays optional and creates a separate editable copy", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   await page.locator(".lore-list-options > summary").click();
   await page.getByRole("button", { name: "Посмотреть пример", exact: true }).click();

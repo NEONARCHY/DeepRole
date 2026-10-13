@@ -15,6 +15,14 @@ function fixture() {
   return { client, current, win, store, input, route, source, started, ready, receive };
 }
 describe("content-owned outgoing capture registration and queues", () => {
+  it("updates a read-only receipt after committed writes and never lets a display error break the confirmation", async () => {
+    const f = fixture(), updated = vi.fn(() => { throw Error("display unavailable"); });
+    const client = new StoryDispatchCaptureClient(f.win, () => f.current, f.store, undefined, updated);
+    expect(await client.prepare(f.input)).toBe(true); expect(updated).toHaveBeenCalledWith(f.input.id);
+    client.receive({ source:f.win, origin:f.win.location.origin, data:{source:"deeprole-page-bridge",type:"STORY_CAPTURE_SOURCE",...f.source}} as unknown as MessageEvent);
+    await client.flush();expect(updated).toHaveBeenCalledTimes(2);
+    expect(f.win.postMessage).toHaveBeenCalledWith({source:"deeprole-extension",type:"STORY_CAPTURE_CONFIRMED",id:f.input.id,ok:true},f.win.location.origin);
+  });
   it("saves preparation then confirms only its exact registered request", async () => {
     const f = fixture(); expect(await f.client.prepare(f.input)).toBe(true); f.receive("STORY_CAPTURE_SOURCE", f.source);
     await vi.waitFor(() => expect(f.win.postMessage).toHaveBeenCalledWith({ source: "deeprole-extension", type: "STORY_CAPTURE_CONFIRMED", id: "request-a", ok: true }, "https://chat.deepseek.com"));

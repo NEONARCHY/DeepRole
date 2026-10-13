@@ -3,7 +3,7 @@ import type { DataRecord } from "../../src/core/types";
 
 test("import choices cannot change after saving begins", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html?world");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles({ name: "commit.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Committed choice", content: "Exact" }])) });
   await page.locator(".lore-import-modal details > summary").filter({ hasText: "Дополнительно" }).click();

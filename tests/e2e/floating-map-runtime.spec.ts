@@ -19,7 +19,7 @@ test("production iframe is centered, modeless, and returns to the sidebar withou
     await panel.goto(`chrome-extension://${id}/sidepanel.html`);
     await panel.evaluate(async () => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru", onboardingComplete: true } }));
     await panel.reload();
-    await panel.getByRole("button", { name: "Лор", exact: true }).click();
+    await panel.getByRole("button", { name: "Миры", exact: true }).click();
     await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
     await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Обсерватория.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ name: "Обсерватория", entries: [{ title: "Правило мира", content: "По ночам над городом видны две луны.", activation: "always" }, { title: "Мира", content: "Мира работает в обсерватории и хранит карту неба.", activation: "smart" }, { title: "Башня", content: "Башня стоит на берегу озера.", activation: "smart" }] })) });
     await panel.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
@@ -30,7 +30,7 @@ test("production iframe is centered, modeless, and returns to the sidebar withou
     await chat.getByRole("button", { name: "Открыть меню DeepRole", exact: true }).click();
     await expect(chat.locator(".dr-menu-drawer iframe")).toBeVisible();
     const menu = chat.frameLocator(".dr-menu-drawer iframe");
-    await menu.getByRole("button", { name: "Лор", exact: true }).click();
+    await menu.getByRole("button", { name: "Миры", exact: true }).click();
     await menu.getByRole("button", { name: "Открыть карту мира", exact: true }).click();
     const drawer = chat.locator(".dr-menu-drawer");
     const map = menu.getByRole("dialog", { name: "Карта мира", exact: true });

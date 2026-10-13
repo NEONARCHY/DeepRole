@@ -11,7 +11,7 @@ async function setup(page: Page, locale: "ru" | "en") {
     const world = (id: string) => ({ id, name: id === "w1" ? "Observatory" : "Harbour", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1, mapLayout: { positions: Object.fromEntries([1, 2, 3].map((i) => ["entry:" + id + i, { x: 2350 + (i - 2) * 450, y: 2700 }])), customCategories: [], expandedIds: [] } });
     await repository.mergeRecords([...["w1", "w2"].map((id) => ({ kind: "world", id, data: world(id) })), ...["w1", "w2"].flatMap((worldId) => [1, 2, 3].map((i) => ({ kind: "entry", id: worldId + i, data: { id: worldId + i, worldId, bookId: null, title: `${worldId} Fact ${i}`, content: `Neutral fact ${i} of ${worldId}.`, keywords: [], activation: "smart", enabled: true, priority: "normal", source: { type: "manual" }, createdAt: 1, updatedAt: 1 } })))]);
   });
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
   await page.getByRole("button", { name: new RegExp("^" + l("Библиотека мира", "World library") + ":") }).click();
   await page.getByRole("menuitemradio", { name: "Observatory", exact: true }).click();
   await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();

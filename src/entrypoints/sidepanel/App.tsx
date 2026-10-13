@@ -1,6 +1,9 @@
 import { readJsonFile } from "../../core/read-json-file";
+import { navigationText, type SettingsSection } from "../../core/navigation-i18n";
+import { SettingsNavigation } from "../shared/SettingsNavigation";
 import { Select } from "../shared/Select";
 import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
+import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
 import { StoryDiagnostics } from "../shared/StoryDiagnostics";
 import { StoryWorkspace } from "../shared/StoryWorkspace";
 import { storyUxText } from "../../core/story-ux-i18n";
@@ -14,7 +17,6 @@ import { setPortraitPhotoStorage } from "../shared/portrait-file";
 import { ImageSettings } from "./ImageSettings";
 import { PortraitUploadSettings } from "../shared/PortraitUploadSettings";
 import { portraitUploadText } from "../../core/portrait-upload-i18n";
-import { imageText } from "../../core/image-i18n";
 import { requestImagePermission } from "../../storage/image-permissions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelWidthControl } from "../shared/PanelWidthControl";
@@ -111,6 +113,7 @@ import "./lore-map.css";
 type Tab = "overview" | "settings" | "worlds" | "story";
 
 interface PageState {
+  memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
   pendingHandoff?: string;
   activity?: ServiceActivity | null;
   generating?: boolean;
@@ -270,7 +273,7 @@ export function App() {
           messageCount: response.messageCount,
           compatible: response.status.compatible,
           scene: response.scene,
-          selection: response.selection, overrides: response.overrides,
+          selection: response.selection, overrides: response.overrides, memoryDelivery: response.memoryDelivery,
           activity: response.activity, generating: response.generating, warning: response.warning, pendingHandoff: response.pendingHandoff,
         });
       } else setPage(EMPTY_PAGE);
@@ -555,9 +558,9 @@ export function App() {
 
       {exportRequest && <ExportDialog locale={settings.locale} worlds={worlds} worldId={exportRequest.worldId} onClose={() => setExportRequest(null)} />}
       <nav className="bottom-nav" aria-label={t("navigation")}>
-        <NavButton active={activeTab === "overview"} label={mt("play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
-        <NavButton active={activeTab === "worlds"} label={mt("lore")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
-        <NavButton active={activeTab === "story"} label={storyUxText(settings.locale, "nav")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
+        <NavButton active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
+        <NavButton active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
+        <NavButton active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
         <NavButton active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={() => setActiveTab("settings")} />
       </nav>
 
@@ -636,7 +639,8 @@ function Overview(props: {
     <MemoryStatus key={props.page.chatUrl + props.worldId} locale={props.locale} connected={props.page.compatible} warning={props.page.warning} selection={props.page.selection} pendingHandoff={props.page.pendingHandoff} available={enabledEntries} onAdd={props.onNewMemory} />
     {!!props.page.selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {props.page.selection.omittedCount}</p>}
     {!!props.page.selection?.overBudgetTokens && <p className="dr-inline-note">{assistantText(props.locale, "overflow")}</p>}
-    <ContextBudgetSummary locale={props.locale} report={props.page.selection?.contextReport}/>
+    <ContextBudgetSummary locale={props.locale} report={props.page.selection?.contextReport} entries={props.page.selection?.entries}/>
+    <MemoryDeliverySummary locale={props.locale} receipt={props.page.memoryDelivery}/>
     <section className="quick-actions">
       <button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button>
       <button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button>
@@ -786,7 +790,7 @@ function SettingsView(props: {
   onRefresh: () => void;
   onToast: (message: string) => void;
 }) {
-  const [section, setSection] = useState<"memory" | "data" | "characters" | "app" | "images" | "appearance">("memory");
+  const [section, setSection] = useState<SettingsSection>("home");
   const [capacityDraft, setCapacityDraft] = useState(String(chatCapacity(props.settings.chatContextCapacity)));
   useEffect(() => setCapacityDraft(String(chatCapacity(props.settings.chatContextCapacity))), [props.settings.chatContextCapacity]);
   const [reminderDraft, setReminderDraft] = useState(String(props.settings.suggestionInterval));
@@ -850,8 +854,8 @@ function SettingsView(props: {
 
   return (
     <div className="view-stack">
-      <div className="view-title"><div><small>DeepRole</small><h1>{props.t("settings")}</h1></div></div>
-      <nav className="dr-settings-nav" aria-label={x("settingsLabel")}>{(["memory", "characters", "images", "appearance", "app", "data"] as const).map((id) => <button key={id} type="button" aria-pressed={section === id} onClick={() => setSection(id)}>{id === "images" ? imageText(props.settings.locale, "title") : id === "characters" ? storyUxText(props.settings.locale, "settingsCharacters") : x(id === "appearance" ? "settingsAppearance" : id === "memory" ? "settingsMemory" : id === "data" ? "settingsData" : "settingsPreferences")}</button>)}</nav>
+      <div className="view-title"><div><h1>{props.t("settings")}</h1></div></div>
+      <SettingsNavigation locale={props.settings.locale} section={section} onSelect={setSection} worldName={props.world?.name}/>
       <div className="dr-settings-page" hidden={section !== "appearance"}>
         <SettingsCard icon={<Eye />} title={portraitUploadText(props.settings.locale, "title")}>
           <PortraitUploadSettings settings={props.settings} onSettings={props.onSettings} />
@@ -911,7 +915,6 @@ function SettingsView(props: {
       </SettingsCard>
       </div>
       <div className="dr-settings-page" hidden={section !== "data"}>
-      <details className="settings-card dr-story-advanced"><summary>{storyUxText(props.settings.locale, "diagnostics")}</summary><p className="setting-copy">{storyUxText(props.settings.locale, "diagnosticsHint")}</p><StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(browser.tabs)} /><ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} /></details>
       <SettingsCard icon={<FileKey2 />} title={u("backup")}>
         <p className="setting-copy">{u("backupHint")}</p>
         <label className="field-label"><span className="help-field-title">{u("backupPassword")}</span><input className="input" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
@@ -920,6 +923,7 @@ function SettingsView(props: {
       </SettingsCard>
       </div>
       {restore && <BackupRestore t={props.t} fileName={restore.fileName} payload={restore.payload} onClose={() => setRestore(null)} onRestore={async (mode) => { await restoreBackup(restore.payload, mode); setRestore(null); props.onToast(props.t("importSuccess")); props.onRefresh(); }} />}
+      <div className="dr-settings-page" hidden={section !== "diagnostics"}><StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(browser.tabs)} /><ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} /></div>
       <div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<BrainCircuit />} title={u("reminders")} locale={props.settings.locale} help={u("remindersHint")}>
 

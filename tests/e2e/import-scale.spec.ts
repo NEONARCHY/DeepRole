@@ -7,7 +7,7 @@ for (const locale of ["ru", "en"] as const) test(`large file preview is bounded,
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
   await page.setViewportSize({ width: 420, height: 700 }); await page.goto("/tests/fixtures/sidepanel.html");
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
   await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
   const entries = Array.from({ length: 1500 }, (_, i) => ({ title: `Fact ${i + 1}`, content: `Exact fact ${i + 1}.\nKeep this line unchanged.`, keywords: [`key-${i + 1}`], activation: i === 1499 ? "manual" : "smart", enabled: i !== 1499 }));
   await page.locator('input[type="file"]').setInputFiles({ name: "Large neutral world.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ name: "Large neutral world", entries })) });
@@ -32,7 +32,7 @@ for (const locale of ["ru", "en"] as const) test(`large file preview is bounded,
 });
 
 test("a slow earlier file never replaces the latest dropped file", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.evaluate(() => {
     const original = File.prototype.text;
     File.prototype.text = function () { return this.name === "slow.json" ? original.call(this).then(text => new Promise<string>(resolve => { (window as any).finishSlowRead = () => resolve(text); })) : original.call(this); };
@@ -48,7 +48,7 @@ test("a slow earlier file never replaces the latest dropped file", async ({ page
 });
 
 test("a delayed valid file cannot override a later invalid file", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.evaluate(() => {
     const original = File.prototype.text;
     File.prototype.text = function () { return this.name === "slow.json" ? original.call(this).then(text => new Promise<string>(resolve => { (window as any).finishSlowRead = () => resolve(text); })) : original.call(this); };
@@ -65,7 +65,7 @@ test("a delayed valid file cannot override a later invalid file", async ({ page 
 });
 
 test("saving cannot be interrupted by another drop, Escape or duplicate confirmation", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Лор", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles({ name: "confirmed.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Confirmed record", content: "Exact original" }])) });
   await page.evaluate(async () => {
     const { repository } = await import("/src/storage/repository.ts" as string); const original = repository.mergeRecords.bind(repository);

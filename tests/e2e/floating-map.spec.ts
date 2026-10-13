@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -16,10 +17,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [1440, 360]) {
     const l = (ru: string, en: string) => locale === "ru" ? ru : en;
     if (locale === "en") {
       await frame.getByRole("button", { name: "Настройки", exact: true }).click();
-      await frame.getByRole("button", { name: "Приложение", exact: true }).click();
+      await openSettingsSection(frame,"app","ru");
       await frame.getByRole("button", { name: "English", exact: true }).click();
     }
-    await frame.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click();
+    await frame.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
     await frame.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
     const drawer = page.locator(".dr-menu-drawer");
     const map = frame.getByRole("dialog", { name: l("Карта мира", "World map"), exact: true });

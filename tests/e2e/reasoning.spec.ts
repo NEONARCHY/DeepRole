@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setEnglish } from "./helpers/settings";
+import { setEnglish, openSettingsSection } from "./helpers/settings";
 import AxeBuilder from "@axe-core/playwright";
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
@@ -26,16 +26,16 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) {
   test(`appearance settings save and reload without changing game settings ${locale} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 950 }); await page.goto("/tests/fixtures/sidepanel.html?persist");
     await page.getByRole("button", { name: "Настройки", exact: true }).click(); if (locale === "en") await setEnglish(page);
-    const appearance = page.getByRole("button", { name: locale === "ru" ? "Оформление" : "Appearance", exact: true }); await appearance.click();
+    await openSettingsSection(page,"appearance",locale);
     const toggle = page.getByRole("checkbox", { name: locale === "ru" ? "Показывать размышления автоматически" : "Show thoughts automatically", exact: true });
-    await expect(toggle).not.toBeChecked(); await expect(appearance).toHaveAttribute("aria-pressed", "true"); await expect(page.locator(".dr-settings-nav button")).toHaveCount(6);
+    await expect(toggle).not.toBeChecked(); await expect(page.locator(".dr-settings-directory h2")).toBeFocused();
     await page.screenshot({ path: info.outputPath("appearance-settings.png") });
     const audit = await new AxeBuilder({ page }).include(".dr-settings-page:not([hidden])").withTags(["wcag2a", "wcag2aa"]).analyze(); expect(audit.violations).toEqual([]);
     await toggle.check();
     await expect.poll(() => page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.showDeepSeekReasoning)).toBe(true);
     const settings = await page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings);
     expect(settings.contextBudget).toBe(2000); expect(settings.sceneChoicesEnabled).toBe(true); expect(settings.characterSheetsEnabled).toBe(true);
-    await page.reload(); await page.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click(); await appearance.click(); await expect(toggle).toBeChecked();
+    await page.reload(); await page.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click(); await openSettingsSection(page,"appearance",locale); await expect(toggle).toBeChecked();
     await toggle.uncheck(); await expect.poll(() => page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.showDeepSeekReasoning)).toBe(false);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });

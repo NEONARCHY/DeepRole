@@ -7,7 +7,7 @@ const sample = Object.fromEntries(Array.from({ length: 60 }, (_, i) => [patterns
 async function openMap(page: Page) {
   await page.setViewportSize({ width: 1320, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Обсерватория.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(sample)) });
   await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
@@ -371,7 +371,7 @@ test("English UI and varied English title conventions work without Russian inter
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await setEnglish(page);
-  await page.getByRole("button", { name: "Lore", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page.getByRole("button", { name: "Import existing lore", exact: true }).click();
   const data = { "MiraBody": { value: "Original body description.", importance: "called" }, "Character: Mira — Appearance": { value: "Original appearance.", importance: "called" }, "WritingStyle": { value: "Original writing preferences.", importance: "always" }, "DialogueFormat": { value: "Original chat format.", importance: "always" } };
   await page.getByLabel("Choose JSON", { exact: true }).setInputFiles({ name: "Observatory.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(data)) });

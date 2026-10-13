@@ -12,6 +12,7 @@ import { StoryGameClient } from "../adapters/story-game-client";
 import { worldGameBinding, worldGamePeople, type WorldGameActivation } from "../core/world-game";
 import type { StoryFact } from "../core/story-update";
 import { compileGameContext } from "../core/game-context";
+import { memoryDeliveryView } from "../core/memory-delivery-view";
 import { storyUpdateText } from "../core/story-update-i18n";
 import { StoryRepairClient } from "../adapters/story-repair-client";
 import { CharacterDiscoveryClient } from "../adapters/character-discovery-client";
@@ -59,7 +60,7 @@ import { boundStory } from "../core/story-continuation";
 import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
 import type { StoryContinuation } from "../core/types";
-import { startupDeadline } from "../core/startup";
+import { startupBudget } from "../core/startup";
 import { formatMemoryContext } from "../core/context";
 import { parseSceneChoices, sceneChoiceRecoveryPrompt, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
 import { createId } from "../core/id";
@@ -203,7 +204,7 @@ class PageController {
   private pendingMetadataRevision: string | null = null;
   private lastMetadataRepairAt = 0;
   private metadataRepairTimer = 0;
-  private readonly dispatchCaptures = new StoryDispatchCaptureClient(window, () => ({ chatId: this.adapter.getChatId(), worldId: this.currentScene().worldId, url: location.href, locked: this.state.vaultLocked }), repository, query => { void this.dispatchReplies.read(query); });
+  private readonly dispatchCaptures = new StoryDispatchCaptureClient(window, () => ({ chatId: this.adapter.getChatId(), worldId: this.currentScene().worldId, url: location.href, locked: this.state.vaultLocked }), repository, query => { void this.dispatchReplies.read(query); }, id => { void this.refreshMemoryDelivery(id); });
   private readonly reasoningPresentation = new ReasoningPresentation();
   private readonly replyRecovery = new DeepSeekReplyRecovery(async edit => {
     if (this.state.vaultLocked || this.settings.replyRecoveryEnabled === false || this.adapter.getChatId() !== edit.chatId) throw new Error("reply-scope");
@@ -233,6 +234,8 @@ class PageController {
   private draftOverrides: MemoryOverrides = { ...EMPTY_OVERRIDES };
   private dismissedAt = new Map<string, number>();
   private selection: ContextSelection = { entries: [], estimatedTokens: 0, omittedCount: 0 };
+  private memoryDispatchRecords: unknown[] = [];
+  private memoryReceiptGeneration = 0;
   private appliedSnapshot: HandoffSnapshot | null = null;
   private snapshotToken: string | null = null;
   private readonly deliveries = new Map<string, ContextDelivery>();
@@ -287,17 +290,25 @@ class PageController {
     window.addEventListener("message", (event) => this.handleBridgeMessage(event));
     this.observePage();
     try {
-      this.settings = await startupDeadline(getSettings());
-      this.reasoningPresentation.configure(this.settings.showDeepSeekReasoning === true, this.settings.locale);
-      this.state.locale = this.settings.locale;
-      this.draftScene = (await startupDeadline(browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage))) ?? { ...EMPTY_SCENE };
-      this.previousChatId = this.adapter.getChatId();
-      const savedPosition = await startupDeadline(browser.storage.local.get([CONTEXT_INDICATOR_POSITION_KEY, WIDGET_LAYOUT_KEY]));
-      this.contextIndicatorPosition = parseSavedIndicatorPosition(savedPosition[CONTEXT_INDICATOR_POSITION_KEY]);
-      this.state.widgetLayout = parseWidgetLayout(savedPosition[WIDGET_LAYOUT_KEY]);
-      await startupDeadline(this.reload());
-      restoreServiceTurns();
-      this.cleanArchivedMemoryPayloads();
+      await startupBudget(async active => {
+        const [settings, draftScene, savedPosition] = await Promise.all([
+          getSettings(),
+          browser.runtime.sendMessage({ type: "DR_GET_DRAFT_SCENE" } satisfies DeepRoleMessage) as Promise<SceneState | undefined>,
+          browser.storage.local.get([CONTEXT_INDICATOR_POSITION_KEY, WIDGET_LAYOUT_KEY]),
+        ]);
+        if (!active()) return;
+        this.settings = settings;
+        this.reasoningPresentation.configure(this.settings.showDeepSeekReasoning === true, this.settings.locale);
+        this.state.locale = this.settings.locale;
+        this.draftScene = draftScene ?? { ...EMPTY_SCENE };
+        this.previousChatId = this.adapter.getChatId();
+        this.contextIndicatorPosition = parseSavedIndicatorPosition(savedPosition[CONTEXT_INDICATOR_POSITION_KEY]);
+        this.state.widgetLayout = parseWidgetLayout(savedPosition[WIDGET_LAYOUT_KEY]);
+        await this.reload();
+        if (!active()) return;
+        restoreServiceTurns();
+        this.cleanArchivedMemoryPayloads();
+      });
     } catch {
       // A failed/aborted worker must not leave the launcher hidden forever.
       // Invalidate late library reads and expose no memory until a fresh load.
@@ -371,9 +382,10 @@ class PageController {
 
   private async load(generation: number): Promise<boolean> {
     const settings = await getSettings();
-    this.imageSettings = await getImageSettings().catch(() => structuredClone(DEFAULT_IMAGE_SETTINGS));
+    const imageSettings = await getImageSettings().catch(() => structuredClone(DEFAULT_IMAGE_SETTINGS));
     const locked = await repository.isLocked();
     if (generation !== this.reloadGeneration) return false;
+    this.imageSettings = imageSettings;
     this.state.startupError = false;
     this.settings = settings;
     this.reasoningPresentation.configure(settings.showDeepSeekReasoning === true, settings.locale);
@@ -409,6 +421,7 @@ class PageController {
       if (generation !== this.reloadGeneration) return false;
     }
     this.illustrations = libraryRecords<Illustration>(records, "illustration");
+    this.memoryDispatchRecords = records.filter(r => r.kind === "dispatch").map(r => r.data);
     for (const record of pending?.contextWarnings ?? (pending?.contextWarning ? [pending.contextWarning] : [])) {
       const seen = this.seenContextWarnings.find(v => v.chatId === record.chatId && v.capacity === record.capacity);
       if (!seen) this.seenContextWarnings.push(record); else seen.level = Math.max(seen.level, record.level);
@@ -583,6 +596,8 @@ class PageController {
     if (!pending.length) { window.clearTimeout(this.selfieScanTimer); this.selfieScanTimer = 0; }
   }
   private clearPrivateState() {
+    ++this.memoryReceiptGeneration;
+    this.memoryDispatchRecords = [];
     this.dispatchCaptures.reset();
     this.dispatchReplies.reset();
     if (this.characterTextWaiter) this.settleCharacterText(this.characterTextWaiter.id, undefined, "vault-locked");
@@ -648,6 +663,22 @@ class PageController {
   private currentBinding(): ChatBinding | undefined {
     const chatId = this.adapter.getChatId();
     return chatId ? this.bindings.find((binding) => binding.chatId === chatId) : undefined;
+  }
+  private memoryDelivery() {
+    const binding = this.currentBinding(), worldId = this.currentScene().worldId, chatId = this.adapter.getChatId();
+    if (this.state.vaultLocked || this.pendingService || !binding || !worldId || !chatId || binding.worldId !== worldId
+      || !this.worlds.some(w => w.id === worldId)) return undefined;
+    return memoryDeliveryView(this.memoryDispatchRecords, { worldId, bindingId: binding.id, chatId });
+  }
+  private async refreshMemoryDelivery(id: string) {
+    const scope = this.pageScope(), worldId = this.currentScene().worldId, bindingId = this.currentBinding()?.id, generation = ++this.memoryReceiptGeneration;
+    try {
+      const receipt = await repository.get<import("../core/story-dispatch-capture").StoryDispatchCapture>("dispatch", id);
+      if (generation !== this.memoryReceiptGeneration || this.state.vaultLocked || location.href !== scope.url
+        || this.adapter.getChatId() !== scope.chatId || this.currentScene().worldId !== worldId || this.currentBinding()?.id !== bindingId || !receipt) return;
+      this.memoryDispatchRecords = [...this.memoryDispatchRecords.filter(v => (v as {id?:string}).id !== id), receipt];
+      this.render();
+    } catch { /* Read-only receipt failure cannot stop the native request. */ }
   }
   private sharedBinding(): ChatBinding | undefined {
     const binding = this.currentBinding();
@@ -919,7 +950,7 @@ class PageController {
     }
     this.state.contextPosition = this.resolveContextIndicatorPosition();
     this.root?.render(<PageWidget
-      state={{ ...this.state, selection: this.selection }}
+      state={{ ...this.state, selection: this.selection, memoryDelivery: this.memoryDelivery() }}
       onStayInOldChat={async () => {
         const notice = this.state.oldChatNotice, binding = this.currentBinding();
         if (!notice || !binding) return;
@@ -2289,7 +2320,7 @@ class PageController {
         messageCount: this.adapter.getMessageCount(),
         status: this.adapter.getStatus(),
         scene: this.currentScene(),
-        selection: this.selection, overrides: this.overrides(),
+        selection: this.selection, overrides: this.overrides(), memoryDelivery: this.memoryDelivery(),
         pendingHandoff: this.state.pendingHandoff,
         activity: this.currentActivity(), generating: this.adapter.isGenerating(), warning: this.state.warning,
       } satisfies DeepRoleMessage;

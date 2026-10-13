@@ -28,7 +28,7 @@ for (const locale of ["ru", "en"] as const) test(`BDS import connects explicitly
     // Chromium intentionally drops clicks into recently positioned cross-origin
     // frames. Wait for its 500 ms security window, not another click or force:true.
     await menuFrame.waitForFunction(() => performance.now() >= 650);
-    await menu.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true }).click();
+    await menu.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
     await expect(menu.getByRole("heading", { name: locale === "ru" ? "Лор" : "Lore", exact: true })).toBeVisible();
     await menu.getByRole("button", { name: locale === "ru" ? "Загрузить готовый лор" : "Import existing lore", exact: true }).click();
     const title = locale === "ru" ? "Алекс_характер" : "AlexPersonality";
@@ -96,7 +96,7 @@ for (const locale of ["ru", "en"] as const) test(`BDS import connects explicitly
     await chat.getByRole("button", { name: locale === "ru" ? "Открыть меню DeepRole" : "Open DeepRole menu", exact: true }).click();
     await expect(menu.locator(".bottom-nav")).toBeVisible();
     await chat.frames().find(frame => frame.url().includes("sidepanel.html"))!.waitForFunction(() => performance.now() >= 650);
-    await menu.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true }).click();
+    await menu.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
     await expect(menu.getByText(locale === "ru" ? "Подключён к этому чату" : "Connected to this chat", { exact: true })).toBeVisible();
     await menu.locator(".worlds-view").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished.catch(() => undefined))));
     await chat.screenshot({ path: testInfo.outputPath(`import-connected-${locale}.png`), animations: "disabled" });

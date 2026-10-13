@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 import AxeBuilder from "@axe-core/playwright";
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
@@ -18,7 +18,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     });
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
     if (locale === "en") await setEnglish(page);
-    await page.getByRole("button", { name: l("Файлы и защита", "Files & security"), exact: true }).click();
+    await openSettingsSection(page,"data",locale);
     await page.getByRole("button", { name: l("Экспорт", "Export"), exact: true }).click();
     const dialog = page.getByRole("dialog", { name: l("Экспорт", "Export"), exact: true });
     await dialog.getByRole("radio", { name: new RegExp(`^${l("Этот мир", "This world")}`) }).check();
@@ -77,7 +77,7 @@ for(const locale of ["ru","en"] as const) test(`missing photo gives a readable e
   });
   await page.getByRole("button",{name:"Настройки",exact:true}).click();
   if(locale==="en")await setEnglish(page);
-  await page.getByRole("button",{name:l("Файлы и защита","Files & security"),exact:true}).click();
+  await openSettingsSection(page,"data",locale);
   await page.getByRole("button",{name:l("Экспорт","Export"),exact:true}).click();
   const dialog=page.getByRole("dialog",{name:l("Экспорт","Export"),exact:true});
   await dialog.getByRole("radio",{name:new RegExp("^"+l("Полная резервная копия","Full backup"))}).check();

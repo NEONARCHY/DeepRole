@@ -1,4 +1,4 @@
-import { setEnglish } from "./helpers/settings";
+import { openSettingsSection, setEnglish  } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -9,7 +9,7 @@ for (const kind of ["entry", "book"] as const) {
       const { repository } = await import("/src/storage/repository.ts" as string);
       await repository.enableVault("session-password");
     });
-    await page.getByRole("button", { name: "Лор", exact: true }).click();
+    await page.getByRole("button", { name: "Миры", exact: true }).click();
     await page.getByRole("button", { name: "Список записей", exact: true }).click();
     if (kind === "book") {
       await page.locator(".lore-list-options > summary").click();
@@ -26,7 +26,7 @@ for (const kind of ["entry", "book"] as const) {
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.getByPlaceholder("Пароль", { exact: true }).fill("session-password");
     await page.getByRole("button", { name: "Разблокировать", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Лор", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Миры", exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     const record = await page.evaluate(async (kind) => {
       const { repository } = await import("/src/storage/repository.ts" as string);
@@ -56,8 +56,8 @@ for (const locale of ["ru", "en"] as const) {
   test(`explicit lock, wrong password, and safe unlock (${locale})`, async ({ page }, testInfo) => {
     await page.goto("/tests/fixtures/sidepanel.html");
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
-    if (locale === "en") { await setEnglish(page); await page.getByRole("button", { name: "Files & security", exact: true }).click(); }
+  await openSettingsSection(page,"data","ru");
+    if (locale === "en") { await setEnglish(page); await openSettingsSection(page,"data","en"); }
     const password = page.getByPlaceholder(locale === "ru" ? "Пароль" : "Password", { exact: true });
     await page.getByLabel(locale === "ru" ? "Новый пароль сейфа" : "New vault password", { exact: true }).fill("session-password");
     
@@ -70,7 +70,7 @@ for (const locale of ["ru", "en"] as const) {
     await password.fill("wrong-password"); await unlock.click();
     await expect(page.locator(".error-text")).toContainText(locale === "ru" ? "Неверный пароль" : "Wrong password");
     await password.fill("session-password"); await password.press("Enter");
-    await expect(page.getByRole("button", { name: locale === "ru" ? "Лор" : "Lore", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true })).toBeVisible();
     expect(await page.evaluate(async () => { const { repository } = await import("/src/storage/repository.ts" as string); return (await repository.list("entry")).length; })).toBe(2);
   });
 }
@@ -79,7 +79,7 @@ for (const cancel of ["lock", "leave"] as const) {
   test(`a prepared export is not downloaded after ${cancel}`, async ({ page }) => {
     await page.goto("/tests/fixtures/sidepanel.html?vault=1");
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+  await openSettingsSection(page,"data","ru");
     await page.evaluate(async () => {
       const { repository } = await import("/src/storage/repository.ts" as string);
       const original = repository.rawRecords.bind(repository);
@@ -100,7 +100,7 @@ for (const cancel of ["lock", "leave"] as const) {
     if (cancel === "lock") {
       await page.evaluate(async () => { const { repository } = await import("/src/storage/repository.ts" as string); await repository.lockVault(); });
       await expect(page.getByRole("button", { name: "Разблокировать", exact: true })).toBeVisible();
-    } else { await page.getByRole("dialog", { name: "Экспорт", exact: true }).getByRole("button", { name: "Закрыть", exact: true }).click(); await page.getByRole("button", { name: "Лор", exact: true }).click(); }
+    } else { await page.getByRole("dialog", { name: "Экспорт", exact: true }).getByRole("button", { name: "Закрыть", exact: true }).click(); await page.getByRole("button", { name: "Миры", exact: true }).click(); }
     await page.evaluate(async () => {
       (window as any).releaseExport();
       // The fixture storage returns already-resolved promises. Drain their chain
@@ -114,7 +114,7 @@ for (const cancel of ["lock", "leave"] as const) {
 test("encrypted backup preview works, and unsafe headers are not mistaken for passwords", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await page.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+  await openSettingsSection(page,"data","ru");
   await page.getByLabel("Пароль для импорта (если нужен)", { exact: true }).fill("backup-password");
   const backup = await page.evaluate(async () => { const { createBackup } = await import("/src/storage/backup.ts" as string); return createBackup("backup-password"); });
   const choose = (value: unknown) => page.locator('input[type="file"]').setInputFiles({ name: "backup.vault.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(value)) });
@@ -128,7 +128,7 @@ test("encrypted backup preview works, and unsafe headers are not mistaken for pa
 
 test("an unfinished world export is cancelled on lock, while a normal export still downloads", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html?vault=1");
-  await page.getByRole("button", { name: "Лор", exact: true }).click();
+  await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.evaluate(async () => {
     const { repository } = await import("/src/storage/repository.ts" as string);
     const now = Date.now(); await repository.put("world", { id: "w", name: "Export World", description: "Private world notes", color: "#58a6ff", contextBudget: 2000, relevanceThreshold: 6, createdAt: now, updatedAt: now });
@@ -165,7 +165,7 @@ for (const closing of ["X", "Escape"] as const) test(`the locked embedded menu s
   await page.getByRole("button", { name: "Открыть меню DeepRole", exact: true }).click();
   const menu = page.frameLocator("iframe");
   await menu.getByRole("button", { name: "Настройки", exact: true }).click();
-  await menu.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+  await openSettingsSection(menu,"data","ru");
   await menu.getByLabel("Новый пароль сейфа", { exact: true }).fill("session-password");
 
   await menu.getByRole("button", { name: "Включить локальный сейф", exact: true }).click();

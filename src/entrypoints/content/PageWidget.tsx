@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { flushSync } from "react-dom";
 import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
+import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
 import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell } from "lucide-react";
 import { WidgetDeck, WidgetTile, type WidgetLayout } from "./WidgetDeck";
 import { translate } from "../../core/i18n";
@@ -35,6 +36,7 @@ import type { ContinuationFlow } from "../../core/continuation-flow";
 import type { CharacterTextRequestGenerator } from "../../core/character-text";
 
 export interface WidgetState {
+  memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
   oldChatNotice?: OldChatNotice | null;
   continuation?: ContinuationFlow | null;
   chatContextCapacity?: number;
@@ -338,7 +340,8 @@ export function PageWidget(props: {
         </>}
       {quick && props.onQuickSave && props.onDraftLore ? <QuickMemory worldName={props.state.worlds?.find((world) => world.id === props.state.scene?.worldId)?.name} locale={props.state.locale} onSave={props.onQuickSave} onDraft={props.onDraftLore} onClose={() => setQuick(false)} /> : review && props.onReview && props.onDiscard ? <MemoryReview key={review.id} locale={props.state.locale} batch={review} onKeepMemory={props.state.continuation?.proposalId === review.id ? props.onKeepContinuationMemory : undefined} keepLabel={continuationText(props.state.locale, "keepMemory")} introduction={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "reviewHint") : undefined} saveLabel={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "saveContinue") : undefined} onSave={(items, profileChoice) => props.onReview!(review, items, profileChoice)} onDiscard={() => props.onDiscard!(review.id)} onClose={() => { setReviewId(null); props.onReviewClose?.(); }} /> : <>
         {(props.state.selection.overBudgetTokens ?? 0) > 0 && <p className="dr-budget-note">{at("overflow")}</p>}{props.state.selection.omittedCount > 0 && <p className="dr-budget-note">{at("omitted")} ({props.state.selection.omittedCount})</p>}
-        <ContextBudgetSummary locale={props.state.locale} report={props.state.selection.contextReport}/>
+        <ContextBudgetSummary locale={props.state.locale} report={props.state.selection.contextReport} entries={props.state.selection.entries}/>
+        <MemoryDeliverySummary locale={props.state.locale} receipt={props.state.memoryDelivery}/>
         {count === 0 ? <div className="dr-empty">{t("contextEmpty")}</div> : props.state.selection.entries.map((item) => <div key={item.entry.id}><label className="dr-entry"><input type="checkbox" checked onChange={(event) => props.onToggleEntry(item.entry, event.target.checked)} /><div><strong>{item.entry.title}</strong><small>{item.entry.content}</small></div><em>{x(selectionReason(item))}</em></label>{props.state.overrides?.includedIds.includes(item.entry.id) && <button className="dr-reset" onClick={() => props.onResetEntry?.(item.entry.id)}>{at("reset")}</button>}</div>)}{props.state.availableEntries.length > 0 && <div className="dr-add"><button onClick={() => setAdding(!adding)}>＋ {t("attachManually")}</button>{adding && <div className="dr-add-list"><input className="dr-attach-search" aria-label={x("searchAttach")} placeholder={x("searchAttach")} value={attachQuery} onChange={(event) => setAttachQuery(event.target.value)} />{props.state.availableEntries.filter((entry) => `${entry.title} ${entry.content}`.toLocaleLowerCase().includes(attachQuery.trim().toLocaleLowerCase())).map((entry) => <div key={entry.id}><button onClick={() => props.onAttachEntry(entry)}><strong>{entry.title}</strong><small>{entry.content}</small></button>{props.state.overrides?.excludedIds.includes(entry.id) && <button onClick={() => props.onResetEntry?.(entry.id)}>{at("reset")}</button>}</div>)}</div>}</div>}
         {proposals.map((batch) => <button className="dr-reset" key={batch.id} onClick={() => { setQuick(false); setReviewId(batch.id); }}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}
         {props.state.lastChange && props.onUndo && <div className="dr-play-tools"><button disabled={undoBusy} onClick={() => { setUndoBusy(true); setUndoError(false); void props.onUndo!(props.state.lastChange!.id).catch(() => setUndoError(true)).finally(() => setUndoBusy(false)); }}>{at("undo")}</button></div>}{undoError && <p role="alert">{at("conflict")}</p>}

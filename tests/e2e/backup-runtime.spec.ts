@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { chromium, expect, test } from "@playwright/test";
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -29,7 +30,7 @@ test("installed Edge exports a full backup and restores the same file through th
     });
     await panel.reload();
     await panel.getByRole("button", { name: "Настройки", exact: true }).click();
-    await panel.getByRole("button", { name: "Файлы и защита", exact: true }).click();
+    await openSettingsSection(panel,"data","ru");
     await panel.getByRole("button", { name: "Экспорт", exact: true }).click();
     const exportDialog = panel.getByRole("dialog", { name: "Экспорт", exact: true });
     await exportDialog.getByRole("radio", { name: /^Полная резервная копия/ }).check();
@@ -44,7 +45,7 @@ test("installed Edge exports a full backup and restores the same file through th
        open.onsuccess = () => { const db = open.result, tx = db.transaction(["records", "photos"], "readwrite"); tx.objectStore("records").clear(); tx.objectStore("photos").clear();
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
     }));
-    await panel.reload(); await panel.getByRole("button", { name: "Лор", exact: true }).click();
+    await panel.reload(); await panel.getByRole("button", { name: "Миры", exact: true }).click();
     await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
     await panel.locator(".rp-import-input").setInputFiles(file);
     const preview = panel.getByRole("dialog", { name: "Восстановление копии", exact: true });
@@ -63,7 +64,7 @@ test("installed Edge exports a full backup and restores the same file through th
       open.onsuccess=()=>{const db=open.result,q=db.transaction("photos").objectStore("photos").getAll();q.onerror=()=>reject(q.error);q.onsuccess=async()=>{db.close();if(q.result.length!==1)return reject(Error("Expected one restored original"));resolve(await q.result[0].data.text());};};
     }));
     expect(savedImage).toBe(original.photos[0].image);
-    await panel.getByRole("button", { name: "Лор", exact: true }).click();
+    await panel.getByRole("button", { name: "Миры", exact: true }).click();
     await panel.getByRole("button", { name: /^Библиотека мира:/ }).click();
     await panel.getByRole("menuitemradio", { name: "Observatory", exact: true }).click();
     await expect(panel.getByRole("heading", { name: "Observatory", exact: true })).toBeVisible();

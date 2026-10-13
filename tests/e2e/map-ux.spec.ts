@@ -8,7 +8,7 @@ async function setup(page: Page, locale: "ru" | "en") {
   await page.setViewportSize({ width: 1280, height: 900 }); await page.goto("/tests/fixtures/sidepanel.html");
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
-  await page.getByRole("button", { name: l("Лор", "Lore"), exact: true }).click(); await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click(); await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
   await page.getByLabel(l("Выбрать JSON", "Choose JSON"), { exact: true }).setInputFiles({ name: "Observatory.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(sample)) });
   await page.getByRole("button", { name: l("Подтвердить импорт", "Confirm import"), exact: true }).click(); await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
   const map = page.getByRole("dialog", { name: l("Карта мира", "World map"), exact: true });

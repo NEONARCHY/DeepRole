@@ -1,3 +1,4 @@
+import { openSettingsSection } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
 
 for (const locale of ["ru", "en"]) for (const pinned of [false, true]) test(`adaptive scene survives live resize ${locale} pinned=${pinned}`, async ({ page }, info) => {
@@ -53,7 +54,7 @@ for (const locale of ["ru", "en"]) test(`adaptive sizing setting is saved ${loca
   if (locale === "en") {
     const { setEnglish } = await import("./helpers/settings"); await setEnglish(page);
   }
-  await page.getByRole("button", { name: locale === "ru" ? "Приложение" : "App", exact: true }).click();
+  await openSettingsSection(page,"app",locale);
   const toggle = page.getByRole("checkbox", { name: locale === "ru" ? "Адаптивный размер" : "Adaptive sizing", exact: true });
   await expect(toggle).toBeChecked(); await toggle.uncheck();
   await expect.poll(() => page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.adaptiveLayout)).toBe(false);

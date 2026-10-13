@@ -3,7 +3,7 @@ import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
 
-for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled", "rejected", "library-rejected", "library-stalled", "normal", "normal-ru", "no-worker"] as const) test(`installed ${browser} menu survives ${mode} startup`, async ({}, info) => {
+for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled", "rejected", "library-rejected", "library-stalled", "delayed-library-stalled", "normal", "normal-ru", "no-worker"] as const) test(`installed ${browser} menu survives ${mode} startup`, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Chrome MV3 installed build");
   test.skip(browser === "brave" && !existsSync("C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"), "Brave is not installed; no browser coverage claimed");
   const dir = path.join(info.project.outputDir, "profiles");
@@ -28,14 +28,19 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
       (globalThis as any).restoreStartup = () => { api.storage.local.get = localGet; api.storage.session.get = get; };
       api.storage.local.get = (keys: string) => {
         if (keys === "deeprole_vault") {
-          if (mode === "library-stalled") return new Promise(() => {});
+          if (mode === "library-stalled" || mode === "delayed-library-stalled") return new Promise(() => {});
           if (mode === "library-rejected") return Promise.reject(new Error("QA unavailable library"));
         }
         return localGet(keys);
       };
       const get = api.storage.session.get.bind(api.storage.session);
+      let delayed = false;
       api.storage.session.get = (keys: string) => {
         if (String(keys).startsWith("deeprole_draft_scene_")) {
+          if (mode === "delayed-library-stalled" && !delayed) {
+            delayed = true;
+            return new Promise(resolve => setTimeout(() => resolve(get(keys)), 5500));
+          }
           if (mode === "stalled") return new Promise(() => {});
           if (mode === "rejected") return Promise.reject(new Error("QA aborted worker request"));
         }
@@ -47,6 +52,7 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
     const errors: string[] = [];
     chat.on("pageerror", error => errors.push(error.message));
     await chat.goto("https://chat.deepseek.com/");
+    await chat.bringToFront();
     await expect(chat.locator(".dr-launcher")).toBeVisible({ timeout: 12000 });
     if (!mode.startsWith("normal")) await expect(chat.getByRole("alert")).toContainText(/Memory could not connect|Память не подключилась/);
     else await expect(chat.getByRole("alert")).toHaveCount(0);
@@ -61,20 +67,23 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
       const nextPage = context.waitForEvent("page");
       await open.click();
       const fullMenu = await nextPage;
-      await expect(fullMenu.locator(".onboarding")).toBeVisible();
+      // This standalone menu has the same bounded 8s cold read as the iframe.
+      await expect(fullMenu.locator(".onboarding")).toBeVisible({ timeout: 12000 });
       await fullMenu.screenshot({ path: info.outputPath(`full-menu-${mode}.png`) });
       const pageCount = context.pages().length;
       await chat.bringToFront();
       await open.click();
       await expect.poll(() => context.pages().length).toBe(pageCount);
-    } else await expect(menu.locator(".onboarding")).toBeVisible();
+    // The menu performs its own bounded cold read; 5s is shorter than its
+    // existing 8s startup deadline. Keep a finite independent UI assertion.
+    } else await expect(menu.locator(".onboarding")).toBeVisible({timeout:12000});
     await expect(chat.getByRole("textbox", { name: "Message" })).toHaveValue("");
     expect(errors.filter(error => error.includes("sceneChoicesEnabled"))).toEqual([]);
     await chat.screenshot({ path: info.outputPath(`startup-${mode}.png`) });
     if (!mode.startsWith("normal") && mode !== "no-worker") {
       await worker!.evaluate(() => (globalThis as any).restoreStartup());
       await chat.reload();
-      await expect(chat.locator(".dr-launcher")).toBeVisible();
+      await expect(chat.locator(".dr-launcher")).toBeVisible({timeout:12000});
       await expect(chat.getByRole("alert")).toHaveCount(0);
     }
   } finally { await context.close(); }

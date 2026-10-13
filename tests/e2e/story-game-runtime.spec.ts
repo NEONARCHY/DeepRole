@@ -4,6 +4,7 @@ import { storyWorld } from "../fixtures/story-worlds";
 import { EMPTY_STATUS } from "../../src/core/characters";
 import { storyReviewText } from "../../src/core/story-review-i18n";
 import { storyUxText } from "../../src/core/story-ux-i18n";
+import { navigationText } from "../../src/core/navigation-i18n";
 async function rows(panel: Page) {
   return panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
     const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -76,7 +77,7 @@ for (const locale of ["ru", "en"] as const) test(`installed playable story ${loc
     const review = await panel.evaluate(async () => { const api = (globalThis as any).chrome, [tab] = await api.tabs.query({ url: "https://chat.deepseek.com/chat/s/synthetic-a", active: true }); return api.tabs.sendMessage(tab.id, { type: "DR_STORY_REVIEW_READ", cursor: null }); });
     expect(review).toMatchObject({ ok: true, data: { managed: true } }); expect(JSON.stringify(review.data.entries)).not.toContain("<deeprole_characters>");
     await panel.reload(); await panel.setViewportSize({ width: 320, height: 1000 }); await second.bringToFront();
-    await panel.locator(".bottom-nav").getByRole("button", { name: storyUxText(locale, "nav"), exact: true }).click();
+    await panel.locator(".bottom-nav").getByRole("button", { name: navigationText(locale, "story"), exact: true }).click();
     await expect(panel.getByText(storyUxText(locale, "active"), { exact: true })).toBeVisible({ timeout: 12000 });
     await panel.getByRole("button", { name: storyUxText(locale, "timeline"), exact: true }).click();
     await expect(panel.getByText(storyUxText(locale, "timelineHint"), { exact: true })).toBeVisible();
