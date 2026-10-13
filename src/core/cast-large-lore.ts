@@ -77,7 +77,8 @@ export function acceptLargeCastReply(job: CastJob, raw: string): CastJob {
  const sources = largeProfileSources(job), candidate = p.candidates[p.prepared]!, batch = parseCastBatch(raw, job.id, sources, 1);
  castCheck(!!batch.draft && batch.draft.characters.length === 1 && batch.draft.characters[0]!.key === candidate.key && batch.draft.characters[0]!.name === candidate.name && batch.draft.characters[0]!.aliases.length === 0 && !batch.more && batch.draft.present.length === 0 && batch.draft.partners.length === 0, "characters", "exact requested person, no aliases or guessed scene", undefined);
  const incoming = structuredClone(batch.draft!);
- incoming.characters[0]!.evidence = incoming.characters[0]!.evidence.map(e => ({ source: sources.find(s => s.id === e.source)!.originalId, quote: e.quote }));
+  incoming.characters[0]!.evidence = incoming.characters[0]!.evidence.map(e => ({ source: sources.find(s => s.id === e.source)!.originalId, quote: e.quote }));
+  if(incoming.resetEntries)incoming.resetEntries=incoming.resetEntries.map(e=>({...e,id:sources.find(s=>s.id===e.id)!.originalId}));
  const draft = mergeCastBatches(job.draft, incoming, job.id, job.sources); p.prepared++;
  if (p.prepared === p.candidates.length) p.stage = "done";
  return { ...job, draft, large: p, phase: batch.partial ? "error" : "ready", ...(batch.partial ? { error: "partial-reply" } : {}), awaiting: false, repair: false, repairIssues: undefined, replyCheckpoint: undefined };

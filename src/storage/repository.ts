@@ -181,6 +181,13 @@ export class DeepRoleRepository {
       if (readKinds?.some(k => ["binding", "story", "entity"].includes(k))) readKinds = [...new Set([...readKinds, "world", "binding", "story", "entity"])] as RecordKind[];
       const stored = readKinds ? await this.db.records.where("kind").anyOf(readKinds).toArray() : await this.db.records.toArray();
       const current = await Promise.all(stored.map(async (row) => ({ kind: row.kind, id: row.id, data: await this.decode<RecordValue>(row) })));
+      // Source-role snapshots reference exact pre-send journals. Read only those
+      // dependencies for scoped story reads; do not load every private prompt.
+      if(readKinds?.includes("story")&&!readKinds.includes("dispatch")){
+        const refs=[...new Set(current.flatMap(r=>{const s=r.data as {type?:string;roleRosterRequestId?:unknown};return r.kind==="story"&&s.type==="revision"&&typeof s.roleRosterRequestId==="string"?[recordKey("dispatch",s.roleRosterRequestId)]:[];}))];
+        const linked=(await this.db.records.bulkGet(refs)).filter((r):r is StoredRecord=>!!r);
+        stored.push(...linked);current.push(...await Promise.all(linked.map(async row=>({kind:row.kind,id:row.id,data:await this.decode<RecordValue>(row)}))));
+      }
       const plan = transform(current);
       plan.records = sharedGameCommit(current, plan.records, plan.removed);
       if (readKinds && [...plan.records, ...plan.removed].some(row => !readKinds!.includes(row.kind))) throw new Error("repository-scope");

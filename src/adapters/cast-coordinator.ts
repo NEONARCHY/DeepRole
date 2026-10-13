@@ -17,10 +17,16 @@ import { ServiceAuditOutbox } from "../storage/service-outbox";
 import { reconcileCastServiceJobs } from "../storage/cast-service";
 import { recordCastServiceValidation } from "../storage/service-validation";
 import { acceptLargeCastReply } from "../core/cast-large-lore";
+import type { WorldResetRequest } from "../core/world-reset";
+import { confirmWorldReset, applyWorldReset } from "../storage/world-reset";
+import {parseResetEntryReply} from "../core/world-reset-entries";
 
 export type CastMessage =
- | { type: "DR_CAST"; action: "start"; worldId: string; locale: Locale; retry?: boolean; restart?: boolean }
- | { type: "DR_CAST"; action: "status"; worldId: string }
+ | { type: "DR_CAST"; action: "start"; worldId: string; locale: Locale; retry?: boolean; restart?: boolean; reset?: WorldResetRequest }
+ | { type: "DR_CAST"; action: "status"; worldId: string; reset?: boolean }
+ | { type: "DR_CAST"; action: "confirm-reset"; id: string; draft: CastDraft; entries: string[] }
+ | { type: "DR_CAST"; action: "apply-reset"; id: string; token: string; worldName: string }
+ | { type: "DR_CAST"; action: "open-reset-chat"; id: string }
  | { type: "DR_CAST"; action: "apply"; id: string; draft: CastDraft; selected: string[]; hero: string }
  | { type: "DR_CAST"; action: "cancel" | "cleanup" | "hide" | "show" | "confirm-cleanup" | "open"; id: string }
  | { type: "DR_CAST_WORKER"; action: "claim"; id?: string }
@@ -34,16 +40,17 @@ export type CastMessage =
  | { type: "DR_CAST_WORKER"; action: "cleaned"; id: string; chatId?: string; ok: boolean }
  | { type: "DR_CAST_RETRY_CLEANUP" }
  | { type: "DR_CAST_REVEAL" };
-export type CastView = Omit<CastJob, "sources" | "signature" | "replyCheckpoint" | "large"> & { sourceCount: number; partCount: number; titles: Record<string,string>; large?: Omit<NonNullable<CastJob["large"]>, "candidates"> & { found: number } };
+export type CastView = Omit<CastJob, "sources" | "signature" | "resetGuard" | "replyCheckpoint" | "large"> & { sourceCount: number; partCount: number; titles: Record<string,string>; large?: Omit<NonNullable<CastJob["large"]>, "candidates"> & { found: number } };
 interface Ownership { id: string; tabId: number; chatId?: string; audit?: ServiceOperationProgress }
 const OWNERS = "deeprole_cast_owners";
 const active = (job: CastJob) => ["opening", "reading", "analyzing"].includes(job.phase);
 export function castView(job: CastJob): CastView {
-  const { sources, signature: _signature, replyCheckpoint: _checkpoint, large, ...rest } = job;
+  const { sources, signature: _signature, resetGuard:_resetGuard, replyCheckpoint: _checkpoint, large, ...rest } = job;
   return { ...rest, sourceCount: sources.length, partCount: large ? 0 : sources.length ? castParts(sources).length : 0, titles: Object.fromEntries(sources.map(s => [s.id, s.title])), ...(large ? { large: { stage: large.stage, source: large.source, offset: large.offset, prepared: large.prepared, found: large.candidates.length } } : {}) };
 }
 export class CastCoordinator {
   private starts: Promise<unknown> = Promise.resolve();
+  private resetNavigation:Promise<unknown>=Promise.resolve();
   private ownershipWrites: Promise<unknown> = Promise.resolve();
   private auditSnapshots = new Map<string, string>();
   private knownAudits = new Set<string>();
@@ -215,7 +222,8 @@ export class CastCoordinator {
           if (!Array.isArray(identity) || identity.length !== 2 || !["message", "virtual"].includes(identity[0]) || typeof identity[1] !== "string" || !identity[1]) throw new Error("invalid-result");
           // Checkpoints can contain a complete batch or finished character objects.
           // Missing batch completion does not authorize another request.
-          if (job.large) acceptLargeCastReply(job, message.raw);
+          if(job.reset?.entryOffset!==undefined&&job.reset.entryOffset<job.reset.entries.length)parseResetEntryReply(job,message.raw);
+          else if (job.large) acceptLargeCastReply(job, message.raw);
           else if (job.batchSize) parseCastBatch(message.raw, job.id, job.sources, job.batchSize, job.draft);
           else parseCastDraft(message.raw, job.id, job.sources);
           await mutateCastJob(job.id, j => {
@@ -264,15 +272,22 @@ export class CastCoordinator {
         return { ok: true };
       }
       if (message.type !== "DR_CAST") return { ok: false };
+      if((message.action==="start"&&message.reset||["confirm-reset","apply-reset","open-reset-chat"].includes(message.action))&&!sender.url?.startsWith(this.api.runtime.getURL("")))throw Error("untrusted");
+      if(message.action==="confirm-reset")return {ok:true,token:await confirmWorldReset(message.id,message.draft,message.entries,this.repo)};
+      if(message.action==="apply-reset"){
+        const snapshot=await applyWorldReset(message.id,message.token,message.worldName,this.repo);
+        try{await this.openResetChat(snapshot.id);}catch{return {ok:true,chatOpened:false};}return {ok:true,chatOpened:true};
+      }
+      if(message.action==="open-reset-chat"){const job=await this.repo.get<CastJob>("cast",message.id);if(job?.phase!=="applied"||!job.reset?.snapshotId)throw Error("reset-not-ready");await this.openResetChat(job.reset.snapshotId);return {ok:true};}
       if (message.action === "start") {
         if (message.restart !== undefined && typeof message.restart !== "boolean") throw Error("invalid-request");
-        const start = () => this.start(message.worldId, message.locale, !!message.retry, sender.tab?.id, undefined, !!message.restart);
+        const start = () => this.start(message.worldId, message.locale, !!message.retry, sender.tab?.id, undefined, !!message.restart,message.reset);
         const result = this.starts.then(start, start); this.starts = result.catch(() => undefined);
         return { ok: true, job: await result };
       }
       if (message.action === "status") {
         await this.reconcilePending();
-        let job = (await this.repo.list<CastJob>("cast")).filter(j => j.worldId === message.worldId).sort((a,b) => b.createdAt - a.createdAt)[0];
+        let job = (await this.repo.list<CastJob>("cast")).filter(j => j.worldId === message.worldId&&!!j.reset===!!message.reset).sort((a,b) => b.createdAt - a.createdAt)[0];
         if (job && active(job) && Date.now() - job.updatedAt > 30000 && !await this.owner(job.id)) job = await mutateCastJob(job.id, j => ({ ...interruptedCastJob(j, "interrupted"), cleanup: j.chatId || j.awaiting || j.step > 0 ? "failed" : "none" }), this.repo);
         if (job) await this.audit(job);
         await this.outbox.flush().catch(() => undefined);
@@ -323,16 +338,31 @@ export class CastCoordinator {
     // prompts or automatically delete the conversation on load.
     await this.api.tabs.create({ url, active: true });
   }
-  private async start(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false): Promise<CastView> {
-    return nativeStartLane(() => this.startInside(worldId, locale, retry, sourceTabId, continuationOf, restart));
+  private openResetChat(snapshotId:string){
+    const work=async()=>{
+      const snapshot=await this.repo.get<import("../core/types").HandoffSnapshot>("snapshot",snapshotId),world=snapshot?.worldId?await this.repo.get<WorldProfile>("world",snapshot.worldId):null;
+      if(!snapshot?.resetGameId||world?.sharedGame?.id!==snapshot.resetGameId||!snapshot.appliedAt&&world.sharedGame.revision!==snapshot.sharedGameRevision)throw Error("reset-stale");
+      const key="deeprole_reset_chat_"+snapshot.id,oldId=(await this.api.storage.session.get(key))[key] as number|undefined,old=oldId===undefined?undefined:await this.api.tabs.get(oldId).catch(()=>undefined);
+      const target=snapshot.appliedAt?"https://chat.deepseek.com/a/chat/s/"+encodeURIComponent(world.sharedGame.activeChatId):"https://chat.deepseek.com/";
+      if(old?.id!==undefined&&old.url===target){await this.api.tabs.update(old.id,{active:true});return;}
+      if(snapshot.appliedAt){await this.api.tabs.create({url:target,active:true});return;}
+      const tab=await this.api.tabs.create({url:"about:blank",active:false});if(tab.id===undefined)throw Error("tab-unavailable");
+      await this.api.storage.session.set({[key]:tab.id,["deeprole_tab_state_"+tab.id]:{snapshotId:snapshot.id,snapshotToken:crypto.randomUUID(),continueOnFreshChat:true,continueUntil:Date.now()+45000,overrides:{includedIds:[],excludedIds:[]}},["deeprole_draft_scene_"+tab.id]:{worldId:snapshot.worldId,bookId:null,focusIds:[]}});
+      await this.api.tabs.update(tab.id,{url:target,active:true});
+    };
+    const next=this.resetNavigation.then(work,work);this.resetNavigation=next.catch(()=>undefined);return next;
   }
-  private async startInside(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false): Promise<CastView> {
+  private async start(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false, reset?:WorldResetRequest): Promise<CastView> {
+    return nativeStartLane(() => this.startInside(worldId, locale, retry, sourceTabId, continuationOf, restart,reset));
+  }
+  private async startInside(worldId: string, locale: Locale, retry: boolean, sourceTabId?: number, continuationOf?: string, restart = false, reset?:WorldResetRequest): Promise<CastView> {
     if (((await this.api.storage.session.get(FIELD_OWNERS_KEY))[FIELD_OWNERS_KEY] as { memoryBatch?: unknown; cleanup?: string }[] | undefined)?.some(o => o.memoryBatch && o.cleanup !== "done")) throw Error("busy");
     if (!["ru", "en"].includes(locale) || !worldId) throw new Error("invalid-request");
     await this.reconcilePending().catch(() => undefined);
     const jobs = await this.repo.list<CastJob>("cast");
     if (jobs.some(j => j.worldId !== worldId && active(j))) throw new Error("busy");
-    const job = await createCastJob(worldId, locale, retry, this.repo, continuationOf, restart);
+    if(reset&&jobs.some(j=>!j.reset&&(active(j)||["pending","failed"].includes(j.cleanup))))throw Error("busy");
+    const job = await createCastJob(worldId, locale, retry, this.repo, continuationOf, restart,reset);
     if (!active(job) || await this.owner(job.id)) return castView(job);
     if (jobs.some(j => j.id === job.id)) {
       // A stored active job without its owner is not permission to open/send again.

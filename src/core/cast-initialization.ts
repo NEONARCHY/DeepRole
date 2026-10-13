@@ -3,14 +3,18 @@ import { normalizeActionStatus } from "./action-compat";
 import { castCheck, castProfileIssues, CastValidationError, type CastIssue } from "./cast-validation";
 import type { CharacterSheet, CharacterStatus, DataRecord, Locale, MemoryBook, MemoryEntry, SceneEntity, StoryTemplate, WorldProfile } from "./types";
 import { largeCastPrompt, type LargeCastProgress } from "./cast-large-lore";
+import { resetEntries, WORLD_RESET_INSTRUCTION, type ResetEntry, type WorldResetPreparation } from "./world-reset";
+import {resetEntryPrompt} from "./world-reset-entries";
 
 export interface CastSource { id: string; title: string; text: string; at: number }
 export interface CastMember {
   key: string; name: string; aliases: string[]; sheet: CharacterSheet; state: CharacterStatus;
   completed: string[]; reason: string; evidence: { source: string; quote: string }[];
 }
-export interface CastDraft { version: 1; request: string; characters: CastMember[]; present: string[]; partners: string[]; warnings: string[] }
+export interface CastDraft { version: 1; request: string; characters: CastMember[]; present: string[]; partners: string[]; warnings: string[]; resetEntries?: ResetEntry[] }
 export interface CastJob {
+  reset?: WorldResetPreparation;
+  resetGuard?: string;
   large?: LargeCastProgress;
   incognito?: boolean;
   diagnostics?: { requestId: string; step: number; repair: boolean; code: string; issues: string[]; details?: CastIssue[]; stage?: "parse" | "merge" | "worker"; at?: number; replyLength?: number; prepared?: number; reasoning?: string }[];
@@ -66,8 +70,9 @@ export function castParts(sources: CastSource[]): string[] {
   return parts;
 }
 export function castPrompt(job: CastJob): string {
-  if (job.large) return job.large.stage !== "done" ? largeCastPrompt(job, legacyCastPrompt) : "";
-  return legacyCastPrompt(job);
+  if(job.reset?.entryOffset!==undefined&&job.reset.entryOffset<job.reset.entries.length)return resetEntryPrompt(job);
+  const prompt=job.large ? job.large.stage !== "done" ? largeCastPrompt(job, legacyCastPrompt) : "" : legacyCastPrompt(job);
+  return job.reset&&prompt&&(job.large||job.step>=castParts(job.sources).length) ? prompt+'\n'+WORLD_RESET_INSTRUCTION+'\nStarting point (user data): '+JSON.stringify(job.reset.start)+'\nRequired existing roster (data): '+JSON.stringify(job.reset.people.map(p=>({id:p.id,name:p.name})))+'\nEntry decisions already prepared (do not repeat): '+JSON.stringify(job.draft?.resetEntries?.map(e=>e.id)??[]) : prompt;
 }
 function legacyCastPrompt(job: CastJob): string {
   const parts = castParts(job.sources), final = job.step >= parts.length;
@@ -196,5 +201,5 @@ export function validateCastDraftValue(v: unknown, request: string, sources: Cas
   const present = v.present as string[], partners = v.partners as string[];
   present.forEach((id, i) => castCheck(byKey.has(id), `present[${i}]`, "key from this batch or previously validated roster (not a character name or source ID)", id));
   partners.forEach((id, i) => { castCheck(present.includes(id), `partners[${i}]`, "key must also be present", id); castCheck(!byKey.get(id)?.sheet.protagonist, `partners[${i}]`, "must not be protagonist", id); });
-  return { version: 1, request, characters, present, partners, warnings: v.warnings as string[] };
+  return { version: 1, request, characters, present, partners, warnings: v.warnings as string[], ...(v.resetEntries!==undefined?{resetEntries:resetEntries(v.resetEntries,sources)}:{}) };
 }

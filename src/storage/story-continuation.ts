@@ -71,6 +71,7 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
     const removed: { kind: import("../core/types").RecordKind; id: string }[] = [];
     if (worldId && binding) {
       const world = records.find(r => r.kind === "world" && r.id === worldId)!.data as WorldProfile;
+      if(snapshot.resetGameId&&world.sharedGame?.id!==snapshot.resetGameId)throw Error("handoff-conflict");
       const source = records.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === snapshot.sourceChatId)?.data as ChatBinding | undefined;
       if (source) assertWorldGameWriter(records, source, worldId);
       if (snapshot.sharedGameRevision && world.sharedGame?.revision !== snapshot.sharedGameRevision) throw Error("handoff-conflict");

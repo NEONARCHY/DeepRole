@@ -7,6 +7,8 @@ import { indexStoryLineage, type StoryLineagePosition } from "./story-lineage";
 import { validStoryBaselineEffects, type StoryBaselineEffects } from "./story-baseline-effects";
 import { validStoryTurnEffects, type StoryTurnEffects } from "./story-turn-effects";
 import { validStoryFact, validStoryUpdateDiagnostic, storyReplyProse } from "./story-update";
+import { gameTimeEvidence, isGameTimeFact } from "./story-time";
+import { storyFactIdentity } from "./story-memory-lifecycle";
 import { validCharacterCandidate, validCharacterDiscoveryProgress, type CharacterCandidate, type CharacterDiscoveryProgress } from "./story-character-discovery";
 import { validDiscoveryProfile, type DiscoveryProfile } from "./discovery-profile";
 import { validDiscoveryProfileTask, type DiscoveryProfileTask } from "./discovery-profile-queue";
@@ -19,6 +21,7 @@ import { validIdentityControl, identityControlSource, type IdentityControl } fro
 import { validStoryContinuation } from "./story-continuation";
 import { validStoryAutomationDecision, validReviewResolutions, type ReviewResolutions, type StoryAutomationDecision } from "./story-automation";
 import { validMemoryBatchProgress, type MemoryBatchProgress } from "./story-memory-batch";
+import { validEpisodeSources, validEpisodeLineage } from "./story-episodes";
 export { canonicalStoryValue } from "./story-value";
 
 interface StoryScope {
@@ -39,6 +42,8 @@ export interface StorySnapshot {
   names: Record<string, string>;
 }
 export interface StoryBaseline extends StoryScope {
+  episodeSourceSeeds?: string[];
+  factRoleSeeds?: import("./story-role-binding").FactRoleSeed[];
   memoryBatchSeeds?: string[];
   gameId?: string;
   pendingReviewSeeds?: string[];
@@ -72,6 +77,8 @@ export interface StoryBranch extends StoryScope {
   pausedAtRevisionId?: string | null;
 }
 export interface StoryRevision extends StoryScope {
+  roleRosterRequestId?: string;
+  roleRoster?: import("./story-role-binding").RolePerson[];
   memoryBatch?: MemoryBatchProgress;
   type: "revision";
   messageId: string;
@@ -109,6 +116,7 @@ export interface StoryRequest extends StoryScope {
 export interface StoryStateChange { entityId: string; before: CharacterStatus | null; after: CharacterStatus | null }
 export interface StorySceneMembership { presentIds: string[]; partnerIds: string[] }
 export interface StoryEvent extends StoryScope {
+  memoryRoles?: import("./story-role-binding").StoryRoleBinding;
   memoryBatchSourceRevisionId?: string;
   /** Explicit human resolution of a source-backed proposal in this same game. */
   originEventId?: string;
@@ -187,7 +195,9 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
     case "baseline": {
       const origin = value.origin;
       if (value.memoryBatchSeeds !== undefined && !ids(value.memoryBatchSeeds)) return false;
-      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds", "memoryBatchSeeds"])
+      if (value.episodeSourceSeeds !== undefined && !validEpisodeSources(value.episodeSourceSeeds)) return false;
+      if (value.factRoleSeeds !== undefined && (!Array.isArray(value.factSeeds) || !validFactRoleSeeds(value.factRoleSeeds,value.factSeeds))) return false;
+      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds", "memoryBatchSeeds", "factRoleSeeds", "episodeSourceSeeds"])
         && (value.gameId === undefined || id(value.gameId)) && (value.pendingReviewSeeds === undefined || ids(value.pendingReviewSeeds)) && (value.reviewResolutionSeeds === undefined || validReviewResolutions(value.reviewResolutionSeeds))
          && value.historyBeforeBaseline === "unknown" && value.legacyEntryScope === "unclassified"
         && object(origin) && keys(origin, ["bindingId", "chatId", "worldId", "sceneRevision", "nativeAnchor"]) && id(origin.bindingId) && id(origin.chatId) && id(origin.worldId) && optionalId(origin.sceneRevision)
@@ -198,10 +208,12 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
     case "branch": return keys(value, [...common, "baselineId", "parentBranchId", "forkRevisionId", "headRevisionId", "selectionVersion", "projectionId", "gameManaged", "pausedAtRevisionId"])
       && value.branchId === value.id && id(value.baselineId) && optionalId(value.parentBranchId) && optionalId(value.forkRevisionId) && optionalId(value.headRevisionId) && integer(value.selectionVersion)
       && (value.parentBranchId === null) === (value.forkRevisionId === null) && (value.projectionId === undefined || id(value.projectionId)) && (value.gameManaged === undefined || typeof value.gameManaged === "boolean") && (value.pausedAtRevisionId === undefined || value.gameManaged === true && optionalId(value.pausedAtRevisionId) && value.pausedAtRevisionId === value.headRevisionId);
-    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch"])
+    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch", "roleRoster", "roleRosterRequestId"])
       && id(value.messageId) && id(value.nativeMessageKey) && optionalId(value.requestId) && optionalId(value.parentRevisionId) && ["user", "assistant"].includes(String(value.role)) && ["complete", "partial", "interrupted"].includes(String(value.completion)) && text(value.content, 250_000) && (value.storyPurpose === undefined || ["game", "out-of-character"].includes(String(value.storyPurpose)))
       && (value.requestProof === undefined || id(value.requestId) && validNativeStoryKey(value.nativeMessageKey) && object(value.requestProof) && keys(value.requestProof, ["nativeParentKey"]) && (value.requestProof.nativeParentKey === null || validNativeStoryKey(value.requestProof.nativeParentKey)))
       && (value.updateDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.updateDiagnostic))
+      && (value.roleRoster === undefined || value.role === "assistant" && validRoleRoster(value.roleRoster))
+      && (value.roleRosterRequestId === undefined || value.roleRoster !== undefined && id(value.roleRosterRequestId))
       && (value.repairDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.repairDiagnostic))
       && (value.metadataRepair === undefined || value.role === "assistant" && object(value.metadataRepair) && Object.keys(value.metadataRepair).length === 3 && keys(value.metadataRepair, ["id", "status", "at"]) && id(value.metadataRepair.id) && ["requested", "done", "failed", "cancelled"].includes(String(value.metadataRepair.status)) && time(value.metadataRepair.at))
       && (value.memoryBatch === undefined || value.completion === "complete" && value.storyPurpose !== "out-of-character" && validMemoryBatchProgress(value.memoryBatch) && value.memoryBatch.request.end <= storyReplyProse(value.content as string).length)
@@ -212,8 +224,9 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
       && (value.delivery.status === "prepared" || value.delivery.at >= value.createdAt && value.delivery.at <= value.updatedAt)
       && (value.context === undefined || object(value.context) && keys(value.context, ["algorithmVersion", "acceptedEventIds"]) && value.context.algorithmVersion === 1 && ids(value.context.acceptedEventIds)
         && value.context.acceptedEventIds.every((item, index, list) => index === 0 || list[index - 1]! < item));
-    case "event": return keys(value, [...common, "revisionId", "ordinal", "disposition", "label", "quote", "participantIds", "changes", "sceneChange", "effects", "memory", "characterCandidate", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate", "characterIdentity", "identityControl", "characterMerge", "automation", "originEventId", "memoryBatchSourceRevisionId"])
+    case "event": return keys(value, [...common, "revisionId", "ordinal", "disposition", "label", "quote", "participantIds", "changes", "sceneChange", "effects", "memory", "characterCandidate", "characterProfile", "characterProfileTask", "characterSourceRevisionId", "profileSupplement", "profileUpdate", "characterIdentity", "identityControl", "characterMerge", "automation", "originEventId", "memoryBatchSourceRevisionId", "memoryRoles"])
       && (value.memoryBatchSourceRevisionId === undefined || id(value.memoryBatchSourceRevisionId))
+      && (value.memoryRoles === undefined || value.memory !== undefined && validRoleBinding(value.memoryRoles) && value.memoryRoles.quote === value.quote)
       && (value.automation === undefined || validStoryAutomationDecision(value.automation) && (value.memory !== undefined || value.characterCandidate !== undefined || value.profileSupplement !== undefined || value.originEventId !== undefined))
        && (value.originEventId === undefined || id(value.originEventId) && value.originEventId !== value.id && value.automation !== undefined && (value.automation as StoryAutomationDecision).reason === "manual")
        && id(value.revisionId) && integer(value.ordinal) && value.disposition === "candidate" && text(value.label, 240) && !!value.label.trim() && text(value.quote, 4000) && !!value.quote.trim() && ids(value.participantIds)
@@ -249,9 +262,20 @@ function validDiscoveryEffect(effects: import("./story-turn-effects").StoryTurnE
 /** Graph validation is separate from single-record validation; backups need both. */
 export function assertStoryGraph(records: DataRecord[]): void {
   const rows = records.filter(row => row.kind === "story");
-  if (!rows.length) return;
+  if (!rows.length) { if(records.some(r=>r.kind==="world"&&[(r.data as import("./types").WorldProfile).sharedGame,...(r.data as import("./types").WorldProfile).sharedGameArchives??[]].some(g=>g?.factRoleSeeds?.length || g?.episodeSources?.length)))throw Error("story-evidence-invalid");return; }
   if (rows.some(row => !validStoryRecord(row.data) || row.data.id !== row.id)) throw new Error("story-record-invalid");
   const all = new Map(rows.map(row => [row.id, row.data as StoryRecord]));
+  const roleProof = (binding: import("./story-role-binding").StoryRoleBinding, worldId: string | null) => {
+    const source=all.get(binding.sourceRevisionId);
+    if(source?.type!=="revision"||source.worldId!==worldId||source.completion!=="complete"||source.storyPurpose==="out-of-character"||!storyReplyProse(source.content).includes(binding.quote)||!sameStoryValue(bindStoryRoles({text:"Evidence",kind:"event",quote:binding.quote},source),binding))throw Error("story-evidence-invalid");
+    return source;
+  };
+  const timeProof = (facts: import("./story-update").StoryFact[], seeds: import("./story-role-binding").FactRoleSeed[], worldId: string | null) => {
+    for (const fact of facts) if (isGameTimeFact(fact)) {
+      const seed = seeds.find(s => s.key === storyFactIdentity(fact));
+      if (seed && !gameTimeEvidence(fact, storyReplyProse(roleProof(seed.binding, worldId).content))) throw Error("story-evidence-invalid");
+    }
+  };
   if (all.size !== rows.length) throw new Error("story-id-conflict");
   const worlds = new Set(records.filter(row => row.kind === "world").map(row => row.id));
   const entityProfiles = new Map(records.filter(r => r.kind === "entity").map(r => [r.id, r.data as import("./types").SceneEntity]));
@@ -279,10 +303,30 @@ export function assertStoryGraph(records: DataRecord[]): void {
     return base?.type === "baseline" && oldBase?.type === "baseline" && !!base.gameId && base.gameId === oldBase.gameId && !!base.memoryBatchSeeds?.includes(source.id);
   };
   const messages = new Map<string, string>();
+  for (const row of records) if (row.kind === "world") for (const game of [(row.data as import("./types").WorldProfile).sharedGame, ...(row.data as import("./types").WorldProfile).sharedGameArchives ?? []]) if (game) timeProof(game.facts, game.factRoleSeeds ?? [], row.id);
+  for (const row of records) if (row.kind === "world") for (const game of [(row.data as import("./types").WorldProfile).sharedGame, ...(row.data as import("./types").WorldProfile).sharedGameArchives ?? []]) if (game?.episodeSources && !validEpisodeLineage(game.episodeSources, [...all.values()], { worldId: row.id, gameId: game.id, bindingId: game.activeBindingId })) throw Error("story-evidence-invalid");
+  for(const row of records)if(row.kind==="world")for(const game of [(row.data as import("./types").WorldProfile).sharedGame,...(row.data as import("./types").WorldProfile).sharedGameArchives??[]])if(game)for(const seed of game.factRoleSeeds??[]){
+    const source=roleProof(seed.binding,row.id),base=all.get(branch(source).baselineId);
+    if(base?.type!=="baseline"||base.gameId!==game.id&&base.origin.bindingId!==game.activeBindingId)throw Error("story-evidence-invalid");
+  }
   for (const item of all.values()) {
     if (item.worldId !== null && !worlds.has(item.worldId)) throw new Error("story-world-missing");
     const owner = branch(item);
+    if(item.type==="revision"&&item.roleRoster!==undefined){
+      if(item.roleRoster.some(p=>{const e=entityProfiles.get(p.id);return e&&(e.worldId!==item.worldId||e.kind!=="character");}))throw Error("story-evidence-invalid");
+      if(item.roleRosterRequestId){
+        const capture=records.find(r=>r.kind==="dispatch"&&r.id===item.roleRosterRequestId)?.data,base=all.get(owner.baselineId),parent=all.get(item.parentRevisionId??"");
+        if(!validStoryDispatchCapture(capture)||capture.roleRoster===undefined||capture.purpose!=="user-turn"||capture.worldId!==item.worldId||capture.injection!=="context"||capture.delivery?.status!=="accepted"||capture.wire.link?.assistantMessageKey!==item.nativeMessageKey||parent?.type!=="revision"||parent.role!=="user"||capture.wire.link.userMessageKey!==parent.nativeMessageKey||(capture.originalDraft!==parent.content&&confirmedDispatchText(capture)!==parent.content)||base?.type!=="baseline"||base.origin.bindingId!==capture.bindingId||base.origin.chatId!==capture.identity.chatId||capture.storyBranchId!==undefined&&capture.storyBranchId!==item.branchId||!sameStoryValue(sourceRoleRoster(capture.roleRoster,item.worldId??"",storyReplyProse(item.content)),item.roleRoster))throw Error("story-evidence-invalid");
+        const previous = parent.parentRevisionId ? all.get(parent.parentRevisionId) : undefined;
+        if (parent.parentRevisionId && previous?.type !== "revision" || !parent.parentRevisionId && !base.origin.nativeAnchor) throw Error("story-evidence-invalid");
+        const nativeParent = previous?.type === "revision" ? previous.nativeMessageKey : base.origin.nativeAnchor!.nativeMessageKey;
+        if (capture.identity.nativeParentKey !== nativeParent) throw Error("story-evidence-invalid");
+      }else if(item.roleRoster.length)throw Error("story-evidence-invalid");
+    }
     if (item.type === "baseline") {
+      timeProof(item.factSeeds ?? [], item.factRoleSeeds ?? [], item.worldId);
+      if (item.episodeSourceSeeds && !validEpisodeLineage(item.episodeSourceSeeds, [...all.values()], { worldId: item.worldId, gameId: item.gameId, playthroughId: item.playthroughId })) throw Error("story-evidence-invalid");
+      for(const seed of item.factRoleSeeds??[]){const source=roleProof(seed.binding,item.worldId),oldBase=all.get(branch(source).baselineId);if(source.playthroughId!==item.playthroughId&&(oldBase?.type!=="baseline"||!item.gameId||item.gameId!==oldBase.gameId))throw Error("story-evidence-invalid");}
       for (const sourceId of item.memoryBatchSeeds ?? []) {
         const source = all.get(sourceId), sourceBranch = source && all.get(source.branchId), sourceBase = sourceBranch?.type === "branch" ? all.get(sourceBranch.baselineId) : undefined;
         const sourceProjection = sourceBranch?.type === "branch" ? all.get(sourceBranch.projectionId ?? "") : undefined;
@@ -360,6 +404,8 @@ export function assertStoryGraph(records: DataRecord[]): void {
       const origin = proposalOrigin(item, owner);
       const quoteSource = origin ? all.get(origin.memoryBatchSourceRevisionId ?? origin.characterSourceRevisionId ?? origin.revisionId) : item.memoryBatchSourceRevisionId ? all.get(item.memoryBatchSourceRevisionId) : item.characterSourceRevisionId ? all.get(item.characterSourceRevisionId) : revision;
       if (quoteSource?.type !== "revision" || (!origin && (!compatible(item, quoteSource) && !inheritedBatchSource(item, quoteSource))) || !!origin && (quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character") || !quoteSource.content.includes(item.quote)) throw new Error("story-evidence-invalid");
+      if(item.memoryRoles){if(item.memoryRoles.sourceRevisionId!==quoteSource.id)throw Error("story-evidence-invalid");roleProof(item.memoryRoles,item.worldId);}
+      if (item.memory && isGameTimeFact(item.memory) && (quoteSource.completion !== "complete" || quoteSource.storyPurpose === "out-of-character" || !gameTimeEvidence(item.memory, storyReplyProse(quoteSource.content)))) throw Error("story-evidence-invalid");
       if (!origin && item.memoryBatchSourceRevisionId) {
         const ancestors = new Set<string>(); let cursor: StoryRecord | undefined = revision;
         while (cursor?.type === "revision" && !ancestors.has(cursor.id)) { ancestors.add(cursor.id); cursor = all.get(cursor.parentRevisionId ?? ""); }
@@ -480,3 +526,6 @@ export function assertStoryRequestLinks(request: StoryRequest, owner: StoryBranc
   if (head?.type !== "revision" || head.branchId !== owner.id || !headPosition?.complete || !headPosition.distinct) throw new Error("story-request-link-invalid");
   if (!parentPosition || parentPosition.start > headPosition.start || headPosition.start >= parentPosition.end) throw new Error("story-request-parent-unselected");
 }
+import { validRoleRoster, validRoleBinding, validFactRoleSeeds, bindStoryRoles } from "./story-role-binding";
+import { confirmedDispatchText, validStoryDispatchCapture } from "./story-dispatch-capture";
+import { sourceRoleRoster } from "./story-role-binding";

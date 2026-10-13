@@ -1,3 +1,7 @@
+.dr-world-reset footer { flex-wrap:wrap; }
+.dr-world-reset footer .button { min-width:0; white-space:normal; flex:1; }
+.dr-world-reset .dr-reset-code { max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; }
+.dr-world-reset .button.danger { background:var(--dr-panel,#1d242b); border-color:var(--dr-danger,#f19ca5); color:var(--dr-danger,#f19ca5); }
 .dr-cast-setup { padding:var(--dr-space-3,12px); border:1px solid var(--dr-line,#39434c); border-radius:12px; background:var(--dr-surface,#20272d); }
 .dr-cast-setup p { margin:8px 0; font-size:12px; line-height:1.5; }
 .dr-cast-setup .button { display:inline-flex; align-items:center; justify-content:center; gap:6px; }

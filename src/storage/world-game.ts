@@ -15,6 +15,7 @@ import { planLegacyStory } from "./story-history";
 import { boundStory } from "../core/story-continuation";
 import { storyReplyProse, compactStoryFacts } from "../core/story-update";
 import { automationReviews } from "../core/story-automation";
+import { roleSeed, selectedRoleSeeds } from "../core/story-role-binding";
 const stories = (all: DataRecord[]) => all.filter(r => r.kind === "story").map(r => r.data as StoryRecord);
 const replace = (all: DataRecord[], changes: DataRecord[], removed: { kind: RecordKind; id: string }[] = []) => {
  const keys = new Set([...changes, ...removed].map(r => r.kind + ":" + r.id));
@@ -31,7 +32,14 @@ export function captureWorldGame(all: DataRecord[], world: WorldProfile, binding
  const recentStory = branch?.gameManaged || baseline?.storySeeds ? boundStory([...(baseline?.storySeeds?.turns ?? []), ...played], "history", !!baseline?.storySeeds?.partial, baseline?.storySeeds?.omittedTurns ?? 0) : previous?.recentStory;
  const reviewState = automationReviews(stored, baseline, projection?.type === "projection" ? projection : undefined);
   const visible = branch?.gameManaged ? currentStoryProfileEntities(raw, stored, world.id, binding.chatId, binding.id) : baseline ? storyProfileEntities(raw, [], [], world.id, binding.chatId, baseline.profileSeeds, baseline.identitySeeds, baseline.mergeSeeds) : raw;
- const profileSeeds: ProfileSeeds = {}, identitySeeds: IdentitySeeds = {};
+  const profileSeeds: ProfileSeeds = {}, identitySeeds: IdentitySeeds = {};
+  const applied = projection?.type === "projection" ? projection.appliedEventIds.flatMap(id=>{const e=stored.find(r=>r.id===id);return e?.type==="event"&&e.memory?[e]:[];}) : [];
+  const facts = compactStoryFacts([...(baseline?.factSeeds??[]),...applied.map(e=>e.memory!)]);
+  const factRoleSeeds = selectedRoleSeeds(facts,[...(baseline?.factRoleSeeds??[]),...applied.flatMap(e=>e.memoryRoles?[roleSeed(e.memory!,e.memoryRoles)]:[])]);
+  const sourceIndex = new Map(stored.map(r => [r.id, r]));
+  const episodeSources = branch?.gameManaged && projection?.type === "projection"
+    ? [...new Set([...(baseline?.episodeSourceSeeds ?? []), ...projection.revisionIds.filter(id => { const r = sourceIndex.get(id); return r?.type === "revision" && r.completion === "complete" && r.storyPurpose !== "out-of-character"; })])]
+    : previous?.episodeSources;
  for (const p of visible) {
   const origin = byId.get(p.id)!;
   const borrowed = baseline ? identityReferences(baseline, stored, projection?.type === "projection" ? projection.appliedEventIds : []).filter(r => r.reference.entityId === p.id && sameStoryValue(r.canonical, identityCanonical(origin))).map(r => r.reference.alias) : [];
@@ -41,11 +49,12 @@ export function captureWorldGame(all: DataRecord[], world: WorldProfile, binding
   const values = Object.fromEntries(PROFILE_TEXT_FIELDS.filter(k => p.characterSheet![k] !== origin.characterSheet![k]).map(k => [k, p.characterSheet![k]]));
   if (Object.keys(values).length) profileSeeds[p.id] = { canonical: profileValues(origin.characterSheet), versions: { ...origin.profileFieldRevisions }, values };
  }
- return { version: 1, id: previous?.id ?? createId("game"), revision: previous?.revision ?? createId("game-rev"), activationId: previous?.activationId ?? createId("game-activation"), activeChatId: binding.chatId, activeBindingId: binding.id,
+  return { version: 1, id: previous?.id ?? createId("game"), revision: previous?.revision ?? createId("game-rev"), activationId: previous?.activationId ?? createId("game-activation"), activeChatId: binding.chatId, activeBindingId: binding.id,
+   ...(episodeSources ? { episodeSources } : {}),
   ...((previous?.memoryBatchSources || world.storyMemoryBatch) ? { memoryBatchSources: [...new Set([...(baseline?.memoryBatchSeeds ?? previous?.memoryBatchSources?.filter(id => stored.find(r => r.id === id)?.branchId !== branch?.id) ?? []), ...(projection?.type === "projection" ? projection.revisionIds.filter(id => { const r = stored.find(r => r.id === id); return r?.type === "revision" && r.completion === "complete" && r.storyPurpose !== "out-of-character"; }) : [])])] } : {}),
   ...(reviewState.pending.length ? { pendingReviewIds: reviewState.pending } : {}), ...(Object.keys(reviewState.resolutions).length ? { reviewResolutions: reviewState.resolutions } : {}),
    managed: !!branch?.gameManaged || !!(previous?.managed && baseline && !baseline.origin.nativeAnchor), ...(binding.characterScenes?.[world.id] ? { scene: structuredClone(binding.characterScenes[world.id]) } : {}),
-  memoryOverrides: structuredClone(binding.memoryOverrides ?? { includedIds: [], excludedIds: [] }), profileSeeds, identitySeeds, mergeSeeds: projection ? currentMergeSeeds(stored, world.id, binding.chatId, binding.id) : structuredClone(baseline?.mergeSeeds ?? {}), facts: compactStoryFacts([...(baseline?.factSeeds ?? []), ...(projection?.type === "projection" ? projection.appliedEventIds.flatMap(id => { const e = stored.find(r => r.id === id); return e?.type === "event" && e.memory ? [e.memory] : []; }) : [])]), ...(recentStory?.turns.length ? { recentStory, recentChatId: played.length ? binding.chatId : baseline?.storySourceChatId ?? previous?.recentChatId } : {}), ...(previous?.restartPending && !branch?.headRevisionId ? { restartPending: true as const } : {}), updatedAt: Date.now() };
+  memoryOverrides: structuredClone(binding.memoryOverrides ?? { includedIds: [], excludedIds: [] }), profileSeeds, identitySeeds, mergeSeeds: projection ? currentMergeSeeds(stored, world.id, binding.chatId, binding.id) : structuredClone(baseline?.mergeSeeds ?? {}), facts, ...(factRoleSeeds.length?{factRoleSeeds}:{}), ...(recentStory?.turns.length ? { recentStory, recentChatId: played.length ? binding.chatId : baseline?.storySourceChatId ?? previous?.recentChatId } : {}), ...(previous?.restartPending && !branch?.headRevisionId ? { restartPending: true as const } : {}), updatedAt: Date.now() };
 }
 export function planWorldGameActivation(initial: DataRecord[], input: WorldGameActivation) {
  if (!validWorldGameActivation(input) || !isSameDeepSeekChat(input.chatUrl, input.chatUrl, input.chatId)) throw Error("story-game-invalid");
@@ -85,13 +94,13 @@ export function planWorldGameActivation(initial: DataRecord[], input: WorldGameA
    // New native chat => new anchor, never replay its old transcript over current progress.
    const planned = planLegacyStory(all, { worldId: world.id, bindingId: binding.id }); all = replace(all, planned.records);
    const baseline = stories(all).find((r): r is StoryBaseline => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === world.id)!;
-   all = replace(all, [storyRow({ ...baseline, ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: structuredClone(game.profileSeeds), identitySeeds: structuredClone(game.identitySeeds), mergeSeeds: structuredClone(game.mergeSeeds), factSeeds: structuredClone(game.facts), storySeeds: structuredClone(game.recentStory), memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
+   all = replace(all, [storyRow({ ...baseline, gameId: game.id, ...(game.episodeSources ? {episodeSourceSeeds:[...game.episodeSources]} : {}), ...(game.factRoleSeeds?{factRoleSeeds:structuredClone(game.factRoleSeeds)}:{}), ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: structuredClone(game.profileSeeds), identitySeeds: structuredClone(game.identitySeeds), mergeSeeds: structuredClone(game.mergeSeeds), factSeeds: structuredClone(game.facts), storySeeds: structuredClone(game.recentStory), memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
   }
  }
  if (game.managed && game.activeBindingId === binding.id && !stories(all).some(r => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === world.id)) {
   const planned = planLegacyStory(all, { worldId: world.id, bindingId: binding.id }); all = replace(all, planned.records);
   const baseline = stories(all).find((r): r is StoryBaseline => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === world.id)!;
-  all = replace(all, [storyRow({ ...baseline, ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: structuredClone(game.profileSeeds), identitySeeds: structuredClone(game.identitySeeds), mergeSeeds: structuredClone(game.mergeSeeds), factSeeds: structuredClone(game.facts), storySeeds: structuredClone(game.recentStory), memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
+  all = replace(all, [storyRow({ ...baseline, gameId: game.id, ...(game.episodeSources ? {episodeSourceSeeds:[...game.episodeSources]} : {}), ...(game.factRoleSeeds?{factRoleSeeds:structuredClone(game.factRoleSeeds)}:{}), ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: structuredClone(game.profileSeeds), identitySeeds: structuredClone(game.identitySeeds), mergeSeeds: structuredClone(game.mergeSeeds), factSeeds: structuredClone(game.facts), storySeeds: structuredClone(game.recentStory), memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
  }
  all = replace(all, [{ kind: "world", id: world.id, data: { ...world, sharedGame: game } }]);
  assertStoryGraph(all);
@@ -110,7 +119,7 @@ export function resetWorldGame(initial: DataRecord[], chatId: string, worldId: s
  if (!stories(all).some(r => r.type === "baseline" && r.origin.bindingId === source.id && r.worldId === worldId)) all = replace(all, planLegacyStory(all, { worldId, bindingId: source.id }).records);
  const scene = { revision: createId("rev"), states: {}, presentIds: [], updatedAt: Date.now() };
  const binding: ChatBinding = { ...source, id: createId("binding"), characterScenes: { ...source.characterScenes, [worldId]: scene }, nextStoryMessageMode: undefined, updatedAt: Date.now() };
- const game: WorldGame = { ...world.sharedGame, id: createId("game"), revision: createId("game-rev"), activationId: createId("game-activation"), activeBindingId: binding.id, activeChatId: chatId, scene, profileSeeds: {}, identitySeeds: {}, mergeSeeds: {}, facts: [], memoryBatchSources: [], pendingReviewIds: undefined, reviewResolutions: undefined, recentStory: undefined, recentChatId: undefined, managed: false, restartPending: true, updatedAt: Date.now() };
+ const game: WorldGame = { ...world.sharedGame, id: createId("game"), revision: createId("game-rev"), activationId: createId("game-activation"), activeBindingId: binding.id, activeChatId: chatId, scene, profileSeeds: {}, identitySeeds: {}, mergeSeeds: {}, facts: [], episodeSources: [], factRoleSeeds: undefined, memoryBatchSources: [], pendingReviewIds: undefined, reviewResolutions: undefined, recentStory: undefined, recentChatId: undefined, managed: false, restartPending: true, updatedAt: Date.now() };
  return replace(all, [{ kind: "binding", id: binding.id, data: binding }, { kind: "world", id: world.id, data: { ...world, sharedGame: game, sharedGameArchives: [...world.sharedGameArchives ?? [], structuredClone(world.sharedGame)] } }], [{ kind: "binding", id: source.id }]);
 }
 /** Reversible reset, only before the new game receives any played/manual state. */
@@ -129,7 +138,7 @@ export function undoWorldGameReset(initial: DataRecord[], chatId: string, worldI
  all = replace(all, [{ kind: "binding", id: binding.id, data: binding }, { kind: "world", id: world.id, data: { ...world, sharedGame: game, sharedGameArchives: world.sharedGameArchives!.slice(0,-1) } }], [{ kind: "binding", id: source.id }]);
  const planned = planLegacyStory(all, { worldId, bindingId: binding.id }); all = replace(all, planned.records);
  const baseline = stories(all).find((r): r is StoryBaseline => r.type === "baseline" && r.origin.bindingId === binding.id && r.worldId === worldId)!;
- return replace(all, [storyRow({ ...baseline, ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: game.profileSeeds, identitySeeds: game.identitySeeds, mergeSeeds: game.mergeSeeds, factSeeds: game.facts, storySeeds: game.recentStory, memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
+ return replace(all, [storyRow({ ...baseline, gameId: game.id, ...(game.episodeSources ? {episodeSourceSeeds:[...game.episodeSources]} : {}), ...(game.factRoleSeeds?{factRoleSeeds:structuredClone(game.factRoleSeeds)}:{}), ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: game.profileSeeds, identitySeeds: game.identitySeeds, mergeSeeds: game.mergeSeeds, factSeeds: game.facts, storySeeds: game.recentStory, memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
 }
 /** Runs under the repository lock for every planner, including legacy writers.
  * Archived segments may receive transport receipts, never change the live game. */

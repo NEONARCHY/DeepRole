@@ -48,6 +48,7 @@ export async function resolveAutomationReview(input: AutomationReviewDecision, r
     if (input.accept && origin.memory) {
       if (input.fields.length || input.entityId || input.name) throw Error("story-review-invalid");
       e.memory = structuredClone(origin.memory);
+      if (origin.memoryRoles) e.memoryRoles = structuredClone(origin.memoryRoles);
       if (input.replaceKeys?.length) e.memory.replaces = [...input.replaceKeys];
     } else if (input.accept) {
       const profile = origin.profileSupplement?.profile ?? origin.characterProfile;

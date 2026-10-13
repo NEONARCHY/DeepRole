@@ -1,6 +1,7 @@
 import { parseCastDraft, validateCastDraftValue, type CastDraft, type CastJob, type CastSource } from "./cast-initialization";
 import { castCheck, CastValidationError } from "./cast-validation";
 import { acceptLargeCastReply } from "./cast-large-lore";
+import {acceptResetEntryReply,beginResetEntries} from "./world-reset-entries";
 function payload(raw: string): Record<string, unknown> {
   const body = /<deeprole_cast>\s*([\s\S]*?)\s*<\/deeprole_cast>/u.exec(raw)?.[1] ?? raw.trim();
   try { return JSON.parse(body.replace(/^```(?:json)?\s*|\s*```$/gu, "")) as Record<string, unknown>; }
@@ -29,14 +30,15 @@ export function mergeCastBatches(previous: CastDraft | undefined, incoming: Cast
   if (!incoming) return { ...previous, request };
   const known = new Set(previous.characters.flatMap(c => [c.name, ...c.aliases]).map(s => s.toLocaleLowerCase()));
   incoming.characters.forEach((c, i) => castCheck(![c.name, ...c.aliases].some(s => known.has(s.toLocaleLowerCase())), `characters[${i}].name/aliases`, "must not repeat an earlier batch", c.aliases, "duplicate-character"));
-  return validateCastDraftValue({ version: 1, request, characters: [...previous.characters, ...incoming.characters], present: [...new Set([...previous.present, ...incoming.present])].slice(0, 12), partners: [...new Set([...previous.partners, ...incoming.partners])].slice(0, 12), warnings: [...new Set([...previous.warnings, ...incoming.warnings])].slice(0, 12) }, request, sources);
+  return validateCastDraftValue({ version: 1, request, characters: [...previous.characters, ...incoming.characters], present: [...new Set([...previous.present, ...incoming.present])].slice(0, 12), partners: [...new Set([...previous.partners, ...incoming.partners])].slice(0, 12), warnings: [...new Set([...previous.warnings, ...incoming.warnings])].slice(0, 12), ...((previous.resetEntries||incoming.resetEntries)?{resetEntries:[...previous.resetEntries??[],...incoming.resetEntries??[]]}:{}) }, request, sources);
 }
 /** Keep already validated data on a closed tab or lost worker; never commit profiles here. */
 export function interruptedCastJob(job: CastJob, error: string): CastJob {
   let draft = job.draft;
   const saved = job.replyCheckpoint;
+  if(job.reset?.entryOffset!==undefined&&job.awaiting&&saved&&saved.step===job.step&&saved.repair===job.repair&&saved.chatId===job.chatId){try{return {...acceptResetEntryReply(job,saved.raw),phase:"error",error};}catch{}}
   if (job.large && job.awaiting && saved && saved.step === job.step && saved.repair === job.repair && saved.chatId === job.chatId) {
-    try { return { ...acceptLargeCastReply(job, saved.raw), phase: "error", error }; } catch { /* Invalid catalogue/profile checkpoints never advance progress. */ }
+    try { return { ...beginResetEntries(acceptLargeCastReply(job, saved.raw)), phase: "error", error }; } catch { /* Invalid catalogue/profile checkpoints never advance progress. */ }
   }
   if (job.awaiting && saved && saved.step === job.step && saved.repair === job.repair && saved.chatId === job.chatId) {
     try {

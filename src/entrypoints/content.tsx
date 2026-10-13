@@ -910,7 +910,7 @@ class PageController {
     }
     if (this.adapter.isGenerating()) { this.queueAutoContinue(); return; }
     if (this.adapter.getDraft().trim()) { await this.disarmAutoContinue(false); return; }
-    const prompt = continuationText(this.state.locale, "continuePrompt");
+    const prompt = snapshot.resetGameId ? this.state.locale==="ru"?"Начни историю с утверждённой исходной точки.":"Begin the story at the approved starting point." : continuationText(this.state.locale, "continuePrompt");
     if (!this.adapter.setDraft(prompt)) { this.queueAutoContinue(); return; }
     this.autoContinuePending = false;
     this.autoContinueAttempted = true;

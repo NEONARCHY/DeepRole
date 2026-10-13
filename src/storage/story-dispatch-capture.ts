@@ -8,6 +8,9 @@ import type { ChatBinding, DataRecord } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
 import { dispatchStoryRequest, planDispatchStoryRequest } from "./story-dispatch-ingestion";
 import { planStoryRequestSettlement } from "./story-requests";
+import { captureRoleRoster } from "../core/story-role-binding";
+import { worldGamePeople } from "../core/world-game";
+import { characterInChat } from "../core/characters";
 
 function liveScope(all: DataRecord[], capture: Pick<StoryDispatchCapture, "worldId" | "bindingId" | "identity">) {
   const binding = all.find(row => row.kind === "binding" && row.id === capture.bindingId)?.data as ChatBinding | undefined;
@@ -35,6 +38,7 @@ export async function prepareDispatchCapture(input: StoryDispatchCaptureInput, o
       return { records: [], removed: [], result: undefined };
     }
     const story = planDispatchStoryRequest(all, capture);
+    if (world && capture.purpose === "user-turn" && (!world.sharedGame || world.sharedGame.activeBindingId===binding.id)) capture.roleRoster = captureRoleRoster(worldGamePeople(all.filter(r=>r.kind==="entity").map(r=>r.data as import("../core/types").SceneEntity),world,all.filter(r=>r.kind==="story").map(r=>r.data as import("../core/story-records").StoryRecord)).filter(p=>characterInChat(p,binding.chatId)),world.id);
     if (story.length) capture.storyBranchId = (story[0]!.data as import("../core/story-records").StoryRequest).branchId;
     if (!validStoryDispatchCapture(capture)) throw Error("dispatch-input-invalid");
     const consumed = !navigation && capture.purpose === "out-of-character" ? [{ kind: "binding" as const, id: binding.id, data: { ...binding, nextStoryMessageMode: undefined } }] : [];

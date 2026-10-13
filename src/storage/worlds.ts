@@ -28,7 +28,7 @@ export async function createWorldContent(worldId: string, repo: DeepRoleReposito
   // An explicit world export is a reusable canon package, not a live playthrough.
   // Full backups retain this origin; a portable world must work in a new chat.
   for (const row of records) if (row.kind === "entity") delete (row.data as SceneEntity).playthroughChatId;
-  for (const row of records) if (row.kind === "world") { delete (row.data as WorldProfile).sharedGame; delete (row.data as WorldProfile).sharedGameArchives; }
+  for (const row of records) if (row.kind === "world") { delete (row.data as WorldProfile).sharedGame; delete (row.data as WorldProfile).sharedGameArchives; delete (row.data as WorldProfile).resetArchives; }
   if (!records.some((r) => r.kind === "world")) throw new Error("invalidBackup");
   const entryIds = new Set(records.filter((r) => r.kind === "entry").map((r) => r.id));
   const world = records.find(r => r.kind === "world")!.data as WorldProfile;
@@ -80,7 +80,7 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
     const data = structuredClone(r.data);
     data.id = ids.get(r.id)!;
     if (r.kind === "world") (data as WorldProfile).autoPrepareCharacters = false;
-    if (r.kind === "world") { (data as WorldProfile).storyMemoryBatch && ((data as WorldProfile).storyMemoryBatch = { ...(data as WorldProfile).storyMemoryBatch!, mode: "paused", revision: createId("memory-imported") }); delete (data as WorldProfile).sharedGame; delete (data as WorldProfile).sharedGameArchives; }
+    if (r.kind === "world") { (data as WorldProfile).storyMemoryBatch && ((data as WorldProfile).storyMemoryBatch = { ...(data as WorldProfile).storyMemoryBatch!, mode: "paused", revision: createId("memory-imported") }); delete (data as WorldProfile).sharedGame; delete (data as WorldProfile).sharedGameArchives; delete (data as WorldProfile).resetArchives; }
     if (r.kind === "world" && (data as WorldProfile).mapLayout) {
       const layout = (data as WorldProfile).mapLayout!;
       const remap = (key: string) => key.split(":").map((part) => ids.get(part) ?? part).join(":");

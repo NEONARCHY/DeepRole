@@ -10,6 +10,8 @@ import { repository, type DeepRoleRepository } from "./repository";
 import { scopedDiscovery, discoveryGuard } from "./story-character-discovery";
 import { planStoryAccompaniment } from "./story-automation";
 import { planStorySelection } from "./story-selection";
+import { isGameTimeFact } from "../core/story-time";
+import { createEpisodeReader } from "../core/story-episodes";
 
 export interface MemoryBatchBrief {
   input: MemoryBatchInput; requestId: string; prompt: string; parts: MemoryBatchPart[];
@@ -103,7 +105,7 @@ export async function prepareMemoryBatch(input: MemoryBatchInput, requestId: str
       const item = { id: p.id, name: p.name, aliases: p.aliases, profile: p.characterSheet ? Object.fromEntries(["appearance", "personality", "goals", "background"].map(k => [k, p.characterSheet![k as "appearance"].slice(0, 240)])) : {} };
       const size = JSON.stringify(item).length; if (rosterSize + size > 6000) continue; roster.push(item); rosterSize += size;
     }
-    const facts = [...f.world.sharedGame!.facts.filter(f => f.task?.status === "open").slice(-8), ...f.world.sharedGame!.facts.filter(f => f.task?.status !== "open").slice(-12)].filter((_, i, a) => JSON.stringify(a.slice(0, i + 1).map(storyFactHint)).length < 5000);
+    const facts = [...f.world.sharedGame!.facts.filter(f => f.task?.status === "open").slice(-8), ...f.world.sharedGame!.facts.filter(f => f.task?.status !== "open").slice(-12)].filter((_, i, a) => JSON.stringify(a.slice(0, i + 1).map(f => storyFactHint(f))).length < 5000);
     const prompt = memoryBatchPrompt(requestId, parts, roster, facts, locale), now = Date.now();
     if (prompt.length > 26000) throw Error("text-too-long");
     const records = parts.map(p => storyRow({ ...f.sources.find(r => r.id === p.revisionId)!, memoryBatch: { offset: p.start, request: { id: requestId, anchor: f.guard.headRevisionId!, policy: policy.revision, end: p.end, status: "requested" as const, at: now } }, updatedAt: now }));
@@ -133,12 +135,22 @@ export async function applyMemoryBatch(b: MemoryBatchBrief, raw: string, repo: D
   return repo.updateRecords(all => {
     const f = scope(all, b.input); check(f, b);
     const head = f.stored.find((r): r is StoryRevision => r.type === "revision" && r.id === f.guard.headRevisionId)!;
+    const game = f.world.sharedGame!, clock = game.facts.find(isGameTimeFact);
+    const clockPosition = clock ? createEpisodeReader(game.factRoleSeeds, game.episodeSources).position(clock) : 0;
+    const sourcePositions = new Map((game.episodeSources ?? []).map((id, i) => [id, i + 1]));
     let changed = [...all]; const records: DataRecord[] = [], approved = new Set(f.projection.acceptedEventIds);
     for (const result of parsed) {
       const source = f.sources.find(r => r.id === result.part.revisionId)!;
       // Older state descriptions cannot replace a later accepted current value.
       const facts = result.facts.map(fact => {
-        const later = compactStoryFacts(f.world.sharedGame!.facts).find(old => old.claim && fact.claim && normalizedFact(old.claim.key) === normalizedFact(fact.claim.key) && normalizedFact(old.claim.value) !== normalizedFact(fact.claim.value));
+        // Equal elapsed wording at an older source is still an older clock.
+        // Do not turn delayed extraction into a fresh time transition.
+        if (isGameTimeFact(fact)) {
+          const at = sourcePositions.get(source.id) ?? 0;
+          if (clock && (!clockPosition || !at || clockPosition > at)) return { ...fact, risk: "uncertain" };
+          if (clock && clockPosition === at && clock.text === fact.text) return { ...fact, risk: "uncertain" };
+        }
+        const later = compactStoryFacts(f.world.sharedGame!.facts).find(old => old.claim && fact.claim && normalizedFact(old.claim.key) === normalizedFact(fact.claim.key) && (normalizedFact(old.claim.value) !== normalizedFact(fact.claim.value) || old.claim.status !== fact.claim.status));
         const laterTask = fact.task && f.world.sharedGame!.facts.some(old => old.task?.key === fact.task!.key && old.task.status !== fact.task!.status);
         return source.role === "user" && fact.kind === "event" || (later && fact.claim?.scope === "state" || laterTask) && source.id !== head.id ? { ...fact, risk: "uncertain" } : fact;
       });

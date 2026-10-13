@@ -4,7 +4,7 @@ import { applyMemoryBatch, readMemoryBatch, changeMemoryBatch, finishMemoryBatch
 import { assertStoryGraph, type StoryEvent, type StoryRecord, type StoryRevision } from "../src/core/story-records";
 import { MEMORY_BATCH_BYTES, validMemoryBatchPolicy } from "../src/core/story-memory-batch";
 import { createBackup, restoreBackup } from "../src/storage/backup";
-import { activateWorldGame } from "../src/storage/world-game";
+import { activateWorldGame, captureWorldGame } from "../src/storage/world-game";
 import { exportWorld, cloneWorldPackage } from "../src/storage/worlds";
 import type { DeepRoleDatabase } from "../src/storage/database";
 import type { SceneEntity } from "../src/core/types";
@@ -77,7 +77,11 @@ it("continuation inherits pending sources and processed receipts; backup cannot 
 });
 it("OOC and partial sources never count; ordinary turns remain available",async()=>{
  const f=await fixture(2),rows=await f.repo.list<StoryRecord>("story");const reply=rows.find((r):r is StoryRevision=>r.type==="revision"&&r.role==="assistant"&&r.content.includes("token4"))!;
- await f.repo.put("story",{...reply,storyPurpose:"out-of-character"});expect(await readMemoryBatch(f.input,f.repo)).toMatchObject({pendingTurns:1});
+ await f.repo.put("story",{...reply,storyPurpose:"out-of-character"});
+ // The fixture changes a source directly; rebuild its derived game projection
+ // as the normal writer does before reading the batch against the new purpose.
+ const current=await f.world();await f.repo.put("world",{...current,sharedGame:captureWorldGame(await f.repo.rawRecords(),current,await f.binding(),current.sharedGame)});
+ expect(await readMemoryBatch(f.input,f.repo)).toMatchObject({pendingTurns:1});
  const b=await f.prepare();expect(b.parts.some(p=>p.revisionId===reply.id)).toBe(false);await applyMemoryBatch(b,batchReply(b),f.repo);expect((await f.world()).sharedGame!.facts).toHaveLength(1);
 });
 it("late manual edits send additions to review instead of replacing the author",async()=>{

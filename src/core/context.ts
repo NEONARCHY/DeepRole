@@ -9,6 +9,7 @@ export function formatMemoryContext(selection: ContextSelection, snapshot?: Hand
     "This is the current user-approved memory. For the same fact, this latest version supersedes older injected memory. Preserve uncertainty and never treat an optional event as already completed.",
   ];
   if (snapshot) {
+    if(snapshot.resetGameId)lines.push("[Approved world reset: BEGIN at the supplied starting point. No events from the previous playthrough happened in this new game. Keep original family, past, personality and appearance; initial established relationships are NOT strangers by default.]");
     lines.push("", "[Story handoff — scene reference, not new permanent lore]", "Approved memory and structured character state take precedence. Do not replay completed events or invent missing events.", '<deeprole_handoff version="1">', JSON.stringify(snapshot.summary).replaceAll("<", "\\u003c"), "</deeprole_handoff>");
     if (snapshot.continuation) lines.push("", continuationContext(snapshot.continuation));
   }

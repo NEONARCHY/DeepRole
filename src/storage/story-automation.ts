@@ -12,6 +12,7 @@ import type { StoryDispatchCapture } from "../core/story-dispatch-capture";
 import { automationMode, factAutomationReason, inlineStoryPeople, normalizedFact, literalEvidence, sensitiveStoryText, conflictingStoryText, type AutomationReason, type StoryAutomationDecision, automationReviews } from "../core/story-automation";
 import { storyEffectsAt } from "./story-effect-replay";
 import { storyFactIdentity } from "../core/story-memory-lifecycle";
+import { bindStoryRoles } from "../core/story-role-binding";
 
 /** One completed reply is one bounded portion. Stored events are the durable work
  * receipt, and the existing selected-line replay owns every resulting effect. */
@@ -38,7 +39,7 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
     if (automationMode(world) === "off" && world.storyAutomation) continue;
     const automation = decision(factAutomationReason(fact, original?.risk, previous, protectedTexts));
     if (held.some(e => e.memory && storyFactIdentity(e.memory) === storyFactIdentity(fact))) continue;
-    const event: StoryEvent = { ...common, id: createId("event"), ordinal: ordinal++, label: "Memory proposal", quote: fact.quote, participantIds: [], changes: [], memory: fact, ...(world.storyAutomation ? { automation } : {}) };
+    const event: StoryEvent = { ...common, id: createId("event"), ordinal: ordinal++, label: "Memory proposal", quote: fact.quote, participantIds: [], changes: [], memory: fact, memoryRoles: bindStoryRoles(fact,batch?.source??source), ...(world.storyAutomation ? { automation } : {}) };
     result.push(storyRow(event));
     if (automation.status === "saved") { approved.add(event.id); previous.push(fact); }
   }
