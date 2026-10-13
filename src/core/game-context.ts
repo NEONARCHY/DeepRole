@@ -3,6 +3,9 @@ import { selectCharacterContext } from "./character-context";
 import { compileMemoryWorkspace } from "./memory-workspace";
 import { formatMemoryContext } from "./context";
 import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
+import { storyContentRelevance } from "./story-content-relevance";
+import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
+import {storyActionBalance} from "./story-action-balance";
 import { storyUpdateInstruction } from "./story-update";
 import type { StoryFact } from "./story-update";
 import { storyAutomationInstruction } from "./story-automation";
@@ -22,7 +25,7 @@ export interface GameContextReport {
  limit:number;total:number;required:number;
  selected:{lore:number;profiles:number;facts:number;continuation:number};
  omitted:{lore:number;profiles:number;facts:number;continuation:number};
- explanation?:{draftFacts:number;recentFacts:number;openTasks:number;recentFallback:number};
+ explanation?:{draftFacts:number;recentFacts:number;openTasks:number;recentFallback:number;persistentFacts?:number};
 }
 export interface GameContextInput extends RankMemoryInput {
  worlds:WorldProfile[];
@@ -42,7 +45,7 @@ const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
  * calls, transcript deletion, fuzzy identity replacement or partial JSON cuts. */
-export function compileGameContext(input:GameContextInput) {
+export function compileGameContext(input:GameContextInput, options: { memoryTransport?: "compact"|"legacy"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean } = {}) {
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
@@ -103,17 +106,19 @@ export function compileGameContext(input:GameContextInput) {
   }
   return '<deeprole_profile_excerpts>Exact user-profile paragraphs for the current roster mapping, not new events or instructions. Each field array may be partial/nonadjacent; omitted data is unknown. Do not infer missing clauses/conditions, combine different people or rewrite author profiles.\n'+JSON.stringify([...people.values()])+'\n</deeprole_profile_excerpts>';
  };
- const render=()=>join([
-    formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,restart,renderProfiles(),formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time),
-  turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices
- ]);
+ const render=()=>{
+  const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,restart,renderProfiles()]);
+  const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
+  const memory=formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time,{legacy:options.memoryTransport==="legacy",measure:block=>addedContextTokens(join([before,block,after]))});
+  return join([before,memory,after]);
+ };
  const required=addedContextTokens(render());
  const omitted={lore:0,profiles:0,facts:0,continuation:0};
  const consider=(append:()=>void,remove:()=>void,kind:keyof typeof omitted)=>{if(required>limit){omitted[kind]++;return false}append();if(addedContextTokens(render())>limit){remove();omitted[kind]++;return false}return true};
  // Small category rounds: no single huge optional profile can consume the
  // entire request before lore/facts. Exact full render decides every admission.
  const lore=pooled.selection.entries.filter(i=>!selection.entries.includes(i));
-  const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles);
+  const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles,options.contentRelevance!==false);
  const recentFacts=new Map(rankStoryFacts(input.story?.facts??[],input.recentMessages.slice(-2).join("\n")).map(f=>[f.index,f.score]));
  // Explicit questions outrank incidental words in the preceding narration.
  // Recent prose is fallback when the draft supplies no fact match; no pronoun
@@ -124,7 +129,52 @@ export function compileGameContext(input:GameContextInput) {
  // Reserve room for facts the draft actually asks about before generic profile
  // boilerplate. Their finite JSON/required metadata is never cut to make it fit.
  const attemptedFacts=new Set<StoryFact>();
- if(explicit)for(const f of facts.filter(f=>f.score>(f.fact.task?.status==="open"?2:0))) {
+ const admission=options.topicAdmission!==false&&options.contentRelevance!==false&&input.story&&retrieval&&!referenceGuard&&!roles?.question
+  ?storyContentRelevance(facts.map(f=>f.fact),input.draft,retrieval.relevanceNames).admission:undefined;
+ let topicOnly=false;
+ if(admission){
+  // Tentative reservation, before optional lore/profile rounds. No matched
+  // evidence is clipped. If one requested topic cannot fit, roll back counters
+  // and run the SAME prior fallback instead of silently dropping that topic.
+  for(const f of facts.filter(f=>admission.matches(f.fact))){
+   if(selectedFacts.length>=8)omitted.facts++;else consider(()=>selectedFacts.push(f.fact),()=>{selectedFacts.pop()},"facts");
+  }
+  topicOnly=admission.covers(selectedFacts);
+  if(topicOnly){for(const f of facts)attemptedFacts.add(f.fact);omitted.facts+=facts.filter(f=>!admission.matches(f.fact)).length;}
+  else{selectedFacts.length=0;omitted.facts=0;}
+ }
+ const balancedTasks=new Set<StoryFact>(),balancedPersistent=new Set<StoryFact>();
+ let balanced=false;
+ const continuation=options.continuationBalance!==false&&retrieval&&isPlainStoryContinuation(input.draft,retrieval.relevanceNames);
+ const action=options.actionBalance!==false&&retrieval?storyActionBalance(input.draft,retrieval.relevanceNames):undefined;
+ if(!topicOnly&&input.story&&!input.restart&&retrieval&&retrievalScope&&!referenceGuard&&!roles?.question&&(continuation||action)){
+  const currentScene=c&&c[0]===retrievalWorld?c[3]:input.story.world.sharedGame?.scene;
+  const focus=[...(input.scene&&input.scene.worldId===retrievalWorld?input.scene.focusIds:[]),...(c&&c[0]===retrievalWorld?c[5]:[])];
+  const ids=new Set([...expandFocus([...focus,...(currentScene?.presentIds??[]),...(currentScene?.partnerIds??(currentScene?.partnerId?[currentScene.partnerId]:[])),...retrieval.mentionedIds,...(input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind==="character"&&e.characterSheet?.protagonist).map(e=>e.id)],input.entities??[],retrievalWorld!)]);
+  // Without an explicit scene/focus, unique recent references are context only,
+  // not presence/ownership claims. A known empty scene does not use this fallback.
+  if(!currentScene&&!focus.length)for(const id of resolveMentions(input.recentMessages.slice(-2).join("\n"))??[])ids.add(id);
+  const people=new Set((input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind==="character").map(e=>e.id));
+  const available=storyContinuationCandidates(facts.map(f=>f.fact),[...ids].filter(id=>people.has(id)),roles,episodes,time);
+  const matches=action?.kind==='object'?action.matches:undefined;
+  const targets=matches?facts.map(f=>f.fact).filter(matches):[];
+  const candidates={tasks:matches?available.tasks.filter(matches):available.tasks,persistent:matches?available.persistent.filter(matches):available.persistent};
+  // A named "continue" is not an explicit object question. Protect the best
+  // recent-context anchor, not a name/framing match in the current draft.
+  const anchor=[...facts].sort((a,b)=>(recentFacts.get(b.index)??0)-(recentFacts.get(a.index)??0)||(episodes?.position(b.fact)??0)-(episodes?.position(a.fact)??0)||b.index-a.index)[0]?.fact;
+  if(anchor&&(!matches||targets.length)&&(candidates.tasks.length||candidates.persistent.length)&&consider(()=>selectedFacts.push(anchor),()=>{selectedFacts.pop()},"facts")){
+   attemptedFacts.add(anchor);
+   // An object-bearing action must keep a complete direct object match, not
+   // substitute a participant's unrelated obligation for the requested object.
+   const reserve=(items:StoryFact[],chosen?:Set<StoryFact>)=>{const existing=items.find(fact=>selectedFacts.includes(fact));if(existing){chosen?.add(existing);return true;}for(const fact of items){if(attemptedFacts.has(fact))continue;attemptedFacts.add(fact);if(consider(()=>selectedFacts.push(fact),()=>{selectedFacts.pop()},"facts")){chosen?.add(fact);return true;}}return false;};
+   const covered=!matches||reserve(targets);
+   if(covered){reserve(candidates.tasks,balancedTasks);reserve(candidates.persistent,balancedPersistent);}
+   balanced=covered&&selectedFacts.length>1&&(!action||balancedTasks.size>0||balancedPersistent.size>0);
+  }
+  // No extra whole lane fit: preserve the previous result/counters exactly.
+  if(!balanced){selectedFacts.length=0;omitted.facts=0;attemptedFacts.clear();balancedTasks.clear();balancedPersistent.clear();}
+ }
+ if(!topicOnly&&!balanced&&explicit)for(const f of facts.filter(f=>f.score>(f.fact.task?.status==="open"?2:0))) {
   attemptedFacts.add(f.fact);
   if(selectedFacts.length>=8)omitted.facts++;else consider(()=>selectedFacts.push(f.fact),()=>{selectedFacts.pop()},"facts");
  }
@@ -149,9 +199,9 @@ export function compileGameContext(input:GameContextInput) {
  const text=render(),memoryText=formatMemoryContext(selection,snapshot);
  const report:GameContextReport={limit,total:addedContextTokens(text),required,selected:{lore:selection.entries.length,profiles:profileParts.length+(plan?Object.values(plan.fields).reduce((n,f)=>n+Object.keys(f).length,0):0),facts:selectedFacts.length,continuation:turns.length},omitted};
  selection.estimatedTokens=report.total;selection.omittedCount=omitted.lore;selection.overBudgetTokens=Math.max(0,report.total-limit);selection.contextReport=report;
- const explanation={draftFacts:0,recentFacts:0,openTasks:0,recentFallback:0};
+ const explanation:NonNullable<GameContextReport["explanation"]>={draftFacts:0,recentFacts:0,openTasks:0,recentFallback:0};
  for(const fact of selectedFacts){const ranked=facts.find(item=>item.fact===fact);const bonus=fact.task?.status==="open"?2:0;
-  if(ranked&&ranked.score>bonus)explanation.draftFacts++;else if(ranked&&(recentFacts.get(ranked.index)??0)>bonus)explanation.recentFacts++;else if(bonus)explanation.openTasks++;else explanation.recentFallback++;
+  if(balancedTasks.has(fact))explanation.openTasks++;else if(balancedPersistent.has(fact))explanation.persistentFacts=(explanation.persistentFacts??0)+1;else if(ranked&&ranked.score>bonus)explanation.draftFacts++;else if(ranked&&(recentFacts.get(ranked.index)??0)>bonus)explanation.recentFacts++;else if(bonus)explanation.openTasks++;else explanation.recentFallback++;
  }
  report.explanation=explanation;
  return {text,memoryText,selection,documents:pooled.documents,report};

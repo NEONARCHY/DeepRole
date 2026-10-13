@@ -17,7 +17,7 @@ import { ServiceAuditOutbox } from "../storage/service-outbox";
 import { reconcileCastServiceJobs } from "../storage/cast-service";
 import { recordCastServiceValidation } from "../storage/service-validation";
 import { acceptLargeCastReply } from "../core/cast-large-lore";
-import type { WorldResetRequest } from "../core/world-reset";
+import {resetBatchMore,type WorldResetRequest} from "../core/world-reset";
 import { confirmWorldReset, applyWorldReset } from "../storage/world-reset";
 import {parseResetEntryReply} from "../core/world-reset-entries";
 
@@ -203,7 +203,7 @@ export class CastCoordinator {
           if (message.action === "claim") return { ok: true, id: own.id, chatId: own.chatId, phase: "error", prompt: "", cleanupOnly: true };
           if (message.action !== "cleaned") throw new Error("stale-step");
         }
-        if (message.action === "claim") return { ok: true, id: job.id, locale: job.locale, phase: job.phase, step: job.step, awaiting: job.awaiting, prompt: active(job) ? castPrompt(job) : "", chatId: own.chatId, repair: job.repair, reasoningChanged:job.reasoningChanged, replyCheckpoint: job.replyCheckpoint?.step === job.step && job.replyCheckpoint.repair === job.repair && job.replyCheckpoint.chatId === own.chatId ? job.replyCheckpoint : undefined };
+        if (message.action === "claim") return { ok: true, id: job.id, locale: job.locale, reset: !!job.reset, phase: job.phase, step: job.step, awaiting: job.awaiting, prompt: active(job) ? castPrompt(job) : "", chatId: own.chatId, repair: job.repair, reasoningChanged:job.reasoningChanged, replyCheckpoint: job.replyCheckpoint?.step === job.step && job.replyCheckpoint.repair === job.repair && job.replyCheckpoint.chatId === own.chatId ? job.replyCheckpoint : undefined };
         if (message.action === "reasoning") {
           if (!active(job) || job.awaiting || typeof message.changed !== "boolean" || !["enabled", "unavailable", "unverified"].includes(message.status)) throw new Error("stale-step");
           await mutateCastJob(job.id, j => ({ ...j, reasoning: message.status, reasoningChanged:!!j.reasoningChanged || message.changed }), this.repo);
@@ -224,7 +224,7 @@ export class CastCoordinator {
           // Missing batch completion does not authorize another request.
           if(job.reset?.entryOffset!==undefined&&job.reset.entryOffset<job.reset.entries.length)parseResetEntryReply(job,message.raw);
           else if (job.large) acceptLargeCastReply(job, message.raw);
-          else if (job.batchSize) parseCastBatch(message.raw, job.id, job.sources, job.batchSize, job.draft);
+          else if (job.batchSize) {const batch=parseCastBatch(message.raw, job.id, job.sources, job.batchSize, job.draft);if(job.reset)resetBatchMore(job,batch.draft);}
           else parseCastDraft(message.raw, job.id, job.sources);
           await mutateCastJob(job.id, j => {
             if (!active(j) || !j.awaiting || j.step !== message.step || j.repair !== message.repair) throw new Error("stale-step");
@@ -373,7 +373,7 @@ export class CastCoordinator {
     try { await beginCastServiceOperation({ id: job.id, worldId: job.worldId, createdAt: job.createdAt }, this.repo); this.knownAudits.add(job.id); }
     catch { await mutateCastJob(job.id, j => ({ ...j, phase: "error", error: "interrupted", cleanup: "none" }), this.repo).catch(() => undefined); throw new Error("interrupted"); }
     let tabId: number | undefined;
-    const workerUrl = "https://chat.deepseek.com/?deeprole_cast_job=" + encodeURIComponent(job.id) + "&deeprole_cast_locale=" + locale;
+    const workerUrl = "https://chat.deepseek.com/?deeprole_cast_job=" + encodeURIComponent(job.id) + "&deeprole_cast_locale=" + locale + (job.reset ? "&deeprole_cast_mode=reset" : "");
     try {
       const source = sourceTabId === undefined ? await this.api.windows.getLastFocused().catch(() => undefined) : await this.api.tabs.get(sourceTabId).catch(() => undefined);
       const incognito = job.incognito ?? !!source?.incognito;

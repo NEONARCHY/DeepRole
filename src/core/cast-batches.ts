@@ -2,6 +2,7 @@ import { parseCastDraft, validateCastDraftValue, type CastDraft, type CastJob, t
 import { castCheck, CastValidationError } from "./cast-validation";
 import { acceptLargeCastReply } from "./cast-large-lore";
 import {acceptResetEntryReply,beginResetEntries} from "./world-reset-entries";
+import {resetBatchMore} from "./world-reset";
 function payload(raw: string): Record<string, unknown> {
   const body = /<deeprole_cast>\s*([\s\S]*?)\s*<\/deeprole_cast>/u.exec(raw)?.[1] ?? raw.trim();
   try { return JSON.parse(body.replace(/^```(?:json)?\s*|\s*```$/gu, "")) as Record<string, unknown>; }
@@ -43,6 +44,7 @@ export function interruptedCastJob(job: CastJob, error: string): CastJob {
   if (job.awaiting && saved && saved.step === job.step && saved.repair === job.repair && saved.chatId === job.chatId) {
     try {
       const received = job.batchSize ? parseCastBatch(saved.raw, job.id, job.sources, job.batchSize, job.draft).draft : parseCastDraft(saved.raw, job.id, job.sources);
+      if(job.reset&&job.batchSize)resetBatchMore(job,received);
       draft = mergeCastBatches(draft, received, job.id, job.sources);
     } catch { /* A stale or invalid checkpoint is never a draft. */ }
   }

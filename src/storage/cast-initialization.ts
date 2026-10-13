@@ -9,9 +9,9 @@ import { getSettings } from "./settings";
 import { CastValidationError } from "../core/cast-validation";
 import type { CharacterScene, CharacterSheet, CharacterStatus, ChatBinding, DataRecord, Locale, SceneEntity, WorldProfile } from "../core/types";
 import { acceptLargeCastReply } from "../core/cast-large-lore";
-import { validResetRequest, resetGuard, type WorldResetRequest } from "../core/world-reset";
+import { validResetRequest, resetGuard, resetBatchMore, type WorldResetRequest } from "../core/world-reset";
 import { assertWorldGameWriter, worldGamePeople } from "../core/world-game";
-import {beginResetEntries,acceptResetEntryReply} from "../core/world-reset-entries";
+import {beginResetEntries,acceptResetEntryReply,resetEntryRepairIssues} from "../core/world-reset-entries";
 import {memoryWorld} from "../core/scene";
 
 export async function createCastJob(worldId: string, locale: Locale, retry = false, repo: DeepRoleRepository = repository, continuationOf?: string, restart = false, reset?: WorldResetRequest): Promise<CastJob> {
@@ -79,16 +79,17 @@ export async function acceptCastReply(id: string, step: number, raw: string, rep
       if (job.large) return beginResetEntries(acceptLargeCastReply(job, raw));
       if (job.batchSize) {
         const batch = parseCastBatch(raw, job.id, job.sources, job.batchSize, job.draft);
+        const more = job.reset ? resetBatchMore(job,batch.draft) : batch.more;
         stage = "merge";
         const draft = mergeCastBatches(job.draft, batch.draft, job.id, job.sources);
         if (batch.partial) return { ...castDiagnostic({...job,draft}, "partial-reply", [], {stage:"parse",replyLength:raw.length,details:[{path:"$",rule:"complete final batch envelope",actual:"only completed profiles recovered from interrupted reply"}]}), phase: "error", awaiting: false, replyCheckpoint: undefined, draft, error: "partial-reply" };
-        return beginResetEntries({ ...job, draft, phase: batch.more ? "analyzing" : "ready", step: job.step + 1, repair: false, repairIssues: undefined, awaiting: false, replyCheckpoint: undefined });
+        return beginResetEntries({ ...job, draft, phase: more ? "analyzing" : "ready", step: job.step + 1, repair: false, repairIssues: undefined, awaiting: false, replyCheckpoint: undefined });
       }
       return beginResetEntries({ ...job, phase: "ready", awaiting: false, replyCheckpoint: undefined, draft: parseCastDraft(raw, job.id, job.sources) });
     }
     catch (e) {
       const details = e instanceof CastValidationError ? e.issues.slice(0, 60) : undefined;
-      const hints = job.large?.stage === "scan" ? ["Return one complete version/request/names/more catalogue with exact source quotes."] : castRepairIssues(raw, job);
+      const hints = job.reset?.entryOffset!==undefined&&job.reset.entryOffset<job.reset.entries.length ? resetEntryRepairIssues() : job.large?.stage === "scan" ? ["Return one complete version/request/names/more catalogue with exact source quotes."] : castRepairIssues(raw, job);
       const repairIssues = [...(details?.map(d => `${d.path}: expected ${d.rule}; received ${d.actual}.`) ?? []), ...(details?.length && hints[0]?.startsWith("Schema or exact") ? [] : hints)].filter((v, i, all) => all.indexOf(v) === i).slice(0, 60);
       const diagnosed = castDiagnostic(job, e instanceof Error ? e.message : "invalid-result", repairIssues, { details, stage, replyLength: raw.length });
       if (!job.repair) return { ...diagnosed, repair: true, repairIssues, awaiting: false, replyCheckpoint: undefined };

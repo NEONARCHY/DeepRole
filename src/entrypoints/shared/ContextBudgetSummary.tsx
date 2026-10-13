@@ -20,7 +20,7 @@ export function ContextBudgetSummary({locale,report,entries=[]}:{locale:Locale;r
   {report.total>report.limit&&<p role="status">{t.overflow}</p>}
   {kinds.some(k=>report.omitted[k]>0)&&<><h4>{t.omitted}</h4><dl>{kinds.filter(k=>report.omitted[k]>0).map(k=><div key={k}><dt>{t[k]}</dt><dd>{number(report.omitted[k])}</dd></div>)}</dl></>}
   {(entries.length>0||report.selected.profiles>0||report.selected.continuation>0||Object.values(report.explanation??{}).some(n=>n>0))&&<h4>{t.why}</h4>}
-  {report.explanation&&Object.values(report.explanation).some(n=>n>0)&&<dl>{(["draftFacts","recentFacts","openTasks","recentFallback"] as const).filter(key=>report.explanation![key]>0).map(key=><div key={key}><dt>{t[key]}</dt><dd>{number(report.explanation![key])}</dd></div>)}</dl>}
+  {report.explanation&&Object.values(report.explanation).some(n=>n>0)&&<dl>{(["draftFacts","recentFacts","openTasks","persistentFacts","recentFallback"] as const).filter(key=>(report.explanation![key]??0)>0).map(key=><div key={key}><dt>{t[key]}</dt><dd>{number(report.explanation![key]??0)}</dd></div>)}</dl>}
   {report.selected.profiles>0&&<p>{t.profileReason}</p>}
   {report.selected.continuation>0&&<p>{t.continuationReason}</p>}
   {entries.length>0&&<details><summary>{t.loreReasons}</summary><ul>{entries.slice(0,8).map(item=><li key={item.entry.id}><strong>{item.entry.title}</strong><ul>{reasons(item).map(reason=><li key={reason}>{reason}</li>)}</ul></li>)}</ul>{entries.length>8&&<p>{t.more}</p>}</details>}

@@ -2,11 +2,13 @@
 
 ## Как пользоваться
 
-В разделе «Память истории» появились «Сводки эпизодов». Они автоматически собираются из уже принятой игровой памяти. Откройте эпизод, чтобы прочитать короткие записи; «Исходная реплика» показывает точную цитату. Поиск проверяет текст факта, название задачи и цитату. Кнопка «Показать более ранние эпизоды» раскрывает старые порции.
+В разделе «Память игры» появились «Сводки эпизодов». Они автоматически собираются из уже принятой игровой памяти. Откройте эпизод: сверху находится краткий связный текст, ниже — все записи. Номер [1] рядом с текстом открывает точную исходную цитату и переносит на неё фокус. Поиск проверяет текст факта, название задачи и цитату. Кнопка «Показать более ранние эпизоды» раскрывает старые порции.
+
+Например, «Нора: “Я помогу, если дорогу откроют”» остаётся обещанием с условием, а не превращается в «Нора помогла». Слишком длинная цитата не обрезается: она остаётся в полном списке, а краткий текст сообщает о пропущенных записях. Это локальное представление из целых цитат, не свободный пересказ модели. [Правила и ограничения](NARRATIVE-SUMMARIES.md).
 
 Первая версия группирует по 12 записанным завершённым игровым репликам. Номер эпизода показывает порядок в сохранённой истории. Он не обозначает день, главу или самостоятельно определённую сюжетную арку. Эпизод может содержать меньше 12 реплик, если это текущая порция. В сводке присутствуют только принятые факты; непроверенные предложения туда не попадают.
 
-Сводка является пересчитываемым представлением памяти. Исправление, обновление состояния, снятие принятия или выбор другого ответа автоматически меняют её. Исходные сцены и пользовательский лор сохраняются. Отдельного запроса к DeepSeek для создания этих сводок нет.
+Сводка является пересчитываемым представлением памяти. Исправление, обновление состояния, снятие принятия или выбор другого ответа автоматически меняют её. Исходные сцены и пользовательский лор сохраняются. Отдельного запроса к DeepSeek для создания этих сводок нет. В запросе выбранные факты могут использовать [обратимую компактную упаковку](COMPACT-GAME-MEMORY.md); этот UI-текст поверх тех же фактов не добавляется.
 
 ## Если прошло много игровых дней
 
@@ -35,7 +37,7 @@
 
 Known temporary properties can now carry an explicit ended status. Selected memory retains the ending rather than the previous current activity; original scenes remain available. Tasks are not fulfilled by ending an activity. [Details](CIRCUMSTANCES.md).
 
-Episode summaries are automatically derived from accepted game facts, grouped by 12 complete recorded in-character turns. They are extractive outlines with exact evidence, not a new model-written recap. Episode numbers represent recorded order, not dates or inferred story arcs. Open the source disclosure, search fact/task/quote text, or show earlier portions in Story memory.
+Episode summaries are automatically derived from accepted game facts, grouped by 12 complete recorded in-character turns. A brief source-backed paragraph now precedes the full fact list: numbered citations open and focus the exact source disclosure. Whole quotes preserve conditions, negation, attribution, kinds and confirmed task statuses. Overlong records remain in the full list with explicit omissions in the brief. This is a local template view, not a model-written recap or a change to outgoing memory. [Contract and limits](NARRATIVE-SUMMARIES.md). Episode numbers represent recorded order, not dates or inferred story arcs. Search fact/task/quote text or show earlier portions in Story memory.
 
 Earlier transient position/activity is last-known at its source; the current scene and later explicit state updates take priority. Permanent knowledge can remain relevant. Time passing alone does not complete or cancel obligations. Confirmed source recency resolves otherwise equal retrieval candidates; explicit old-event queries remain supported.
 

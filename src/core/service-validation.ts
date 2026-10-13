@@ -3,7 +3,7 @@ import { FieldValidationError, validFieldValidationIssue, type FieldDiagnosticRu
 
 /** Fixed protocol rules only. Never export a repair prompt or a model-owned key. */
 export const castDiagnosticRules = [
- "complete valid JSON object", "reply length <=180000", "at most one deeprole_cast block", "object", "version must equal 1", "must match current request ID",
+ "complete valid JSON object", "reply length <=180000", "at most one deeprole_cast block", "object", "version must equal 1", "must match current request ID", "exact next existing reset profiles",
  "batch array <=1", "batch array <=2", "boolean unless partial reply", "empty batch requires more=false and no partial flag", "empty array for empty final batch",
  "at least one prepared profile across batches", "must not repeat an earlier batch", "complete final batch envelope", "roster <=40 profiles", "array of 1..40 profiles", "nonempty profile array",
  "array <=12 unique safe string IDs <=80", "array <=12", "string <=600", "safe nonempty string ID <=160", "nonempty string <=80",

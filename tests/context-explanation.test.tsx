@@ -4,7 +4,15 @@ import {ContextBudgetSummary} from "../src/entrypoints/shared/ContextBudgetSumma
 import {contextBudgetText} from "../src/core/context-budget-i18n";
 import {compileGameContext,type GameContextInput} from "../src/core/game-context";
 import {storyWorld} from "./fixtures/story-worlds";
+import {continuationWorld} from "./fixtures/story-continuation-quality";
+import {actionWorld} from "./fixtures/story-action-quality";
 afterEach(cleanup);
+for(const locale of ['ru','en'] as const)it(`describes protected object-matching tasks without claiming no direct match: ${locale}`,()=>{
+ const out=compileGameContext(actionWorld(locale).input),t=contextBudgetText(locale);expect(out.report.explanation!.openTasks).toBe(1);render(<ContextBudgetSummary locale={locale} report={out.report}/>);expect(screen.getByText(t.openTasks)).toBeInTheDocument();expect(t.openTasks).toBe(locale==='ru'?'Незавершённые дела':'Open tasks and promises');
+});
+for(const locale of ["ru","en"] as const)it(`shows the optional lasting-detail reason only when actually selected: ${locale}`,()=>{
+ const out=compileGameContext(continuationWorld(locale).input),t=contextBudgetText(locale);expect(out.report.explanation!.persistentFacts).toBe(1);expect(Object.values(out.report.explanation!).reduce((a,b)=>a+b,0)).toBe(out.report.selected.facts);render(<ContextBudgetSummary locale={locale} report={out.report}/>);expect(screen.getByText(t.persistentFacts)).toBeInTheDocument();
+});
 function fixture(){const f=storyWorld();const input:GameContextInput={draft:"medallion",recentMessages:["clock key"],entries:[],worlds:[f.world],entities:[],activeBookId:null,settings:{contextBudget:2500,relevanceThreshold:6},scene:{worldId:f.world.id,bookId:null,focusIds:[]},story:{world:f.world,chat:f.binding.chatId,branch:"a",sheetsEnabled:true,facts:[{text:"The medallion is in the cellar.",quote:"The medallion is in the cellar.",kind:"event"},{text:"The clock key is blue.",quote:"The clock key is blue.",kind:"event"},{text:"Avery agreed to repair the gate.",quote:"Avery agreed to repair the gate.",kind:"promise",task:{key:"gate",title:"repair the gate",status:"open"}},{text:"The red door was painted.",quote:"The red door was painted.",kind:"event"}]}};return {f,input};}
 it("counts actual selected facts once by direct, recent, open-task or fallback basis",()=>{
  const {input}=fixture(),before=structuredClone(input),r=compileGameContext(input);

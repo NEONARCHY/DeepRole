@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>DeepRole reset service fixture</title></head><body><main><textarea>PRIVATE_RESET_PROMPT</textarea><article>PRIVATE_RESET_REPLY</article><div class="ds-think-content">PRIVATE_RESET_REASONING</div></main><script type="module">
+import {FieldServiceScreen} from "/src/adapters/field-service-screen.ts";
+const locale=new URLSearchParams(location.search).get('locale')==='ru'?'ru':'en';document.documentElement.lang=locale;
+const screen=new FieldServiceScreen(document,locale,'cast','reset');window.cancelled=0;
+screen.configure(undefined,()=>{window.cancelled++;screen.update('cleanup');});screen.update('generating');
+</script></body></html>

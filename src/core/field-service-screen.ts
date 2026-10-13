@@ -71,3 +71,19 @@ export function castServiceScreenCopy(locale: Locale) {
   stages: { ...base.stages, reading: "Reading the lore", generating: "Generating profiles", repairing: "Correcting the profile format", done: "Profiles ready for review" },
  };
 }
+
+/** Preparing a proposal is never the destructive reset itself. */
+export function resetServiceScreenCopy(locale: Locale) {
+ const base = fieldServiceScreenCopy(locale);
+ return locale === "ru" ? { ...base,
+  title: "Подготовка сброса мира", generic: "Подготовь план возврата мира к началу истории",
+  hint: "Оставьте окно видимым. После очистки оно закроется, а план появится в DeepRole. Мир пока не меняется: после проверки нужны два подтверждения.",
+  failed: "План сброса не подготовлен. Мир не изменён. Подробности — в окне «Полный сброс мира по лору».",
+  stages: { ...base.stages, preparing: "Готовим запрос сброса", reading: "Проверяем исходный лор", generating: "Готовим исходные состояния и очистку памяти", repairing: "Исправляем формат плана сброса", done: "План сброса готов к проверке", failed: "Подготовка сброса остановлена" },
+ } : { ...base,
+  title: "Preparing a world reset", generic: "Prepare a plan to return the world to the story opening",
+  hint: "Keep this window visible. It will close after cleanup, and the plan will appear in DeepRole. The world is unchanged: review and two confirmations are required.",
+  failed: "The reset plan could not be prepared. The world is unchanged. See Full world reset from lore for details.",
+  stages: { ...base.stages, preparing: "Preparing the reset request", reading: "Checking the original lore", generating: "Preparing starting states and memory cleanup", repairing: "Correcting the reset plan format", done: "Reset plan ready for review", failed: "Reset preparation stopped" },
+ };
+}

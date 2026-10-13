@@ -69,7 +69,8 @@ export async function startCastWorker(): Promise<boolean> {
   const id: string = claim.id, adapter = new DeepSeekDomAdapter();
   const locale: Locale = claim.locale === "en" || !claim.locale && earlyScreen?.host.lang === "en" ? "en" : "ru";
   const screen = earlyScreen ?? createCastServiceScreen(locale);
-  rememberCastServiceScreen(id, locale);
+  if (typeof claim.reset === "boolean") screen.setCastMode(claim.reset, locale);
+  rememberCastServiceScreen(id, locale, document, screen.isReset);
   let touched = false, cleaning = false, stopped = false, failedRequest = false;
   let failed = !["opening", "reading", "analyzing", "ready"].includes(claim.phase);
   let capture: CastReplyCapture | undefined, activeRequestMarker = "";

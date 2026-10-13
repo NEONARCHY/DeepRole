@@ -10,3 +10,18 @@ it.each(["request","duplicate","foreign","quote","partial-remove"])("rejects an 
 it("keeps partial long records and never treats an excerpt as deletion proof",()=>{const j=job();j.reset!.entries[0]!.content="Original static fact. "+"\\".repeat(10000);const batch=resetEntryBatch(j);expect(JSON.stringify(batch).length).toBeLessThanOrEqual(12000);const raw=JSON.stringify({version:1,request:j.id,decisions:batch.map(e=>({id:e.id,action:"keep",content:"",reason:"Partial or uncertain; retain.",quote:e.content.slice(0,20)}))});expect(parseResetEntryReply(j,raw).changes).toEqual([]);expect(parseResetEntryReply(j,raw).notes).toHaveLength(1);});
 it("requires a complete exact roster before entry review begins",()=>{const j=job();j.phase="ready";j.reset!.entryOffset=undefined;expect(beginResetEntries(j).phase).toBe("analyzing");j.draft!.characters.pop();expect(()=>beginResetEntries(j)).toThrow("invalid-result");});
 it("uses a fresh request marker after the last large-lore profile, and checkpoints complete entry replies",()=>{const j=job();j.phase="ready";j.step=0;j.reset!.entryOffset=undefined;j.large={stage:"done",source:0,offset:0,prepared:4,candidates:[]};const next=beginResetEntries(j);expect(next.step).toBe(1);expect(completeCastReply(reply(next),next.id)).toBe(true);expect(completeCastReply(reply(next),"other")).toBe(false);});
+it("accepts a complete fenced entry envelope, without repairing JSON or accepting a partial decision",()=>{
+ const j=job(),fence=String.fromCharCode(96).repeat(3),raw='<deeprole_cast>'+fence+'json\n'+reply(j)+'\n'+fence+'</deeprole_cast>';
+ expect(parseResetEntryReply(j,raw).changes).toHaveLength(2);
+ expect(()=>parseResetEntryReply(j,raw.slice(0,-25))).toThrow();
+ expect(()=>parseResetEntryReply(j,raw+raw)).toThrow();
+});
+it("entry correction repeats only the entry schema and locally generated errors",()=>{
+ const j=job();j.repair=true;j.repairIssues=['decisions must cover exactly the supplied entry IDs.'];
+ const prompt=resetEntryPrompt(j);
+ expect(prompt).toContain('The previous entry decisions were invalid');
+ expect(prompt).toContain(j.repairIssues[0]);
+ expect(prompt).toContain('Output in English');
+ expect(prompt).not.toContain('characters array');
+ expect(prompt).not.toContain('Your previous roster');
+});

@@ -1,6 +1,7 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
 import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
+import { decodeStoryMemory } from "../../src/core/story-memory-transport";
 
 const records = (panel: Page) => panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
   const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -57,7 +58,7 @@ for (const locale of ["ru", "en"] as const) test(`installed late dispatch ${loca
       await (globalThis as any).chrome.storage.local.set({ deeprole_library_change: { token: "late-rename" } });
     }, locale);
     await nativeSend(locale === "ru" ? "Напомни, что Ева обещала Мире." : "Remind me what Eva promised Mira.", 43);
-    const payload = JSON.parse(outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!.split("\n")[1]!);
+    const payload = decodeStoryMemory(JSON.parse(outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!.split("\n")[1]!));
     expect(payload[0]).toMatchObject({ sourceQuote: quote, sourceIdentity: "unknown" }); expect(payload[0]).not.toHaveProperty("sourceRoles");
     const after = await records(panel); expect(JSON.stringify(after.find(r => r.kind === "world").data.sharedGame.facts)).toBe(originalFacts);
     expect(after.filter(r => r.kind === "story" && r.data.type === "revision").map(r => r.id).sort()).toEqual(sourceIds);

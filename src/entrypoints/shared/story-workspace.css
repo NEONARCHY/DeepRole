@@ -17,6 +17,11 @@
 .dr-story-sections button[aria-pressed="true"] { background: var(--dr-raised); color: var(--dr-text); }
 .dr-story-sections button:hover { color: var(--dr-text); }
 .dr-story-tool { margin-block: var(--dr-space-3); }
+.dr-story-narrative { margin-block: var(--dr-space-3); }
+.dr-story-narrative-text { line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dr-story-narrative-reference { min-width: 28px; min-height: 28px; padding: 3px 6px; color: var(--dr-primary); background: transparent; border: 1px solid var(--dr-border); border-radius: 6px; font: inherit; cursor: pointer; }
+.dr-story-narrative-reference:focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 2px; }
+@media (max-width: 400px) { .dr-story-narrative-reference { min-width: 44px; min-height: 44px; } }
 .dr-story-tool > summary, .dr-candidate-detail > summary { cursor: pointer; min-height: 40px; padding-block: var(--dr-space-2); font-weight: 600; }
 .dr-story-tools { width: 100%; }
 .dr-story-tools > summary { font-weight: 600; cursor: pointer; padding-block: var(--dr-space-2); }

@@ -34,11 +34,15 @@
 
 ## Защита от ошибок
 
+Служебное окно показывает **Подготовка сброса мира**, а не создание персонажей. Оно готовит план, не выполняет сброс: сначала проверяются исходные состояния существующих персонажей, затем записи библиотеки. Формат и источники проверяются отдельно. При ошибке формата расширение один раз просит исправить ответ именно текущего этапа; исправление очистки записей не должно возвращать анкеты. Повторная ошибка останавливает подготовку, не сбрасывая мир.
+
 Неполный состав персонажей, чужой источник, неправильная цитата, незавершённая подготовка или сбой очистки не разрешают сброс. Изменения мира между подготовкой, первым и вторым подтверждением делают план устаревшим. Повторное применение одного плана не создаёт ещё одну новую игру. Ваша установленная копия расширения не обновляется пересборкой автоматически.
 
 Автоматические и браузерные проверки используют вымышленные миры. Качество предложений настоящего DeepSeek в личном лоре проверяется отдельно.
 
 ## English
+
+The service window says **Preparing a world reset**, not character generation. It prepares a reviewable plan without changing the world. Existing character IDs are checked locally. A malformed entry-cleanup reply receives one correction using the entry-decision schema, not profile instructions; repeated failure stops preparation without a reset.
 
 **Story memory → Shared progress → Full world reset from lore** prepares a starting situation in an owned temporary DeepSeek chat, one character at a time followed by bounded review of the world description and nonempty library entries. Preparation is nondestructive. Review/edit the starting scores, narrative state, goals/background and selected entry cleanup; inspect exact evidence and the optional service JSON. Two separate human confirmations are required, including typing the world name. Unfinished cleanup, incomplete rosters and stale world state block application.
 

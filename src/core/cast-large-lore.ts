@@ -49,7 +49,7 @@ export function largeCastPrompt(job: CastJob, legacy: (job: CastJob) => string) 
  }
  const candidate = p.candidates[p.prepared], sources = largeProfileSources(job);
  if (!candidate) throw Error("invalid-result");
- const prompt = legacy({ ...job, large: undefined, sources: sources.map(({ originalId: _original, ...s }) => s), draft: undefined, batchSize: 1, step: Number.MAX_SAFE_INTEGER });
+ const prompt = legacy({ ...job, large: undefined, sources: sources.map(({ originalId: _original, ...s }) => s), draft: undefined, ...(job.reset ? {reset:{...job.reset,people:job.reset.people.filter(person=>person.id===candidate.key)}} : {}), batchSize: 1, step: Number.MAX_SAFE_INTEGER });
  return prompt.replace(/\[Request ID: [^\n]+\]/u, `[Request ID: ${job.id}-${job.step}${job.repair ? "-repair" : ""}]`)
   + `\n[DeepRole Large Lore Profile]\nThese are bounded literal-name excerpts only; NO previous source fragments were sent in this chat. Omitted facts are unknown; pronouns or other names may be missed. Prepare EXACTLY ONE profile with key=${JSON.stringify(candidate.key)}, name=${JSON.stringify(candidate.name)} and aliases:[] (identity/alias resolution is separate). This is not the latest physical scene: present:[] and partners:[] are REQUIRED. Do not guess who is currently present. more:false is REQUIRED; local software selects the next person. Preserve explicitly established ages and facts. Do not make another person a protagonist based solely on their importance. Any missing information stays unknown. There are no images or other profile contexts in this request.`
   + '\nPreviously proposed protagonist (not permission to change it): ' + JSON.stringify(job.draft?.characters.filter(c => c.sheet.protagonist).map(c => c.name) ?? [])

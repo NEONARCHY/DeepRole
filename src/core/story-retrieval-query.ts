@@ -87,7 +87,7 @@ export function storyRetrievalQuery(draft: string, scope: StoryRetrievalScope) {
   };
   const ambiguousName = [...exactNames].some(name => !personalReference.test(name) && (owners.get(name)?.size ?? 0) > 1);
   const concepts = storyConceptSearch(draft, owners.keys());
-  return { query: [draft, ...subjects.map(e => e.name)].join("\n"), unresolvedReference, ambiguousName, mentionedIds: named.map(e => e.id),
+  return { query: [draft, ...subjects.map(e => e.name)].join("\n"), unresolvedReference, ambiguousName, mentionedIds: named.map(e => e.id), relevanceNames:[...owners.keys()],
     score: (f: StoryFact) => (matchesTopic(f) ? 4 : 0) + (matchesSubject(f) ? 16 : 0) + concepts.score(f) };
 }
 

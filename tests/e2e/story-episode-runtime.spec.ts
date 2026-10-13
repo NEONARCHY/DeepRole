@@ -3,6 +3,9 @@ import { chromium, expect, test, type Page } from "@playwright/test";
 import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { GAME_TIME_KEY } from "../../src/core/story-time";
+import { navigationText } from "../../src/core/navigation-i18n";
+import { storyNarrativeText } from "../../src/core/story-narrative-i18n";
+import { decodeStoryMemory } from "../../src/core/story-memory-transport";
 
 const records = (panel: Page) => panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
   const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -60,8 +63,15 @@ for (const locale of ["ru", "en"] as const) test(`installed episodes ${locale}: 
     await expect.poll(async()=> (await read()).facts?.some((x:any)=>x.text===library),{timeout:12000}).toBe(true);await approve();
     const saved=(await records(panel)).find(r=>r.kind==="world").data.sharedGame;
     expect(saved.episodeSources).toHaveLength(4);expect(saved.scene.states["person-1"].condition).toBe(library);
+    await panel.locator(".bottom-nav").getByRole("button",{name:navigationText(locale,"story"),exact:true}).click();
+    const episode=panel.locator(".dr-story-episodes > details").first();await episode.locator(":scope > summary").click();
+    const n=storyNarrativeText(locale),brief=episode.locator(".dr-story-narrative-text");
+    await expect(brief).toContainText(promiseQuote);await expect(brief).toContainText(n.openPromise);await expect(brief).toContainText(n.ended);
+    await episode.getByRole("button",{name:n.source.replace("{number}","1")}).click();
+    await expect(episode.getByText(promiseQuote,{exact:true})).toBeVisible();
+    expect((await records(panel)).find(r=>r.kind==="world").data.sharedGame.facts).toEqual(saved.facts);
     const check=()=>{
-      const block=outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!,payload=JSON.parse(block.split("\n").find(x=>x.startsWith("["))!);
+      const block=outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!,payload=decodeStoryMemory(JSON.parse(block.split("\n").find(x=>x.startsWith("["))!));
       expect(payload[0]).toMatchObject({kind:"promise",text:promise.text,task,sourceQuote:promiseQuote,episodeSource:{episode:1,period:"earlier-turn"}});
        expect(payload.find((x:any)=>x.text===library)).toMatchObject({episodeSource:{period:"latest-turn"},claim:nextPlace.claim,timeStatus:"last-known"});
         expect(payload.find((x:any)=>x.text===coatText)).toMatchObject({timeStatus:"earlier-scene",claim:coat.claim});expect(payload.find((x:any)=>x.text===codeText)).toMatchObject({timeStatus:"persistent",claim:code.claim});

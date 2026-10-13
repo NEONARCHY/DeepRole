@@ -2,6 +2,7 @@ import { useState } from "react";
 import { castText } from "../../core/cast-i18n";
 import type { CastView } from "../../adapters/cast-coordinator";
 import type { Locale } from "../../core/types";
+import {worldResetText} from "../../core/world-reset-i18n";
 
 export function CastDiagnostics({ job, locale }: { job: CastView; locale: Locale }) {
   const [fallback, setFallback] = useState(false), [copied, setCopied] = useState(false);
@@ -15,7 +16,7 @@ export function CastDiagnostics({ job, locale }: { job: CastView; locale: Locale
     {job.diagnostics.map((item, index) => <section key={index}><p>{item.requestId !== job.id && <><strong>{t("previousAttempt")}</strong><br/></>}{t("requestId")}: <code>{item.requestId}</code><br/>{t("diagnosticStep")}: {item.step + 1} · {t(item.repair ? "repairStep" : "finalStep")}<br/>{t("diagnosticCode")}: <code>{item.code}</code>
       {item.stage && <><br/>{t("diagnosticStage")}: {t(item.stage === "merge" ? "stageMerge" : item.stage === "worker" ? "stageWorker" : "stageParse")}</>}
       {item.replyLength !== undefined && <><br/>{t("replyLength")}: {item.replyLength}</>}
-      {item.prepared !== undefined && <><br/>{t("savedCount")}: {item.prepared}</>}
+      {item.prepared !== undefined && <><br/>{job.reset ? worldResetText(locale).phase : t("savedCount")}: {item.prepared}</>}
       {item.reasoning && <><br/>{t("thinkingMode")}: {t(item.reasoning === "enabled" ? "thinkingEnabled" : item.reasoning === "unverified" ? "thinkingUnverified" : "thinkingUnavailable")}</>}
       {item.at && <><br/>{new Intl.DateTimeFormat(locale, {dateStyle:"short", timeStyle:"medium"}).format(item.at)}</>}
     </p>{item.details?.length ? <ul>{item.details.map((d, i) => <li key={i}><code>{d.path}</code><br/>{t("expected")}: {d.rule}<br/>{t("actual")}: {d.actual}</li>)}</ul> : !!item.issues.length && <ul>{item.issues.map((issue, i) => <li key={i}>{issue}</li>)}</ul>}</section>)}

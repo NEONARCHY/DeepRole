@@ -1,4 +1,5 @@
-import type { CastDraft, CastSource } from "./cast-initialization";
+import type { CastDraft, CastSource, CastJob } from "./cast-initialization";
+import {castCheck} from "./cast-validation";
 import type { CharacterSheet, CharacterStatus, DataRecord, MemoryEntry, SceneEntity, WorldProfile } from "./types";
 import { validCharacterSheet } from "./characters";
 import { validMemoryEntry } from "./proposal-validation";
@@ -19,6 +20,18 @@ export interface WorldResetArchive {
   entries: MemoryEntry[];
 }
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==="object"&&!Array.isArray(v);
+export function resetNextPeople(job:CastJob){
+ const prepared=new Set(job.draft?.characters.map(c=>c.key)??[]);
+ return job.reset!.people.filter(p=>!prepared.has(p.id)).slice(0,job.batchSize??1).map(p=>({id:p.id,name:p.name}));
+}
+/** A reset has an exact local roster. The model's more flag is not its authority. */
+export function resetBatchMore(job:CastJob,incoming:CastDraft|undefined){
+ const next=resetNextPeople(job),characters=incoming?.characters??[];
+ castCheck(characters.length===next.length&&characters.every((c,i)=>c.key===next[i]!.id&&c.name===next[i]!.name),"characters","exact next existing reset profiles",characters);
+ const completed=[...job.draft?.characters??[],...characters];
+ castCheck(completed.every(c=>job.reset!.people.some(p=>p.id===c.key&&p.name===c.name)),"characters","exact next existing reset profiles",completed);
+ return completed.length<job.reset!.people.length;
+}
 export const validResetRequest=(v:unknown):v is WorldResetRequest=>obj(v)&&Object.keys(v).length===3&&["chatId","revision"].every(k=>typeof v[k]==="string"&&/^[\w-]{1,160}$/u.test(v[k] as string))&&typeof v.start==="string"&&v.start.trim().length>=3&&v.start.length<=4000;
 export function resetEntries(value:unknown,sources:CastSource[]):ResetEntry[]{
   if(value===undefined)return [];

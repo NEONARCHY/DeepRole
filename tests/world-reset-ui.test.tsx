@@ -15,3 +15,11 @@ it.each(["ru","en"] as const)("requires two explicit confirmations, matching nam
 });
 it.each(["ru","en"] as const)("closing or a failed cleanup never applies a reset: %s",async locale=>{const t=worldResetText(locale),job=initial();job.cleanup="failed";const send=vi.fn(async()=>({ok:true,job}));render(<WorldResetSetup locale={locale} worldId={f.world.id} worldName={f.world.name} game={game} chatId={game.activeChatId} send={send}/>);fireEvent.click(screen.getByRole("button",{name:t.title}));await screen.findByText(t.cleanupHint);expect(screen.getByRole("button",{name:t.review})).toBeDisabled();fireEvent.click(screen.getByRole("button",{name:t.close}));expect(screen.queryByRole("dialog")).not.toBeInTheDocument();expect(send.mock.calls.every(([m]:any)=>m.action==="status")).toBe(true);});
 it.each(["ru","en"] as const)("disables resetting from an inactive chat or during generation: %s",locale=>{const t=worldResetText(locale),v=render(<WorldResetSetup locale={locale} worldId={f.world.id} worldName={f.world.name} game={game} chatId="old"/>);expect(screen.getByRole("button",{name:t.title})).toBeDisabled();v.rerender(<WorldResetSetup locale={locale} worldId={f.world.id} worldName={f.world.name} game={game} chatId={game.activeChatId} blocked/>);expect(screen.getByRole("button",{name:t.title})).toBeDisabled();});
+it.each(['ru','en'] as const)('explains a malformed reset result and labels preserved starting states: %s',async locale=>{
+ const t=worldResetText(locale),job=initial();job.phase='error';job.error='invalid-result';job.draft!.characters=job.draft!.characters.slice(0,1);
+ job.diagnostics=[{requestId:job.id,step:3,repair:true,code:'invalid-result',issues:[],stage:'parse',replyLength:5078,prepared:1}];
+ const send=vi.fn(async()=>({ok:true,job}));render(<WorldResetSetup locale={locale} worldId={f.world.id} worldName={f.world.name} game={game} chatId={game.activeChatId} send={send}/>);
+ fireEvent.click(screen.getByRole('button',{name:t.title}));await screen.findByRole('alert');expect(screen.getByRole('alert')).toHaveTextContent(t.invalidReply);
+ expect(screen.getByRole('button',{name:t.retry})).toBeEnabled();expect(screen.getByText((text)=>text.includes(t.phase+': 1'))).toBeInTheDocument();
+ expect(send.mock.calls.every(([m]:any)=>m.action==='status')).toBe(true);
+});

@@ -1,6 +1,7 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
 import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
+import { decodeStoryMemory } from "../../src/core/story-memory-transport";
 
 const records = (panel: Page) => panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
   const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -47,7 +48,7 @@ for (const locale of ["ru", "en"] as const) test(`installed source roles ${local
     for (let n = 0; n < 3; n++) { const current = await read(), candidate = current.facts.find((x: any) => !x.accepted); if (!candidate) break; expect(await send({ type: "DR_STORY_FACT", input: { worldId: f.world.id, chatId: f.binding.chatId, guard: current.guard, eventId: candidate.eventId, text: candidate.text, accept: true } })).toMatchObject({ ok: true }); }
     const original = JSON.stringify((await records(panel)).find(r => r.kind === "world").data.sharedGame.facts);
     const question = locale === "ru" ? "Напомни, что Нора обещала Мире." : "Remind me what Nora promised Mira.";
-    const payload = () => JSON.parse(outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!.split("\n")[1]!);
+    const payload = ():any[] => decodeStoryMemory(JSON.parse(outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!.split("\n")[1]!));
     await nativeSend(question, 43);
     expect(payload()[0]).toMatchObject({ sourceQuote: quote, sourceRoles: { speaker: { id: "person-1", name: names[0] }, recipient: { id: "person-2", name: names[1] }, promisor: { id: "person-1", name: names[0] } } });
     expect(payload().find((x: any) => x.sourceQuote === otherQuote).sourceRoles.promisor.id).toBe("person-2");

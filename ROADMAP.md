@@ -1,5 +1,96 @@
 # DeepRole — roadmap
 
+## Диагностика изображений перед публикацией
+
+14 октября 2026 года. Пользователь прислал две ошибки; причины проверены, реализация ещё не запрошена. Push публикует прежний RP254, не исправление этих ошибок.
+
+- [x] Read-only diagnosis: legacy draftBusyImage guard при уже isolated preparation; Venice model promptLimit читается, но assembled request проверяет только12000. API пользователя отклонил qwen-edit-uncensored prompt>1500.73 existing image tests pass; платный API не вызывался.
+- [ ] После отдельного указания: подготовка иллюстрации без изменения основного черновика, сохраняя busy/scope/world guards и прежние in-chat selfie/service protections.
+- [ ] После отдельного указания: лимит фактически выбранной generate/edit модели, budget полного финального prompt, явная проверка перед платным POST. Не обрезать canonical анкеты молча, не менять frozen retry, не повторять платный запрос автоматически.
+
+## RP 254 Память коротких игровых действий
+
+14 октября 2026 года. Обычные действия от первого лица получают осторожный подбор старого открытого дела и длительного сведения; не включать lanes для любого текста и не считать запрос доказательством события.
+
+- [x] Independent fixed48 RU/EN cases:24 positives/24 exact controls, дверь/шлюз/сундук,20 newer related conversations и100 other obligations. Complete-target recall0→24/24; gesture/object/known address, quote/negation/attempt/pronoun/owner/topic/unknown/source/budget guards.
+- [x] Finite short action syntax, whole asterisk wrappers. Object terms must all match one full text/title; no quote/key/value proof. Recent anchor+whole direct object target+at most1 matching source-bound open task/persistent detail. Exact roles/current IDs/selected lineage/time; no I-owner inference, canonical writes/new setting/model call. Whole-budget/counters rollback, cap8 and required/manual lore intact.
+- [x]126 новых unit cases (116 action/quality,8 sequence/condition guards,2 UI labels); initial focused8 files/415 passed. Role V1 grammar checked, recipients/terminal tasks/identity replacement/rename/restart/foreign/time guards; request-local cache invalidates text/title edits. First corpus run reproduced25 failures before implementation. Label changed to RU «Незавершённые дела»/EN «Open tasks and promises»: protected object tasks can directly match.
+- [x] Final TypeScript and full237 files/4310 passed/5 прежних todo. Browser38 passed/14 intentional installed-Firefox skips: actual RU/EN action/object/gesture/address/topic/owner/unknown POST before/after reload,20 explicit sends/no extra tabs/errors, unchanged DB/factRoleSeeds/episodeSources. Previous relevance/transport/roles/alternative/paraphrase/late/lifecycle regressions retained. RU/EN320/900 Chromium/Firefox keyboard/overflow/Axe,4 updated-label screenshots inspected. Initial Russian topic assertion revealed existing short-word morphology, now explicit fallback control; no evidence gate weakened. Final packaged Chrome repeat and ZIP audit below. Live model/Brave not tested; own contexts closed.
+- [x] Final packaged Chrome repeat26 passed/2 intentional installed-Firefox skips (same actual actions and all budget UI cases). Chrome/Firefox/source SHA25623/23/566 entries-to-disk and all3 canonical copies verified; updated only downloads/deeprole-0.1.0-chrome.zip, firefox.zip, sources.zip, no dated copies. ACTION-MEMORY/continuation guide, handoff/home/day log/readme current; final source includes QA docs. Personal installed extension/world/account untouched, contexts closed, no commit/push requested. Existing chunk-size warning stays RP-08.
+
+Goal-linked priorities, older-task starvation and long/compound/third-person intent remain separate work. Browser corpus also exposed existing short-word morphology: «коде» does not match «код»; a natural exact «Напомни код» works. Both behaviors are asserted; global stemming was not broadened in this action change. Native DeepSeek history/context window is not compressed. RP-05–08 remain open.
+
+## RP 253 Подготовка сброса без смешения с генерацией персонажей
+
+14 октября 2026 года. По скриншотам пользователя: сброс показывал плашку подготовки персонажей; ответ не прошёл JSON-разбор. Точную синтаксическую причину конкретного ответа скрин не раскрывает. Личный мир и установленная копия не изменяются.
+
+- [x] RU/EN окно «Подготовка сброса мира»: собственные запрос, этапы, завершение и ошибки, без обещания создания анкет. Тип отображения передаётся до claim, проверенный background claim исправляет его; после reload сохраняется только presentation marker.
+- [x] Обычный reset-проход запрашивает следующий точный существующий ID/имя, не NEW people. Убрано противоречие новых ключей и исходного состояния; локальная проверка списка определяет продолжение, не модельный more. Обычная генерация состава и large-lore путь сохраняют свои правила; текущий large reset target уточнён.
+- [x] Entry cleanup получает собственные статичные repair hints и повторную схему decisions, а не characters. Полный JSON внутри Markdown-fence принимается без редактирования содержимого; неполные ответы, чужие ID, выдуманные цитаты и несколько блоков не принимаются.
+- [x] Checkpoint/interrupt не обходят точный reset target; прежние состояния сохраняются при ошибке. Понятное сообщение в основном окне и счётчик исходных состояний. Два подтверждения, stale guard, архивы и защита личных данных прежние.
+- [x] Финальная QA: TypeScript/diff-check; full235 files/4184 passed/5 прежних todo,17 новых unit cases. Первый concurrent full run получил один 5s timeout старого portrait-action-search; полный повтор с двумя workers прошёл без изменения production. 50 разных browser cases прошли в исходном и повторном прогонах,8 expected installed-Firefox skips. Четыре reset-runtime ожидания ready и одно cleanup были слишком короткими при нагрузке; только тестовые deadlines подняты до60/30s, production не менялся; повтор всех6 installed RU/EN normal/repair/failure прошёл. RU/EN320/520 masked screen, keyboard/overflow/Axe,4 screenshots просмотрены, прежние cast/large сохранены. Живой ответ пользователя не воспроизводится по одному скриншоту; собственные contexts закрыты.
+- [x] Chrome/Firefox/source пакеты пересобраны и сверены SHA256 со всеми23/23/564 файлами; три canonical copies совпадают. Финальная Chromium-сборка повторно прошла все6 installed synthetic reset scenarios. Handoff/home/day log и руководство обновлены; новых датированных ZIP нет. Установленное расширение и личный мир не менялись; chunk-size warning остаётся RP-08, commit/push не запрошен.
+
+Два пользовательских действия пока не объединены: обычный restart использует сохранённые начальные значения, полный reset пересматривает их по лору и предлагает очистку записей. Пользователю объяснено различие; удаление функции не запрошено. UX одного входа с выбором сценария — возможный следующий шаг, не реализован молча.
+
+## RP 252 Память обычного продолжения
+
+14 октября 2026 года. Проверенный небольшой набор для распознанного «продолжай», а не отправка всей библиотеки задач. Источники, смысл и общий бюджет сохраняются.
+
+- [x] Independent fixed48 RUEN quality cases:24 positives/24 exact controls, три vocabulary settings; full-target recall0→24/24. Старое open обещание/план, lasting source после20 noise/100 obligations, current/recent anchor и explicit focus; completion/cancel/unknown/removed/foreign/budget guards.
+- [x] Source-bound lanes: лучший recent-context anchor (не draft-name framing), до одного fitting open дела и persistent сведения, exact frozen role/current IDs/selected lineage. Recorded latest source (не numeric lexical hit/urgency). Whole budget and rollback if no additional lane fits; no storage/inference/schema/provider call. Explicit/action/quoted syntax unchanged.
+- [x]84 новых cases; final TypeScript/diff-check pass, full234 files/4167 pass/0 fail/5 прежних todo. Optional persistentFacts reason в прежнем RUEN preview. Final browser38 pass/14 intentional installed-Firefox skips: actual native synthetic next POST/reload carries current anchor+owned open task+persistent exact quote,16 POST/no extra tabs/errors, DB/role/source unchanged. Previous transport/roles/paraphrase/episode/time/late/lifecycle passed; UI RUEN320/900 Chromium/Firefox keyboard/Axe/overflow и4 continuation screenshots просмотрены. Live account/model/Brave/full E2E не проверены; contexts закрыты.
+- [x] Chrome/Firefox/source ZIP SHA25623/23/564 entries/canonical copies сверены; актуальны DeepRole-Brave-continuation-memory-20261014.zip и идентичный Edge archive. Финальный source включает QA/handoff, old dated packages сохранены. Installed user copy не обновлялась; chunk warning/RP-08 остаётся. Commit/push не запрошен.
+
+Next: independent quality corpus для «Я открываю дверь»/«I nod» и других обычных narrative actions без short control phrase; multiple owners/direct queries/unknown/quoted/budget. RP252 не решает arbitrary intent, goal-linked priority или starvation older tasks; не включать current lanes без измеренных guard границ. RP-05–08 остаются открытыми.
+
+## RP 251 Ограничение посторонней памяти при ясной теме
+
+14 октября 2026 года. Сократить посторонние fact candidates только после покрытия всей распознанной темы целыми выбранными записями. Не сокращает native transcript и не удаляет данные.
+
+- [x] Independent fixed48 RUEN admission cases:24 topical/24 exact fallback controls из четырёх vocabulary settings;192→32 selected records, whole-target recall20→24/24. Same-needed-data subset20 full added requests77450→56353 chars (-27,2%); не native tokenizer/live/универсальная оценка.
+- [x] Fail-closed topic admission поверх RP250: supported explicit request prefix, all meaningful query terms present, at least one distinguishing term, no action/owner/reference uncertainty. Whole admitted facts cover all topics or tentative facts/counters roll back to EXACT prior fallback. Open tasks sharing common requested terms remain candidates; fixed canonical source/status/scope and required/manual lore unchanged.
+- [x]71 новых unit/quality/guards cases; focused273/7 files, final TypeScript/diff-check pass, full232 files/4083 pass/0 fail/5 прежних todo. Installed RUEN topic1/compound2/owner+unknown+continuation8 actual POST/reload,16 explicit POST/no extra tabs/errors, DB/role/source unchanged. Final browser22 pass/14 intentional installed-Firefox skips, previous transport/roles/paraphrases/time/late evidence/lifecycle and RUEN320/900 Chromium/Firefox keyboard/Axe/overflow,4 screenshots просмотрены. Live account/model/Brave/full E2E не проверены; contexts закрыты.
+- [x] Chrome/Firefox/source ZIP SHA25623/23/562 entries/canonical copies сверены; текущие DeepRole-Brave-focused-memory-20261014.zip и идентичный Edge archive. Финальный source содержит QA/handoff, старые dated packages сохранены. Installed user copy не обновлялась; chunk warning/RP-08 остаётся. Commit/push не запрошен.
+
+Следующий участок — balanced ordinary continuation: прежние восемь новых похожих разговоров могут вытеснять старое open дело, если recent context не называет его. RP251 не меняет этот fallback. Independent RUEN corpus/доказанные fixes, не рассылать все задачи или угадывать срочность/владельца/выполнение. RP-05–08 открыты.
+
+## RP 250 Релевантность фактов в ограниченном запросе
+
+14 октября 2026 года. Сначала независимый RUEN corpus разных сеттингов и измерение пропусков, затем ограниченное локальное исправление. Не меняет канон, источники, смысл или владельцев и не требует дополнительных действий игрока.
+
+- [x] Independent fixed48 RUEN cases: six vocabulary settings, late body/full task title/past secret/owned conditional promise; exact gold inputs and baseline/current actual request comparison. Controls for names/framing/action forms/unknown/ambiguous/opaque keys/quote/value.
+- [x] Scoped bounded content relevance using full text/title, masked known names/query framing/actions-before-stemming, fresh distinguishing-term frequencies; old explicit owner priorities/standalone scoring unchanged. Fixed first/actual request recall24→48/48; no semantic/provider/identity inference.
+- [x]79 новых cases; input/quote/status/kind/source immutability, edits/cache masks/frequency/subset,2000 newer framing records within2000 budget, previous owner/paraphrase/transport regression. Generic RUEN continuation does not gain a new topic bonus. Final TypeScript pass; full230 files/4012 pass/0 fail/5 прежних todo.
+- [x] Final browser22 pass/14 intentional installed-Firefox skips: RUEN old body/topic и completed-title actual next POST/reload, прежние transport/roles/paraphrase/late evidence/lifecycle regressions; Chromium/Firefox RUEN320/900 keyboard/focus/search/overflow/Axe и4 screenshots просмотрены. Живой аккаунт/модель/installed Brave не проверены; собственные contexts закрыты.
+- [x] Chrome/Firefox/source ZIP SHA25623/23/562 entries/canonical copies сверены, актуальны downloads/DeepRole-Edge-memory-topics-20261014.zip и идентичный DeepRole-Brave-memory-topics-20261014.zip. Финальный source включает QA/handoff; старые архивы сохранены. Installed user copy не обновлялась; chunk warning/RP-08 остаётся. Commit/push не запрошен.
+
+RP-05–08 остаются открытыми; live model quality и широкий семантический поиск не объявляются завершёнными.
+
+## RP 249 Компактная передача игровой памяти
+
+14 октября 2026 года. Без пересказа и изменений сохранённой памяти: сравнить точную request-local упаковку повторяющихся данных, учитывать легенду и весь запрос, сохранить прежний формат там, где сокращение невыгодно.
+
+- [x] Контракт docs/COMPACT-GAME-MEMORY.md: целые цитаты, exact equality, явные локальные ссылки, прежние виды/статусы/условия/источники/исторические роли; неизвестное не угадывается.
+- [x] Encoder/strict decoder, roundtrip gate и автоматический выбор только меньшего представления по полной добавке (легенда/required suffix/Cyrillic estimate оплачены); исходный формат fallback. Никаких refs между запросами или в БД/backup/fact proposals.
+- [x] Fixed RUEN48 corpus, mixed eight-fact requests и бюджетные границы; exact restoration. Whole chars RU9675→8550 (-11,6%), EN9885→8698 (-12,0%); estimates2423→2142/2476→2179, не native tokenizer usage. Same eight selected records, standalone/short fallback, malformed/history/1000-library/Unicode/delimiter cases.
+- [x]96 новых cases; final TypeScript/diff-check pass, full228 files/3933 pass/0 fail/5 прежних todo. Final browser20 pass/12 expected installed-Firefox skips: mixed scene→real review→actual next POST/reload exact eight records и unchanged DB/seed/source values; previous roles/rename/alternative/paraphrases/late evidence/lifecycle passed. RUEN320/900 Chromium/Firefox keyboard/Axe/overflow,4 screenshots просмотрены. Живой аккаунт/модель/full E2E не проверены.
+- [x] Chrome/Firefox/source ZIP SHA25623/23/560 entries/canonical copies сверены; downloads/DeepRole-Edge-compact-memory-20261014.zip актуален. Финальная source упаковка включает QA docs. Installed user copy не обновлялась, chunk warning/RP-08 остаётся; commit/push не запрошен. Handoff и day log2026-10-14 обновлены.
+
+Это сокращение упаковки выбранной памяти, не бесконечное native окно DeepSeek. Проверка структуры не заменяет live-model quality. RP-05–08 остаются открытыми.
+
+## RP 248 Краткий связный текст с точными источниками
+
+13 октября 2026 года. Продолжение после pull main7a9dd3c; RP239–247 не повторяются. Первый рабочий слой source-backed narrative contract поверх extractive эпизодов, без новой изменяемой памяти или скрытых запросов модели.
+
+- [x] Зафиксировать контракт docs/NARRATIVE-SUMMARIES.md: точные fact/source IDs и цитаты, source-order связки, условия/negation/виды/task statuses/temporal state, явная неполнота вместо усечения.
+- [x] Реализовать пересчитываемый локальный narrator/read-only references и вывести его в существующих эпизодах, с раскрытием источника и переносом фокуса. Whole quote admission; kind не теряется из-за temporal labels.
+- [x] Независимый fixed corpus48 RUEN scenarios и63 новых unit/quality/UI cases.14 критических условий/отрицаний/атрибуций теперь видны без раскрытия источника (раньше полные источники уже сохранялись); progress/undo/alternative/source/unknown/oversize/references checked.
+- [x] Full unit227 files/3837 pass/0 fail/5 прежних todo, TypeScript/diff-check pass. Browser14 pass/6 expected installed-Firefox skips: RUEN320/900 Chromium/Firefox keyboard/focus/search/overflow/Axe,4 screenshots просмотрены. Installed Edge synthetic citation→actual next POST/reload без изменения facts/новых вызовов, previous roles/alternative/paraphrases regression passed.
+- [x] Docs/handoff, Chrome/Firefox/source ZIP SHA25623/23/557 files и canonical copies сверены; актуален downloads/DeepRole-Edge-narrative-memory-20261013.zip. Финальная source упаковка включает QA docs. Живой аккаунт/модель/full E2E не проверены, installed user copy не обновлялась. Chunk warning остаётся RP-08. Commit/push не запрошен.
+
+RP248 меняет чтение эпизодов, не формат outgoing memory. Следующий этап — измеренная компактная сериализация для модели, а не дублирование фактов сводкой. RP-05–08 остаются открытыми; UX02/old-chat rewind/historical identity repair по-прежнему отложены.
+
 ## RP 247 Полный сброс мира по исходному лору
 
 13 октября 2026 года. Подготовить начальную ситуацию через DeepSeek, проверить её и подтвердить дважды; сохранять семью/изначальные чувства и все изображения.

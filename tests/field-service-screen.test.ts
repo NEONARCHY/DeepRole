@@ -1,10 +1,31 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { FieldServiceScreen, bootstrapCastServiceScreen, bootstrapFieldServiceScreen, rememberCastServiceScreen, rememberFieldServiceScreen, finishCastServiceScreenMarker, finishFieldServiceScreenMarker } from "../src/adapters/field-service-screen";
-import { castServiceScreenCopy, fieldServiceScreenCopy, validFieldServicePresentation } from "../src/core/field-service-screen";
+import { castServiceScreenCopy, resetServiceScreenCopy, fieldServiceScreenCopy, validFieldServicePresentation } from "../src/core/field-service-screen";
 
 const mounted: FieldServiceScreen[] = [];
 const id = "field_01234567-89ab-4cde-8fab-0123456789ab";
 const screen = (locale: "ru" | "en" = "en") => { const value = new FieldServiceScreen(document, locale); mounted.push(value); return value; };
+it.each(["ru", "en"] as const)("labels reset preparation and every stage without character-generation promises: %s", locale => {
+ const value = new FieldServiceScreen(document, locale, "cast", "reset"); mounted.push(value);
+ value.configure(undefined, vi.fn()); const t = resetServiceScreenCopy(locale);
+ expect(value.host.shadowRoot!.querySelector("h1")!.textContent).toBe(t.title);
+ expect(value.host.shadowRoot!.querySelector(".brief")!.textContent).toBe(t.generic);
+ for (const stage of ["opening", "preparing", "reading", "generating", "repairing", "cleanup", "done", "failed"] as const) {
+  value.update(stage); expect(value.host.shadowRoot!.textContent).not.toMatch(/анкеты|анкет|Персонажи из лора|карточке персонажа|profiles|character profile|Characters from lore/iu);
+ }
+ value.update("reading"); expect(value.host.shadowRoot!.querySelector(".hint")!.textContent).toContain(locale === "ru" ? "два подтверждения" : "two confirmations");
+});
+it("keeps only reset presentation across reload; a background claim can correct a spoofed mode", () => {
+ const cast = id.replace("field_", "cast_");
+ history.replaceState({}, "", "/?deeprole_cast_job=" + cast + "&deeprole_cast_locale=en&deeprole_cast_mode=reset");
+ const early = bootstrapCastServiceScreen()!; mounted.push(early);
+ expect(early.host.shadowRoot!.querySelector("h1")!.textContent).toBe("Preparing a world reset");
+ early.setCastMode(false, "en"); expect(early.host.shadowRoot!.querySelector("h1")!.textContent).toBe("Characters from lore"); early.dispose();
+ rememberCastServiceScreen(cast, "ru", document, true); history.replaceState({}, "", "/chat/s/owned");
+ expect(JSON.parse(sessionStorage.getItem("deeprole_cast_screen")!)).toEqual({id:cast,locale:"ru",mode:"reset"});
+ const resumed=bootstrapCastServiceScreen()!; mounted.push(resumed);
+ expect(resumed.host.shadowRoot!.querySelector("h1")!.textContent).toBe("Подготовка сброса мира");
+});
 it.each(["ru", "en"] as const)("labels a one-character profile for review, not field insertion, in %s", locale => {
  const value = screen(locale), presentation = { locale, fieldLabel: "Profile", characterName: "Mira", kind: "profile" };
  expect(validFieldServicePresentation(presentation)).toBe(true); expect(validFieldServicePresentation({ ...presentation, kind: "foreign" })).toBe(false);
