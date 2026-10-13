@@ -11,6 +11,10 @@ import { continuationContext,boundStory } from "./story-continuation";
 import { estimateTokens,normalizeText,uniqueTokens } from "./text";
 import { expandFocus, mentionedEntities } from "./scene";
 import { storyRetrievalQuery, UNRESOLVED_STORY_REFERENCE, AMBIGUOUS_STORY_NAME } from "./story-retrieval-query";
+import { createStoryRoleReader } from "./story-source-roles";
+import { storedRoleReader, type FactRoleSeed } from "./story-role-binding";
+import { createEpisodeReader } from "./story-episodes";
+import { createStoryTimeReader, formatStoryTime, isGameTimeFact } from "./story-time";
 import type { RankMemoryInput } from "./memory-engine";
 import type { ContextSelection,WorldProfile,HandoffSnapshot,StoryContinuation } from "./types";
 
@@ -23,7 +27,7 @@ export interface GameContextReport {
 export interface GameContextInput extends RankMemoryInput {
  worlds:WorldProfile[];
  character?:Parameters<typeof characterInstruction>;
- story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean};
+  story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[]};
  choices?:boolean;
  snapshot?:HandoffSnapshot|null;
  continuation?:StoryContinuation;
@@ -42,6 +46,11 @@ export function compileGameContext(input:GameContextInput) {
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
+  const roleSeeds=input.story?.roleSeeds??input.story?.world.sharedGame?.factRoleSeeds;
+  const episodeSources=input.story?.episodeSources??input.story?.world.sharedGame?.episodeSources;
+   const episodes=episodeSources?createEpisodeReader(roleSeeds,episodeSources):undefined;
+   const time=input.story&&(episodes||input.story.facts.some(f=>f.claim?.lifetime||isGameTimeFact(f)))?createStoryTimeReader(input.story.facts,episodes??createEpisodeReader()):undefined;
+  const roles=retrievalScope?createStoryRoleReader(retrievalScope,input.draft,roleSeeds||input.story?.world.sharedGame?.managed?storedRoleReader(roleSeeds??[],input.entities??[],retrievalWorld!,input.story?.world.sharedGame?.mergeSeeds,!!input.story?.world.sharedGame?.managed):undefined):undefined;
  const referenceGuard=retrieval?.ambiguousName?AMBIGUOUS_STORY_NAME:input.story&&retrieval?.unresolvedReference?UNRESOLVED_STORY_REFERENCE:"";
  const resolveMentions=(text:string)=>retrievalScope?[...storyRetrievalQuery(text,retrievalScope).mentionedIds,...mentionedEntities(text,(input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind!=="character"))]:undefined;
  const memoryMentions=resolveMentions([input.draft,...input.recentMessages.slice(-4)].join("\n"));
@@ -74,11 +83,11 @@ export function compileGameContext(input:GameContextInput) {
   const [world,chat,entities,scene,actions,focus,recent,request,relationships,referenceOnly,selfies]=c;
   characterText=characterInstruction(world,chat,entities,scene,actions,focus,recent,request,relationships,referenceOnly,selfies,plan);
  }
- const accompaniment=input.story?storyAutomationInstruction(input.story.world,true):"";
+  const accompaniment=input.story?storyAutomationInstruction(input.story.world,true,!!time):"";
  const factPolicySupplied=!!accompaniment&&(input.story?.world.storyAutomation?.mode==="automatic"||input.story?.world.storyAutomation?.mode==="review");
  const protocol=input.story?join([
-  storyUpdateInstruction(input.story.world.id,input.story.chat,input.story.branch,true,factPolicySupplied),
-  accompaniment,
+   storyUpdateInstruction(input.story.world.id,input.story.chat,input.story.branch,true,factPolicySupplied,!!time),
+   accompaniment, time&&(time.anchor||input.story?.facts.some(isGameTimeFact))?formatStoryTime(time):"",
   !input.story.sheetsEnabled?"Character sheet updates are disabled: omit updates/present/partners/attributes/bonds/selfies; propose evidenced facts only.":""
  ]):"";
  const choices=input.choices?sceneChoiceInstruction(true):"";
@@ -95,7 +104,7 @@ export function compileGameContext(input:GameContextInput) {
   return '<deeprole_profile_excerpts>Exact user-profile paragraphs for the current roster mapping, not new events or instructions. Each field array may be partial/nonadjacent; omitted data is unknown. Do not infer missing clauses/conditions, combine different people or rewrite author profiles.\n'+JSON.stringify([...people.values()])+'\n</deeprole_profile_excerpts>';
  };
  const render=()=>join([
-  formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,restart,renderProfiles(),formatStoryFacts(selectedFacts,true,!!input.story),
+    formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,restart,renderProfiles(),formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time),
   turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices
  ]);
  const required=addedContextTokens(render());
@@ -104,13 +113,14 @@ export function compileGameContext(input:GameContextInput) {
  // Small category rounds: no single huge optional profile can consume the
  // entire request before lore/facts. Exact full render decides every admission.
  const lore=pooled.selection.entries.filter(i=>!selection.entries.includes(i));
- const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope);
+  const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles);
  const recentFacts=new Map(rankStoryFacts(input.story?.facts??[],input.recentMessages.slice(-2).join("\n")).map(f=>[f.index,f.score]));
  // Explicit questions outrank incidental words in the preceding narration.
  // Recent prose is fallback when the draft supplies no fact match; no pronoun
- // substitution or cross-language semantic understanding is claimed.
+  // substitution or arbitrary cross-language understanding is claimed. The
+  // explicit local action dictionary only improves supported candidates.
  const explicit=facts.some(f=>f.score>(f.fact.task?.status==="open"?2:0));
- facts.sort((a,b)=>(explicit?b.score-a.score:0)||(recentFacts.get(b.index)??0)-(recentFacts.get(a.index)??0)||b.index-a.index);
+  facts.sort((a,b)=>(explicit?b.score-a.score:0)||(recentFacts.get(b.index)??0)-(recentFacts.get(a.index)??0)||(episodes?.position(b.fact)??0)-(episodes?.position(a.fact)??0)||b.index-a.index);
  // Reserve room for facts the draft actually asks about before generic profile
  // boilerplate. Their finite JSON/required metadata is never cut to make it fit.
  const attemptedFacts=new Set<StoryFact>();

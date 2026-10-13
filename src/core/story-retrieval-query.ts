@@ -1,6 +1,7 @@
 import type { SceneEntity } from "./types";
 import type { StoryFact } from "./story-update";
 import { normalizeText } from "./text";
+import { storyConceptSearch } from "./story-retrieval-concepts";
 
 export interface StoryRetrievalScope { worldId: string; entities: SceneEntity[] }
 type Topic = "obligation" | "plan" | "belief" | "secret";
@@ -12,7 +13,7 @@ const topicWords: Record<Topic, RegExp> = {
 };
 const personalReference = /^(?:она|он|они|ее|его|их|ей|ему|ней|нем|ним|им|she|he|her|hers|his|him|they|their|theirs|them)$/u;
 const namePrefixes = new Set(["the", "a", "an", "mr", "mrs", "ms", "miss", "dr", "sir", "lady", "lord", "captain", "king", "queen", "господин", "госпожа", "доктор", "капитан", "король", "королева", "сэр", "леди", "лорд"]);
-function retrievalNames(e: SceneEntity) {
+export function retrievalNames(e: SceneEntity, inflect = true) {
   const names = [e.name, ...e.aliases];
   // Conservative short form for conventional multi-part proper names. It is
   // runtime-only, checked against ALL explicit and inferred names for collision.
@@ -22,11 +23,12 @@ function retrievalNames(e: SceneEntity) {
   }
   return [...new Set(names.flatMap(name => {
     const phrase = normalizeText(name);
-    if (!/^[а-я]{3,}[ая]$/u.test(phrase)) return [phrase];
+    if (!inflect || !/^[а-я]{3,}[ая]$/u.test(phrase)) return [phrase];
     const endings = phrase.endsWith("а") ? ["а", "ы", "и", "е", "у", "ой", "ою"] : ["я", "и", "е", "ю", "ей", "ею"];
     return [phrase, ...endings.map(ending => phrase.slice(0, -1) + ending)];
   }))];
 }
+export const isPersonalStoryReference = (name: string) => personalReference.test(normalizeText(name));
 const phraseIn = (text: string, phrase: string) => phrase && (` ${normalizeText(text)} `).includes(` ${phrase} `);
 function longestNames(text: string, phrases: Iterable<string>) {
   const haystack = ` ${normalizeText(text)} `;
@@ -84,8 +86,9 @@ export function storyRetrievalQuery(draft: string, scope: StoryRetrievalScope) {
     });
   };
   const ambiguousName = [...exactNames].some(name => !personalReference.test(name) && (owners.get(name)?.size ?? 0) > 1);
+  const concepts = storyConceptSearch(draft, owners.keys());
   return { query: [draft, ...subjects.map(e => e.name)].join("\n"), unresolvedReference, ambiguousName, mentionedIds: named.map(e => e.id),
-    score: (f: StoryFact) => (matchesTopic(f) ? 4 : 0) + (matchesSubject(f) ? 16 : 0) };
+    score: (f: StoryFact) => (matchesTopic(f) ? 4 : 0) + (matchesSubject(f) ? 16 : 0) + concepts.score(f) };
 }
 
 export const UNRESOLVED_STORY_REFERENCE = '<deeprole_reference_guard>Personal reference in the current request is NOT resolved by DeepRole. Establish speaker/owner only from explicit played evidence. Selected facts are candidates, not proof of who a pronoun names. Do not invent ownership or merge different people\'s obligations.</deeprole_reference_guard>';

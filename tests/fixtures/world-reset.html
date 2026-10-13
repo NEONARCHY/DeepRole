@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>World reset fixture</title></head><body><main id="app"></main><script type="module">
+import React from "react";import {createRoot} from "react-dom/client";
+import {WorldResetSetup} from "/src/entrypoints/shared/WorldResetSetup.tsx";
+import {resetFixture,resetDraft} from "/tests/fixtures/world-reset.ts";
+import "/src/entrypoints/sidepanel/styles.css";import "/src/entrypoints/shared/design-system.css";import "/src/entrypoints/shared/story-workspace.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en";document.documentElement.lang=locale;const f=resetFixture(),game={version:1,id:"game",revision:"revision",activationId:"active",activeChatId:f.binding.chatId,activeBindingId:f.binding.id,managed:true,facts:[],profileSeeds:{},identitySeeds:{},mergeSeeds:{},memoryOverrides:{includedIds:[],excludedIds:[]},updatedAt:1},draft=resetDraft("cast-reset",f.records);
+let job={id:"cast-reset",worldId:f.world.id,locale,createdAt:1,updatedAt:1,phase:"ready",step:99,awaiting:false,repair:false,cleanup:"done",draft,sourceCount:7,partCount:1,titles:{[f.event.id]:f.event.title,[f.mixed.id]:f.mixed.title},reset:{gameId:game.id,revision:game.revision,chatId:game.activeChatId,worldName:f.world.name,start:"Tyoma returns after six years abroad.",people:f.entities.map(p=>({id:p.id,name:p.name})),entries:[f.event,f.mixed].map(e=>({id:e.id,title:e.title,content:e.content})),entryOffset:2}};
+window.resetCalls=[];const send=async m=>{window.resetCalls.push(m);if(m.action==="confirm-reset")return {ok:true,token:"nonce"};if(m.action==="apply-reset"){job={...job,phase:"applied"};return {ok:true,chatOpened:true};}return {ok:true,job:structuredClone(job)};};
+createRoot(document.querySelector("#app")).render(React.createElement("div",{className:"dr-root view-stack",style:{padding:16}},React.createElement("h1",null,locale==="ru"?"Память истории":"Story memory"),React.createElement(WorldResetSetup,{locale,worldId:f.world.id,worldName:f.world.name,game,chatId:game.activeChatId,send})));
+</script></body></html>

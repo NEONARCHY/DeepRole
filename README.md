@@ -13,6 +13,8 @@ Photos are stored separately from profiles: name/text saves do not resend the im
 
 **Automatic game accompaniment:** choose **Story → Game accompaniment → Automatic** to save supported played facts, find new people and append profile details during normal play. Conflicts and protected fields await review; original author lore stays intact. Existing installations retain review mode until you choose. Explicit lore-rewrite proposals still need approval. [Modes, examples and limits](docs/AUTOMATIC-MEMORY.md).
 
+**Restart from the original lore:** Story now offers a full reset plan prepared by DeepSeek in a temporary chat. Review starting relationships and memory cleanup, then confirm twice. Family ties and preexisting feelings can stay; portraits and references remain attached. The new game starts in an empty chat. [How it works](docs/WORLD-RESET.md).
+
 > Early version 0.1.0. Independent project, not affiliated with DeepSeek. Make a [full backup](#backups-and-moving-to-another-computer) before uninstalling, replacing your data or moving to another computer.
 
 The current build adds relationship stages, numeric characteristics, visible consequences, personal action rules, one-click story continuation and a cleaner, adaptive interface. The examples below show the current UI in English; the [Russian page](docs/README.ru.md) has its own Russian screenshots. All examples use fictional demo data and built-in silhouettes, not a player's private lore.

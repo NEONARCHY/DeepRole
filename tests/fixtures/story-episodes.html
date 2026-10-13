@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Episode summaries fixture</title></head><body><main id="app"></main><script type="module">
+import React from "react";import {createRoot} from "react-dom/client";
+import {StoryEpisodePanel} from "/src/entrypoints/shared/StoryEpisodePanel.tsx";
+import {roleSeed} from "/src/core/story-role-binding.ts";
+import "/src/entrypoints/sidepanel/styles.css";import "/src/entrypoints/shared/design-system.css";import "/src/entrypoints/shared/story-workspace.css";
+const locale=new URL(location.href).searchParams.get("locale")??"en",ru=locale==="ru";document.documentElement.lang=locale;
+const sources=Array.from({length:100},(_,i)=>"source-"+i),facts=Array.from({length:9},(_,i)=>({kind:i===0?"promise":"event",text:i===0?(ru?"Нора обещала помощь при открытой дороге.":"Nora promised help if the road opens."):(ru?"Сохранённое событие ":"Saved event ")+i,quote:i===0?(ru?"Нора: «Я помогу, если дорогу откроют».":"Nora: “I will help if the road opens.”"):(ru?"Исходная сцена ":"Original scene ")+i}));
+facts[1].claim={key:"place",value:facts[1].text,scope:"state",lifetime:"scene"};facts[2].claim={key:"knowledge",value:facts[2].text,scope:"state",lifetime:"persistent"};
+facts[3].text=ru?"Мира закончила читать.":"Mira finished reading.";facts[3].quote=facts[3].text;facts[3].claim={key:"reading",value:facts[3].text,scope:"state",lifetime:"scene",transition:"progress",status:"ended"};
+const timeLabel=ru?"Прошло три дня.":"Three days later.";facts.push({kind:"event",text:timeLabel,quote:timeLabel,claim:{key:"deeprole:game-time",value:timeLabel,scope:"state",transition:"progress"}});
+const seeds=facts.map((f,i)=>roleSeed(f,{version:1,sourceRevisionId:sources[Math.min(i*12,99)],quote:f.quote,roles:{}}));
+const game={version:1,id:"game",revision:"rev",activationId:"activation",activeChatId:"synthetic-a",activeBindingId:"binding:synthetic-a",managed:true,memoryOverrides:{includedIds:[],excludedIds:[]},profileSeeds:{},identitySeeds:{},mergeSeeds:{},updatedAt:0,facts,factRoleSeeds:seeds,episodeSources:sources};
+const root=createRoot(document.querySelector("#app"));window.episodeFixture={game,render:()=>root.render(React.createElement("div",{className:"dr-root view-stack",style:{padding:16,maxWidth:650,margin:"auto"}},React.createElement(StoryEpisodePanel,{locale,game})))};window.episodeFixture.render();
+</script></body></html>

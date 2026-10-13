@@ -9,6 +9,7 @@ export interface WorldProfile {
   /** One live game per lore; chat branches remain historical checkpoints. */
   sharedGame?: import("./world-game").WorldGame;
   sharedGameArchives?: import("./world-game").WorldGame[];
+  resetArchives?: import("./world-reset").WorldResetArchive[];
   /** User opted into one preparation when this world first has lore. */
   autoPrepareCharacters?: boolean;
   relationshipsEnabled?: boolean;
@@ -230,6 +231,7 @@ export interface RecoveredReply {
 }
 
 export interface HandoffSnapshot {
+  resetGameId?: string;
   /** Optimistic guard: recap delivery may not restore an older shared game. */
   sharedGameRevision?: string;
   /** Confirmed destination, recorded only after accepted continuation delivery. */

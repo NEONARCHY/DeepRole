@@ -1,5 +1,6 @@
 import { validOldChatNoticeReceipt, chatId as validNoticeChatId } from "./old-chat-notice";
 import { validWorldGame } from "./world-game";
+import { validResetArchive } from "./world-reset";
 import { validStoryAutomationPolicy } from "./story-automation";
 import { validMemoryBatchPolicy } from "./story-memory-batch";
 import { validateLoreMapLayout } from "./lore-categories";
@@ -46,6 +47,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
     case "story": return validStoryRecord(d);
     case "illustration": return validIllustration(d);
     case "world":
+      if(d.resetArchives!==undefined&&(!Array.isArray(d.resetArchives)||!d.resetArchives.every(validResetArchive)))return false;
       if (d.storyMemoryBatch !== undefined && !validMemoryBatchPolicy(d.storyMemoryBatch)) return false;
       if (d.storyAutomation !== undefined && !validStoryAutomationPolicy(d.storyAutomation)) return false;
       if (d.sharedGame !== undefined && !validWorldGame(d.sharedGame) || d.sharedGameArchives !== undefined && (!Array.isArray(d.sharedGameArchives) || !d.sharedGameArchives.every(validWorldGame))) return false;
@@ -67,7 +69,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
     case "binding":
       return (d.oldChatNotice === undefined || validOldChatNoticeReceipt(d.oldChatNotice)) && (d.nextStoryMessageMode === undefined || d.nextStoryMessageMode === "out-of-character") && id(d.chatId) && typeof d.chatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && integer(d.messageCountAtAnalysis, 0, Number.MAX_SAFE_INTEGER) &&
         (d.memoryOverrides === undefined || object(d.memoryOverrides) && strings(d.memoryOverrides.includedIds) && strings(d.memoryOverrides.excludedIds)) && (d.characterScenes === undefined || validCharacterScenes(d.characterScenes)) && (d.portraitLayouts === undefined || validPortraitLayouts(d.portraitLayouts)) && (d.recoveredReplies === undefined || validRecoveredReplies(d.recoveredReplies)) && (d.scenePhotos === undefined || validScenePhotos(d.scenePhotos)) && (d.illustrationAttempts === undefined || validImageAttempts(d.illustrationAttempts));
-    case "snapshot": return (d.sharedGameRevision === undefined || typeof d.sharedGameRevision === "string" && /^[A-Za-z0-9_-]{1,160}$/u.test(d.sharedGameRevision)) && (d.targetChatId === undefined || validNoticeChatId(d.targetChatId) && d.targetChatId !== d.sourceChatId && time(d.appliedAt)) && typeof d.title === "string" && typeof d.summary === "string" && typeof d.sourceChatId === "string" && typeof d.sourceChatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && (d.appliedAt === undefined || time(d.appliedAt)) && (d.characterScene === undefined || validCharacterScenes({ snapshot: d.characterScene }));
+    case "snapshot": return (d.resetGameId === undefined || typeof d.resetGameId === "string" && /^[A-Za-z0-9_-]{1,160}$/u.test(d.resetGameId)) && (d.sharedGameRevision === undefined || typeof d.sharedGameRevision === "string" && /^[A-Za-z0-9_-]{1,160}$/u.test(d.sharedGameRevision)) && (d.targetChatId === undefined || validNoticeChatId(d.targetChatId) && d.targetChatId !== d.sourceChatId && time(d.appliedAt)) && typeof d.title === "string" && typeof d.summary === "string" && typeof d.sourceChatId === "string" && typeof d.sourceChatUrl === "string" && optionalId(d.bookId) && d.bookId !== undefined && (d.appliedAt === undefined || time(d.appliedAt)) && (d.characterScene === undefined || validCharacterScenes({ snapshot: d.characterScene }));
     case "proposal": return validMemoryProposal(d) && d.items.every((item) => !item.expectedEntry || validDataRecord({ kind: "entry", id: item.expectedEntry.id, data: item.expectedEntry }));
     case "change": return validLoreChange(d) && d.entries.every((pair) => validDataRecord({ kind: "entry", id: pair.after.id, data: pair.after }) && (!pair.before || validDataRecord({ kind: "entry", id: pair.before.id, data: pair.before })));
     default: return false;

@@ -11,7 +11,7 @@ it.each(["ru", "en"] as const)("%s linking requires a searched and selected stab
  render(<CharacterDiscovery locale={locale} scope={p} onAction={onAction} onChanged={() => undefined} disabled={false} />);
  fireEvent.click(screen.getByText(text(locale, "read"))); await screen.findByText("Courier", { selector: "h4" }); fireEvent.change(screen.getByLabelText(text(locale, "background")), { target: { value: "My draft" } });
  expect(calls).toHaveLength(1); fireEvent.click(screen.getByText(text(locale, "identityOpen"))); await screen.findByText("Clockmaker"); expect(screen.getByText(text(locale, "identityConfirm"))).toBeDisabled(); expect(screen.getByLabelText(text(locale, "background"))).toHaveValue("My draft");
- fireEvent.click(screen.getByRole("radio", { name: "Alex Courier" })); fireEvent.click(screen.getByText(text(locale, "identityConfirm") + " · Alex")); await screen.findByText(text(locale, "identityLinked").replace("{name}", "Alex"));
+ fireEvent.click(screen.getByRole("radio", { name: "Alex Courier" })); const confirm=await screen.findByText(text(locale, "identityConfirm") + " · Alex");await waitFor(()=>expect(confirm).not.toBeDisabled());fireEvent.click(confirm); await screen.findByText(text(locale, "identityLinked").replace("{name}", "Alex"));
  expect(calls.at(-1)).toMatchObject({ action: "approve", input: { eventId: "event", identity: { entityId: "person-b", updatedAt: 30 }, accept: true } }); expect(calls.at(-1)!.input).not.toHaveProperty("values"); expect(calls.some(a => a.action === "run" || a.action === "profile" || a.action === "queue")).toBe(false); expect(screen.getByText(text(locale, "identityRemove"))).toBeInTheDocument();
 });
 it("searching clears selection and closing the picker preserves author fields", async () => {

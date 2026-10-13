@@ -9,11 +9,17 @@ import { getSettings } from "./settings";
 import { CastValidationError } from "../core/cast-validation";
 import type { CharacterScene, CharacterSheet, CharacterStatus, ChatBinding, DataRecord, Locale, SceneEntity, WorldProfile } from "../core/types";
 import { acceptLargeCastReply } from "../core/cast-large-lore";
+import { validResetRequest, resetGuard, type WorldResetRequest } from "../core/world-reset";
+import { assertWorldGameWriter, worldGamePeople } from "../core/world-game";
+import {beginResetEntries,acceptResetEntryReply} from "../core/world-reset-entries";
+import {memoryWorld} from "../core/scene";
 
-export async function createCastJob(worldId: string, locale: Locale, retry = false, repo: DeepRoleRepository = repository, continuationOf?: string, restart = false): Promise<CastJob> {
+export async function createCastJob(worldId: string, locale: Locale, retry = false, repo: DeepRoleRepository = repository, continuationOf?: string, restart = false, reset?: WorldResetRequest): Promise<CastJob> {
   const defaults = (await getSettings()).characterActions;
   return repo.updateRecords(records => {
-    const previous = records.filter(r => r.kind === "cast" && (r.data as CastJob).worldId === worldId).map(r => r.data as CastJob).sort((a,b) => b.createdAt - a.createdAt)[0];
+    const continuation=continuationOf?records.find(r=>r.kind==="cast"&&r.id===continuationOf)?.data as CastJob|undefined:undefined;
+    const resetMode=!!reset||!!continuation?.reset;
+    const previous = records.filter(r => r.kind === "cast" && (r.data as CastJob).worldId === worldId && !!(r.data as CastJob).reset===resetMode).map(r => r.data as CastJob).sort((a,b) => b.createdAt - a.createdAt)[0];
     if (continuationOf && (previous?.id !== continuationOf || previous.phase !== "ready" || !previous.large || previous.large.stage === "done" || previous.cleanup !== "done")) { if (!previous) throw Error("job-missing"); return { records: [], removed: [], result: previous }; }
     if (previous && (!retry || ["opening", "reading", "analyzing"].includes(previous.phase))) return { records: [], removed: [], result: previous };
     if (previous && retry && ["pending", "failed"].includes(previous.cleanup)) throw new Error("cleanup-required");
@@ -30,6 +36,18 @@ export async function createCastJob(worldId: string, locale: Locale, retry = fal
     if (resumable) { job.statusHidden = previous!.statusHidden; job.incognito = previous!.incognito; }
     if (previous?.diagnostics) job.diagnostics = previous.diagnostics.slice(-24);
     const world = records.find(r => r.kind === "world" && r.id === worldId)!.data as WorldProfile;
+    if(resetMode){
+      const input=reset??previous!.reset!,b=records.find(r=>r.kind==="binding"&&(r.data as ChatBinding).chatId===input.chatId)?.data as ChatBinding|undefined;
+      if(!validResetRequest({chatId:input.chatId,revision:input.revision,start:input.start})||!b||!world.sharedGame||world.sharedGame.revision!==input.revision)throw Error("reset-stale");assertWorldGameWriter(records,b,worldId);
+      const people=worldGamePeople(records.filter(r=>r.kind==="entity").map(r=>r.data as SceneEntity),world).filter(p=>p.worldId===worldId&&p.kind==="character");
+      if(!people.length)throw Error("lore-empty");
+      const books=records.filter(r=>r.kind==="book").map(r=>r.data as import("../core/types").MemoryBook),entries=records.filter(r=>r.kind==="entry"&&memoryWorld(r.data as import("../core/types").MemoryEntry,books)===worldId).map(r=>r.data as import("../core/types").MemoryEntry).filter(e=>e.content.trim().length>=3);
+      job.reset=resumable?structuredClone(previous!.reset!):{chatId:input.chatId,revision:input.revision,start:input.start,gameId:world.sharedGame.id,worldName:world.name,people:people.map(p=>({id:p.id,name:p.name,before:{goals:p.characterSheet?.goals??"",background:p.characterSheet?.background??"",state:world.sharedGame!.scene?.states[p.id]}})),entries:[...(world.description.trim().length>=3?[{id:world.id,title:world.name,content:world.description,scope:"world" as const}]:[]),...entries.map(e=>({id:e.id,title:e.title,content:e.content,scope:"entry" as const}))]};
+      for(const e of entries)if(!job.sources.some(s=>s.id===e.id))job.sources.push({id:e.id,title:e.title,text:e.content,at:e.updatedAt});
+      if(!job.large&&JSON.stringify(job.sources).length>CAST_MAX_SOURCE){job.large={stage:"profiles",source:0,offset:0,prepared:0,candidates:[]};job.sources=job.sources.map(s=>({...s,text:s.title+"\n"+s.text}));}
+      delete job.reset.confirmation;job.resetGuard=resumable?previous!.resetGuard:resetGuard(records,worldId);
+      if(job.large&&!resumable)job.large={stage:"profiles",source:0,offset:0,prepared:0,candidates:people.map(p=>({key:p.id,name:p.name,evidence:[{source:p.id,quote:p.name}]}))};
+    }
     job.actions = [...actionsFor(world.characterActions ?? defaults)];
     return { records: [{ kind: "cast", id: job.id, data: job }, { kind: "world", id: worldId, data: { ...world, autoPrepareCharacters: false } }], removed: previous ? [{ kind: "cast", id: previous.id }] : [], result: job };
   });
@@ -39,6 +57,14 @@ export async function mutateCastJob(id: string, update: (job: CastJob, records: 
     const job = records.find(r => r.kind === "cast" && r.id === id)?.data as CastJob | undefined;
     if (!job) throw new Error("job-missing");
     const next = { ...update(job, records), updatedAt: Date.now() };
+    // Reset can choose starting scores, not redefine existing scales, gates or identity.
+    // Normalize model proposals before the user sees the review. Human edits are
+    // subsequently checked against these same preserved definitions at commit.
+    if(next.reset&&next.draft)next.draft={...next.draft,characters:next.draft.characters.map(c=>{
+      const old=(records.find(r=>r.kind==="entity"&&r.id===c.key)?.data as SceneEntity|undefined)?.characterSheet;
+      if(!old)return c;const rel=old.relationships;
+      return {...c,completed:c.completed.filter(id=>rel?.milestones.some(m=>m.id===id)),sheet:{...c.sheet,protagonist:old.protagonist,attributes:(old.attributes??[]).map(a=>({...a,initial:c.sheet.attributes?.find(v=>v.id===a.id)?.initial??a.initial})),relationships:rel?{...rel,initial:c.sheet.relationships?.initial??rel.initial}:undefined}};
+    })};
     return { records: [{ kind: "cast", id, data: next }], removed: [], result: next };
   });
 }
@@ -49,15 +75,16 @@ export async function acceptCastReply(id: string, step: number, raw: string, rep
     if (!job.large && job.step < castParts(job.sources).length) return { ...job, step: job.step + 1, awaiting: false };
     let stage: "parse" | "merge" = "parse";
     try {
-      if (job.large) return acceptLargeCastReply(job, raw);
+      if(job.reset?.entryOffset!==undefined&&job.reset.entryOffset<job.reset.entries.length)return acceptResetEntryReply(job,raw);
+      if (job.large) return beginResetEntries(acceptLargeCastReply(job, raw));
       if (job.batchSize) {
         const batch = parseCastBatch(raw, job.id, job.sources, job.batchSize, job.draft);
         stage = "merge";
         const draft = mergeCastBatches(job.draft, batch.draft, job.id, job.sources);
         if (batch.partial) return { ...castDiagnostic({...job,draft}, "partial-reply", [], {stage:"parse",replyLength:raw.length,details:[{path:"$",rule:"complete final batch envelope",actual:"only completed profiles recovered from interrupted reply"}]}), phase: "error", awaiting: false, replyCheckpoint: undefined, draft, error: "partial-reply" };
-        return { ...job, draft, phase: batch.more ? "analyzing" : "ready", step: job.step + 1, repair: false, repairIssues: undefined, awaiting: false, replyCheckpoint: undefined };
+        return beginResetEntries({ ...job, draft, phase: batch.more ? "analyzing" : "ready", step: job.step + 1, repair: false, repairIssues: undefined, awaiting: false, replyCheckpoint: undefined });
       }
-      return { ...job, phase: "ready", awaiting: false, replyCheckpoint: undefined, draft: parseCastDraft(raw, job.id, job.sources) };
+      return beginResetEntries({ ...job, phase: "ready", awaiting: false, replyCheckpoint: undefined, draft: parseCastDraft(raw, job.id, job.sources) });
     }
     catch (e) {
       const details = e instanceof CastValidationError ? e.issues.slice(0, 60) : undefined;
@@ -83,6 +110,7 @@ export async function applyCastDraft(id: string, draft: CastDraft, selected: str
   return repo.updateRecords(records => {
     const job = records.find(r => r.kind === "cast" && r.id === id)?.data as CastJob | undefined;
     if (!job || !["ready", "error"].includes(job.phase) || !job.draft) throw new Error("job-missing");
+    if(job.reset)throw Error("reset-confirmation-required");
     if (castSignature(records, job.worldId) !== job.signature) throw new Error("lore-changed");
     const sanitized = validateCastDraftValue(draft, id, job.sources);
     if (sanitized.characters.length !== job.draft.characters.length || sanitized.characters.some(c => !job.draft!.characters.some(old => old.key === c.key && old.name === c.name))) throw new Error("invalid-result");

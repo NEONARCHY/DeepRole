@@ -35,7 +35,7 @@ export async function approveStoryFact(input: StoryFactApproval, repo: DeepRoleR
     const changed = [...all.filter(r => !(r.kind === "story" && r.id === event.id)), storyRow(updated)];
     // Removing an explicitly resolved old proposal is a durable dismissal.
     // Keep the pure resolution selected, without its memory effect.
-    if (event.originEventId && !input.accept) delete updated.memory;
+    if (event.originEventId && !input.accept) { delete updated.memory; delete updated.memoryRoles; }
     const approved = projection.acceptedEventIds.filter(id => id !== event.id); if (input.accept || event.originEventId) approved.push(event.id);
     const selection = planStorySelection(changed, branch.id, { headRevisionId: branch.headRevisionId, expectedHeadRevisionId: branch.headRevisionId, expectedSelectionVersion: branch.selectionVersion, acceptedEventIds: approved });
     return { records: [storyRow(updated), ...selection.records], removed: selection.removed, result: { active: true, changed: true } };

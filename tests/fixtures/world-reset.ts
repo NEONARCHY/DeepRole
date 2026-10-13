@@ -1,0 +1,15 @@
+import {storyWorld} from "./story-worlds";
+import {EMPTY_STATUS} from "../../src/core/characters";
+import {DEFAULT_RELATIONSHIP} from "../../src/core/relationships";
+import type {CastDraft} from "../../src/core/cast-initialization";
+import type {DataRecord,MemoryEntry} from "../../src/core/types";
+export function resetFixture(){
+ const f=storyWorld("en",4),names=["Tyoma","Chloe","Mother","Stranger"],scores=[[0,0],[25,80],[75,60],[0,0]];
+ f.world.description="Tyoma returns after six years abroad. Mother is his mother. Chloe loved him before he left; she doubted a future together. The stranger has never met him.";
+ f.entities.forEach((p,i)=>{p.name=names[i]!;p.description="Original identity "+p.name;p.characterSheet!.goals="Old played goal";p.characterSheet!.background=i===2?"Mother remembers her son; they hugged yesterday.":"Original past, with a played event yesterday.";p.characterSheet!.attributes=[];if(i)p.characterSheet!.relationships={...structuredClone(DEFAULT_RELATIONSHIP),initial:{trust:scores[i]![0]!,affinity:scores[i]![1]!},romance:i===1};p.characterSheet!.sprites={neutral:"data:image/png;base64,AAAA"};});
+ const event:MemoryEntry={...f.entry,id:"played-entry",title:"Yesterday's hug",content:"Mother hugged Tyoma yesterday in this playthrough.",entityIds:["person-3"],source:{type:"suggestion",chatId:f.binding.chatId},updatedAt:40},mixed:MemoryEntry={...f.entry,id:"mixed-entry",title:"Mother",content:"Mother is Tyoma's mother. They hugged yesterday in this playthrough.",entityIds:["person-3"],updatedAt:40},foreign:MemoryEntry={...event,id:"foreign-entry",worldId:"elsewhere",content:"OTHER WORLD",links:[{targetId:event.id,label:"reference",mode:"reference"}]};
+ f.records.push(...[event,mixed,foreign].map(data=>({kind:"entry" as const,id:data.id,data})));return {...f,event,mixed,foreign};
+}
+export function resetDraft(request:string,_records:DataRecord[]):CastDraft{
+ const f=resetFixture();return {version:1,request,characters:f.entities.map((p,i)=>({key:p.id,name:p.name,aliases:[],sheet:{...structuredClone(p.characterSheet!),sprites:{},goals:"Original goal",background:i===2?"Mother remembers her son.":"Original past."},state:{...EMPTY_STATUS,condition:"At the starting point",relationship:i===2?"Mother knows her son.":i===1?"Loved him before his return.":i===3?"They have not met.":"Returned after six years.",goal:"Begin original story"},completed:[],reason:i===2?"Family stays familiar.":i===1?"Love existed before the story.":"Based on original lore.",evidence:[{source:f.world.id,quote:i===2?"Mother is his mother.":i===1?"Chloe loved him before he left; she doubted a future together.":i===3?"The stranger has never met him.":"Tyoma returns after six years abroad."}]})),present:["person-1"],partners:[],warnings:[],resetEntries:[{id:f.event.id,action:"remove",content:"",reason:"Only played event",quote:f.event.content},{id:f.mixed.id,action:"rewrite",content:"Mother is Tyoma's mother.",reason:"Keep family, remove played event",quote:f.mixed.content}]};
+}
