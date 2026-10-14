@@ -2,9 +2,11 @@
 
 Version 0.1.0 is an early build installed manually. [Русская инструкция](../INSTALL.md)
 
-The latest build is from **14 October 2026 (RP254)** and includes the earlier improvements. Only three current archives are kept here: the Chromium package for Brave/Edge/Chrome, Firefox, and project sources. Dated snapshots and duplicate browser copies have been removed; historical release notes below describe features already included in the current build.
+The latest build is from **14 October 2026 (RP255)** and includes the earlier improvements. Only three current archives are kept here: the Chromium package for Brave/Edge/Chrome, Firefox, and project sources. Dated snapshots and duplicate browser copies have been removed; historical release notes below describe features already included in the current build.
 
 Для Brave скачайте [deeprole-0.1.0-chrome.zip](deeprole-0.1.0-chrome.zip?raw=true). Это актуальная сборка; отдельный архив с названием Brave не нужен.
+
+RP255 fixes **illustration drafts and model-specific prompt limits**. An unsent main-chat draft no longer blocks isolated frame preparation. Venice catalog limits guide planning and the complete generate/edit prompt is checked before image generation. Only application-owned boilerplate can shorten; saved profiles and selected source values stay unchanged. Oversized protected descriptions stop with safe length/limit details, not silent truncation or automatic paid retries. [Examples and limits](../docs/IMAGE-PROMPT-LIMITS.md).
 
 RP254 adds **bounded memory balance for short first-person actions** such as “I open the door” and “I nod”, including whole asterisk-wrapped actions. Object actions protect whole object-matching records, one fitting source-bound open obligation and one accepted lasting detail alongside recent context. Conditions, quotes, statuses and storage remain intact; retrieving a promise does not fulfill it and a known code is not permission. Unsupported syntax and direct questions keep their prior memory selection. No new setting or model call. [Examples and limits](../docs/ACTION-MEMORY.md).
 

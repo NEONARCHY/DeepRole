@@ -10,12 +10,15 @@ export interface ImageDiagnostic {
   providerCode?: string;
   message?: string;
   fields?: string[];
+  promptLength?:number;
+  promptLimit?:number;
 }
 const bounded = (v: unknown, max: number): v is string => typeof v === "string" && v.length > 0 && v.length <= max && !/[\u0000-\u001f\u007f]/u.test(v);
 export function validImageDiagnostic(v: unknown): v is ImageDiagnostic {
   return object(v) && ["provider", "deepseek", "deeprole"].includes(String(v.source))
     && ["models", "request", "plan", "download", "response", "local"].includes(String(v.phase))
-    && Object.keys(v).every(k => ["source", "phase", "status", "endpoint", "model", "providerCode", "message", "fields"].includes(k))
+    && Object.keys(v).every(k => ["source", "phase", "status", "endpoint", "model", "providerCode", "message", "fields", "promptLength", "promptLimit"].includes(k))
+    && ['promptLength','promptLimit'].every(k=>v[k]===undefined||Number.isSafeInteger(v[k])&&Number(v[k])>=0&&Number(v[k])<=1_000_000)
     && (v.status === undefined || Number.isInteger(v.status) && Number(v.status) >= 100 && Number(v.status) <= 599)
     && (v.endpoint === undefined || bounded(v.endpoint, 100) && /^\/[a-zA-Z0-9/_-]+$/u.test(v.endpoint))
     && (v.model === undefined || bounded(v.model, 200))

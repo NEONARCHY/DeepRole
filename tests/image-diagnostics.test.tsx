@@ -7,12 +7,17 @@ import { imageModelsFor, DEFAULT_IMAGE_SETTINGS } from "../src/core/image-genera
 import { imageErrorKey, IMAGE_STRINGS } from "../src/core/image-i18n";
 import { ImageErrorDetails } from "../src/entrypoints/shared/ImageErrorDetails";
 import { ImageSettings } from "../src/entrypoints/sidepanel/ImageSettings";
+import {screen} from '@testing-library/react';
 import { saveImageSettings, getImageSettings } from "../src/storage/image-settings";
 import { profile } from "./image-fixtures";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const key = "SYNTHETIC-SECRET-KEY", prompt = "Private appearance and private scene";
 const base = { source: "provider" as const, phase: "request" as const, status: 400, endpoint: "/image/edit", model: "synthetic-edit" };
+test.each(['ru','en'] as const)('shows safe local length/limit and no false HTTP claim: %s',locale=>{
+ const {container}=render(<ImageErrorDetails locale={locale} error={{code:'modelPromptLimit',diagnostic:{source:'deeprole',phase:'local',model:'synthetic-edit',promptLength:1700,promptLimit:1500}}}/>);
+ expect(screen.getByText((1500).toLocaleString(locale),{normalizer:v=>v.trim()})).toBeDefined();expect(screen.getByText((1700).toLocaleString(locale),{normalizer:v=>v.trim()})).toBeDefined();expect(screen.getByText(IMAGE_STRINGS.errorSelectedModel[locale==='ru'?0:1],{exact:true})).toBeDefined();expect(container.textContent).not.toContain(IMAGE_STRINGS.noErrorDetails[locale==='ru'?0:1]);expect(screen.getByText(IMAGE_STRINGS.noGenerationRequest[locale==='ru'?0:1],{exact:true})).toBeDefined();
+});
 test("extracts documented error formats, never arbitrary bodies or field values", () => {
   const result = providerDiagnostic({ error: `Invalid request ${key}; ${prompt}`, code: "INVALID_MODEL", details: { model: { _errors: ["required"] }, image: { _errors: [key] } }, request: { authorization: key } }, base, [key, prompt]);
   expect(result).toMatchObject({ providerCode: "INVALID_MODEL", fields: ["model", "image"], message: "Invalid request [redacted]; [redacted]" });

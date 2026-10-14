@@ -1,8 +1,21 @@
 # DeepRole — roadmap
 
-## Диагностика изображений перед публикацией
+## RP 255 Черновик и лимит описания изображения
 
-14 октября 2026 года. Пользователь прислал две ошибки; причины проверены, реализация ещё не запрошена. Push публикует прежний RP254, не исправление этих ошибок.
+14 октября 2026 года. Пользователь разрешил оба исправления после диагностики; исходные анкеты, черновик, возрастные настройки и точный replay сохраняются.
+
+- [x] Убрана только legacy draftBusyImage проверка из illustration scope. Изолированная подготовка не меняет главный composer; askSelfie/runService, busy/world/chat/reply guards сохраняются.
+- [x] Scoped DR_IMAGE_BUDGET для своего preparing attempt; actual Venice catalog limits передаются в DeepSeek plan. Separate generate/edit caps сохранены даже при одном ID; unknown не угадывается по названию. Каталог читается заново, credentials/labels не отправляются DeepSeek.
+- [x] Только служебные пояснения DeepRole сокращаются, когда полный кадр превышает известный model cap. Канонические значения, выбранные участники/scene/action/position/style/reference contexts остаются прежними. Перед платным вызовом проверяются весь prompt и фактический generate/edit режим; переполнение — local modelPromptLimit и числовая безопасная диагностика без POST. Profiles/settings changes и exact manual frozen replay проверены.
+- [x]32 новых unit cases, full239 files/4342 passed/5 прежних todo, TypeScript pass. Initial failing mocks reproduced missing preflight/planning support; fixture assigned references corrected, test-only numeric whitespace/English wording and type fixed. RU/EN microcopy reports no image-generation request, not missing HTTP.
+- [x] Final packaged browser72 passed/2 intentional installed-Firefox skips. Real MV3 content/worker RU/EN: unsent composer→owned masked field chat→real cleanup→one fitted multi-edit(two refs,edit cap1500)→reload; service prompt includes budget/no pixels/key. Second prepared frame with protected long style fails locally; zero additional image POST, draft intact, numeric diagnostic survives reload. Previous group2/6 refs, presets/age gate, isolated worker/cleanup/intervention/evidence/privacy and RU/EN320/900 keyboard/Axe/overflow passed;4 final UI screenshots inspected. Initial mocks lacked model GETs, native fake needed proper layout and serialized settings; invalid panel→content API test replaced by actual second Create click. Production guards not weakened, own contexts closed.
+- [x] Chrome/Firefox/source canonical ZIP rebuilt, SHA25623/23/568 entries-to-disk/copies checked; source includes current QA and new image guide. Only3 downloads, no dated aliases. Handoff/home/day/readme current. Latest source docs repacked after final note changes. User explicitly requested publication of RP255 and these packages to main. No installed user extension/world/account changes or paid API; existing chunk-size warning remains RP-08. Live provider/Brave not tested.
+
+If protected source values alone cannot fit, the operation stops visibly instead of cutting lore or dropping people. OpenAI-compatible catalog caps remain unknown (adapter supplies none); existing local12000 safeguard remains. Catalog reads add metadata requests, not automatic image-generation attempts. Broad semantic prompt rewriting remains outside this change.
+
+## Историческая диагностика изображений перед RP255
+
+14 октября 2026 года. Снимок диагностики перед разрешением на реализацию. Оба исправления завершены в RP255 выше; следующие незакрытые пункты сохраняют историческое состояние, а не текущий список работ.
 
 - [x] Read-only diagnosis: legacy draftBusyImage guard при уже isolated preparation; Venice model promptLimit читается, но assembled request проверяет только12000. API пользователя отклонил qwen-edit-uncensored prompt>1500.73 existing image tests pass; платный API не вызывался.
 - [ ] После отдельного указания: подготовка иллюстрации без изменения основного черновика, сохраняя busy/scope/world guards и прежние in-chat selfie/service protections.

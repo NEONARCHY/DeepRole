@@ -7,6 +7,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 800]) for 
   await page.route("https://images.example.test/**", async route => {
     const headers={"access-control-allow-origin":"*","access-control-allow-headers":"authorization,content-type","access-control-allow-methods":"GET,POST,OPTIONS","content-type":"image/png"};
     if(route.request().method()==="OPTIONS"){await route.fulfill({status:204,headers});return;}
+    if(route.request().url().includes('/models?')){const edit=route.request().url().includes('inpaint');await route.fulfill({headers:{...headers,'content-type':'application/json'},body:JSON.stringify({data:[{id:edit?'synthetic-edit-model':'synthetic-image-model',model_spec:{constraints:{promptCharacterLimit:12000}}}]})});return;}
     requests.push({url:route.request().url(),body:route.request().postDataJSON()});
     await route.fulfill({body:Buffer.from(realPng,"base64"),headers});
   });

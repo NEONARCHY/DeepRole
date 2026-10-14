@@ -27,6 +27,7 @@ export async function handleImageMessage(message: ImageMessage, sender: ImageSen
     if (!tab.url || !isSameDeepSeekChat(target.chatUrl, tab.url, target.chatId)) throw new ImageApiError("changed");
     if (message.type === "DR_IMAGE_GENERATE") { if (!validImageJob(message.input)) throw new ImageApiError("invalid"); return { ok: true, illustration: await imageWorkerOperation(() => jobs.run(message.input)) }; }
     if (message.type === "DR_IMAGE_START") return { ok: true, attempt: await jobs.start(target) };
+    if (message.type === "DR_IMAGE_BUDGET") return {ok:true,limits:await imageWorkerOperation(()=>jobs.promptBudget(target,message.id))};
     if (message.type === "DR_IMAGE_RENDER") return { ok: true, illustration: await imageWorkerOperation(() => jobs.render(target, message.id, message.plan)) };
     if (message.type === "DR_IMAGE_REVIEW") { await jobs.review(target, message.id, message.review); return { ok: true }; }
     if (message.type === "DR_IMAGE_REVIEW_CLAIM") return { ok: true, review: await jobs.claimReview(target, message.id, message.overrides) };

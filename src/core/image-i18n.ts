@@ -1,5 +1,10 @@
 import type { Locale } from "./types";
 const strings = {
+  modelPromptLimit: ["Описание кадра не помещается в лимит модели. Выберите модель с большим лимитом или сократите стиль и описания для изображений. Запрос на генерацию не отправлен; сохранённые анкеты не изменены.", "The frame description exceeds the model limit. Choose a model with a larger limit or shorten the image style and descriptions. No generation request was sent; saved profiles are unchanged."],
+  errorPromptLength: ["Символов в описании", "Description characters"],
+  errorPromptLimit: ["Лимит выбранной модели", "Selected model limit"],
+  errorSelectedModel: ["Выбранная модель", "Selected model"],
+  noGenerationRequest: ["Запрос на генерацию изображения не отправлен.", "No image generation request was sent."],
   previousGeneration: ["Предыдущая генерация", "Previous generation"],
   nextGeneration: ["Следующая генерация", "Next generation"],
   generationCounter: ["Генерация {current} из {total}", "Generation {current} of {total}"],

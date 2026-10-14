@@ -6,6 +6,7 @@ export type ImageMessage =
   | { type: "DR_IMAGE_MODELS"; profile: ImageProviderConfig }
   | { type: "DR_IMAGE_GENERATE"; input: ImageJobInput }
   | { type: "DR_IMAGE_START"; target: ImageTarget }
+  | { type: "DR_IMAGE_BUDGET"; target: ImageTarget; id:string }
   | { type: "DR_IMAGE_RENDER"; target: ImageTarget; id: string; plan: import("./image-plan").ImageScenePlan }
   | { type: "DR_IMAGE_REVIEW"; target: ImageTarget; id: string; review: import("./image-plan").ImagePlanReview }
   | { type: "DR_IMAGE_REVIEW_CLAIM"; target: ImageTarget; id: string; overrides: import("./image-references").ImageReferenceOverrides }

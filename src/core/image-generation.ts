@@ -35,6 +35,7 @@ export const DEFAULT_IMAGE_SETTINGS: ImageSettings = { enabled: false, contentLe
 export interface ImageModelInfo {
   id: string; label: string; privacy?: "private" | "anonymized"; priceUsd?: number;
   maxInputImages?: number; promptLimit?: number; supportsEdit?: boolean; supportsGenerate?: boolean;
+  generatePromptLimit?: number; editPromptLimit?: number;
   uncensored?: boolean;
   constraints?: Record<string, unknown>;
 }

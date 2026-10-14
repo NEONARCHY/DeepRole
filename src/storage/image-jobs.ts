@@ -9,6 +9,7 @@ import { validImageReplay, planImageInput, validImagePlanReview, type ImagePlanR
 import { imageReviewContextKey, sameImagePlanCast, validImageReferenceChoices, validImageReferenceOverrides, type ImageReferenceOverrides } from "../core/image-references";
 import { startImageAttempt, imageAttempt, patchImageAttempt } from "./image-attempts";
 import { imageReferences, buildImagePrompt } from "../core/image-prompt";
+import {modelPromptLimits,imagePromptOverflow,type ImagePromptLimits} from '../core/image-prompt-budget';
 import { claimSelfie, finishSelfie, selfieIllustrationId } from "./selfie-images";
 import { imageErrorKey } from "../core/image-i18n";
 import { imageFailureDetails, validImageDiagnostic } from "../core/image-diagnostics";
@@ -39,6 +40,19 @@ export function validImageJob(v: unknown): v is ImageJobInput {
 export class ImageJobs {
   private readonly active = new Set<string>();
   constructor(private readonly repo: DeepRoleRepository = repository, private readonly permitted: ImagePermissionCheck = hasImagePermission, private readonly createProvider: (config: ImageProviderConfig, key: string, permitted: ImagePermissionCheck) => ImageProvider = imageProvider) {}
+  private async promptLimits(config:ImageProviderConfig):Promise<ImagePromptLimits> {
+    // OpenAI-compatible catalogs do not supply this documented Venice field.
+    // Unknown is kept unknown, not guessed from a model name.
+    return config.kind==='venice-native'?modelPromptLimits(config,await this.models(config)):{};
+  }
+  async promptBudget(target:ImageTarget,id:string):Promise<ImagePromptLimits> {
+    const attempt=await imageAttempt(this.repo,target,id);if(attempt.status!=='preparing')throw new ImageApiError('changed');
+    try {
+      const settings=await getImageSettings(),config=settings.profiles.find(p=>p.id===settings.profileByLevel[settings.contentLevel]&&p.enabled);
+      if(!settings.enabled||!config)throw new ImageApiError('disabled');const limits=await this.promptLimits(config);
+      if((await imageAttempt(this.repo,target,id)).status!=='preparing')throw new ImageApiError('changed');return limits;
+    } catch(error) {await patchImageAttempt(this.repo,target,id,{status:'failed',error:imageErrorKey(error),...imageFailureDetails(error)},'preparing').catch(()=>undefined);throw error;}
+  }
   async models(profile: ImageProviderConfig) {
     if (!validImageProviderConfig(profile)) throw new ImageApiError("invalid");
     if (!profile.enabled) throw new ImageApiError("disabled");
@@ -65,6 +79,10 @@ export class ImageJobs {
       if (!config.modelId || input.referenceKeys.length && !(config.editModelId || config.modelId)) throw new ImageApiError("missingModel");
       if (input.referenceKeys.length > config.maxReferences) throw new ImageApiError("invalid");
       const key = await getProviderKey(config.id); if (!key) throw new ImageApiError("missingKey");
+      const limits=await this.promptLimits(config),overflow=imagePromptOverflow(input.prompt,config,limits,input.referenceKeys.length>0);
+      if(overflow)throw new ImageApiError('modelPromptLimit',{},undefined,undefined,redactMetadata(overflow,key) as typeof overflow);
+      const refreshed=await getImageSettings(),refreshedConfig=refreshed.profiles.find(p=>p.id===config.id);
+      if(!refreshed.enabled||!refreshedConfig?.enabled||JSON.stringify(refreshedConfig)!==JSON.stringify(currentConfig)||refreshed.contentLevel!==settings.contentLevel||refreshed.adultConfirmed!==settings.adultConfirmed)throw new ImageApiError('changed');
       if (await this.repo.isLocked()) throw new ImageApiError("changed");
       const records = await this.repo.rawRecords();
       if (options.review && imageReviewContextKey(options.review.plan, input.worldId, records.filter(r => r.kind === "entity").map(r => r.data as SceneEntity), settings) !== options.review.contextKey) throw new ImageApiError("changed");
@@ -153,7 +171,9 @@ export class ImageJobs {
       const entities = await this.repo.list<SceneEntity>("entity"), settings = await getImageSettings();
       if (settings.reviewBeforeGeneration && !attempt.review) throw new ImageApiError("changed");
       if (attempt.review && (imageReviewContextKey(attempt.review.plan, target.worldId, entities, settings) !== attempt.review.contextKey || !sameImagePlanCast(attempt.review.plan, plan))) throw new ImageApiError("changed");
-      const input = planImageInput(plan, target, entities, settings, attempt.review?.overrides);
+      const config=settings.profiles.find(p=>p.id===settings.profileByLevel[settings.contentLevel]&&p.enabled);
+      if(!config)throw new ImageApiError('disabled');
+      const input = planImageInput(plan, target, entities, settings, attempt.review?.overrides,await this.promptLimits(config));
       return await this.run(input, id, { attemptId: id, review: attempt.review });
     } catch (error) {
       await patchImageAttempt(this.repo, target, id, { status: "failed", error: imageErrorKey(error), ...imageFailureDetails(error), ticketId: error instanceof ImageApiError ? error.ticketId : undefined }).catch(() => undefined); throw error instanceof ImageApiError ? error : new ImageApiError(imageErrorKey(error));

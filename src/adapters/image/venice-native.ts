@@ -46,6 +46,7 @@ export class VeniceNativeProvider implements ImageProvider {
         ...(price === undefined ? {} : { priceUsd: price }),
         ...(max === undefined ? {} : { maxInputImages: max }),
         ...(Number.isInteger(constraints.promptCharacterLimit) && Number(constraints.promptCharacterLimit) > 0 ? { promptLimit: Number(constraints.promptCharacterLimit) } : {}),
+        ...(Number.isSafeInteger(constraints.promptCharacterLimit)&&Number(constraints.promptCharacterLimit)>0?{[type==='inpaint'?'editPromptLimit':'generatePromptLimit']:Number(constraints.promptCharacterLimit)}:{}),
         ...(spec.uncensored === true ? { uncensored: true } : {}),
         supportsEdit: type === "inpaint", supportsGenerate: type === "image", constraints } satisfies ImageModelInfo;
     });

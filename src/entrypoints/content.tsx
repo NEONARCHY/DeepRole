@@ -510,7 +510,6 @@ class PageController {
   private checkIllustrationScope(target: import("../core/image-messages").ImageTarget, text?: string) {
     if (this.state.vaultLocked || this.adapter.isAuthenticationPage() || this.adapter.getChatId() !== target.chatId || this.currentScene().worldId !== target.worldId) throw { code: "changed" };
     if (this.adapter.isGenerating() || this.pendingService || this.preparingService || this.characterTextWaiter) throw { code: "busy" };
-    if (this.adapter.getDraft().trim()) throw { code: "draftBusyImage" };
     const row = nativeMessageRows(document).find(row => nativeMessageIdentity(row) === target.messageKey);
     if (text !== undefined && row && illustrationSceneText(row) !== text) throw { code: "changed" };
   }
@@ -521,7 +520,8 @@ class PageController {
     const { attempt } = await this.imageCall({ type: "DR_IMAGE_START", target });
     let phase: "plan" | undefined = "plan";
     try {
-      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(entities), referenceBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
+      const {limits:promptBudget}=await this.imageCall({type:'DR_IMAGE_BUDGET',target,id:attempt.id});this.checkIllustrationScope(target,text);
+      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(entities), referenceBudget, promptBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
       this.checkIllustrationScope(target, text);
       const parsed = parseImageScenePlan(value);
       const plan: ImageScenePlan = { ...parsed, characters: imagePlanCast(parsed, target.worldId, entities).map(c => ({ ...c.chosen, id: c.person.id })) };
@@ -551,7 +551,8 @@ class PageController {
       if (changed) {
         const attempt = { ...target, id, status: "preparing" as const, createdAt: Date.now(), updatedAt: Date.now() };
         const referenceBudget = settings.profiles.find(p => p.id === settings.profileByLevel[settings.contentLevel])?.maxReferences ?? 1;
-        const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Reviewed scene illustration", completedScene: review.sceneText, previousPlan: review.plan, referenceOverrides: overrides, roster: imagePlanRoster(entities), referenceBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
+        const {limits:promptBudget}=await this.imageCall({type:'DR_IMAGE_BUDGET',target,id});this.checkIllustrationScope(target,review.sceneText);
+        const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Reviewed scene illustration", completedScene: review.sceneText, previousPlan: review.plan, referenceOverrides: overrides, roster: imagePlanRoster(entities), referenceBudget, promptBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
         plan = parseImageScenePlan(value);
         if (!sameImagePlanCast(review.plan, plan)) throw new Error("invalidPlan");
       }

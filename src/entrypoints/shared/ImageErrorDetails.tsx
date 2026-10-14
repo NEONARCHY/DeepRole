@@ -15,11 +15,13 @@ export function ImageErrorDetails({ error, locale, id }: { error: unknown; local
       {diagnostic && <div><dt>{t("errorSource")}</dt><dd>{t(diagnostic.source === "provider" ? "sourceProvider" : diagnostic.source === "deepseek" ? "sourceDeepseek" : "sourceDeeprole")}</dd></div>}
       {diagnostic?.status && <div><dt>{t("errorStatus")}</dt><dd><code>{diagnostic.status}</code></dd></div>}
       {diagnostic?.endpoint && <div><dt>{t("errorEndpoint")}</dt><dd><code>{diagnostic.endpoint}</code></dd></div>}
-      {diagnostic?.model && <div><dt>{t("errorModel")}</dt><dd><code>{diagnostic.model}</code></dd></div>}
+      {diagnostic?.model && <div><dt>{t(code==='modelPromptLimit'?'errorSelectedModel':"errorModel")}</dt><dd><code>{diagnostic.model}</code></dd></div>}
+      {diagnostic?.promptLength!==undefined&&<div><dt>{t('errorPromptLength')}</dt><dd>{diagnostic.promptLength.toLocaleString(locale)}</dd></div>}
+      {diagnostic?.promptLimit!==undefined&&<div><dt>{t('errorPromptLimit')}</dt><dd>{diagnostic.promptLimit.toLocaleString(locale)}</dd></div>}
       {diagnostic?.providerCode && <div><dt>{t("errorProviderCode")}</dt><dd><code>{diagnostic.providerCode}</code></dd></div>}
       {diagnostic?.message && <div><dt>{t("errorMessage")}</dt><dd>{diagnostic.message}</dd></div>}
       {!!diagnostic?.fields?.length && <div><dt>{t("errorFields")}</dt><dd><code>{diagnostic.fields.join(", ")}</code></dd></div>}
       {headers && Object.entries(headers).map(([name, value]) => <div key={name}><dt><code>{name}</code></dt><dd>{value}</dd></div>)}
-    </dl>{!diagnostic?.status && <p>{t("noErrorDetails")}</p>}{[400, 404, 413, 415].includes(diagnostic?.status ?? 0) && <p>{t("errorConfigHint")}</p>}<p>{t("errorPrivacy")}</p></details>
+    </dl>{!diagnostic?.status && <p>{t(code==='modelPromptLimit'?'noGenerationRequest':"noErrorDetails")}</p>}{(code==='modelPromptLimit'||[400, 404, 413, 415].includes(diagnostic?.status ?? 0)) && <p>{t("errorConfigHint")}</p>}<p>{t("errorPrivacy")}</p></details>
   </div>;
 }

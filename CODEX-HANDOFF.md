@@ -1,6 +1,20 @@
 # Передача Codex — 14 октября 2026
 
-## Публикация и незакрытые ошибки изображений
+## Текущая точка RP255 Исправления подготовки изображений
+
+Публикация RP255: пользователь явно запросил push в main. В этот коммит входят оба исправления изображений, проверки, документация и три актуальных архива. Раздел диагностики ниже — исторический; перечисленные там ошибки уже исправлены в RP255. Следующий Codex не должен повторять эту реализацию; для продолжения работы сначала сверить текущий Git и следующий участок roadmap.
+
+Пользователь после push74942ec явно разрешил оба image fixes. Legacy main draft guard снят только у illustration flow, не у native askSelfie/runService; все scope/busy/reply guards остаются. Scoped DR_IMAGE_BUDGET проверяет owned preparing attempt, читает trusted selected settings/catalog и возвращает только generate/edit numeric caps. Preparing catalog failures сохраняют provider/models diagnostic и не превращаются в ложную DeepSeek/plan ошибку. Ограничение передаётся imagePlanInstruction; не требует нового user click или отдельного paid request.
+
+Venice same-ID mode caps не теряются при merge. PlanImageInput по необходимости меняет только собственный explanatory boilerplate; selected canonical/scene/appearance/action/position/style/reference context values/IDs/references прежние. Full prompt checked before provider.generate/edit in ImageJobs.run against actual reference mode/current or frozen model. No blind slicing/user-data rewrite/dropped cast/automatic paid retry. Oversized protected descriptions fail locally with safe model/length/limit counters, RU/EN wording and clear no-generation-request details. Catalog metadata unavailable for OpenAI-compatible adapter stays unknown, not guessed; existing12000 guard still applies.
+
+Main files: core/image-prompt-budget, image-plan/generation/diagnostics/i18n/messages; storage/image-jobs, native provider/background handler, content illustration callbacks and ImageErrorDetails. New tests image-prompt-limit/image-prompt-budget-core, diagnostic regressions and e2e image-prompt-limit/fixture. Full239 files4342 passed/5 prior todo and TypeScript pass; first mocks reproduced the old paid-call failure. Final browser/archive completion in ROADMAP. No live API/paid generation/personal extension/world/Brave touched. RP255 follows74942ec and is included in the user-requested publication. Do not repeat RP248–254. Next memory priorities still multiple old obligations/longer syntax; review image limits edge cases before widening automatic rewriting.
+
+Final browser72 passed/2 intentional installed-Firefox skips on packaged Chrome. RU/EN real MV3 click with unsent main draft completes isolated field worker/correct1500-budget prompt/owned deletion/one multi-edit with two references; exact source scene in paid mock body and no source service rows in main. After reload a second Create with long protected style fails locally; numeric actual edit cap/length remains after another reload, mock image POST count stays1 and composer untouched during both preparations. Prior group2/6/preset/age/isolated worker/evidence/intervention/privacy regressions retained. RU/EN320/900 Chromium/Firefox keyboard/Axe/overflow and4 final screenshots inspected; selected-model label does not imply a POST happened. Initial fixture errors (catalog not mocked, evaluate closure, floating-panel overlap, invalid panel→content RPC) corrected in tests only; no production timeout/ownership/evidence relaxations. All contexts closed. Unknown caps/old model aliases/real model interpretation are not promised; new runtime metadata reads are not paid generation retries. Final packages in current roadmap.
+
+RP255 packages: final Chrome/Firefox builds and3 canonical ZIPs, exact SHA25623/23/568 entry-to-disk/copy audit; source has current QA/handoff/home/day/readme/new guide, private/test/.env/Git/node_modules/nested ZIP exclusions remain. Source document entries refreshed after final notes. No dated archives or user-install reload; chunk-size warning remains RP-08. Full239 files4342 pass/5 prior todo and final TypeScript/diff-check. The user requested publishing these packages with RP255. Next: user tests updated Chromium package; do not claim live model quality from mocked image generation.
+
+## Историческая диагностика изображений перед push74942ec
 
 Пользователь запросил push текущей работы RP248–254 и актуальных пакетов в main. Функциональных изменений после финальной RP254 QA нет. Диагностика следующих двух ошибок не является их исправлением; пользователь пока не дал отдельного указания реализовать предложенные изменения.
 
@@ -14,7 +28,7 @@ Read-only QA диагностики:73 existing tests image-api/image-plan/image
 
 По просьбе пользователя в downloads оставлены только три актуальных архива: deeprole-0.1.0-chrome.zip (основная сборка для Brave/Edge/Chrome), deeprole-0.1.0-firefox.zip и deeprole-0.1.0-sources.zip. 48 датированных снимков и дубликатов отправлены в Корзину; упоминания этих путей в исторических разделах ниже больше не являются ссылками на доступные загрузки. downloads/README.md указывает только существующие пакеты. В следующих итерациях обновлять три основных архива, не создавать браузерные/датированные дубликаты без отдельной просьбы пользователя. Установленное расширение, профили браузеров и игровые данные не затронуты.
 
-## Текущая точка — RP254, память коротких игровых действий
+## Предыдущая готовая точка — RP254, память коротких игровых действий
 
 Запрос пользователя: подбор для «Я открываю дверь», не только «Продолжай». Finite single first-person RU/EN actions/gestures, optional whole asterisk wrappers; no arbitrary intent/third-person/pronoun owner/quoted/compound/conditional grammar. Object terms must all occur in one full text or task title; quote/key/value/status is not object proof. Request-local WeakMap invalidates text/title edits. Supported gesture with known unambiguous address uses existing reference guard; I does not infer a player/owner ID.
 

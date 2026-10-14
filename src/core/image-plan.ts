@@ -3,6 +3,7 @@ import type { ImageJobInput, ImageTarget } from "./image-messages";
 import type { SceneEntity } from "./types";
 import { resolveImageReferences, validImageReferenceOverrides, validImageReferenceChoices, type ImageReferenceOverrides } from "./image-references";
 import { imageReferences } from "./image-prompt";
+import {imagePlanBudgetInstruction,imagePromptLimit,type ImagePromptLimits} from './image-prompt-budget';
 import { validImageDiagnostic, type ImageDiagnostic } from "./image-diagnostics";
 import { validImageHeaders, type ImageResponseHeaders } from "./image-generation";
 import { FieldValidationError, fieldShape, type FieldValidationIssue } from "./field-validation";
@@ -65,7 +66,7 @@ export function imagePlanInstruction(reference: Record<string, unknown>): string
     "Assigned ordinary references are attached automatically, even if you return none; none means no matching alternate look, not permission to discard a user's identity image. Do not fill unused reference slots with absent characters, extra variations or invented images. Reference numbers will be mapped to their exact owners by DeepRole; describe the cast, not image bytes.",
     "The configured contentLevel controls the requested rendering. For off use neutral/non-explicit framing; suggestive is non-explicit romance. Do not change the chosen preset or settings. Do not contradict ages or personal boundaries.",
     "Keep the entire JSON within " + MAX_IMAGE_PLAN_TEXT + " characters. Use concise but specific per-person details rather than repeating the whole scene for each person.",
-    "Reference data:", JSON.stringify(reference)].join("\n");
+    imagePlanBudgetInstruction(reference.promptBudget), "Reference data:", JSON.stringify(reference)].filter(Boolean).join("\n");
 }
 export function validImageReplay(v: unknown): v is ImageReplay {
   if (!object(v) || !validImageProviderConfig(v.config) || !object(v.input) || !validImageContentLevel(v.contentLevel)) return false;
@@ -85,7 +86,7 @@ export function validImagePlanReview(v: unknown): v is ImagePlanReview {
 export function validImageAttempts(v: unknown): v is ImageAttempt[] {
   return Array.isArray(v) && v.length <= 8 && v.every(a => object(a) && ["id", "worldId", "chatId"].every(k => imageKey(a[k])) && text(a.chatUrl, 1, 2048) && text(a.messageKey, 1, 1000) && ["preparing", "review", "generating", "failed"].includes(String(a.status)) && (a.review === undefined || validImagePlanReview(a.review)) && (a.status !== "review" || a.review !== undefined && a.request === undefined) && [a.createdAt, a.updatedAt].every(t => typeof t === "number" && Number.isFinite(t) && t >= 0) && (a.request === undefined || validImageReplay(a.request) && a.request.input.worldId === a.worldId && a.request.input.chatId === a.chatId && a.request.input.messageKey === a.messageKey) && (a.error === undefined || imageKey(a.error)) && (a.diagnostic === undefined || validImageDiagnostic(a.diagnostic)) && (a.headers === undefined || validImageHeaders(a.headers)) && (a.ticketId === undefined || imageKey(a.ticketId)));
 }
-export function planImageInput(plan: ImageScenePlan, target: ImageTarget, entities: SceneEntity[], settings: ImageSettings, overrides: ImageReferenceOverrides = {}): ImageJobInput {
+export function planImageInput(plan: ImageScenePlan, target: ImageTarget, entities: SceneEntity[], settings: ImageSettings, overrides: ImageReferenceOverrides = {}, limits:ImagePromptLimits = {}): ImageJobInput {
   if (!validImageScenePlan(plan) || !validImageContentLevel(settings.contentLevel)) throw new Error("invalidPlan");
   const config = settings.profiles.find(p => p.id === settings.profileByLevel[settings.contentLevel] && p.enabled);
   if (!settings.enabled || !config) throw new Error("disabled");
@@ -101,13 +102,25 @@ export function planImageInput(plan: ImageScenePlan, target: ImageTarget, entiti
       !attached && (selected ? "Identity from text only: configured reference limit reached." : "Identity from text only: no assigned reference image.")].filter(Boolean).join("\n"));
   }
   if (new Set(ids).size !== ids.length) throw new Error("invalidPlan");
-  const prompt = [settings.stylePrefix, "Landscape illustration, 16:9. " + plan.scene,
+  let prompt = [settings.stylePrefix, "Landscape illustration, 16:9. " + plan.scene,
     ids.length > 1 && "Depict all " + ids.length + " described participants. Keep distinct faces and bodies, consistent spatial placement and anatomically plausible poses. Primary participants are in clear focus; background blur must not remove other described people. Permanent identity comes from each person's profile/reference; outfit and actions follow this scene, not the reference pose. Do not blend or swap identities, change established features or add extra participants.",
     ...descriptions, ...references.map((r, index) => {
     const person = entities.find(e => e.id === r.entityId)!, profile = person.characterSheet?.imageGeneration;
     const look = cast.find(c => c.person.id === r.entityId)?.reference === "suggestive" ? profile?.suggestiveReferenceContext : profile?.referenceContext;
     return "Reference " + (index + 1) + " preserves the identity of " + person.name + "; outfit, pose and location follow the described scene. " + (look ?? "");
   }), settings.styleSuffix].filter(Boolean).join("\n\n");
+  if(prompt.length>imagePromptLimit(limits,references.length>0)) {
+    // Only our repeated explanatory boilerplate changes. Every user/plan value
+    // remains whole, in the same order; references and canonical storage do not change.
+    const compactDescriptions=cast.map(({chosen,person,selected,attached})=>{
+      const profile=person.characterSheet?.imageGeneration;
+      return [person.name+": "+(profile?.canonical||person.characterSheet?.appearance||chosen.appearance||person.description.slice(0,600)),chosen.appearance&&"Look: "+chosen.appearance,chosen.action&&"Action: "+chosen.action,chosen.position&&"Position: "+chosen.position,"Focus: "+chosen.focus,!attached&&(selected?"Text identity: reference limit reached.":"Text identity: no reference.")].filter(Boolean).join('\n');
+    });
+    prompt=[settings.stylePrefix,"Landscape illustration, 16:9. "+plan.scene,ids.length>1&&`Show all ${ids.length} people, distinct faces/bodies, anatomically plausible poses, stated positions/focus; do not hide background people. Preserve identities/features, no extra people. Scene outfits/actions override reference pose/outfit.`,...compactDescriptions,...references.map((r,index)=>{
+      const person=entities.find(e=>e.id===r.entityId)!,profile=person.characterSheet?.imageGeneration,look=cast.find(c=>c.person.id===r.entityId)?.reference==='suggestive'?profile?.suggestiveReferenceContext:profile?.referenceContext;
+      return `Reference ${index+1}: ${person.name} identity only; use scene outfit/pose/place. `+(look??'');
+    }),settings.styleSuffix].filter(Boolean).join('\n\n');
+  }
   if (prompt.length > 12000) throw new Error("promptTooLong");
   return { ...target, providerId: config.id, ...(ids.length ? { entityId: ids[0], entityIds: ids } : {}), prompt, references, referenceChoices: cast.map(c => ({ entityId: c.person.id, reference: c.reference })), referenceKeys: references.map(r => r.key), aspectRatio: "16:9" };
 }
