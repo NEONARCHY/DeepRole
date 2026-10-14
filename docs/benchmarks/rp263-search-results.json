@@ -1,0 +1,6291 @@
+{
+  "version": 1,
+  "inputDigest": "f1253bb9cb662660e49a9c73d986054024d10c59142d264161fee177f90ed73e",
+  "goldDigest": "d173b9d46ded8ed4ccf8fb52c2c05368d4ff4d02b2de30c49b5a027244ae4cbd",
+  "model": {
+    "id": "Xenova/multilingual-e5-small",
+    "revision": "ae61bf0193ce3851dc8a45147e459b04ed783d8a",
+    "dtype": "q8",
+    "pooling": "mean",
+    "dimensions": 384
+  },
+  "scope": "Offline candidates only: dense/hybrid top8 do NOT measure complete compiled-prompt admission or live model quality.",
+  "groups": [
+    {
+      "split": "development",
+      "intent": "explicit",
+      "cases": 16,
+      "protected": 8,
+      "baselineComplete": 16,
+      "lexicalComplete": 16,
+      "denseComplete": 7,
+      "hybridComplete": 14,
+      "baselineWrongFirst": 0,
+      "lexicalWrongFirst": 0,
+      "denseWrongFirst": 9,
+      "hybridWrongFirst": 2,
+      "baselineMissingGold": 0,
+      "lexicalMissingGold": 0,
+      "denseMissingGold": 9,
+      "hybridMissingGold": 2,
+      "controlDrift": 0
+    },
+    {
+      "split": "development",
+      "intent": "paraphrase",
+      "cases": 8,
+      "protected": 2,
+      "baselineComplete": 6,
+      "lexicalComplete": 6,
+      "denseComplete": 5,
+      "hybridComplete": 5,
+      "baselineWrongFirst": 3,
+      "lexicalWrongFirst": 2,
+      "denseWrongFirst": 4,
+      "hybridWrongFirst": 3,
+      "baselineMissingGold": 2,
+      "lexicalMissingGold": 2,
+      "denseMissingGold": 3,
+      "hybridMissingGold": 3,
+      "controlDrift": 0
+    },
+    {
+      "split": "development",
+      "intent": "ambiguous",
+      "cases": 8,
+      "protected": 0,
+      "baselineComplete": 3,
+      "lexicalComplete": 4,
+      "denseComplete": 2,
+      "hybridComplete": 2,
+      "baselineWrongFirst": 6,
+      "lexicalWrongFirst": 4,
+      "denseWrongFirst": 5,
+      "hybridWrongFirst": 5,
+      "baselineMissingGold": 9,
+      "lexicalMissingGold": 7,
+      "denseMissingGold": 10,
+      "hybridMissingGold": 11,
+      "controlDrift": 0
+    },
+    {
+      "split": "development",
+      "intent": "control",
+      "cases": 8,
+      "protected": 4,
+      "baselineComplete": 0,
+      "lexicalComplete": 0,
+      "denseComplete": 0,
+      "hybridComplete": 0,
+      "baselineWrongFirst": 0,
+      "lexicalWrongFirst": 0,
+      "denseWrongFirst": 0,
+      "hybridWrongFirst": 0,
+      "baselineMissingGold": 0,
+      "lexicalMissingGold": 0,
+      "denseMissingGold": 0,
+      "hybridMissingGold": 0,
+      "controlDrift": 4
+    },
+    {
+      "split": "holdout",
+      "intent": "paraphrase",
+      "cases": 12,
+      "protected": 0,
+      "baselineComplete": 9,
+      "lexicalComplete": 10,
+      "denseComplete": 9,
+      "hybridComplete": 9,
+      "baselineWrongFirst": 6,
+      "lexicalWrongFirst": 4,
+      "denseWrongFirst": 3,
+      "hybridWrongFirst": 4,
+      "baselineMissingGold": 3,
+      "lexicalMissingGold": 2,
+      "denseMissingGold": 3,
+      "hybridMissingGold": 3,
+      "controlDrift": 0
+    },
+    {
+      "split": "holdout",
+      "intent": "ambiguous",
+      "cases": 2,
+      "protected": 0,
+      "baselineComplete": 2,
+      "lexicalComplete": 2,
+      "denseComplete": 1,
+      "hybridComplete": 1,
+      "baselineWrongFirst": 0,
+      "lexicalWrongFirst": 0,
+      "denseWrongFirst": 1,
+      "hybridWrongFirst": 1,
+      "baselineMissingGold": 0,
+      "lexicalMissingGold": 0,
+      "denseMissingGold": 2,
+      "hybridMissingGold": 2,
+      "controlDrift": 0
+    },
+    {
+      "split": "holdout",
+      "intent": "control",
+      "cases": 6,
+      "protected": 2,
+      "baselineComplete": 0,
+      "lexicalComplete": 0,
+      "denseComplete": 0,
+      "hybridComplete": 0,
+      "baselineWrongFirst": 0,
+      "lexicalWrongFirst": 0,
+      "denseWrongFirst": 0,
+      "hybridWrongFirst": 0,
+      "baselineMissingGold": 0,
+      "lexicalMissingGold": 0,
+      "denseMissingGold": 0,
+      "hybridMissingGold": 0,
+      "controlDrift": 4
+    },
+    {
+      "split": "holdout",
+      "intent": "explicit",
+      "cases": 4,
+      "protected": 0,
+      "baselineComplete": 4,
+      "lexicalComplete": 4,
+      "denseComplete": 4,
+      "hybridComplete": 4,
+      "baselineWrongFirst": 0,
+      "lexicalWrongFirst": 0,
+      "denseWrongFirst": 1,
+      "hybridWrongFirst": 0,
+      "baselineMissingGold": 0,
+      "lexicalMissingGold": 0,
+      "denseMissingGold": 0,
+      "hybridMissingGold": 0,
+      "controlDrift": 0
+    }
+  ],
+  "rows": [
+    {
+      "id": "ru:medallion",
+      "split": "development",
+      "family": "gift",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0"
+        ],
+        "dense": [
+          "fact-0",
+          "fact-1",
+          "fact-60",
+          "fact-27",
+          "fact-96",
+          "fact-99",
+          "fact-74",
+          "fact-38"
+        ],
+        "hybrid": [
+          "fact-0",
+          "fact-99",
+          "fact-2",
+          "fact-96",
+          "fact-101",
+          "fact-100",
+          "fact-74",
+          "fact-89"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-0",
+          "score": 0.819121769384572
+        },
+        {
+          "id": "fact-1",
+          "score": 0.8133519197131516
+        },
+        {
+          "id": "fact-60",
+          "score": 0.7980020340667267
+        },
+        {
+          "id": "fact-27",
+          "score": 0.7965644194832152
+        },
+        {
+          "id": "fact-96",
+          "score": 0.7964635679024608
+        },
+        {
+          "id": "fact-99",
+          "score": 0.7962941532097028
+        },
+        {
+          "id": "fact-74",
+          "score": 0.7952673195963645
+        },
+        {
+          "id": "fact-38",
+          "score": 0.7952191567307958
+        }
+      ]
+    },
+    {
+      "id": "ru:birthday",
+      "split": "development",
+      "family": "gift",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-1"
+        ],
+        "dense": [
+          "fact-0",
+          "fact-56",
+          "fact-12",
+          "fact-17",
+          "fact-7",
+          "fact-36",
+          "fact-42",
+          "fact-24"
+        ],
+        "hybrid": [
+          "fact-0",
+          "fact-96",
+          "fact-101",
+          "fact-102",
+          "fact-99",
+          "fact-56",
+          "fact-84",
+          "fact-100"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-0",
+          "score": 0.9029777470400918
+        },
+        {
+          "id": "fact-56",
+          "score": 0.8813545643618786
+        },
+        {
+          "id": "fact-12",
+          "score": 0.8806247905805876
+        },
+        {
+          "id": "fact-17",
+          "score": 0.8804405631069032
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8800225975048859
+        },
+        {
+          "id": "fact-36",
+          "score": 0.879674864463573
+        },
+        {
+          "id": "fact-42",
+          "score": 0.8795386208717587
+        },
+        {
+          "id": "fact-24",
+          "score": 0.8794288445259527
+        }
+      ]
+    },
+    {
+      "id": "ru:keepsake",
+      "split": "development",
+      "family": "gift",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ],
+        "dense": [
+          "fact-1",
+          "fact-0",
+          "fact-96",
+          "fact-9",
+          "fact-27",
+          "fact-34",
+          "fact-99",
+          "fact-16"
+        ],
+        "hybrid": [
+          "fact-96",
+          "fact-99",
+          "fact-100",
+          "fact-93",
+          "fact-101",
+          "fact-102",
+          "fact-97",
+          "fact-91"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-1",
+          "score": 0.8331888050809921
+        },
+        {
+          "id": "fact-0",
+          "score": 0.8268321082602258
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8251701184651526
+        },
+        {
+          "id": "fact-9",
+          "score": 0.8240562541565427
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8236202320233126
+        },
+        {
+          "id": "fact-34",
+          "score": 0.8226380723946225
+        },
+        {
+          "id": "fact-99",
+          "score": 0.8224056836918561
+        },
+        {
+          "id": "fact-16",
+          "score": 0.8220038964949581
+        }
+      ]
+    },
+    {
+      "id": "ru:her-gift",
+      "split": "development",
+      "family": "gift",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ],
+        "dense": [
+          "fact-1",
+          "fact-0",
+          "fact-3",
+          "fact-34",
+          "fact-56",
+          "fact-70",
+          "fact-30",
+          "fact-27"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-100",
+          "fact-99",
+          "fact-70",
+          "fact-102",
+          "fact-96",
+          "fact-56",
+          "fact-2"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-1",
+          "score": 0.827534913020585
+        },
+        {
+          "id": "fact-0",
+          "score": 0.8116207522746839
+        },
+        {
+          "id": "fact-3",
+          "score": 0.8102436957286647
+        },
+        {
+          "id": "fact-34",
+          "score": 0.7979403754374157
+        },
+        {
+          "id": "fact-56",
+          "score": 0.7969024181923878
+        },
+        {
+          "id": "fact-70",
+          "score": 0.7966382903840001
+        },
+        {
+          "id": "fact-30",
+          "score": 0.7962727739203301
+        },
+        {
+          "id": "fact-27",
+          "score": 0.7962556786872157
+        }
+      ]
+    },
+    {
+      "id": "ru:gifts",
+      "split": "development",
+      "family": "gift",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": true,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97"
+        ],
+        "dense": [
+          "fact-34",
+          "fact-1",
+          "fact-27",
+          "fact-9",
+          "fact-30",
+          "fact-21",
+          "fact-42",
+          "fact-96"
+        ],
+        "hybrid": [
+          "fact-1",
+          "fact-96",
+          "fact-99",
+          "fact-100",
+          "fact-84",
+          "fact-102",
+          "fact-34",
+          "fact-60"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-34",
+          "score": 0.8376650162651548
+        },
+        {
+          "id": "fact-1",
+          "score": 0.8369691915105957
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8360655458591446
+        },
+        {
+          "id": "fact-9",
+          "score": 0.8358519263738002
+        },
+        {
+          "id": "fact-30",
+          "score": 0.8350675869070248
+        },
+        {
+          "id": "fact-21",
+          "score": 0.8347254654752516
+        },
+        {
+          "id": "fact-42",
+          "score": 0.8338919915394692
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8335512147994929
+        }
+      ]
+    },
+    {
+      "id": "ru:unknown-bracelet",
+      "split": "development",
+      "family": "gift",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ],
+        "dense": [
+          "fact-1",
+          "fact-27",
+          "fact-60",
+          "fact-96",
+          "fact-38",
+          "fact-34",
+          "fact-17",
+          "fact-21"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-96",
+          "fact-99",
+          "fact-60",
+          "fact-76",
+          "fact-100",
+          "fact-102",
+          "fact-89"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-1",
+          "score": 0.8267461729088901
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8089124456426958
+        },
+        {
+          "id": "fact-60",
+          "score": 0.807662721300428
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8070388628574527
+        },
+        {
+          "id": "fact-38",
+          "score": 0.8069791805565193
+        },
+        {
+          "id": "fact-34",
+          "score": 0.8062259432526069
+        },
+        {
+          "id": "fact-17",
+          "score": 0.8061664138307127
+        },
+        {
+          "id": "fact-21",
+          "score": 0.8059799330376022
+        }
+      ]
+    },
+    {
+      "id": "ru:direct-duty",
+      "split": "development",
+      "family": "promise",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-7",
+          "fact-76",
+          "fact-56",
+          "fact-101",
+          "fact-96",
+          "fact-32",
+          "fact-41",
+          "fact-12"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-7",
+          "score": 0.9072316124014048
+        },
+        {
+          "id": "fact-76",
+          "score": 0.9055297685393714
+        },
+        {
+          "id": "fact-56",
+          "score": 0.9046651852165832
+        },
+        {
+          "id": "fact-101",
+          "score": 0.9045885698769348
+        },
+        {
+          "id": "fact-96",
+          "score": 0.9045732713663068
+        },
+        {
+          "id": "fact-32",
+          "score": 0.9032887500174059
+        },
+        {
+          "id": "fact-41",
+          "score": 0.9028986000246643
+        },
+        {
+          "id": "fact-12",
+          "score": 0.9023980467059735
+        }
+      ]
+    },
+    {
+      "id": "ru:word",
+      "split": "development",
+      "family": "promise",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-8",
+          "fact-101",
+          "fact-76",
+          "fact-96",
+          "fact-56",
+          "fact-7",
+          "fact-42",
+          "fact-32"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-8",
+          "score": 0.8771292537106474
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8769761001931018
+        },
+        {
+          "id": "fact-76",
+          "score": 0.8767800591123106
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8766779764580167
+        },
+        {
+          "id": "fact-56",
+          "score": 0.8757983611298934
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8755455066025135
+        },
+        {
+          "id": "fact-42",
+          "score": 0.875442819655445
+        },
+        {
+          "id": "fact-32",
+          "score": 0.8750353563632052
+        }
+      ]
+    },
+    {
+      "id": "ru:unspecified-duty",
+      "split": "development",
+      "family": "promise",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": true,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-30",
+          "fact-10",
+          "fact-27",
+          "fact-96",
+          "fact-29",
+          "fact-90",
+          "fact-91"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-96",
+          "fact-99",
+          "fact-90",
+          "fact-91",
+          "fact-100",
+          "fact-2",
+          "fact-101"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8304665674405763
+        },
+        {
+          "id": "fact-30",
+          "score": 0.822760054157329
+        },
+        {
+          "id": "fact-10",
+          "score": 0.8227129803801614
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8223241637565389
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8218876009293343
+        },
+        {
+          "id": "fact-29",
+          "score": 0.8218635126726737
+        },
+        {
+          "id": "fact-90",
+          "score": 0.8216104628391999
+        },
+        {
+          "id": "fact-91",
+          "score": 0.8214511868863132
+        }
+      ]
+    },
+    {
+      "id": "ru:completed-duty",
+      "split": "development",
+      "family": "promise",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-6",
+          "fact-2",
+          "fact-5",
+          "fact-3",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-2",
+          "fact-3",
+          "fact-1",
+          "fact-38",
+          "fact-96",
+          "fact-60",
+          "fact-10"
+        ],
+        "hybrid": [
+          "fact-6",
+          "fact-2",
+          "fact-3",
+          "fact-96",
+          "fact-99",
+          "fact-93",
+          "fact-74",
+          "fact-60"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.8632244142214766
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8276883104541388
+        },
+        {
+          "id": "fact-3",
+          "score": 0.8120916741244552
+        },
+        {
+          "id": "fact-1",
+          "score": 0.8044176221445895
+        },
+        {
+          "id": "fact-38",
+          "score": 0.8028816674096565
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8024364712587917
+        },
+        {
+          "id": "fact-60",
+          "score": 0.801509498143636
+        },
+        {
+          "id": "fact-10",
+          "score": 0.8008160647623846
+        }
+      ]
+    },
+    {
+      "id": "ru:known-alias",
+      "split": "development",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-76",
+          "fact-7",
+          "fact-101",
+          "fact-56",
+          "fact-41",
+          "fact-96",
+          "fact-83",
+          "fact-32"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-76",
+          "score": 0.8845792361373317
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8826426761072381
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8815814646506163
+        },
+        {
+          "id": "fact-56",
+          "score": 0.8813243986688324
+        },
+        {
+          "id": "fact-41",
+          "score": 0.8809204316461376
+        },
+        {
+          "id": "fact-96",
+          "score": 0.880789037891338
+        },
+        {
+          "id": "fact-83",
+          "score": 0.8805578263593268
+        },
+        {
+          "id": "fact-32",
+          "score": 0.880365461373551
+        }
+      ]
+    },
+    {
+      "id": "ru:alias-and-recipient",
+      "split": "development",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-56",
+          "fact-60",
+          "fact-41",
+          "fact-101",
+          "fact-76",
+          "fact-2",
+          "fact-36",
+          "fact-7"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-56",
+          "score": 0.8666742411507503
+        },
+        {
+          "id": "fact-60",
+          "score": 0.8662854138937474
+        },
+        {
+          "id": "fact-41",
+          "score": 0.866216400811827
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8660004578357372
+        },
+        {
+          "id": "fact-76",
+          "score": 0.8658984690991335
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8653733953092937
+        },
+        {
+          "id": "fact-36",
+          "score": 0.8652732740191983
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8652109330979821
+        }
+      ]
+    },
+    {
+      "id": "ru:stable-id-rename",
+      "split": "development",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-76",
+          "fact-101",
+          "fact-56",
+          "fact-96",
+          "fact-7",
+          "fact-6",
+          "fact-32",
+          "fact-99"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-76",
+          "score": 0.8567920597967401
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8539878356826827
+        },
+        {
+          "id": "fact-56",
+          "score": 0.8535098442237233
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8534903204681766
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8525233591042461
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8522841541809921
+        },
+        {
+          "id": "fact-32",
+          "score": 0.8508742229252352
+        },
+        {
+          "id": "fact-99",
+          "score": 0.8508275529936246
+        }
+      ]
+    },
+    {
+      "id": "ru:shared-alias",
+      "split": "development",
+      "family": "alias",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": true,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97"
+        ],
+        "dense": [
+          "fact-76",
+          "fact-99",
+          "fact-79",
+          "fact-96",
+          "fact-93",
+          "fact-81",
+          "fact-91",
+          "fact-2"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-76",
+          "score": 0.8117317025534054
+        },
+        {
+          "id": "fact-99",
+          "score": 0.8114325105477377
+        },
+        {
+          "id": "fact-79",
+          "score": 0.8082603870708722
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8073646175118914
+        },
+        {
+          "id": "fact-93",
+          "score": 0.8072138956760474
+        },
+        {
+          "id": "fact-81",
+          "score": 0.8067719167811765
+        },
+        {
+          "id": "fact-91",
+          "score": 0.8067336403205468
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8066258515367052
+        }
+      ]
+    },
+    {
+      "id": "ru:reused-name",
+      "split": "development",
+      "family": "alias",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": true,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ],
+        "dense": [
+          "fact-76",
+          "fact-7",
+          "fact-101",
+          "fact-56",
+          "fact-41",
+          "fact-96",
+          "fact-83",
+          "fact-32"
+        ],
+        "hybrid": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-76",
+          "score": 0.8845792361373317
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8826426761072381
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8815814646506163
+        },
+        {
+          "id": "fact-56",
+          "score": 0.8813243986688324
+        },
+        {
+          "id": "fact-41",
+          "score": 0.8809204316461376
+        },
+        {
+          "id": "fact-96",
+          "score": 0.880789037891338
+        },
+        {
+          "id": "fact-83",
+          "score": 0.8805578263593268
+        },
+        {
+          "id": "fact-32",
+          "score": 0.880365461373551
+        }
+      ]
+    },
+    {
+      "id": "ru:theatre",
+      "split": "development",
+      "family": "event",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-4",
+          "fact-96",
+          "fact-5",
+          "fact-60",
+          "fact-74",
+          "fact-34",
+          "fact-38",
+          "fact-99"
+        ],
+        "hybrid": [
+          "fact-4",
+          "fact-96",
+          "fact-99",
+          "fact-93",
+          "fact-101",
+          "fact-81",
+          "fact-74",
+          "fact-91"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-4",
+          "score": 0.840075368197804
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8140260751273453
+        },
+        {
+          "id": "fact-5",
+          "score": 0.8137512791788721
+        },
+        {
+          "id": "fact-60",
+          "score": 0.811862470140193
+        },
+        {
+          "id": "fact-74",
+          "score": 0.8118516742436643
+        },
+        {
+          "id": "fact-34",
+          "score": 0.811279472704548
+        },
+        {
+          "id": "fact-38",
+          "score": 0.8112282810770515
+        },
+        {
+          "id": "fact-99",
+          "score": 0.8108353238487902
+        }
+      ]
+    },
+    {
+      "id": "ru:flames",
+      "split": "development",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-4",
+          "fact-5",
+          "fact-0",
+          "fact-1",
+          "fact-96",
+          "fact-3",
+          "fact-15",
+          "fact-93"
+        ],
+        "hybrid": [
+          "fact-4",
+          "fact-3",
+          "fact-96",
+          "fact-93",
+          "fact-91",
+          "fact-95",
+          "fact-87",
+          "fact-76"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-4",
+          "score": 0.8449019841364526
+        },
+        {
+          "id": "fact-5",
+          "score": 0.8215725672917273
+        },
+        {
+          "id": "fact-0",
+          "score": 0.8052468243555131
+        },
+        {
+          "id": "fact-1",
+          "score": 0.8032257830654038
+        },
+        {
+          "id": "fact-96",
+          "score": 0.7997912852940601
+        },
+        {
+          "id": "fact-3",
+          "score": 0.7995053287771468
+        },
+        {
+          "id": "fact-15",
+          "score": 0.7993336098279767
+        },
+        {
+          "id": "fact-93",
+          "score": 0.7992502807697468
+        }
+      ]
+    },
+    {
+      "id": "ru:near-drowning",
+      "split": "development",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-4",
+          "fact-2",
+          "fact-7",
+          "fact-42",
+          "fact-9",
+          "fact-76",
+          "fact-93"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-93",
+          "fact-96",
+          "fact-76",
+          "fact-99",
+          "fact-87",
+          "fact-68",
+          "fact-74"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.8703490243839092
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8567534100251838
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8510641334189449
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8491944771992576
+        },
+        {
+          "id": "fact-42",
+          "score": 0.848197687423909
+        },
+        {
+          "id": "fact-9",
+          "score": 0.8480900294314614
+        },
+        {
+          "id": "fact-76",
+          "score": 0.8478382130905239
+        },
+        {
+          "id": "fact-93",
+          "score": 0.846381677464931
+        }
+      ]
+    },
+    {
+      "id": "ru:two-rescues",
+      "split": "development",
+      "family": "event",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-1",
+          "fact-96",
+          "fact-2",
+          "fact-27",
+          "fact-34",
+          "fact-30",
+          "fact-42",
+          "fact-16"
+        ],
+        "hybrid": [
+          "fact-1",
+          "fact-2",
+          "fact-3",
+          "fact-96",
+          "fact-99",
+          "fact-102",
+          "fact-0",
+          "fact-100"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-1",
+          "score": 0.8159455483512356
+        },
+        {
+          "id": "fact-96",
+          "score": 0.8115780675782815
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8113601091239949
+        },
+        {
+          "id": "fact-27",
+          "score": 0.810046306869841
+        },
+        {
+          "id": "fact-34",
+          "score": 0.8099469267280738
+        },
+        {
+          "id": "fact-30",
+          "score": 0.8094898042225493
+        },
+        {
+          "id": "fact-42",
+          "score": 0.8092963723773374
+        },
+        {
+          "id": "fact-16",
+          "score": 0.8091430615934566
+        }
+      ]
+    },
+    {
+      "id": "ru:unknown-avalanche",
+      "split": "development",
+      "family": "event",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96",
+          "fact-95"
+        ],
+        "dense": [
+          "fact-1",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-96",
+          "fact-76",
+          "fact-99",
+          "fact-10"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-2",
+          "fact-99",
+          "fact-96",
+          "fact-102",
+          "fact-100",
+          "fact-76",
+          "fact-101"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-1",
+          "score": 0.8122810862334487
+        },
+        {
+          "id": "fact-5",
+          "score": 0.8079477135350872
+        },
+        {
+          "id": "fact-3",
+          "score": 0.8010836125642394
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8002743123298716
+        },
+        {
+          "id": "fact-96",
+          "score": 0.796995132727307
+        },
+        {
+          "id": "fact-76",
+          "score": 0.7954528794823319
+        },
+        {
+          "id": "fact-99",
+          "score": 0.7953896941018836
+        },
+        {
+          "id": "fact-10",
+          "score": 0.7953507336602891
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:warm-keepsake",
+      "split": "holdout",
+      "family": "gift",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73"
+        ],
+        "dense": [
+          "fact-0",
+          "fact-4",
+          "fact-12",
+          "fact-45",
+          "fact-68",
+          "fact-8",
+          "fact-50",
+          "fact-78"
+        ],
+        "hybrid": [
+          "fact-0",
+          "fact-78",
+          "fact-75",
+          "fact-68",
+          "fact-70",
+          "fact-71",
+          "fact-45",
+          "fact-50"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-0",
+          "score": 0.8080871780615345
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8057280661914524
+        },
+        {
+          "id": "fact-12",
+          "score": 0.8038637685099974
+        },
+        {
+          "id": "fact-45",
+          "score": 0.8037299393612485
+        },
+        {
+          "id": "fact-68",
+          "score": 0.8034365098815973
+        },
+        {
+          "id": "fact-8",
+          "score": 0.8028166129586263
+        },
+        {
+          "id": "fact-50",
+          "score": 0.8021681944425507
+        },
+        {
+          "id": "fact-78",
+          "score": 0.8021677424946089
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:souvenirs",
+      "split": "holdout",
+      "family": "gift",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74"
+        ],
+        "dense": [
+          "fact-0",
+          "fact-1",
+          "fact-34",
+          "fact-26",
+          "fact-8",
+          "fact-32",
+          "fact-24",
+          "fact-7"
+        ],
+        "hybrid": [
+          "fact-1",
+          "fact-0",
+          "fact-78",
+          "fact-74",
+          "fact-73",
+          "fact-34",
+          "fact-76",
+          "fact-26"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-0",
+          "score": 0.8149962398102696
+        },
+        {
+          "id": "fact-1",
+          "score": 0.8061557386785676
+        },
+        {
+          "id": "fact-34",
+          "score": 0.8014326310150864
+        },
+        {
+          "id": "fact-26",
+          "score": 0.8013027513037758
+        },
+        {
+          "id": "fact-8",
+          "score": 0.8012790943301178
+        },
+        {
+          "id": "fact-32",
+          "score": 0.8009811010952822
+        },
+        {
+          "id": "fact-24",
+          "score": 0.8007593908653668
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8005034774421321
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:unknown-phone",
+      "split": "holdout",
+      "family": "gift",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72",
+          "fact-71"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-3",
+          "fact-45",
+          "fact-50",
+          "fact-39",
+          "fact-11",
+          "fact-75",
+          "fact-27"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-75",
+          "fact-78",
+          "fact-50",
+          "fact-45",
+          "fact-68",
+          "fact-70",
+          "fact-76"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.8133209996628019
+        },
+        {
+          "id": "fact-3",
+          "score": 0.8091126166068104
+        },
+        {
+          "id": "fact-45",
+          "score": 0.8065325509170566
+        },
+        {
+          "id": "fact-50",
+          "score": 0.8047579100081528
+        },
+        {
+          "id": "fact-39",
+          "score": 0.803500013992754
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8029089896758812
+        },
+        {
+          "id": "fact-75",
+          "score": 0.8028610667166748
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8027267947938599
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:camera-complete",
+      "split": "holdout",
+      "family": "promise",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-6",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-3",
+          "fact-29",
+          "fact-45",
+          "fact-15",
+          "fact-51",
+          "fact-52",
+          "fact-40"
+        ],
+        "hybrid": [
+          "fact-6",
+          "fact-3",
+          "fact-67",
+          "fact-63",
+          "fact-78",
+          "fact-65",
+          "fact-68",
+          "fact-51"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.8930088208909539
+        },
+        {
+          "id": "fact-3",
+          "score": 0.7976996628811088
+        },
+        {
+          "id": "fact-29",
+          "score": 0.7791089287779864
+        },
+        {
+          "id": "fact-45",
+          "score": 0.7785116453054365
+        },
+        {
+          "id": "fact-15",
+          "score": 0.7777044742723814
+        },
+        {
+          "id": "fact-51",
+          "score": 0.7777010691705665
+        },
+        {
+          "id": "fact-52",
+          "score": 0.777247931420649
+        },
+        {
+          "id": "fact-40",
+          "score": 0.7764920673585475
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:boris-duty",
+      "split": "holdout",
+      "family": "promise",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-45",
+          "fact-12",
+          "fact-75",
+          "fact-11",
+          "fact-78",
+          "fact-68",
+          "fact-34"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-78",
+          "fact-75",
+          "fact-68",
+          "fact-65",
+          "fact-45",
+          "fact-63",
+          "fact-76"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8531243677532407
+        },
+        {
+          "id": "fact-45",
+          "score": 0.8513833761883506
+        },
+        {
+          "id": "fact-12",
+          "score": 0.8500705360031698
+        },
+        {
+          "id": "fact-75",
+          "score": 0.8490984841782298
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8485655868085914
+        },
+        {
+          "id": "fact-78",
+          "score": 0.8480254744686071
+        },
+        {
+          "id": "fact-68",
+          "score": 0.8477792693241039
+        },
+        {
+          "id": "fact-34",
+          "score": 0.846076029612633
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:conditional-duty",
+      "split": "holdout",
+      "family": "promise",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72",
+          "fact-71"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-68",
+          "fact-33",
+          "fact-52",
+          "fact-45",
+          "fact-63",
+          "fact-70"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-68",
+          "fact-70",
+          "fact-73",
+          "fact-63",
+          "fact-71",
+          "fact-52",
+          "fact-69"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8059942618189757
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8004808411062682
+        },
+        {
+          "id": "fact-68",
+          "score": 0.7819026631111072
+        },
+        {
+          "id": "fact-33",
+          "score": 0.7803332317823668
+        },
+        {
+          "id": "fact-52",
+          "score": 0.7783079360751253
+        },
+        {
+          "id": "fact-45",
+          "score": 0.7775959585798102
+        },
+        {
+          "id": "fact-63",
+          "score": 0.7773907799063589
+        },
+        {
+          "id": "fact-70",
+          "score": 0.7770207887832343
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:north-clothing",
+      "split": "holdout",
+      "family": "alias",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72",
+          "fact-71"
+        ],
+        "dense": [
+          "fact-0",
+          "fact-75",
+          "fact-68",
+          "fact-4",
+          "fact-45",
+          "fact-8",
+          "fact-19",
+          "fact-44"
+        ],
+        "hybrid": [
+          "fact-75",
+          "fact-78",
+          "fact-68",
+          "fact-73",
+          "fact-76",
+          "fact-70",
+          "fact-61",
+          "fact-45"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-0",
+          "score": 0.766540848193529
+        },
+        {
+          "id": "fact-75",
+          "score": 0.7593117256831416
+        },
+        {
+          "id": "fact-68",
+          "score": 0.7589765577925045
+        },
+        {
+          "id": "fact-4",
+          "score": 0.757788250423704
+        },
+        {
+          "id": "fact-45",
+          "score": 0.756743826182994
+        },
+        {
+          "id": "fact-8",
+          "score": 0.7565789784905714
+        },
+        {
+          "id": "fact-19",
+          "score": 0.756376652694273
+        },
+        {
+          "id": "fact-44",
+          "score": 0.7561452096634672
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:spark-bird",
+      "split": "holdout",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0"
+        ],
+        "dense": [
+          "fact-1",
+          "fact-0",
+          "fact-4",
+          "fact-38",
+          "fact-50",
+          "fact-49",
+          "fact-8",
+          "fact-21"
+        ],
+        "hybrid": [
+          "fact-1",
+          "fact-0",
+          "fact-78",
+          "fact-73",
+          "fact-71",
+          "fact-50",
+          "fact-49",
+          "fact-38"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-1",
+          "score": 0.8637182338097944
+        },
+        {
+          "id": "fact-0",
+          "score": 0.8579482400962224
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8442705367926907
+        },
+        {
+          "id": "fact-38",
+          "score": 0.8430609955398997
+        },
+        {
+          "id": "fact-50",
+          "score": 0.8425182189943013
+        },
+        {
+          "id": "fact-49",
+          "score": 0.8421152487129261
+        },
+        {
+          "id": "fact-8",
+          "score": 0.8420208101216493
+        },
+        {
+          "id": "fact-21",
+          "score": 0.8415985243726047
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:shared-spark",
+      "split": "holdout",
+      "family": "alias",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": true,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-45",
+          "fact-58",
+          "fact-51",
+          "fact-68",
+          "fact-46",
+          "fact-73",
+          "fact-50"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8080569763248707
+        },
+        {
+          "id": "fact-45",
+          "score": 0.7928301821819679
+        },
+        {
+          "id": "fact-58",
+          "score": 0.7918720553401831
+        },
+        {
+          "id": "fact-51",
+          "score": 0.7912412613391172
+        },
+        {
+          "id": "fact-68",
+          "score": 0.7908194860552322
+        },
+        {
+          "id": "fact-46",
+          "score": 0.7904277996159964
+        },
+        {
+          "id": "fact-73",
+          "score": 0.7894234602273587
+        },
+        {
+          "id": "fact-50",
+          "score": 0.7892317577117763
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:whiteout",
+      "split": "holdout",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0",
+          "fact-4",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75"
+        ],
+        "dense": [
+          "fact-4",
+          "fact-29",
+          "fact-51",
+          "fact-45",
+          "fact-58",
+          "fact-7",
+          "fact-62",
+          "fact-52"
+        ],
+        "hybrid": [
+          "fact-4",
+          "fact-78",
+          "fact-68",
+          "fact-75",
+          "fact-62",
+          "fact-58",
+          "fact-51",
+          "fact-73"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-4",
+          "score": 0.7884798142228995
+        },
+        {
+          "id": "fact-29",
+          "score": 0.7850358682483092
+        },
+        {
+          "id": "fact-51",
+          "score": 0.7847906202623699
+        },
+        {
+          "id": "fact-45",
+          "score": 0.7845973685303389
+        },
+        {
+          "id": "fact-58",
+          "score": 0.7836455807742404
+        },
+        {
+          "id": "fact-7",
+          "score": 0.7836416795823207
+        },
+        {
+          "id": "fact-62",
+          "score": 0.7834297494624289
+        },
+        {
+          "id": "fact-52",
+          "score": 0.7830421265657895
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:injury",
+      "split": "holdout",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-5",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-6",
+          "fact-4",
+          "fact-0",
+          "fact-78",
+          "fact-7",
+          "fact-12",
+          "fact-45"
+        ],
+        "hybrid": [
+          "fact-5",
+          "fact-78",
+          "fact-76",
+          "fact-75",
+          "fact-68",
+          "fact-71",
+          "fact-66",
+          "fact-73"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.8631121202573513
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8521317565888522
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8517624997335548
+        },
+        {
+          "id": "fact-0",
+          "score": 0.8477030209168733
+        },
+        {
+          "id": "fact-78",
+          "score": 0.8453641460295701
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8446432162874702
+        },
+        {
+          "id": "fact-12",
+          "score": 0.8445337639561568
+        },
+        {
+          "id": "fact-45",
+          "score": 0.8444188825236443
+        }
+      ]
+    },
+    {
+      "id": "ru:holdout:unknown-mine",
+      "split": "holdout",
+      "family": "event",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72",
+          "fact-71"
+        ],
+        "dense": [
+          "fact-75",
+          "fact-45",
+          "fact-12",
+          "fact-11",
+          "fact-68",
+          "fact-78",
+          "fact-50",
+          "fact-39"
+        ],
+        "hybrid": [
+          "fact-75",
+          "fact-78",
+          "fact-76",
+          "fact-68",
+          "fact-71",
+          "fact-70",
+          "fact-45",
+          "fact-50"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-75",
+          "score": 0.8199246657527437
+        },
+        {
+          "id": "fact-45",
+          "score": 0.8195988118090215
+        },
+        {
+          "id": "fact-12",
+          "score": 0.8189769072956068
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8185840332751741
+        },
+        {
+          "id": "fact-68",
+          "score": 0.8173847877337863
+        },
+        {
+          "id": "fact-78",
+          "score": 0.8163348577545102
+        },
+        {
+          "id": "fact-50",
+          "score": 0.8162002891469363
+        },
+        {
+          "id": "fact-39",
+          "score": 0.8160936076714297
+        }
+      ]
+    },
+    {
+      "id": "en:medallion",
+      "split": "development",
+      "family": "gift",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0"
+        ],
+        "dense": [
+          "fact-85",
+          "fact-77",
+          "fact-51",
+          "fact-50",
+          "fact-40",
+          "fact-99",
+          "fact-27",
+          "fact-57"
+        ],
+        "hybrid": [
+          "fact-99",
+          "fact-85",
+          "fact-100",
+          "fact-77",
+          "fact-98",
+          "fact-97",
+          "fact-95",
+          "fact-86"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-85",
+          "score": 0.8120261427869463
+        },
+        {
+          "id": "fact-77",
+          "score": 0.8118099052813046
+        },
+        {
+          "id": "fact-51",
+          "score": 0.811055282768091
+        },
+        {
+          "id": "fact-50",
+          "score": 0.8105354622299271
+        },
+        {
+          "id": "fact-40",
+          "score": 0.8099439883675839
+        },
+        {
+          "id": "fact-99",
+          "score": 0.809616377370689
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8094968541893286
+        },
+        {
+          "id": "fact-57",
+          "score": 0.8094906407676715
+        }
+      ]
+    },
+    {
+      "id": "en:birthday",
+      "split": "development",
+      "family": "gift",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-24",
+          "fact-8",
+          "fact-100",
+          "fact-55",
+          "fact-34",
+          "fact-35",
+          "fact-40",
+          "fact-33"
+        ],
+        "hybrid": [
+          "fact-100",
+          "fact-101",
+          "fact-99",
+          "fact-83",
+          "fact-95",
+          "fact-88",
+          "fact-55",
+          "fact-90"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-24",
+          "score": 0.8730919889000798
+        },
+        {
+          "id": "fact-8",
+          "score": 0.8716741887514192
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8716264525352144
+        },
+        {
+          "id": "fact-55",
+          "score": 0.871250945865789
+        },
+        {
+          "id": "fact-34",
+          "score": 0.8708945223359628
+        },
+        {
+          "id": "fact-35",
+          "score": 0.8704730659601212
+        },
+        {
+          "id": "fact-40",
+          "score": 0.8700748474799658
+        },
+        {
+          "id": "fact-33",
+          "score": 0.8698231378984288
+        }
+      ]
+    },
+    {
+      "id": "en:keepsake",
+      "split": "development",
+      "family": "gift",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100"
+        ],
+        "dense": [
+          "fact-38",
+          "fact-24",
+          "fact-30",
+          "fact-23",
+          "fact-35",
+          "fact-40",
+          "fact-33",
+          "fact-42"
+        ],
+        "hybrid": [
+          "fact-100",
+          "fact-93",
+          "fact-97",
+          "fact-95",
+          "fact-92",
+          "fact-38",
+          "fact-101",
+          "fact-94"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-38",
+          "score": 0.8179653984806965
+        },
+        {
+          "id": "fact-24",
+          "score": 0.8179033598236236
+        },
+        {
+          "id": "fact-30",
+          "score": 0.8173983930255787
+        },
+        {
+          "id": "fact-23",
+          "score": 0.8169776093082207
+        },
+        {
+          "id": "fact-35",
+          "score": 0.8163465593523679
+        },
+        {
+          "id": "fact-40",
+          "score": 0.8160526031464505
+        },
+        {
+          "id": "fact-33",
+          "score": 0.8157214954331614
+        },
+        {
+          "id": "fact-42",
+          "score": 0.8156169003390062
+        }
+      ]
+    },
+    {
+      "id": "en:her-gift",
+      "split": "development",
+      "family": "gift",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-0",
+          "fact-5",
+          "fact-6",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101"
+        ],
+        "dense": [
+          "fact-38",
+          "fact-85",
+          "fact-15",
+          "fact-27",
+          "fact-57",
+          "fact-22",
+          "fact-51",
+          "fact-28"
+        ],
+        "hybrid": [
+          "fact-85",
+          "fact-99",
+          "fact-97",
+          "fact-57",
+          "fact-93",
+          "fact-38",
+          "fact-98",
+          "fact-51"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-38",
+          "score": 0.8225737749398367
+        },
+        {
+          "id": "fact-85",
+          "score": 0.8214333895562889
+        },
+        {
+          "id": "fact-15",
+          "score": 0.8208818713444681
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8208409363765212
+        },
+        {
+          "id": "fact-57",
+          "score": 0.8203908956300633
+        },
+        {
+          "id": "fact-22",
+          "score": 0.8199609088658757
+        },
+        {
+          "id": "fact-51",
+          "score": 0.8192399815636155
+        },
+        {
+          "id": "fact-28",
+          "score": 0.819200898599803
+        }
+      ]
+    },
+    {
+      "id": "en:gifts",
+      "split": "development",
+      "family": "gift",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-85",
+          "fact-51",
+          "fact-9",
+          "fact-10",
+          "fact-20",
+          "fact-64",
+          "fact-66",
+          "fact-36"
+        ],
+        "hybrid": [
+          "fact-97",
+          "fact-85",
+          "fact-99",
+          "fact-96",
+          "fact-100",
+          "fact-101",
+          "fact-93",
+          "fact-95"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-85",
+          "score": 0.8438427998669871
+        },
+        {
+          "id": "fact-51",
+          "score": 0.8429097351283248
+        },
+        {
+          "id": "fact-9",
+          "score": 0.842809858734641
+        },
+        {
+          "id": "fact-10",
+          "score": 0.8427510125484208
+        },
+        {
+          "id": "fact-20",
+          "score": 0.8424894851162718
+        },
+        {
+          "id": "fact-64",
+          "score": 0.8422486863393746
+        },
+        {
+          "id": "fact-66",
+          "score": 0.8421988595809684
+        },
+        {
+          "id": "fact-36",
+          "score": 0.841454888754272
+        }
+      ]
+    },
+    {
+      "id": "en:unknown-bracelet",
+      "split": "development",
+      "family": "gift",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-85",
+          "fact-77",
+          "fact-27",
+          "fact-57",
+          "fact-51",
+          "fact-97",
+          "fact-40",
+          "fact-17"
+        ],
+        "hybrid": [
+          "fact-97",
+          "fact-99",
+          "fact-85",
+          "fact-96",
+          "fact-101",
+          "fact-77",
+          "fact-95",
+          "fact-80"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-85",
+          "score": 0.8080479636986511
+        },
+        {
+          "id": "fact-77",
+          "score": 0.8079853299092229
+        },
+        {
+          "id": "fact-27",
+          "score": 0.8074719768651382
+        },
+        {
+          "id": "fact-57",
+          "score": 0.8072329208824484
+        },
+        {
+          "id": "fact-51",
+          "score": 0.8072232840479188
+        },
+        {
+          "id": "fact-97",
+          "score": 0.806902578816639
+        },
+        {
+          "id": "fact-40",
+          "score": 0.8067703190612593
+        },
+        {
+          "id": "fact-17",
+          "score": 0.8066274725673321
+        }
+      ]
+    },
+    {
+      "id": "en:direct-duty",
+      "split": "development",
+      "family": "promise",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-100",
+          "fact-6",
+          "fact-83",
+          "fact-46",
+          "fact-24",
+          "fact-55",
+          "fact-101"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8854446353922871
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8757165763727165
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8752689853971907
+        },
+        {
+          "id": "fact-83",
+          "score": 0.8730708217433402
+        },
+        {
+          "id": "fact-46",
+          "score": 0.872606686283359
+        },
+        {
+          "id": "fact-24",
+          "score": 0.871924122046373
+        },
+        {
+          "id": "fact-55",
+          "score": 0.871603433685154
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8715315851630611
+        }
+      ]
+    },
+    {
+      "id": "en:word",
+      "split": "development",
+      "family": "promise",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-100",
+          "fact-46",
+          "fact-8",
+          "fact-40",
+          "fact-7",
+          "fact-55",
+          "fact-65"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.8855495418100673
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8836702879806454
+        },
+        {
+          "id": "fact-46",
+          "score": 0.8834494021987686
+        },
+        {
+          "id": "fact-8",
+          "score": 0.8828724736728167
+        },
+        {
+          "id": "fact-40",
+          "score": 0.8825087995645204
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8825060757911712
+        },
+        {
+          "id": "fact-55",
+          "score": 0.8814828827934792
+        },
+        {
+          "id": "fact-65",
+          "score": 0.8814402485143601
+        }
+      ]
+    },
+    {
+      "id": "en:unspecified-duty",
+      "split": "development",
+      "family": "promise",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-2",
+          "fact-27",
+          "fact-22",
+          "fact-57",
+          "fact-62",
+          "fact-42"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-2",
+          "fact-100",
+          "fact-87",
+          "fact-62",
+          "fact-57",
+          "fact-101",
+          "fact-60"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8240729749415464
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8128675205550623
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8127544109619868
+        },
+        {
+          "id": "fact-27",
+          "score": 0.809788851781042
+        },
+        {
+          "id": "fact-22",
+          "score": 0.8093511207755771
+        },
+        {
+          "id": "fact-57",
+          "score": 0.8080580661562173
+        },
+        {
+          "id": "fact-62",
+          "score": 0.8076191803008497
+        },
+        {
+          "id": "fact-42",
+          "score": 0.8073165374689567
+        }
+      ]
+    },
+    {
+      "id": "en:completed-duty",
+      "split": "development",
+      "family": "promise",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-6",
+          "fact-2",
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-102",
+          "fact-101",
+          "fact-100"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-2",
+          "fact-3",
+          "fact-4",
+          "fact-73",
+          "fact-101",
+          "fact-38",
+          "fact-77"
+        ],
+        "hybrid": [
+          "fact-6",
+          "fact-2",
+          "fact-3",
+          "fact-4",
+          "fact-101",
+          "fact-99",
+          "fact-98",
+          "fact-94"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.9017168822727957
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8573825347362343
+        },
+        {
+          "id": "fact-3",
+          "score": 0.841550177402202
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8397814553917353
+        },
+        {
+          "id": "fact-73",
+          "score": 0.8299000383313233
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8264858388178398
+        },
+        {
+          "id": "fact-38",
+          "score": 0.82586494429998
+        },
+        {
+          "id": "fact-77",
+          "score": 0.8256316669817485
+        }
+      ]
+    },
+    {
+      "id": "en:known-alias",
+      "split": "development",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-100",
+          "fact-46",
+          "fact-83",
+          "fact-24",
+          "fact-55",
+          "fact-101"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8670038112772537
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8618200903939577
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8606873297295464
+        },
+        {
+          "id": "fact-46",
+          "score": 0.8566909208834605
+        },
+        {
+          "id": "fact-83",
+          "score": 0.8565533517217765
+        },
+        {
+          "id": "fact-24",
+          "score": 0.8564199918448856
+        },
+        {
+          "id": "fact-55",
+          "score": 0.8561701919654584
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8558470767907079
+        }
+      ]
+    },
+    {
+      "id": "en:alias-and-recipient",
+      "split": "development",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-100",
+          "fact-24",
+          "fact-2",
+          "fact-55",
+          "fact-101",
+          "fact-88",
+          "fact-83"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8531812764010144
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8437942735349037
+        },
+        {
+          "id": "fact-24",
+          "score": 0.8424279796025019
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8419092803324976
+        },
+        {
+          "id": "fact-55",
+          "score": 0.8410033300607727
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8409683017258976
+        },
+        {
+          "id": "fact-88",
+          "score": 0.8402948019226213
+        },
+        {
+          "id": "fact-83",
+          "score": 0.8402393579627587
+        }
+      ]
+    },
+    {
+      "id": "en:stable-id-rename",
+      "split": "development",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": true,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-2",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-100",
+          "fact-6",
+          "fact-101",
+          "fact-55",
+          "fact-99",
+          "fact-91",
+          "fact-46"
+        ],
+        "hybrid": [
+          "fact-2",
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8469764790406874
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8380666881379841
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8330402249462935
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8323894733826602
+        },
+        {
+          "id": "fact-55",
+          "score": 0.8320177667589977
+        },
+        {
+          "id": "fact-99",
+          "score": 0.8314681266631406
+        },
+        {
+          "id": "fact-91",
+          "score": 0.8309571395375479
+        },
+        {
+          "id": "fact-46",
+          "score": 0.8305925823301078
+        }
+      ]
+    },
+    {
+      "id": "en:shared-alias",
+      "split": "development",
+      "family": "alias",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": true,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-3",
+          "fact-2",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-2",
+          "fact-19",
+          "fact-100",
+          "fact-52",
+          "fact-94",
+          "fact-87"
+        ],
+        "hybrid": [
+          "fact-0",
+          "fact-3",
+          "fact-2",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8033499573101595
+        },
+        {
+          "id": "fact-6",
+          "score": 0.777896192865267
+        },
+        {
+          "id": "fact-2",
+          "score": 0.7759013126054503
+        },
+        {
+          "id": "fact-19",
+          "score": 0.7629519150533519
+        },
+        {
+          "id": "fact-100",
+          "score": 0.7614949047192491
+        },
+        {
+          "id": "fact-52",
+          "score": 0.76116358331652
+        },
+        {
+          "id": "fact-94",
+          "score": 0.7611541315279726
+        },
+        {
+          "id": "fact-87",
+          "score": 0.7609234265504737
+        }
+      ]
+    },
+    {
+      "id": "en:reused-name",
+      "split": "development",
+      "family": "alias",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": true,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-100",
+          "fact-46",
+          "fact-83",
+          "fact-24",
+          "fact-55",
+          "fact-101"
+        ],
+        "hybrid": [
+          "fact-0",
+          "fact-6",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8670038112772537
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8618200903939577
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8606873297295464
+        },
+        {
+          "id": "fact-46",
+          "score": 0.8566909208834605
+        },
+        {
+          "id": "fact-83",
+          "score": 0.8565533517217765
+        },
+        {
+          "id": "fact-24",
+          "score": 0.8564199918448856
+        },
+        {
+          "id": "fact-55",
+          "score": 0.8561701919654584
+        },
+        {
+          "id": "fact-101",
+          "score": 0.8558470767907079
+        }
+      ]
+    },
+    {
+      "id": "en:theatre",
+      "split": "development",
+      "family": "event",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99",
+          "fact-98",
+          "fact-97",
+          "fact-96"
+        ],
+        "dense": [
+          "fact-4",
+          "fact-5",
+          "fact-85",
+          "fact-31",
+          "fact-47",
+          "fact-51",
+          "fact-50",
+          "fact-100"
+        ],
+        "hybrid": [
+          "fact-4",
+          "fact-100",
+          "fact-101",
+          "fact-85",
+          "fact-96",
+          "fact-86",
+          "fact-87",
+          "fact-99"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-4",
+          "score": 0.8669888562256526
+        },
+        {
+          "id": "fact-5",
+          "score": 0.8279795149806941
+        },
+        {
+          "id": "fact-85",
+          "score": 0.8270605584696349
+        },
+        {
+          "id": "fact-31",
+          "score": 0.8264513067288923
+        },
+        {
+          "id": "fact-47",
+          "score": 0.8259820522112703
+        },
+        {
+          "id": "fact-51",
+          "score": 0.8257798670930746
+        },
+        {
+          "id": "fact-50",
+          "score": 0.8257544069353785
+        },
+        {
+          "id": "fact-100",
+          "score": 0.8255365176633003
+        }
+      ]
+    },
+    {
+      "id": "en:flames",
+      "split": "development",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-4",
+          "fact-5",
+          "fact-35",
+          "fact-31",
+          "fact-85",
+          "fact-28",
+          "fact-68",
+          "fact-15"
+        ],
+        "hybrid": [
+          "fact-4",
+          "fact-5",
+          "fact-94",
+          "fact-85",
+          "fact-95",
+          "fact-87",
+          "fact-101",
+          "fact-89"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-4",
+          "score": 0.8732254686745418
+        },
+        {
+          "id": "fact-5",
+          "score": 0.8452901630894881
+        },
+        {
+          "id": "fact-35",
+          "score": 0.8251153903052528
+        },
+        {
+          "id": "fact-31",
+          "score": 0.8239060508899488
+        },
+        {
+          "id": "fact-85",
+          "score": 0.8214965979293358
+        },
+        {
+          "id": "fact-28",
+          "score": 0.8214226905188187
+        },
+        {
+          "id": "fact-68",
+          "score": 0.8211442500460618
+        },
+        {
+          "id": "fact-15",
+          "score": 0.8210645083450556
+        }
+      ]
+    },
+    {
+      "id": "en:near-drowning",
+      "split": "development",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-4",
+          "fact-6",
+          "fact-54",
+          "fact-59",
+          "fact-35",
+          "fact-3",
+          "fact-85"
+        ],
+        "hybrid": [
+          "fact-5",
+          "fact-4",
+          "fact-3",
+          "fact-101",
+          "fact-2",
+          "fact-85",
+          "fact-88",
+          "fact-83"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.8763267708457755
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8583220999738959
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8495687283622171
+        },
+        {
+          "id": "fact-54",
+          "score": 0.84490338572744
+        },
+        {
+          "id": "fact-59",
+          "score": 0.8448266199212523
+        },
+        {
+          "id": "fact-35",
+          "score": 0.84411095641958
+        },
+        {
+          "id": "fact-3",
+          "score": 0.8433997819205667
+        },
+        {
+          "id": "fact-85",
+          "score": 0.8433102728261908
+        }
+      ]
+    },
+    {
+      "id": "en:two-rescues",
+      "split": "development",
+      "family": "event",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-96",
+          "fact-82",
+          "fact-66",
+          "fact-95",
+          "fact-32",
+          "fact-85",
+          "fact-99",
+          "fact-86"
+        ],
+        "hybrid": [
+          "fact-96",
+          "fact-99",
+          "fact-95",
+          "fact-82",
+          "fact-98",
+          "fact-85",
+          "fact-86",
+          "fact-102"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-96",
+          "score": 0.8346233354241572
+        },
+        {
+          "id": "fact-82",
+          "score": 0.8342271017188624
+        },
+        {
+          "id": "fact-66",
+          "score": 0.8341188985915592
+        },
+        {
+          "id": "fact-95",
+          "score": 0.8341139835077981
+        },
+        {
+          "id": "fact-32",
+          "score": 0.8339721902170449
+        },
+        {
+          "id": "fact-85",
+          "score": 0.833922328858463
+        },
+        {
+          "id": "fact-99",
+          "score": 0.8338611880587148
+        },
+        {
+          "id": "fact-86",
+          "score": 0.8338156760928574
+        }
+      ]
+    },
+    {
+      "id": "en:unknown-avalanche",
+      "split": "development",
+      "family": "event",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-4",
+          "fact-5",
+          "fact-3",
+          "fact-2",
+          "fact-102",
+          "fact-101",
+          "fact-100",
+          "fact-99"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-4",
+          "fact-31",
+          "fact-2",
+          "fact-32",
+          "fact-77",
+          "fact-3",
+          "fact-85"
+        ],
+        "hybrid": [
+          "fact-5",
+          "fact-4",
+          "fact-2",
+          "fact-3",
+          "fact-102",
+          "fact-97",
+          "fact-101",
+          "fact-85"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.8171587927378733
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8148294227038174
+        },
+        {
+          "id": "fact-31",
+          "score": 0.8023141629076632
+        },
+        {
+          "id": "fact-2",
+          "score": 0.8011480355458108
+        },
+        {
+          "id": "fact-32",
+          "score": 0.8007012871520677
+        },
+        {
+          "id": "fact-77",
+          "score": 0.8003931826509568
+        },
+        {
+          "id": "fact-3",
+          "score": 0.8003719996709744
+        },
+        {
+          "id": "fact-85",
+          "score": 0.8003244050996642
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:warm-keepsake",
+      "split": "holdout",
+      "family": "gift",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73"
+        ],
+        "dense": [
+          "fact-4",
+          "fact-68",
+          "fact-61",
+          "fact-19",
+          "fact-50",
+          "fact-7",
+          "fact-53",
+          "fact-39"
+        ],
+        "hybrid": [
+          "fact-68",
+          "fact-76",
+          "fact-74",
+          "fact-72",
+          "fact-61",
+          "fact-69",
+          "fact-77",
+          "fact-71"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-4",
+          "score": 0.8082145382333266
+        },
+        {
+          "id": "fact-68",
+          "score": 0.7979608642404552
+        },
+        {
+          "id": "fact-61",
+          "score": 0.7973470771453905
+        },
+        {
+          "id": "fact-19",
+          "score": 0.7967585237651151
+        },
+        {
+          "id": "fact-50",
+          "score": 0.7966101625294179
+        },
+        {
+          "id": "fact-7",
+          "score": 0.7960858078786622
+        },
+        {
+          "id": "fact-53",
+          "score": 0.7954621074665301
+        },
+        {
+          "id": "fact-39",
+          "score": 0.7951627918511394
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:souvenirs",
+      "split": "holdout",
+      "family": "gift",
+      "intent": "ambiguous",
+      "goldCount": 2,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 2
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74"
+        ],
+        "dense": [
+          "fact-25",
+          "fact-74",
+          "fact-52",
+          "fact-47",
+          "fact-77",
+          "fact-21",
+          "fact-18",
+          "fact-20"
+        ],
+        "hybrid": [
+          "fact-74",
+          "fact-77",
+          "fact-75",
+          "fact-73",
+          "fact-52",
+          "fact-68",
+          "fact-47",
+          "fact-76"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-25",
+          "score": 0.8108914655705968
+        },
+        {
+          "id": "fact-74",
+          "score": 0.8102387076361911
+        },
+        {
+          "id": "fact-52",
+          "score": 0.8099379771155635
+        },
+        {
+          "id": "fact-47",
+          "score": 0.809882249473957
+        },
+        {
+          "id": "fact-77",
+          "score": 0.8079414444632032
+        },
+        {
+          "id": "fact-21",
+          "score": 0.8077900573630882
+        },
+        {
+          "id": "fact-18",
+          "score": 0.807627923952338
+        },
+        {
+          "id": "fact-20",
+          "score": 0.8075758734691879
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:unknown-phone",
+      "split": "holdout",
+      "family": "gift",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72",
+          "fact-71"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-3",
+          "fact-7",
+          "fact-19",
+          "fact-27",
+          "fact-61",
+          "fact-68",
+          "fact-50"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-74",
+          "fact-68",
+          "fact-77",
+          "fact-76",
+          "fact-72",
+          "fact-61",
+          "fact-73"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.8158718407717938
+        },
+        {
+          "id": "fact-3",
+          "score": 0.7998744048725833
+        },
+        {
+          "id": "fact-7",
+          "score": 0.7998696562785594
+        },
+        {
+          "id": "fact-19",
+          "score": 0.79911144549374
+        },
+        {
+          "id": "fact-27",
+          "score": 0.7954523817016309
+        },
+        {
+          "id": "fact-61",
+          "score": 0.7954494388581399
+        },
+        {
+          "id": "fact-68",
+          "score": 0.7954017426042762
+        },
+        {
+          "id": "fact-50",
+          "score": 0.7952600012433721
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:camera-complete",
+      "split": "holdout",
+      "family": "promise",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-6",
+          "fact-1",
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75"
+        ],
+        "dense": [
+          "fact-6",
+          "fact-41",
+          "fact-73",
+          "fact-5",
+          "fact-52",
+          "fact-77",
+          "fact-13",
+          "fact-51"
+        ],
+        "hybrid": [
+          "fact-6",
+          "fact-77",
+          "fact-73",
+          "fact-75",
+          "fact-3",
+          "fact-76",
+          "fact-68",
+          "fact-52"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-6",
+          "score": 0.8820988590987497
+        },
+        {
+          "id": "fact-41",
+          "score": 0.7853164103444659
+        },
+        {
+          "id": "fact-73",
+          "score": 0.7839985478065721
+        },
+        {
+          "id": "fact-5",
+          "score": 0.7839276389839607
+        },
+        {
+          "id": "fact-52",
+          "score": 0.7838070079816065
+        },
+        {
+          "id": "fact-77",
+          "score": 0.7836066054638926
+        },
+        {
+          "id": "fact-13",
+          "score": 0.7834364955970834
+        },
+        {
+          "id": "fact-51",
+          "score": 0.7830943277258557
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:boris-duty",
+      "split": "holdout",
+      "family": "promise",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-5",
+          "fact-9",
+          "fact-76",
+          "fact-11",
+          "fact-42",
+          "fact-34"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-76",
+          "fact-77",
+          "fact-72",
+          "fact-61",
+          "fact-58",
+          "fact-42",
+          "fact-73"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8773235605727636
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8416397799510822
+        },
+        {
+          "id": "fact-5",
+          "score": 0.838010614222396
+        },
+        {
+          "id": "fact-9",
+          "score": 0.8266676450547549
+        },
+        {
+          "id": "fact-76",
+          "score": 0.8260483414695543
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8259368069820853
+        },
+        {
+          "id": "fact-42",
+          "score": 0.8250301041669827
+        },
+        {
+          "id": "fact-34",
+          "score": 0.8244600963889771
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:conditional-duty",
+      "split": "holdout",
+      "family": "promise",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-0",
+          "fact-6",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-6",
+          "fact-34",
+          "fact-78",
+          "fact-41",
+          "fact-30",
+          "fact-59",
+          "fact-61"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-6",
+          "fact-78",
+          "fact-77",
+          "fact-61",
+          "fact-59",
+          "fact-64",
+          "fact-75"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.8137080171080278
+        },
+        {
+          "id": "fact-6",
+          "score": 0.7959324700434492
+        },
+        {
+          "id": "fact-34",
+          "score": 0.7791633158856762
+        },
+        {
+          "id": "fact-78",
+          "score": 0.778826015451632
+        },
+        {
+          "id": "fact-41",
+          "score": 0.7780831069491531
+        },
+        {
+          "id": "fact-30",
+          "score": 0.7764605469438329
+        },
+        {
+          "id": "fact-59",
+          "score": 0.7756261687363817
+        },
+        {
+          "id": "fact-61",
+          "score": 0.7753364617608819
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:north-clothing",
+      "split": "holdout",
+      "family": "alias",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-3",
+          "fact-5",
+          "fact-1",
+          "fact-0",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-76",
+          "fact-9",
+          "fact-53",
+          "fact-19",
+          "fact-41",
+          "fact-58",
+          "fact-11"
+        ],
+        "hybrid": [
+          "fact-5",
+          "fact-76",
+          "fact-3",
+          "fact-77",
+          "fact-0",
+          "fact-72",
+          "fact-53",
+          "fact-58"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.828118565059487
+        },
+        {
+          "id": "fact-76",
+          "score": 0.8221861263082613
+        },
+        {
+          "id": "fact-9",
+          "score": 0.8221306846514439
+        },
+        {
+          "id": "fact-53",
+          "score": 0.8217502011438874
+        },
+        {
+          "id": "fact-19",
+          "score": 0.8205483764874252
+        },
+        {
+          "id": "fact-41",
+          "score": 0.820499669302606
+        },
+        {
+          "id": "fact-58",
+          "score": 0.8204446093035265
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8202573650479515
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:spark-bird",
+      "split": "holdout",
+      "family": "alias",
+      "intent": "explicit",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-3"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-4",
+          "fact-6",
+          "fact-1",
+          "fact-0",
+          "fact-11",
+          "fact-73",
+          "fact-71"
+        ],
+        "hybrid": [
+          "fact-1",
+          "fact-73",
+          "fact-76",
+          "fact-71",
+          "fact-77",
+          "fact-74",
+          "fact-68",
+          "fact-67"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.8332736855860949
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8209084561050985
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8208946938598563
+        },
+        {
+          "id": "fact-1",
+          "score": 0.8201956176037736
+        },
+        {
+          "id": "fact-0",
+          "score": 0.8109671362172532
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8072554809341758
+        },
+        {
+          "id": "fact-73",
+          "score": 0.807119849992122
+        },
+        {
+          "id": "fact-71",
+          "score": 0.8061675877426631
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:shared-spark",
+      "split": "holdout",
+      "family": "alias",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": true,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-3",
+          "fact-0",
+          "fact-6",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75"
+        ],
+        "dense": [
+          "fact-3",
+          "fact-73",
+          "fact-47",
+          "fact-77",
+          "fact-71",
+          "fact-13",
+          "fact-23",
+          "fact-5"
+        ],
+        "hybrid": [
+          "fact-1",
+          "fact-3",
+          "fact-0",
+          "fact-6",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-3",
+          "score": 0.7627315763375385
+        },
+        {
+          "id": "fact-73",
+          "score": 0.7528942136342578
+        },
+        {
+          "id": "fact-47",
+          "score": 0.7478306302038016
+        },
+        {
+          "id": "fact-77",
+          "score": 0.7474947780196465
+        },
+        {
+          "id": "fact-71",
+          "score": 0.7467005121250982
+        },
+        {
+          "id": "fact-13",
+          "score": 0.7462323362157836
+        },
+        {
+          "id": "fact-23",
+          "score": 0.7459021927186459
+        },
+        {
+          "id": "fact-5",
+          "score": 0.7456277336979799
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:whiteout",
+      "split": "holdout",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 1
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-1",
+          "fact-0",
+          "fact-3",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74"
+        ],
+        "dense": [
+          "fact-52",
+          "fact-73",
+          "fact-47",
+          "fact-27",
+          "fact-21",
+          "fact-41",
+          "fact-48",
+          "fact-71"
+        ],
+        "hybrid": [
+          "fact-73",
+          "fact-71",
+          "fact-77",
+          "fact-52",
+          "fact-47",
+          "fact-68",
+          "fact-64",
+          "fact-57"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-52",
+          "score": 0.7926776935870326
+        },
+        {
+          "id": "fact-73",
+          "score": 0.7920652555840532
+        },
+        {
+          "id": "fact-47",
+          "score": 0.7908854125990644
+        },
+        {
+          "id": "fact-27",
+          "score": 0.7895441807395994
+        },
+        {
+          "id": "fact-21",
+          "score": 0.7895411038270447
+        },
+        {
+          "id": "fact-41",
+          "score": 0.7891051207699524
+        },
+        {
+          "id": "fact-48",
+          "score": 0.7890473143188195
+        },
+        {
+          "id": "fact-71",
+          "score": 0.7883925796594288
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:injury",
+      "split": "holdout",
+      "family": "event",
+      "intent": "paraphrase",
+      "goldCount": 1,
+      "protected": false,
+      "baseline": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": true,
+        "correctFirst": true,
+        "missingGold": 0
+      },
+      "controlDrift": false,
+      "selected": {
+        "baseline": [
+          "fact-5",
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-6",
+          "fact-4",
+          "fact-11",
+          "fact-52",
+          "fact-67",
+          "fact-7",
+          "fact-72"
+        ],
+        "hybrid": [
+          "fact-5",
+          "fact-74",
+          "fact-72",
+          "fact-67",
+          "fact-73",
+          "fact-76",
+          "fact-68",
+          "fact-77"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.895792729680825
+        },
+        {
+          "id": "fact-6",
+          "score": 0.8671113598583047
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8575461556298587
+        },
+        {
+          "id": "fact-11",
+          "score": 0.8436366600459073
+        },
+        {
+          "id": "fact-52",
+          "score": 0.8426208044495944
+        },
+        {
+          "id": "fact-67",
+          "score": 0.8419694697144048
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8416287005004045
+        },
+        {
+          "id": "fact-72",
+          "score": 0.8415895676662761
+        }
+      ]
+    },
+    {
+      "id": "en:holdout:unknown-mine",
+      "split": "holdout",
+      "family": "event",
+      "intent": "control",
+      "goldCount": 0,
+      "protected": false,
+      "baseline": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "lexical": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "dense": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "hybrid": {
+        "complete": false,
+        "correctFirst": false,
+        "missingGold": 0
+      },
+      "controlDrift": true,
+      "selected": {
+        "baseline": [
+          "fact-78",
+          "fact-77",
+          "fact-76",
+          "fact-75",
+          "fact-74",
+          "fact-73",
+          "fact-72",
+          "fact-71"
+        ],
+        "dense": [
+          "fact-5",
+          "fact-4",
+          "fact-7",
+          "fact-53",
+          "fact-55",
+          "fact-72",
+          "fact-61",
+          "fact-68"
+        ],
+        "hybrid": [
+          "fact-3",
+          "fact-72",
+          "fact-68",
+          "fact-73",
+          "fact-76",
+          "fact-61",
+          "fact-74",
+          "fact-55"
+        ]
+      },
+      "denseScores": [
+        {
+          "id": "fact-5",
+          "score": 0.8184167700303999
+        },
+        {
+          "id": "fact-4",
+          "score": 0.8151473539377608
+        },
+        {
+          "id": "fact-7",
+          "score": 0.8112847140151871
+        },
+        {
+          "id": "fact-53",
+          "score": 0.8089879934525367
+        },
+        {
+          "id": "fact-55",
+          "score": 0.80806372393462
+        },
+        {
+          "id": "fact-72",
+          "score": 0.8078148201657348
+        },
+        {
+          "id": "fact-61",
+          "score": 0.8074821956538121
+        },
+        {
+          "id": "fact-68",
+          "score": 0.8070687615395701
+        }
+      ]
+    }
+  ],
+  "timing": {
+    "cacheHit": false,
+    "loadMs": 1282.855300000003,
+    "encoded": 424,
+    "encodeTotalMs": 5374.155199999972,
+    "medianInputMs": 12.304400000000896,
+    "p95InputMs": 23.03530000000319,
+    "maxTokens": 46,
+    "modelBytes": 135392183,
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "evaluateMs": 53.35779999999795
+  },
+  "experiment": "RP263; frozen before model evaluation; no post-holdout tuning",
+  "decision": "Do not integrate this model/RRF configuration into gameplay. It regresses retrieval and unknown-query controls.",
+  "method": {
+    "baseline": "actual compiled context selection, budgeted",
+    "lexical": "current lexical top8, before whole-prompt admission",
+    "dense": "cosine top8",
+    "hybrid": "fixed equal-weight RRF k=60, top8; explicit owner/ambiguous identity retains baseline",
+    "first": "first entry of each method; compiled baseline ordering differs from lexical candidate priority",
+    "controls": "gold empty is not scored as recall success; control drift measures hybrid vs compiled baseline"
+  },
+  "provenance": {
+    "inputDigest": "f1253bb9cb662660e49a9c73d986054024d10c59142d264161fee177f90ed73e",
+    "goldDigest": "d173b9d46ded8ed4ccf8fb52c2c05368d4ff4d02b2de30c49b5a027244ae4cbd",
+    "files": [
+      "scripts/story-search-model.json",
+      "tests/fixtures/story-search-baseline.json",
+      "tests/fixtures/story-semantic-holdout.ts"
+    ]
+  },
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i5-10400 CPU @ 2.90GHz",
+    "logicalCpus": 12,
+    "ramBytes": 34222669824,
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "inferenceThreads": 2,
+    "runtimeBytes": 391572893,
+    "runtimeFiles": 2465,
+    "runtimeBytesMeaning": "installed .pnpm directory logical file bytes, includes distributed platform binaries; excludes global pnpm store and model files",
+    "runtimeLockSha256": "c3006602e40f066cbad739550bf8d26482908709f407ad480bc8a4bbe7afc059"
+  },
+  "offlineCold": {
+    "cacheHit": false,
+    "loadMs": 923.028,
+    "encodeTotalMs": 4159.9371,
+    "medianInputMs": 9.5033,
+    "p95InputMs": 13.566,
+    "encoded": 424,
+    "maxTokens": 46,
+    "peakProcessRssBytes": 816300032,
+    "totalProcessMs": 16307.2535,
+    "networkAttempts": 0,
+    "scope": "Node fetch/http/https/net blocked. Process RSS/wall time include Vite benchmark preparation. OS disconnection and browser inference not tested."
+  },
+  "cacheWarm": {
+    "cacheHit": true,
+    "cacheReadMs": 18.7487000000001,
+    "encoded": 0,
+    "evaluateMs": 52.215000000000146,
+    "peakProcessRssBytes": 547823616,
+    "totalProcessMs": 11672.4395,
+    "networkAttempts": 0,
+    "scope": "424 ready vectors read; no model inference. Full wall time includes fixture compilation."
+  },
+  "sanity": {
+    "repeatedSingleInputMaxVectorDelta": 0,
+    "batchVsSingleMaxVectorDelta": 0.014470206573605537,
+    "explanation": "q8 padding/batch may alter numerical outputs; benchmark uses one input at a time consistently. Repeated single-input runs are identical on this PC."
+  }
+}

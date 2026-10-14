@@ -28,6 +28,16 @@ export function retrievalNames(e: SceneEntity, inflect = true) {
     return [phrase, ...endings.map(ending => phrase.slice(0, -1) + ending)];
   }))];
 }
+/** Current-query forms only. V1 source bindings intentionally keep using
+ * retrievalNames: adding a query form must not reinterpret historical actors. */
+export function retrievalQueryNames(e: SceneEntity) {
+  const shortForms = retrievalNames(e, false).flatMap(phrase => {
+    if (!/^[а-я]{2}[ая]$/u.test(phrase) || personalReference.test(phrase)) return [];
+    const endings = phrase.endsWith("а") ? ["а", "ы", "и", "е", "у", "ой", "ою"] : ["я", "и", "е", "ю", "ей", "ею"];
+    return endings.map(ending => phrase.slice(0, -1) + ending);
+  });
+  return [...new Set([...retrievalNames(e), ...shortForms])];
+}
 export const isPersonalStoryReference = (name: string) => personalReference.test(normalizeText(name));
 const phraseIn = (text: string, phrase: string) => phrase && (` ${normalizeText(text)} `).includes(` ${phrase} `);
 function longestNames(text: string, phrases: Iterable<string>) {
@@ -45,7 +55,7 @@ function longestNames(text: string, phrases: Iterable<string>) {
  * Only exact whole names/aliases with one owner in this world may expand. */
 export function storyRetrievalQuery(draft: string, scope: StoryRetrievalScope) {
   const people = scope.entities.filter(e => e.worldId === scope.worldId && e.kind === "character");
-  const namesById = new Map(people.map(e => [e.id, retrievalNames(e)]));
+  const namesById = new Map(people.map(e => [e.id, retrievalQueryNames(e)]));
   const owners = new Map<string, Set<string>>();
   const explicitOwners = new Map<string, Set<string>>();
   for (const e of people) for (const name of [e.name, ...e.aliases]) {

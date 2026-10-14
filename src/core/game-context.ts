@@ -6,6 +6,11 @@ import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
 import { storyContentRelevance } from "./story-content-relevance";
 import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
 import {storyActionBalance} from "./story-action-balance";
+import {storyTaskGoal,storyTaskGoalCandidates} from "./story-task-goal";
+import {storyCompoundAction} from "./story-compound-action";
+import {storyNaturalRecall} from "./story-natural-recall";
+import {storyLastingRecall} from "./story-lasting-recall";
+import {storyObjectReference,storyLiteralReference,storyReferenceCandidates,UNRESOLVED_STORY_OBJECT,AMBIGUOUS_STORY_OBJECT} from "./story-reference-recall";
 import { storyUpdateInstruction } from "./story-update";
 import type { StoryFact } from "./story-update";
 import { storyAutomationInstruction } from "./story-automation";
@@ -45,7 +50,7 @@ const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
  * calls, transcript deletion, fuzzy identity replacement or partial JSON cuts. */
-export function compileGameContext(input:GameContextInput, options: { memoryTransport?: "compact"|"legacy"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean } = {}) {
+export function compileGameContext(input:GameContextInput, options: { memoryTransport?: "compact"|"legacy"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean } = {}) {
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
@@ -54,7 +59,9 @@ export function compileGameContext(input:GameContextInput, options: { memoryTran
    const episodes=episodeSources?createEpisodeReader(roleSeeds,episodeSources):undefined;
    const time=input.story&&(episodes||input.story.facts.some(f=>f.claim?.lifetime||isGameTimeFact(f)))?createStoryTimeReader(input.story.facts,episodes??createEpisodeReader()):undefined;
   const roles=retrievalScope?createStoryRoleReader(retrievalScope,input.draft,roleSeeds||input.story?.world.sharedGame?.managed?storedRoleReader(roleSeeds??[],input.entities??[],retrievalWorld!,input.story?.world.sharedGame?.mergeSeeds,!!input.story?.world.sharedGame?.managed):undefined):undefined;
- const referenceGuard=retrieval?.ambiguousName?AMBIGUOUS_STORY_NAME:input.story&&retrieval?.unresolvedReference?UNRESOLVED_STORY_REFERENCE:"";
+ const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles,options.contentRelevance!==false);
+ const reference=options.referenceRecall!==false&&input.story&&!input.restart&&retrieval?storyObjectReference(input.draft,retrieval.relevanceNames)??(options.referenceBundle!==false?storyLiteralReference(input.draft,facts.map(f=>f.fact),retrieval.relevanceNames):undefined):undefined;
+ const referenceGuard=retrieval?.ambiguousName?AMBIGUOUS_STORY_NAME:(input.story&&retrieval?.unresolvedReference||reference?.kind==='personal')?UNRESOLVED_STORY_REFERENCE:reference?.kind==='deictic'?UNRESOLVED_STORY_OBJECT:reference?.kind==='literal'?AMBIGUOUS_STORY_OBJECT:"";
  const resolveMentions=(text:string)=>retrievalScope?[...storyRetrievalQuery(text,retrievalScope).mentionedIds,...mentionedEntities(text,(input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind!=="character"))]:undefined;
  const memoryMentions=resolveMentions([input.draft,...input.recentMessages.slice(-4)].join("\n"));
  const limit=Math.max(0,Math.floor(input.settings.contextBudget));
@@ -118,7 +125,6 @@ export function compileGameContext(input:GameContextInput, options: { memoryTran
  // Small category rounds: no single huge optional profile can consume the
  // entire request before lore/facts. Exact full render decides every admission.
  const lore=pooled.selection.entries.filter(i=>!selection.entries.includes(i));
-  const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles,options.contentRelevance!==false);
  const recentFacts=new Map(rankStoryFacts(input.story?.facts??[],input.recentMessages.slice(-2).join("\n")).map(f=>[f.index,f.score]));
  // Explicit questions outrank incidental words in the preceding narration.
  // Recent prose is fallback when the draft supplies no fact match; no pronoun
@@ -146,8 +152,10 @@ export function compileGameContext(input:GameContextInput, options: { memoryTran
  const balancedTasks=new Set<StoryFact>(),balancedPersistent=new Set<StoryFact>();
  let balanced=false;
  const continuation=options.continuationBalance!==false&&retrieval&&isPlainStoryContinuation(input.draft,retrieval.relevanceNames);
- const action=options.actionBalance!==false&&retrieval?storyActionBalance(input.draft,retrieval.relevanceNames):undefined;
- if(!topicOnly&&input.story&&!input.restart&&retrieval&&retrievalScope&&!referenceGuard&&!roles?.question&&(continuation||action)){
+  const action=options.actionBalance!==false&&retrieval?storyActionBalance(input.draft,retrieval.relevanceNames):undefined;
+   const taskGoal=options.taskGoalBalance!==false&&retrieval?storyTaskGoal(input.draft,retrieval.relevanceNames):undefined;
+   const compound=options.compoundActionBalance!==false&&retrieval?storyCompoundAction(input.draft,retrieval.relevanceNames):undefined;
+     if(!topicOnly&&input.story&&!input.restart&&retrieval&&retrievalScope&&(!referenceGuard||reference&&reference.kind!=='personal'&&!retrieval.ambiguousName)&&!roles?.question&&(continuation||action||taskGoal||compound||options.naturalRecall!==false||options.lastingRecall!==false||reference&&reference.kind!=='personal')){
   const currentScene=c&&c[0]===retrievalWorld?c[3]:input.story.world.sharedGame?.scene;
   const focus=[...(input.scene&&input.scene.worldId===retrievalWorld?input.scene.focusIds:[]),...(c&&c[0]===retrievalWorld?c[5]:[])];
   const ids=new Set([...expandFocus([...focus,...(currentScene?.presentIds??[]),...(currentScene?.partnerIds??(currentScene?.partnerId?[currentScene.partnerId]:[])),...retrieval.mentionedIds,...(input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind==="character"&&e.characterSheet?.protagonist).map(e=>e.id)],input.entities??[],retrievalWorld!)]);
@@ -156,23 +164,78 @@ export function compileGameContext(input:GameContextInput, options: { memoryTran
   if(!currentScene&&!focus.length)for(const id of resolveMentions(input.recentMessages.slice(-2).join("\n"))??[])ids.add(id);
   const people=new Set((input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind==="character").map(e=>e.id));
   const available=storyContinuationCandidates(facts.map(f=>f.fact),[...ids].filter(id=>people.has(id)),roles,episodes,time);
-  const matches=action?.kind==='object'?action.matches:undefined;
-  const targets=matches?facts.map(f=>f.fact).filter(matches):[];
-  const candidates={tasks:matches?available.tasks.filter(matches):available.tasks,persistent:matches?available.persistent.filter(matches):available.persistent};
+   const goalTasks=taskGoal?storyTaskGoalCandidates(available.tasks,taskGoal,episodes):[],goal=goalTasks.length>=2?taskGoal:undefined;
+   const matches=goal?goal.matchesObject:action?.kind==='object'?action.matches:undefined;
+   const targets=goal?goalTasks:matches?facts.map(f=>f.fact).filter(matches):[];
+   const candidates={tasks:goal?goalTasks:matches?available.tasks.filter(matches):available.tasks,persistent:matches?available.persistent.filter(matches):available.persistent};
   // A named "continue" is not an explicit object question. Protect the best
   // recent-context anchor, not a name/framing match in the current draft.
-  const anchor=[...facts].sort((a,b)=>(recentFacts.get(b.index)??0)-(recentFacts.get(a.index)??0)||(episodes?.position(b.fact)??0)-(episodes?.position(a.fact)??0)||b.index-a.index)[0]?.fact;
-  if(anchor&&(!matches||targets.length)&&(candidates.tasks.length||candidates.persistent.length)&&consider(()=>selectedFacts.push(anchor),()=>{selectedFacts.pop()},"facts")){
+   const anchor=[...facts].sort((a,b)=>(recentFacts.get(b.index)??0)-(recentFacts.get(a.index)??0)||(episodes?.position(b.fact)??0)-(episodes?.position(a.fact)??0)||b.index-a.index)[0]?.fact;
+   const reserve=(items:StoryFact[],chosen?:Set<StoryFact>)=>{const existing=items.find(fact=>selectedFacts.includes(fact));if(existing){chosen?.add(existing);return true;}for(const fact of items){if(attemptedFacts.has(fact))continue;attemptedFacts.add(fact);if(consider(()=>selectedFacts.push(fact),()=>{selectedFacts.pop()},"facts")){chosen?.add(fact);return true;}}return false;};
+   if(!referenceGuard){
+   if(compound&&anchor&&consider(()=>selectedFacts.push(anchor),()=>{selectedFacts.pop()},"facts")){
+    attemptedFacts.add(anchor);
+    // Every clause needs whole, source-owned evidence. No partial admission:
+    // failed coverage rolls back all selected facts AND counters below.
+    balanced=compound.every(clause=>{
+     const tasks=available.tasks.filter(clause.matchesTask).sort((a,b)=>episodes!.position(a)-episodes!.position(b));
+     const persistent=clause.goal?[]:available.persistent.filter(clause.matchesObject);
+     const task=reserve(tasks,balancedTasks),detail=reserve(persistent,balancedPersistent);
+     return task||detail;
+    })&&selectedFacts.length>1;
+   }else if((continuation||action||goal)&&anchor&&(!matches||targets.length)&&(candidates.tasks.length||candidates.persistent.length)&&consider(()=>selectedFacts.push(anchor),()=>{selectedFacts.pop()},"facts")){
    attemptedFacts.add(anchor);
    // An object-bearing action must keep a complete direct object match, not
    // substitute a participant's unrelated obligation for the requested object.
-   const reserve=(items:StoryFact[],chosen?:Set<StoryFact>)=>{const existing=items.find(fact=>selectedFacts.includes(fact));if(existing){chosen?.add(existing);return true;}for(const fact of items){if(attemptedFacts.has(fact))continue;attemptedFacts.add(fact);if(consider(()=>selectedFacts.push(fact),()=>{selectedFacts.pop()},"facts")){chosen?.add(fact);return true;}}return false;};
    const covered=!matches||reserve(targets);
-   if(covered){reserve(candidates.tasks,balancedTasks);reserve(candidates.persistent,balancedPersistent);}
-   balanced=covered&&selectedFacts.length>1&&(!action||balancedTasks.size>0||balancedPersistent.size>0);
+    if(covered){reserve(candidates.tasks,balancedTasks);if(goal)reserve(candidates.tasks.filter(f=>!balancedTasks.has(f)),balancedTasks);reserve(candidates.persistent,balancedPersistent);}
+    balanced=covered&&selectedFacts.length>1&&(!(action||goal)||balancedTasks.size>0||balancedPersistent.size>0);
   }
   // No extra whole lane fit: preserve the previous result/counters exactly.
-  if(!balanced){selectedFacts.length=0;omitted.facts=0;attemptedFacts.clear();balancedTasks.clear();balancedPersistent.clear();}
+   if(!balanced){selectedFacts.length=0;omitted.facts=0;attemptedFacts.clear();balancedTasks.clear();balancedPersistent.clear();}
+   if(!balanced&&options.naturalRecall!==false){
+    const groups=storyNaturalRecall(input.draft,available.tasks,available.persistent,retrieval.relevanceNames,episodes);
+    if(groups.length&&anchor&&consider(()=>selectedFacts.push(anchor),()=>{selectedFacts.pop()},"facts")){
+     attemptedFacts.add(anchor);
+     // Cover every recognized literal object before optional lasting details.
+     // There is no action-count ceiling; cap8 and the whole rendered budget
+     // remain authoritative. The raw user query is never rewritten/shortened.
+     const whole=(items:StoryFact[],chosen:Set<StoryFact>)=>selectedFacts.length<8||items.some(f=>selectedFacts.includes(f))?reserve(items,chosen):false;
+     balanced=groups.every(group=>whole(group.tasks,balancedTasks));
+     if(balanced)for(const group of groups)whole(group.persistent,balancedPersistent);
+    }
+    if(!balanced){selectedFacts.length=0;omitted.facts=0;attemptedFacts.clear();balancedTasks.clear();balancedPersistent.clear();}
+   }
+    if(options.lastingRecall!==false){
+     const groups=storyLastingRecall(input.draft,available.persistent,facts.map(f=>f.fact),ids,retrieval.relevanceNames,roles,episodes);
+     if(groups.length&&anchor){
+      // Supplement an already balanced task selection as well as an empty one.
+      // A failed whole-record admission restores every prior counter and set.
+      const saved={facts:[...selectedFacts],omitted:omitted.facts,attempted:[...attemptedFacts],tasks:[...balancedTasks],persistent:[...balancedPersistent],balanced};
+      const whole=(items:StoryFact[],chosen?:Set<StoryFact>)=>selectedFacts.length<8||items.some(f=>selectedFacts.includes(f))?reserve(items,chosen):false;
+      const admitted=(selectedFacts.includes(anchor)||whole([anchor]))&&groups.every(group=>{
+       const detail=group.persistent.length?whole(group.persistent,balancedPersistent):true;
+       const history=group.closed.length?whole(group.closed):true;
+       return detail&&history;
+      });
+      if(admitted)balanced=true;
+      else{selectedFacts.splice(0,selectedFacts.length,...saved.facts);omitted.facts=saved.omitted;attemptedFacts.clear();saved.attempted.forEach(f=>attemptedFacts.add(f));balancedTasks.clear();saved.tasks.forEach(f=>balancedTasks.add(f));balancedPersistent.clear();saved.persistent.forEach(f=>balancedPersistent.add(f));balanced=saved.balanced;}
+     }
+   }
+   }
+   if(reference&&reference.kind!=='personal'&&anchor&&!retrieval.ambiguousName&&options.referenceRecall!=="guard"){
+    const candidate=storyReferenceCandidates(reference,available.tasks,available.persistent,anchor,input.recentMessages,retrieval.relevanceNames,roles,episodes,options.referenceBundle!==false?facts.map(f=>f.fact):undefined);
+    if(candidate){
+     if(options.referenceBundle===false)balanced=reserve([anchor])&&reserve(candidate.tasks,balancedTasks)&&(!candidate.persistent.length||reserve(candidate.persistent,balancedPersistent));
+     else{
+      const whole=(fact:StoryFact,chosen?:Set<StoryFact>)=>selectedFacts.includes(fact)||selectedFacts.length<8?reserve([fact],chosen):false;
+      // Same label does not establish object identity. Carry every independently
+      // source-owned alternative whole, or restore the guarded fallback exactly.
+      balanced=whole(anchor)&&candidate.tasks.every(f=>whole(f,balancedTasks))&&candidate.persistent.every(f=>whole(f,balancedPersistent));
+     }
+     if(!balanced){selectedFacts.length=0;omitted.facts=0;attemptedFacts.clear();balancedTasks.clear();balancedPersistent.clear();}
+   }
+    }
  }
  if(!topicOnly&&!balanced&&explicit)for(const f of facts.filter(f=>f.score>(f.fact.task?.status==="open"?2:0))) {
   attemptedFacts.add(f.fact);

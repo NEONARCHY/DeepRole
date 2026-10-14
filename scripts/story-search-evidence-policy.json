@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "experiment": "RP264B",
+  "base": "RP264 anchored MMR unchanged lambda=0.5",
+  "preserveBaselineEvidence": "Every already-admitted current source with task/claim or a nonempty frozen source-role binding is mandatory. Attribution is not importance: speaker-bound discussions may conservatively fill the budget too.",
+  "seedOrder": "lexical leader then mandatory baseline evidence in its existing order",
+  "overflow": "If mandatory evidence fills cap8 or the mandatory union exceeds cap8, exact baseline fallback",
+  "similarityIsNotIdentity": true,
+  "unknownQueryPolicy": "Measure explicitly; no gold-based suppression or unvalidated confidence threshold",
+  "evaluation": "RP264 fresh40 is development now; author and freeze a second new24 before evaluating this guard"
+}

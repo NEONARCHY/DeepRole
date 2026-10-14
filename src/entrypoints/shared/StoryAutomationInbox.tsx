@@ -21,7 +21,7 @@ export function StoryAutomationInbox({ locale,tabs,scope,revision,blocked = fals
     catch(e) { setError(storyReviewText(locale,storyReviewError(e))); } finally { setBusy(false); }
   };
   return <section className="settings-card dr-story-automation-inbox" aria-label={t.inbox}><div className="dr-story-inbox-heading"><h2>{t.inbox}{page && page.total > 0 && <span className="dr-story-inbox-count">{page.total}</span>}</h2><button className="button secondary" type="button" disabled={busy || blocked} onClick={() => void load()}>{t.refresh}</button></div>
-    {error && <p role="alert">{error}</p>}{page && !page.total && <p className="setting-copy">{t.empty}</p>}
+    {busy && !page && <p role="status">{t.loading}</p>}{error && <p role="alert">{error}</p>}{page && !page.total && <p className="setting-copy">{t.empty}</p>}
     {!!page?.total && <><p className="setting-copy">{t.inboxHint}</p>{!page.ready && <p role="status">{t.readyScene}</p>}
       {page.items.some(p => p.type === "person") && <div className="dr-story-inbox-search"><span className="field-label" id={id+"-search-label"}>{t.searchPeople}</span><input type="text" className="input" aria-labelledby={id+"-search-label"} id={id+"-search"} value={query} maxLength={80} disabled={busy || blocked} onChange={e => setQuery(e.target.value)} /><button type="button" className="button secondary" disabled={busy || blocked} onClick={() => void load()}>{t.search}</button></div>}
       {page.items.map(item => {

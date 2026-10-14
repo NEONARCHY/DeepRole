@@ -9,7 +9,12 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test
   const fields = page.getByLabel(t("text"), { exact: true }); await expect(fields).toHaveCount(2); await fields.first().fill(locale === "ru" ? "Ключ в кармане героя" : "The key is in the protagonist’s pocket");
   const save = page.getByRole("button", { name: t("save"), exact: true }).first(); await save.focus(); await page.keyboard.press("Enter"); await expect(page.getByText(t("saved"), { exact: true })).toHaveCount(1); await expect(page.getByText(t("edited"), { exact: true })).toHaveCount(1);
   await expect(page.getByText(t("promise"), { exact: true })).toBeVisible(); await page.getByText(t("evidence"), { exact: true }).first().click();
-  await page.getByRole("button", { name: t("copy"), exact: true }).click(); const report = await page.evaluate(() => (window as any).storyMemoryFixture.copied.at(-1)); expect(JSON.parse(report)).toMatchObject({ stage: "story-update", result: { skipped: 1 } }); expect(report).not.toMatch(/Мира|Mira|карман|pocket|fact-one|review-assistant|quote/);
+  const copy = page.getByRole("button", { name: t("copy"), exact: true });
+  await expect(copy).toBeHidden();
+  await page.locator(".dr-support-details > summary").filter({hasText:locale === "ru" ? "Для технической поддержки" : "For technical support"}).click();
+  await expect(copy).toBeHidden();
+  await page.locator(".dr-support-details details > summary").filter({hasText:locale === "ru" ? "Открыть технические данные" : "Open technical data"}).click();
+  await copy.click(); const report = await page.evaluate(() => (window as any).storyMemoryFixture.copied.at(-1)); expect(JSON.parse(report)).toMatchObject({ stage: "story-update", result: { skipped: 1 } }); expect(report).not.toMatch(/Мира|Mira|карман|pocket|fact-one|review-assistant|quote/);
   await page.evaluate(() => { (window as any).storyMemoryFixture.clipboardFails = true; }); await page.getByRole("button", { name: t("copy"), exact: true }).click(); await expect(page.getByLabel(t("report"))).toBeVisible();
   await page.getByRole("button", { name: t("repair"), exact: true }).click(); await expect(page.getByText(t("repaired"), { exact: true })).toBeVisible();
   await page.getByRole("button", { name: t("remove"), exact: true }).click(); await expect(page.getByText(t("saved"), { exact: true })).toHaveCount(0);

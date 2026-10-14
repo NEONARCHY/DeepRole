@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { Grip, RotateCcw, X } from "lucide-react";
 import { clampCastPopup, dockCastPopup, type CastPopupPoint } from "../../core/cast-popup";
 import { castText } from "../../core/cast-i18n";
+import { castPreparationReady } from "../../core/cast-progress";
+import { castProgressText } from "../../core/cast-progress-i18n";
 import type { CastView } from "../../adapters/cast-coordinator";
 import type { Locale } from "../../core/types";
 
@@ -78,6 +80,7 @@ export function CastStatus({ job, locale, compact, anchor, children, onHide }: {
     {preparing && <><div className="dr-cast-activity" aria-hidden="true"><span/></div><p className="dr-cast-waiting-hint" aria-live="off">{t((job.large?.stage === "scan" ? ["waitNames", "waitSources", "waitService"] : job.phase === "opening" ? ["waitOpening", "waitConnection", "waitService"] : job.phase === "reading" ? ["waitFragments", "waitSources", "waitService"] : ["waitProfiles", "waitRelationships", "waitService"])[hint] as Parameters<typeof castText>[1])}</p>
       {!job.large && <small>{job.phase === "analyzing" ? t("finalStep") : job.phase === "opening" ? t("source") + ": " + job.sourceCount : t("fragment") + " " + Math.min(job.step + 1, job.partCount) + "/" + job.partCount}{job.repair ? " · " + t("repairStep") : ""}</small>}{job.large && job.repair && <small>{t("repairStep")}</small>}</>}
     {!!job.draft?.characters.length && preparing && <small>{t("savedCount")}: {job.draft.characters.length}</small>}
+    {castPreparationReady(job)&&!job.reset&&<p className="dr-cast-validation-success">{castProgressText(locale).ready}</p>}
     {children}
   </div>;
   return compact && anchor.current ? createPortal(status, anchor.current.closest(".dr-root") ?? anchor.current.ownerDocument.body) : status;

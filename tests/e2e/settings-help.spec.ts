@@ -5,7 +5,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test
  await page.setViewportSize({ width, height: 1000 }); await page.goto("/tests/fixtures/sidepanel.html?world&locale=" + locale);
  await page.locator(".bottom-nav").getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
  const prefix = locale === "ru" ? "Подсказка: " : "Help: ";
- for (const name of ["characters","appearance","app","memory"] as const) {
+  for (const name of ["characters","appearance","app","safety"] as const) {
   await openSettingsSection(page,name,locale);
   const visible = page.locator(".dr-settings-page:visible");
   const helpers = visible.locator(".dr-settings-help-button"); expect(await helpers.count()).toBeGreaterThan(0);

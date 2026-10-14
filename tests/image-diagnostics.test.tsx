@@ -55,17 +55,20 @@ test("merges both real catalog capabilities without overwriting a dual-purpose m
   expect(fetch).toHaveBeenCalledTimes(2);
 });
 for (const locale of ["ru", "en"] as const) {
-  test(`error disclosure has a hover code, keyboard disclosure and no retry ${locale}`, () => {
+  test(`current error stays visible and technical codes require both disclosures ${locale}`, () => {
     const view = render(<ImageErrorDetails locale={locale} error={{ code: "badRequest", diagnostic: { ...base, providerCode: "INVALID_MODEL", message: "Unknown model", fields: ["model"] } }} />);
-    expect(view.getByRole("alert")).toHaveAttribute("title", "badRequest · HTTP 400 · INVALID_MODEL");
+    expect(view.getByRole("alert")).not.toHaveAttribute("title");
     const disclosure = view.container.querySelector("details")!;
-    expect(disclosure.open).toBe(false); fireEvent.click(view.getByText(locale === "ru" ? "Подробности ошибки" : "Error details"));
-    expect(view.container.textContent).toContain("INVALID_MODEL"); expect(view.container.textContent).toContain("/image/edit");
+    expect(disclosure.open).toBe(false); expect(view.getByText("INVALID_MODEL")).not.toBeVisible();
+    fireEvent.click(view.getByText(locale === "ru" ? "Для технической поддержки" : "For technical support"));
+    expect(view.getByText("INVALID_MODEL")).not.toBeVisible();
+    fireEvent.click(view.getByText(locale === "ru" ? "Открыть технические данные" : "Open technical data"));
+    expect(view.getByText("INVALID_MODEL")).toBeVisible(); expect(view.getByText("/image/edit")).toBeVisible();
     expect(view.queryAllByRole("button")).toHaveLength(0);
   });
   test(`old errors stay readable without invented HTTP codes ${locale}`, () => {
     const view = render(<ImageErrorDetails locale={locale} error="invalidPlan" />);
-    expect(view.getByRole("alert")).toHaveAttribute("title", "invalidPlan");
+    expect(view.getByRole("alert")).not.toHaveAttribute("title");
     expect(view.container.textContent).not.toContain("400"); expect(imageErrorKey("invalidPlan")).toBe("invalidPlan");
   });
   test(`catalog selectors filter API capabilities and preserve a saved incompatible selection ${locale}`, async () => {

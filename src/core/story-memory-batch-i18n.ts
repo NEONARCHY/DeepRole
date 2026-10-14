@@ -1,5 +1,6 @@
 import type { Locale } from "./types";
 const ru = {
+ loading: "Проверяем состояние…", unavailable: "Не удалось обновить состояние. Последние полученные данные сохранены.", refresh: "Обновить состояние",
  title: "Дополнительная проверка памяти", intro: "Отдельный запрос DeepSeek проверяет небольшую партию новых записанных сцен. Обычно после 12 игровых ходов; при большом объёме или смене сцены — раньше. Весь лор не отправляется.",
  cost: "Использует дополнительные запросы и лимиты DeepSeek. Откроется видимое служебное окно с плашками; после очистки оно закроется. По умолчанию выключено.",
  enabled: "Включено", disabled: "Выключено", paused: "На паузе", enable: "Включить дополнительную проверку", pause: "Приостановить", resume: "Возобновить", disable: "Выключить",
@@ -8,6 +9,7 @@ const ru = {
  inactive: "Завершите обычный игровой ход и возобновите сопровождение или запись сцен.", "service-busy": "Другая служебная операция ещё работает или ждёт очистки. Завершите её; новая партия пока не отправляется.", start: "Сначала включите сопровождение игры выше.", error: "Не удалось выполнить действие. Проверьте актуальный чат и служебное окно; память сохранена.", saved: "Настройка сохранена",
 };
 const en: Record<keyof typeof ru, string> = {
+ loading: "Checking status…", unavailable: "Could not refresh the status. The last received data is kept.", refresh: "Refresh status",
  title: "Extra memory review", intro: "An extra DeepSeek request reviews a small batch of newly recorded scenes. Usually after 12 game turns; earlier for large excerpts or a scene change. It does not send the whole lore.",
  cost: "Uses additional DeepSeek requests and limits. A visible service window with progress cards opens and closes after cleanup. Disabled by default.",
  enabled: "Enabled", disabled: "Disabled", paused: "Paused", enable: "Enable extra memory review", pause: "Pause", resume: "Resume", disable: "Disable",

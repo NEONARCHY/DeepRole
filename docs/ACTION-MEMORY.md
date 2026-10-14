@@ -2,6 +2,8 @@
 
 DeepRole теперь может сохранять место для старого открытого дела и длительного сведения не только после «Продолжай», но и после коротких действий от первого лица. Новая настройка, дополнительная палочка и отдельный запрос модели не нужны. Используется уже принятая память выбранной истории.
 
+Этот раздел описывает прежний короткий разбор. Для обычных формулировок, падежей, условий и сообщений с большим числом действий добавлен [поиск явных предметов](NATURAL-MEMORY.md). Он подбирает сведения из принятых дел и сохраняет весь запрос, не объявляя действие выполненным.
+
 ## Пример с дверью
 
 Нора обещала проверить дверь **только после разрешения охраны**. Мира сообщила, что знает код, но дверь без разрешения должна оставаться закрытой. Эти сведения приняты в память, а позднее записано двадцать разговоров о той же двери.
@@ -16,11 +18,13 @@ DeepRole теперь может сохранять место для старо
 
 Для действия с предметом все значимые слова предмета должны совпасть в одном полном тексте факта или названии задачи. Одна «дверь» не покрывает «красную дверь». Цитата, внутренний ключ и значение свойства не заменяют такое совпадение. Это лексический подбор, не доказательство тождества двух похожих предметов и не универсальное понимание намерения.
 
-Цитированная речь, отрицания, попытки, условия, несколько действий, неизвестные адресаты и неопределённый владелец вроде «её дверь» не включают этот новый баланс. Для них остаётся прежний подбор памяти, а не отключение памяти. Прямые вопросы по теме или владельцу также сохраняют свои правила.
+Цитированная речь, отрицания, попытки, условия, неизвестные адресаты и неопределённый владелец вроде «её дверь» не включают этот баланс. Для них остаётся прежний подбор памяти, а не отключение памяти. Прямые вопросы по теме или владельцу также сохраняют свои правила. Для двух или трёх поддержанных действий с разными предметами есть [отдельный подбор](COMPOUND-ACTIONS.md): он требует целого источника для каждой части.
 
 ## Источники и размер запроса
 
 Отдельное место получает не больше одного подходящего открытого дела и одного длительного сведения. Для дела нужны сохранённый владелец по ID и проверенный источник выбранной истории; для длительного сведения — принятая отметка `persistent` и сохранённый говорящий или автор мнения. Получатель обещания не становится владельцем. Персонаж с прежним именем, но новым ID не наследует обязательства.
+
+Для некоторых явно названных целей ремонта, возврата и доставки есть отдельный подбор нескольких дел: если подходят хотя бы два подтверждённых дела, в запрос могут войти самое старое и самое новое вместе с полными условиями. Совпадение проверяется по действию и буквальному названию предмета в начале заголовка. [Примеры и ограничения](TASK-GOALS.md).
 
 Сначала сохраняется недавний контекст. Действие с предметом также требует целого прямого совпадения с предметом; защищённые дело и сведение должны относиться к нему. Для жеста отдельного предметного фильтра нет. Среди подходящих записей используется подтверждённый порядок источников, не вычисленная срочность или важность сюжета.
 
@@ -38,4 +42,6 @@ DeepRole теперь может сохранять место для старо
 
 Finite short first-person actions such as `I open the door`, `I am opening the door`, `I nod` and whole asterisk-wrapped actions can now protect a recent-context anchor, at most one applicable open obligation and one accepted lasting detail. Object actions additionally require a whole directly matching record; every meaningful object term must occur in one full fact text or task title. Protected obligations and lasting details must match that object too. Gestures use contextual character IDs without guessing agreement, presence or who heard a statement.
 
-Frozen owner or speaker IDs, accepted lifetime and verified selected-source order are required. Quotes, conditions, statuses and stored data remain unchanged. A known code is not permission, a retrieval is not a performed event, and a recipient is not an owner. Quoted, negated, tentative, conditional, compound, unsupported or ambiguous syntax keeps previous selection, as do direct topic and owner questions. Whole-budget failure restores previous selection and counters; pinned lore is not clipped. No new setting or model call is added. The fixed synthetic corpus improves complete-target recall from 0 to 24 of 24 with 24 unchanged controls, not universal or live-model quality. Native chat history is not compressed.
+Frozen owner or speaker IDs, accepted lifetime and verified selected-source order are required. Quotes, conditions, statuses and stored data remain unchanged. A known code is not permission, a retrieval is not a performed event, and a recipient is not an owner. Quoted, negated, tentative, conditional, unsupported or ambiguous syntax keeps previous selection, as do direct topic and owner questions. Finite two/three-object actions have a separate [all-clause evidence path](COMPOUND-ACTIONS.md). Whole-budget failure restores previous selection and counters; pinned lore is not clipped. No new setting or model call is added. The fixed synthetic corpus improves complete-target recall from 0 to 24 of 24 with 24 unchanged controls, not universal or live-model quality. Native chat history is not compressed.
+
+Самостоятельные знания и результаты закрытых дел также могут дополняться по [правилам длительных сведений](LASTING-MEMORY.md), без открытия завершённого дела и без нового запроса к модели. / Standalone knowledge and terminal task results have an additional [literal retrieval path](LASTING-MEMORY.md).

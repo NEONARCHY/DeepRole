@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "experiment": "RP264",
+  "method": "anchored-mmr",
+  "limit": 8,
+  "lexicalAnchors": 1,
+  "lambda": 0.5,
+  "probeBudgets": [900, 1500, 2300, 4000, 6000],
+  "preserve": ["source-owner-question", "ambiguous-current-identity", "covered-current-topic-admission"],
+  "similarityIsNotIdentity": true,
+  "unknownQueryPolicy": "No gold-based or unvalidated confidence gate. Measure selection drift explicitly; do not ship on an unexplained regression.",
+  "admission": "Whole replacement in the existing complete rendered prompt, all-or-exact-fallback. No clipping, new source interpretation, canonical writes or model rollout."
+}

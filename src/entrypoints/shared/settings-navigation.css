@@ -1,9 +1,9 @@
 .dr-settings-directory { min-width: 0; }
 .app-shell .view-stack:has(.dr-settings-directory) { animation: none; }
 .dr-settings-directory h2 { font-size: 1.125rem; margin: 16px 0 8px; overflow-wrap: anywhere; }
-.dr-settings-directory h3 { font-size: .875rem; margin: 24px 0 8px; color: var(--dr-muted); }
+.dr-settings-directory h3 { font-size: .75rem; margin: 0; padding: 16px 14px 4px; color: var(--dr-muted); }
 .dr-settings-directory p { font-size: .875rem; line-height: 1.6; color: var(--dr-muted); margin: 8px 0 16px; overflow-wrap: anywhere; }
-.dr-settings-route { display: flex; width: 100%; align-items: center; gap: 12px; text-align: start; padding: 14px 4px; border: 0; border-bottom: 1px solid var(--dr-border); background: transparent; color: var(--dr-text); cursor: pointer; min-height: 44px; }
+.dr-settings-route { display: flex; width: 100%; align-items: center; gap: 12px; text-align: start; padding: 14px; border: 0; border-bottom: 1px solid var(--dr-border); background: transparent; color: var(--dr-text); cursor: pointer; min-height: 64px; }
 .dr-settings-route:hover { background: var(--dr-panel); }
 .dr-settings-route span { flex: 1; min-width: 0; }
 .dr-settings-route strong, .dr-settings-route small { display: block; overflow-wrap: anywhere; }
@@ -14,3 +14,10 @@
 .dr-settings-directory summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-weight: 600; }
 .dr-settings-directory :focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 3px; }
 .dr-settings-scope { padding: 12px; background: var(--dr-panel); border-radius: 10px; }
+.dr-settings-group { margin-top: 16px; border: 1px solid var(--dr-border); border-radius: 14px; background: var(--dr-panel); overflow: hidden; }
+.dr-settings-group > :last-child { border-bottom: 0; }
+.dr-settings-route > svg:first-child { color: var(--dr-muted); }
+.dr-settings-route:hover { background: var(--dr-surface); }
+.dr-settings-advanced { padding: 0 14px; border: 1px solid var(--dr-border); border-radius: 12px; }
+.dr-settings-advanced > details { border-top: 1px solid var(--dr-border); margin-top: 12px; }
+.dr-settings-directory .dr-settings-save-hint { font-size: .75rem; margin-bottom: 4px; }

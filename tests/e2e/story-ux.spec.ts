@@ -13,6 +13,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test
   await nav.focus(); await page.keyboard.press("Enter");
   await expect(nav).toHaveAttribute("aria-current", "page");
   await expect(page.getByText(ux(locale, "active"), { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: ux(locale, "memory"), exact: true }).click();
   const field = page.getByRole("textbox", { name: facts(locale, "text"), exact: true });
   await field.fill("My manually reviewed fact");
   await page.getByRole("button", { name: ux(locale, "timeline"), exact: true }).click();

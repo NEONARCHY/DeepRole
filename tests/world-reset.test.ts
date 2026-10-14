@@ -1,4 +1,4 @@
-import {afterEach,expect,it} from "vitest";
+import {afterEach,expect,it,vi} from "vitest";
 import {DeepRoleDatabase} from "../src/storage/database";
 import {DeepRoleRepository} from "../src/storage/repository";
 import {activateWorldGame} from "../src/storage/world-game";
@@ -19,10 +19,33 @@ import {characterRevision} from "../src/core/characters";
 import {nativeStoryMessageKey as nativeKey} from "../src/core/story-transport";
 import {readStoryMerge,approveStoryMerge} from "../src/storage/story-character-merge";
 import {worldGamePeople} from "../src/core/world-game";
+import {savePortraitLayout} from "../src/storage/portrait-layout";
 import type {WorldProfile,SceneEntity,ChatBinding} from "../src/core/types";
-const dbs:DeepRoleDatabase[]=[];afterEach(async()=>{await Promise.all(dbs.splice(0).map(db=>db.delete()));});
+const dbs:DeepRoleDatabase[]=[];afterEach(async()=>{vi.restoreAllMocks();await Promise.all(dbs.splice(0).map(db=>db.delete()));});
 async function fixture(){const f=resetFixture(),db=new DeepRoleDatabase("reset-"+crypto.randomUUID());dbs.push(db);const repo=new DeepRoleRepository(db);await repo.mergeRecords(f.records);await activateWorldGame({chatId:f.binding.chatId,chatUrl:f.binding.chatUrl,worldId:f.world.id,mode:"initialize",expectedRevision:null},repo);const w=(await repo.get<WorldProfile>("world",f.world.id))!,job=await createCastJob(w.id,"en",false,repo,undefined,false,{chatId:f.binding.chatId,revision:w.sharedGame!.revision,start:"Tyoma has just returned after six years abroad."}),draft=resetDraft(job.id,f.records);await mutateCastJob(job.id,j=>({...j,phase:"ready",step:99,draft,cleanup:"done",reset:{...j.reset!,entryOffset:j.reset!.entries.length}}),repo);return {...f,repo,db,job,draft,getWorld:()=>repo.get<WorldProfile>("world",f.world.id).then(w=>w!)};}
 it("prepares a reset-specific immutable lore request without image bytes or mutation",async()=>{const f=await fixture(),job=(await f.repo.get<CastJob>("cast",f.job.id))!;expect(castPrompt(job)).toContain("WORLD RESET TO THE START");expect(castPrompt(job)).toContain("NEVER make everyone strangers");expect(JSON.stringify(job.sources)).not.toContain("AAAA");expect((await f.getWorld()).sharedGame!.id).toBe(f.job.reset!.gameId);expect(await f.repo.get("entry",f.event.id)).not.toBeNull();});
+it.each(["current","legacy"] as const)("delayed reset review survives idle binding metadata before both confirmations: %s",async format=>{
+ const f=await fixture(),before=await f.getWorld();
+ if(format==="legacy"){
+  // The shipped guard stored the whole binding. Keep this exact old format to
+  // prove an already prepared plan can be used after updating the extension.
+  const all=await f.repo.rawRecords(),books=all.filter(r=>r.kind==="book"&&"worldId" in r.data&&r.data.worldId===f.world.id).map(r=>r.id);
+  const guard=JSON.stringify([before.sharedGame,before.description,all.filter(r=>r.kind==="binding"&&r.id===before.sharedGame!.activeBindingId).map(r=>r.data),all.filter(r=>r.kind==="entry"&&((r.data as any).worldId===f.world.id||books.includes((r.data as any).bookId??""))||["template","entity"].includes(r.kind)&&"worldId" in r.data&&r.data.worldId===f.world.id).map(r=>r.kind==="entity"?[r.id,(r.data as SceneEntity).name,(r.data as SceneEntity).aliases,(r.data as SceneEntity).updatedAt]:[r.kind,r.id,r.data]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))]);
+  await mutateCastJob(f.job.id,j=>({...j,resetGuard:guard}),f.repo);
+ }
+ vi.spyOn(Date,"now").mockReturnValue(Date.now()+50*60*1000);
+ await savePortraitLayout({worldId:f.world.id,chatId:f.binding.chatId,chatUrl:f.binding.chatUrl,resetAt:0,entityId:"person-1",pose:{x:.4,y:.3,width:240,space:"viewport"}},f.repo);
+ const binding=(await f.repo.get<ChatBinding>("binding",f.binding.id))!;
+ await f.repo.put("binding",{...binding,messageCountAtAnalysis:binding.messageCountAtAnalysis+1,updatedAt:Date.now()});
+ expect((await f.getWorld()).sharedGame).toEqual(before.sharedGame);
+ const token=await confirmWorldReset(f.job.id,f.draft,[f.event.id,f.mixed.id],f.repo);
+ await savePortraitLayout({worldId:f.world.id,chatId:f.binding.chatId,chatUrl:f.binding.chatUrl,resetAt:0,entityId:"person-1",pose:{x:.5,y:.3,width:260,space:"viewport"}},f.repo);
+ await applyWorldReset(f.job.id,token,f.world.name,f.repo);
+ expect((await f.getWorld()).sharedGame!.id).not.toBe(before.sharedGame!.id);
+ expect(await f.repo.get("entry",f.event.id)).toBeNull();
+ expect((await f.repo.get<CastJob>("cast",f.job.id))!.phase).toBe("applied");
+ assertStoryGraph(await f.repo.rawRecords());
+});
 it.each(["no token","wrong world","wrong token"])("requires both explicit confirmations atomically: %s",async mode=>{const f=await fixture(),before=await f.repo.rawRecords(),token=mode==="no token"?"":await confirmWorldReset(f.job.id,f.draft,[f.event.id,f.mixed.id],f.repo);await expect(applyWorldReset(f.job.id,mode==="wrong token"?"bad":token,mode==="wrong world"?"Other":f.world.name,f.repo)).rejects.toThrow("reset-confirmation-required");expect((await f.getWorld()).sharedGame).toEqual((before.find(r=>r.kind==="world")!.data as WorldProfile).sharedGame);expect(await f.repo.get("entry",f.event.id)).not.toBeNull();});
 it("resets individually, clears progress, preserves family/initial love/static entries/images and archives changed text",async()=>{
  const f=await fixture(),before=(await f.getWorld()).sharedGame!,images=(await f.repo.list<SceneEntity>("entity")).map(p=>({id:p.id,sprites:p.characterSheet!.sprites,appearance:p.characterSheet!.appearance,personality:p.characterSheet!.personality})),token=await confirmWorldReset(f.job.id,f.draft,[f.event.id,f.mixed.id],f.repo),snapshot=await applyWorldReset(f.job.id,token,f.world.name,f.repo),w=await f.getWorld(),g=w.sharedGame!;

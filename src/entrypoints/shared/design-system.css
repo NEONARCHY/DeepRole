@@ -4,6 +4,7 @@
 @import "./design-tokens.css";
 @import "./select.css";
 @import "./design-effects.css";
+@import "./support-details.css";
 /* Scoped to DeepRole only, including content-script shadow roots and dialogs. */
 :is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu), :is(.app-shell,.dr-root,.dr-loremap) * {
   scrollbar-width:thin; scrollbar-color:var(--dr-raised) transparent; color-scheme:dark;

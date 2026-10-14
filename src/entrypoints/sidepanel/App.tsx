@@ -6,6 +6,7 @@ import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
 import { StoryDiagnostics } from "../shared/StoryDiagnostics";
 import { StoryWorkspace } from "../shared/StoryWorkspace";
+import { WorldResetSetup } from "../shared/WorldResetSetup";
 import { storyUxText } from "../../core/story-ux-i18n";
 import { StoryUpdateSettings } from "../shared/StoryUpdateSettings";
 import { ServiceDiagnostics } from "../shared/ServiceDiagnostics";
@@ -153,7 +154,14 @@ export function App() {
   const [page, setPage] = useState<PageState>(EMPTY_PAGE);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [storyVisited, setStoryVisited] = useState(false);
+  const [settingsVisited, setSettingsVisited] = useState(false);
+  const [settingsSaveError, setSettingsSaveError] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const settingsWriting = useRef(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const requestedResetReview = new URLSearchParams(window.location.search).get("resetReview");
   const openStory = () => { setStoryVisited(true); setActiveTab("story"); };
+  const openSettings = () => { setSettingsVisited(true); setActiveTab("settings"); };
   const [openMapWorldId, setOpenMapWorldId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -355,8 +363,12 @@ export function App() {
   }
 
   async function persistSettings(next: DeepRoleSettings) {
-    setSettingsState(next);
-    await saveSettings(next);
+    if (settingsWriting.current) throw Error("settings-save-busy");
+    settingsWriting.current = true; setSettingsSaving(true);
+    setSettingsSaveError(false);
+    try { await saveSettings(next); setSettingsState(next); }
+    catch (error) { setSettingsSaveError(true); throw error; }
+    finally { settingsWriting.current = false; setSettingsSaving(false); }
   }
 
 
@@ -499,6 +511,9 @@ export function App() {
       </header>
 
       <main className="app-main">
+        {settingsSaveError && <p className="error-text dr-workspace-notice" role="alert">{settings.locale === "ru" ? "Настройки не сохранены. Проверьте доступ к хранилищу и повторите изменение." : "Settings were not saved. Check storage access and try the change again."}</p>}
+        {settingsSaving && <p role="status">{settings.locale === "ru" ? "Сохраняем настройки…" : "Saving settings…"}</p>}
+        {scene.worldId && page.chatId && worlds.find(w=>w.id===scene.worldId)?.sharedGame && <WorldResetSetup key={scene.worldId} worldId={scene.worldId} worldName={worlds.find(w=>w.id===scene.worldId)!.name} locale={settings.locale} game={worlds.find(w=>w.id===scene.worldId)!.sharedGame!} chatId={page.chatId} blocked={!!page.generating} open={resetDialogOpen} onOpenChange={setResetDialogOpen} hideLauncher requestedReviewId={requestedResetReview}/>}
         {relevantProposals.length > 0 && <section className="dr-assistant"><header><strong>{at("proposals")}</strong></header>{relevantProposals.map((batch) => <button key={batch.id} onClick={() => setReviewId(batch.id)}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}</section>}
         {activeReview && <MemoryReview key={activeReview.id} locale={settings.locale} batch={activeReview} onClose={() => setReviewId(null)} onDiscard={async () => { await discardMemoryProposals(activeReview.id); await refresh(); }} onSave={async (items, profileChoice) => { await applyMemoryProposals(activeReview.id, items, undefined, profileChoice); const count = items.filter((item) => item.selected && !item.issue).length + Number(!!profileChoice); setToast(at("memoryUpdated").replace("{count}", String(count))); await refresh(); await refreshPage(); }} />}
         {activeTab === "overview" && lastChange && <div className="button-row"><button className="button secondary small" onClick={() => void undoLoreChange(lastChange.id).then(() => refresh()).catch(() => setToast(at("conflict")))}>{at("undo")}</button></div>}
@@ -542,8 +557,8 @@ export function App() {
           />
         </details></div>}
 
-        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
-        {activeTab === "settings" && (
+        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
+        {settingsVisited && <div hidden={activeTab !== "settings"}><fieldset className="dr-settings-save-scope" disabled={settingsSaving} aria-busy={settingsSaving}>
           <SettingsView
             onExport={() => setExportRequest({ worldId: scene.worldId ?? libraryWorld })}
             t={t}
@@ -553,7 +568,7 @@ export function App() {
             onRefresh={() => { void notifyDataChanged(); void refresh(); }}
             onToast={setToast}
           />
-        )}
+        </fieldset></div>}
       </main>
 
       {exportRequest && <ExportDialog locale={settings.locale} worlds={worlds} worldId={exportRequest.worldId} onClose={() => setExportRequest(null)} />}
@@ -561,7 +576,7 @@ export function App() {
         <NavButton active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
         <NavButton active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
         <NavButton active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
-        <NavButton active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={() => setActiveTab("settings")} />
+        <NavButton active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={openSettings} />
       </nav>
 
       {bookEditor && (
@@ -639,13 +654,11 @@ function Overview(props: {
     <MemoryStatus key={props.page.chatUrl + props.worldId} locale={props.locale} connected={props.page.compatible} warning={props.page.warning} selection={props.page.selection} pendingHandoff={props.page.pendingHandoff} available={enabledEntries} onAdd={props.onNewMemory} />
     {!!props.page.selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {props.page.selection.omittedCount}</p>}
     {!!props.page.selection?.overBudgetTokens && <p className="dr-inline-note">{assistantText(props.locale, "overflow")}</p>}
-    <ContextBudgetSummary locale={props.locale} report={props.page.selection?.contextReport} entries={props.page.selection?.entries}/>
-    <MemoryDeliverySummary locale={props.locale} receipt={props.page.memoryDelivery}/>
+    {(props.page.selection?.contextReport || props.page.memoryDelivery) && <details className="play-memory-details"><summary>{props.locale === "ru" ? "Что получает DeepSeek" : "What DeepSeek receives"}</summary><p className="setting-copy">{props.locale === "ru" ? "Подходящая часть лора и памяти добавляется к сообщению. Вся библиотека целиком не отправляется." : "Relevant lore and memory are added to your message. The entire library is not sent at once."}</p><ContextBudgetSummary locale={props.locale} report={props.page.selection?.contextReport} entries={props.page.selection?.entries}/><MemoryDeliverySummary locale={props.locale} receipt={props.page.memoryDelivery}/></details>}
     <section className="quick-actions">
-      <button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button>
-      <button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button>
       <button className="action-card" aria-label={storyUxText(props.locale, "open")} onClick={props.onOpenStory}><BookOpen /><span><strong>{storyUxText(props.locale, "open")}</strong><small>{storyUxText(props.locale, "openHint")}</small></span><ChevronRight /></button>
     </section>
+    <details className="play-memory-details"><summary>{props.locale === "ru" ? "Добавить или проверить память вручную" : "Add or check memory manually"}</summary><div className="quick-actions"><button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button><button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{!props.page.compatible || !props.page.chatId ? (props.locale === "ru" ? "Сначала откройте игровой чат DeepSeek." : "Open a DeepSeek game chat first.") : x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button></div></details>
   </div>;
 }
 
@@ -791,6 +804,7 @@ function SettingsView(props: {
   onToast: (message: string) => void;
 }) {
   const [section, setSection] = useState<SettingsSection>("home");
+  const changePreference = (next: DeepRoleSettings) => { void props.onSettings(next).catch(() => { /* App shows the persistent storage error. */ }); };
   const [capacityDraft, setCapacityDraft] = useState(String(chatCapacity(props.settings.chatContextCapacity)));
   useEffect(() => setCapacityDraft(String(chatCapacity(props.settings.chatContextCapacity))), [props.settings.chatContextCapacity]);
   const [reminderDraft, setReminderDraft] = useState(String(props.settings.suggestionInterval));
@@ -861,7 +875,7 @@ function SettingsView(props: {
           <PortraitUploadSettings settings={props.settings} onSettings={props.onSettings} />
         </SettingsCard>
         <SettingsCard icon={<Eye />} title={x("reasoningTitle")} locale={props.settings.locale} help={x("reasoningHint")}>
-          <label className="toggle-row"><span>{x("reasoningShow")}</span><input type="checkbox" checked={props.settings.showDeepSeekReasoning === true} onChange={event => void props.onSettings({ ...props.settings, showDeepSeekReasoning: event.target.checked })} /></label>
+          <label className="toggle-row"><span>{x("reasoningShow")}</span><input type="checkbox" checked={props.settings.showDeepSeekReasoning === true} onChange={event => changePreference({ ...props.settings, showDeepSeekReasoning: event.target.checked })} /></label>
 
         </SettingsCard>
       </div>
@@ -873,13 +887,12 @@ function SettingsView(props: {
           else await props.onSettings({ ...props.settings, ...values });
         }} />
       </SettingsCard>
-      <StoryUpdateSettings settings={props.settings} onSave={settings => void props.onSettings(settings)} />
       </div>
       <div className="dr-settings-page" hidden={section !== "characters"}>
       <SettingsCard icon={<BrainCircuit />} title={storyUxText(props.settings.locale, "settingsCharacters")} locale={props.settings.locale} help={[storyUxText(props.settings.locale, "settingsCharactersHint"), props.world ? exportText(props.settings.locale, "actionScope").replace("{name}", props.world.name) : ""].filter(Boolean).join("\n\n")}>
 
 
-        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldActions={props.world?.characterActions} onSettings={props.onSettings} onActions={async (actions, renames) => {
+        <CharacterSettings key={props.world?.id ?? "global"} settings={props.settings} worldActions={props.world?.characterActions} onSettings={changePreference} onActions={async (actions, renames) => {
           if (props.world) await saveWorldActionList(props.world, actions, undefined, renames, props.settings.characterActions);
           else { await saveDefaultActionList(props.settings, actions, renames); }
           props.onRefresh();
@@ -888,28 +901,31 @@ function SettingsView(props: {
       </div><div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<Pin />} title={props.settings.locale === "ru" ? "Панели и сцена" : "Panels and scene"} locale={props.settings.locale} help={props.settings.locale === "ru" ? "Эти настройки действуют во всех чатах. Перетаскивание портретов остаётся доступным, когда закрепление выключено." : "These settings apply across chats. You can still drag portraits when pinning is off."}>
         <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />
-        <div className="toggle-row"><SettingsHelp locale={props.settings.locale} title={adaptiveText(props.settings.locale).title} text={adaptiveText(props.settings.locale).hint}/><input aria-label={adaptiveText(props.settings.locale).title} type="checkbox" checked={props.settings.adaptiveLayout !== false} onChange={event => void props.onSettings({ ...props.settings, adaptiveLayout: event.target.checked })} /></div>
+        <div className="toggle-row"><SettingsHelp locale={props.settings.locale} title={adaptiveText(props.settings.locale).title} text={adaptiveText(props.settings.locale).hint}/><input aria-label={adaptiveText(props.settings.locale).title} type="checkbox" checked={props.settings.adaptiveLayout !== false} onChange={event => changePreference({ ...props.settings, adaptiveLayout: event.target.checked })} /></div>
 
 
-        <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinChoices")}</span><input type="checkbox" checked={!!props.settings.pinSceneChoices} onChange={event => void props.onSettings({ ...props.settings, pinSceneChoices: event.target.checked })} /></label>
-        <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinPortraits")}</span><input type="checkbox" checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={event => void props.onSettings({ ...props.settings, pinPortraitLeft: event.target.checked, pinPortraitRight: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinChoices")}</span><input type="checkbox" checked={!!props.settings.pinSceneChoices} onChange={event => changePreference({ ...props.settings, pinSceneChoices: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinPortraits")}</span><input type="checkbox" checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={event => changePreference({ ...props.settings, pinPortraitLeft: event.target.checked, pinPortraitRight: event.target.checked })} /></label>
       </SettingsCard>
+      </div><div className="dr-settings-page" hidden={section !== "safety"}>
       <SettingsCard icon={<ShieldCheck />} title={replyRecoveryText(props.settings.locale).title} locale={props.settings.locale} help={replyRecoveryText(props.settings.locale).hint}>
-        <label className="toggle-row"><span>{replyRecoveryText(props.settings.locale).toggle}</span><input type="checkbox" checked={props.settings.replyRecoveryEnabled !== false} onChange={event => void props.onSettings({ ...props.settings, replyRecoveryEnabled: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{replyRecoveryText(props.settings.locale).toggle}</span><input type="checkbox" checked={props.settings.replyRecoveryEnabled !== false} onChange={event => changePreference({ ...props.settings, replyRecoveryEnabled: event.target.checked })} /></label>
 
       </SettingsCard>
+      <StoryUpdateSettings settings={props.settings} onSave={changePreference} />
+      </div><div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<Languages />} title={props.t("language")}>
-        <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => props.onSettings({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
+        <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
       </SettingsCard>
       <SettingsCard icon={<Eye />} title={x("contextIndicatorsTitle")} locale={props.settings.locale} help={[x("contextIndicatorsHint"), continuationText(props.settings.locale, "warnings") + ": " + continuationText(props.settings.locale, "warningHint"), continuationText(props.settings.locale, "capacity") + ": " + continuationText(props.settings.locale, "capacityHint")].join("\n\n")}>
 
-        <label className="toggle-row"><span>{x("chatContextIndicator")}</span><input type="checkbox" checked={props.settings.showChatContextMeter} onChange={(event) => void props.onSettings({ ...props.settings, showChatContextMeter: event.target.checked })} /></label>
-        <label className="toggle-row"><span>{x("memoryContextIndicator")}</span><input type="checkbox" checked={props.settings.showMemoryContextIndicator} onChange={(event) => void props.onSettings({ ...props.settings, showMemoryContextIndicator: event.target.checked })} /></label>
-        <label className="toggle-row"><span>{continuationText(props.settings.locale, "warnings")}</span><input type="checkbox" checked={props.settings.contextWarningsEnabled !== false} onChange={event => void props.onSettings({ ...props.settings, contextWarningsEnabled: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{x("chatContextIndicator")}</span><input type="checkbox" checked={props.settings.showChatContextMeter} onChange={(event) => changePreference({ ...props.settings, showChatContextMeter: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{x("memoryContextIndicator")}</span><input type="checkbox" checked={props.settings.showMemoryContextIndicator} onChange={(event) => changePreference({ ...props.settings, showMemoryContextIndicator: event.target.checked })} /></label>
+        <label className="toggle-row"><span>{continuationText(props.settings.locale, "warnings")}</span><input type="checkbox" checked={props.settings.contextWarningsEnabled !== false} onChange={event => changePreference({ ...props.settings, contextWarningsEnabled: event.target.checked })} /></label>
 
         <label className="field-label"><span>{continuationText(props.settings.locale, "capacity")}</span><input type="number" min="8000" max="2000000" step="1000" value={capacityDraft} onChange={event => setCapacityDraft(event.target.value)} onBlur={() => {
           const number = Number(capacityDraft), value = capacityDraft.trim() && Number.isFinite(number) ? Math.min(2_000_000, Math.max(8000, Math.round(number))) : chatCapacity(props.settings.chatContextCapacity);
-          setCapacityDraft(String(value)); if (value !== props.settings.chatContextCapacity) void props.onSettings({ ...props.settings, chatContextCapacity: value });
+          setCapacityDraft(String(value)); if (value !== props.settings.chatContextCapacity) changePreference({ ...props.settings, chatContextCapacity: value });
         }} /></label>
 
       </SettingsCard>
@@ -927,12 +943,12 @@ function SettingsView(props: {
       <div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<BrainCircuit />} title={u("reminders")} locale={props.settings.locale} help={u("remindersHint")}>
 
-        <label className="toggle-row"><span>{u("remind")}</span><input type="checkbox" checked={props.settings.suggestionsEnabled} onChange={(event) => void props.onSettings({ ...props.settings, suggestionsEnabled: event.target.checked })} /></label>
-        <label className="field-label"><span className="help-field-title">{u("interval")}</span><input type="number" min="4" max="100" value={reminderDraft} disabled={!props.settings.suggestionsEnabled} onChange={(event) => setReminderDraft(event.target.value)} onBlur={() => { const number = Number(reminderDraft); const value = reminderDraft.trim() && Number.isFinite(number) ? Math.min(100, Math.max(4, Math.round(number))) : props.settings.suggestionInterval; setReminderDraft(String(value)); if (value !== props.settings.suggestionInterval) void props.onSettings({ ...props.settings, suggestionInterval: value }); }} /></label>
+        <label className="toggle-row"><span>{u("remind")}</span><input type="checkbox" checked={props.settings.suggestionsEnabled} onChange={(event) => changePreference({ ...props.settings, suggestionsEnabled: event.target.checked })} /></label>
+        <label className="field-label"><span className="help-field-title">{u("interval")}</span><input type="number" min="4" max="100" value={reminderDraft} disabled={!props.settings.suggestionsEnabled} onChange={(event) => setReminderDraft(event.target.value)} onBlur={() => { const number = Number(reminderDraft); const value = reminderDraft.trim() && Number.isFinite(number) ? Math.min(100, Math.max(4, Math.round(number))) : props.settings.suggestionInterval; setReminderDraft(String(value)); if (value !== props.settings.suggestionInterval) changePreference({ ...props.settings, suggestionInterval: value }); }} /></label>
       </SettingsCard></div>
       <div className="dr-settings-page" hidden={section !== "data"}><SettingsCard icon={<CircleHelp />} title={props.t("deletionProtection")}>
         <p className="setting-copy">{props.t("deletionProtectionHint")}</p>
-        <label className="toggle-row"><span className="help-field-title">{props.t("deletionProtection")}</span><input type="checkbox" checked={props.settings.confirmDeletions} onChange={(event) => props.onSettings({ ...props.settings, confirmDeletions: event.target.checked })} /></label>
+        <label className="toggle-row"><span className="help-field-title">{props.t("deletionProtection")}</span><input type="checkbox" checked={props.settings.confirmDeletions} onChange={(event) => changePreference({ ...props.settings, confirmDeletions: event.target.checked })} /></label>
       </SettingsCard><SettingsCard icon={<ShieldCheck />} title={u("vault")}>
         <p className="setting-copy">{u("vaultHint")}</p>
         {!vaultEnabled && <label className="field-label">{u("vaultPassword")}<input className="input" type="password" autoComplete="new-password" value={vaultPassword} onChange={(event) => setVaultPassword(event.target.value)} /></label>}

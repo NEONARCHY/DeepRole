@@ -43,6 +43,9 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) for
     const { file, text } = await exportedCopy(page, locale);
     const original = JSON.parse(text);
     expect(original.format).toBe("deeprole-backup");
+    // File v5 stores shared photos once and references them by ID. Compare
+    // repository records before/after, then verify the actual image bytes too.
+    const expectedRecords = await records(page);
     await page.evaluate(async () => {
       const { repository } = await import("/src/storage/repository.ts" as string);
       const entry = await repository.get("entry", "memory-1");
@@ -53,7 +56,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) for
     if (route === "lore") await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
     const choose = async () => {
       if (route === "lore") await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
-      await page.locator('input[type="file"]').setInputFiles(file);
+      await page.locator(route === "lore" ? ".rp-import-input" : '.dr-settings-page:not([hidden]) input[type="file"]').setInputFiles(file);
     };
     await choose();
     const preview = page.getByRole("dialog", { name: l("Восстановление копии", "Restore backup"), exact: true });
@@ -74,7 +77,13 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) for
     await expect(restore).toBeDisabled();
     await preview.getByRole("checkbox", { name: l("Я сохранил нужные данные и согласен на полную замену", "I have saved what I need and agree to replace the library"), exact: true }).check();
     await restore.click(); await expect(preview).toHaveCount(0);
-    expect(await records(page)).toEqual(original.records);
+    expect(await records(page)).toEqual(expectedRecords);
+    const photoBytes = await page.evaluate(async () => {
+      const { repository } = await import("/src/storage/repository.ts" as string);
+      const hero = await repository.get("entity", "backup-hero") as any;
+      return repository.readPhoto(hero.characterSheet.sprites.neutral);
+    });
+    expect(original.photos.map((photo: any) => photo.image)).toContain(photoBytes);
     const settings = await page.evaluate(async () => (await import("/src/storage/settings.ts" as string)).getSettings());
     expect(settings).toEqual(original.settings);
     expect(await readFile(file, "utf8")).toBe(text);

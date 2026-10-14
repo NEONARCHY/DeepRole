@@ -53,6 +53,10 @@ for (const locale of ["ru", "en"] as const) test(`installed source roles ${local
     expect(payload()[0]).toMatchObject({ sourceQuote: quote, sourceRoles: { speaker: { id: "person-1", name: names[0] }, recipient: { id: "person-2", name: names[1] }, promisor: { id: "person-1", name: names[0] } } });
     expect(payload().find((x: any) => x.sourceQuote === otherQuote).sourceRoles.promisor.id).toBe("person-2");
     expect(payload().find((x: any) => x.sourceQuote === sharedQuote)).not.toHaveProperty("sourceRoles"); expect(outgoing).toContain("NOT fulfillment or objective truth");
+    const wordQuestion=locale==="ru"?"Напомни про данное Норой Мире слово.":"Remind me about Nora’s word to Mira.";
+    await nativeSend(wordQuestion,43);
+    expect(payload()[0]).toMatchObject({sourceQuote:quote,sourceRoles:{promisor:{id:"person-1"}}});
+    expect(outgoing.endsWith("[User message]\n"+wordQuestion)).toBe(true);
     expect(JSON.stringify((await records(panel)).find(r => r.kind === "world").data.sharedGame.facts)).toBe(original);
     const currentName=locale==="ru"?"Ева":"Eva";
     await panel.evaluate(async ({currentName,originalName})=>{
@@ -62,9 +66,12 @@ for (const locale of ["ru", "en"] as const) test(`installed source roles ${local
     await chat.reload(); await chat.bringToFront(); await expect(chat.locator(".dr-character-row")).toHaveCount(2, { timeout: 12000 });
     await nativeSend(locale==="ru"?"Что обещала Ева?":"What did Eva promise?",43);
     expect(payload()[0].sourceRoles.promisor).toEqual({id:"person-1",name:currentName,sourceName:names[0]});
-    await nativeSend(question, 43); expect(payload().find((x:any)=>x.sourceQuote===quote).sourceRoles.promisor.id).toBe("person-1");expect(payload().filter((x:any)=>x.sourceRoles?.promisor?.id==="new-nora")).toEqual([]);expect(posts).toBe(4); expect(context.pages()).toHaveLength(pageCount);
+    await nativeSend(question, 43); expect(payload().find((x:any)=>x.sourceQuote===quote).sourceRoles.promisor.id).toBe("person-1");expect(payload().filter((x:any)=>x.sourceRoles?.promisor?.id==="new-nora")).toEqual([]);
+    await nativeSend(locale==="ru"?"Напомни про данное Евой Мире слово.":"Remind me about Eva’s given word to Mira.",43);
+    expect(payload()[0].sourceRoles.promisor).toEqual({id:"person-1",name:currentName,sourceName:names[0]});
+    expect(posts).toBe(6); expect(context.pages()).toHaveLength(pageCount);
     expect(JSON.stringify((await records(panel)).find(r => r.kind === "world").data.sharedGame.facts)).toBe(original);
     await display(44, alternate); await expect.poll(async () => (await read())?.facts?.length, { timeout: 12000 }).toBe(0);
-    await nativeSend(question, 44); expect(outgoing).not.toContain('"sourceRoles":'); expect(outgoing).not.toContain(quote); expect(posts).toBe(5); expect(errors).toEqual([]);
+    await nativeSend(question, 44); expect(outgoing).not.toContain('"sourceRoles":'); expect(outgoing).not.toContain(quote); expect(posts).toBe(7); expect(errors).toEqual([]);
   } finally { await context.close(); }
 });

@@ -17,18 +17,23 @@ for (const locale of ["ru", "en"] as const) for (const format of ["json", "exist
     const entry: MemoryEntry = { id: "source-entry", worldId: world.id, bookId: null, title: "Recovery fact", content: "Exact source", keywords: [], activation: "manual", priority: "normal", enabled: false, source: { type: "manual" }, createdAt: 1, updatedAt: 1 };
     payload = { format: "deeprole-world", version: 1, records: [world, entry].map(data => ({ pk: `${data.id === world.id ? "world" : "entry"}:${data.id}`, kind: data.id === world.id ? "world" : "entry", id: data.id, data, updatedAt: 1 })) };
   }
-  await page.locator('input[type="file"]').setInputFiles({ name: "recovery.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(payload)) });
+  await page.locator('.rp-import-input').setInputFiles({ name: "recovery.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(payload)) });
   if (format === "existing") {
     await page.locator(".lore-import-modal details > summary").filter({ hasText: l("Дополнительно", "Advanced") }).click();
     await page.getByRole("combobox", { name: l("Куда перенести", "Destination"), exact: true }).selectOption("world-b");
   }
-  await page.evaluate(async () => {
+  await page.evaluate(async format => {
     const { repository } = await import("/src/storage/repository.ts" as string);
     const merge = repository.mergeRecords.bind(repository); const locked = repository.isLocked.bind(repository);
+    const update = repository.updateRecords.bind(repository);
     let failures = 0; (window as any).importWrites = 0;
-    repository.mergeRecords = async (records: DataRecord[]) => { await merge(records); (window as any).importWrites++; failures = 2; };
+    repository.mergeRecords = async (records: DataRecord[]) => { await merge(records); (window as any).importWrites++; if (format !== "existing") failures = 2; };
+    // Existing-world import also commits the automatic-preparation preference.
+    // Inject a refresh fault after that commit, not a vault-read failure midway
+    // through the write (which correctly switches to the locked/error screen).
+    if (format === "existing") repository.updateRecords = (async (...args: any[]) => { const result = await (update as any)(...args); failures = 2; return result; }) as typeof repository.updateRecords;
     repository.isLocked = async () => { if (failures) { failures--; throw new Error("QA window refresh failure"); } return locked(); };
-  });
+  }, format);
   await page.getByRole("button", { name: l("Подтвердить импорт", "Confirm import"), exact: true }).click();
   await expect(page.getByRole("alert")).toContainText(l("Лор уже в библиотеке", "Your lore is already in the library"));
   await expect(page.getByRole("button", { name: l("Подтвердить импорт", "Confirm import"), exact: true })).toHaveCount(0);
@@ -49,7 +54,7 @@ test("a failed write can retry and a saved import survives closing the recovery 
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
-  await page.locator('input[type="file"]').setInputFiles({ name: "retry.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Retry fact", content: "Exact" }])) });
+  await page.locator('.rp-import-input').setInputFiles({ name: "retry.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Retry fact", content: "Exact" }])) });
   await page.evaluate(async () => {
     const { repository } = await import("/src/storage/repository.ts" as string); const merge = repository.mergeRecords.bind(repository); const locked = repository.isLocked.bind(repository);
     let attempt = 0; let failRefresh = false;

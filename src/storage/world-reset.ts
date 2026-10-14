@@ -1,6 +1,6 @@
 import { createId } from "../core/id";
 import { validateCastDraftValue, type CastDraft, type CastJob } from "../core/cast-initialization";
-import { resetGuard, type WorldResetArchive } from "../core/world-reset";
+import { matchesResetGuard, type WorldResetArchive } from "../core/world-reset";
 import { sameStoryValue } from "../core/story-value";
 import { assertWorldGameWriter } from "../core/world-game";
 import { assertStoryGraph, storyRow, type StoryBaseline } from "../core/story-records";
@@ -15,7 +15,7 @@ function ready(all:DataRecord[],id:string){
  const job=all.find(r=>r.kind==="cast"&&r.id===id)?.data as CastJob|undefined;
  const w=all.find(r=>r.kind==="world"&&r.id===job?.worldId)?.data as WorldProfile|undefined;
  if(!job?.reset||job.reset.entryOffset!==job.reset.entries.length||job.phase!=="ready"||!job.draft||job.large&&job.large.stage!=="done"||!["done","none"].includes(job.cleanup))throw Error("reset-not-ready");
- if(!w?.sharedGame||w.sharedGame.id!==job.reset.gameId||w.sharedGame.revision!==job.reset.revision||resetGuard(all,w.id)!==job.resetGuard)throw Error("reset-stale");
+ if(!w?.sharedGame||w.sharedGame.id!==job.reset.gameId||w.sharedGame.revision!==job.reset.revision||!matchesResetGuard(all,w.id,job.resetGuard))throw Error("reset-stale");
  const b=all.find(r=>r.kind==="binding"&&(r.data as ChatBinding).chatId===job.reset!.chatId&&(r.data as ChatBinding).worldId===w.id)?.data as ChatBinding|undefined;
  if(!b)throw Error("story-binding-conflict");assertWorldGameWriter(all,b,w.id);return {job,w,b};
 }

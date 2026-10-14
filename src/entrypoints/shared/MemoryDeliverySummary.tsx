@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Locale } from "../../core/types";
 import type { MemoryDeliveryView } from "../../core/memory-delivery-view";
 import { memoryDeliveryText } from "../../core/memory-delivery-i18n";
+import { SupportDetails } from "./SupportDetails";
 
 export function MemoryDeliverySummary({locale,receipt}: {locale: Locale; receipt?: MemoryDeliveryView}) {
  const [open,setOpen] = useState(false);
@@ -14,10 +15,10 @@ export function MemoryDeliverySummary({locale,receipt}: {locale: Locale; receipt
   <p>{t.historical}</p>
   {receipt.injection === "unconfirmed" && <p>{t.unknown}</p>}
   {receipt.injection === "none" && <p>{t.none}</p>}
-  {receipt.context !== undefined && <details onToggle={event=>setOpen(event.currentTarget.open)}>
+  {receipt.context !== undefined && <SupportDetails locale={locale}><details onToggle={event=>setOpen(event.currentTarget.open)}>
    <summary>{t.payload}</summary>
    {open && <><p>{t.payloadHint}</p><textarea aria-label={t.payload} readOnly rows={8} value={receipt.context}/></>}
-  </details>}
+  </details></SupportDetails>}
   {receipt.responseInterrupted && <p>{t.interrupted}</p>}
   <p>{t.use}</p>
  </details>;

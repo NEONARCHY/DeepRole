@@ -1,5 +1,5 @@
 import type { OwnerRole } from "./story-source-roles";
-import { isPersonalStoryReference, retrievalNames, type StoryRetrievalScope } from "./story-retrieval-query";
+import { isPersonalStoryReference, retrievalNames, retrievalQueryNames, type StoryRetrievalScope } from "./story-retrieval-query";
 import { normalizeText } from "./text";
 
 export interface StoryOwnerQuestion { role: OwnerRole; personId: string }
@@ -25,7 +25,7 @@ export function storyOwnerQuestion(draft: string, scope: StoryRetrievalScope): S
   if (/[«»“”"]/u.test(draft)) return;
   const names = new Map<string, Set<string>>(), subjects = new Map<string, Set<string>>();
   for (const e of scope.entities) if (e.kind === "character" && e.worldId === scope.worldId) {
-    for (const [map, forms] of [[names, retrievalNames(e)], [subjects, retrievalNames(e, false)]] as const) {
+    for (const [map, forms] of [[names, retrievalQueryNames(e)], [subjects, retrievalNames(e, false)]] as const) {
       for (const name of forms) if (name && !isPersonalStoryReference(name)) {
         const ids = map.get(name) ?? new Set<string>(); ids.add(e.id); map.set(name, ids);
       }
@@ -33,14 +33,14 @@ export function storyOwnerQuestion(draft: string, scope: StoryRetrievalScope): S
   }
   const phrases = [...names.keys()].sort((a, b) => b.length - a.length);
   if (!phrases.length) return;
-  const identities = new Map<string, { id: string; subject: boolean }>();
+  const identities = new Map<string, { id: string; subject: boolean; phrase: string }>();
   let serial = 0;
   const pattern = new RegExp(`(?<![\\p{L}\\p{N}_])(?:${phrases.map(escape).join("|")})(?![\\p{L}\\p{N}_])`, "gu");
   let query = normalizeText(draft).replace(pattern, phrase => {
     const token = `@person${serial++}@`, ids = names.get(phrase)!;
     if (ids.size === 1) {
       const id = [...ids][0]!;
-      identities.set(token, { id, subject: subjects.get(phrase)?.has(id) ?? false });
+      identities.set(token, { id, subject: subjects.get(phrase)?.has(id) ?? false, phrase });
     }
     return token; // A longer ambiguous name never falls back to a shorter name.
   });
@@ -50,6 +50,35 @@ export function storyOwnerQuestion(draft: string, scope: StoryRetrievalScope): S
     || /(?:^| )(?:и|или|and|or) (?:что|what|@person\d+@)(?: |$)/u.test(query)) return;
   const ownerWords = new RegExp(`(?:^| )(?:${Object.values(verbs).join("|")})(?= |$)`, "gu");
   if ([...query.matchAll(ownerWords)].length > 1) return;
+
+  // A bounded nominal commitment request, not general word/speech semantics.
+  // Masked names are unique IDs only for THIS query; the frozen source reader
+  // still establishes who actually promised. A named recipient is required to
+  // resolve uniquely too, but does not become the owner or prove fulfillment.
+  const givenWord = [
+    `^(?:(?:про|о|об) )?(?:данное|данном|данного) ${personToken}(?: ${personToken})? слов(?:о|е|а)$`,
+    `^(?:(?:про|о|об) )?(?:данное|данном|данного) слов(?:о|е|а) ${personToken}(?: ${personToken})?$`,
+    `^(?:about |of )?${personToken} s (?:given )?word(?: to ${personToken})?$`,
+  ];
+  for (const [index, syntax] of givenWord.entries()) {
+    const match = query.match(new RegExp(syntax, "u"));
+    if (!match) continue;
+    const owner = identities.get(match[1]!);
+    if (!owner || match[2] && !identities.has(match[2])) continue;
+    // "Данное Евой слово" names the giver; "данное Еве слово" only names
+    // the recipient. Recognizing a short name must not reverse that relation.
+    if (index < 2) {
+      const person = scope.entities.find(e => e.id === owner.id && e.worldId === scope.worldId);
+      const ownerCase = person && retrievalNames(person, false).some(base => {
+        if (!/^[а-я]{2,}[ая]$/u.test(base)) return false;
+        const stem = base.slice(0, -1), forms = index === 0 ? (base.endsWith("а") ? ["ой", "ою"] : ["ей", "ею"])
+          : base.endsWith("а") ? [/[гкхжчшщ]$/u.test(stem) ? "и" : "ы"] : ["и"];
+        return forms.some(ending => stem + ending === owner.phrase);
+      });
+      if (!ownerCase) continue;
+    }
+    return { role: "promisor", personId: owner.id };
+  }
 
   for (const role of Object.keys(verbs) as OwnerRole[]) {
     const verb = `(?:${verbs[role]})`, noun = `(?:${nouns[role]})`;

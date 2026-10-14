@@ -7,6 +7,7 @@ import { buildImagePrompt, imageReferences } from "../../core/image-prompt";
 import { imageText, type ImageCopyKey } from "../../core/image-i18n";
 import type { ImageJobInput, ImageTarget } from "../../core/image-messages";
 import { ImageErrorDetails } from "./ImageErrorDetails";
+import { SupportDetails } from "./SupportDetails";
 export interface IllustrationEditorProps {
   locale: Locale; target: ImageTarget; entities: SceneEntity[]; settings: ImageSettings; sceneText: string;
   onClose(): void; onGenerate(input: ImageJobInput): Promise<Illustration>;
@@ -20,7 +21,7 @@ export function ImageHeaders({ headers, locale }: { headers?: ImageResponseHeade
     if (name === "x-venice-model-deprecation-warning" && value && value !== "false") return ["deprecation" as const];
     if (value === "true" || value === "1") return [name === "x-venice-is-blurred" ? "blurred" as const : "violation" as const]; return [];
   });
-  return <div className="dr-image-diagnostics">{messages.map(key => <p role="status" key={key}>{imageText(locale, key)}</p>)}<details><summary>{imageText(locale, "headers")}</summary>{Object.entries(headers).map(([name, value]) => <p key={name}><code>{name}</code>: {value}</p>)}</details></div>;
+  return <div className="dr-image-diagnostics">{messages.map(key => <p role="status" key={key}>{imageText(locale, key)}</p>)}<SupportDetails locale={locale}>{Object.entries(headers).map(([name, value]) => <p key={name}><code>{name}</code>: {value}</p>)}</SupportDetails></div>;
 }
 export function IllustrationEditor(props: IllustrationEditorProps) {
   const t = (key: ImageCopyKey) => imageText(props.locale, key);

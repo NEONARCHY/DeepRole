@@ -1,0 +1,6 @@
+.dr-support-details { margin-block: 16px; border-top: 1px solid var(--dr-border); color: var(--dr-muted); min-width: 0; }
+.dr-support-details summary { padding-block: 12px; min-height: 44px; cursor: pointer; font-size: .8125rem; font-weight: 600; }
+.dr-support-details > details { padding-inline: 12px; border-inline-start: 2px solid var(--dr-border); }
+.dr-support-details code, .dr-support-details dd { overflow-wrap: anywhere; }
+.dr-support-details textarea { max-width: 100%; }
+.dr-support-details :focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 3px; }

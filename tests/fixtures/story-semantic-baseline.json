@@ -1,0 +1,930 @@
+{
+  "version": 1,
+  "selector": "RP261 local before nominal word requests",
+  "fixture": "RP262 fixed forty cases, 96 later scenes",
+  "groups": [
+    {
+      "intent": "explicit",
+      "cases": 16,
+      "complete": 16,
+      "missing": 0,
+      "wrongTop": 0
+    },
+    {
+      "intent": "paraphrase",
+      "cases": 8,
+      "complete": 4,
+      "missing": 4,
+      "wrongTop": 4
+    },
+    {
+      "intent": "ambiguous",
+      "cases": 8,
+      "complete": 3,
+      "missing": 5,
+      "wrongTop": 4
+    }
+  ],
+  "cases": [
+    {
+      "name": "ru:medallion",
+      "family": "gift",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        0
+      ],
+      "ranked": [
+        0,
+        3,
+        2
+      ]
+    },
+    {
+      "name": "ru:birthday",
+      "family": "gift",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        0,
+        1
+      ],
+      "ranked": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "name": "ru:keepsake",
+      "family": "gift",
+      "intent": "paraphrase",
+      "complete": false,
+      "top": false,
+      "wanted": 1,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        3,
+        2,
+        102
+      ]
+    },
+    {
+      "name": "ru:her-gift",
+      "family": "gift",
+      "intent": "ambiguous",
+      "complete": false,
+      "top": false,
+      "wanted": 2,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        3,
+        2,
+        102
+      ]
+    },
+    {
+      "name": "ru:gifts",
+      "family": "gift",
+      "intent": "ambiguous",
+      "complete": true,
+      "top": true,
+      "wanted": 2,
+      "selected": [
+        1,
+        0,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97
+      ],
+      "ranked": [
+        1,
+        0,
+        102
+      ]
+    },
+    {
+      "name": "ru:unknown-bracelet",
+      "family": "gift",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        3,
+        2,
+        102
+      ]
+    },
+    {
+      "name": "ru:direct-duty",
+      "family": "promise",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        2,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        2,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "ru:word",
+      "family": "promise",
+      "intent": "paraphrase",
+      "complete": false,
+      "top": false,
+      "wanted": 1,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        102,
+        101,
+        100
+      ]
+    },
+    {
+      "name": "ru:unspecified-duty",
+      "family": "promise",
+      "intent": "ambiguous",
+      "complete": false,
+      "top": true,
+      "wanted": 2,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        3,
+        2,
+        102
+      ]
+    },
+    {
+      "name": "ru:completed-duty",
+      "family": "promise",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        6,
+        2,
+        5,
+        3,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        6,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "ru:known-alias",
+      "family": "alias",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        2,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        2,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "ru:alias-and-recipient",
+      "family": "alias",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        3,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        3,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "ru:stable-id-rename",
+      "family": "alias",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        2,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        2,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "ru:shared-alias",
+      "family": "alias",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        3,
+        2,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97
+      ],
+      "ranked": [
+        3,
+        2,
+        102
+      ]
+    },
+    {
+      "name": "ru:reused-name",
+      "family": "alias",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        102,
+        101,
+        100
+      ]
+    },
+    {
+      "name": "ru:theatre",
+      "family": "event",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        4,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        4,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "ru:flames",
+      "family": "event",
+      "intent": "paraphrase",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        4,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        4,
+        3,
+        2
+      ]
+    },
+    {
+      "name": "ru:near-drowning",
+      "family": "event",
+      "intent": "paraphrase",
+      "complete": false,
+      "top": false,
+      "wanted": 1,
+      "selected": [
+        2,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        2,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "ru:two-rescues",
+      "family": "event",
+      "intent": "ambiguous",
+      "complete": false,
+      "top": false,
+      "wanted": 2,
+      "selected": [
+        1,
+        0,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        1,
+        0,
+        3
+      ]
+    },
+    {
+      "name": "ru:unknown-avalanche",
+      "family": "event",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        3,
+        2,
+        102
+      ]
+    },
+    {
+      "name": "en:medallion",
+      "family": "gift",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        0
+      ],
+      "ranked": [
+        0,
+        5,
+        4
+      ]
+    },
+    {
+      "name": "en:birthday",
+      "family": "gift",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        0,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        0,
+        3,
+        2
+      ]
+    },
+    {
+      "name": "en:keepsake",
+      "family": "gift",
+      "intent": "paraphrase",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        0,
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100
+      ],
+      "ranked": [
+        0,
+        5,
+        4
+      ]
+    },
+    {
+      "name": "en:her-gift",
+      "family": "gift",
+      "intent": "ambiguous",
+      "complete": false,
+      "top": false,
+      "wanted": 2,
+      "selected": [
+        4,
+        0,
+        5,
+        6,
+        3,
+        2,
+        102,
+        101
+      ],
+      "ranked": [
+        4,
+        0,
+        5
+      ]
+    },
+    {
+      "name": "en:gifts",
+      "family": "gift",
+      "intent": "ambiguous",
+      "complete": false,
+      "top": false,
+      "wanted": 2,
+      "selected": [
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "name": "en:unknown-bracelet",
+      "family": "gift",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "name": "en:direct-duty",
+      "family": "promise",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        2,
+        0,
+        6,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        2,
+        0,
+        6
+      ]
+    },
+    {
+      "name": "en:word",
+      "family": "promise",
+      "intent": "paraphrase",
+      "complete": false,
+      "top": false,
+      "wanted": 1,
+      "selected": [
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96,
+        95
+      ],
+      "ranked": [
+        102,
+        101,
+        100
+      ]
+    },
+    {
+      "name": "en:unspecified-duty",
+      "family": "promise",
+      "intent": "ambiguous",
+      "complete": true,
+      "top": true,
+      "wanted": 2,
+      "selected": [
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        3,
+        2,
+        5
+      ]
+    },
+    {
+      "name": "en:completed-duty",
+      "family": "promise",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        6,
+        2,
+        4,
+        5,
+        3,
+        102,
+        101,
+        100
+      ],
+      "ranked": [
+        6,
+        2,
+        5
+      ]
+    },
+    {
+      "name": "en:known-alias",
+      "family": "alias",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        2,
+        0,
+        6,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        2,
+        0,
+        6
+      ]
+    },
+    {
+      "name": "en:alias-and-recipient",
+      "family": "alias",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        3,
+        0,
+        6,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        3,
+        0,
+        6
+      ]
+    },
+    {
+      "name": "en:stable-id-rename",
+      "family": "alias",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        2,
+        0,
+        6,
+        102,
+        101,
+        100,
+        99,
+        98
+      ],
+      "ranked": [
+        2,
+        0,
+        6
+      ]
+    },
+    {
+      "name": "en:shared-alias",
+      "family": "alias",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        0,
+        3,
+        2,
+        6,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        0,
+        3,
+        2
+      ]
+    },
+    {
+      "name": "en:reused-name",
+      "family": "alias",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        0,
+        6,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97
+      ],
+      "ranked": [
+        0,
+        6,
+        102
+      ]
+    },
+    {
+      "name": "en:theatre",
+      "family": "event",
+      "intent": "explicit",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        4,
+        102,
+        101,
+        100,
+        99,
+        98,
+        97,
+        96
+      ],
+      "ranked": [
+        4,
+        102,
+        101
+      ]
+    },
+    {
+      "name": "en:flames",
+      "family": "event",
+      "intent": "paraphrase",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        4,
+        5,
+        3
+      ]
+    },
+    {
+      "name": "en:near-drowning",
+      "family": "event",
+      "intent": "paraphrase",
+      "complete": true,
+      "top": true,
+      "wanted": 1,
+      "selected": [
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "name": "en:two-rescues",
+      "family": "event",
+      "intent": "ambiguous",
+      "complete": true,
+      "top": true,
+      "wanted": 2,
+      "selected": [
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "name": "en:unknown-avalanche",
+      "family": "event",
+      "intent": "control",
+      "complete": true,
+      "top": false,
+      "wanted": 0,
+      "selected": [
+        4,
+        5,
+        3,
+        2,
+        102,
+        101,
+        100,
+        99
+      ],
+      "ranked": [
+        5,
+        4,
+        3
+      ]
+    }
+  ]
+}

@@ -1,11 +1,13 @@
 import { openSettingsSection, setEnglish  } from "./helpers/settings";
 import { expect, test } from "@playwright/test";
+import { characterText } from "../../src/core/characters";
 
 test("section guidance explains the workflow without per-button question marks", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
   await expect(page.locator(".bottom-nav button")).toHaveCount(4);
   await expect(page.locator(".app-main .dr-help, .bottom-nav .dr-help")).toHaveCount(0);
   await expect(page.locator(".dr-memory-status")).toContainText("Откройте чат DeepSeek");
+  await page.getByText("Добавить или проверить память вручную", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
   await expect(page.getByText("Запрос подготовлен в DeepSeek", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
@@ -72,12 +74,49 @@ test("scene pins use persistent switches in compact settings", async ({ page }, 
 
 test("does not run analysis or handoff from an empty chat", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
+  await page.getByText("Добавить или проверить память вручную", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
-  await expect(page.getByText("Сначала отправьте реплику в чат").first()).toBeVisible();
+  await expect(page.getByText("Сначала откройте игровой чат DeepSeek.",{exact:true})).toBeVisible();
   await page.locator(".play-continuation > summary").click();
   await page.locator(".play-continuation .memory-detail > summary").click();
   await expect(page.getByRole("button", { name: "Сохранить состояние истории", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Продолжить в новом чате", exact: true })).toBeDisabled();
+});
+
+for(const locale of ["ru","en"] as const) test(`preference failure is visible, keeps the saved value and allows retry ${locale}`,async({page})=>{
+  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+  await page.goto(`/tests/fixtures/sidepanel.html?locale=${locale}`);
+  await page.locator(".bottom-nav").getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();
+  for(const item of [
+    {section:"app",name:locale==="ru"?"Закрепить варианты на экране":"Pin options on screen",key:"pinSceneChoices"},
+    {section:"characters",name:characterText(locale,"enable"),key:"characterSheetsEnabled"},
+    {section:"safety",name:locale==="ru"?"Автоматически исправлять данные ответа":"Automatically correct reply metadata",key:"automaticMetadataRepair"},
+  ] as const){
+    await openSettingsSection(page,item.section,locale);
+    const toggle=page.getByRole("checkbox",{name:item.name,exact:true}),wasChecked=await toggle.isChecked();
+    const before=await page.evaluate(async()=>(await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings);
+    await page.evaluate(()=>(window as any).failSettingsSave=true);await toggle.click();
+    await expect(page.getByRole("alert")).toContainText(locale==="ru"?"Настройки не сохранены":"Settings were not saved");
+    await expect.poll(()=>toggle.isChecked()).toBe(wasChecked);
+    expect(await page.evaluate(async()=>(await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings)).toEqual(before);
+    await page.evaluate(()=>(window as any).failSettingsSave=false);await toggle.click();
+    await expect.poll(()=>toggle.isChecked()).toBe(!wasChecked);await expect(page.getByRole("alert")).toHaveCount(0);
+    expect(await page.evaluate(async key=>(await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings[key],item.key)).toBe(!wasChecked);
+  }
+  expect(errors).toEqual([]);
+});
+
+for(const locale of ["ru","en"] as const) test(`slow preference save has a visible pending state and prevents overlapping writes ${locale}`,async({page})=>{
+  await page.goto(`/tests/fixtures/sidepanel.html?locale=${locale}`);
+  await page.locator(".bottom-nav").getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();
+  await openSettingsSection(page,"app",locale);
+  const toggle=page.getByRole("checkbox",{name:locale==="ru"?"Закрепить варианты на экране":"Pin options on screen",exact:true});
+  await page.evaluate(()=>(window as any).delaySettingsSave=true); await toggle.click();
+  await expect(page.getByRole("status").filter({hasText:locale==="ru"?"Сохраняем настройки…":"Saving settings…"})).toHaveText(locale==="ru"?"Сохраняем настройки…":"Saving settings…");
+  await expect(toggle).toBeDisabled();
+  expect(await page.evaluate(async()=>(await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.pinSceneChoices??false)).toBe(false);
+  await page.evaluate(()=>{(window as any).delaySettingsSave=false;(window as any).releaseSettingsSave();});
+  await expect(toggle).toBeEnabled();await expect(toggle).toBeChecked();await expect(page.getByText(locale==="ru"?"Сохраняем настройки…":"Saving settings…",{exact:true})).toHaveCount(0);
 });
 
 test("tutorial stays optional and creates a separate editable copy", async ({ page }) => {

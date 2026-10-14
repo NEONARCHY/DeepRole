@@ -48,6 +48,21 @@ it("a typed but unchanged saved fact still offers removal, not another approval"
   expect(onSave).toHaveBeenCalledWith("fact-1", page.facts[0]!.text, false);
 });
 
+it("can edit a fact again after saving without inventing a concurrent change", () => {
+  const page = snapshot(), onSave = vi.fn();
+  const view = render(<StoryFacts locale="en" page={page} busy={false} onSave={onSave}/>);
+  fireEvent.change(screen.getByLabelText(fact("en", "text")), { target: { value: "The gate is blue." } });
+  fireEvent.click(screen.getByText(fact("en", "save")));
+  expect(onSave).toHaveBeenCalledWith("fact-1", "The gate is blue.", true);
+  const saved = { ...page, facts: [{ ...page.facts[0]!, text: "The gate is blue.", accepted: true, edited: true }] };
+  view.rerender(<StoryFacts locale="en" page={saved} busy={false} onSave={onSave}/>);
+  fireEvent.change(screen.getByLabelText(fact("en", "text")), { target: { value: "The gate is green." } });
+  expect(screen.queryByText(ux("en", "changedFact"))).toBeNull();
+  expect(screen.getByText(fact("en", "save"))).toBeEnabled();
+  fireEvent.click(screen.getByText(ux("en", "discardFact")));
+  expect(screen.getByLabelText(fact("en", "text"))).toHaveValue("The gate is blue.");
+});
+
 it.each(["ru", "en"] as const)("%s a new starting point needs a concrete confirmation", async locale => {
   const onGame = vi.fn(async () => undefined);
   render(<StoryReview locale={locale} guided onRead={async () => snapshot()} onGame={onGame} onPreview={async () => storyReviewPreview()} />);
@@ -58,12 +73,13 @@ it.each(["ru", "en"] as const)("%s a new starting point needs a concrete confirm
   await waitFor(() => expect(restart).toBeDisabled());
 });
 
-it("does not read or mutate while a reply is being generated; resumes read-only afterwards", async () => {
+it("allows reading during a reply but keeps every game mutation disabled", async () => {
   const onRead = vi.fn(async () => snapshot()), onGame = vi.fn();
   const props = { locale: "en" as const, guided: true, onRead, onGame, onPreview: async () => storyReviewPreview() };
   const view = render(<StoryReview {...props} operationBlocked/>);
-  expect(onRead).not.toHaveBeenCalled(); expect(screen.getByText(ux("en", "pending"))).toBeVisible();
-  view.rerender(<StoryReview {...props} operationBlocked={false}/>); await screen.findByText(ux("en", "active"));
+  await screen.findByText(ux("en", "active")); expect(onRead).toHaveBeenCalledOnce(); expect(screen.getByText(ux("en", "pending"))).toBeVisible();
+  expect(screen.getByText(ux("en", "sync"))).toBeDisabled();
+  view.rerender(<StoryReview {...props} operationBlocked={false}/>); await waitFor(() => expect(onRead).toHaveBeenCalledTimes(2));
   view.rerender(<StoryReview {...props} operationBlocked/>);
   expect(screen.getByText(ux("en", "sync"))).toBeDisabled(); expect(onGame).not.toHaveBeenCalled();
 });

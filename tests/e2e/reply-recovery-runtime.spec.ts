@@ -89,7 +89,7 @@ for (const locale of ["ru", "en"]) test(`installed automatic recovery persists a
     await chat.goto("https://chat.deepseek.com/chat/s/recovery-runtime"); await expect(host).toBeVisible();
     await panel.setViewportSize({ width: locale === "ru" ? 360 : 1280, height: 900 });
     await panel.getByRole("button", { name: locale === "ru" ? "Настройки" : "Settings", exact: true }).click();
-    await openSettingsSection(panel,"app",locale);
+    await openSettingsSection(panel,"safety",locale);
     const toggle = panel.getByRole("checkbox", { name: locale === "ru" ? "Автоматически восстанавливать скрытые ответы" : "Automatically restore hidden replies", exact: true });
     await expect(toggle).toBeChecked(); await toggle.evaluate(node => node.scrollIntoView({ block: "center" }));
     expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

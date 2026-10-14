@@ -29,6 +29,7 @@ import { chatCapacity } from "../../core/context-capacity";
 import { continuationText } from "../../core/continuation-i18n";
 import { ContextCapacityWarning } from "../shared/ContextCapacityWarning";
 import { OldChatNoticeCard } from "../shared/OldChatNotice";
+import { WorldResetNotice } from "../shared/WorldResetNotice";
 import type { OldChatNotice } from "../../core/old-chat-notice";
 
 import type { ContinuationFlow } from "../../core/continuation-flow";
@@ -128,6 +129,7 @@ export function PageWidget(props: {
   const [undoError, setUndoError] = useState(false);
   const [undoBusy, setUndoBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [resetReviewId,setResetReviewId] = useState<string|null>(null);
   const [mapLayout, setMapLayout] = useState<"closed" | "compact" | "full">("closed");
   const menuFrame = useRef<HTMLIFrameElement>(null);
   const contextAnchor = useRef<HTMLDivElement>(null);
@@ -178,7 +180,7 @@ export function PageWidget(props: {
       window.removeEventListener("message", closeFromMenu);
     };
   }, [menuOpen, props.menuUrl, mapLayout]);
-  useEffect(() => { if (!menuOpen) setMapLayout("closed"); }, [menuOpen]);
+  useEffect(() => { if (!menuOpen) { setMapLayout("closed");setResetReviewId(null); } }, [menuOpen]);
   useEffect(() => {
     if (!props.state.vaultLocked) return;
     setOpen(false); setAdding(false); setQuick(false); setReviewId(null); setUndoError(false); setMapLayout("closed");
@@ -298,7 +300,8 @@ export function PageWidget(props: {
     {props.state.startupError && <div className="dr-toast" role="alert">{x("startupError")}</div>}
     {!props.state.vaultLocked && props.state.oldChatNotice && !props.state.oldChatNotice.dismissed && props.onStayInOldChat && <OldChatNoticeCard key={props.state.oldChatNotice.snapshotId} locale={props.state.locale} notice={props.state.oldChatNotice} onStay={props.onStayInOldChat}/>}
     {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton nativeTooltip className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisHelp} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
-    {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={props.menuUrl} title="DeepRole" /></aside></div>}
+    {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={resetReviewId?props.menuUrl+(props.menuUrl.includes("?")?"&":"?")+"resetReview="+encodeURIComponent(resetReviewId):props.menuUrl} title="DeepRole" /></aside></div>}
+    {!menuOpen&&!props.state.vaultLocked&&props.state.scene?.worldId&&chatAdapter.current.getChatId()&&<WorldResetNotice key={props.state.scene.worldId+":"+chatAdapter.current.getChatId()} worldId={props.state.scene.worldId} chatId={chatAdapter.current.getChatId()!} locale={props.state.locale} game={props.state.worlds?.find(world=>world.id===props.state.scene?.worldId)?.sharedGame} onReview={id=>{setResetReviewId(id);setMenuOpen(true);}}/>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
     {!props.state.vaultLocked && props.state.continuation && (!review || review.id !== props.state.continuation.proposalId) && <section className="dr-continuation-progress" aria-label={continuationText(props.state.locale, "title")}>
       <strong role="status">{continuationText(props.state.locale, props.state.continuation.phase === "analysis" ? "analysis" : props.state.continuation.phase === "review" ? "review" : props.state.continuation.phase === "ready" ? "readyToSummarize" : props.state.continuation.phase === "opening" ? "summaryDone" : "summary")}</strong>

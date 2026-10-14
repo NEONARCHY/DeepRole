@@ -21,7 +21,7 @@
             const list = Array.isArray(keys) ? keys : [keys];
             return Object.fromEntries(list.filter((key) => values.has(key)).map((key) => [key, values.get(key)]));
           },
-          set: async (next) => { Object.entries(next).forEach(([key, value]) => values.set(key, value)); if (persistSettings && persistentKey) localStorage.setItem(persistentKey, JSON.stringify(Object.fromEntries(values))); storageListeners.forEach((listener) => listener()); },
+          set: async (next) => { if(window.delaySettingsSave && Object.hasOwn(next,"deeprole_settings")) await new Promise(resolve=>{window.releaseSettingsSave=resolve;}); if(window.failSettingsSave && Object.hasOwn(next,"deeprole_settings")) throw Error("Synthetic settings storage failure"); Object.entries(next).forEach(([key, value]) => values.set(key, value)); if (persistSettings && persistentKey) localStorage.setItem(persistentKey, JSON.stringify(Object.fromEntries(values))); storageListeners.forEach((listener) => listener()); },
           remove: async (keys) => { (Array.isArray(keys) ? keys : [keys]).forEach((key) => values.delete(key)); },
         };
       };

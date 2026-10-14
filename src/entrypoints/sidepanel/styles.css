@@ -26,6 +26,7 @@
 }
 
 * { box-sizing: border-box; }
+.app-shell [hidden] { display: none !important; }
 html, body, #root { min-width: 300px; min-height: 100%; margin: 0; }
 body {
   background: var(--bg);
@@ -61,6 +62,10 @@ svg { width: 18px; height: 18px; stroke-width: 1.8; }
 .menu-close svg { width: 17px; height: 17px; }
 .app-main { width: min(100%, 620px); margin: 0 auto; padding: 16px; }
 .view-stack { display: grid; gap: 14px; animation: rise .28s ease; }
+.play-memory-details { border: 1px solid var(--dr-border); border-radius: 12px; padding-inline: 14px; }
+.play-memory-details > summary { cursor: pointer; font-weight: 600; min-height: 48px; padding-block: 14px; line-height: 1.5; }
+.play-memory-details[open] { padding-bottom: 14px; }
+.play-memory-details .quick-actions { margin-top: 8px; }
 /* A transforming ancestor reanchors fixed windows to the view, not the screen.
    Stop the entrance animation when an overlay opens, including a fast click. */
 .view-stack:has(.modal-backdrop, .dr-map-workspace) { animation: none; transform: none; }
@@ -205,3 +210,4 @@ body:has(.app-shell[data-embedded-menu="true"] .dr-map-workspace) { background: 
 }
 .app-shell[data-embedded-menu="true"] .dr-map-workspace { visibility: visible; }
 .app-shell[data-embedded-menu="true"]:has(.dr-map-workspace) .view-stack { animation: none; }
+.dr-settings-save-scope { margin: 0; padding: 0; border: 0; min-inline-size: 0; }

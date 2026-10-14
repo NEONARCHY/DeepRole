@@ -1,0 +1,25 @@
+import {expect,it} from 'vitest';
+import {compileGameContext} from '../src/core/game-context';
+import {decodeStoryMemory} from '../src/core/story-memory-transport';
+import {createStoryRoleReaderV1} from '../src/core/story-source-roles';
+import {validStoryFact} from '../src/core/story-update';
+import {longHistoryWorld} from './fixtures/story-long-history';
+const hints=(text:string)=>{const block=text.split('<deeprole_story_memory>')[1]?.split('</deeprole_story_memory>')[0];return block?decodeStoryMemory(JSON.parse(block.split('\n')[1]!)):[];};
+for(const locale of ['ru','en'] as const){
+ it(`${locale} retains distinct source owners, task keys, locations and current codes`,()=>{const f=longHistoryWorld(locale),before=structuredClone(f.input),out=compileGameContext(f.input),selected=hints(out.text);
+  expect(out.text).toContain('A shared literal label is NOT an object ID');for(const fact of f.bundle){const hint=selected.find(h=>h.text===fact.text)!;expect(hint.sourceQuote??hint.text).toBe(fact.quote);expect(hint.episodeSource?.revisionId).toBe(f.sources[f.facts.indexOf(fact)]);if(fact.task)expect(hint.task).toEqual(fact.task);}
+  expect(selected.find(h=>h.text===f.first.text)!.sourceRoles!.promisor!.id).toBe(f.base.entities[0]!.id);expect(selected.find(h=>h.text===f.other.text)!.sourceRoles!.planner!.id).toBe(f.base.entities[1]!.id);expect(out.report.explanation?.openTasks).toBe(2);expect(out.report.explanation?.persistentFacts).toBe(2);expect(f.first.task!.key).not.toBe(f.other.task!.key);expect(f.currentCode.claim!.key).not.toBe(f.archiveCode.claim!.key);expect(selected.some(h=>h.text===f.oldCode.text)).toBe(false);expect(f.input).toEqual(before);
+ });
+ it(`${locale} fixture owner/speaker bindings also follow the actual named source grammar`,()=>{const f=longHistoryWorld(locale),reader=createStoryRoleReaderV1({worldId:f.base.world.id,entities:f.input.entities!});expect(reader.read(f.first)?.promisor?.id).toBe(f.base.entities[0]!.id);expect(reader.read(f.other)?.planner?.id).toBe(f.base.entities[1]!.id);for(const fact of [f.currentCode,f.archiveCode,f.closed,f.anchor])expect(reader.read(fact)?.speaker?.id).toBe(f.base.entities[1]!.id);});
+ for(const id of ['edited-task','edited-detail','missing-episode','unavailable-other','manual-shadow'] as const)it(`${locale} refuses a half-proved same-label bundle: ${id}`,()=>{const f=longHistoryWorld(locale);
+  if(id==='edited-task')f.other.quote+=' changed';
+  if(id==='edited-detail')f.archiveCode.quote+=' changed';
+  if(id==='missing-episode')f.input.story!.episodeSources=f.sources.filter(source=>source!==f.sources[f.facts.indexOf(f.archiveCode)]);
+  if(id==='unavailable-other'){f.input.entities=f.input.entities!.slice(1);f.input.character![2]=f.input.entities;}
+  if(id==='manual-shadow'){const shadow=structuredClone(f.first);shadow.task!.key='manual-distinct-key';shadow.text=shadow.text.replace('кладовой','лаборатории').replace('storeroom','laboratory');shadow.quote=shadow.text;f.input.story!.facts.push(shadow);}
+  expect(compileGameContext(f.input)).toEqual(compileGameContext(f.input,{referenceRecall:'guard'}));
+ });
+ it(`${locale} can retain several independent lasting records without an object merge`,()=>{const f=longHistoryWorld(locale),detail=structuredClone(f.archiveCode);detail.claim!.key='archive-rule';detail.text=f.s('Про синий ключ от архива: после входа нужно закрыть шкаф.','About the blue key for the archive: close the cupboard after entry.');detail.quote=f.s(`Мира сказала: «${detail.text}».`,`Mira said: “${detail.text}.”`);detail.claim!.value=detail.text;f.facts.splice(-1,0,detail);f.sources.splice(-1,0,'independent-archive-rule');f.input.story!.roleSeeds=f.seedAll();const selected=hints(compileGameContext(f.input).text);for(const fact of [...f.bundle,detail])expect(selected.some(h=>h.text===fact.text)).toBe(true);expect(f.currentCode.claim!.key).not.toBe(detail.claim!.key);});
+ for(const budget of [1500,1900,2300,2700,3100,3500,3900,4300])it(`${locale} restores whole selection/counters at budget ${budget}`,()=>{const f=longHistoryWorld(locale);f.archiveCode.text=f.s('Про синий ключ от архива: ','About the blue key for the archive: ')+'Full source condition. '.repeat(40);f.archiveCode.claim!.value=f.archiveCode.text;f.archiveCode.quote=f.s(`Мира сказала: «${f.archiveCode.text}».`,`Mira said: “${f.archiveCode.text}.”`);f.input.story!.roleSeeds=f.seedAll();f.input.settings.contextBudget=budget;const out=compileGameContext(f.input),selected=hints(out.text),complete=f.bundle.every(fact=>selected.some(h=>h.text===fact.text));if(budget===1500)expect(complete).toBe(false);if(!complete)expect(out).toEqual(compileGameContext(f.input,{referenceRecall:'guard'}));for(const fact of f.facts)expect(validStoryFact(fact)).toBe(true);});
+ it(`${locale} replays the same selection after serialization without canonical mutation`,()=>{const f=longHistoryWorld(locale),before=structuredClone(f.input),first=compileGameContext(f.input),reload=JSON.parse(JSON.stringify(f.input));expect(compileGameContext(reload)).toEqual(first);expect(f.input).toEqual(before);expect(f.input.story!.facts).toContain(f.oldCode);});
+}

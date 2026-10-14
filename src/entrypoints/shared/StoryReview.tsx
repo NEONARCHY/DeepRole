@@ -21,9 +21,10 @@ import { storyReviewText, storyReviewError, type StoryReviewTextKey } from "../.
 import type { Locale } from "../../core/types";
 import "./story-review.css";
 
-export function ActiveStoryReviewCard({ locale, tabs, guided = false, operationBlocked = false, scope }: { locale: Locale; tabs: StoryReviewTabs; guided?: boolean; operationBlocked?: boolean; scope?: { worldId: string; chatId: string } }) {
+type WorkspaceSection = "overview" | "memory" | "people" | "timeline";
+export function ActiveStoryReviewCard({ locale, tabs, guided = false, operationBlocked = false, scope, workspaceSection, readOnly = false }: { locale: Locale; tabs: StoryReviewTabs; guided?: boolean; operationBlocked?: boolean; scope?: { worldId: string; chatId: string }; workspaceSection?: WorkspaceSection; readOnly?: boolean }) {
   const target = useRef<ActiveStoryReview | null>(null);
-  return <StoryReview locale={locale} guided={guided} operationBlocked={operationBlocked} onRead={async previous => {
+  return <StoryReview locale={locale} guided={guided} workspaceSection={workspaceSection} readOnly={readOnly} operationBlocked={operationBlocked} onRead={async previous => {
     const old = target.current; target.current = null;
     if (previous && old?.page !== previous) throw Error("story-binding-conflict");
     const next = await readActiveStoryReview(tabs, previous ? old! : undefined);
@@ -34,24 +35,27 @@ export function ActiveStoryReviewCard({ locale, tabs, guided = false, operationB
     return previewActiveStoryReview(tabs, target.current, head);
   }} onGame={async (operation, manual) => { await runActiveStoryGame(tabs, operation, manual, scope); target.current = null; }} onFact={async (page, event, text, accept) => { await approveActiveStoryFact(tabs, page, event, text, accept); target.current = null; }} onRepair={async page => { await repairActiveStory(tabs, page); target.current = null; }} onSupplement={action => supplementActiveStory(tabs, action)} onIdentities={action => manageActiveStoryIdentities(tabs, action)} onMerge={action => manageActiveStoryMerge(tabs, action)} onDiscovery={action => discoverActiveStory(tabs, action)} />;
 }
-export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepair, onDiscovery, onSupplement, onIdentities, onMerge, guided = false, operationBlocked = false }: { locale: Locale; guided?: boolean; operationBlocked?: boolean; onMerge?: (action: MergeAction) => Promise<MergePage>; onIdentities?: (action: IdentityAction) => Promise<IdentityPage>; onRead: (previous: StoryReviewPage | null) => Promise<StoryReviewPage>; onPreview: (page: StoryReviewPage, head: string | null) => Promise<StoryReviewPreview>; onGame?: (operation: "start" | "restart" | "sync" | "undo" | "out-of-character", manual: "stop" | "keep") => Promise<void>; onFact?: (page: StoryReviewPage, eventId: string, text: string, accept: boolean) => Promise<void>; onRepair?: (page: StoryReviewPage) => Promise<void>; onDiscovery?: (action: CharacterDiscoveryAction) => Promise<CharacterDiscoveryPage | null>; onSupplement?: (action: SupplementAction) => Promise<SupplementPage | null> }) {
+export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepair, onDiscovery, onSupplement, onIdentities, onMerge, guided = false, operationBlocked = false, workspaceSection, readOnly = false }: { locale: Locale; guided?: boolean; operationBlocked?: boolean; workspaceSection?: WorkspaceSection; readOnly?: boolean; onMerge?: (action: MergeAction) => Promise<MergePage>; onIdentities?: (action: IdentityAction) => Promise<IdentityPage>; onRead: (previous: StoryReviewPage | null) => Promise<StoryReviewPage>; onPreview: (page: StoryReviewPage, head: string | null) => Promise<StoryReviewPreview>; onGame?: (operation: "start" | "restart" | "sync" | "undo" | "out-of-character", manual: "stop" | "keep") => Promise<void>; onFact?: (page: StoryReviewPage, eventId: string, text: string, accept: boolean) => Promise<void>; onRepair?: (page: StoryReviewPage) => Promise<void>; onDiscovery?: (action: CharacterDiscoveryAction) => Promise<CharacterDiscoveryPage | null>; onSupplement?: (action: SupplementAction) => Promise<SupplementPage | null> }) {
   const [page, setPage] = useState<StoryReviewPage | null>(null), [preview, setPreview] = useState<StoryReviewPreview | null>(null);
   const [busy, setBusy] = useState<"read" | "preview" | "repair" | null>(null), [notice, setNotice] = useState<StoryReviewTextKey | null>(null);
-  const [section, setSection] = useState<"memory" | "people" | "timeline">("memory"), [visited, setVisited] = useState({ memory: true, people: false, timeline: false }), [restartConfirmed, setRestartConfirmed] = useState(false);
+  const [localSection, setSection] = useState<"memory" | "people" | "timeline">("memory"), [visited, setVisited] = useState({ memory: true, people: false, timeline: false }), [restartConfirmed, setRestartConfirmed] = useState(false);
+  const section = workspaceSection ?? localSection;
+  const showControls = !workspaceSection || workspaceSection === "overview";
+  useEffect(() => { if (workspaceSection && workspaceSection !== "overview") setVisited(v => ({ ...v, [workspaceSection]: true })); }, [workspaceSection]);
   const ux = (key: Parameters<typeof storyUxText>[1]) => storyUxText(locale, key);
   const running = useRef(false), mounted = useRef(false), generation = useRef(0), previewHeading = useRef<HTMLHeadingElement>(null), id = useId();
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; }; }, []);
   useEffect(() => { if (preview) previewHeading.current?.focus(); }, [preview]);
   const t = (key: StoryReviewTextKey) => storyReviewText(locale, key), n = (v: number) => new Intl.NumberFormat(locale).format(v);
-  useEffect(() => { if (!guided || operationBlocked) return; const timer = setTimeout(() => void run("read"), 0); return () => clearTimeout(timer); }, [guided, operationBlocked]);
+  useEffect(() => { if (!guided) return; const timer = setTimeout(() => void run("read"), 0); return () => clearTimeout(timer); }, [guided, operationBlocked]);
   async function memory(task: () => Promise<void>, repair = false) {
-    if (running.current || operationBlocked) return; running.current = true; const token = ++generation.current; setBusy(repair ? "repair" : "read"); setNotice(null);
+    if (running.current || operationBlocked || readOnly) return; running.current = true; const token = ++generation.current; setBusy(repair ? "repair" : "read"); setNotice(null);
     try { await task(); const value = await onRead(null); if (!validStoryReviewPage(value)) throw Error("story-review-invalid"); if (mounted.current && token === generation.current) setPage(value); }
     catch (error) { if (mounted.current && token === generation.current) setNotice(storyReviewError(error)); }
     finally { running.current = false; if (mounted.current && token === generation.current) setBusy(null); }
   }
   async function game(operation: "start" | "restart" | "sync" | "undo" | "out-of-character", manual: "stop" | "keep" = "stop") {
-    if (running.current || !onGame || operationBlocked) return;
+    if (running.current || !onGame || operationBlocked || readOnly) return;
     running.current = true; const token = ++generation.current; setBusy("read"); setNotice(null); setPreview(null);
     try {
       await onGame(operation, manual);
@@ -79,12 +83,12 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
       if (mounted.current && generation.current === token) { setNotice(storyReviewError(error)); setPage(null); setPreview(null); }
     } finally { if (mounted.current && generation.current === token) setBusy(null); running.current = false; }
   }
-  const blocked = !!busy || operationBlocked;
-  return <section className={"settings-card dr-story-review" + (guided ? " is-guided" : "")} aria-labelledby={id + "-title"}><header><h2 id={id + "-title"}>{guided ? ux("recordingTitle") : t("title")}</h2></header><div>
+  const blocked = !!busy || operationBlocked || readOnly;
+  return <section className={"settings-card dr-story-review" + (guided ? " is-guided" : "")} aria-labelledby={showControls ? id + "-title" : undefined} aria-label={!showControls && workspaceSection ? ux(workspaceSection) : undefined}>{showControls && <header><h2 id={id + "-title"}>{guided ? ux("recordingTitle") : t("title")}</h2></header>}<div>
     {!guided && <><p className="setting-copy">{t("hint")}</p><p className="setting-copy">{t("limit")}</p></>}
-    {guided && <div className="dr-story-state" data-state={!page ? "loading" : page.paused ? "paused" : page.managed ? "active" : "inactive"}><strong>{ux(!page ? notice && !busy ? "unavailable" : "loading" : page.paused ? "paused" : page.managed ? "active" : "inactive")}</strong>{page && <p className="setting-copy">{ux(page.paused ? "pauseHint" : page.managed ? "activeHint" : "inactiveHint")}</p>}</div>}
+    {guided && showControls && <div className="dr-story-state" data-state={!page ? "loading" : page.paused ? "paused" : page.managed ? "active" : "inactive"}><strong>{ux(!page ? notice && !busy ? "unavailable" : "loading" : page.paused ? "paused" : page.managed ? "active" : "inactive")}</strong>{page && <p className="setting-copy">{ux(page.paused ? "pauseHint" : page.managed ? "activeHint" : "inactiveHint")}</p>}</div>}
     {operationBlocked && <p role="status" className="setting-copy">{ux("pending")}</p>}
-    {onGame && (!guided || page) && <div className="dr-story-review-actions">
+    {showControls && onGame && (!guided || page) && <div className="dr-story-review-actions">
       <button type="button" className={"button " + (guided && page?.managed && !page.paused ? "secondary" : "")} disabled={blocked} onClick={() => void game(page?.managed ? "sync" : "start")}>{guided ? ux(page?.managed ? page.paused ? "resume" : "sync" : "start") : t(page?.managed ? "syncGame" : "startGame")}</button>
       {guided && <button type="button" className="button secondary" disabled={!!busy} onClick={() => void run("read")}>{busy === "read" ? t("reading") : ux("refresh")}</button>}
       {!guided && <p className="setting-copy">{t("gameHint")}</p>}
@@ -98,9 +102,10 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
       </details>
     </div>}
     {(!guided || !page || !onGame) && <button type="button" className="button secondary" disabled={!!busy} onClick={() => void run("read")}>{busy === "read" ? t("reading") : guided ? ux("refresh") : t(page || notice ? "refresh" : "read")}</button>}
+    {workspaceSection && !showControls && page && onGame && <button type="button" className="button secondary small" disabled={!!busy} onClick={() => void run("read")}>{busy === "read" ? t("reading") : ux("refresh")}</button>}
     <div role="status" aria-live="polite" aria-atomic="true">{busy === "repair" ? storyUpdateText(locale, "repairing") : busy === "preview" ? t("checking") : notice ? t(notice) : null}</div>
     {page && <>{!guided && <p>{t("world").replace("{name}", page.worldName)}</p>}
-      {guided && <nav className="dr-story-sections" aria-label={ux("sections")}>{(["memory", "people", "timeline"] as const).map(key => <button key={key} type="button" aria-pressed={section === key} onClick={() => { setSection(key); setVisited(v => ({ ...v, [key]: true })); }}>{ux(key)}</button>)}</nav>}
+      {guided && !workspaceSection && <nav className="dr-story-sections" aria-label={ux("sections")}>{(["memory", "people", "timeline"] as const).map(key => <button key={key} type="button" aria-pressed={section === key} onClick={() => { setSection(key); setVisited(v => ({ ...v, [key]: true })); }}>{ux(key)}</button>)}</nav>}
       {(!guided || visited.people) && <section hidden={guided && section !== "people"}>
         {page.managed && onMerge && <details className="dr-story-tool"><summary>{storyMergeText(locale, "title")}</summary><StoryMerge key={page.worldId + ":" + page.chatId} locale={locale} scope={{ chatId: page.chatId, worldId: page.worldId }} onAction={onMerge} onChanged={() => void memory(async () => {})} disabled={blocked}/></details>}
         {page.managed && onIdentities && <details className="dr-story-tool"><summary>{storyIdentityText(locale, "title")}</summary><StoryIdentities key={page.worldId + ":" + page.chatId} locale={locale} scope={{ chatId: page.chatId, worldId: page.worldId }} onAction={onIdentities} onChanged={() => void memory(async () => {})} disabled={blocked}/></details>}
@@ -112,7 +117,7 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
       <section hidden={guided && section !== "memory"}>{page.managed && <StoryFacts locale={locale} page={page} busy={blocked} compact={guided} onSave={onFact ? (event, text, accept) => void memory(() => onFact(page, event, text, accept)) : undefined} onRepair={onRepair ? () => void memory(() => onRepair(page), true) : undefined}/>}
         {guided && !page.managed && <p>{ux("initial")}</p>}
       </section>
-      {(!guided || visited.timeline) && <section hidden={guided && section !== "timeline"}>{guided && <p className="setting-copy">{ux("timelineHint")}</p>}
+      {(!guided || visited.timeline) && <section hidden={guided && section !== "timeline"}>{guided && !workspaceSection && <p className="setting-copy">{ux("timelineHint")}</p>}
       {!page.guard ? <p>{guided ? ux("initial") : t("missing")}</p> : <>
         {!page.entries.length ? <p>{t("empty")}</p> : <><p className="setting-copy">{t("order").replace("{from}", n(page.offset + 1)).replace("{to}", n(page.offset + page.entries.length)).replace("{total}", n(page.guard.revisionCount))}</p>
           {page.entries.map((entry, index) => <article className="dr-story-review-entry" key={entry.id}>
@@ -128,7 +133,7 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
       </>}
       </section>}
     </>}
-    {preview && <section className="dr-story-review-preview" aria-labelledby={`${id}-preview`}><h3 ref={previewHeading} tabIndex={-1} id={`${id}-preview`}>{t("previewTitle")}</h3>
+    {preview && (!workspaceSection || workspaceSection === "timeline") && <section className="dr-story-review-preview" aria-labelledby={`${id}-preview`}><h3 ref={previewHeading} tabIndex={-1} id={`${id}-preview`}>{t("previewTitle")}</h3>
       <p>{t("previewLimit")}</p><p>{t("delta").replace("{added}", n(preview.addedEvents)).replace("{removed}", n(preview.removedEvents))}</p>
       <p>{t(preview.manualConflict ? "conflict" : "unchanged")}</p>
       <details><summary>{t("snapshot")}</summary>{Object.keys(preview.snapshot.states).length ? <ul>{Object.entries(preview.snapshot.states).map(([person, state]) => <li key={person}><strong>{preview.snapshot.names[person] ?? t("unnamed")}</strong>

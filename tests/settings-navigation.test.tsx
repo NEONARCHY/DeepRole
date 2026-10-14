@@ -7,12 +7,12 @@ describe("settings directory", () => {
   for (const locale of ["ru", "en"] as const) {
     it(`${locale}: all routes are explained and only navigation is requested`, () => {
       const select = vi.fn(); render(<SettingsNavigation locale={locale} section="home" onSelect={select}/>);
-      for (const id of ["app", "appearance", "characters", "images", "data", "memory", "diagnostics"] as const) {
+      for (const id of ["app", "appearance", "characters", "images", "safety", "data", "memory", "diagnostics"] as const) {
         const button = screen.getByRole("button", { name: navigationText(locale,id), hidden: true });
         fireEvent.click(button); expect(select).toHaveBeenLastCalledWith(id);
       }
       expect(document.querySelector("details")?.open).toBe(false);
-      expect(select).toHaveBeenCalledTimes(7);
+      expect(select).toHaveBeenCalledTimes(8);
     });
     it(`${locale}: section heading receives focus, return and mixed scope stay explicit`, () => {
       const select = vi.fn(); const view = render(<SettingsNavigation locale={locale} section="home" onSelect={select}/>);

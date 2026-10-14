@@ -2,6 +2,12 @@
 
 При распознанном «Продолжай» DeepRole подбирает небольшой набор напоминаний: подходящее недавнее сведение, одно открытое дело и одно длительное сведение. Это помогает не потерять старое обещание за новыми разговорами. Новой настройки или обязательного окна нет; дополнительных обращений к модели тоже нет.
 
+Для обычного игрового текста, включая длинные сообщения и условия, есть [дополнительный подбор по явным предметам](NATURAL-MEMORY.md). Его работа не зависит от количества действий и не меняет статусы сохранённых дел.
+
+Если указать короткую поддерживаемую цель — например, «Продолжай: починить красные ворота», — отдельный подбор может сохранить два подходящих открытых дела, самое раннее и самое позднее по источникам. Это не вычисление срочности или разрешения действовать. [Память нескольких дел по цели](TASK-GOALS.md).
+
+Для двух или трёх поддержанных частей с разными предметами — например, «Продолжай: починить красные ворота и вернуть синий ключ» — есть [составной подбор](COMPOUND-ACTIONS.md). Каждая часть требует целого подходящего источника; неизвестная часть или переполнение возвращают обычный подбор для всего запроса.
+
 ## Пример в игре
 
 Нора обещала восстановить ворота **только после разрешения охраны**. Мира сказала, что узнала код кладовой, **но код не даёт разрешения входить**. Эти сведения приняты в память. Позднее записано двадцать разговоров о погоде.
@@ -43,3 +49,5 @@
 Recognized short continuation requests can protect a recent-context anchor, at most one applicable open obligation and at most one accepted lasting detail before ordinary optional selection. Frozen owner IDs, selected-source order and accepted lifetime are required. Recipients, matching names, guessed urgency or elapsed time cannot establish ownership or fulfillment. Unknown evidence retains ordinary selection. These are context references, not proof of physical presence or knowledge transfer.
 
 Every admitted record and its metadata remain whole within the same budget. One lane may fit while the other does not; if no additional whole record fits, the original selection and counters return. Completion, cancellation and correction use current canonical compaction. Exact quoted speech, unsupported narrative syntax and explicit topic/owner questions retain their previous paths. Finite first-person actions now have a separate bounded balance: [action examples and limits](ACTION-MEMORY.md). No storage rewrite, migration, new setting or model call occurs. The fixed48 synthetic continuation cases show complete-target recall0→24/24 with24 unchanged controls, not universal or live-model quality. The existing preview explains lasting details separately.
+
+Самостоятельные знания и результаты закрытых дел также могут дополняться по [правилам длительных сведений](LASTING-MEMORY.md), без открытия завершённого дела и без нового запроса к модели. / Standalone knowledge and terminal task results have an additional [literal retrieval path](LASTING-MEMORY.md).
