@@ -61,6 +61,7 @@
   "installedUserCopyReloaded": false,
   "pushRequested": true,
   "publicationBranch": "codex/rp274-rp288-memory-safety",
+  "publicationPullRequest": "https://github.com/NEONARCHY/DeepRole/pull/2",
   "packages": {
     "chromeFiles": 23,
     "firefoxFiles": 23,
