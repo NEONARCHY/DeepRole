@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "experiment": "RP269",
+  "scope": "read-only, lexical/source-aware candidate experiment; no runtime integration, model, download or network API",
+  "limit": 8,
+  "query": "finite whole RU/EN information-request frames with a literal topic; no owner/pronoun/quoted/compound intent inference",
+  "occurrence": "finite impersonal past-action grammar in identical whole fact.text/source quote, with selected-source proof; no reported/negated/question/conditional assertion promotion",
+  "typed": "current accepted kind plus terminal task status or persistent claim, with genuine frozen available source role and selected lineage; neither authorship nor kind event alone is completion proof",
+  "mandatory": "all prior compiled tasks/claims/nonempty frozen roles retained; an unproved baseline, unknown topic/source/identity, or union overflow returns exact baseline",
+  "order": "eligible literal/source-backed priorities, then mandatory baseline sources, then unchanged lexical order",
+  "admission": "whole actual compiler prompt only; cap8 and full cost; preserve budget-specific mandatory sources, otherwise exact original prompt",
+  "metrics": "complete sets, wrong first, lost lexical gold, mandatory loss, control drift and actual full-prompt admission separately",
+  "evaluation": "new 64 development and 32 holdout cases fixed before algorithm; do not tune after results; past RP263/264 cases are not holdout"
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "amendment": "Unbound unclassified discussion tails retain exact fallback; bound meaningful dialogue stays eligible; data/gold unchanged",
+  "previousProtocolDigest": "4ee90b258125c6380c52588f5ad338aac0d0e112ce5023c330ea22031c995471",
+  "initialProtocolDigest": "27b62b5ff755ba34cd196173cbbedbb0b3eef0c5f7642b54e0196a7fd0bef92a",
+  "inputDigest": "668328a01cbac267f3f03c6d60e4facc3f5c596edc613273b8eaf72e5739fac9",
+  "goldDigest": "ae41eca4208372652ac2e279a5b3fa2835439036da60624a218532bd4c74e3d4",
+  "algorithmDigest": "cdd124c64352730df91011106e5b25f189827365bfe47baa7ab1ec58aa49f86f",
+  "compilerDigest": "e50c7eac9d2c0f9a960cea89635e85ddab9d34aa28dd3b0a16c7155e65a88803",
+  "fixtureDigest": "166a82b17e2654b11c37a90878d1588a096bfc7446e6a55972316ac8fad60d00",
+  "benchmarkDigest": "0f49f10bdf59ca051dd548012747cc68bf3e341fab26053142233aa28d40ab59"
+}

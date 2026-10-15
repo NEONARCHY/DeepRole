@@ -1,0 +1,30 @@
+import type { StoryFact } from './story-update';
+import type { StoryRoleReader } from './story-source-roles';
+import type { EpisodeReader } from './story-episodes';
+import { isFlexibleDiscussionRepeat } from './story-flexible-priority';
+import { normalizeText } from './text';
+
+// Existing transport decoder bound: a resource guard on ONE request, not a
+// world-library limit. Do not expand the eight proposals allowed per reply.
+export const BUDGET_SOURCE_ROWS = 128;
+export interface BudgetTopicFilter { matches: (fact: StoryFact) => boolean; covers: (selected: StoryFact[]) => boolean }
+const inquiry = /(?:^| )(?:said|say|says|talk|talked|conversation|conversations|discussion|discussions|recalled|remember|who|where|when|сказал|сказала|сказали|разговор|разговора|разговоре|разговоры|обсуждение|обсуждения|вспоминали|помнишь|кто|где|когда)(?: |$)/u;
+const unclassifiedDiscussion = /(?:^| )(?:discussion|discussions|discussed|discussing|conversation|conversations|talk|talked|разговор|разговора|разговоры|обсуждение|обсуждения|обсуждали|обсудили|говорили)(?: |$)/u;
+
+/** Existing literal/action parsers supply the request match. Every substantive
+ * matching source stays whole and separate, including uncertainty and terminal
+ * tasks. Only proved empty discussion can leave the prior selection. No keys,
+ * quote-only hits, fabricated ownership or synthetic "summary" supplies proof. */
+export function budgetPriorityFacts(facts: StoryFact[], query: string, filter: BudgetTopicFilter | undefined, roles?: StoryRoleReader, episodes?: EpisodeReader) {
+  if (!filter || !roles || !episodes || roles.question || inquiry.test(normalizeText(query))) return;
+  const matching = facts.filter(filter.matches);
+  if (matching.some(f => !episodes.read(f) || Object.values(roles.read(f) ?? {}).some(person => person.unavailable))) return;
+  const repeats = new Set(matching.filter(f => isFlexibleDiscussionRepeat(f, roles, episodes)));
+  const primary = matching.filter(f => !repeats.has(f));
+  // A conversation without the complete absence proof is NOT empty noise.
+  // Nor is it permission to inflate the request with its entire long tail.
+  // Keep the exact old path, including its scene/owner lanes and counters.
+  if (primary.some(f => unclassifiedDiscussion.test(normalizeText(f.text)))) return;
+  if (!primary.length || primary.length > BUDGET_SOURCE_ROWS || !filter.covers(primary)) return;
+  return { primary, repeats, covers: filter.covers };
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "amendment": "Remove an unused fixture import for TypeScript; exact data/gold/baseline and algorithm/compiler stay unchanged",
+  "initialProtocolDigest": "6636bbef969cbe19550da5cc28da28a420a2ab9bc6c68462f230f652cd249a57",
+  "inputDigest": "12684b7e138aebaf1a98fa2d9dfc3cd35a8217adb1f5ffd253514d51261eb9ae",
+  "goldDigest": "150ead151910cd8d3adfbd55b7452d602140c51f6040c1ec1c35930342d0922a",
+  "algorithmDigest": "08d93b83fbbc129a89df03ed80c5e2a43296add9a20e48e8f868e1194d9abe3a",
+  "compilerDigest": "814cc22c568fc80ee235d87ebc43ff9f77d375c9ca0a190a028a00f5029532ab",
+  "fixtureDigest": "a307228c9a02931b3c1983572d8ee3eb710d0a689a95c165f132f80b032a7ca3",
+  "benchmarkDigest": "d71e6315d556024b713bd112e5292d5b4d82f77f42c836e8053992710af235fe"
+}

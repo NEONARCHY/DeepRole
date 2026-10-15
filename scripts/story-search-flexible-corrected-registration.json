@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "amendment": "Keep the existing literal ambiguity guard and ALL independent candidate sources for supported actions; first comparison preserved, reused evaluation is not independent",
+  "initialProtocolDigest": "fed6e71df72b7825f460fdc5cb4eb4518975f5e761710d3c2eddfbadb34c4a89",
+  "inputDigest": "c7e0787889871d46b41d401ab4f1aba4c73949247f7c267f15f363ea51c50c38",
+  "goldDigest": "c84ba534767066c6b0259d27ad85ea64fd3b42fd0351f83d7858d063de1d8e4c",
+  "algorithmDigest": "2df704333b179a2a913bd91ba0f62d14e8b38dc1aa061c289bf64b06c529c9cf",
+  "compilerDigest": "62ce057d6d9d90ec4085241946dfb78f52abe4b26f7eadf7fe60d2d0fa897070",
+  "fixtureDigest": "6c12a6b64a25bef034e2d1a1182760bde2770a1eade04de82f8f30249784cf87",
+  "benchmarkDigest": "92ced90c3831de2fdbc6aa5993a014d91e8e1971cec939ab9aa6db65461cfb1b"
+}

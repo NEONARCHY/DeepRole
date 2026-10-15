@@ -1,0 +1,74 @@
+import { admissionWorld } from './story-topic-admission';
+import type { Locale } from '../../src/core/types';
+import type { StoryFact } from '../../src/core/story-update';
+import { roleSeed } from '../../src/core/story-role-binding';
+import { createStoryRoleReaderV1 } from '../../src/core/story-source-roles';
+import { compileGameContext } from '../../src/core/game-context';
+export { flexibleHints as sequenceHints } from './story-flexible-priority';
+
+// New exact source prose / desired sets fixed before sequence priority exists.
+const settings = [
+  { id: 'tower', split: 'development', ru: ['железная дверь', 'железную дверь', 'дверь', 'медный ключ', 'ключ', 'дорожный набор'], en: ['iron door', 'door', 'copper key', 'key', 'travel kit'] },
+  { id: 'station', split: 'evaluation', ru: ['внешний люк', 'внешний люк', 'люк', 'синий жетон', 'жетон', 'медицинский комплект'], en: ['outer hatch', 'hatch', 'blue token', 'token', 'medical kit'] },
+] as const;
+const places = [['у башни', 'by the tower'], ['у причала', 'by the pier'], ['в мастерской', 'in the workshop'], ['в саду', 'in the garden']] as const;
+export function sequenceWorld(locale: Locale, setting = settings[0] as typeof settings[number]) {
+  const f = admissionWorld(locale), s = f.s, [A, B] = f.base.entities;
+  A!.name = s('Вера', 'Vera'); A!.aliases = []; B!.name = s('Денис', 'Denis'); B!.aliases = [];
+  const first = s(setting.ru[0], setting.en[0]), second = s(setting.ru[3], setting.en[2]), third = s(setting.ru[5], setting.en[4]);
+  const texts = [
+    s(`Предмет ${first} закрыт; открывать его без разрешения старшего нельзя.`, `The ${first} is closed; it must not be opened without the supervisor's permission.`),
+    s(`Вера обещала Денису проверить предмет ${first} только после снятия пломбы; разрешение осмотреть не является разрешением открыть.`, `Vera promised Denis to check the ${first} only after the seal is removed; permission to inspect is not permission to open.`),
+    s(`Денис сказал: «Мы опять говорили про предмет ${first}. Узнали новое: прежнее согласие больше не действует».`, `Denis said: “We talked about the ${first} again. We learned something new: the previous agreement is no longer valid.”`),
+    s(`Денис передал предмет ${second} Вере после разрешения владельца; это не разрешение передавать его другому человеку.`, `Denis handed the ${second} to Vera after the owner allowed it; this is not permission to pass it to someone else.`),
+    s(`Вера сказала: «Код для предмета ${second} теперь9067; старый9066 отменён, это не подтверждает право пользоваться им».`, `Vera said: “The ${second} code is now9067; the old9066 is revoked; this does not confirm permission to use it.”`),
+    s(`Денис обещал Вере вернуть предмет ${second} только после сверки списка; осмотр сам по себе не завершает поручение.`, `Denis promised Vera to return the ${second} only after checking the list; inspection alone does not complete the duty.`),
+    s(`Предмет ${third} в сундуке.`, `The ${third} is in the chest.`),
+    s('Вера сказала: «Поручение забрать пустую коробку отменено, его выполнять не нужно».', 'Vera said: “The duty to collect the empty box is cancelled; it does not need to be done.”'),
+  ];
+  const records: StoryFact[] = texts.map((text, i) => ({ kind: i === 1 || i === 5 ? 'promise' : 'event', text,
+    quote: i === 6 ? s(`Вера сказала: «Возможно, предмет ${third} в сундуке, но я не проверяла; вскрывать упаковку до разрешения врача нельзя».`, `Vera said: “Maybe the ${third} is in the chest, but I have not checked; the packaging must not be opened before the doctor gives permission.”`) : text,
+    ...(i === 1 || i === 5 || i === 7 ? { task: { key: setting.id + '-duty-' + i, title: i === 7 ? s('Забрать пустую коробку', 'Collect the empty box') : i === 1 ? s(`Проверить ${first}`, `Check the ${first}`) : s(`Вернуть ${second}`, `Return the ${second}`), status: i === 7 ? 'cancelled' as const : 'open' as const } } : {}),
+    ...(i === 4 ? { claim: { key: setting.id + '-access-code', value: '9067', scope: 'state' as const, lifetime: 'persistent' as const } } : {}),
+  }));
+  const discussions: StoryFact[] = [first, second, third].flatMap(topic => places.flatMap(place => [
+    s(`Мы опять говорили про предмет ${topic} ${place[0]}. Ничего нового не узнали. Ничего не сделали. Новых обещаний не дали.`, `We talked about the ${topic} again ${place[1]}. We learned nothing new. We did nothing. We made no new promises.`),
+    s(`Мы ещё раз обсудили предмет ${topic} ${place[0]}; новых действий не было; новых фактов не появилось; новых обязательств не возникло.`, `We went over the ${topic} once more ${place[1]}; no new actions occurred; no new facts emerged; no new commitments arose.`),
+    s(`Мы вновь вспоминали предмет ${topic} ${place[0]} — новых сведений, действий и обязательств не появилось.`, `We revisited our discussion of the ${topic} ${place[1]} — no new information, actions or commitments were added.`),
+  ].map(body => { const text = s(`Денис сказал: «${body}».`, `Denis said: “${body}”`); return { kind: 'event' as const, text, quote: text }; })));
+  const facts = [...records, ...discussions], sources = facts.map((_, i) => setting.id + '-sequence-source-' + i);
+  const grammar = createStoryRoleReaderV1({ worldId: f.base.world.id, entities: f.input.entities! });
+  const seeds = facts.map((fact, i) => roleSeed(fact, { version: 1, sourceRevisionId: sources[i]!, quote: fact.quote, roles: grammar.read(fact) ?? {} }));
+  Object.assign(f.input.story!, { facts, roleSeeds: seeds, episodeSources: sources }); f.input.recentMessages = [discussions.at(-1)!.text];
+  const a = s(`открываю ${setting.ru[1]}`, `open the ${setting.en[0]}`), b = s(`достаю ${setting.ru[3]}`, `take the ${setting.en[2]}`), c = s(`осматриваю ${setting.ru[5]}`, `inspect the ${setting.en[4]}`);
+  return { ...f, A: A!, B: B!, setting, first, second, third, records, discussions, facts, sources, seeds, a, b, c,
+    short: a, dual: s(`${a} и ${b}`, `${a} and ${b}`), triple: s(`${a} и ${b} и ${c}`, `${a} and ${b} and ${c}`) };
+}
+export function sequenceScenarios() {
+  return (['ru', 'en'] as const).flatMap(locale => settings.flatMap(setting => {
+    const f = sequenceWorld(locale, setting), s = f.s, full = s('Я ', 'I ') + f.dual;
+    const rows = [
+      ['short', f.short, 3], ['dual', f.dual, 6], ['full', full, 6],
+      ['wrapped', '**' + f.dual + '**', 6], ['sequence', s(`${f.a} и затем ${f.b}`, `${f.a} and then ${f.b}`), 6],
+      ['repeat-subject', s(`Я ${f.a} и я ${f.b}`, `I ${f.a} and I ${f.b}`), 6], ['triple', f.triple, 7],
+      ['unknown-tail', s(`${f.a} и осматриваю неизвестный трон`, `${f.a} and inspect the unknown throne`), 0],
+      ['negative', s(`${f.a} и не ${f.b}`, `${f.a} and do not ${f.b}`), 0],
+      ['conditional', s(`${f.dual}, если охрана разрешит`, `${f.dual} if the guard allows it`), 0],
+      ['personal', s(`${f.a} и беру её ключ`, `${f.a} and take her key`), 0],
+      ['quoted', '"' + f.dual + '"', 0], ['third-person', s(`Она ${f.dual}`, `She ${f.dual}`), 0],
+      ['missing-source', f.dual, 0], ['overflow', f.dual, 0], ['required', full, 0],
+    ] as const;
+    return rows.map(([id, draft, count]) => {
+      const c = sequenceWorld(locale, setting); c.input.draft = draft;
+      if (id === 'missing-source') c.input.story!.episodeSources = c.sources.filter((_, i) => i !== 3);
+      if (id === 'overflow') for (const suffix of [s('Проверка отдельно согласована.', 'An inspection is separately approved.'), s('Есть дополнительный запрет.', 'There is an additional prohibition.'), s('Есть другое условие хранения.', 'There is another storage condition.')]) {
+        const text = s(`Предмет ${c.second}. `, `The ${c.second}. `) + suffix, fact: StoryFact = { kind: 'event', text, quote: text }, source = 'extra-' + c.facts.length;
+        c.facts.push(fact); c.sources.push(source); c.seeds.push(roleSeed(fact, { version: 1, sourceRevisionId: source, quote: text, roles: {} }));
+      }
+      if (id === 'required') { c.input.settings.contextBudget = 1000; c.input.requiredContext = 'Uncut required rule. '.repeat(1000); }
+      return { ...c, id: `${locale}:rp272:${setting.id}:${id}`, family: id, positive: count > 0, split: setting.split, wanted: c.records.slice(0, count) };
+    });
+  }));
+}
+export type SequenceScenario = ReturnType<typeof sequenceScenarios>[number];
+export const priorSequenceContext = (input: SequenceScenario['input']) => compileGameContext(input, { sequencePriority: false } as {});

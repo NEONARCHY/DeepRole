@@ -1,5 +1,76 @@
 # DeepRole — roadmap
 
+## Передача на рабочий ПК — пакет RP269–RP273
+
+- [x] Сохранена сводка всей накопленной работы15 октября, проверок/ограничений, исходников и следующих задач в CODEX-HANDOFF, HOME-CODEX-NEXT и дневнике. Пользователь запросил push пакета в main; старые «локально/push не запрошен» ниже исторические.
+- [x] Publication QA:25selectedfiles1417unitpass/0fail, TypeScript/diff-check;41 frozen indexed files equivalent after Git checkout. Updated handoff notes входят в source ZIP,3copies/content audit повторён. Не full suite/live account, runtime не менялся.
+- [ ] Следующее: отдельный понятный сигнал дефицита полного important bundle, без изменения канона/exact rollback и вмешательства игрока в каждую реплику.
+- [ ] Проверить/довести уже существующий safe continuation в новый чат по длинной synthetic линии с facts/roles/statuses/tasks/source IDs/manual edits/reload/retry/two tabs. Не обещать удаление контекста native DeepSeek каждые10–15 сообщений.
+- [ ] Новый corpus свободной речи/масштаба ДО новых правил; full актуальный регресс/длинная live игра с разрешённым тестовым миром, restore/import/export/performance/RP-08. RP-05–08 в целом открыты; E5/MMR не интегрированы.
+
+Сначала читать актуальный верх CODEX-HANDOFF. Не повторять завершённые RP269–273; ниже — журнал выполненных этапов, а не новое задание.
+
+## RP273 — 9+ важных источников по бюджету запроса
+
+- [x]64 новых RU/EN input/gold/exact RP272 baselines закреплены до интеграции:32positive/32control,9/12/16 записей, одиночные/2–3 действия и info request, отсутствие повторов,2settings/dev+evaluation.
+- [x] Полный matching substantive + prior non-repeat набор при9+ источниках проверяется атомарно по полному render. Whole quote/status/условия/required lore остаются целыми; недостаток места/unknown source → exact RP272 result/counters. <=8 lanes и8 proposals/reply unchanged; decoder128 safety на один request, не лимит канона.
+- [x] Protocol algorithm/compiler/fixture/script до comparison. Старые core/gold/protocols сохранены; finalized RP272 compiler snapshot фиксирует fingerprint, historical cap8 assertions используют budgetPriority:false, новые default tests отдельно.
+- [x] Initial32/32 full sets против0/32,32 controls exact,320 probes pass. Две separately registered поправки по регрессу с прежними input/gold: unbound unclassified discussion tail → old path, bound meaningful dialogue остаётся eligible. Все initial/intermediate protocols/reports/algorithms сохранены; amended evaluation reused, не новый holdout.
+- [x]196 новых unit cases; final selected23files1279pass/0fail, TypeScript/diff-check0. Ранние975pass/5fail и1274pass/5fail документированы в передаче, причины исправлены, не выдаются за0fail.
+- [x] Native synthetic Edge:6 unchanged old compound/reference/sequence cases pass и2 новых RU/EN pass после исправления harness. Initial6pass/2fail (copied old question), next2fail/isolated1fail (early duplicate-text wait) сохранены/объяснены; full source wait/current DOM исправлены, production/gold не менялись. Новые26 POST/12 whole records/reload/unchanged facts,roles,episodes/no extra pages; all own contexts closed.
+- [x] Chrome/Firefox build+ZIP и3 canonical downloads завершены; SHA25623/23 runtime и662 source entries совпадают с диском/copies. Source включает все3 protocols/reports/snapshots/current core/docs/.gitattributes, исключает tests/private-assets/секреты/веса/Git/nested ZIP; final notes повторно упакованы/сверены. Installed copy не менялась автоматически, push не запрошен.
+
+Следующее: автоматический понятный сигнал нехватки места для полного important bundle и безопасный continuation нового чата. Native transcript не сжат, весь RP-05–08 не закрыт. Push/изменение личного мира не запрошены.
+
+## RP272 — короткие и составные игровые действия
+
+- [x]64 новых RU/EN cases:32dev/32evaluation,28 positives/36 controls,2 сеттинга/3 предмета/36 поздних разговоров. Baseline/gold закреплены до интеграции; старые данные/протоколы не менялись.
+- [x] Короткие действия и2–3 object clauses через неизменные storyActionBalance/storyCompoundAction; quotes/negation/conditional/personal/deictic/unknown/failed clause/goal/third-person сохраняют прежний путь. Намерение не доказательство действия/согласия/выполнения.
+- [x] Каждый предмет должен иметь substantive evidence; все подходящие содержательные источники + prior non-repeat union≤8/full render либо exact RP271 output/counters. Frozen quote/status/source identity/условия/неизвестность остаются целыми.28/28 complete vs baseline0/28,36 controls exact, substantive loss0,192 whole-prompt probes без source/budget ошибок. Архив RP271 compiler сохранил прежний fingerprint, сравнение больше не требует неизменного текущего compiler.
+- [x] Native Edge8/8pass/0fail/0flaky, RU/EN whole POST/reload/canon safeguards; all own contexts closed. Chrome/Firefox build+ZIP,3 canonical copies иSHA25623/23 runtime/648 source entries совпадают с диском. Итоговая документация повторно упакована/сверена; tests/private-assets/веса/.env/Git/nested ZIP исключены. Личный аккаунт/installed files не менялись, push не запрошен.
+
+154 новых unit cases, selected18files931pass/0fail, TypeScript/diff-check0. Первоначальный protocol сохранён; unused fixture import removal для TypeScript имел separate pre-comparison registration с теми же algorithm/compiler/input/gold hashes. Initial comparison безопасно остановлен fingerprint check, не оценка изменённых данных. Native8/8pass/0fail/0flaky: new sequence/RP271/old compound/reference RU/EN,2.6m, all own contexts closed.30 new actual POST/reload без изменения facts/roles/episode sources/лишних окон. Финальные архивы сверены, прежний >500KB warning остаётся RP-08. Полный unit/RP-05–08/native-chat compression не объявлять закрытыми. Дальше — новый corpus/budget allocator9+ нужных источников вместо удаления условий/истории или механического поднятия cap.
+
+## RP271 — более свободные повторы и память для игровых действий
+
+Продолжение RP270 по запросу пользователя. Без удаления истории, догадок о выполнении поручений или новых запросов модели.
+
+- [x] Зафиксированы90 новых RU/EN случаев:60 development/30 evaluation,18 целевых/72 защитных,3 сеттинга/6 форм повторов/36 поздних разговоров. Baseline и gold закреплены до интеграции; старые эталоны и протоколы неизменны.
+- [x] Более свободные целые формы/пунктуация/порядок трёх явных отрицаний новизны; источник/говорящий/полная цитата обязательны. Добавочные условия, обещания, числа и неопределённость не понижаются; RP270 reader не переписан.
+- [x] Поддержанные одиночные first-person object actions используют прежний буквальный matcher. Весь substantive topic + prior non-repeat union≤8/full budget либо exact RP270 rollback. Первый15/18 (10/12+5/6), три qualified EN actions упёрлись в literal ambiguity guard. Начальные code/protocol/report сохранены; отдельно зарегистрировано сохранение ВСЕХ независимых кандидатов с прежним guard на wire. Corrected18/18,72 controls exact, substantive loss0,270 probes без source/budget ошибок. Reused evaluation не новый независимый holdout исправления.
+- [x] Проверены реальный компилятор, полный бюджет, неизменность памяти, RU/EN отправка/reload в изолированном Edge. Передача и3 текущих архива обновлены; SHA25623/23 runtime и640 source entries совпадают с диском/copies. Source notes повторно упакованы после QA; секреты/tests/private-assets/веса/вложенные ZIP исключены.
+
+QA завершена:165 new unit cases, focused444pass/0fail, TypeScript/diff-check0. Full267files5871pass/1 legacy100-turn5000ms timeout/5todo; неизменённый file repeat24/24pass (100-turn2969ms).8 unique native Edge cases прошли, включая new/RP270/action/reference RU/EN; два старых reference timing failures при parallel unit затем прошли sequential без изменений. Первые full/combined runs не0fail/0flaky; их отчёты сохранены в ignored .output/test-results. Chrome/Firefox build+ZIP/canonical copies завершены и сверены; прежний >500KB warning остаётся RP-08. Все own contexts closed, no personal account/world/installed files, push не запрошен. Следующее: новый корпус коротких/составных действий и свободнее сформулированных повторов;9 substantive источников/native chat compression ещё не решены.
+
+## RP270 Приоритет содержания перед явным повторным обсуждением
+
+15 октября 2026 года. Новая проверка по результатам RP269, без удаления истории и без переноса старого экспериментального алгоритма в игру.
+
+- [x] До алгоритма frozen96 RU/EN cases:64 development/32 проверочных,48 positive/48 controls.120 поздних разговоров, разные условия, новые сведения внутри разговора, terminal status/code, неизвестность, повреждённый источник/пересказ. Existing baseline/gold/provenance неизменны.
+- [x] Core finite whole-quote/no-new-information predicate registered before comparison; tasks/claims/beliefs/recipients/unknown/mixed/edited sources не понижаются. Unit25/26 выявил внешнюю RU closing-quote точку; initial code/protocol/report сохранены, corrected amendment отдельно registered before its comparison, gold/policy/weights не менялись. Reused holdout не новый независимый набор исправления.
+- [x] Initial complete dev16→20/32, проверочная8→10/16; corrected16→22/32 и8→11/16.48 controls exact, substantive/lost lexical gold0.480 full-prompt probes,900 exact rollback,1500+15 whole replacements и33/48. Current E5/MMR/RP269 prototype не используется. [Границы и метод](docs/DISCUSSION-PRIORITY.md).
+- [x] Подключён ограниченный путь в игровой компилятор; проверены настоящая synthetic MV3 отправка/reload, сохранность библиотеки, старые контроли и бюджет. Передача и три текущих архива обновлены.
+
+Рабочий compileGameContext теперь собирает prior pass как точный rollback, получает proof из внутренней selection (не из user-authored wire), сохраняет весь substantive topic + prior non-repeat union≤8 и перепроверяет полный render. No new user setting/schema/DB/model request/canonical change.58 initial runtime/contract cases pass; selected6files446pass, TypeScript0. Native RU/EN Edge2/2pass после20 explicit synthetic POST/reload с неизменной библиотекой/ролями/источниками; дополнительно6/6 старых long-history/task-goal/lasting-recall браузерных сценариев. Все собственные contexts closed. Полный unit и архивы проверены ниже. CLI startup несколько раз остановился на Vite SSR timeout; unchanged retry и отдельный temp/hmr:false/ws:false исправленного harness, production/test таймауты не повышались. Один unit timeout от повторной генерации96-case fixture на каждый test устранён однократной подготовкой + отдельным cloned input, assertions не ослаблялись.
+
+- [x] Полный unit265 files5707pass/0fail/5 прежних todo наNode24/worker1 за562.39s; TypeScript/diff-check0.155 новых unit cases; old scope/budget/owner/transport/backup/long-history/semantic protocols сохраняются. Native relevant suite8/8pass. Полный браузерный набор и live account не проверялись.
+- [x] Chrome/Firefox build+ZIP и3 canonical copies обновлены. SHA256 всех23/23 runtime и631 source entries совпадают с диском/copies; source включает current docs/reports/registrations/.gitattributes, исключает tests/private-assets/веса/.env/Git/nested ZIP. Прежний >500KB warning остаётся RP-08. Личный мир/установленные файлы не трогались, push не запрошен.
+
+Дальше — новый независимый набор свободных формулировок и обычных игровых действий ДО расширения правила; RP270 теперь просмотрен. Девять содержательных источников и сжатие самой переписки DeepSeek остаются отдельными задачами. Не выдавать этот узкий приоритет за универсальное решение RP-05–08.
+
+## RP269 Различение события и обсуждения при поиске памяти
+
+15 октября 2026 года. Продолжение по передаче RP256–FIX268. Отдельный read-only эксперимент; нынешние E5/MMR и новый подбор не подключать к игровым отправкам без доказанного выигрыша.
+
+- [x] Новый96-case RU/EN корпус:64 development/32 holdout,48 positive/48 controls; событие, обещание, план, непроверенный пересказ, completed/cancelled, разные условия, смена кода,120 поздних разговоров и неизвестный/чужой источник. Baseline/gold/provenance hashes закреплены ДО алгоритма.
+- [x] Отдельная регистрация finite literal/source-aware protocol/code/admission hashes ДО оценки; gold/opaque IDs/world labels не признаки. Whole sources/historical roles/current status/cap8/mandatory baseline/exact fallback не ослаблены. E5/MMR/production hooks/downloads отсутствуют.
+- [x] Complete recall dev20/32→20/32, holdout10/16→10/16; wrong-first16→12 и8→6.48 controls exact, mandatory/lost lexical gold0.480 actual whole-prompt probes;900 всегда exact rollback,1500+ block fits с прежними30/48.12 union-overflow; прототип не внедрять. [Метод/границы](docs/SEARCH-GROUNDING.md). Related-template holdout не проверяет произвольную речь; новый корпус теперь seen.
+- [x]138 новых unit cases, выбранный8files590pass/0fail; TypeScript/diff-check. Previous regressions сначала450pass/2 code-SHA failures от checkout CRLF; `.gitattributes`/EOL formatting восстановили точные прежние hashes без изменения алгоритмов/gold. Network-blocked Node probe0 attempts. Передача/home/day актуальны; финальная упаковка ниже. Full unit/browser/live account не проверены в этом этапе.
+
+Следующий RP-05: новый independent корпус свободнее сформулированных запросов перед query-relevant mandatory source policy. Сохранять целые существенные доказательства/условия/альтернативы, а не любые повторные speaker-bound разговоры; не тюнить по RP269 и не стирать историю ради cap8. Рабочая память RP262 остаётся прежней.
+
+- [x] Финальные Chrome/Firefox builds и3 canonical ZIP; SHA25623/23/619 entry-to-disk/copies успешны. Source включает `.gitattributes`, current docs/report/protocol/tooling, исключает tests/private-assets/веса/.env/Git/nested ZIP. Source notes обновлены после QA; warning >500KB прежний RP-08. Никакие браузерные вкладки/личные игровые данные/установленные файлы не трогались; push не запрошен.
+
 ## Передача домой — 14 октября 2026
 
 Пользователь поручил push накопленных RP256–FIX268 в main. [Итог дня](docs/HANDOFF-2026-10-14.md), [точное следующее задание домашнему Codex](docs/HOME-CODEX-NEXT.md), проверки/границы/обновление расширения — верх CODEX-HANDOFF. Исторические «локально/push не запрошен» ниже относятся к моменту тех итераций. Следующий приоритет RP-05: отдельный независимый source-aware grounding/reranking корпус, различающий сыгранное событие и обсуждение. UX265–267 закрыт; нынешний E5/MMR не внедрять, RP-05–08 целиком не завершены.

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "inputDigest": "12684b7e138aebaf1a98fa2d9dfc3cd35a8217adb1f5ffd253514d51261eb9ae",
+  "goldDigest": "150ead151910cd8d3adfbd55b7452d602140c51f6040c1ec1c35930342d0922a",
+  "algorithmDigest": "08d93b83fbbc129a89df03ed80c5e2a43296add9a20e48e8f868e1194d9abe3a",
+  "compilerDigest": "814cc22c568fc80ee235d87ebc43ff9f77d375c9ca0a190a028a00f5029532ab",
+  "fixtureDigest": "acaebe136f888d35702c7795edf16ff2de492e24fa514ac4efb3e97b7cced724",
+  "benchmarkDigest": "d9afc67c13980b2ca804f8423fda9b3d8e551b3c6a0a6425502485be4e9dceeb"
+}

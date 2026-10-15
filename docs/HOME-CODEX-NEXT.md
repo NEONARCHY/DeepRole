@@ -1,4 +1,62 @@
-# Домашний Codex: откуда продолжать после pull
+# Codex на другом ПК: откуда продолжать после pull
+
+## Передача на рабочий ПК — RP269–RP273
+
+Publication gate:25selectedfiles/1417unitpass/0fail, TypeScript/diff-check;41 frozen indexed files после Git checkout сохраняют эквивалентные registered byte fingerprints/required EOL. Это не full suite/live account. Финальные тексты передачи повторно включены в source ZIP и package audit; base f4a093e, текущую опубликованную вершину сверять `git log` после pull.
+
+Пользователь запросил публикацию всего пакета в main. Актуальная передача — начало [CODEX-HANDOFF](../CODEX-HANDOFF.md), затем [итог15 октября](HANDOFF-2026-10-15.md) и верх [ROADMAP](../ROADMAP.md). Старые «push не запрошен»/«следующее RP272» ниже исторические; не начинать завершённую работу заново.
+
+Уже в игре: приоритет целых содержательных исходников перед доказанно пустыми повторными разговорами; RU/EN одиночные, короткие и2–3 составных действия;9+ источников целиком по полному added-context budget или exact prior rollback. История/канон не удаляются, задачи не завершаются словами игрока, личные/указательные ссылки и разные владельцы не угадываются. RP269/E5/MMR — исследования, не новая модель поиска в расширении. Сохранены все gold/протоколы/первые и исправленные reports; наборы уже seen.3 текущих ZIP и QA обновлены, installed copy обновляется вручную.
+
+Начать следующим запросом именно с понятного сигнала дефицита полного важного набора: complete vs local budget vs unknown source/unsupported query, без засорения нарратива и необходимости ручного review каждой реплики. Сохранять exact fallback/required lore/source integrity; диагностику передавать отдельно. Затем проверить/довести существующий безопасный continuation нового чата на длинной synthetic истории, не переписывать его заново и не обещать сжатие native переписки каждые10–15 сообщений. Минимум вмешательства игрока — приоритет пользователя.
+
+Открыты: свободная речь/новый независимый corpus, настоящая игра с моделью и масштаб, полный актуальный unit/browser регресс, источник/задачи/ручные правки при новом чате и сбоях/двух вкладках, производительность/RP-08. Финальные1279 selectedunitpass/TypeScript и8 unique native synthetic cases не доказательство всего endless RP. Личные аккаунты/миры не использовать для разрушительных проверок. Рабочий ПК: full Git checkout, Node24+, npm ci если dependencies отсутствуют. Frozen `.gitattributes`/gold/registrations не переписывать.
+
+## Текущий этап 15 октября RP273
+
+Завершён:3 canonical ZIP/Chrome+Firefox build, SHA25623/23 runtime/662 source entries match disk/copies, финальные notes включены. Source исключает tests/private-assets/веса/секреты/Git/nested ZIP. Selected1279unitpass, strengthened valid whole quote budget test196pass, TypeScript0;8 unique native cases passed с ранними harness failures объяснёнными ниже. Личная installed copy не менялась, push не запрошен. Не повторять завершённый RP273; дальше видимый дефицит whole bundle/безопасный новый чат, не arbitrary language/E5/MMR по уже seen corpus.
+
+Native QA завершён:8 unique scenarios passed across6 unchanged old RU/EN and corrected2 new RU/EN. First6pass/2fail от old-question assertion, next2fail/isolated1fail от duplicate-text early baseline; trace доказал last batch50/51 was still recording. Test waits exact selected source, DOM matches history on reload; unchanged exact canon assertions passed. Production/input/gold не менялись.26 new actual scoped POSTs/12 whole sources/reload/no extra pages/page errors, all own contexts closed. Source ZIP/audit завершены; финальный статус — верх CODEX-HANDOFF. Личный аккаунт/installed copy не трогали.
+
+Final selected1279unitpass/0fail (196 new), TypeScript/diff-check0; первоначальные failures и отдельно зарегистрированные поправки по регрессу записаны в CODEX-HANDOFF. Все3 сравнения32/32 complete vs0/32,32 exact controls,320 whole-budget/source probes. Old gold/input/registrations неизменны; amended evaluation уже seen, не independent holdout. Native QA завершён, package audit завершён. Локальный бюджет добавленной памяти НЕ равен измерению native свободного окна DeepSeek.
+
+При9+ важных источниках whole matching substantive + prior non-repeat bundle передаётся по полному бюджету либо exact RP272 rollback. Условия/quotes/status/source не режутся/не угадываются; <=8 lanes/8 proposals за ответ unchanged. Decoder128 safety — один request, не лимит мира. UI/DB/schema/settings/model/canon/native chat не менялись. [Пример](DISCUSSION-PRIORITY.md).64 новых input/gold/baseline до интеграции, отдельный protocol до comparison; old gold/core/registrations сохранены, cap8 historical comparator явно выключает budgetPriority, finalized RP272 compiler snapshot сохранён. QA завершён, ZIP audit завершён, финальный статус смотреть в начале CODEX-HANDOFF/ROADMAP. Push/installed copy не запрошены. После QA — сигнал дефицита whole bundle и безопасный новый чат; весь endless RP не обещать.
+
+## Текущий этап 15 октября RP272
+
+Chrome/Firefox build+ZIP и3 canonical copies готовы; SHA25623/23 runtime/648 source entries совпадают с диском/copies, итоговая QA-документация входит в source ZIP. Tests/private-assets/веса/секреты/Git/nested ZIP исключены. Старые проверки/реализацию RP272 не повторять; installed copy нужно обновлять вручную, push не запрошен.
+
+Приоритет для коротких RU/EN действий и2–3 частей подключён в игру. «открываю дверь и достаю ключ» требует содержательных сведений об обоих предметах; вся память/цитаты/условия/status/sourceIDs + prior non-repeat должна поместиться≤8/full render или возвращается exact RP271. Unknown/edited/foreign/ambiguous personal source не угадывается; действие запроса не выполнение, shared labels не identity. История/DB/settings/model не менялись. [Пример](DISCUSSION-PRIORITY.md).
+
+Fresh64cases до интеграции:28positive/36control. Type-only unused fixture import fix separately registered, algorithm/compiler/input/gold unchanged, old protocol/snapshot preserved.28/28 complete vs0/28, controls exact,192 whole-budget probes pass.154 new unit cases, selected931pass, TypeScript0. Native Edge8/8pass/0fail/0flaky, source/conditions/reload/canon сохранность; all own contexts closed. Финальные ZIP итоги — верх CODEX-HANDOFF. Старый RP271 compiler fingerprint привязан к историческому snapshot, прежние эталоны не переписаны; full unit/live account не считать проверенными в этом этапе.
+
+Следующий шаг — NEW corpus и budget allocator для9+ нужных источников; не удалять канон/не объединять условия/не повышать cap без общей проверки. Все RP272 cases seen, arbitrary language/E5/MMR/native chat compression/RP-05–08 остаются открыты. Установленная копия требует ручного обновления, push не запрошен.
+
+## Текущий этап 15 октября RP271
+
+Chrome/Firefox и3 canonical ZIP завершены; SHA25623/23 runtime и640 source entries совпадают с диском/copies, документация после QA входит в source ZIP. Tests/private-assets/модель/секреты/nested ZIP исключены; полный эксперимент повторять из Git. Установленные личные файлы не заменялись автоматически, push не запрошен. Проверки и результаты этого этапа не повторять.
+
+Рабочий приоритет RP270 расширен на конечные более свободные формы повторов (разделители/порядок трёх явно отсутствующих изменений) и прежние одиночные first-person object actions. Полный literal substantive bundle + все prior non-repeat источники должны поместиться≤8/full budget либо exact RP270 fallback. Shared literal-label ambiguity guide остаётся на wire; все разные исполнители/условия/цитаты — отдельные кандидаты, не объединённая идентичность. Unknown source/name/personal/deictic/reference-only/restart защищены; DB/canon/model/settings не менялись. [Пример](DISCUSSION-PRIORITY.md).
+
+Новый baseline90cases перед интеграцией:18positives/72controls; первый15/18, separately registered amended18/18 с прежними gold/input. Старые snapshots/protocol/report сохранены; revised evaluation reused, не fresh holdout.270 full-prompt probes без source/budget ошибок.165 новых unit cases, focused444pass, TypeScript0; полный5871pass/1 legacy100-turn timeout/5todo, unchanged file repeat24pass.8 уникальных native cases прошли; старые reference2 после unchanged sequential rerun, первый combined run имел timing failures. Не выдавать эти первые прогоны за0fail/0flaky. ZIP-проверки — верх CODEX-HANDOFF. Пересборка не обновляет installed copy автоматически; push не запрошен.
+
+Следующая задача — NEW corpus для коротких/составных действий и более свободной речи ДО изменения правил. Все RP271 examples seen; сохранить whole evidence/current status/conditions/uncertainty/cap8/exact rollback, не добавлять модель или стирать канон.9 существенных источников и native chat compression — отдельные открытые задачи. RP270 ниже исторический, не повторять завершённую работу.
+
+## Текущий этап 15 октября RP270
+
+По запросу пользователя реализован ограниченный приоритет важных источников перед **явным повтором без новых сведений/действий/обязательств**. Runtime two-pass/full bundle сохраняет все non-repeat старого подбора и literal topic, либо exact original output/counters. Не удаляет историю/не меняет статусы/не угадывает владельца, не подключает E5/MMR. [Метод, пример, границы](DISCUSSION-PRIORITY.md), текущие QA/упаковка — верх CODEX-HANDOFF. RP269 ниже — исторический этап, больше не считать всё только исследованием.
+
+Следующий RP-05: новый независимый RU/EN corpus более свободных повторов и ordinary actions ДО расширения правила. Все96 RP270 уже seen; повторная оценка после mechanical RU quote punctuation fix не новый holdout. Source/conditions/uncertainty/current status/cap8/whole budget/exact fallback остаются обязательными; проблема9 substantive источников не закрыта. Не добавлять модель/сервис и не стирать канон ради экономии контекста. Новая user setting не нужна; discussionPriority:false — внутренний comparator. Финально5707unitpass/0fail/5 прежних todo, TypeScript/diff-check0,8/8 synthetic Edge native cases. Chrome/Firefox и3 canonical ZIP сверены SHA25623/23/631 files/copies; личные installed files автоматически не менялись. Работу/QA RP270 не повторять, продолжать с нового набора.
+
+## Текущий этап 15 октября RP269
+
+Пакеты пересобраны и сверены SHA25623/23/619 entries/canonical copies. Их игровой алгоритм прежний; установка ради RP269 не требуется. Source содержит `.gitattributes` для portable audit hashes и текущие tools/report/docs, но не tests/private-assets/модель/секреты. Полное исследование повторять из Git checkout.
+
+Новый source-aware эксперимент завершён, но в игру не внедрён. Полнота holdout осталась10/16, первая неверная позиция8→6. Все48 контролей сохраняют прежний выбор; whole source/status/conditions/IDs/cap8/budget проверены. Рабочий поиск RP262 и личный мир неизменны. [Результаты и повторение](SEARCH-GROUNDING.md); верх CODEX-HANDOFF — текущая передача, нижнее задание RP264 уже выполнено этим исследованием.
+
+**Дальше:** создать новый independent RU/EN корпус со свободнее сформулированными запросами, закрепить gold/baseline до изменения правил. Затем отдельно проверить защиту обязательных источников по задаче запроса: нынешнее правило «любой известный speaker обязателен» заполняет восемь мест разговорами и не улучшает полные наборы событий/условий. Не тюнить по уже просмотренным96 cases, не внедрять старые E5/MMR/finite source grammar и не удалять каноническую историю ради места в запросе. Сохранить источники/полные альтернативы/негативные сведения/current statuses/unknown/exact budget fallback. Node24+, модель не нужна. В Git локальная работа поверх f4a093e, push не запрошен.
+
+QA:138 new unit cases; выбранный590pass/0fail, TypeScript/diff-check. Две старые ошибки frozen code SHA от CRLF/LF исправлены только форматированием и `.gitattributes`, без новых gold/правил. Нативный браузер/полный unit/live account не повторялись; установленные файлы автоматически не обновляются.
 
 ## Передача 14 октября: RP256–FIX268
 

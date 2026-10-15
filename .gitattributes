@@ -1,0 +1,25 @@
+# Frozen search experiments hash exact source code, not just behavior. Pin the
+# line endings so a checkout on another OS cannot change their fingerprints.
+scripts/story-search-*.mjs text eol=lf
+src/core/story-discussion-priority.ts text eol=lf
+tests/fixtures/story-discussion-priority.ts text eol=lf
+tests/fixtures/story-discussion-priority-evaluation.ts text eol=lf
+src/core/story-flexible-priority.ts text eol=lf
+src/core/story-sequence-priority.ts text eol=lf
+src/core/story-budget-priority.ts text eol=lf
+tests/fixtures/story-budget-priority.ts text eol=lf
+docs/benchmarks/rp272-final-compiler.txt text eol=crlf
+docs/benchmarks/rp273-initial-algorithm.txt text eol=lf
+docs/benchmarks/rp273b-algorithm.txt text eol=lf
+docs/benchmarks/rp273-initial-compiler.txt text eol=crlf
+tests/fixtures/story-sequence-priority.ts text eol=lf
+tests/fixtures/story-flexible-priority.ts text eol=lf
+docs/benchmarks/rp270-initial-algorithm.txt text eol=lf
+docs/benchmarks/rp271-initial-algorithm.txt text eol=lf
+docs/benchmarks/rp271-initial-compiler.txt text eol=crlf
+docs/benchmarks/rp271-final-compiler.txt text eol=crlf
+docs/benchmarks/rp272-initial-fixture.txt text eol=lf
+# These two existing inputs were recorded with CRLF in the RP269 registration.
+src/core/text.ts text eol=crlf
+src/core/game-context.ts text eol=crlf
+tests/fixtures/story-search-diverse.ts text eol=crlf

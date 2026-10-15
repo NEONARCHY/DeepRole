@@ -4,6 +4,11 @@ import { compileMemoryWorkspace } from "./memory-workspace";
 import { formatMemoryContext } from "./context";
 import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
 import { storyContentRelevance } from "./story-content-relevance";
+import { discussionPriorityFacts } from "./story-discussion-priority";
+import { flexiblePriorityFacts } from "./story-flexible-priority";
+import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
+import { budgetPriorityFacts, BUDGET_SOURCE_ROWS } from "./story-budget-priority";
+import { storyFactIdentity } from "./story-memory-lifecycle";
 import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
 import {storyActionBalance} from "./story-action-balance";
 import {storyTaskGoal,storyTaskGoalCandidates} from "./story-task-goal";
@@ -19,9 +24,9 @@ import { continuationContext,boundStory } from "./story-continuation";
 import { estimateTokens,normalizeText,uniqueTokens } from "./text";
 import { expandFocus, mentionedEntities } from "./scene";
 import { storyRetrievalQuery, UNRESOLVED_STORY_REFERENCE, AMBIGUOUS_STORY_NAME } from "./story-retrieval-query";
-import { createStoryRoleReader } from "./story-source-roles";
+import { createStoryRoleReader, type StoryRoleReader } from "./story-source-roles";
 import { storedRoleReader, type FactRoleSeed } from "./story-role-binding";
-import { createEpisodeReader } from "./story-episodes";
+import { createEpisodeReader, type EpisodeReader } from "./story-episodes";
 import { createStoryTimeReader, formatStoryTime, isGameTimeFact } from "./story-time";
 import type { RankMemoryInput } from "./memory-engine";
 import type { ContextSelection,WorldProfile,HandoffSnapshot,StoryContinuation } from "./types";
@@ -50,7 +55,104 @@ const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
  * calls, transcript deletion, fuzzy identity replacement or partial JSON cuts. */
-export function compileGameContext(input:GameContextInput, options: { memoryTransport?: "compact"|"legacy"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean } = {}) {
+export interface GameContextOptions { memoryTransport?: "compact"|"legacy"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean }
+type PriorityProof = { facts: StoryFact[]; selected: StoryFact[]; roles?: StoryRoleReader; episodes?: EpisodeReader; referenceGuard: string; admission: ReturnType<typeof storyContentRelevance>["admission"]; action: ReturnType<typeof storyActionBalance>; names: string[] };
+type PriorityReservation = { ids: string[]; covers: (selected:StoryFact[])=>boolean; budgetRows?: boolean };
+/** RP273: allow more than eight whole request-owned sources when the COMPLETE
+ * rendered prompt fits. Otherwise return the exact RP272 result and counters.
+ * This reads memory only; it never performs the user's action or edits canon. */
+export function compileGameContext(input:GameContextInput, options:GameContextOptions = {}) {
+ let proof:PriorityProof|undefined;
+ const prior=compileSequenceContext(input,options,p=>{proof=p});
+ if(options.budgetPriority===false||options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.topicAdmission===false||options.contentRelevance===false||options.actionBalance===false||!input.story||input.restart||input.character?.[9]||!proof)return prior;
+ if(proof.referenceGuard&&proof.referenceGuard!==AMBIGUOUS_STORY_OBJECT)return prior;
+ const sequence=storyActionSequence(input.draft,proof.names);
+ if(sequence&&sequence.matches.length>1&&options.compoundActionBalance===false)return prior;
+ const actionMatches=proof.action?.kind==='object'?proof.action.matches:undefined;
+ const filter=sequence?{matches:(f:StoryFact)=>sequence.matches.some(m=>m(f)),covers:(selected:StoryFact[])=>sequence.matches.every(m=>selected.some(m))}:proof.admission??(actionMatches?{matches:actionMatches,covers:(selected:StoryFact[])=>selected.some(actionMatches)}:undefined);
+ if(proof.referenceGuard&&!sequence&&proof.action?.kind!=='object')return prior;
+ const group=budgetPriorityFacts(proof.facts,input.draft,filter,proof.roles,proof.episodes);
+ if(!group)return prior;
+ const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
+ const ids=[...new Set([...group.primary,...proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)))].map(storyFactIdentity))];
+ // Leave all <=8 behavior unchanged. Retain every prior substantive source;
+ // if their union exceeds decoder safety, don't choose an arbitrary subset.
+ if(ids.length<=8||ids.length>BUDGET_SOURCE_ROWS)return prior;
+ let selected:StoryFact[]=[];
+ const candidate=compileGameContextPass(input,options,{ids,covers:group.covers,budgetRows:true},p=>{selected=p.selected});
+ const accepted=new Set(selected.map(storyFactIdentity));
+ return ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit?candidate:prior;
+}
+/** RP272: all objects in a finite short/compound action need whole evidence.
+ * The complete RP271 result remains the rollback; no canonical state writes. */
+function compileSequenceContext(input:GameContextInput, options:GameContextOptions, capture:(proof:PriorityProof)=>void) {
+ let proof:PriorityProof|undefined;
+ const prior=compileFlexibleContext(input,options,p=>{proof=p;capture(p)});
+ if(options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.topicAdmission===false||options.contentRelevance===false||options.actionBalance===false||!input.story||input.restart||input.character?.[9]||!proof)return prior;
+ if(proof.referenceGuard&&proof.referenceGuard!==AMBIGUOUS_STORY_OBJECT)return prior;
+ const sequence=storyActionSequence(input.draft,proof.names);
+ if(!sequence||sequence.matches.length>1&&options.compoundActionBalance===false)return prior;
+ const group=sequencePriorityFacts(proof.facts,sequence,proof.roles,proof.episodes);
+ if(!group)return prior;
+ const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
+ const ids=[...new Set([...group.primary,...proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)))].map(storyFactIdentity))];
+ if(ids.length>8)return prior;
+ const oldIds=new Set(proof.selected.map(storyFactIdentity));
+ if(ids.every(id=>oldIds.has(id)))return prior;
+ let selected:StoryFact[]=[];
+ let candidateProof:PriorityProof|undefined;
+ const candidate=compileGameContextPass(input,options,{ids,covers:group.covers},p=>{selected=p.selected;candidateProof=p});
+ const accepted=new Set(selected.map(storyFactIdentity));
+ if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit){capture(candidateProof!);return candidate}
+ return prior;
+}
+/** RP271 keeps the complete RP270 result as rollback, including its counters.
+ * The old grammar/protocol remain unchanged; comparison flags are local only. */
+function compileFlexibleContext(input:GameContextInput, options:GameContextOptions, capture:(proof:PriorityProof)=>void) {
+ let proof:PriorityProof|undefined;
+ const prior=compileDiscussionContext(input,options,p=>{proof=p;capture(p)});
+ if(options.flexiblePriority===false||options.discussionPriority===false||options.topicAdmission===false||options.contentRelevance===false||!input.story||input.restart||input.character?.[9]||!proof)return prior;
+ // A literal shared label is still ambiguous, NOT an object identity. Keep
+ // the existing guard on wire and every independent candidate/condition; only
+ // this supported object action may prefer them over proved empty discussion.
+ if(proof.referenceGuard&&!(proof.referenceGuard===AMBIGUOUS_STORY_OBJECT&&proof.action?.kind==='object'))return prior;
+ const group=flexiblePriorityFacts(proof.facts,input.draft,proof.admission,proof.action,proof.roles,proof.episodes);
+ if(!group)return prior;
+ const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
+ const protectedPrior=proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)));
+ const ids=[...new Set([...group.primary,...protectedPrior].map(storyFactIdentity))];
+ if(ids.length>8)return prior;
+ const oldIds=new Set(proof.selected.map(storyFactIdentity));
+ if(ids.every(id=>oldIds.has(id)))return prior;
+ let selected:StoryFact[]=[];
+ let candidateProof:PriorityProof|undefined;
+ const candidate=compileGameContextPass(input,options,{ids,covers:group.covers},p=>{selected=p.selected;candidateProof=p});
+ const accepted=new Set(selected.map(storyFactIdentity));
+ if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit){capture(candidateProof!);return candidate}
+ return prior;
+}
+/** The first pass is also the exact rollback value. Read internal selection,
+ * never parse potentially user-authored protocol text to manufacture proof. */
+function compileDiscussionContext(input:GameContextInput, options:GameContextOptions, capture:(proof:PriorityProof)=>void) {
+ let proof:PriorityProof|undefined;
+ const prior=compileGameContextPass(input,options,undefined,p=>{proof=p;capture(p)});
+ if(options.discussionPriority===false||!input.story||input.restart||input.character?.[9]||!proof||proof.referenceGuard)return prior;
+ const group=discussionPriorityFacts(proof.facts,input.draft,proof.admission,proof.roles,proof.episodes);
+ if(!group)return prior;
+ const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
+ const protectedPrior=proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)));
+ const ids=[...new Set([...group.primary,...protectedPrior].map(storyFactIdentity))];
+ if(ids.length>8)return prior;
+ let selected:StoryFact[]=[];
+ let candidateProof:PriorityProof|undefined;
+ const candidate=compileGameContextPass(input,options,{ids,covers:proof.admission!.covers},p=>{selected=p.selected;candidateProof=p});
+ const accepted=new Set(selected.map(storyFactIdentity));
+ // Every old substantive source and every new condition must survive whole.
+ // Failure returns original text/selection/report/counters byte-for-byte.
+ if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit){capture(candidateProof!);return candidate}
+ return prior;
+}
+function compileGameContextPass(input:GameContextInput, options:GameContextOptions, priority?:PriorityReservation, capture?:(proof:PriorityProof)=>void) {
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
@@ -138,7 +240,19 @@ export function compileGameContext(input:GameContextInput, options: { memoryTran
  const admission=options.topicAdmission!==false&&options.contentRelevance!==false&&input.story&&retrieval&&!referenceGuard&&!roles?.question
   ?storyContentRelevance(facts.map(f=>f.fact),input.draft,retrieval.relevanceNames).admission:undefined;
  let topicOnly=false;
- if(admission){
+ if(priority){
+  const byId=new Map(facts.map(f=>[storyFactIdentity(f.fact),f.fact]));
+  // The expanded path measures ONE atomic full bundle: shared exact transport
+  // can make the whole bundle fit even when an intermediate prefix costs more.
+  // Ordinary eight-row passes retain their historical order/counters exactly.
+  const expanded=priority.budgetRows&&priority.ids.length<=BUDGET_SOURCE_ROWS&&priority.ids.every(id=>byId.has(id));
+  const whole=priority.budgetRows?!!expanded&&consider(()=>selectedFacts.push(...priority.ids.map(id=>byId.get(id)!)),()=>{selectedFacts.length=0},"facts")
+   :priority.ids.length<=8&&priority.ids.every(id=>{const f=byId.get(id);return !!f&&consider(()=>selectedFacts.push(f),()=>{selectedFacts.pop()},"facts")});
+  topicOnly=whole&&priority.covers(selectedFacts);
+  if(topicOnly){for(const f of facts)attemptedFacts.add(f.fact);omitted.facts=facts.length-selectedFacts.length;}
+  else{selectedFacts.length=0;omitted.facts=0;}
+ }
+ if(admission&&!topicOnly){
   // Tentative reservation, before optional lore/profile rounds. No matched
   // evidence is clipped. If one requested topic cannot fit, roll back counters
   // and run the SAME prior fallback instead of silently dropping that topic.
@@ -267,5 +381,6 @@ export function compileGameContext(input:GameContextInput, options: { memoryTran
   if(balancedTasks.has(fact))explanation.openTasks++;else if(balancedPersistent.has(fact))explanation.persistentFacts=(explanation.persistentFacts??0)+1;else if(ranked&&ranked.score>bonus)explanation.draftFacts++;else if(ranked&&(recentFacts.get(ranked.index)??0)>bonus)explanation.recentFacts++;else if(bonus)explanation.openTasks++;else explanation.recentFallback++;
  }
  report.explanation=explanation;
+ capture?.({facts:facts.map(f=>f.fact),selected:[...selectedFacts],roles,episodes,referenceGuard,admission,action,names:retrieval?.relevanceNames??[]});
  return {text,memoryText,selection,documents:pooled.documents,report};
 }

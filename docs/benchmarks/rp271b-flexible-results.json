@@ -1,0 +1,3271 @@
+{
+  "registration": {
+    "version": 1,
+    "amendment": "Keep the existing literal ambiguity guard and ALL independent candidate sources for supported actions; first comparison preserved, reused evaluation is not independent",
+    "initialProtocolDigest": "fed6e71df72b7825f460fdc5cb4eb4518975f5e761710d3c2eddfbadb34c4a89",
+    "inputDigest": "c7e0787889871d46b41d401ab4f1aba4c73949247f7c267f15f363ea51c50c38",
+    "goldDigest": "c84ba534767066c6b0259d27ad85ea64fd3b42fd0351f83d7858d063de1d8e4c",
+    "algorithmDigest": "2df704333b179a2a913bd91ba0f62d14e8b38dc1aa061c289bf64b06c529c9cf",
+    "compilerDigest": "62ce057d6d9d90ec4085241946dfb78f52abe4b26f7eadf7fe60d2d0fa897070",
+    "fixtureDigest": "6c12a6b64a25bef034e2d1a1182760bde2770a1eade04de82f8f30249784cf87",
+    "benchmarkDigest": "92ced90c3831de2fdbc6aa5993a014d91e8e1971cec939ab9aa6db65461cfb1b"
+  },
+  "groups": [
+    {
+      "split": "development",
+      "count": 12,
+      "baselineComplete": 0,
+      "complete": 12
+    },
+    {
+      "split": "evaluation",
+      "count": 6,
+      "baselineComplete": 0,
+      "complete": 6
+    }
+  ],
+  "rows": [
+    {
+      "id": "ru:rp271:fort:question",
+      "split": "development",
+      "family": "question",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a0160e3ba77a3b727b0345fb4972307e80d2f26f49fba22e4ee7e01b7b861b95",
+      "outputDigest": "394eed6b6f800346d4a416002a90adda93a464751102516bd8bad529f336aaed"
+    },
+    {
+      "id": "ru:rp271:fort:action",
+      "split": "development",
+      "family": "action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "2a9084dc804f97a8e29f5591c506e4e1884b833865c084666cc5a26803f91f76",
+      "outputDigest": "394eed6b6f800346d4a416002a90adda93a464751102516bd8bad529f336aaed"
+    },
+    {
+      "id": "ru:rp271:fort:slow-action",
+      "split": "development",
+      "family": "slow-action",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a0160e3ba77a3b727b0345fb4972307e80d2f26f49fba22e4ee7e01b7b861b95",
+      "outputDigest": "a0160e3ba77a3b727b0345fb4972307e80d2f26f49fba22e4ee7e01b7b861b95"
+    },
+    {
+      "id": "ru:rp271:fort:bare-action",
+      "split": "development",
+      "family": "bare-action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "2a9084dc804f97a8e29f5591c506e4e1884b833865c084666cc5a26803f91f76",
+      "outputDigest": "394eed6b6f800346d4a416002a90adda93a464751102516bd8bad529f336aaed"
+    },
+    {
+      "id": "ru:rp271:fort:negative",
+      "split": "development",
+      "family": "negative",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a0160e3ba77a3b727b0345fb4972307e80d2f26f49fba22e4ee7e01b7b861b95",
+      "outputDigest": "a0160e3ba77a3b727b0345fb4972307e80d2f26f49fba22e4ee7e01b7b861b95"
+    },
+    {
+      "id": "ru:rp271:fort:conditional",
+      "split": "development",
+      "family": "conditional",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "d590105bc5acd96a2dd2828c16e5cc3551fa627af13d244005f8412948dda4ea",
+      "outputDigest": "d590105bc5acd96a2dd2828c16e5cc3551fa627af13d244005f8412948dda4ea"
+    },
+    {
+      "id": "ru:rp271:fort:dialogue",
+      "split": "development",
+      "family": "dialogue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "995220c067731e791f3353c32a6b73705bfe00e53a8c0f96159e2561da65e441",
+      "outputDigest": "995220c067731e791f3353c32a6b73705bfe00e53a8c0f96159e2561da65e441"
+    },
+    {
+      "id": "ru:rp271:fort:continue",
+      "split": "development",
+      "family": "continue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "c228b43449e03688cbfda554e53ce084f67ad61b491b402d578ffd9c49ef8f5e",
+      "outputDigest": "c228b43449e03688cbfda554e53ce084f67ad61b491b402d578ffd9c49ef8f5e"
+    },
+    {
+      "id": "ru:rp271:fort:unknown",
+      "split": "development",
+      "family": "unknown",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "6e2696ef4b0e52532f665d4be00fc5cbda6df09c4ec03fa9055e960a088c6964",
+      "outputDigest": "6e2696ef4b0e52532f665d4be00fc5cbda6df09c4ec03fa9055e960a088c6964"
+    },
+    {
+      "id": "ru:rp271:fort:lineage",
+      "split": "development",
+      "family": "lineage",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "2a9084dc804f97a8e29f5591c506e4e1884b833865c084666cc5a26803f91f76",
+      "outputDigest": "2a9084dc804f97a8e29f5591c506e4e1884b833865c084666cc5a26803f91f76"
+    },
+    {
+      "id": "ru:rp271:fort:roles",
+      "split": "development",
+      "family": "roles",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a3b9763a66bf639e30bc925fb7467eb00d46b908b4edaf0a04ec3bf4344c2d03",
+      "outputDigest": "a3b9763a66bf639e30bc925fb7467eb00d46b908b4edaf0a04ec3bf4344c2d03"
+    },
+    {
+      "id": "ru:rp271:fort:summary",
+      "split": "development",
+      "family": "summary",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "20a17074be56b493209812d5bfb004ee3d9584f56a3688fde517a88bdd957395",
+      "outputDigest": "20a17074be56b493209812d5bfb004ee3d9584f56a3688fde517a88bdd957395"
+    },
+    {
+      "id": "ru:rp271:fort:overflow",
+      "split": "development",
+      "family": "overflow",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "e61e82f4fb75ef8a5ff8d686b6f2cbef1eacc1808cc65ff362ab27a710c3eef9",
+      "outputDigest": "e61e82f4fb75ef8a5ff8d686b6f2cbef1eacc1808cc65ff362ab27a710c3eef9"
+    },
+    {
+      "id": "ru:rp271:fort:required",
+      "split": "development",
+      "family": "required",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506",
+      "outputDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506"
+    },
+    {
+      "id": "ru:rp271:fort:pronoun",
+      "split": "development",
+      "family": "pronoun",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "11ede6b0d0d1dc4135a3e68d91ee35fdcd21868da784a1af50da463f84d363b3",
+      "outputDigest": "11ede6b0d0d1dc4135a3e68d91ee35fdcd21868da784a1af50da463f84d363b3"
+    },
+    {
+      "id": "ru:rp271:clinic:question",
+      "split": "development",
+      "family": "question",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "dcae000ce765df663a5d13a4a193f1609dbf13672d77502a069ea602cc5c6978",
+      "outputDigest": "b79ce749d593f225fe3ac7e8df6223d782c2ceefa1ee5431f35077e7d1d31826"
+    },
+    {
+      "id": "ru:rp271:clinic:action",
+      "split": "development",
+      "family": "action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "51bce0dce3fa9717267dd6ed5000072bfee0815caa9abc1c843d866ca6607ebc",
+      "outputDigest": "b79ce749d593f225fe3ac7e8df6223d782c2ceefa1ee5431f35077e7d1d31826"
+    },
+    {
+      "id": "ru:rp271:clinic:slow-action",
+      "split": "development",
+      "family": "slow-action",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "dcae000ce765df663a5d13a4a193f1609dbf13672d77502a069ea602cc5c6978",
+      "outputDigest": "dcae000ce765df663a5d13a4a193f1609dbf13672d77502a069ea602cc5c6978"
+    },
+    {
+      "id": "ru:rp271:clinic:bare-action",
+      "split": "development",
+      "family": "bare-action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "51bce0dce3fa9717267dd6ed5000072bfee0815caa9abc1c843d866ca6607ebc",
+      "outputDigest": "b79ce749d593f225fe3ac7e8df6223d782c2ceefa1ee5431f35077e7d1d31826"
+    },
+    {
+      "id": "ru:rp271:clinic:negative",
+      "split": "development",
+      "family": "negative",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "dcae000ce765df663a5d13a4a193f1609dbf13672d77502a069ea602cc5c6978",
+      "outputDigest": "dcae000ce765df663a5d13a4a193f1609dbf13672d77502a069ea602cc5c6978"
+    },
+    {
+      "id": "ru:rp271:clinic:conditional",
+      "split": "development",
+      "family": "conditional",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "15cd7580bb6e5301e2b8f6873175b95f2316a4988ea03c1118a508959c2e9b22",
+      "outputDigest": "15cd7580bb6e5301e2b8f6873175b95f2316a4988ea03c1118a508959c2e9b22"
+    },
+    {
+      "id": "ru:rp271:clinic:dialogue",
+      "split": "development",
+      "family": "dialogue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "c069da07ae4cdc979e7a0d6d7110011a3c6cd31c2f133fa7f1be1838634ba528",
+      "outputDigest": "c069da07ae4cdc979e7a0d6d7110011a3c6cd31c2f133fa7f1be1838634ba528"
+    },
+    {
+      "id": "ru:rp271:clinic:continue",
+      "split": "development",
+      "family": "continue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "88c64671563e365ad12ca7299626a443caa1926949def081402107b720eec1b2",
+      "outputDigest": "88c64671563e365ad12ca7299626a443caa1926949def081402107b720eec1b2"
+    },
+    {
+      "id": "ru:rp271:clinic:unknown",
+      "split": "development",
+      "family": "unknown",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "03cd60cec494a3b924ef3dc3890567f30da5b70fc5b8a7b8d690a1080977cb7e",
+      "outputDigest": "03cd60cec494a3b924ef3dc3890567f30da5b70fc5b8a7b8d690a1080977cb7e"
+    },
+    {
+      "id": "ru:rp271:clinic:lineage",
+      "split": "development",
+      "family": "lineage",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "51bce0dce3fa9717267dd6ed5000072bfee0815caa9abc1c843d866ca6607ebc",
+      "outputDigest": "51bce0dce3fa9717267dd6ed5000072bfee0815caa9abc1c843d866ca6607ebc"
+    },
+    {
+      "id": "ru:rp271:clinic:roles",
+      "split": "development",
+      "family": "roles",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "7f81b8305e49bba3e1674b71a72cda8b93740edd1c440e7525a47806efd4cb5b",
+      "outputDigest": "7f81b8305e49bba3e1674b71a72cda8b93740edd1c440e7525a47806efd4cb5b"
+    },
+    {
+      "id": "ru:rp271:clinic:summary",
+      "split": "development",
+      "family": "summary",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "bb4f2bd5cbab5838f691c8ee0cc8fcd71647aedbb3627104df01a966adbfe686",
+      "outputDigest": "bb4f2bd5cbab5838f691c8ee0cc8fcd71647aedbb3627104df01a966adbfe686"
+    },
+    {
+      "id": "ru:rp271:clinic:overflow",
+      "split": "development",
+      "family": "overflow",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "d0aee7eff23fbaab416e1a4577fee7565fec380b651680adeb347eaebdcb9d6c",
+      "outputDigest": "d0aee7eff23fbaab416e1a4577fee7565fec380b651680adeb347eaebdcb9d6c"
+    },
+    {
+      "id": "ru:rp271:clinic:required",
+      "split": "development",
+      "family": "required",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506",
+      "outputDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506"
+    },
+    {
+      "id": "ru:rp271:clinic:pronoun",
+      "split": "development",
+      "family": "pronoun",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "fd1ba5c03c1875c15795aef6e4bfbc8e0b3b6d4037f5e170bfba4b7b791b7e8b",
+      "outputDigest": "fd1ba5c03c1875c15795aef6e4bfbc8e0b3b6d4037f5e170bfba4b7b791b7e8b"
+    },
+    {
+      "id": "ru:rp271:island:question",
+      "split": "evaluation",
+      "family": "question",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a627731f7f533ccd6ebeb9150eb255f1c3745cdc32881a0f075da4be784685d0",
+      "outputDigest": "1f8c6615e9ae9063021cc28780e29a7cdb35158adf9eecb324046e388a07a27e"
+    },
+    {
+      "id": "ru:rp271:island:action",
+      "split": "evaluation",
+      "family": "action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "f77c33dd4a3ed16cb1225d0566174fc8a971b5aaf0b5ed134ca3f5c8ba5463c5",
+      "outputDigest": "1f8c6615e9ae9063021cc28780e29a7cdb35158adf9eecb324046e388a07a27e"
+    },
+    {
+      "id": "ru:rp271:island:slow-action",
+      "split": "evaluation",
+      "family": "slow-action",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a627731f7f533ccd6ebeb9150eb255f1c3745cdc32881a0f075da4be784685d0",
+      "outputDigest": "a627731f7f533ccd6ebeb9150eb255f1c3745cdc32881a0f075da4be784685d0"
+    },
+    {
+      "id": "ru:rp271:island:bare-action",
+      "split": "evaluation",
+      "family": "bare-action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "f77c33dd4a3ed16cb1225d0566174fc8a971b5aaf0b5ed134ca3f5c8ba5463c5",
+      "outputDigest": "1f8c6615e9ae9063021cc28780e29a7cdb35158adf9eecb324046e388a07a27e"
+    },
+    {
+      "id": "ru:rp271:island:negative",
+      "split": "evaluation",
+      "family": "negative",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a627731f7f533ccd6ebeb9150eb255f1c3745cdc32881a0f075da4be784685d0",
+      "outputDigest": "a627731f7f533ccd6ebeb9150eb255f1c3745cdc32881a0f075da4be784685d0"
+    },
+    {
+      "id": "ru:rp271:island:conditional",
+      "split": "evaluation",
+      "family": "conditional",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "961ceb5658ee1f4d71eacd89349d50b47f999a39e384fc5ea9242004f2c0d07a",
+      "outputDigest": "961ceb5658ee1f4d71eacd89349d50b47f999a39e384fc5ea9242004f2c0d07a"
+    },
+    {
+      "id": "ru:rp271:island:dialogue",
+      "split": "evaluation",
+      "family": "dialogue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "9f2fbf15dd30c0f169004217e97664b96f30e30d57d836e59f2870143e1d0434",
+      "outputDigest": "9f2fbf15dd30c0f169004217e97664b96f30e30d57d836e59f2870143e1d0434"
+    },
+    {
+      "id": "ru:rp271:island:continue",
+      "split": "evaluation",
+      "family": "continue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "04ece0443b582e845cdabd56f655d581b46b86ea5091dc9f86d75564d1d4964b",
+      "outputDigest": "04ece0443b582e845cdabd56f655d581b46b86ea5091dc9f86d75564d1d4964b"
+    },
+    {
+      "id": "ru:rp271:island:unknown",
+      "split": "evaluation",
+      "family": "unknown",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "cacde90ef6da06fa8ea0aee1b4b0524fe3c6f28f5a280d416bf3cb06727e00b0",
+      "outputDigest": "cacde90ef6da06fa8ea0aee1b4b0524fe3c6f28f5a280d416bf3cb06727e00b0"
+    },
+    {
+      "id": "ru:rp271:island:lineage",
+      "split": "evaluation",
+      "family": "lineage",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "f77c33dd4a3ed16cb1225d0566174fc8a971b5aaf0b5ed134ca3f5c8ba5463c5",
+      "outputDigest": "f77c33dd4a3ed16cb1225d0566174fc8a971b5aaf0b5ed134ca3f5c8ba5463c5"
+    },
+    {
+      "id": "ru:rp271:island:roles",
+      "split": "evaluation",
+      "family": "roles",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "09442f8c8c56f864c252ff6d936d2949ae2713d9bbc644353800447e59c851cd",
+      "outputDigest": "09442f8c8c56f864c252ff6d936d2949ae2713d9bbc644353800447e59c851cd"
+    },
+    {
+      "id": "ru:rp271:island:summary",
+      "split": "evaluation",
+      "family": "summary",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "20e7e0a90c346f18bf74dbdc9a093bcaf5f12a3a66f2dfe8b252777d95730658",
+      "outputDigest": "20e7e0a90c346f18bf74dbdc9a093bcaf5f12a3a66f2dfe8b252777d95730658"
+    },
+    {
+      "id": "ru:rp271:island:overflow",
+      "split": "evaluation",
+      "family": "overflow",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "4d8537e3edd81f7ccc87aacc08d2900eb0992f40c3158b90979d82191898dfce",
+      "outputDigest": "4d8537e3edd81f7ccc87aacc08d2900eb0992f40c3158b90979d82191898dfce"
+    },
+    {
+      "id": "ru:rp271:island:required",
+      "split": "evaluation",
+      "family": "required",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506",
+      "outputDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506"
+    },
+    {
+      "id": "ru:rp271:island:pronoun",
+      "split": "evaluation",
+      "family": "pronoun",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "a2a438f2cce9f38663ce7464bae690c00223221cd8211858961176022b15d1fc",
+      "outputDigest": "a2a438f2cce9f38663ce7464bae690c00223221cd8211858961176022b15d1fc"
+    },
+    {
+      "id": "en:rp271:fort:question",
+      "split": "development",
+      "family": "question",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "9982c1a142b316685044aad7b6f16560e523b1203be44fe4dcb47ae83b6a3069",
+      "outputDigest": "94ea56a899b31939c3cc57afd03bc437dda4833887e589521297a42326eec61c"
+    },
+    {
+      "id": "en:rp271:fort:action",
+      "split": "development",
+      "family": "action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "bd4afa1c23bf31f93fb445e4f8566d6b3750218670c92f55167c665c63436f20",
+      "outputDigest": "0b5208384d03851c08041763a1c53244c3d5406c22a2182a532248632a198a06"
+    },
+    {
+      "id": "en:rp271:fort:slow-action",
+      "split": "development",
+      "family": "slow-action",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "300d7f1c788bea8a3ab68cf42dd4cf67347a072c4e8e32b7a5d2a17d0fa3f1b2",
+      "outputDigest": "300d7f1c788bea8a3ab68cf42dd4cf67347a072c4e8e32b7a5d2a17d0fa3f1b2"
+    },
+    {
+      "id": "en:rp271:fort:bare-action",
+      "split": "development",
+      "family": "bare-action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "5cc8df72f41ab342c88e69807568fa35086e5c9d1f4aaac10f0f81b5cf77df84",
+      "outputDigest": "5caeb75a6425fbbe61afe71713d1f0212a0cf121f250d41aa3f6cbcf45a3f9fa"
+    },
+    {
+      "id": "en:rp271:fort:negative",
+      "split": "development",
+      "family": "negative",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "300d7f1c788bea8a3ab68cf42dd4cf67347a072c4e8e32b7a5d2a17d0fa3f1b2",
+      "outputDigest": "300d7f1c788bea8a3ab68cf42dd4cf67347a072c4e8e32b7a5d2a17d0fa3f1b2"
+    },
+    {
+      "id": "en:rp271:fort:conditional",
+      "split": "development",
+      "family": "conditional",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "358a07063819b3a3f23ff3355affcd68877ce322519ebabb13df7f12366f9d73",
+      "outputDigest": "358a07063819b3a3f23ff3355affcd68877ce322519ebabb13df7f12366f9d73"
+    },
+    {
+      "id": "en:rp271:fort:dialogue",
+      "split": "development",
+      "family": "dialogue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "14bcef10acf879228494e135020abe4c3c4a4c5caa30175a7ff353eb24621879",
+      "outputDigest": "14bcef10acf879228494e135020abe4c3c4a4c5caa30175a7ff353eb24621879"
+    },
+    {
+      "id": "en:rp271:fort:continue",
+      "split": "development",
+      "family": "continue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "8c58e4997d91085947f7486acf719d8ccbc76f9f28e36df44590115df5ba61a3",
+      "outputDigest": "8c58e4997d91085947f7486acf719d8ccbc76f9f28e36df44590115df5ba61a3"
+    },
+    {
+      "id": "en:rp271:fort:unknown",
+      "split": "development",
+      "family": "unknown",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "d5e6c053ddfe589d93509bdcd1d16359c69f9162b2d17fbace19d8d46e24a041",
+      "outputDigest": "d5e6c053ddfe589d93509bdcd1d16359c69f9162b2d17fbace19d8d46e24a041"
+    },
+    {
+      "id": "en:rp271:fort:lineage",
+      "split": "development",
+      "family": "lineage",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "bd4afa1c23bf31f93fb445e4f8566d6b3750218670c92f55167c665c63436f20",
+      "outputDigest": "bd4afa1c23bf31f93fb445e4f8566d6b3750218670c92f55167c665c63436f20"
+    },
+    {
+      "id": "en:rp271:fort:roles",
+      "split": "development",
+      "family": "roles",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "bdb62507fd5507c3f173e28ef403a8302072335e3124dc006361e9df16b6077a",
+      "outputDigest": "bdb62507fd5507c3f173e28ef403a8302072335e3124dc006361e9df16b6077a"
+    },
+    {
+      "id": "en:rp271:fort:summary",
+      "split": "development",
+      "family": "summary",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "06356e18dc29968af51bb4831fc085818d47db606bde16422f3f988f9a20cdfd",
+      "outputDigest": "06356e18dc29968af51bb4831fc085818d47db606bde16422f3f988f9a20cdfd"
+    },
+    {
+      "id": "en:rp271:fort:overflow",
+      "split": "development",
+      "family": "overflow",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "5f618063ed77a597cf8783bcefd000f9a9cee3c6217afd432c1d838f4a07e9f6",
+      "outputDigest": "5f618063ed77a597cf8783bcefd000f9a9cee3c6217afd432c1d838f4a07e9f6"
+    },
+    {
+      "id": "en:rp271:fort:required",
+      "split": "development",
+      "family": "required",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506",
+      "outputDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506"
+    },
+    {
+      "id": "en:rp271:fort:pronoun",
+      "split": "development",
+      "family": "pronoun",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "d5e6c053ddfe589d93509bdcd1d16359c69f9162b2d17fbace19d8d46e24a041",
+      "outputDigest": "d5e6c053ddfe589d93509bdcd1d16359c69f9162b2d17fbace19d8d46e24a041"
+    },
+    {
+      "id": "en:rp271:clinic:question",
+      "split": "development",
+      "family": "question",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "143fd0ad7f5e75df91134f326a50d2586596d7eb6c5366b456b98479be961c59",
+      "outputDigest": "9b007cc52f78fe3e2179d6fe4282d8c2af7c9d13ad96ab125adf26b2f6df12fa"
+    },
+    {
+      "id": "en:rp271:clinic:action",
+      "split": "development",
+      "family": "action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "326f373cf210bb3bd4d006eedee47bb7fe1c5ee137ab6e4c1144b05810ed9d6d",
+      "outputDigest": "2986defde6d8c0096d5b2fef0fc3186fa8739786d5127c4c4ab583be57968314"
+    },
+    {
+      "id": "en:rp271:clinic:slow-action",
+      "split": "development",
+      "family": "slow-action",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "218547b227636ef20fcceb56ee15f3ed8670d9fc75d3a28ea512bf0fafabd042",
+      "outputDigest": "218547b227636ef20fcceb56ee15f3ed8670d9fc75d3a28ea512bf0fafabd042"
+    },
+    {
+      "id": "en:rp271:clinic:bare-action",
+      "split": "development",
+      "family": "bare-action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "c11a44a1fea17c17d00f8219cd3acb47526dd04bbf88be6e65cef3c36eb8b7ca",
+      "outputDigest": "01d3563a57ceec23dd1c7c760ae5f8494dd652e6e0b689d34dd6d7bb3cd2a541"
+    },
+    {
+      "id": "en:rp271:clinic:negative",
+      "split": "development",
+      "family": "negative",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "218547b227636ef20fcceb56ee15f3ed8670d9fc75d3a28ea512bf0fafabd042",
+      "outputDigest": "218547b227636ef20fcceb56ee15f3ed8670d9fc75d3a28ea512bf0fafabd042"
+    },
+    {
+      "id": "en:rp271:clinic:conditional",
+      "split": "development",
+      "family": "conditional",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "f93abf7775079a80bce9ab58ab9ee245ca392c0239094e2cb5d60158c8520e17",
+      "outputDigest": "f93abf7775079a80bce9ab58ab9ee245ca392c0239094e2cb5d60158c8520e17"
+    },
+    {
+      "id": "en:rp271:clinic:dialogue",
+      "split": "development",
+      "family": "dialogue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "2c5eb1a7cd7c156f18c6ff7ff5fa2dedb52ba1efb8741d8d1b86be20ba49e2ef",
+      "outputDigest": "2c5eb1a7cd7c156f18c6ff7ff5fa2dedb52ba1efb8741d8d1b86be20ba49e2ef"
+    },
+    {
+      "id": "en:rp271:clinic:continue",
+      "split": "development",
+      "family": "continue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "402a96a67434179167965170a4a3fa67f2948baf3a644721317529ec1ab5ca9a",
+      "outputDigest": "402a96a67434179167965170a4a3fa67f2948baf3a644721317529ec1ab5ca9a"
+    },
+    {
+      "id": "en:rp271:clinic:unknown",
+      "split": "development",
+      "family": "unknown",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "35482c44ca243084967c45172d56127920a55a97cef515b37411044cdedc49ed",
+      "outputDigest": "35482c44ca243084967c45172d56127920a55a97cef515b37411044cdedc49ed"
+    },
+    {
+      "id": "en:rp271:clinic:lineage",
+      "split": "development",
+      "family": "lineage",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "326f373cf210bb3bd4d006eedee47bb7fe1c5ee137ab6e4c1144b05810ed9d6d",
+      "outputDigest": "326f373cf210bb3bd4d006eedee47bb7fe1c5ee137ab6e4c1144b05810ed9d6d"
+    },
+    {
+      "id": "en:rp271:clinic:roles",
+      "split": "development",
+      "family": "roles",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "e06a2093e460218198c3bdbfa204f022c55de2b4039fb1d5b3c7789421504f81",
+      "outputDigest": "e06a2093e460218198c3bdbfa204f022c55de2b4039fb1d5b3c7789421504f81"
+    },
+    {
+      "id": "en:rp271:clinic:summary",
+      "split": "development",
+      "family": "summary",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "69f18040aca53bddd6d7ea2013cbad4a5b4efa28ecd1c6c324ca45c7208ed3b4",
+      "outputDigest": "69f18040aca53bddd6d7ea2013cbad4a5b4efa28ecd1c6c324ca45c7208ed3b4"
+    },
+    {
+      "id": "en:rp271:clinic:overflow",
+      "split": "development",
+      "family": "overflow",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "2b6f5f63d3c8dc5fac81862a1ea31058e650657d97cdfe85e1d64354b33ab53f",
+      "outputDigest": "2b6f5f63d3c8dc5fac81862a1ea31058e650657d97cdfe85e1d64354b33ab53f"
+    },
+    {
+      "id": "en:rp271:clinic:required",
+      "split": "development",
+      "family": "required",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506",
+      "outputDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506"
+    },
+    {
+      "id": "en:rp271:clinic:pronoun",
+      "split": "development",
+      "family": "pronoun",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "35482c44ca243084967c45172d56127920a55a97cef515b37411044cdedc49ed",
+      "outputDigest": "35482c44ca243084967c45172d56127920a55a97cef515b37411044cdedc49ed"
+    },
+    {
+      "id": "en:rp271:island:question",
+      "split": "evaluation",
+      "family": "question",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "4a535d18e0bebfbf5d7eba4a650a0d0da7ce293537700d2950b00c55768e3632",
+      "outputDigest": "31beb68cbf9f02b0ad30ea79f8dd910a2c9cf2b648b19501ba25a4891f6aa520"
+    },
+    {
+      "id": "en:rp271:island:action",
+      "split": "evaluation",
+      "family": "action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "badea60a9baaf0ea7ae457cf767c7d4695cfcc5880192d1ead40c3b6207295f4",
+      "outputDigest": "9e0802fe0379c7610671cad160a3798214d7b24520b569a84771bda019502ff3"
+    },
+    {
+      "id": "en:rp271:island:slow-action",
+      "split": "evaluation",
+      "family": "slow-action",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "94252c612b9c165d9b1ffc5380e0282435efc101bc3d26cb46a6c0a5208fb423",
+      "outputDigest": "94252c612b9c165d9b1ffc5380e0282435efc101bc3d26cb46a6c0a5208fb423"
+    },
+    {
+      "id": "en:rp271:island:bare-action",
+      "split": "evaluation",
+      "family": "bare-action",
+      "positive": true,
+      "baselineComplete": false,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "0813ba6d5190453ca7c0dc1aa41d9c08a945dda48e01c871722767ccd0acf547",
+      "outputDigest": "4b70e42924de05397162f84df64ab22184a040cefecaa18893e3491bff7ea279"
+    },
+    {
+      "id": "en:rp271:island:negative",
+      "split": "evaluation",
+      "family": "negative",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "94252c612b9c165d9b1ffc5380e0282435efc101bc3d26cb46a6c0a5208fb423",
+      "outputDigest": "94252c612b9c165d9b1ffc5380e0282435efc101bc3d26cb46a6c0a5208fb423"
+    },
+    {
+      "id": "en:rp271:island:conditional",
+      "split": "evaluation",
+      "family": "conditional",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "f7b88c561bce6fb2cfee301c17e6b946478de35c18f24e5384593a8fdd518fed",
+      "outputDigest": "f7b88c561bce6fb2cfee301c17e6b946478de35c18f24e5384593a8fdd518fed"
+    },
+    {
+      "id": "en:rp271:island:dialogue",
+      "split": "evaluation",
+      "family": "dialogue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "4822bbf38fab5c3f40202c04e816d94a2a5803269040c2ba88c1b2577e2fe763",
+      "outputDigest": "4822bbf38fab5c3f40202c04e816d94a2a5803269040c2ba88c1b2577e2fe763"
+    },
+    {
+      "id": "en:rp271:island:continue",
+      "split": "evaluation",
+      "family": "continue",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "1ac694889acece1def0ac04fdb80fa9559b9c53713f90771a5eb06703734ab98",
+      "outputDigest": "1ac694889acece1def0ac04fdb80fa9559b9c53713f90771a5eb06703734ab98"
+    },
+    {
+      "id": "en:rp271:island:unknown",
+      "split": "evaluation",
+      "family": "unknown",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "485167ad7b70cc0db5dc1aa0c256b3796e3b778067e9d9d4d9f5162e5e97ff92",
+      "outputDigest": "485167ad7b70cc0db5dc1aa0c256b3796e3b778067e9d9d4d9f5162e5e97ff92"
+    },
+    {
+      "id": "en:rp271:island:lineage",
+      "split": "evaluation",
+      "family": "lineage",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "badea60a9baaf0ea7ae457cf767c7d4695cfcc5880192d1ead40c3b6207295f4",
+      "outputDigest": "badea60a9baaf0ea7ae457cf767c7d4695cfcc5880192d1ead40c3b6207295f4"
+    },
+    {
+      "id": "en:rp271:island:roles",
+      "split": "evaluation",
+      "family": "roles",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "ade9c47d02ae4bcb337d4554e4f84275c0c3badae53c9aedab63fda0ff80bae8",
+      "outputDigest": "ade9c47d02ae4bcb337d4554e4f84275c0c3badae53c9aedab63fda0ff80bae8"
+    },
+    {
+      "id": "en:rp271:island:summary",
+      "split": "evaluation",
+      "family": "summary",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "b84ba601df885b532639b643203acc2d52619328da53fa2a8cf71f0cc2354ba3",
+      "outputDigest": "b84ba601df885b532639b643203acc2d52619328da53fa2a8cf71f0cc2354ba3"
+    },
+    {
+      "id": "en:rp271:island:overflow",
+      "split": "evaluation",
+      "family": "overflow",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "c0e050dda744399309ee2423607b89e0234313f17d4953d6463062ab74bd97cd",
+      "outputDigest": "c0e050dda744399309ee2423607b89e0234313f17d4953d6463062ab74bd97cd"
+    },
+    {
+      "id": "en:rp271:island:required",
+      "split": "evaluation",
+      "family": "required",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506",
+      "outputDigest": "457008fa348a6d3bae5335cfd63dadc563693af5fd1b1a97ad3ab4fecda68506"
+    },
+    {
+      "id": "en:rp271:island:pronoun",
+      "split": "evaluation",
+      "family": "pronoun",
+      "positive": false,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "substantiveLoss": [],
+      "baselineDigest": "485167ad7b70cc0db5dc1aa0c256b3796e3b778067e9d9d4d9f5162e5e97ff92",
+      "outputDigest": "485167ad7b70cc0db5dc1aa0c256b3796e3b778067e9d9d4d9f5162e5e97ff92"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "ru:rp271:fort:question",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:question",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:question",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:slow-action",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:slow-action",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:slow-action",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:bare-action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:bare-action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:bare-action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:negative",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:negative",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:negative",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:conditional",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:conditional",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:conditional",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:dialogue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:dialogue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:dialogue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:continue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:continue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:continue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:unknown",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:unknown",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:unknown",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:lineage",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:lineage",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:lineage",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:roles",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:roles",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:roles",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:summary",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:summary",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:summary",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:overflow",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:overflow",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:overflow",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:required",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:required",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:required",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:pronoun",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:pronoun",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:fort:pronoun",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:question",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:question",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:question",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:slow-action",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:slow-action",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:slow-action",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:bare-action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:bare-action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:bare-action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:negative",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:negative",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:negative",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:conditional",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:conditional",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:conditional",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:dialogue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:dialogue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:dialogue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:continue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:continue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:continue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:unknown",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:unknown",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:unknown",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:lineage",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:lineage",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:lineage",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:roles",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:roles",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:roles",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:summary",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:summary",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:summary",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:overflow",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:overflow",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:overflow",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:required",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:required",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:required",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:pronoun",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:pronoun",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:clinic:pronoun",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:question",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:question",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:question",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:slow-action",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:slow-action",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:slow-action",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:bare-action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:bare-action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:bare-action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:negative",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:negative",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:negative",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:conditional",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:conditional",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:conditional",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:dialogue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:dialogue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:dialogue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:continue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:continue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:continue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:unknown",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:unknown",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:unknown",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:lineage",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:lineage",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:lineage",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:roles",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:roles",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:roles",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:summary",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:summary",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:summary",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:overflow",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:overflow",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:overflow",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:required",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:required",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:required",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:pronoun",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:pronoun",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "ru:rp271:island:pronoun",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:question",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:question",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:question",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:slow-action",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:slow-action",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:slow-action",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:bare-action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:bare-action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:bare-action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:negative",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:negative",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:negative",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:conditional",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:conditional",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:conditional",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:dialogue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:dialogue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:dialogue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:continue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:continue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:continue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:unknown",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:unknown",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:unknown",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:lineage",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:lineage",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:lineage",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:roles",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:roles",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:roles",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:summary",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:summary",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:summary",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:overflow",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:overflow",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:overflow",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:required",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:required",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:required",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:pronoun",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:pronoun",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:fort:pronoun",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:question",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:question",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:question",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:slow-action",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:slow-action",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:slow-action",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:bare-action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:bare-action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:bare-action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:negative",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:negative",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:negative",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:conditional",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:conditional",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:conditional",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:dialogue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:dialogue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:dialogue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:continue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:continue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:continue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:unknown",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:unknown",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:unknown",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:lineage",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:lineage",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:lineage",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:roles",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:roles",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:roles",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:summary",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:summary",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:summary",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:overflow",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:overflow",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:overflow",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:required",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:required",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:required",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:pronoun",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:pronoun",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:clinic:pronoun",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:question",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:question",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:question",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:slow-action",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:slow-action",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:slow-action",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:bare-action",
+      "limit": 900,
+      "changed": false,
+      "complete": false,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:bare-action",
+      "limit": 1500,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:bare-action",
+      "limit": 6000,
+      "changed": true,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:negative",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:negative",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:negative",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:conditional",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:conditional",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:conditional",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:dialogue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:dialogue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:dialogue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:continue",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:continue",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:continue",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:unknown",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:unknown",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:unknown",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:lineage",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:lineage",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:lineage",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:roles",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:roles",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:roles",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:summary",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:summary",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:summary",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:overflow",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:overflow",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:overflow",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:required",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:required",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:required",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:pronoun",
+      "limit": 900,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:pronoun",
+      "limit": 1500,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    },
+    {
+      "id": "en:rp271:island:pronoun",
+      "limit": 6000,
+      "changed": false,
+      "complete": true,
+      "sourceExact": true,
+      "budget": true
+    }
+  ]
+}

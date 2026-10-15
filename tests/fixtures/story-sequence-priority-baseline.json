@@ -1,0 +1,1440 @@
+{
+  "version": 1,
+  "prior": "RP271",
+  "inputDigest": "12684b7e138aebaf1a98fa2d9dfc3cd35a8217adb1f5ffd253514d51261eb9ae",
+  "goldDigest": "150ead151910cd8d3adfbd55b7452d602140c51f6040c1ec1c35930342d0922a",
+  "cases": [
+    {
+      "id": "ru:rp272:tower:short",
+      "split": "development",
+      "family": "short",
+      "positive": true,
+      "query": "открываю железную дверь",
+      "inputDigest": "2362c228a66d542b5f85198c32ed1105014b71a8835d546367d76d436bb651e0",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-0",
+        "source-18"
+      ],
+      "baselineDigest": "3e7cf32581505f08920c7e6db9f624534efaa324e521a695df05d99fd99f3456"
+    },
+    {
+      "id": "ru:rp272:tower:dual",
+      "split": "development",
+      "family": "dual",
+      "positive": true,
+      "query": "открываю железную дверь и достаю медный ключ",
+      "inputDigest": "edb54317f25fe71483df66a5e52398f3f952a321c36980a4ada56260d4a2d8b7",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:full",
+      "split": "development",
+      "family": "full",
+      "positive": true,
+      "query": "Я открываю железную дверь и достаю медный ключ",
+      "inputDigest": "88df2b2f0de351e9b65159f556167a3aa1d31016d0e885cbdbfd3597c36773a6",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:wrapped",
+      "split": "development",
+      "family": "wrapped",
+      "positive": true,
+      "query": "**открываю железную дверь и достаю медный ключ**",
+      "inputDigest": "e224b7edc559163028e95aee6c2438f19c3f8ab057431877f0412fff64db9dbd",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:sequence",
+      "split": "development",
+      "family": "sequence",
+      "positive": true,
+      "query": "открываю железную дверь и затем достаю медный ключ",
+      "inputDigest": "4748fbc8a723da88dbe0ef5cf6a40a1e1eafe3b444864e5370c5d8b3f3478c2a",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:repeat-subject",
+      "split": "development",
+      "family": "repeat-subject",
+      "positive": true,
+      "query": "Я открываю железную дверь и я достаю медный ключ",
+      "inputDigest": "7e9671964dfca915d2c0762f196a9fdb5619abff3d00aab00f2df593fc64f4b4",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:triple",
+      "split": "development",
+      "family": "triple",
+      "positive": true,
+      "query": "открываю железную дверь и достаю медный ключ и осматриваю дорожный набор",
+      "inputDigest": "b12adeb4374cc4f459a20d7f976dd07480057b040ac9a96d70c444ae3a14ba3a",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5",
+        "source-6"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-40",
+        "source-37",
+        "source-34",
+        "source-6"
+      ],
+      "baselineDigest": "5565013e5e4cdf155eb6b17728948c61c03f0c251c7273fe6dec7a0dc1cc896c"
+    },
+    {
+      "id": "ru:rp272:tower:unknown-tail",
+      "split": "development",
+      "family": "unknown-tail",
+      "positive": false,
+      "query": "открываю железную дверь и осматриваю неизвестный трон",
+      "inputDigest": "46fab90976681f3ab40e1721c278a46b86ce4849087ec466c1bc2164d0df894a",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-0",
+        "source-18"
+      ],
+      "baselineDigest": "3e7cf32581505f08920c7e6db9f624534efaa324e521a695df05d99fd99f3456"
+    },
+    {
+      "id": "ru:rp272:tower:negative",
+      "split": "development",
+      "family": "negative",
+      "positive": false,
+      "query": "открываю железную дверь и не достаю медный ключ",
+      "inputDigest": "ecd0b1336e2414aaf895df6b7d0715e28555b414a58c3120ae34fbd31a266b97",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:conditional",
+      "split": "development",
+      "family": "conditional",
+      "positive": false,
+      "query": "открываю железную дверь и достаю медный ключ, если охрана разрешит",
+      "inputDigest": "8167291eaf7bf0caf6cc74173b30b7af514a64d4d73fe2fc6715a4067108e08e",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:personal",
+      "split": "development",
+      "family": "personal",
+      "positive": false,
+      "query": "открываю железную дверь и беру её ключ",
+      "inputDigest": "b5e1fad89074583db80d2cc09fb8d107785c5ae8fe40be93ccf3d510df690d4f",
+      "gold": [],
+      "baseline": [
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-0",
+        "source-18",
+        "source-17"
+      ],
+      "baselineDigest": "72cacc34978125cf630e78056ec183f7f9fe08dfed80e1f630a2a120851e3c12"
+    },
+    {
+      "id": "ru:rp272:tower:quoted",
+      "split": "development",
+      "family": "quoted",
+      "positive": false,
+      "query": "\"открываю железную дверь и достаю медный ключ\"",
+      "inputDigest": "cf7dd8068065824e9e114e959c10040a6847cef249ee6dfb5ce1ac052598f418",
+      "gold": [],
+      "baseline": [
+        "source-5",
+        "source-1",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19",
+        "source-16"
+      ],
+      "baselineDigest": "6cd666cfa996447b1e8d1ac149524eee3e5074d2ee0bed71dc9bb8d9c59bb58c"
+    },
+    {
+      "id": "ru:rp272:tower:third-person",
+      "split": "development",
+      "family": "third-person",
+      "positive": false,
+      "query": "Она открываю железную дверь и достаю медный ключ",
+      "inputDigest": "0b3a11b12b6026c5e24f654b6cd17e303adb0ed14740851e7e69f4b9a68be84d",
+      "gold": [],
+      "baseline": [
+        "source-5",
+        "source-1",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19",
+        "source-16"
+      ],
+      "baselineDigest": "4e23e204600f208a617f1cb15045e192b8fa72e42a8e008e0af605decb514e75"
+    },
+    {
+      "id": "ru:rp272:tower:missing-source",
+      "split": "development",
+      "family": "missing-source",
+      "positive": false,
+      "query": "открываю железную дверь и достаю медный ключ",
+      "inputDigest": "c7b16fb36fc5b580057e1ca20b12a44273fcd3ccd15e3427f8f298240ebaeb5d",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "666825dff3edfa36a0d4d1b2a942de818490eb744f58313b44fec079028a0112"
+    },
+    {
+      "id": "ru:rp272:tower:overflow",
+      "split": "development",
+      "family": "overflow",
+      "positive": false,
+      "query": "открываю железную дверь и достаю медный ключ",
+      "inputDigest": "b54f06ebefc57bd0ee8ab92cae194e3230dd3d787540ce9dcc4d05a74dacabbf",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10"
+      ],
+      "baselineDigest": "fea0fa6d284e75d09afab9f2af64d964791fa4c8e884ea9698db36faba74277f"
+    },
+    {
+      "id": "ru:rp272:tower:required",
+      "split": "development",
+      "family": "required",
+      "positive": false,
+      "query": "Я открываю железную дверь и достаю медный ключ",
+      "inputDigest": "040d17bc4eb85a4c8d0989c44c15ad4a5fabd8b832deb4e8584645ae542d633c",
+      "gold": [],
+      "baseline": [],
+      "baselineDigest": "b2a4046b4121d582310c984bb50793558a1fb0835d5aed4c678ea8da9d129c61"
+    },
+    {
+      "id": "ru:rp272:station:short",
+      "split": "evaluation",
+      "family": "short",
+      "positive": true,
+      "query": "открываю внешний люк",
+      "inputDigest": "25eed20471476ac6a7b05b380ef0f6880674eb54f0f64489791f281a1d8d81dd",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-0",
+        "source-18"
+      ],
+      "baselineDigest": "b7bf465ce9655eae530ebf153c7c4f4a3dfe475789a7520988ccd3d1b3f0e1f2"
+    },
+    {
+      "id": "ru:rp272:station:dual",
+      "split": "evaluation",
+      "family": "dual",
+      "positive": true,
+      "query": "открываю внешний люк и достаю синий жетон",
+      "inputDigest": "42cb41159172a85a97636e193f61eec70314aac5ecab4d10bb4c74dff36cdfd8",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:full",
+      "split": "evaluation",
+      "family": "full",
+      "positive": true,
+      "query": "Я открываю внешний люк и достаю синий жетон",
+      "inputDigest": "d53a53aab6a8b1df14bbce5f335790e0af865c0542218b6f1ebdca4547cbe420",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:wrapped",
+      "split": "evaluation",
+      "family": "wrapped",
+      "positive": true,
+      "query": "**открываю внешний люк и достаю синий жетон**",
+      "inputDigest": "564e65dcde32608422d6ed61f0e6cc8395c51128ce6ec50ed1ff96ea81883a8d",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:sequence",
+      "split": "evaluation",
+      "family": "sequence",
+      "positive": true,
+      "query": "открываю внешний люк и затем достаю синий жетон",
+      "inputDigest": "287c01c614241eb5bf1239e6600011ae6f3d4835a267af9964c63049ddabe7aa",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:repeat-subject",
+      "split": "evaluation",
+      "family": "repeat-subject",
+      "positive": true,
+      "query": "Я открываю внешний люк и я достаю синий жетон",
+      "inputDigest": "5256fbc89c250ccbfa13dfe8e12197321631c4422725067cb5444e71e6ab6cc0",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:triple",
+      "split": "evaluation",
+      "family": "triple",
+      "positive": true,
+      "query": "открываю внешний люк и достаю синий жетон и осматриваю медицинский комплект",
+      "inputDigest": "e69c4fd2a5916380d4f509e712cb03e9d5091de3ca8c628fea5b4d5ec11547d1",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5",
+        "source-6"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-40",
+        "source-37",
+        "source-34",
+        "source-6"
+      ],
+      "baselineDigest": "939f62f27478257b4c5d89e629b3cdbfdfca1b72f95ce03b71cf8bc2dccf48c3"
+    },
+    {
+      "id": "ru:rp272:station:unknown-tail",
+      "split": "evaluation",
+      "family": "unknown-tail",
+      "positive": false,
+      "query": "открываю внешний люк и осматриваю неизвестный трон",
+      "inputDigest": "5d5bf12103b01b1169fae6809f14b85e902044b0354f051f5ed288af9a441b40",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-0",
+        "source-18"
+      ],
+      "baselineDigest": "b7bf465ce9655eae530ebf153c7c4f4a3dfe475789a7520988ccd3d1b3f0e1f2"
+    },
+    {
+      "id": "ru:rp272:station:negative",
+      "split": "evaluation",
+      "family": "negative",
+      "positive": false,
+      "query": "открываю внешний люк и не достаю синий жетон",
+      "inputDigest": "4f9ec87026af00141df3260d3909fab5574d5c32a832839243686816128904f6",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:conditional",
+      "split": "evaluation",
+      "family": "conditional",
+      "positive": false,
+      "query": "открываю внешний люк и достаю синий жетон, если охрана разрешит",
+      "inputDigest": "dfb720465b5a199fb15061dfa3cb27a49a305801652264d581703c57f4b9c35e",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:personal",
+      "split": "evaluation",
+      "family": "personal",
+      "positive": false,
+      "query": "открываю внешний люк и беру её ключ",
+      "inputDigest": "e8188baefe02e6544c5ae4be6cf50e35e64035301ecf458a81af63e8a5c8c40e",
+      "gold": [],
+      "baseline": [
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-0",
+        "source-18",
+        "source-17"
+      ],
+      "baselineDigest": "b8a56658f40c0661cf08ca0f520dab913557a4fbff6b92cb8cb7797bacaaf155"
+    },
+    {
+      "id": "ru:rp272:station:quoted",
+      "split": "evaluation",
+      "family": "quoted",
+      "positive": false,
+      "query": "\"открываю внешний люк и достаю синий жетон\"",
+      "inputDigest": "eccb07764cbd538b5b3bff5c8d5c7bb10361cc7ed226358513117e5d55a2d37a",
+      "gold": [],
+      "baseline": [
+        "source-5",
+        "source-1",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19",
+        "source-16"
+      ],
+      "baselineDigest": "dbb7cbfd6b514f8f94fc1f4f7970661c3782b52921bbb3b5af890e2e1be55841"
+    },
+    {
+      "id": "ru:rp272:station:third-person",
+      "split": "evaluation",
+      "family": "third-person",
+      "positive": false,
+      "query": "Она открываю внешний люк и достаю синий жетон",
+      "inputDigest": "e8e1235f9db67e14ff9de748bb58fa2ffe21da31cf538b78ff64cd10e76c9ae3",
+      "gold": [],
+      "baseline": [
+        "source-5",
+        "source-1",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19",
+        "source-16"
+      ],
+      "baselineDigest": "167e3bdfb99823af9edb61b8dfee4a85895a946f10f1df159c695074f2995155"
+    },
+    {
+      "id": "ru:rp272:station:missing-source",
+      "split": "evaluation",
+      "family": "missing-source",
+      "positive": false,
+      "query": "открываю внешний люк и достаю синий жетон",
+      "inputDigest": "c84798032682d4f125a7818f87a1ed848e0187567a2137dcb7865cf70ba53375",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22"
+      ],
+      "baselineDigest": "d9bb9f091afe01954036e1bd8b39b567623688aabbcdbe65543eac96e581d673"
+    },
+    {
+      "id": "ru:rp272:station:overflow",
+      "split": "evaluation",
+      "family": "overflow",
+      "positive": false,
+      "query": "открываю внешний люк и достаю синий жетон",
+      "inputDigest": "bfd84c4bc59309af367493e1e437bebad635fe57bc4909083905713502cb8dc2",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10"
+      ],
+      "baselineDigest": "182cb86fbc5edfd8dbac997de784d645013e515535e39f488481cb2f4c80cca7"
+    },
+    {
+      "id": "ru:rp272:station:required",
+      "split": "evaluation",
+      "family": "required",
+      "positive": false,
+      "query": "Я открываю внешний люк и достаю синий жетон",
+      "inputDigest": "ca22a1e93988faa82ea8bc1dae112b4f3c111337fd905f1e1f8c2206c8eacbf6",
+      "gold": [],
+      "baseline": [],
+      "baselineDigest": "b2a4046b4121d582310c984bb50793558a1fb0835d5aed4c678ea8da9d129c61"
+    },
+    {
+      "id": "en:rp272:tower:short",
+      "split": "development",
+      "family": "short",
+      "positive": true,
+      "query": "open the iron door",
+      "inputDigest": "0f0caa0af0ff85f991d217aad033af7580c230e5eed475df7862d06d44fbd56c",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-0",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-18"
+      ],
+      "baselineDigest": "97c691241a12a5e7f86de2a3563b232a7c1b333f48da0b0940a452cd5dd96ea1"
+    },
+    {
+      "id": "en:rp272:tower:dual",
+      "split": "development",
+      "family": "dual",
+      "positive": true,
+      "query": "open the iron door and take the copper key",
+      "inputDigest": "d16be8b123996d62f7f7835d40cad19c48b4da5e60967e50a87c00321387a229",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:full",
+      "split": "development",
+      "family": "full",
+      "positive": true,
+      "query": "I open the iron door and take the copper key",
+      "inputDigest": "a59514d08a60bcb5efecce19e865e8dfa2a6d622fc05f6766532db4dd78a234e",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:wrapped",
+      "split": "development",
+      "family": "wrapped",
+      "positive": true,
+      "query": "**open the iron door and take the copper key**",
+      "inputDigest": "ca76c9ad56fbb9335a18c5c3695864294276c256ec8e70e7b8c4e63063f57d10",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:sequence",
+      "split": "development",
+      "family": "sequence",
+      "positive": true,
+      "query": "open the iron door and then take the copper key",
+      "inputDigest": "81e5754016ed6d8ffc345303a14f489231659f2527ab08c01bf91179deb60ff0",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:repeat-subject",
+      "split": "development",
+      "family": "repeat-subject",
+      "positive": true,
+      "query": "I open the iron door and I take the copper key",
+      "inputDigest": "aa6a20599abcdb208d558d083c03adae59c59b6a082c05cbb423d2b059e54eae",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:triple",
+      "split": "development",
+      "family": "triple",
+      "positive": true,
+      "query": "open the iron door and take the copper key and inspect the travel kit",
+      "inputDigest": "5c990022b6f5ceb74eb3263974f4b21cdc1419f17bcf5426c7517421d64e502b",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5",
+        "source-6"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-40",
+        "source-37",
+        "source-34"
+      ],
+      "baselineDigest": "498cad8b8947f85ba17ba1343a55ef73d569b3abf5a5de1e9b399548e9ff02ff"
+    },
+    {
+      "id": "en:rp272:tower:unknown-tail",
+      "split": "development",
+      "family": "unknown-tail",
+      "positive": false,
+      "query": "open the iron door and inspect the unknown throne",
+      "inputDigest": "7e4be07451c044987f88c7bf91c5b7472701edca75e3a5b570ab0092eb83e34e",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-0",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-18"
+      ],
+      "baselineDigest": "97c691241a12a5e7f86de2a3563b232a7c1b333f48da0b0940a452cd5dd96ea1"
+    },
+    {
+      "id": "en:rp272:tower:negative",
+      "split": "development",
+      "family": "negative",
+      "positive": false,
+      "query": "open the iron door and do not take the copper key",
+      "inputDigest": "95c518728c6ba8893201265647d57daa9091a162c3cd7c4c4490a424cbfc0050",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:conditional",
+      "split": "development",
+      "family": "conditional",
+      "positive": false,
+      "query": "open the iron door and take the copper key if the guard allows it",
+      "inputDigest": "1822db260984166f0ea26abb8b5708f391c9ad2bacb4f452b34591b892c92a42",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-3",
+        "source-0",
+        "source-31",
+        "source-28"
+      ],
+      "baselineDigest": "d5ca55055798ceea921aae3cddfd6ac6a64fb286aef9f810c857602bb7ae3470"
+    },
+    {
+      "id": "en:rp272:tower:personal",
+      "split": "development",
+      "family": "personal",
+      "positive": false,
+      "query": "open the iron door and take her key",
+      "inputDigest": "fbf25220762d098270ca6dfb5cacf4ece7d83514ae412246346b9551631b1476",
+      "gold": [],
+      "baseline": [
+        "source-0",
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-18",
+        "source-17"
+      ],
+      "baselineDigest": "8196915a0c23c9a01f0eff00980990355aac53d52cddebc7b6972169d4783351"
+    },
+    {
+      "id": "en:rp272:tower:quoted",
+      "split": "development",
+      "family": "quoted",
+      "positive": false,
+      "query": "\"open the iron door and take the copper key\"",
+      "inputDigest": "107bfde51b9b6c7dce256c01df8f56e9c9c4867fbeb844af1831e7e6f68dc6f7",
+      "gold": [],
+      "baseline": [
+        "source-0",
+        "source-1",
+        "source-5",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19"
+      ],
+      "baselineDigest": "d265fbb3758ca59de9b6a31eb5250008a3002aba4e9440bae627857668db2ddf"
+    },
+    {
+      "id": "en:rp272:tower:third-person",
+      "split": "development",
+      "family": "third-person",
+      "positive": false,
+      "query": "She open the iron door and take the copper key",
+      "inputDigest": "0fda71fe495c5ce03b6feaee5b388093ddd71395545726944d263e8968f2f3e6",
+      "gold": [],
+      "baseline": [
+        "source-0",
+        "source-1",
+        "source-5",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19"
+      ],
+      "baselineDigest": "ddedc1fc3cf4fc407c562757cc535e1c2b202d59aaf0ad799e16292ef64efdff"
+    },
+    {
+      "id": "en:rp272:tower:missing-source",
+      "split": "development",
+      "family": "missing-source",
+      "positive": false,
+      "query": "open the iron door and take the copper key",
+      "inputDigest": "81533d6badaef8926a33bc703864c1ff63f2a2982dddbe8f80ac5494544a76b2",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "ca8b4e664bced920782e7415ed9be6762f931cde993570467026d6d0a729a53f"
+    },
+    {
+      "id": "en:rp272:tower:overflow",
+      "split": "development",
+      "family": "overflow",
+      "positive": false,
+      "query": "open the iron door and take the copper key",
+      "inputDigest": "865d16e767a3dea6445f3115d793618e440310dff6bcb475ac01b7a440ab3f28",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-19",
+        "source-16",
+        "source-13"
+      ],
+      "baselineDigest": "389bef3ef475c8ae439f1c2643bd3cf93b371c47f7e9fa05199eb94f1cd5be9c"
+    },
+    {
+      "id": "en:rp272:tower:required",
+      "split": "development",
+      "family": "required",
+      "positive": false,
+      "query": "I open the iron door and take the copper key",
+      "inputDigest": "b413bf59313d1d598f575d84d8a8394e7880b89833e15d459ee3504799c66202",
+      "gold": [],
+      "baseline": [],
+      "baselineDigest": "b2a4046b4121d582310c984bb50793558a1fb0835d5aed4c678ea8da9d129c61"
+    },
+    {
+      "id": "en:rp272:station:short",
+      "split": "evaluation",
+      "family": "short",
+      "positive": true,
+      "query": "open the outer hatch",
+      "inputDigest": "e6b8948e9df05461ba8f823a7df0c57012443c5139d8009bb66b12f2c160e39e",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-0",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-18"
+      ],
+      "baselineDigest": "2e61c7381278fdded7844beb52de8e9ce7e5d49fc1db2b373f23e0bfbaef2b33"
+    },
+    {
+      "id": "en:rp272:station:dual",
+      "split": "evaluation",
+      "family": "dual",
+      "positive": true,
+      "query": "open the outer hatch and take the blue token",
+      "inputDigest": "63d1c08835d891b410422fbbd2a5f363d0912762e27d799e68a40d03f4855ae3",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:full",
+      "split": "evaluation",
+      "family": "full",
+      "positive": true,
+      "query": "I open the outer hatch and take the blue token",
+      "inputDigest": "50ff7b3aa7d0a0564df09f9b135915d773c3b2ef8759b316b88eeb182605737f",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:wrapped",
+      "split": "evaluation",
+      "family": "wrapped",
+      "positive": true,
+      "query": "**open the outer hatch and take the blue token**",
+      "inputDigest": "0f44b82e600bac461bbb4d066e8436a0e79293c7553ca8eae246c62ef15cabcf",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:sequence",
+      "split": "evaluation",
+      "family": "sequence",
+      "positive": true,
+      "query": "open the outer hatch and then take the blue token",
+      "inputDigest": "4b52797583b48a2311df952bdbc52740c6c1c5ec69390e78ef5851f42695ebd4",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:repeat-subject",
+      "split": "evaluation",
+      "family": "repeat-subject",
+      "positive": true,
+      "query": "I open the outer hatch and I take the blue token",
+      "inputDigest": "ab48e24c6cb913bbc29cda365037d22492c46780bb2abeaf0a56a4addfd6a3fd",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:triple",
+      "split": "evaluation",
+      "family": "triple",
+      "positive": true,
+      "query": "open the outer hatch and take the blue token and inspect the medical kit",
+      "inputDigest": "c442011dccef7d665bc109b52db533f49ec1b090aaed6b2db9574b9f31dab506",
+      "gold": [
+        "source-0",
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5",
+        "source-6"
+      ],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-40",
+        "source-37",
+        "source-34"
+      ],
+      "baselineDigest": "87d5b2ac4bfc16aad64e4e1fa2d17e2c2e277324005d05c243d28e76572e217c"
+    },
+    {
+      "id": "en:rp272:station:unknown-tail",
+      "split": "evaluation",
+      "family": "unknown-tail",
+      "positive": false,
+      "query": "open the outer hatch and inspect the unknown throne",
+      "inputDigest": "c80443c1a6ac62421559d3053a17e0f757b5a0da28abedb2551689dcd510ccb8",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-0",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-18"
+      ],
+      "baselineDigest": "2e61c7381278fdded7844beb52de8e9ce7e5d49fc1db2b373f23e0bfbaef2b33"
+    },
+    {
+      "id": "en:rp272:station:negative",
+      "split": "evaluation",
+      "family": "negative",
+      "positive": false,
+      "query": "open the outer hatch and do not take the blue token",
+      "inputDigest": "eab55e242ffed8b2859667079431e3cdc34dcce226e22021f643196faab80bfe",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:conditional",
+      "split": "evaluation",
+      "family": "conditional",
+      "positive": false,
+      "query": "open the outer hatch and take the blue token if the guard allows it",
+      "inputDigest": "a55e3f783a64a2bba9697399185e25073b0b8df5ea55ae3f146347b951cac4c0",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-3",
+        "source-0",
+        "source-31",
+        "source-28"
+      ],
+      "baselineDigest": "450d246a4ced797e58f0ac34b7eb515bc4eb44b25446865e75ccd06a01464fd4"
+    },
+    {
+      "id": "en:rp272:station:personal",
+      "split": "evaluation",
+      "family": "personal",
+      "positive": false,
+      "query": "open the outer hatch and take her key",
+      "inputDigest": "973aadfb5a72e87f6a2d7ed217ea6ef539e3476e1d488eba373b2c0a0d64e9d6",
+      "gold": [],
+      "baseline": [
+        "source-0",
+        "source-1",
+        "source-19",
+        "source-16",
+        "source-13",
+        "source-10",
+        "source-18",
+        "source-17"
+      ],
+      "baselineDigest": "1a8454e132f9ed776787f3311500786fbe9d290c7d6e8798784f5ffbe0d04dc0"
+    },
+    {
+      "id": "en:rp272:station:quoted",
+      "split": "evaluation",
+      "family": "quoted",
+      "positive": false,
+      "query": "\"open the outer hatch and take the blue token\"",
+      "inputDigest": "d6faf2d5852e35f88a4bab5c332d34ca9bcf97f11838f7db0c86ca7a5e55a24a",
+      "gold": [],
+      "baseline": [
+        "source-0",
+        "source-1",
+        "source-5",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19"
+      ],
+      "baselineDigest": "52a9ba1923fdc107ef853ece7193ddb2d30c67765dd0badec78ffd33f5e96e58"
+    },
+    {
+      "id": "en:rp272:station:third-person",
+      "split": "evaluation",
+      "family": "third-person",
+      "positive": false,
+      "query": "She open the outer hatch and take the blue token",
+      "inputDigest": "a447d4606aeb0445122c821e991d7cab9e882dec07e6525a31960a318f7f5605",
+      "gold": [],
+      "baseline": [
+        "source-0",
+        "source-1",
+        "source-5",
+        "source-31",
+        "source-28",
+        "source-25",
+        "source-22",
+        "source-19"
+      ],
+      "baselineDigest": "41447b031329372866b41c32ed19c244fcb0fe82abdd6945b1dc2fab346b9c6b"
+    },
+    {
+      "id": "en:rp272:station:missing-source",
+      "split": "evaluation",
+      "family": "missing-source",
+      "positive": false,
+      "query": "open the outer hatch and take the blue token",
+      "inputDigest": "f8260cc81fcf5ab9dda49cefc61d2f75179d027026006045a87fc68b90555fcf",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-31",
+        "source-28",
+        "source-25"
+      ],
+      "baselineDigest": "4833716752fb8a8bc95992d0c46a7159fe49e5ede503bd424de105df09296d2f"
+    },
+    {
+      "id": "en:rp272:station:overflow",
+      "split": "evaluation",
+      "family": "overflow",
+      "positive": false,
+      "query": "open the outer hatch and take the blue token",
+      "inputDigest": "1816415d6865dddb6e6605c7762fa73ca495c265be87d935f5b8a6128921afe9",
+      "gold": [],
+      "baseline": [
+        "source-43",
+        "source-1",
+        "source-5",
+        "source-4",
+        "source-0",
+        "source-19",
+        "source-16",
+        "source-13"
+      ],
+      "baselineDigest": "2efdd2bf2160f4bcc80cb6558d4acd11bfd91a20a56d25ddae4ccf23b3b9aa46"
+    },
+    {
+      "id": "en:rp272:station:required",
+      "split": "evaluation",
+      "family": "required",
+      "positive": false,
+      "query": "I open the outer hatch and take the blue token",
+      "inputDigest": "ebe8d11338581202b48ff1af14ed50400ee689daded6144b32bff138707bf92f",
+      "gold": [],
+      "baseline": [],
+      "baselineDigest": "b2a4046b4121d582310c984bb50793558a1fb0835d5aed4c678ea8da9d129c61"
+    }
+  ]
+}

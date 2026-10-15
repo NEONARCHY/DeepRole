@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "experiment": "RP270",
+  "scope": "new fixed bilingual sources and varied queries before evaluation; no E5/MMR/model/download",
+  "query": "existing literal topic admission, excluding explicit ownership, ambiguous references and conversation/person/time questions; no new language/intent inference",
+  "repeat": "whole equal text/quote, current selected source, frozen available speaker ONLY, kind event without task/claim; finite explicit repetition statement saying no new information/actions/commitments; reject extra clauses, numbers, commitments, recipients, beliefs, unknown/edited/report-only source",
+  "primary": "every matching non-repeat source, including all distinct conditions, terminal statuses/current codes/attributed uncertainty; max8, full coverage, no merging/truth/status/identity changes",
+  "mandatory": "prior compiled non-repeat selection is retained even outside the new topic; cap8 union/unknown/full budget failure returns exact prior compiler output and counters",
+  "admission": "whole real compiler context, not candidate recall alone; required/manual lore/profiles and existing transport preserved",
+  "evaluation": "96 new cases:64 development/32 holdout; full set/wrong first/control drift/retained substantive baseline separately; all previously viewed corpora are seen, no tuning after new results",
+  "integration": "only after full-set gain and invariant checks; private comparison option is not a user setting; native synthetic MV3 POST/reload and no DB mutations required"
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "inputDigest": "b9bda79c4254b6c4a3da88dcbbfe40adc96f10019fadb1ff126bf700796ffe0f",
+  "goldDigest": "95e855dae3e2648bc9b810afd4162241b84b3f8f118b0afd38fc796f76bd15d3",
+  "algorithmDigest": "9d10c43f48271534f1f7e67792546cb56e5f6bbaf1bec2c1545f753a5f4cfaff",
+  "policyDigest": "6cf42980ba768fcf01d707dc37a4eda6f396e66a9b9de683d317eb2da0c93bcc",
+  "coreTextDigest": "a37642f06787536fa6847448ce4217c6e0007b28d7dd643c734705a64e07dd9a",
+  "benchmarkDigest": "7d8712d1d61740b10318cf933a618c3ddbc12decfd590007607a3462477faed9",
+  "admissionProbeDigest": "66416ebe72eaef063f2a09dcdf5ab8a858370d5fb619f66ba5ef860e3904c261"
+}

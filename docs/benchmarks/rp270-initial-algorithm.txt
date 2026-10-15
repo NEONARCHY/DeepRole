@@ -1,0 +1,43 @@
+import type { StoryFact } from './story-update';
+import type { StoryRoleReader } from './story-source-roles';
+import type { EpisodeReader } from './story-episodes';
+import { normalizeText } from './text';
+import type { storyContentRelevance } from './story-content-relevance';
+
+type Admission = ReturnType<typeof storyContentRelevance>['admission'];
+/** Only a complete, frozen, available speaker's explicitly repetitive statement.
+ * This is a retrieval preference, NOT truth detection, deduplication or deletion.
+ * Unknown summaries, recipients, commitments, beliefs and state never qualify. */
+export function isExplicitDiscussionRepeat(fact: StoryFact, roles?: StoryRoleReader, episodes?: EpisodeReader): boolean {
+  if (fact.kind !== 'event' || fact.task || fact.claim || fact.text !== fact.quote || !episodes?.read(fact) || roles?.status?.(fact) !== 'bound') return false;
+  const attribution = roles.read(fact);
+  if (!attribution?.speaker || Object.keys(attribution).some(key => key !== 'speaker') || attribution.speaker.unavailable) return false;
+  const source = fact.quote.trim(), colon = source.indexOf(':');
+  if (colon < 1 || !/(?: said| сказал| сказала| сказали)$/u.test(normalizeText(source.slice(0, colon)))) return false;
+  const quoted = source.slice(colon + 1).trim();
+  const pair = quoted.startsWith('«') ? ['«', '»'] : quoted.startsWith('“') ? ['“', '”'] : quoted.startsWith('"') ? ['"', '"'] : undefined;
+  if (!pair || !quoted.endsWith(pair[1]!)) return false;
+  const body = quoted.slice(1, -1).normalize('NFKC').toLocaleLowerCase().replaceAll('ё', 'е');
+  const ru = body.match(/^мы (?:снова обсуждали|лишь вспоминали) ([^«»“”"\r\n;:,.?!]+); новых сведений, действий и обязательств не появилось\.?$/u);
+  const en = body.match(/^we ((?:only (?:discussed|recalled) [^«»“”"\r\n;:,.?!]+)|(?:(?:discussed|recalled) [^«»“”"\r\n;:,.?!]+ again(?: [^«»“”"\r\n;:,.?!]+)?)); no new information, actions or commitments were added\.?$/u);
+  const topic = ru?.[1] ?? en?.[1];
+  // Mixed clauses, codes/quantities and protocol-like text are not empty repeats.
+  if (!topic || /[\p{N}<>{}\[\]`]/u.test(topic) || /(?:\b(?:but|if|not|will|would|learned|learnt|changed|discovered|promised|said|told)\b|(?:^| )(?:но|если|не|бы|что|узнали|узнала|узнал|изменили|изменился|сообщили|обещали|сказали)(?: |$))/u.test(topic)) return false;
+  return true;
+}
+
+/** A whole literal topic must remain covered by ALL its non-repeat sources.
+ * No importance/owner/object ID, fulfillment, permission or new fact is inferred.
+ * The caller also preserves prior substantive selection and complete budget. */
+export function discussionPriorityFacts(facts: StoryFact[], query: string, admission: Admission, roles?: StoryRoleReader, episodes?: EpisodeReader) {
+  if (!admission || !roles || !episodes || roles.question) return;
+  // Asking about the conversation/person/time itself keeps ordinary retrieval.
+  if (/(?:^| )(?:said|say|says|talk|talked|conversation|conversations|discussion|discussions|recalled|remember|who|where|when|сказал|сказала|сказали|разговор|разговора|разговоре|разговоры|обсуждение|обсуждения|вспоминали|помнишь|кто|где|когда)(?: |$)/u.test(normalizeText(query))) return;
+  const matching = facts.filter(f => admission.matches(f));
+  if (matching.some(f => !episodes.read(f) || Object.values(roles.read(f) ?? {}).some(person => person.unavailable))) return;
+  const repeats = new Set(matching.filter(f => isExplicitDiscussionRepeat(f, roles, episodes)));
+  if (!repeats.size) return;
+  const primary = matching.filter(f => !repeats.has(f));
+  if (!primary.length || primary.length > 8 || !admission.covers(primary)) return;
+  return { primary, repeats };
+}

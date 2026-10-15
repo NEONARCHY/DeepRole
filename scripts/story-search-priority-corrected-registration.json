@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "inputDigest": "238bb2e3d21be58302e02367fc7a25f4f9dd099e1357557617befdda7e33f824",
+  "goldDigest": "b8a9bce901493f438d531c1c9bd392129d3c8731ea2b06a2e58e3ada25820cf2",
+  "amendment": "Mechanical closing-quote punctuation fix found by development unit test; initial protocol/report retained, labels and ranking policy unchanged",
+  "initialProtocolDigest": "ce00970eac10a7f168bbafd6f4d33bf523a0d976759df4b5a73b827d2fb00908",
+  "initialAlgorithmDigest": "990879dae89bc83553b6e9de774504e2209ea73ea28b2f9da2151e2215994b2f",
+  "evaluationDigest": "fe42177b1b73ca2555f9f9ced648919ec02e18abe10e28334896737af742d906",
+  "algorithmDigest": "1be9c642ac78744fb1fbf035f62c9fea11079612ce841d51b3053387ae219e50",
+  "policyDigest": "bde81b53c5fc10975ac592bdf7d8add4a62df2140ce15cc81390cd2de084b7fe",
+  "fixtureDigest": "6e8b762ea53fa5ab59bf7b654e161bd4c1515a662de7ffdcfc3f5b592ee317f2",
+  "benchmarkDigest": "2429a4c126a491f92e9b89b9294819adaa79c92f97ecc240a1d96bc6f73912a2"
+}
