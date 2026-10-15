@@ -1,4 +1,20 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { continuationText } from "../../src/core/continuation-i18n";
+
+for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`accepted transfer local-save notice, ${locale}, ${width}px`,async({page},info)=>{
+ await page.setViewportSize({width,height:820});await page.goto(`/tests/fixtures/page-widget.html?locale=${locale}`);
+ await page.locator("#underlying-chat-control").focus();
+ await page.evaluate(()=>(window as any).setWidgetState({continuationCommitPending:true}));
+ const button=page.getByRole("button",{name:continuationText(locale,"commitRetry"),exact:true});await expect(button).toBeVisible();
+ await expect(page.locator("#underlying-chat-control")).toBeFocused();
+ const alert=page.locator(".dr-alert").filter({has:button});await expect(alert).toContainText(continuationText(locale,"commitPending"));
+ const box=await alert.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(width);
+ await button.focus();await page.keyboard.press("Enter");await expect(button).toBeFocused();
+ const results=await new AxeBuilder({page}).include(".dr-alert").analyze();expect(results.violations).toEqual([]);
+ await page.screenshot({path:info.outputPath(`accepted-local-save-${locale}-${width}.png`)});
+ await page.evaluate(()=>(window as any).setWidgetState({vaultLocked:true}));await expect(button).toHaveCount(0);
+});
 
 for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
   test(`continuation stages and hidden recap, ${locale}, ${width}px`, async ({ page }, info) => {

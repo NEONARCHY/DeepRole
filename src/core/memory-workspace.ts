@@ -10,7 +10,7 @@ export const EMPTY_OVERRIDES: MemoryOverrides = { includedIds: [], excludedIds: 
 export const profileMemoryId = (kind: "world" | "entity", id: string) => `profile:${kind}:${id}`;
 type TitleSnapshot = Pick<MemoryEntry, "id" | "title" | "content"> & { keywords: string[] };
 type TitleIndex = { snapshot: TitleSnapshot[]; groups: ReturnType<typeof inferTitlePeople> };
-const titleIndexes = new WeakMap<MemoryEntry[], Map<string, TitleIndex>>();
+const titleIndexes = new WeakMap<object, Map<string, TitleIndex>>();
 
 export function libraryRecords<T extends RecordValue>(records: DataRecord[], kind: RecordKind): T[] {
   return records.filter((r) => r.kind === kind).map((r) => r.data as T).sort((a, b) => ("updatedAt" in b ? b.updatedAt : b.createdAt) - ("updatedAt" in a ? a.updatedAt : a.createdAt));
@@ -50,8 +50,13 @@ export function compileMemoryWorkspace(input: RankMemoryInput & { worlds: WorldP
   const resolvedMentionIds = input.resolvedMentionIds === undefined ? undefined : [...input.resolvedMentionIds];
   const pinnedProfiles = [...input.manualIds ?? []].filter((id) => id.startsWith("profile:entity:")).map((id) => id.slice("profile:entity:".length));
   const { documents, origins } = runtimeMemoryDocuments(input.entries, input.books ?? [], input.worlds, input.entities ?? [], { ...scene, focusIds: [...scene.focusIds, ...pinnedProfiles] }, [input.draft, ...input.recentMessages.slice(-4)].join("\n"), resolvedMentionIds);
+  input.lexicalIndex?.prepare(documents.filter(entry => entry.enabled && entry.activation === "smart" && (memoryWorld(entry, input.books ?? []) ?? null) === scene.worldId));
   const key = JSON.stringify([scene.worldId, scene.bookId, (input.books ?? []).map((book) => [book.id, book.worldId, book.active])]);
-  const indexes = titleIndexes.get(input.entries) ?? new Map<string, TitleIndex>(); titleIndexes.set(input.entries, indexes);
+  const owner = input.lexicalIndex?.titleCacheOwner ?? input.entries;
+  const indexes = titleIndexes.get(owner) ?? new Map<string, TitleIndex>(); titleIndexes.set(owner, indexes);
+  // A scoped long-lived owner keeps only the CURRENT grouping, not snapshots
+  // of previously visited books or deleted data in other scopes.
+  if (input.lexicalIndex && !indexes.has(key)) indexes.clear();
   const scopedEntries = input.entries.filter((entry) => entry.enabled && isMemoryInScene(entry, scene, input.books ?? []));
   const previous = indexes.get(key);
   const unchanged = previous?.snapshot.length === scopedEntries.length && previous.snapshot.every((old, index) => {

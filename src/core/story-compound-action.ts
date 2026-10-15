@@ -2,6 +2,7 @@ import type {StoryFact} from './story-update';
 import {normalizeText,tokenize} from './text';
 import {storyActionBalance} from './story-action-balance';
 import {storyTaskGoal} from './story-task-goal';
+import {storyObjectForms,sameStoryObjectForms} from './story-object-forms';
 
 // Finite two/three-clause retrieval syntax. A query is never performed-event,
 // ownership, permission, consent or task-completion evidence.
@@ -18,13 +19,20 @@ export function storyCompoundAction(query:string,names:Iterable<string>=[]) {
  const subject=/^(я\s+|i(?:['’]m| am)?\s+)/iu.exec(raw)?.[1];
  if(!goal&&!subject)return;
  const rest=raw.slice((goal??subject)!.length).replace(/[.!]$/u,'');
- if(/[\r\n.?!,;:()[\]{}<>`*\/\\=+@]/u.test(rest))return;
- const parts=rest.split(/\s+(?:и(?: затем)?|затем|and(?: then)?|then)\s+/iu);if(parts.length<2||parts.length>3)return;
- const clauses=parts.map((part,index)=>{
+  if(/[\r\n.?!;:()[\]{}<>`*\/\\=+@]/u.test(rest)||goal&&rest.includes(','))return;
+  // Commas separate complete action clauses, never arbitrary object lists.
+  // Keep empty/unknown/conditional parts: EVERY clause must pass below.
+  const parts=rest.split(/\s*,\s*(?:(?:и(?: затем)?|затем|and(?: then)?|then)\s+)?|\s+(?:и(?: затем)?|затем|and(?: then)?|then)\s+/iu);if(parts.length<2||parts.length>3)return;
+  const objects:string[]=[];
+  const clauses=parts.map((part,index)=>{
   const text=index===0?(goal??subject)+part:goal?goal+part:/^(?:я\s|i(?:['’]m| am)?\s)/iu.test(part)?part:(/^я/iu.test(subject!)?'Я ':'I ')+part;
   const task=goal?storyTaskGoal(text,known):undefined,action=goal?undefined:storyActionBalance(text,known);
   const terms=task?.terms??(action?.kind==='object'?action.orderedTerms:undefined);if(!terms?.length)return;
-  const covers=(text:string)=>text.split(/[.!?;,\r\n:]+/u).some(part=>{const words=tokenize(mask(part));return words.some((_,at)=>terms.every((term,index)=>words[at+index]===term));});
+   // Keep goals on their existing matcher. Only validated object actions get
+   // the same bounded inflection supplement as single/narrative actions.
+   const forms=action?.kind==='object'?storyObjectForms(action.object.split(' ')):undefined;
+   if(action?.kind==='object'){if(objects.some(object=>sameStoryObjectForms(object,action.object)))return;objects.push(action.object);}
+   const covers=(text:string)=>text.split(/[.!?;,\r\n:]+/u).some(part=>{const normalized=mask(part),words=tokenize(normalized);return words.some((_,at)=>terms.every((term,index)=>words[at+index]===term))||!!forms&&forms(normalized);});
   return {terms,goal:!!task,matchesTask:(fact:StoryFact)=>task?task.matchesTask(fact):covers(fact.task?.title??''),matchesObject:(fact:StoryFact)=>covers(fact.text)||covers(fact.task?.title??'')};
  });
  if(clauses.some(c=>!c)||new Set(clauses.map(c=>c!.terms.join(' '))).size!==clauses.length)return;

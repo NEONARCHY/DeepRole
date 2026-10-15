@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "scope": "Read-only diagnosis of eight full-suite failures; not a green full-suite result. Before restores ONLY the two exact pre-RP281 parser bodies using a temporary Vite alias, leaving all other current code and test data unchanged. Original bodies from git HEAD 7005aa6 match RP280 historical hashes before relative imports are rewritten to preserve module resolution. Working src files never overwritten.",
+  "beforeParserFingerprints": {
+    "src/core/story-action-balance.ts": "c6cde139435b91a738544916e3efef88ec1a9fb90e796f9fae22e248f47c1d12",
+    "src/core/story-compound-action.ts": "9b1dba6db5d80d5be967828a1bac617a16d9b5244860a470f1de2d6ee84df824"
+  },
+  "fullAfter": {
+    "numPassedTests": 6847,
+    "numFailedTests": 8,
+    "numTotalTests": 6860
+  },
+  "comparison": {
+    "sameFailingTests": 8,
+    "identicalFirstMessages": 7,
+    "note": "Lasting recall stale baseline expected 5, already 8 with old parsers, 9 with new parsers; intended recall improvement does not repair the historical aggregate expectation."
+  },
+  "before": [
+    {
+      "file": "story-lasting-recall-quality.test.ts",
+      "name": "measures fixed standalone knowledge and terminal task recall",
+      "message": "AssertionError: expected 8 to be 5 // Object.is equality"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract en:audit:doctor",
+      "message": "AssertionError: expected [ 'fact-11', 'fact-105', …(19) ] to deeply equal [ 'fact-11', 'fact-105', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract en:audit:safe",
+      "message": "AssertionError: expected [ 'fact-7', 'fact-105', …(17) ] to deeply equal [ 'fact-7', 'fact-105', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract en:audit:umbrella",
+      "message": "AssertionError: expected [ 'fact-2', 'fact-101', …(18) ] to deeply equal [ 'fact-2', 'fact-101', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract ru:audit:safe",
+      "message": "AssertionError: expected [ 'fact-7', 'fact-105', …(17) ] to deeply equal [ 'fact-7', 'fact-105', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract ru:audit:umbrella",
+      "message": "AssertionError: expected [ 'fact-2', 'fact-101', …(18) ] to deeply equal [ 'fact-2', 'fact-101', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "registered evidence guard and saved measurement retain their exact pre-inference provenance",
+      "message": "Error: story-search-prototype: incomplete lexical ranking"
+    },
+    {
+      "file": "story-search-grounding.test.ts",
+      "name": "all pre-algorithm input/gold/baseline and pre-evaluation protocol fingerprints stay unchanged",
+      "message": "AssertionError: expected '3f9b1c0740d92bc18a0f5ae1eef24a77fafc3…' to be '66416ebe72eaef063f2a09dcdf5ab8a858370…' // Object.is equality"
+    }
+  ],
+  "after": [
+    {
+      "file": "story-lasting-recall-quality.test.ts",
+      "name": "measures fixed standalone knowledge and terminal task recall",
+      "message": "AssertionError: expected 9 to be 5 // Object.is equality"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract en:audit:doctor",
+      "message": "AssertionError: expected [ 'fact-11', 'fact-105', …(19) ] to deeply equal [ 'fact-11', 'fact-105', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract en:audit:safe",
+      "message": "AssertionError: expected [ 'fact-7', 'fact-105', …(17) ] to deeply equal [ 'fact-7', 'fact-105', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract en:audit:umbrella",
+      "message": "AssertionError: expected [ 'fact-2', 'fact-101', …(18) ] to deeply equal [ 'fact-2', 'fact-101', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract ru:audit:safe",
+      "message": "AssertionError: expected [ 'fact-7', 'fact-105', …(17) ] to deeply equal [ 'fact-7', 'fact-105', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "mandatory/current evidence contract ru:audit:umbrella",
+      "message": "AssertionError: expected [ 'fact-2', 'fact-101', …(18) ] to deeply equal [ 'fact-2', 'fact-101', …(6) ]"
+    },
+    {
+      "file": "story-search-evidence.test.ts",
+      "name": "registered evidence guard and saved measurement retain their exact pre-inference provenance",
+      "message": "Error: story-search-prototype: incomplete lexical ranking"
+    },
+    {
+      "file": "story-search-grounding.test.ts",
+      "name": "all pre-algorithm input/gold/baseline and pre-evaluation protocol fingerprints stay unchanged",
+      "message": "AssertionError: expected '3f9b1c0740d92bc18a0f5ae1eef24a77fafc3…' to be '66416ebe72eaef063f2a09dcdf5ab8a858370…' // Object.is equality"
+    }
+  ],
+  "rawReportDigests": {
+    "before": "42d65aee601c91c3d59bc9fe3ed57f094db424b049994f7ca74b40616aa71f28",
+    "after": "c315eb81cd482a835179ca38833f9ef0672486311dabbe127bfea1867a2d93dc"
+  },
+  "next": "Repair historical experiment/runtime coupling and stale baseline expectations with their correct frozen compiler/provenance, preserving old gold and reports; do not truncate current memory or rewrite old gold to force green."
+}

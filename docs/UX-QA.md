@@ -1,5 +1,7 @@
 # Финальная проверка меню и настроек — UX267
 
+Дополнение RP274 от15 октября: отдельная проверка нового сигнала дефицита памяти, не повтор всего исторического UX267 ниже.32 UI checks в Edge/Firefox RU/EN320/900px (5 состояний, клавиатура/axe/overflow/support disclosures) прошли. Native Edge RU/EN дополнительно проверяет целые12 источников, отдельный page-state статус/sidepanel, исходящие POST без диагностики, смену причины и reload с неизменной памятью; точный финальный результат — верх CODEX-HANDOFF. Повтор: `node node_modules/@playwright/test/cli.js test game-memory-coverage-ui.spec.ts context-budget-ui.spec.ts story-budget-priority-runtime.spec.ts --config=playwright.ux.config.ts`. Конфиг теперь включает эти3 файла; это не объявление полного набора зелёным.
+
 Дополнение FIX268 от14 октября: отдельное исправление ложного конфликта готового сброса, без повторения всего набора ниже.10 focused unit files/217pass, TypeScript0; выбранные world-reset-runtime/world-reset-ui:24 варианта,16pass/0fail/0flaky/8 Edge-only Firefox skip за124.29s. Добавлен RU/EN legacy ready guard → reload → служебные изменения → оба подтверждения → atomic reset/фото/чистый POST. UI остаётся проверенным на320/900px. Полный UX267 результат ниже исторический; это не проверка личного мира или живого DeepSeek.
 
 14 октября 2026. Область: оболочка UX265–266 — Игра, Миры, Память игры, настройки, персонажи, импорт/экспорт и подтверждения сброса. Это не завершение RP-05–08 и не оценка качества ответов живого DeepSeek.

@@ -6,6 +6,8 @@ import { experienceText } from "../../core/experience-i18n";
 import { formatRecordCount } from "../../core/menu-i18n";
 import { memoryReadiness, selectionReason, type ServiceActivity } from "../../core/memory-experience";
 import { sceneChoiceText } from "../../core/scene-choices";
+import {memoryCoverageIssue} from "../../core/game-memory-coverage";
+import {GameMemoryNotice} from "./GameMemoryNotice";
 
 export function ServiceProgress({ locale, activity }: { locale: Locale; activity?: ServiceActivity | null }) {
   if (!activity || activity.presentation === "inline") return null;
@@ -29,9 +31,10 @@ export function MemoryStatus(props: { locale: Locale; connected: boolean; warnin
   // Accepted game memory/profile excerpts are real context even without a
   // separate author-lore entry. Protocol alone does not count as memory.
   const state = memoryReadiness(props.connected, props.warning, entries.length + (props.pendingHandoff ? 1 : 0) + (selected ? selected.facts + selected.profiles + selected.continuation : 0), props.available);
+   const issue=props.connected&&state!=="failed"&&memoryCoverageIssue(props.selection?.memoryCoverage,props.selection?.contextReport);
   return <section className={`dr-memory-status is-${state}`} aria-label={t("preview")}>
-    <div className="dr-status-heading">{state === "failed" ? <CircleAlert aria-hidden="true" /> : state === "ready" ? <Send aria-hidden="true" /> : <Sparkles aria-hidden="true" />}<strong>{t(state)}</strong>{state === "ready" && entries.length > 0 && <span className="dr-record-count">{entries.length}</span>}</div>
-    <p>{t(`${state}Hint`)}</p>
+    {issue?<GameMemoryNotice locale={props.locale} coverage={props.selection?.memoryCoverage} report={props.selection?.contextReport}/>:<><div className="dr-status-heading">{state === "failed" ? <CircleAlert aria-hidden="true" /> : state === "ready" ? <Send aria-hidden="true" /> : <Sparkles aria-hidden="true" />}<strong>{t(state)}</strong>{state === "ready" && entries.length > 0 && <span className="dr-record-count">{entries.length}</span>}</div>
+    <p>{t(`${state}Hint`)}</p></>}
     {props.pendingHandoff && <p>{experienceText(props.locale, "pendingRecap", { name: props.pendingHandoff })}</p>}
     {state === "empty" && <button className="button primary" onClick={props.onAdd}>{t("empty")}</button>}
     {entries.length > 0 && <>

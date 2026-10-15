@@ -3,7 +3,8 @@ import { it, expect } from 'vitest';
 import { prepareEvaluation } from '../scripts/story-search-evaluation.mjs';
 import { evidenceCandidates } from '../scripts/story-search-evidence.mjs';
 import { auditSearchWorld } from './fixtures/story-search-audit';
-import { diverseScenarios, diverseCase } from './fixtures/story-search-evidence';
+import { diverseScenarios } from './fixtures/story-search-evidence';
+import { historicalEvidenceCase as diverseCase } from './fixtures/historical-search-context';
 import { probeCandidatePrompt } from './fixtures/story-search-diverse';
 import { validStoryFact } from '../src/core/story-update';
 import { createStoryRoleReaderV1 } from '../src/core/story-source-roles';
@@ -35,7 +36,7 @@ const saved = JSON.parse(readFileSync('docs/benchmarks/rp264b-search-results.jso
 it('retains the first fresh40 as development and exposes a genuinely different fresh24', () => {
   expect(scenarios).toHaveLength(128); expect(scenarios.filter(c => c.split === 'fresh')).toHaveLength(24); expect(scenarios.filter(c => c.split === 'development')).toHaveLength(40);
 });
-for (const scenario of scenarios) it(`mandatory/current evidence contract ${scenario.name}`, () => {
+for (const scenario of scenarios) it(`historical mandatory evidence contract ${scenario.name}`, () => {
   const c = diverseCase(scenario);
   measured.push(c);
   const snapshot = frozen.cases.find(s => s.id === c.id)!, result = saved.rows.find(r => r.id === c.id)!;

@@ -1,0 +1,78 @@
+{
+  "phase": "RP284",
+  "scope": "Bounded paragraph fix and seen regression; not independent or live model quality proof",
+  "unit": {
+    "numTotalTests": 7231,
+    "numPassedTests": 7226,
+    "numFailedTests": 0,
+    "success": true
+  },
+  "unitTodo": 5,
+  "newUnitPassed": 56,
+  "focused": {
+    "numPassedTests": 461,
+    "numFailedTests": 0
+  },
+  "native": {
+    "startTime": "2026-10-15T11:36:03.858Z",
+    "duration": 114691.779,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "newParagraphNativeScopedPostAssertions": 38,
+  "runtimeAndHistoryAudit": {
+    "originalComparedFiles": 411,
+    "expectedExistingRuntimeChanges": 2,
+    "addedRuntimeFiles": 1,
+    "otherOriginalFingerprintsUnchanged": 409,
+    "oldReportAndGoldSealsUnchanged": true,
+    "all78NonParagraphOutputsAndCoverageUnchanged": true,
+    "native": {
+      "startTime": "2026-10-15T11:36:03.858Z",
+      "duration": 114691.779,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "seenSummary": {
+    "cases": 84,
+    "scored": 54,
+    "baselineComplete": 39,
+    "complete": 44,
+    "goldFacts": 312,
+    "baselineMissingFacts": 47,
+    "missingFacts": 18,
+    "integrityIssues": 0,
+    "controlsDrift": 0,
+    "lostPriorFacts": 0,
+    "narrativeComplete": 5,
+    "narrativeCases": 6,
+    "narrativeReportedComplete": 0
+  },
+  "seenReportHash": "8cb7f9ec56a239d869d07e54c1751662b0dec7a374c62956a9e1212a5914639e",
+  "hashEncoding": "SHA256 of UTF-8 source bytes after CRLF to LF normalization",
+  "qaFiles": {
+    "scripts/story-search-narrative-seen.mjs": "aa6fb739a9e8cc4f7bc45e546bf780b35da5a800cc4d4317c4d517803f87d312",
+    "tests/story-narrative-action.test.ts": "91238f24ab084d19ce88cad853e1e1ee01d3f4612bf79bce97f0316f3488d636",
+    "tests/story-narrative-seen-report.test.ts": "192eb05c40351839a5bc980362b4d900ea16bd86437f10f2d17312e04c32cae2",
+    "tests/e2e/story-narrative-sequence-runtime.spec.ts": "f539611030779a44a04a2e6c4b97b8e038088b44ab7306be4651e3672e425994",
+    "tests/story-sequence-priority-runtime.test.ts": "f51e75ca422dd0fd4198f9275b37c103232ca0526b02e543ff8bb35f1640c572",
+    "docs/benchmarks/rp272-final-sequence.txt": "ba4b7ef16d0676cc79f24e865dcbe682f1ab26828fae5813818ea1312889bca0"
+  },
+  "checks": {
+    "typecheck": "pass",
+    "diffCheck": "pass",
+    "chromeBuildZip": "pass",
+    "firefoxBuildZip": "pass"
+  },
+  "limits": [
+    "Paragraphs retain unverified/query semantic status.",
+    "Remaining c1, paraphrase, EN references and three prior false-complete cases are open.",
+    "Original RP283 result39/54 preserved; current44/54 is seen regression.",
+    "Full E2E/live model/Firefox native not rerun; installed user copy unchanged."
+  ]
+}

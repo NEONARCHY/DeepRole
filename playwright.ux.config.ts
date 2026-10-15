@@ -13,6 +13,13 @@ export default defineConfig({
     "story-game-ui.spec.ts", "story-review.spec.ts", "world-reset-runtime.spec.ts",
     "settings-help.spec.ts", "settings-navigation-runtime.spec.ts", "sidepanel.spec.ts",
     "story-ux.spec.ts", "world-reset-ui.spec.ts", "large-export.spec.ts",
+    "context-budget-ui.spec.ts", "game-memory-coverage-ui.spec.ts", "story-budget-priority-runtime.spec.ts",
+    "continuation-ui.spec.ts", "continuation-recap-runtime.spec.ts", "world-game-runtime.spec.ts",
+    "continuation-chain-runtime.spec.ts", "story-contextual-runtime.spec.ts", "search-index-runtime.spec.ts",
+    "story-natural-sequence-runtime.spec.ts", "story-sequence-priority-runtime.spec.ts",
+    "story-narrative-sequence-runtime.spec.ts",
+    "story-object-forms-runtime.spec.ts",
+    "story-obligation-runtime.spec.ts",
   ].map(name => `**/${name}`),
   workers: 2,
   // Firefox's parallel context teardown can race in this installed runtime.

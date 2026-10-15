@@ -62,7 +62,9 @@ it('new pre-comparison protocol, desired sets and original baseline remain fixed
   expect(digest(readFileSync('docs/benchmarks/rp272-initial-fixture.txt', 'utf8').replace(/\r\n/g, '\n'))).toBe(initial.fixtureDigest);
   expect(registration.inputDigest).toBe(frozen.inputDigest); expect(registration.goldDigest).toBe(frozen.goldDigest);
   expect(digest(readFileSync('docs/benchmarks/rp272-final-compiler.txt', 'utf8').replace(/\r?\n/g, '\r\n'))).toBe(registration.compilerDigest);
-  for (const [path, key] of [['src/core/story-sequence-priority.ts', 'algorithmDigest'], ['tests/fixtures/story-sequence-priority.ts', 'fixtureDigest'], ['scripts/story-search-sequence-corrected-benchmark.mjs', 'benchmarkDigest']]) expect(digest(readFileSync(path!, 'utf8'))).toBe(registration[key!]);
+  // Pin the actual historical algorithm, as already done for its compiler.
+  // Current behavior remains exercised above and by the separate RP284 tests.
+  for (const [path, key] of [['docs/benchmarks/rp272-final-sequence.txt', 'algorithmDigest'], ['tests/fixtures/story-sequence-priority.ts', 'fixtureDigest'], ['scripts/story-search-sequence-corrected-benchmark.mjs', 'benchmarkDigest']]) {const text=readFileSync(path!, 'utf8');expect(digest(key==='algorithmDigest'?text.replaceAll('\r\n','\n'):text)).toBe(registration[key!]);}
   const report = JSON.parse(readFileSync('docs/benchmarks/rp272b-sequence-results.json', 'utf8'));
   expect(report.registration).toEqual(registration); expect(report.rows).toHaveLength(64); expect(report.budgets).toHaveLength(192);
   expect(report.rows.every((r:any) => !r.controlDrift && !r.substantiveLoss.length && (!r.positive || r.complete))).toBe(true);

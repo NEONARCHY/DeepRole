@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "phase": "RP282",
+  "recordedAt": "2026-10-15T09:52:32.642045+00:00",
+  "scope": "Historical QA repair; not a new independent retrieval-quality evaluation.",
+  "method": "Explicit RP268 comparison profile on current compiler; exact frozen workload/gold/provenance digests required. Not old-binary emulation. No selection from saved baseline/candidate/gold.",
+  "runtimeChangedThisIteration": false,
+  "fullUnit": {
+    "numTotalTests": 7086,
+    "numPassedTests": 7081,
+    "numFailedTests": 0,
+    "success": true
+  },
+  "assertionStatuses": {
+    "passed": 7081,
+    "todo": 5
+  },
+  "currentContract": {
+    "scenarios": 224,
+    "tests": 226,
+    "passed": 226,
+    "transport": "columns",
+    "compilerOptions": "current defaults",
+    "checks": [
+      "whole current facts",
+      "exact quotes",
+      "task/claim",
+      "unique sources",
+      "whole budget",
+      "input immutability",
+      "cold/warm output and coverage",
+      "current lasting 16 positive and 32 control cases",
+      "selection independent of gold labels"
+    ]
+  },
+  "historicalLasting": {
+    "positive": 16,
+    "controls": 32,
+    "before": 5,
+    "after": 16
+  },
+  "historicalDigests": "All complete input/gold/provenance assertions passed in full suite; original reports and protocols unchanged.",
+  "unchangedHistoricalFiles": {
+    "tests/fixtures/story-search-evidence-baseline.json": "fa7e1895d52af0521e5645751a153355aca9ea4c7d9d69560820aad68f5c8933",
+    "tests/fixtures/story-search-grounding-baseline.json": "be4eb6e99e2a5c6788d6d2949e2eb39db64200104ed963e2a6e4bf4b78dcd734",
+    "tests/fixtures/story-lasting-recall-quality.ts": "d3a708a38da1d6b9eea131f9aab57ece90637147ffb4237553600ab713fe7c85",
+    "tests/fixtures/story-search-evidence.ts": "41766773d9b1f6cbe060ac2bf6c9d3ce850e499f225a4f3320b9012e2372ab18",
+    "tests/fixtures/story-search-grounding.ts": "658f746c0271bb925b1a486b13b2266f67cb03b0e4af4fdc31f507e5e7ec6bf7",
+    "scripts/story-search-grounding-registration.json": "32276c285e18f7d7905dc2f1cf3a713be9f5b960680bb28220b7b217b3f12688",
+    "scripts/story-search-grounding.mjs": "5e2fef520a36b752e98c505b3990e870a53c044c0154f6cd7c1a5f17aa785bf6",
+    "scripts/story-search-grounding-benchmark.mjs": "5222c073deec2c92d21385930efe900e49387eb1375c41866e4f82742b228ddc",
+    "scripts/story-search-evidence.mjs": "724642a65bc7dab7c707992c7aee721906633916f936d101b6026acaa40ad886",
+    "docs/benchmarks/rp264b-search-results.json": "e711aa5faf8640727902e6c3c68993b14cebd277e619c92ea7668f02eac49592",
+    "docs/benchmarks/rp269-grounding-results.json": "bb9d447844fcc475a5dad26d21c0df23f92161796e8018dac6911a7ac48fa046"
+  },
+  "qaSourceHashEncoding": "SHA256 of UTF-8 source bytes after CRLF to LF normalization",
+  "qaFiles": {
+    "tests/fixtures/historical-search-context.ts": "5575e81441d0338464520e4c5937bf3ffa074c007e11dec9fe36a82788cc329b",
+    "tests/story-lasting-recall-quality.test.ts": "1059c2ace639ad9c764a57f24d291bb1fb08f54c70299c016cda9a0f899e4d77",
+    "tests/story-search-evidence.test.ts": "1a0e087000cd3ffc7831933df67f874942ad1422321b2c843b6936803fe84a83",
+    "tests/story-search-grounding.test.ts": "640e8bb761afba33722deb4a818ae30addcd85927a1313b5e2c5dc0ed75f972c",
+    "tests/story-search-current-contract.test.ts": "251d230df6d4d700b60e4c1074fd3bddb143e0295c8774e5e9be71bfcdd29427"
+  },
+  "longHistorySeal": {
+    "files": 411,
+    "priorExpectedParserChanges": 2,
+    "othersUnchanged": 409,
+    "firstReportAndBaselineUnchanged": true
+  },
+  "checks": {
+    "typecheck": "pass",
+    "chromeBuildZip": "pass",
+    "firefoxBuildZip": "pass",
+    "archiveAudit": "See CODEX-HANDOFF.md; performed after final notes."
+  },
+  "limits": [
+    "Five pre-existing todo tests remain.",
+    "No native UI or live model/account rerun: production/UI unchanged in this iteration.",
+    "RP280 independent result remains 54/60; RP281 seen replay remains 60/60.",
+    "New independent long-history evaluation and true cross-turn delta remain open.",
+    "Tests are excluded from user source ZIP; reproduce from Git checkout."
+  ]
+}

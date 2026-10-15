@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { continuationScopeMatches, recentSceneReference, type ContinuationFlow } from "../src/core/continuation-flow";
+import { continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, type ContinuationFlow } from "../src/core/continuation-flow";
 import { boundStory } from "../src/core/story-continuation";
 import { sceneHandoffPrompt } from "../src/core/service-protocol";
 import { formatMemoryContext, injectContextIntoPrompt } from "../src/core/context";
@@ -8,6 +8,13 @@ import { visibleStoryHistory } from "../src/adapters/story-history-dom";
 
 const flow: ContinuationFlow = { id: "f", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", scene: { worldId: "w", focusIds: ["a", "b"], bookId: null }, phase: "review", requestId: "r", proposalId: "p", createdAt: 1 };
 describe("reviewed scene transfer", () => {
+  it("offers a local retry only for the exact queued handoff and accepted target",()=>{
+    const r={snapshotId:"s",snapshotToken:"t",targetChatId:"target"};
+    expect(matchingContinuationReceipt(r,"s","t","target",false)).toEqual(r);expect(matchingContinuationReceipt(r,"s","t",null,true)).toEqual(r);
+    expect(matchingContinuationReceipt(r,"s","t","source",false)).toBeNull();expect(matchingContinuationReceipt(r,"s","t",null,false)).toBeNull();
+    expect(matchingContinuationReceipt(r,"new","t","target",false)).toBeNull();expect(matchingContinuationReceipt(r,"s","new","target",false)).toBeNull();
+    for(const value of [null,[],{}, {...r,targetChatId:"/foreign"},{...r,extra:true},{...r,snapshotToken:42}])expect(matchingContinuationReceipt(value,"s","t","target",false)).toBeNull();
+  });
   it("accepts only the source chat, world and focus, independent of focus ordering", () => {
     expect(continuationScopeMatches(flow, "a", flow.chatUrl, { ...flow.scene, focusIds: ["b", "a"] })).toBe(true);
     for (const scene of [{ ...flow.scene, worldId: "other" }, { ...flow.scene, focusIds: [] }, { ...flow.scene, bookId: "other" }]) expect(continuationScopeMatches(flow, "a", flow.chatUrl, scene)).toBe(false);

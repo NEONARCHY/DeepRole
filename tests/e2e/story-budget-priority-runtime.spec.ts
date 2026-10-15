@@ -2,6 +2,7 @@ import { chromium, expect, test, type Page } from '@playwright/test';
 import path from 'node:path';
 import { budgetWorld } from '../fixtures/story-budget-priority';
 import { decodeStoryMemory } from '../../src/core/story-memory-transport';
+import {gameMemoryCoverageText} from '../../src/core/game-memory-coverage-i18n';
 const rows = (page: Page) => page.evaluate(() => new Promise<any[]>((resolve, reject) => {
   const open = indexedDB.open('deeprole'); open.onerror = () => reject(open.error); open.onsuccess = () => {
     const db = open.result, tx = db.transaction('records'), read = tx.objectStore('records').getAll();
@@ -78,9 +79,33 @@ for (const locale of ['ru', 'en'] as const) test(`installed adaptive memory ${lo
       await send(f.s('Что Роман сказал у часов?', 'What did Roman say by the clock?'));
       expect(outgoing.endsWith(f.s('Что Роман сказал у часов?', 'What did Roman say by the clock?'))).toBe(true);
     }
+    // RP274: the live content controller exports preparation diagnostics over
+    // its existing page-state channel, never in the actual completion prompt.
+    await chat.getByRole('textbox',{name:'Message'}).fill(f.dual);
+    const pageState=()=>rpc({type:'DR_GET_PAGE_STATE'});
+    await expect.poll(async()=>(await pageState()).selection.memoryCoverage?.kind).toBe('complete');
+    const normal=(await pageState()).selection.contextReport;
+    await panel.evaluate(({worldId,budget})=>new Promise<void>((resolve,reject)=>{const open=indexedDB.open('deeprole');open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction('records','readwrite'),store=tx.objectStore('records'),read=store.get('world:'+worldId);read.onsuccess=()=>{read.result.data.contextBudget=budget;store.put(read.result);};tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};}),{worldId:base.world.id,budget:normal.required+24});
+    expect(await rpc({type:'DR_DATA_CHANGED'})).toMatchObject({ok:true});
+    await expect.poll(async()=>(await pageState()).selection.memoryCoverage?.kind).toBe('budget');
+    await expect(chat.locator('.dr-game-memory-notice')).toContainText(gameMemoryCoverageText(locale).budgetTitle);
+    await expect(panel.locator('.dr-game-memory-notice')).toContainText(gameMemoryCoverageText(locale).budgetTitle);
+    await expect(chat.getByRole('textbox',{name:'Message'})).toHaveValue(f.dual);
+    await expect(chat.getByRole('dialog')).toHaveCount(0);
+    await send(f.dual);expect(outgoing.endsWith(f.dual)).toBe(true);
+    expect(outgoing).not.toContain('memoryCoverage');expect(outgoing).not.toContain(gameMemoryCoverageText(locale).budgetTitle);
+    // Use a neutral unsupported greeting. Personal references add an existing
+    // mandatory ambiguity guard, which can legitimately overflow this tiny
+    // budget and must keep the required-overflow warning rather than clear it.
+    await chat.getByRole('textbox',{name:'Message'}).fill(f.s('привет','hello'));
+    await expect.poll(async()=>(await pageState()).selection.memoryCoverage?.kind).toBe('unverified');
+    await expect(panel.locator('.dr-game-memory-notice')).toHaveCount(0);
+    await chat.reload();await chat.bringToFront();await expect(chat.locator('.dr-character-row')).toHaveCount(2,{timeout:12000});await chat.getByRole('textbox',{name:'Message'}).fill(f.dual);
+    await expect.poll(async()=>(await pageState()).selection.memoryCoverage?.kind).toBe('budget');
+    await expect(chat.locator('.dr-game-memory-notice')).toContainText(gameMemoryCoverageText(locale).budgetTitle);
     const after = (await rows(panel)).find(r => r.kind === 'world').data.sharedGame;
     if (JSON.stringify(after.episodeSources) !== JSON.stringify(saved.episodeSources)) await info.attach('synthetic-episode-drift', { body: JSON.stringify({ saved: saved.episodeSources, after: after.episodeSources, records: await rows(panel) }), contentType: 'application/json' });
     expect(after.facts).toEqual(saved.facts); expect(after.factRoleSeeds).toEqual(saved.factRoleSeeds); expect(after.episodeSources).toEqual(saved.episodeSources);
-    expect(context.pages()).toHaveLength(pages); expect(errors).toEqual([]); expect(posts).toBe(13);
+    expect(context.pages()).toHaveLength(pages); expect(errors).toEqual([]); expect(posts).toBe(14);
   } finally { await context.close(); }
 });

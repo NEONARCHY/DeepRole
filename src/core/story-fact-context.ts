@@ -1,7 +1,7 @@
 import { compactStoryFactSources, cleanStoryFact, type StoryFact } from "./story-update";
 import { estimateTokens, normalizeText, uniqueTokens } from "./text";
 import { scoreMemory } from "./memory-engine";
-import { storyFactSearchEntry } from "./story-fact-search-index";
+import { storyFactSearchEntry, inheritStoryFactSearchEntry } from "./story-fact-search-index";
 import { storyRetrievalQuery, type StoryRetrievalScope } from "./story-retrieval-query";
 import { createStoryRoleReader, STORY_SOURCE_ROLES, type StoryRoleReader } from "./story-source-roles";
 import { EPISODE_MEMORY_GUIDE, type EpisodeReader } from "./story-episodes";
@@ -46,7 +46,11 @@ export function rankStoryFacts(facts: StoryFact[], query = "", scope?: StoryRetr
   const compact = compactStoryFactSources(facts), haystack = normalizeText(search), tokens = uniqueTokens(search);
   // Explicit owner questions retain the existing source-bound priority exactly.
   const content=contentRelevance&&retrieval&&!roles?.question?storyContentRelevance(compact,query,retrieval.relevanceNames):undefined;
-  return compact.map((source, index) => ({ fact: cleanStoryFact(source), index, score: (source.task?.status === "open" ? 2 : 0) + (query ? scoreMemory(storyFactSearchEntry(source), haystack, tokens).score + (retrieval?.score(source) ?? 0) + (roles?.score(source) ?? 0) + (content?.score(source)??0) : 0) })).sort((a,b) => b.score - a.score || b.index - a.index);
+  return compact.map((source, index) => {
+    const score = (source.task?.status === "open" ? 2 : 0) + (query ? scoreMemory(storyFactSearchEntry(source), haystack, tokens).score + (retrieval?.score(source) ?? 0) + (roles?.score(source) ?? 0) + (content?.score(source)??0) : 0);
+    const fact = cleanStoryFact(source); inheritStoryFactSearchEntry(source, fact);
+    return { fact, index, score };
+  }).sort((a,b) => b.score - a.score || b.index - a.index);
 }
 export function storyFactContext(facts: StoryFact[], budget: number, query = "") {
   const selected: StoryFact[] = [];
@@ -57,7 +61,7 @@ export function storyFactContext(facts: StoryFact[], budget: number, query = "")
   }
   return formatStoryFacts(selected);
 }
-export function formatStoryFacts(selected: StoryFact[], compact = false, typesSupplied = false, roles?: StoryRoleReader, episodes?: EpisodeReader, time?: StoryTimeReader, transport: { legacy?: boolean; measure?: (block:string)=>number } = {}) {
+export function formatStoryFacts(selected: StoryFact[], compact = false, typesSupplied = false, roles?: StoryRoleReader, episodes?: EpisodeReader, time?: StoryTimeReader, transport: { legacy?: boolean; columns?: boolean; measure?: (block:string)=>number } = {}) {
   // Unified game requests already carry these definitions in story_update_mode.
   // Standalone/legacy memory must remain self-contained, including empty history.
   const kinds = typesSupplied ? "Kinds follow this request's story_update_mode."
@@ -74,8 +78,11 @@ export function formatStoryFacts(selected: StoryFact[], compact = false, typesSu
   if(!selected.length||!compact||!typesSupplied||transport.legacy)return original;
   const measure=transport.measure??estimateTokens, originalCost=measure(original);
   let best=original,bestCost=originalCost;
-  for(const payload of memoryTransportCandidates(selected.map(f=>storyFactHint(f,roles,episodes,time)),baseline).slice(1)) {
+  for(const payload of memoryTransportCandidates(selected.map(f=>storyFactHint(f,roles,episodes,time)),baseline,transport.columns).slice(1)) {
     const block=render(payload),cost=measure(block);
+    // Column tables must improve on the best existing encoding in BOTH
+    // characters and full-prompt token estimate, including their whole guide.
+    if(payload.json.startsWith("{")&&block.length>=best.length)continue;
     // Pay for all instructions; require savings in actual characters too.
     // The complete compiler supplies its whole-prompt meter (including the
     // Cyrillic ratio), so a locally shorter JSON cannot worsen that budget.

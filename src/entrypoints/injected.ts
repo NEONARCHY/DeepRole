@@ -166,6 +166,7 @@ export default defineUnlistedScript(() => {
   }
   function status(ok: boolean, id?: string, url = location.href, httpStatus?: number) { window.postMessage({ source: SOURCE, type: "INJECTION_STATUS", ok, id, url, ...(httpStatus !== undefined ? { httpStatus } : {}) }, "*"); }
   function serviceFailed(id?: string) { if (id) window.postMessage({ source: SOURCE, type: "SERVICE_REQUEST_FAILED", id }, "*"); }
+  const continuationPaused = () => document.documentElement.dataset.deeproleTransferPending === "active";
   function supportedUrl(url: string) { try { return new URL(url, location.href).origin === location.origin && looksLikeChatUrl(url); } catch { return false; } }
   function reportDispatch(packet: StoryDispatchPacket) { window.postMessage({ source: SOURCE, type: "NATIVE_STORY_DISPATCH", ...packet }, location.origin); }
   function reportNativeStream(packet: NativeStoryStreamPacket) { window.postMessage({ source: SOURCE, type: "NATIVE_STORY_STREAM", ...packet }, location.origin); }
@@ -188,6 +189,7 @@ export default defineUnlistedScript(() => {
   async function prepare(body: string, transport: "fetch" | "xhr", capture = false, editing = false): Promise<{ body: string; attached: boolean; blocked?: boolean; id?: string; url?: string; serviceId?: string; dispatch?: StoryDispatchIdentity }> {
     const unchanged = { body, attached: false };
     if (isDeepRoleServiceBody(body)) return { ...unchanged, serviceId: deepRoleServiceRequestId(body) ?? undefined };
+    if (continuationPaused()) return { ...unchanged, blocked: true };
     const strict = document.documentElement.dataset.deeproleStrictMemory === "active";
     const id = crypto.randomUUID(); const url = location.href;
     const captured = { ...unchanged, id, url, dispatch: captureDispatch(body, id) };
@@ -196,6 +198,7 @@ export default defineUnlistedScript(() => {
     const value = JSON.parse(body), editedId = value?.message_id;
     const editNativeKey = editing && !readStoryTransportIdentity(body) && outgoingChatId(body) && validNativeStoryId(typeof editedId === "number" && Number.isSafeInteger(editedId) ? String(editedId) : editedId) && typeof value.prompt === "string" ? nativeStoryMessageKey(String(editedId)) : undefined;
     const context = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
+    if (continuationPaused()) { captureRequests.delete(id); editPreparations.delete(id); return { ...captured, blocked: true }; }
     const edit = editPreparations.get(id); editPreparations.delete(id);
     if (editing && edit?.identity?.chatId === outgoingChatId(body)) captured.dispatch = { requestId: id, identity: edit.identity };
     if (context === null || location.href !== url) { captureRequests.delete(id); status(false, id, url); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
@@ -244,7 +247,7 @@ export default defineUnlistedScript(() => {
         dispatch = prepared.dispatch;
         nextInput = new Request(input, { body: prepared.body }); attached = prepared.attached;
       }
-    } catch { status(false); blocked = document.documentElement.dataset.deeproleStrictMemory === "active"; if (blocked && originalBody !== undefined) memoryBlocked(originalBody); }
+    } catch { status(false); blocked = continuationPaused() || document.documentElement.dataset.deeproleStrictMemory === "active"; if (blocked && originalBody !== undefined) memoryBlocked(originalBody); }
     if (blocked) throw new DOMException("DeepRole paused sending: memory unavailable", "AbortError");
     // Don't consume a queued handoff on an aborted or rejected network request.
     // The network call stays outside the preparation catch: a failure is not a retry.
@@ -299,6 +302,7 @@ export default defineUnlistedScript(() => {
       if (typeof body !== "string" || !supportedUrl(this.deepRoleUrl)) { super.send(body); return; }
       // Synchronous XHR cannot wait for storage. Never send stale memory instead.
       if (!this.asynchronous) {
+        if (!isDeepRoleServiceBody(body) && continuationPaused()) throw new DOMException("DeepRole transfer still needs saving", "InvalidStateError");
         if (!isDeepRoleServiceBody(body) && document.documentElement.dataset.deeproleStrictMemory === "active") { memoryBlocked(body); throw new DOMException("DeepRole paused synchronous sending", "InvalidStateError"); }
         if (document.documentElement.dataset.deeproleContext) status(false);
         const tracker = createStoryDispatchTracker(this.deepRoleMethod === "POST" ? captureDispatch(body, crypto.randomUUID()) : undefined, "xhr", reportDispatch);

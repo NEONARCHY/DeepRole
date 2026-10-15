@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { flushSync } from "react-dom";
 import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
+import {GameMemoryNotice} from "../shared/GameMemoryNotice";
 import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell } from "lucide-react";
 import { WidgetDeck, WidgetTile, type WidgetLayout } from "./WidgetDeck";
 import { translate } from "../../core/i18n";
@@ -37,6 +38,7 @@ import type { ContinuationFlow } from "../../core/continuation-flow";
 import type { CharacterTextRequestGenerator } from "../../core/character-text";
 
 export interface WidgetState {
+  continuationCommitPending?: boolean;
   memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
   oldChatNotice?: OldChatNotice | null;
   continuation?: ContinuationFlow | null;
@@ -81,6 +83,7 @@ export interface WidgetState {
 }
 
 export function PageWidget(props: {
+  onRetryContinuationCommit?: () => void;
   onStayInOldChat?: () => Promise<void>;
   onContinueStory?: () => void;
   onCancelContinuation?: () => void;
@@ -303,6 +306,7 @@ export function PageWidget(props: {
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={resetReviewId?props.menuUrl+(props.menuUrl.includes("?")?"&":"?")+"resetReview="+encodeURIComponent(resetReviewId):props.menuUrl} title="DeepRole" /></aside></div>}
     {!menuOpen&&!props.state.vaultLocked&&props.state.scene?.worldId&&chatAdapter.current.getChatId()&&<WorldResetNotice key={props.state.scene.worldId+":"+chatAdapter.current.getChatId()} worldId={props.state.scene.worldId} chatId={chatAdapter.current.getChatId()!} locale={props.state.locale} game={props.state.worlds?.find(world=>world.id===props.state.scene?.worldId)?.sharedGame} onReview={id=>{setResetReviewId(id);setMenuOpen(true);}}/>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
+    {!props.state.vaultLocked && props.state.continuationCommitPending && <Alert title={continuationText(props.state.locale, "commitTitle")} text={continuationText(props.state.locale, "commitPending")} primary={continuationText(props.state.locale, "commitRetry")} onPrimary={() => props.onRetryContinuationCommit?.()} />}
     {!props.state.vaultLocked && props.state.continuation && (!review || review.id !== props.state.continuation.proposalId) && <section className="dr-continuation-progress" aria-label={continuationText(props.state.locale, "title")}>
       <strong role="status">{continuationText(props.state.locale, props.state.continuation.phase === "analysis" ? "analysis" : props.state.continuation.phase === "review" ? "review" : props.state.continuation.phase === "ready" ? "readyToSummarize" : props.state.continuation.phase === "opening" ? "summaryDone" : "summary")}</strong>
       {["review", "ready"].includes(props.state.continuation.phase) && <button className="dr-meter-transfer" disabled={!!props.state.transferring || !!props.state.generating} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation.phase === "review" ? "reviewAction" : "startSummary")}</button>}
@@ -335,6 +339,7 @@ export function PageWidget(props: {
         {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} /></WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
+      {!props.state.vaultLocked&&<GameMemoryNotice locale={props.state.locale} coverage={props.state.selection.memoryCoverage} report={props.state.selection.contextReport} onDetails={()=>setOpen(true)}/>}
       {!props.state.vaultLocked && open && <div className={`dr-panel ${assistantOpen ? "" : "dr-connected-memory"}`} role="region" aria-label={t("selectedMemory")} tabIndex={0} style={panelBounds ? { ...panelBounds, height: assistantOpen ? undefined : panelBounds.maxHeight, position: "fixed", right: "auto", bottom: "auto", margin: 0, zIndex: 3 } : undefined}>{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><div className="dr-memory-help-actions"><MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} /><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></div></header>
         <SectionGuide locale={props.state.locale} text={x("previewHint")} />
         {props.state.pendingHandoff && <p className="dr-inline-note">{experienceText(props.state.locale, "pendingRecap", { name: props.state.pendingHandoff })}</p>}
@@ -342,8 +347,8 @@ export function PageWidget(props: {
         {analysisBlocked && <p className="dr-inline-note">{x(serviceBusy ? "waiting" : props.state.generating ? "generating" : "startChat")}</p>}
         </>}
       {quick && props.onQuickSave && props.onDraftLore ? <QuickMemory worldName={props.state.worlds?.find((world) => world.id === props.state.scene?.worldId)?.name} locale={props.state.locale} onSave={props.onQuickSave} onDraft={props.onDraftLore} onClose={() => setQuick(false)} /> : review && props.onReview && props.onDiscard ? <MemoryReview key={review.id} locale={props.state.locale} batch={review} onKeepMemory={props.state.continuation?.proposalId === review.id ? props.onKeepContinuationMemory : undefined} keepLabel={continuationText(props.state.locale, "keepMemory")} introduction={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "reviewHint") : undefined} saveLabel={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "saveContinue") : undefined} onSave={(items, profileChoice) => props.onReview!(review, items, profileChoice)} onDiscard={() => props.onDiscard!(review.id)} onClose={() => { setReviewId(null); props.onReviewClose?.(); }} /> : <>
-        {(props.state.selection.overBudgetTokens ?? 0) > 0 && <p className="dr-budget-note">{at("overflow")}</p>}{props.state.selection.omittedCount > 0 && <p className="dr-budget-note">{at("omitted")} ({props.state.selection.omittedCount})</p>}
-        <ContextBudgetSummary locale={props.state.locale} report={props.state.selection.contextReport} entries={props.state.selection.entries}/>
+        {props.state.selection.omittedCount > 0 && <p className="dr-budget-note">{at("omitted")} ({props.state.selection.omittedCount})</p>}
+        <ContextBudgetSummary locale={props.state.locale} report={props.state.selection.contextReport} coverage={props.state.selection.memoryCoverage} entries={props.state.selection.entries}/>
         <MemoryDeliverySummary locale={props.state.locale} receipt={props.state.memoryDelivery}/>
         {count === 0 ? <div className="dr-empty">{t("contextEmpty")}</div> : props.state.selection.entries.map((item) => <div key={item.entry.id}><label className="dr-entry"><input type="checkbox" checked onChange={(event) => props.onToggleEntry(item.entry, event.target.checked)} /><div><strong>{item.entry.title}</strong><small>{item.entry.content}</small></div><em>{x(selectionReason(item))}</em></label>{props.state.overrides?.includedIds.includes(item.entry.id) && <button className="dr-reset" onClick={() => props.onResetEntry?.(item.entry.id)}>{at("reset")}</button>}</div>)}{props.state.availableEntries.length > 0 && <div className="dr-add"><button onClick={() => setAdding(!adding)}>＋ {t("attachManually")}</button>{adding && <div className="dr-add-list"><input className="dr-attach-search" aria-label={x("searchAttach")} placeholder={x("searchAttach")} value={attachQuery} onChange={(event) => setAttachQuery(event.target.value)} />{props.state.availableEntries.filter((entry) => `${entry.title} ${entry.content}`.toLocaleLowerCase().includes(attachQuery.trim().toLocaleLowerCase())).map((entry) => <div key={entry.id}><button onClick={() => props.onAttachEntry(entry)}><strong>{entry.title}</strong><small>{entry.content}</small></button>{props.state.overrides?.excludedIds.includes(entry.id) && <button onClick={() => props.onResetEntry?.(entry.id)}>{at("reset")}</button>}</div>)}</div>}</div>}
         {proposals.map((batch) => <button className="dr-reset" key={batch.id} onClick={() => { setQuick(false); setReviewId(batch.id); }}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}

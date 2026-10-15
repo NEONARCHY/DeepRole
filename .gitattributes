@@ -12,6 +12,7 @@ docs/benchmarks/rp272-final-compiler.txt text eol=crlf
 docs/benchmarks/rp273-initial-algorithm.txt text eol=lf
 docs/benchmarks/rp273b-algorithm.txt text eol=lf
 docs/benchmarks/rp273-initial-compiler.txt text eol=crlf
+docs/benchmarks/rp273-final-compiler.txt text eol=crlf
 tests/fixtures/story-sequence-priority.ts text eol=lf
 tests/fixtures/story-flexible-priority.ts text eol=lf
 docs/benchmarks/rp270-initial-algorithm.txt text eol=lf

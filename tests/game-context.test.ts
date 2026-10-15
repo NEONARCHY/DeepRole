@@ -7,6 +7,14 @@ function fixture(limit=2000,count=3) {
  const input:GameContextInput={draft:"Where is the clock key?",recentMessages:[],entries:[f.entry],books:[],entities:f.entities,worlds:[f.world],scene:{worldId:f.world.id,bookId:null,focusIds:[]},activeBookId:null,settings:{contextBudget:limit,relevanceThreshold:6},character:[f.world.id,f.binding.chatId,f.entities,f.binding.characterScenes![f.world.id],DEFAULT_ACTIONS,[],"Where is the clock key?","request-abc",true,false,false],story:{world:f.world,chat:f.binding.chatId,branch:"branch-a",sheetsEnabled:true,facts:[{text:"The clock key is in the blue box.",quote:"The clock key is in the blue box.",kind:"event"}]},choices:true};
  return {...f,input};
 }
+it("a prepared recap replaces automatic transcript fallback without changing structured memory",()=>{
+ const f=fixture(6000);f.input.continuation={version:1,source:"history",partial:false,omittedTurns:0,turns:[{role:"assistant",text:"OBSOLETE TRANSCRIPT TAIL"}]};
+ f.input.snapshot={id:"recap",title:"Final moment",summary:"The artisan waits for the answer.",sourceChatId:"old",sourceChatUrl:"https://chat.deepseek.com/chat/s/old",worldId:f.world.id,bookId:null,createdAt:1};
+ const before=structuredClone(f.input),r=compileGameContext(f.input);
+ expect(r.text).toContain(f.input.snapshot.summary);expect(r.text).not.toContain("OBSOLETE TRANSCRIPT TAIL");expect(r.text).toContain(f.input.story!.facts[0]!.text);expect(f.input).toEqual(before);
+ f.input.snapshot.continuation={...f.input.continuation,turns:[{role:"assistant",text:"EXPLICIT LEGACY HANDOFF"}]};
+ const legacy=compileGameContext(f.input);expect(legacy.text).toContain("EXPLICIT LEGACY HANDOFF");expect(legacy.text).not.toContain("OBSOLETE TRANSCRIPT TAIL");
+});
 it("counts a recovered reply as whole required context, without an unmetered suffix",()=>{
  const f=fixture(500);f.input.requiredContext="Recovered established scene, including its conditions. ".repeat(90);
  const before=structuredClone(f.input),r=compileGameContext(f.input);

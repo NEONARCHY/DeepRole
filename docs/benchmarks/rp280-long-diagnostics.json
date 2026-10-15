@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "scope": "Post-evaluation diagnosis on now-seen failures; no runtime/input/gold or first report changes; comma-removal variants are NOT independent quality evidence.",
+  "firstReportDigest": "eedbe51dc8eb75bd6f93684c4a449bb583cb84c76dc86e1f7804a667d7ba1c59",
+  "baselineDigest": "e5cd00643bd10bcd1dddcbecb50aafdb7aef15b5b245ae320990c59e5da5e5e6",
+  "rows": [
+    {
+      "id": "ru:wetland:three-actions",
+      "variants": [
+        {
+          "label": "original",
+          "draft": "Осматриваю полевой гербарий, проверяю водомерную рейку и отвязываю тростниковый плот.",
+          "sequenceClauses": 0,
+          "missing": [
+            "c0",
+            "c1",
+            "c2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1363,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2450
+        },
+        {
+          "label": "commas-removed",
+          "draft": "Осматриваю полевой гербарий проверяю водомерную рейку и отвязываю тростниковый плот.",
+          "sequenceClauses": 0,
+          "missing": [
+            "c0",
+            "c1",
+            "c2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1363,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2450
+        }
+      ]
+    },
+    {
+      "id": "ru:radio:three-actions",
+      "variants": [
+        {
+          "label": "original",
+          "draft": "Осматриваю ламповый приёмник, проверяю антенный кабель и подключаю аккумуляторный блок.",
+          "sequenceClauses": 0,
+          "missing": [
+            "a0",
+            "a1",
+            "b2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1324,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2407
+        },
+        {
+          "label": "commas-removed",
+          "draft": "Осматриваю ламповый приёмник проверяю антенный кабель и подключаю аккумуляторный блок.",
+          "sequenceClauses": 0,
+          "missing": [
+            "a1",
+            "a2",
+            "a3"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1353,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2436
+        }
+      ]
+    },
+    {
+      "id": "ru:theatre:three-actions",
+      "variants": [
+        {
+          "label": "original",
+          "draft": "Осматриваю бархатный плащ, проверяю суфлёрскую лампу и передвигаю декорационный щит.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b2",
+            "c0",
+            "c1"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1336,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2415
+        },
+        {
+          "label": "commas-removed",
+          "draft": "Осматриваю бархатный плащ проверяю суфлёрскую лампу и передвигаю декорационный щит.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b2",
+            "c0",
+            "c1"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1336,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2415
+        }
+      ]
+    },
+    {
+      "id": "en:wetland:three-actions",
+      "variants": [
+        {
+          "label": "original",
+          "draft": "I examine the pressed-flower album, check the water gauge and untie the reed raft.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b2",
+            "c0",
+            "c2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1387,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2500
+        },
+        {
+          "label": "commas-removed",
+          "draft": "I examine the pressed-flower album check the water gauge and untie the reed raft.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b2",
+            "c0",
+            "c2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1387,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2500
+        }
+      ]
+    },
+    {
+      "id": "en:radio:three-actions",
+      "variants": [
+        {
+          "label": "original",
+          "draft": "I examine the valve receiver, check the antenna cable and connect the battery module.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b0",
+            "b2",
+            "c2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1380,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2494
+        },
+        {
+          "label": "commas-removed",
+          "draft": "I examine the valve receiver check the antenna cable and connect the battery module.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b0",
+            "b2",
+            "c2"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1380,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2494
+        }
+      ]
+    },
+    {
+      "id": "en:theatre:three-actions",
+      "variants": [
+        {
+          "label": "original",
+          "draft": "I examine the velvet cloak, check the prompter lamp and move the scenery panel.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b0",
+            "c0",
+            "c1"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1405,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2529
+        },
+        {
+          "label": "commas-removed",
+          "draft": "I examine the velvet cloak check the prompter lamp and move the scenery panel.",
+          "sequenceClauses": 0,
+          "missing": [
+            "b0",
+            "c0",
+            "c1"
+          ],
+          "coverage": {
+            "kind": "unverified",
+            "reason": "query"
+          },
+          "selectedFacts": 8,
+          "actualEstimatedTokens": 1405,
+          "limit": 16000,
+          "duplicateAllGoldEstimatedTokens": 2529
+        }
+      ]
+    }
+  ]
+}

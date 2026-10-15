@@ -79,6 +79,19 @@ it("carries approved facts as checkpoint seeds and clears them only on explicit 
  await f.repo.updateRecords(all => { const baseline = all.find(r => r.kind === "story" && (r.data as any).type === "baseline")!; return { records: [{ ...baseline, data: { ...baseline.data, factSeeds: [fact] } }], removed: [], result: null }; });
  expect((await f.getWorld()).sharedGame!.facts).toEqual([fact]); await f.addChat("facts-b"); await f.activate("facts-b","attach"); await f.play("facts-b"); expect((await f.getWorld()).sharedGame!.facts).toEqual([fact]); await f.play("facts-b","reset"); expect((await f.getWorld()).sharedGame!.facts).toEqual([]);
 });
+it("continues with the compact recap instead of seeding the old long transcript again",async()=>{
+ const f=await fixture();
+ await f.repo.updateRecords(all=>{const row=all.find(r=>r.kind==="story"&&(r.data as any).type==="baseline")!;return {records:[{...row,data:{...row.data,storySeeds:{version:1,source:"history",partial:false,omittedTurns:0,turns:Array.from({length:100},(_,n)=>({role:"assistant",text:`Old scene ${n}: `+"The clock ticks. ".repeat(100)}))},storySourceChatId:f.binding.chatId}}],removed:[],result:null};});
+ const before=await f.repo.rawRecords(),game=(await f.getWorld()).sharedGame!;
+ const recap={title:"Final moment",summary:"The artisan waits for the answer. Do not repeat the delivery."};
+ const snapshot=await captureContinuation({chatId:f.binding.chatId,chatUrl:f.binding.chatUrl,scene:{worldId:f.world.id,bookId:null,focusIds:[]},story:{version:1,source:"history",turns:[],partial:false,omittedTurns:0},recap,overrides:{includedIds:[],excludedIds:[]}},f.repo);
+ await completeContinuation(snapshot,"compact-target",f.repo);
+ const next=(await f.getWorld()).sharedGame!;
+ expect(next.recentStory!.turns).toEqual([{role:"assistant",text:recap.summary}]);expect(next.recentStory!.partial).toBe(true);
+ expect(next.facts).toEqual(game.facts);expect(next.episodeSources).toEqual(game.episodeSources);expect(next.scene!.states).toEqual(game.scene!.states);
+ for(const row of before.filter(r=>r.kind==="story"))expect(await f.repo.get(row.kind,row.id)).toEqual(row.data);
+ assertStoryGraph(await f.repo.rawRecords());
+});
 it("keeps a bounded recent excerpt across manual continuation and clears it on a fresh game", async () => {
  const f = await fixture(), recent = { version: 1 as const, turns: [{ role: "assistant" as const, text: "The clock stopped at midnight." }], source: "history" as const, partial: false, omittedTurns: 0 };
  await f.repo.updateRecords(all => { const baseline = all.find(r => r.kind === "story" && (r.data as any).type === "baseline")!; return { records: [{ ...baseline, data: { ...baseline.data, storySeeds: recent, storySourceChatId: f.binding.chatId } }], removed: [], result: null }; });

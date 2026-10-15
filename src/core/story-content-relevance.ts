@@ -1,6 +1,8 @@
 import type { StoryFact } from "./story-update";
 import { normalizeText,uniqueTokens } from "./text";
 import { storyConceptSearch } from "./story-retrieval-concepts";
+import { storyFactSearchEntry } from "./story-fact-search-index";
+import type { MemoryEntry } from "./types";
 
 // Query framing, not facts or language understanding. Filtering changes only
 // this supplemental candidate score; none of these words are removed from data.
@@ -9,7 +11,7 @@ const framing=uniqueTokens("what where when why how which do did does has have h
 // name-led continuation and arbitrary language are not proof for tail pruning.
 const topicRequest=/^(?:please |пожалуйста )?(?:what|where|when|why|how|which|remind|tell|show|list|что|где|когда|почему|зачем|как|какой|какая|какие|напомни|расскажи|покажи|перечисли)(?= |$)/u;
 const noMatch={score:(_:StoryFact)=>0,admission:undefined};
-const prepared=new WeakMap<StoryFact,{text:string;title:string;names:string;tokens:Set<string>}>();
+const prepared=new WeakMap<MemoryEntry,{text:string;title:string;names:string;tokens:Set<string>}>();
 
 /** Whole text and task title, not the 90-character title/8-keyword projection.
  * Quotes, opaque keys, current state values and IDs are NOT lexical topic data.
@@ -24,10 +26,10 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
   const requested=[...new Set(normalizeText(mask(query)).split(" ").filter(t=>!storyConceptSearch(t).concepts.length).flatMap(t=>[...uniqueTokens(t)]))].filter(t=>!framing.has(t));
   if(!requested.length)return noMatch;
   const tokens=(fact:StoryFact)=>{
-    const text=fact.text,title=fact.task?.title??"",old=prepared.get(fact);
+    const text=fact.text,title=fact.task?.title??"",key=storyFactSearchEntry(fact),old=prepared.get(key);
     if(old&&old.text===text&&old.title===title&&old.names===signature)return old.tokens;
     const value=new Set([...uniqueTokens(mask(text)),...uniqueTokens(mask(title))]);
-    prepared.set(fact,{text,title,names:signature,tokens:value});return value;
+    prepared.set(key,{text,title,names:signature,tokens:value});return value;
   };
   const frequency=new Map(requested.map(t=>[t,0]));
   for(const fact of facts)for(const term of requested)if(tokens(fact).has(term))frequency.set(term,frequency.get(term)!+1);

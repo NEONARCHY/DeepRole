@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hashEncoding": "SHA256 of UTF-8 file bytes after CRLF to LF normalization",
+  "baseline": "tests/fixtures/story-independent-sequences-v2-baseline.json",
+  "baselineHash": "ef1940c101fe946c7667d4dabd0627916b7143c90cb0f31f4ae9ad1efa88a991",
+  "report": "docs/benchmarks/rp283-independent-results.json",
+  "reportHash": "0b9e07fc317d0b3d5395070db5ad7a69c8ac45037d0bfd642ce2c86b099f511e",
+  "inputDigest": "403a32eb11e7b67d7e35be3897b59e682234c45117365259ec3dba845d6179e8",
+  "goldDigest": "2e73908bfd89f9daf53fd407f308e60738511f05693864fc5436e60fe574676b",
+  "runtimeFixtureProtocolFilesUnchanged": 411,
+  "preflightOnlyCorrection": "Non-gold b-old event to task and its derived role-seed identity key; prose/query/gold unchanged. No compiler was evaluated on the invalid preparation."
+}

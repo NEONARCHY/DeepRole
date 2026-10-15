@@ -260,7 +260,7 @@ export default defineBackground(() => {
           if (message.operation === "completeContinuation") {
             const tabId = sender.tab!.id!, tab = await browser.tabs.get(tabId);
             if (!tab.url || !(isSameDeepSeekChat(`https://chat.deepseek.com/a/chat/s/${message.targetChatId}`, tab.url, message.targetChatId) || new URL(tab.url).origin === "https://chat.deepseek.com" && new URL(tab.url).pathname === "/")) throw new Error("handoff-scope");
-            const ok = await tabSessions.completeSnapshot(tabId, message.snapshot.id, message.token, () => completeContinuation(message.snapshot, message.targetChatId));
+            const ok = await tabSessions.completeSnapshot(tabId, message.snapshot.id, message.token, () => completeContinuation(message.snapshot, message.targetChatId), message.targetChatId);
             return { ok: true, data: ok };
           }
           if (message.operation === "captureContinuation") {

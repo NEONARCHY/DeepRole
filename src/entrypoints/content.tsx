@@ -12,6 +12,7 @@ import { StoryGameClient } from "../adapters/story-game-client";
 import { worldGameBinding, worldGamePeople, type WorldGameActivation } from "../core/world-game";
 import type { StoryFact } from "../core/story-update";
 import { compileGameContext } from "../core/game-context";
+import { GameSearchIndex } from "../core/game-search-index";
 import { memoryDeliveryView } from "../core/memory-delivery-view";
 import { storyUpdateText } from "../core/story-update-i18n";
 import { StoryRepairClient } from "../adapters/story-repair-client";
@@ -55,7 +56,7 @@ import { imageText, imageErrorKey } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
 import { oldChatNotice, oldChatNoticePrompt, type OldChatNoticeEdit } from "../core/old-chat-notice";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
-import { continuationKey, continuationScopeMatches, recentSceneReference, type ContinuationFlow } from "../core/continuation-flow";
+import { continuationKey, continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, type ContinuationFlow, type ContinuationReceipt } from "../core/continuation-flow";
 import { boundStory } from "../core/story-continuation";
 import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
@@ -238,7 +239,10 @@ class PageController {
   private memoryReceiptGeneration = 0;
   private appliedSnapshot: HandoffSnapshot | null = null;
   private snapshotToken: string | null = null;
+  private pendingContinuationCommit: ContinuationReceipt | null = null;
+  private continuationCommitBusy = false;
   private readonly deliveries = new Map<string, ContextDelivery>();
+  private readonly searchIndex = new GameSearchIndex();
   private readonly malformedServiceReplies = new Map<string, { text: string; stableSince: number }>();
   private readonly failedServiceIds = new Set<string>();
   private pickedSceneChoice: { signature: string; text: string } | null = null;
@@ -467,15 +471,18 @@ class PageController {
     const pendingSnapshotId = pending?.snapshotId;
     this.appliedSnapshot = pendingSnapshotId ? this.snapshots.find((item) => item.id === pendingSnapshotId) ?? null : null;
     this.snapshotToken = this.appliedSnapshot ? pending?.snapshotToken ?? null : null;
+    this.pendingContinuationCommit = matchingContinuationReceipt(pending?.continuationReceipt, this.appliedSnapshot?.id, this.snapshotToken, this.adapter.getChatId(), location.origin === "https://chat.deepseek.com" && location.pathname === "/")
+      ?? matchingContinuationReceipt(this.pendingContinuationCommit, this.appliedSnapshot?.id, this.snapshotToken, this.adapter.getChatId(), location.origin === "https://chat.deepseek.com" && location.pathname === "/");
+    this.state.continuationCommitPending = !!this.pendingContinuationCommit;
     const continuationTarget = location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
-    const continuationValid = Boolean(pending?.continueOnFreshChat && pending.continueUntil && pending.continueUntil > Date.now() && continuationTarget && this.appliedSnapshot && this.snapshotToken);
+    const continuationValid = Boolean(!this.pendingContinuationCommit && pending?.continueOnFreshChat && pending.continueUntil && pending.continueUntil > Date.now() && continuationTarget && this.appliedSnapshot && this.snapshotToken);
     this.autoContinuePending = continuationValid && !this.autoContinueAttempted;
     this.autoContinueUntil = continuationValid ? pending?.continueUntil ?? 0 : 0;
     this.autoContinueSnapshotId = pending?.continueOnFreshChat ? pending.snapshotId ?? null : null;
     this.autoContinueSnapshotToken = pending?.continueOnFreshChat ? pending.snapshotToken ?? null : null;
     const waitingAtSource = this.appliedSnapshot?.sourceChatId === this.adapter.getChatId() && !!pending?.continueUntil && pending.continueUntil > Date.now();
     if (pending?.continueOnFreshChat && !continuationValid && !waitingAtSource) await this.disarmAutoContinue(Boolean(this.adapter.getChatId()) || !continuationTarget);
-    if (!this.adapter.getChatId() && this.appliedSnapshot) {
+    if (this.appliedSnapshot && (!this.adapter.getChatId() || this.pendingContinuationCommit)) {
       this.draftScene = { worldId: memoryWorld(this.appliedSnapshot, this.books), focusIds: this.appliedSnapshot.focusIds ?? [], bookId: this.appliedSnapshot.bookId };
       this.draftOverrides = this.appliedSnapshot.memoryOverrides ?? this.draftOverrides;
     }
@@ -597,6 +604,7 @@ class PageController {
     if (!pending.length) { window.clearTimeout(this.selfieScanTimer); this.selfieScanTimer = 0; }
   }
   private clearPrivateState() {
+    this.searchIndex.clear();
     ++this.memoryReceiptGeneration;
     this.memoryDispatchRecords = [];
     this.dispatchCaptures.reset();
@@ -632,6 +640,7 @@ class PageController {
     syncSceneChoiceCards(false, false, this.state.locale, async () => false);
     this.entries = []; this.books = []; this.bindings = []; this.snapshots = [];
     this.worlds = []; this.entities = []; this.documents = []; this.appliedSnapshot = null; this.snapshotToken = null;
+    this.pendingContinuationCommit = null; this.state.continuationCommitPending = false;
     this.deliveries.clear(); this.proposals = []; this.changes = []; this.pendingService = null;
     this.serviceFeedback = null;
     this.state.pendingHandoff = undefined;
@@ -748,6 +757,7 @@ class PageController {
       this.draftOverrides = { ...EMPTY_OVERRIDES }; await this.saveTabState({ overrides: this.draftOverrides });
       this.appliedSnapshot = null;
       this.snapshotToken = null;
+      this.pendingContinuationCommit = null; this.state.continuationCommitPending = false;
       await this.saveTabState({ snapshotId: null, snapshotToken: null });
       this.state.handoffOffer = null;
     }
@@ -764,6 +774,8 @@ class PageController {
     const gameMode = tracked ? "active" : "";
     if (document.documentElement.dataset.deeproleStoryGame !== gameMode) document.documentElement.dataset.deeproleStoryGame = gameMode;
     const strictMode = this.settings.strictMemorySending && !this.pendingService ? "active" : "";
+    const transferMode = this.pendingContinuationCommit ? "active" : "";
+    if (document.documentElement.dataset.deeproleTransferPending !== transferMode) document.documentElement.dataset.deeproleTransferPending = transferMode;
     if (document.documentElement.dataset.deeproleStrictMemory !== strictMode) document.documentElement.dataset.deeproleStrictMemory = strictMode;
     const recentMessages = tracked ? (this.trackedHistory.get(this.currentBinding()!.id) ?? []).slice(-this.settings.recentMessageCount) : this.adapter.getRecentMessages(this.settings.recentMessageCount);
     const contextualEntities = world?.sharedGame ? worldGamePeople(this.entities, world, this.storyRecords) : scene.worldId && chatId ? currentStoryProfileEntities(this.entities, this.storyRecords, scene.worldId, chatId, this.currentBinding()?.id) : this.entities;
@@ -780,6 +792,7 @@ class PageController {
     const overrides = this.overrides();
     const snapshot = this.appliedSnapshot && memoryWorld(this.appliedSnapshot, this.books) === scene.worldId ? this.appliedSnapshot : null;
     const choicesEnabled = Boolean(world && (this.settings.sceneChoicesEnabled ?? true));
+    let memoryCoverage:import("../core/game-memory-coverage").GameMemoryCoverage|undefined;
     const compiled = compileGameContext({
       draft,
       recentMessages,
@@ -792,13 +805,13 @@ class PageController {
       character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService || this.currentBinding()?.nextStoryMessageMode === "out-of-character",this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
       story: tracked && gameBranch && world && chatId && !this.pendingService && this.currentBinding()?.nextStoryMessageMode !== "out-of-character" ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : undefined,
       snapshot,
-      continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot?.continuation ? recentGame.recentStory : undefined,
+      continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
       restart: !!recentGame?.restartPending && !this.pendingService,
       choices: choicesEnabled && !this.pendingService,
       requiredContext,
-    });
-    this.selection = compiled.selection; this.documents = compiled.documents;
-    this.state.pendingHandoff = snapshot?.title;
+    },{searchIndex:this.searchIndex,memoryTransport:"columns"},coverage=>{memoryCoverage=coverage;});
+    this.selection = {...compiled.selection,memoryCoverage}; this.documents = compiled.documents;
+    this.state.pendingHandoff = this.pendingContinuationCommit ? undefined : snapshot?.title;
     const memoryText = compiled.memoryText;
     const contextText = compiled.text;
     this.state.sceneChoicesEnabled = choicesEnabled;
@@ -815,7 +828,7 @@ class PageController {
     );
     this.state.contextText = memoryText;
     this.publishContext(contextText);
-    const signature = JSON.stringify([scene, overrides, contextText, this.selection.omittedCount]);
+    const signature = JSON.stringify([scene, overrides, contextText, this.selection.omittedCount, memoryCoverage]);
     if (signature !== this.publishedState) {
       this.publishedState = signature;
       void browser.runtime.sendMessage({ type: "DR_CONTEXT_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
@@ -997,6 +1010,7 @@ class PageController {
       onDismissHandoff={() => { this.state.handoffOffer = null; this.render(); }}
       onKeepContinuationMemory={() => this.keepContinuationMemory()}
       onCancelContinuation={() => void this.cancelContinuation().catch(() => this.showToast(continuationText(this.state.locale, "failed")))}
+      onRetryContinuationCommit={() => void this.retryContinuationCommit()}
       onContextPositionChange={(position) => void this.saveContextIndicatorPosition(position)}
       onWidgetLayoutChange={async layout => { await browser.storage.local.set({ [WIDGET_LAYOUT_KEY]: layout }); this.state.widgetLayout = layout; this.render(); }}
       onToggleAdaptiveLayout={() => { void this.toggleAdaptiveLayout(); }}
@@ -1972,7 +1986,9 @@ class PageController {
     this.previousChatId = chatId;
     await this.reload();
     if (!this.pendingService) this.cleanArchivedMemoryPayloads();
-    if (promoteDraft && !this.currentBinding()) {
+    // A queued handoff owns activation. Ordinary draft promotion must not
+    // switch ownership before its receipt transaction commits (or after failure).
+    if (promoteDraft && !this.currentBinding() && !this.appliedSnapshot) {
       await this.setScene(nextScene);
       const binding = this.currentBinding();
       if (binding) await repository.putIfUnchanged("binding", { ...binding, memoryOverrides: nextOverrides }, binding);
@@ -2059,6 +2075,7 @@ class PageController {
             task = this.reloadTask; loaded = await task;
           }
           if (!loaded || location.href !== url) throw new Error("context-changed");
+          if (this.pendingContinuationCommit) throw Error("handoff-commit-pending");
           const oldNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
           if (!this.pendingService && requestChatId === this.adapter.getChatId() && !this.sharedGameActive() && oldNotice && (oldNotice.sent || oldNotice.dismissed)) {
             await this.activateGame("resume"); loaded = await this.reload();
@@ -2156,7 +2173,14 @@ class PageController {
         this.characterReceiptTask = this.saveTabState({ characterRequest: receipt }, { characterRequestId: delivery.characterRequest.id }).then(ok => { if (ok) { this.characterReceipt = receipt; this.characterScan = null; this.scheduleScan(); } }).catch(() => undefined);
       }
       if (delivery.scope.url === location.href && delivery.scopeKey === this.contextScopeKey()) this.state.warning = "";
-      void this.acknowledgeDelivery(delivery).catch(() => undefined);
+      void this.acknowledgeDelivery(delivery).catch(async () => {
+        // The accepted model request must not be replayed to retry a local write.
+        await this.reload().catch(() => undefined);
+        // Session storage can fail before it saves the receipt. Keep the
+        // accepted target in this page too, but never resurrect a newer token.
+        const receipt = matchingContinuationReceipt({ snapshotId: delivery.snapshot?.id, snapshotToken: delivery.snapshotToken, targetChatId: delivery.targetChatId ?? this.adapter.getChatId() }, this.appliedSnapshot?.id, this.snapshotToken, this.adapter.getChatId(), location.origin === "https://chat.deepseek.com" && location.pathname === "/");
+        if (receipt) { this.pendingContinuationCommit = receipt; this.state.continuationCommitPending = true; this.state.pendingHandoff = undefined; await this.updateContext().catch(() => this.render()); }
+      });
     } else if (!event.data.ok && event.data.url === location.href && (this.selection.entries.length > 0 || this.appliedSnapshot)) {
       this.state.warning = this.t("incompatible");
     }
@@ -2184,6 +2208,17 @@ class PageController {
       this.appliedSnapshot = null; this.snapshotToken = null;
       await this.updateContext();
     }
+  }
+
+  private async retryContinuationCommit() {
+    const receipt = this.pendingContinuationCommit, snapshot = this.appliedSnapshot;
+    if (this.continuationCommitBusy || !receipt || !snapshot || snapshot.id !== receipt.snapshotId || this.state.vaultLocked) return;
+    this.continuationCommitBusy = true;
+    try {
+      if (!await repository.completeContinuation(snapshot, receipt.snapshotToken, receipt.targetChatId)) throw Error("handoff-conflict");
+      await this.reload();
+    } catch { this.showToast(continuationText(this.state.locale, "commitFailed")); }
+    finally { this.continuationCommitBusy = false; }
   }
 
   private async handleRuntimeMessage(message: DeepRoleMessage): Promise<unknown> {

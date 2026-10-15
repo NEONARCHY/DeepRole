@@ -8,6 +8,8 @@ import { discussionPriorityFacts } from "./story-discussion-priority";
 import { flexiblePriorityFacts } from "./story-flexible-priority";
 import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
 import { budgetPriorityFacts, BUDGET_SOURCE_ROWS } from "./story-budget-priority";
+import { contextualReferenceFacts } from "./story-contextual-reference";
+import { obligationRecallFacts,obligationRecallIntent } from './story-obligation-recall';
 import { storyFactIdentity } from "./story-memory-lifecycle";
 import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
 import {storyActionBalance} from "./story-action-balance";
@@ -18,6 +20,8 @@ import {storyLastingRecall} from "./story-lasting-recall";
 import {storyObjectReference,storyLiteralReference,storyReferenceCandidates,UNRESOLVED_STORY_OBJECT,AMBIGUOUS_STORY_OBJECT} from "./story-reference-recall";
 import { storyUpdateInstruction } from "./story-update";
 import type { StoryFact } from "./story-update";
+import { compactStoryFactSources } from "./story-update";
+import type { GameSearchIndex } from "./game-search-index";
 import { storyAutomationInstruction } from "./story-automation";
 import { sceneChoiceInstruction } from "./scene-choices";
 import { continuationContext,boundStory } from "./story-continuation";
@@ -30,6 +34,7 @@ import { createEpisodeReader, type EpisodeReader } from "./story-episodes";
 import { createStoryTimeReader, formatStoryTime, isGameTimeFact } from "./story-time";
 import type { RankMemoryInput } from "./memory-engine";
 import type { ContextSelection,WorldProfile,HandoffSnapshot,StoryContinuation } from "./types";
+import type { GameMemoryCoverage } from "./game-memory-coverage";
 
 export interface GameContextReport {
  limit:number;total:number;required:number;
@@ -55,33 +60,81 @@ const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
  * calls, transcript deletion, fuzzy identity replacement or partial JSON cuts. */
-export interface GameContextOptions { memoryTransport?: "compact"|"legacy"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean }
+export interface GameContextOptions { memoryTransport?: "compact"|"legacy"|"columns"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean; contextualRecall?: boolean; searchIndex?: GameSearchIndex }
 type PriorityProof = { facts: StoryFact[]; selected: StoryFact[]; roles?: StoryRoleReader; episodes?: EpisodeReader; referenceGuard: string; admission: ReturnType<typeof storyContentRelevance>["admission"]; action: ReturnType<typeof storyActionBalance>; names: string[] };
-type PriorityReservation = { ids: string[]; covers: (selected:StoryFact[])=>boolean; budgetRows?: boolean };
+type PriorityReservation = { ids: string[]; covers: (selected:StoryFact[])=>boolean; budgetRows?: boolean; referenceGuard?:string; observe?: (reason:"complete"|"budget"|"unverified")=>void };
+/** RP277: source-backed contextual candidates supplement the COMPLETE prior
+ * selection. No draft rewrite, pronoun identity inference or storage mutation. */
+export function compileGameContext(input:GameContextInput, options:GameContextOptions = {}, observe?:(coverage:GameMemoryCoverage)=>void) {
+ if(options.searchIndex){
+  const worldId=input.story?.world.id??input.scene?.worldId??null,world=input.story?.world??input.worlds.find(w=>w.id===worldId);
+  options.searchIndex.begin(JSON.stringify([worldId,world?.sharedGame?.id??null,input.story?.branch??null]),compactStoryFactSources(input.story?.facts??[]));
+ }
+ let proof:PriorityProof|undefined,coverage:GameMemoryCoverage={kind:'not-applicable'};
+ const prior=compileBudgetContext(input,options,observe?c=>{coverage=c}:undefined,p=>{proof=p});
+ const finish=(result:typeof prior,next=coverage)=>{observe?.(result.report.required>result.report.limit?{kind:'required-overflow'}:next);return result;};
+ if(options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||!input.story||input.restart||input.character?.[9]||!proof||proof.roles?.question||proof.referenceGuard===AMBIGUOUS_STORY_NAME)return finish(prior);
+ const literal=contextualReferenceFacts(proof.facts,input.draft,input.recentMessages,proof.names,proof.roles,proof.episodes);
+ const group=literal??obligationRecallFacts(proof.facts,input.draft,input.recentMessages,proof.names,proof.roles,proof.episodes);
+ if(!group)return finish(prior);
+ const ids=[...new Set([...group,...proof.selected].map(storyFactIdentity))],oldIds=new Set(proof.selected.map(storyFactIdentity));
+ if(ids.length>BUDGET_SOURCE_ROWS)return finish(prior,{kind:'unverified',reason:'capacity'});
+ // Always render the unresolved-reference guard, including deictic noun-only
+ // queries which the older action grammar does not recognise.
+ const guard=proof.referenceGuard&&proof.referenceGuard!==UNRESOLVED_STORY_OBJECT?proof.referenceGuard+'\n'+UNRESOLVED_STORY_OBJECT:UNRESOLVED_STORY_OBJECT;
+ let selected:StoryFact[]=[];
+ const attempt:{reason:'complete'|'budget'|'unverified'}={reason:'unverified'};
+ const candidate=compileGameContextPass(input,options,{ids,covers:chosen=>ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)),budgetRows:true,referenceGuard:guard,observe:r=>{attempt.reason=r}},p=>{selected=p.selected});
+ const accepted=new Set(selected.map(storyFactIdentity));
+  if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit)return finish(candidate,literal&&obligationRecallIntent(input.draft)!=='reference'?{kind:'complete',sources:ids.length}:{kind:'unverified',reason:'query'});
+ return finish(prior,attempt.reason==='budget'?{kind:'budget',sources:ids.length,selected:ids.filter(id=>oldIds.has(id)).length}:{kind:'unverified',reason:'source'});
+}
 /** RP273: allow more than eight whole request-owned sources when the COMPLETE
  * rendered prompt fits. Otherwise return the exact RP272 result and counters.
  * This reads memory only; it never performs the user's action or edits canon. */
-export function compileGameContext(input:GameContextInput, options:GameContextOptions = {}) {
+function compileBudgetContext(input:GameContextInput, options:GameContextOptions = {}, observe?:(coverage:GameMemoryCoverage)=>void,capture?:(proof:PriorityProof)=>void) {
  let proof:PriorityProof|undefined;
- const prior=compileSequenceContext(input,options,p=>{proof=p});
- if(options.budgetPriority===false||options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.topicAdmission===false||options.contentRelevance===false||options.actionBalance===false||!input.story||input.restart||input.character?.[9]||!proof)return prior;
- if(proof.referenceGuard&&proof.referenceGuard!==AMBIGUOUS_STORY_OBJECT)return prior;
+ const prior=compileSequenceContext(input,options,p=>{proof=p;capture?.(p)});
+ // This side channel must never change text, selection, report or rollback.
+  let narrative=false;
+  const finish=(result:typeof prior,coverage:GameMemoryCoverage)=>{observe?.(result.report.required>result.report.limit?{kind:"required-overflow"}:narrative&&coverage.kind==='complete'?{kind:'unverified',reason:'query'}:coverage);return result;};
+ const unverified=(reason:"source"|"query"|"capacity"="query"):GameMemoryCoverage=>({kind:"unverified",reason});
+ if(options.budgetPriority===false||options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.topicAdmission===false||options.contentRelevance===false||options.actionBalance===false||!input.story||input.restart||input.character?.[9]||!proof)return finish(prior,{kind:"not-applicable"});
+ if(proof.referenceGuard&&proof.referenceGuard!==AMBIGUOUS_STORY_OBJECT)return finish(prior,unverified());
  const sequence=storyActionSequence(input.draft,proof.names);
- if(sequence&&sequence.matches.length>1&&options.compoundActionBalance===false)return prior;
+  narrative=!!sequence?.narrative;
+ if(sequence&&sequence.matches.length>1&&options.compoundActionBalance===false)return finish(prior,{kind:"not-applicable"});
  const actionMatches=proof.action?.kind==='object'?proof.action.matches:undefined;
  const filter=sequence?{matches:(f:StoryFact)=>sequence.matches.some(m=>m(f)),covers:(selected:StoryFact[])=>sequence.matches.every(m=>selected.some(m))}:proof.admission??(actionMatches?{matches:actionMatches,covers:(selected:StoryFact[])=>selected.some(actionMatches)}:undefined);
- if(proof.referenceGuard&&!sequence&&proof.action?.kind!=='object')return prior;
+ if(proof.referenceGuard&&!sequence&&proof.action?.kind!=='object')return finish(prior,unverified());
  const group=budgetPriorityFacts(proof.facts,input.draft,filter,proof.roles,proof.episodes);
- if(!group)return prior;
+ if(!group){
+  const sourceIssue=!!filter&&(!proof.roles||!proof.episodes||proof.facts.filter(filter.matches).some(f=>!proof!.episodes!.read(f)||Object.values(proof!.roles!.read(f)??{}).some(person=>person.unavailable)));
+  return finish(prior,unverified(sourceIssue?"source":"query"));
+ }
  const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
  const ids=[...new Set([...group.primary,...proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)))].map(storyFactIdentity))];
  // Leave all <=8 behavior unchanged. Retain every prior substantive source;
  // if their union exceeds decoder safety, don't choose an arbitrary subset.
- if(ids.length<=8||ids.length>BUDGET_SOURCE_ROWS)return prior;
+ if(ids.length>BUDGET_SOURCE_ROWS)return finish(prior,unverified("capacity"));
+ if(ids.length<=8){
+  if(!observe)return prior;
+  const accepted=new Set(proof.selected.map(storyFactIdentity));
+  if(ids.every(id=>accepted.has(id)))return finish(prior,{kind:"complete",sources:ids.length});
+  // A diagnostic probe measures the WHOLE valid bundle, never admits it to the
+  // old <=8 path or uses failure of ordinary optional selection as budget proof.
+  const attempt:{reason:"complete"|"budget"|"unverified"}={reason:"unverified"};
+  compileGameContextPass(input,options,{ids,covers:group.covers,budgetRows:true,observe:r=>{attempt.reason=r;}});
+  return finish(prior,attempt.reason==="budget"?{kind:"budget",sources:ids.length,selected:ids.filter(id=>accepted.has(id)).length}:unverified());
+ }
  let selected:StoryFact[]=[];
- const candidate=compileGameContextPass(input,options,{ids,covers:group.covers,budgetRows:true},p=>{selected=p.selected});
+ const attempt:{reason:"complete"|"budget"|"unverified"}={reason:"unverified"};
+ let candidateProof:PriorityProof|undefined;
+ const candidate=compileGameContextPass(input,options,{ids,covers:group.covers,budgetRows:true,observe:observe?r=>{attempt.reason=r;}:undefined},p=>{selected=p.selected;candidateProof=p});
  const accepted=new Set(selected.map(storyFactIdentity));
- return ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit?candidate:prior;
+ if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit){capture?.(candidateProof!);return finish(candidate,{kind:"complete",sources:ids.length});}
+ const oldAccepted=new Set(proof.selected.map(storyFactIdentity));
+ return finish(prior,attempt.reason==="budget"?{kind:"budget",sources:ids.length,selected:ids.filter(id=>oldAccepted.has(id)).length}:unverified());
 }
 /** RP272: all objects in a finite short/compound action need whole evidence.
  * The complete RP271 result remains the rollback; no canonical state writes. */
@@ -163,11 +216,14 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   const roles=retrievalScope?createStoryRoleReader(retrievalScope,input.draft,roleSeeds||input.story?.world.sharedGame?.managed?storedRoleReader(roleSeeds??[],input.entities??[],retrievalWorld!,input.story?.world.sharedGame?.mergeSeeds,!!input.story?.world.sharedGame?.managed):undefined):undefined;
  const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles,options.contentRelevance!==false);
  const reference=options.referenceRecall!==false&&input.story&&!input.restart&&retrieval?storyObjectReference(input.draft,retrieval.relevanceNames)??(options.referenceBundle!==false?storyLiteralReference(input.draft,facts.map(f=>f.fact),retrieval.relevanceNames):undefined):undefined;
- const referenceGuard=retrieval?.ambiguousName?AMBIGUOUS_STORY_NAME:(input.story&&retrieval?.unresolvedReference||reference?.kind==='personal')?UNRESOLVED_STORY_REFERENCE:reference?.kind==='deictic'?UNRESOLVED_STORY_OBJECT:reference?.kind==='literal'?AMBIGUOUS_STORY_OBJECT:"";
+  // Detect supported short obligation references before ANY selection pass. A
+  // failed bridge/budget/source check must retain the guard in its exact prior.
+  const obligationReference=options.referenceRecall!==false&&input.story&&!input.restart&&obligationRecallIntent(input.draft)==='reference';
+  const referenceGuard=priority?.referenceGuard??(retrieval?.ambiguousName?AMBIGUOUS_STORY_NAME:(input.story&&retrieval?.unresolvedReference||reference?.kind==='personal')?UNRESOLVED_STORY_REFERENCE:reference?.kind==='deictic'||obligationReference?UNRESOLVED_STORY_OBJECT:reference?.kind==='literal'?AMBIGUOUS_STORY_OBJECT:"");
  const resolveMentions=(text:string)=>retrievalScope?[...storyRetrievalQuery(text,retrievalScope).mentionedIds,...mentionedEntities(text,(input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind!=="character"))]:undefined;
  const memoryMentions=resolveMentions([input.draft,...input.recentMessages.slice(-4)].join("\n"));
  const limit=Math.max(0,Math.floor(input.settings.contextBudget));
- const pooled=compileMemoryWorkspace({...input,draft:retrieval?.query??input.draft,resolvedMentionIds:memoryMentions,candidateOnly:true});
+ const pooled=compileMemoryWorkspace({...input,draft:retrieval?.query??input.draft,resolvedMentionIds:memoryMentions,candidateOnly:true,lexicalIndex:options.searchIndex?.lore});
  const selection:ContextSelection={entries:pooled.selection.entries.filter(i=>i.entry.activation==="always"||i.manuallySelected),estimatedTokens:0,omittedCount:0};
  const selectedFacts:StoryFact[]=[],profileParts:ProfilePart[]=[],turns:StoryContinuation["turns"]=[];
  const profileCandidates:ProfilePart[]=[];
@@ -205,7 +261,9 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  const choices=input.choices?sceneChoiceInstruction(true):"";
  const restart=input.restart?'<deeprole_context version="1">A new game of this lore has been explicitly started. Previous chat events belong to the archived game. Use world lore and initial character values; start a new scene following the user, not previous progress. Do not mention this technical block.</deeprole_context>':"";
  const snapshot=input.snapshot?{...input.snapshot,continuation:undefined}:null;
- const history=input.continuation ?? input.snapshot?.continuation;
+ // An explicit handoff owns its scene reference. A compact recap must not be
+ // accompanied by the automatic old-chat transcript fallback.
+ const history=input.snapshot ? input.snapshot.continuation : input.continuation;
  const renderProfiles=()=>{
   if(!profileParts.length)return "";
   const people=new Map<string,{id:string;name:string;fields:Record<string,string[]>}>();
@@ -218,7 +276,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  const render=()=>{
   const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,restart,renderProfiles()]);
   const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
-  const memory=formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time,{legacy:options.memoryTransport==="legacy",measure:block=>addedContextTokens(join([before,block,after]))});
+   const memory=formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",measure:block=>addedContextTokens(join([before,block,after]))});
   return join([before,memory,after]);
  };
  const required=addedContextTokens(render());
@@ -249,6 +307,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   const whole=priority.budgetRows?!!expanded&&consider(()=>selectedFacts.push(...priority.ids.map(id=>byId.get(id)!)),()=>{selectedFacts.length=0},"facts")
    :priority.ids.length<=8&&priority.ids.every(id=>{const f=byId.get(id);return !!f&&consider(()=>selectedFacts.push(f),()=>{selectedFacts.pop()},"facts")});
   topicOnly=whole&&priority.covers(selectedFacts);
+   priority.observe?.(topicOnly?"complete":expanded&&!whole?"budget":"unverified");
   if(topicOnly){for(const f of facts)attemptedFacts.add(f.fact);omitted.facts=facts.length-selectedFacts.length;}
   else{selectedFacts.length=0;omitted.facts=0;}
  }

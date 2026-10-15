@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "scope": "RP287 fresh synthetic accepted-memory audit; no runtime/UI/storage changes",
+  "firstResult": {
+    "cases": 108,
+    "scored": 62,
+    "complete": 58,
+    "goldFacts": 250,
+    "missingFacts": 6,
+    "casesWithIntegrityIssues": 0,
+    "uncertaintyExpected": 48,
+    "confidenceGapCases": 23,
+    "falseCompleteCases": 1
+  },
+  "frozenFingerprints": 414,
+  "unchangedRuntimeFingerprints": 410,
+  "preflightBeforeCompiler": true,
+  "frozenGoldInputProtocolUnchanged": true,
+  "firstReportSealUnchanged": true,
+  "priorRP283RP286SealsVerified": true,
+  "focused": {
+    "files": 5,
+    "passed": 278,
+    "failed": 0,
+    "newChecks": 111,
+    "report": ".output/rp287-final-focused.json",
+    "earlierRunPassed": 277
+  },
+  "typecheckExit": 0,
+  "diffCheckExit": 0,
+  "chromeZipExit": 0,
+  "firefoxZipExit": 0,
+  "fullUnit": "not rerun; runtime unchanged",
+  "nativeBrowser": "not rerun; runtime/UI unchanged",
+  "liveDeepSeek": "not run",
+  "fullE2E": "not run",
+  "installedUserExtensionReloaded": false,
+  "pushRequested": false,
+  "buildWarning": "existing minified chunks over 500 kB",
+  "packages": {
+    "chromeFiles": 23,
+    "firefoxFiles": 23,
+    "sourceFiles": 730,
+    "byteAndCRCAudited": true,
+    "canonicalDownloadSHA256Matches": true,
+    "finalNotesRepackaged": true,
+    "testsExcludedFromSourceZIP": true
+  },
+  "next": "Short-reference fallback unverified/guard, then 4 whole-source losses; separate seen report; preserve first corpus/gold/report/seal"
+}

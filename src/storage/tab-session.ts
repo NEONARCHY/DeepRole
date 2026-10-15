@@ -36,14 +36,23 @@ export class TabSessionStore {
   /** Keep the token guard held while committing the destination library state.
    * A later snapshot cannot slip between a checked read and the branch write.
    */
-  completeSnapshot(tabId: number, snapshotId: string, token: string | null, commit: () => Promise<void>): Promise<boolean> {
+  completeSnapshot(tabId: number, snapshotId: string, token: string | null, commit: () => Promise<void>, targetChatId?: string): Promise<boolean> {
     return this.enqueue(tabId, async () => {
       if (this.closed.has(tabId)) return false;
       const previous = await this.read(tabId);
       if (previous.snapshotId !== snapshotId || (previous.snapshotToken ?? null) !== token || this.closed.has(tabId)) return false;
+      if (targetChatId !== undefined) {
+        if (!/^[\w-]{1,120}$/u.test(targetChatId)) throw Error("handoff-invalid");
+        const old = previous.continuationReceipt;
+        if (old?.snapshotId === snapshotId && old.snapshotToken === token && old.targetChatId !== targetChatId) throw Error("handoff-conflict");
+        // Keep the accepted target if the library transaction fails, so reload
+        // can finish locally without another model call.
+        await this.area.set({ [`deeprole_tab_state_${tabId}`]: { ...previous, continuationReceipt: { snapshotId, snapshotToken: token, targetChatId } } });
+        if (this.closed.has(tabId)) return false;
+      }
       await commit();
       if (this.closed.has(tabId)) return true;
-      await this.area.set({ [`deeprole_tab_state_${tabId}`]: { ...previous, snapshotId: null, snapshotToken: null, continueOnFreshChat: false, continueUntil: null } });
+      await this.area.set({ [`deeprole_tab_state_${tabId}`]: { ...previous, ...(targetChatId !== undefined ? { continuationReceipt: null } : {}), snapshotId: null, snapshotToken: null, continueOnFreshChat: false, continueUntil: null } });
       return true;
     });
   }
