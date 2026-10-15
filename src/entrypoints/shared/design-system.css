@@ -210,4 +210,10 @@
 .dr-context-budget dl > div { display: flex; justify-content: space-between; gap: 12px; }
 .dr-context-budget dt { min-width: 0; }
 .dr-context-budget dd { margin: 0; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.dr-game-memory-notice { pointer-events:auto; box-sizing:border-box; width:100%; max-width:360px; margin-block:10px; padding:12px; border:1px solid var(--dr-border); border-inline-start:3px solid var(--dr-warning); border-radius:10px; background:var(--dr-panel); color:var(--dr-text); font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.dr-game-memory-notice strong { display:block; font-weight:600; }
+.dr-game-memory-notice p { margin:8px 0 0; }
+.dr-game-memory-notice button { min-height:32px; max-width:100%; margin-top:10px; padding:6px 10px; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:var(--dr-text); font:inherit; white-space:normal; cursor:pointer; }
+.dr-game-memory-notice button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
+.dr-game-memory-coverage { overflow-wrap:anywhere; }
 .dr-memory-delivery textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; resize: vertical; }

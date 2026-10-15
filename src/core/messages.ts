@@ -6,6 +6,7 @@ import type { CharacterRequestReceipt } from "./characters";
 import type { ContinuationFlow } from "./continuation-flow";
 
 export interface TabSessionState {
+  continuationReceipt?: import("./continuation-flow").ContinuationReceipt | null;
   characterTextTurns?: { requestId: string; chatId: string; replyIdentity: string }[];
   continuation?: ContinuationFlow | null;
   characterRequest?: CharacterRequestReceipt | null;

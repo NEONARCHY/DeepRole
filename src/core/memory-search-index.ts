@@ -17,10 +17,13 @@ export interface MemorySearchIndex {
 const indexes = new WeakMap<MemoryEntry, MemorySearchIndex>();
 
 export function memorySearchIndex(entry: MemoryEntry): MemorySearchIndex {
-  const previous = indexes.get(entry);
+  return prepareMemorySearchIndex(entry, indexes.get(entry));
+}
+
+function prepareMemorySearchIndex(entry: MemoryEntry, previous?: MemorySearchIndex): MemorySearchIndex {
   const keywordsUnchanged = previous?.keywords.length === entry.keywords.length
     && previous.keywords.every((keyword, index) => keyword.original === entry.keywords[index]);
-  if (previous && previous.title === entry.title && previous.content === entry.content && keywordsUnchanged) return previous;
+  if (previous && previous.title === entry.title && previous.content === entry.content && keywordsUnchanged) { indexes.set(entry, previous); return previous; }
   const index: MemorySearchIndex = {
     title: entry.title,
     content: entry.content,
@@ -30,4 +33,29 @@ export function memorySearchIndex(entry: MemoryEntry): MemorySearchIndex {
   };
   indexes.set(entry, index);
   return index;
+}
+
+/** One live compiler owns these pure lexical views across storage clones.
+ * Reconcile the COMPLETE current scoped set; no selection/policy is retained. */
+export class MemorySearchIndexOwner {
+  private rows = new Map<string, MemorySearchIndex>();
+  private titleOwner = {};
+  /** Weak aggregate-cache key, replaced on clear so private title snapshots
+   * are released as well. The workspace still verifies exact membership. */
+  get titleCacheOwner() { return this.titleOwner; }
+  prepare(entries: MemoryEntry[]) {
+    const next = new Map<string, MemorySearchIndex>();
+    let built = 0, reused = 0;
+    for (const entry of entries) {
+      const key = JSON.stringify([entry.worldId ?? null, entry.id]);
+      const previous = this.rows.get(key), index = prepareMemorySearchIndex(entry, previous);
+      if (index === previous) reused++; else built++;
+      next.set(key, index);
+    }
+    const removed = [...this.rows.keys()].filter(key => !next.has(key)).length;
+    this.rows = next;
+    return { built, reused, removed, size: next.size };
+  }
+  clear() { this.rows.clear(); this.titleOwner = {}; }
+  get size() { return this.rows.size; }
 }

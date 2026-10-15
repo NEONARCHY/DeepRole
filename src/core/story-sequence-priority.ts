@@ -5,21 +5,26 @@ import { storyActionBalance } from './story-action-balance';
 import { storyCompoundAction } from './story-compound-action';
 import { isFlexibleDiscussionRepeat } from './story-flexible-priority';
 import { normalizeText } from './text';
+import {storyNarrativeActions} from './story-narrative-action';
 
 export interface ActionSequence {
   matches: ((fact: StoryFact) => boolean)[];
   short: boolean;
+  narrative?: true;
 }
 /** Candidate retrieval only, NEVER evidence that an action happened. Reuse
  * both existing validators; don't split away a failed/conditional clause. */
 export function storyActionSequence(query: string, names: Iterable<string> = []): ActionSequence | undefined {
   let raw = query.trim();
-  if (!raw || raw.length > 480) return;
+  if (!raw || raw.length > 1200) return;
   const wrapped = /^(\*{1,2})([^*]+)\1$/u.exec(raw);
   if (wrapped) raw = wrapped[2]!.trim();
+  const known=[...names];
+  const narrative=storyNarrativeActions(raw,known);
+  if(narrative)return {matches:narrative.map(c=>c.matches),short:false,narrative:true};
+  if(raw.length>480)return;
   // A missing subject is grammatical shorthand, not referent resolution.
   if (normalizeText(raw).split(' ').some(w => /^(?:this|that|these|those|это|эта|этот|эту|этой|этого|эти|этим|тот|та|ту|той|того|те|тем)$/u.test(w))) return;
-  const known = [...names];
   const explicit = /^(?:я\s|i(?:['’]m| am)?\s)/iu.test(raw);
   for (const text of explicit ? [raw] : ['Я ' + raw, 'I ' + raw]) {
     if (!explicit) {

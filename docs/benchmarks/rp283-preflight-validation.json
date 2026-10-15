@@ -1,0 +1,13 @@
+{
+  "phase": "preflight only, compiler not evaluated",
+  "passed": 1,
+  "failed": 84,
+  "cause": "b-old has open task metadata but kind event; must be kind task",
+  "correction": "Only b-old kind changes event to task; no story/query/gold changes",
+  "originalManifest": "tests/fixtures/story-independent-sequences-baseline.json",
+  "archiveCopies": {
+    "tests/fixtures/story-independent-sequences.ts": "tests/fixtures/story-independent-sequences-preflight.ts",
+    "scripts/story-search-independent-sequences.mjs": "scripts/story-search-independent-sequences-preflight.mjs",
+    "docs/INDEPENDENT-SEQUENCE-EVALUATION.md": "docs/INDEPENDENT-SEQUENCE-PREFLIGHT.md"
+  }
+}

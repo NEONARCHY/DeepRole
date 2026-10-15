@@ -396,6 +396,8 @@ export interface RankedMemory {
 }
 
 export interface ContextSelection {
+  /** Transient preparation diagnostics, separate from frozen compiler reports. */
+  memoryCoverage?: import("./game-memory-coverage").GameMemoryCoverage;
   contextReport?: import("./game-context").GameContextReport;
   overBudgetTokens?: number;
   entries: RankedMemory[];

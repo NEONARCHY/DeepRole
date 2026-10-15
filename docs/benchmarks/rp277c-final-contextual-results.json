@@ -1,0 +1,648 @@
+{
+  "baselineDigest": "4d747b8ef12498b3e7f1ca8c5ada5a2b6606621e455e2746c7be279e7d2786f7",
+  "fixtureDigest": "a3ebc1acf27044fd97fca171ee87164f5cf07c01c7e4bc6d2a368367442265cf",
+  "algorithmDigest": "3497232392a9dfe518d82cb9994ad58613247564e10d222875ea1483b11cc086",
+  "compilerDigest": "8e734348e3ffdc01fd789330a791defc816c974cdfd88930a5275406b6cea4d2",
+  "results": [
+    {
+      "id": "ru:glassworks:gift-short",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "e83181d4732d7e96be7b9cc3ab8b7416da4828415fa79c72bb13bd189e3f7fed"
+    },
+    {
+      "id": "ru:glassworks:gift-question",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "52c3f52534f584a5de38f592877dbdfe9f96437eea50c3c036dac4296cd620b7"
+    },
+    {
+      "id": "ru:glassworks:promise-short",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "4de0405672e68e8c0b15691a57ba1a0ad7ac7b92f3ba5e3a78d3c6395c5b7ef9"
+    },
+    {
+      "id": "ru:glassworks:promise-verb",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "52c3f52534f584a5de38f592877dbdfe9f96437eea50c3c036dac4296cd620b7"
+    },
+    {
+      "id": "ru:glassworks:no-anchor",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "8b2f2980ee6516fec259fcad51572be4a68d294d6bea6377ff9ba09699c0fbf4"
+    },
+    {
+      "id": "ru:glassworks:old-anchor",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "25c767d8216d055cb821c1d4f5a8a59e58c9d0825d08dae346f63aefce1a25e1"
+    },
+    {
+      "id": "ru:glassworks:missing-proof",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "7c77d69bff767ff2c934d8b820dda8a87df8aad7b53d763c9df266b023550abb"
+    },
+    {
+      "id": "ru:glassworks:edited-quote",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "0e35f82609eb4d16d299fb6e6a2435eec839737f1fff26c54bc2934c2112ab3d"
+    },
+    {
+      "id": "ru:glassworks:deleted-owner",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "76a00aa3fde81029d28e6a042580fcf555ce80f777998fba5426ddb65f1494b0"
+    },
+    {
+      "id": "ru:glassworks:replacement",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "ced1fa2fa22364bf76a9d062983c78aefb20902e81ef8d563b3f3e0e36f0b5df"
+    },
+    {
+      "id": "ru:glassworks:two-topics",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:unknown-topic",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:quoted",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "70f4f32a2a1b8b98501bb96a923e767a5dbbb3830ddf2455a6091fb40d2bbe14"
+    },
+    {
+      "id": "ru:glassworks:action",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "15787119a12c0767fad0903324a9e3781ffc16158511874cd0f391af310aedda"
+    },
+    {
+      "id": "ru:glassworks:conditional",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:restart",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "423a96e160194b02258a40d658e8400c35fe0895d54f10114729416d25d60a50"
+    },
+    {
+      "id": "ru:harbour:gift-short",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "ce49e07d017f85c73bd5476f8142a6f89c825ac1c3ac44a9bea814fbd4d43544"
+    },
+    {
+      "id": "ru:harbour:gift-question",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "11fd30615251d5a5aa5e5f3adea9e5a97b4b46745cd269c96c3bb9ce683fa976"
+    },
+    {
+      "id": "ru:harbour:promise-short",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "4270003af92e104c130dfb26b0867349a19aa2e8758330810ff9e94cb2f7f234"
+    },
+    {
+      "id": "ru:harbour:promise-verb",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "11fd30615251d5a5aa5e5f3adea9e5a97b4b46745cd269c96c3bb9ce683fa976"
+    },
+    {
+      "id": "ru:harbour:no-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "0b68ed8c46206678885a5916b8a1bb5e34c15889232881663bcc12a7b6cdbbc6"
+    },
+    {
+      "id": "ru:harbour:old-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "ccc52473469ebf00122feffbebc948d717b9e2223833f95df89481542d6ff890"
+    },
+    {
+      "id": "ru:harbour:missing-proof",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "462966584584ed5d0c0ac020d61a6220301d12c9e0acfd7da01778e302bbcc19"
+    },
+    {
+      "id": "ru:harbour:edited-quote",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "581ce38b065bf2f88b24877904dd9fc44130e63413d648553e747826548e7e10"
+    },
+    {
+      "id": "ru:harbour:deleted-owner",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "4fc05cdb0c224e1d23ecc3c090d1b62eacda62f166bdbd449de2cf9e15d21a3e"
+    },
+    {
+      "id": "ru:harbour:replacement",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "35034602f0012524de92c163cefea2d86515ad2b5e7ca51c7c1a282c14a98d28"
+    },
+    {
+      "id": "ru:harbour:two-topics",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:unknown-topic",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:quoted",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "e30932dabe4462509192a54c56fa686740db92cf6a281b0b5d07c22a55d875ac"
+    },
+    {
+      "id": "ru:harbour:action",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "688321297f4b0dfe40516ac041e6d1e69ccc7b588a859ed4b6d18db63f18d736"
+    },
+    {
+      "id": "ru:harbour:conditional",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:restart",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "9539c0440bb72cfc94c99469f3697337a49d03c4ce78ee725cd9d5702f005bb1"
+    },
+    {
+      "id": "en:glassworks:gift-short",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "06caf9a6042035031635c0d5368ccfb4d8fb9bf66e8e384c57fbdd09bfb014bb"
+    },
+    {
+      "id": "en:glassworks:gift-question",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "06caf9a6042035031635c0d5368ccfb4d8fb9bf66e8e384c57fbdd09bfb014bb"
+    },
+    {
+      "id": "en:glassworks:promise-short",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "dd6d6ad0a16ccc66a6d7d28a277b9204235493109186268a4c256a88d4d596e2"
+    },
+    {
+      "id": "en:glassworks:promise-verb",
+      "split": "development",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "2bed48ecc1acca8e45b5fc5b773ce337cd0b7878b13a290e231ce416934e6783"
+    },
+    {
+      "id": "en:glassworks:no-anchor",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "29aca54d855d95b2f04fabc69d0c80bed2bd7cb7739380880b0662eccb08292b"
+    },
+    {
+      "id": "en:glassworks:old-anchor",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "1b59c6f917e4ea7d6d3a7e1ee894800b73c44b9c219fe63cc35dc2261d44f8f4"
+    },
+    {
+      "id": "en:glassworks:missing-proof",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "4526893a454a95f1ec8edc94ac71aa51dee21789f81a3cc7dcc8df7af1ba5186"
+    },
+    {
+      "id": "en:glassworks:edited-quote",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "5d82c8fd79bfa3734f5ce522c8c01dbeae007822e8b481ddf2499594ce89bd81"
+    },
+    {
+      "id": "en:glassworks:deleted-owner",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "22c121a6aef4613f20c9278b0389472731f1faa94921149d85763fe6ed47de6b"
+    },
+    {
+      "id": "en:glassworks:replacement",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "22568e0b19e8e15d09fbfbfe98d29a3e2792737446d2ab43caa750de2ed2008d"
+    },
+    {
+      "id": "en:glassworks:two-topics",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "0004449e031b4049c41c46a494ad51cba4ff60d7bda24e4eff49d807b13e4305"
+    },
+    {
+      "id": "en:glassworks:unknown-topic",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "0004449e031b4049c41c46a494ad51cba4ff60d7bda24e4eff49d807b13e4305"
+    },
+    {
+      "id": "en:glassworks:quoted",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "87b7e2f7d7ef9363a00005230e17dbc9f2e8cdd68029b536a1b9773d06c5fa86"
+    },
+    {
+      "id": "en:glassworks:action",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "23b9f74745ccbe7224ed5be3ee4ba9636cf812c2f654b9d49ff61123f8ae82d6"
+    },
+    {
+      "id": "en:glassworks:conditional",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "9790f73eb9658a5e29c36e83ba349cdfa60d527160d71ecd568953f3dd1b3265"
+    },
+    {
+      "id": "en:glassworks:restart",
+      "split": "development",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "69719b054f8b8667cc76f08bfe18b7348cc94bb2aa45f20d7452718341e870d1"
+    },
+    {
+      "id": "en:harbour:gift-short",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "c1a88254fe5f8580644163084f1f79fa46f815fd6a1d93117f169d74ef010130"
+    },
+    {
+      "id": "en:harbour:gift-question",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "c1a88254fe5f8580644163084f1f79fa46f815fd6a1d93117f169d74ef010130"
+    },
+    {
+      "id": "en:harbour:promise-short",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "12ef8387612c76cdcd13e2c4a94c5094f6e289bcb4f29ff5432826fd5a5070db"
+    },
+    {
+      "id": "en:harbour:promise-verb",
+      "split": "evaluation",
+      "positive": true,
+      "baselineComplete": true,
+      "complete": true,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "81dc567a6a833c2c8d68f090f6aaa6d2b20bf7920b50952587d7031c6664b87e"
+    },
+    {
+      "id": "en:harbour:no-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "f523f7e17672cd8e0312d40c52c49a5ddcc500226899e8222cca931901b2382b"
+    },
+    {
+      "id": "en:harbour:old-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "364b0ec0ba534a16e4dc54226b53aad347bb4459033aa579d5c2f2c7ac89ba7e"
+    },
+    {
+      "id": "en:harbour:missing-proof",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "2d27047b560ff9c95b1bff9f8f7534c96672925336fc62783b62fbbef5fa3e2a"
+    },
+    {
+      "id": "en:harbour:edited-quote",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "f4b13cff20c8333d0330f37e0999109cb24f76f0b5336f91b038f3d9e4035453"
+    },
+    {
+      "id": "en:harbour:deleted-owner",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "dfa3fdace0eb8174c9c09354197d8486bef3f8656b6f55aa7b754ee7814b4605"
+    },
+    {
+      "id": "en:harbour:replacement",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "18727b974b4cb5d3c3e19c219303fc41caf806864df69f5acf92fa3d27a11465"
+    },
+    {
+      "id": "en:harbour:two-topics",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "a2284246280da889241d78bb9428f2b091d3dc38d328b2f98f27fe36a62e570c"
+    },
+    {
+      "id": "en:harbour:unknown-topic",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "a2284246280da889241d78bb9428f2b091d3dc38d328b2f98f27fe36a62e570c"
+    },
+    {
+      "id": "en:harbour:quoted",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "f9d98681a82b2d8649f5a512c055db71cb8eb404949a578ad444d612304a70dd"
+    },
+    {
+      "id": "en:harbour:action",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "2c0a9fd4666771d2e5a05819658a9a37e322df842fd2951df56ffb5f29c9a927"
+    },
+    {
+      "id": "en:harbour:conditional",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "352fdd7fe35416a88e06af2e406f8d017bdcbc546f29324aad51b715adf84d9f"
+    },
+    {
+      "id": "en:harbour:restart",
+      "split": "evaluation",
+      "positive": false,
+      "baselineComplete": false,
+      "complete": false,
+      "controlDrift": false,
+      "sourceLoss": 0,
+      "outputDigest": "ae7ec078a66717266eed400f25708220a8c59d39ec8da62deed9ad0820e44135"
+    }
+  ]
+}

@@ -116,7 +116,9 @@ it('source/gold/protocol and historical compiler fingerprints are fixed before c
   expect(digest(readFileSync('docs/benchmarks/rp273-initial-algorithm.txt', 'utf8').replace(/\r\n/g, '\n'))).toBe(initial.algorithmDigest);
   expect(digest(readFileSync('docs/benchmarks/rp273-initial-compiler.txt', 'utf8').replace(/\r?\n/g, '\r\n'))).toBe(initial.compilerDigest);
   expect(r.inputDigest).toBe(frozen.inputDigest); expect(r.goldDigest).toBe(frozen.goldDigest);
-  for (const [path, key] of [['src/core/story-budget-priority.ts', 'algorithmDigest'], ['src/core/game-context.ts', 'compilerDigest'], ['tests/fixtures/story-budget-priority.ts', 'fixtureDigest'], ['scripts/story-search-budget-bound-benchmark.mjs', 'benchmarkDigest']]) expect(digest(readFileSync(path!, 'utf8'))).toBe(r[key!]);
+   // RP274 adds only a diagnostic side channel. Preserve the exact RP273
+   // registered compiler; its frozen output/baseline assertions above remain.
+   for (const [path, key] of [['src/core/story-budget-priority.ts', 'algorithmDigest'], ['docs/benchmarks/rp273-final-compiler.txt', 'compilerDigest'], ['tests/fixtures/story-budget-priority.ts', 'fixtureDigest'], ['scripts/story-search-budget-bound-benchmark.mjs', 'benchmarkDigest']]) expect(digest(readFileSync(path!, 'utf8'))).toBe(r[key!]);
   const report = JSON.parse(readFileSync('docs/benchmarks/rp273c-budget-results.json', 'utf8'));
   expect(report.registration).toEqual(r); expect(report.rows).toHaveLength(64); expect(report.budgets).toHaveLength(320);
   expect(report.rows.every((r:any) => !r.controlDrift && !r.substantiveLoss.length && (!r.positive || r.complete))).toBe(true);

@@ -13,6 +13,7 @@ import { estimateTokens, normalizeText, uniqueTokens } from "./text";
 import { formatMemoryContext } from "./context";
 import { inferTitlePeople } from "./lore-categories";
 import { memorySearchIndex } from "./memory-search-index";
+import type { MemorySearchIndexOwner } from "./memory-search-index";
 
 const PRIORITY_MULTIPLIER: Record<MemoryPriority, number> = {
   low: 0.85,
@@ -21,6 +22,8 @@ const PRIORITY_MULTIPLIER: Record<MemoryPriority, number> = {
 };
 
 export interface RankMemoryInput {
+  /** Ephemeral lexical preparation only; never caches scope/selection. */
+  lexicalIndex?: MemorySearchIndexOwner;
   /** Internal candidate discovery: no aggregate prompt render or budget pruning. */
   candidateOnly?: boolean;
   nameGroups?: ReturnType<typeof inferTitlePeople>;

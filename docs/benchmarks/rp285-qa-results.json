@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "scope": "RP285 final automated verification on current sources. Seen corpus, synthetic installed Edge; no live model/account, native Firefox or full E2E claim.",
+  "seenReport": "docs/benchmarks/rp285b-forms-seen-results.json",
+  "seenReportSha256": "b897aaae2e94b17b52acbc336328da71382063dc48870d5a454516be3b21be2f",
+  "seenSummary": {
+    "cases": 84,
+    "scored": 54,
+    "baselineComplete": 44,
+    "complete": 47,
+    "goldFacts": 312,
+    "baselineMissingFacts": 18,
+    "missingFacts": 15,
+    "integrityIssues": 0,
+    "controlsDrift": 1,
+    "rejectionControlsDrift": 0,
+    "budgetOutputChanges": 1,
+    "lostPriorFacts": 0,
+    "changedOutputs": 4,
+    "narrativeComplete": 6,
+    "narrativeCases": 6,
+    "narrativeReportedComplete": 0
+  },
+  "unit": {
+    "numPassedTests": 7279,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 5,
+    "numTotalTests": 7284
+  },
+  "newTests": 53,
+  "focusedSevenFiles": {
+    "passed": 547,
+    "failed": 0
+  },
+  "reportTests": {
+    "passed": 2,
+    "failed": 0
+  },
+  "native": {
+    "startTime": "2026-10-15T12:06:22.858Z",
+    "duration": 159475.595,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "builds": {
+    "chromeExitCode": 0,
+    "firefoxExitCode": 0,
+    "existingLargeChunkWarning": true
+  },
+  "sourceIntegrity": {
+    "originalComparedFiles": 411,
+    "expectedExistingRuntimeChanges": 4,
+    "addedRuntimeFiles": 2,
+    "otherOriginalFingerprintsUnchanged": 407,
+    "oldReportAndGoldSealsUnchanged": true,
+    "all80OtherOutputsAndCoverageUnchanged": true,
+    "seenSummary": {
+      "cases": 84,
+      "scored": 54,
+      "baselineComplete": 44,
+      "complete": 47,
+      "goldFacts": 312,
+      "baselineMissingFacts": 18,
+      "missingFacts": 15,
+      "integrityIssues": 0,
+      "controlsDrift": 1,
+      "rejectionControlsDrift": 0,
+      "budgetOutputChanges": 1,
+      "lostPriorFacts": 0,
+      "changedOutputs": 4,
+      "narrativeComplete": 6,
+      "narrativeCases": 6,
+      "narrativeReportedComplete": 0
+    },
+    "native": {
+      "startTime": "2026-10-15T12:06:22.858Z",
+      "duration": 159475.595,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "qaFilesSha256": {
+    "tests/story-object-forms.test.ts": "d094637c9dd326a94e05f13ff91315e2371904aa8bd34dd940c40f46e5ec33ab",
+    "tests/story-object-forms-report.test.ts": "5608253a6978f49920b4ccfece2a939a45d25e75bbc4ce0d0be1bc279a81aaec",
+    "tests/story-narrative-action.test.ts": "466acbabb61a0017e9e5783440db0a8376d9a045df60d1cb027c463d4c49445c",
+    "tests/e2e/story-object-forms-runtime.spec.ts": "ff7e21330bb6b5f5e2bf2926bc2812843325502799f8b17a102bd2bda80a4163",
+    "playwright.ux.config.ts": "996acac0a4011b055dd5302ce184a90390a32ed4feccf2d20594f8cc2585762b"
+  },
+  "boundaries": [
+    "Current installed user copy was not reloaded; personal world/account/profile untouched.",
+    "All84 scenarios are now seen; previous first39/54 and seen44/54 reports/gold/seals are preserved.",
+    "One budget probe changes at1631/1800 tokens, tracked separately from24 rejection controls.",
+    "One English reference remains a semantic false-complete; general morphology, paraphrases and true cross-turn delta remain open.",
+    "Source ZIP excludes tests; use Git checkout and Node22 to reproduce."
+  ]
+}

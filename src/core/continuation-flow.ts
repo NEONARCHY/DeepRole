@@ -1,5 +1,15 @@
 import type { SceneState, StoryContinuation } from "./types";
 
+/** Accepted first request; retry only the local commit, never the model call. */
+export interface ContinuationReceipt { snapshotId: string; snapshotToken: string | null; targetChatId: string }
+export function matchingContinuationReceipt(value: unknown, snapshotId: string | undefined, token: string | null, chatId: string | null, freshHome: boolean): ContinuationReceipt | null {
+ if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+ const r = value as ContinuationReceipt;
+ return Object.keys(r).length === 3 && ["snapshotId","snapshotToken","targetChatId"].every(k=>Object.hasOwn(r,k)) && typeof r.snapshotId === "string" && !!r.snapshotId && r.snapshotId === snapshotId
+  && r.snapshotToken === token && (token === null || typeof token === "string") && typeof r.targetChatId === "string" && /^[\w-]{1,120}$/u.test(r.targetChatId)
+  && (chatId === r.targetChatId || !chatId && freshHome) ? { ...r } : null;
+}
+
 /** Correlation metadata only; conversation and lore stay in the private repository. */
 export interface ContinuationFlow {
   id: string;

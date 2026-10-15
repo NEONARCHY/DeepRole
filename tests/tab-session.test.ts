@@ -4,15 +4,39 @@ import { continuationKey, type ContinuationFlow } from "../src/core/continuation
 
 function store() {
   const values: Record<string, any> = {};
-  const state = new TabSessionStore({
-    get: async (key) => { const result = structuredClone({ [key]: values[key] }); await new Promise((r) => setTimeout(r, 5)); return result; },
-    set: async (patch) => { Object.assign(values, structuredClone(patch)); },
-    remove: async (keys) => { for (const key of keys) delete values[key]; },
-  });
-  return { state, values };
+  const area = {
+    get: async (key: string) => { const result = structuredClone({ [key]: values[key] }); await new Promise((r) => setTimeout(r, 5)); return result; },
+    set: async (patch: Record<string, unknown>) => { Object.assign(values, structuredClone(patch)); },
+    remove: async (keys: string[]) => { for (const key of keys) delete values[key]; },
+  };
+  const state = new TabSessionStore(area);
+  return { state, values, area };
 }
 
 describe("per-tab session patches", () => {
+  it("keeps the accepted destination through failed local writes and reload, without repeating delivery", async () => {
+    const {state,area}=store(); await state.patch(1,{snapshotId:"s",snapshotToken:"token"});
+    await expect(state.completeSnapshot(1,"s","token",async()=>{throw Error("write failed");},"target")).rejects.toThrow("write failed");
+    const reloaded=new TabSessionStore(area); expect((await reloaded.get(1)).continuationReceipt).toEqual({snapshotId:"s",snapshotToken:"token",targetChatId:"target"});
+    let commits=0;expect(await reloaded.completeSnapshot(1,"s","token",async()=>{commits++;},"target")).toBe(true);
+    expect(commits).toBe(1);expect(await reloaded.get(1)).toMatchObject({snapshotId:null,snapshotToken:null,continuationReceipt:null});
+    expect(await reloaded.completeSnapshot(1,"s","token",async()=>{commits++;},"target")).toBe(false);expect(commits).toBe(1);
+  });
+  it("never redirects an accepted receipt or retries it over a newer snapshot/token",async()=>{
+    const {state}=store();await state.patch(1,{snapshotId:"s",snapshotToken:"token"});
+    await expect(state.completeSnapshot(1,"s","token",async()=>{throw Error("write failed");},"target")).rejects.toThrow();
+    let commits=0;await expect(state.completeSnapshot(1,"s","token",async()=>{commits++;},"other")).rejects.toThrow("handoff-conflict");
+    await state.patch(1,{snapshotToken:"new-token"});expect(await state.completeSnapshot(1,"s","token",async()=>{commits++;},"target")).toBe(false);
+    await state.patch(1,{snapshotId:"new",snapshotToken:"token"});expect(await state.completeSnapshot(1,"s","token",async()=>{commits++;},"target")).toBe(false);expect(commits).toBe(0);
+  });
+  it("retains the receipt if clearing session storage fails after the library commit",async()=>{
+    const {state,area}=store();await state.patch(1,{snapshotId:"s",snapshotToken:"t"});
+    const original=area.set;let writes=0,committed=false;
+    area.set=async patch=>{if(++writes===2)throw Error("session failed");await original(patch);};
+    await expect(state.completeSnapshot(1,"s","t",async()=>{committed=true;},"target")).rejects.toThrow("session failed");expect(committed).toBe(true);
+    expect((await state.get(1)).continuationReceipt?.targetChatId).toBe("target");area.set=original;
+    expect(await new TabSessionStore(area).completeSnapshot(1,"s","t",async()=>{expect(committed).toBe(true);},"target")).toBe(true);
+  });
   it("guards continuation phases across reordered browser metadata and newer transfers", async () => {
     const { state, values } = store();
     const flow: ContinuationFlow = { id: "f", chatId: "a", chatUrl: "url", scene: { worldId: "w", bookId: null, focusIds: [] }, phase: "review", requestId: "r", proposalId: "p", createdAt: 1 };

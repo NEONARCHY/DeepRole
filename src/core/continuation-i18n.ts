@@ -2,6 +2,10 @@ import type { Locale } from "./types";
 
 const copy = {
   ru: {
+    commitTitle: "Нужно завершить сохранение переноса",
+    commitPending: "DeepSeek принял сообщение, но DeepRole не смог завершить локальное сохранение переноса. Завершите его кнопкой ниже — сообщение повторно не отправится.",
+    commitRetry: "Завершить сохранение переноса",
+    commitFailed: "Сохранение пока не завершено. Проверьте доступность хранилища и попробуйте снова. Если игра изменилась в другом чате, вернитесь в актуальный чат.",
     title: "Продолжение истории", hint: "Сначала DeepSeek сверит историю с памятью. Подтвердите нужные изменения — затем подготовится скрытая сжимка последних сцен и откроется новый чат. Лор, портреты и прогресс остаются в том же мире.",
     detail: "Сжимка передаётся в контексте первого запроса; в чате видна только просьба продолжить. Недоступные события не додумываются. Старый чат остаётся доступен.",
     analysis: "1/3 · Сверяем историю с памятью…", review: "2/3 · Подтвердите изменения памяти",
@@ -26,6 +30,10 @@ const copy = {
     retry: "Отправить продолжение", pending: "История подключена к следующему сообщению. Если отправка не удалась, она остаётся готова к повторной попытке.",
   },
   en: {
+    commitTitle: "Transfer still needs to be saved",
+    commitPending: "DeepSeek accepted the message, but DeepRole could not finish saving the transfer locally. Use the button below to finish — the message will not be sent again.",
+    commitRetry: "Finish saving transfer",
+    commitFailed: "Saving has not finished. Check that storage is available and try again. If the game changed in another chat, return to the current chat.",
     title: "Continue your story", hint: "DeepSeek first compares the story with memory. Approve the changes you want, then a hidden summary of recent scenes is prepared and a new chat opens. Lore, portraits and progress stay in the same world.",
     detail: "The summary goes into the first request context; only the continuation request is visible in chat. Missing events are not invented. The original chat remains available.",
     analysis: "1/3 · Comparing story and memory…", review: "2/3 · Review memory changes",

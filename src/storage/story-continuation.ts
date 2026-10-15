@@ -76,7 +76,9 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
       if (source) assertWorldGameWriter(records, source, worldId);
       if (snapshot.sharedGameRevision && world.sharedGame?.revision !== snapshot.sharedGameRevision) throw Error("handoff-conflict");
       let game = world.sharedGame ?? captureWorldGame(records, world, source ?? binding);
-      if (!game.recentStory?.turns.length) game = { ...game, recentStory: snapshot.continuation ?? boundStory([{ role: "assistant", text: snapshot.summary }], "history", true), recentChatId: snapshot.sourceChatId };
+       // Carry the prepared scene reference into the next segment. Original
+       // selected revisions/episode IDs remain intact; the recap is not canon.
+       game = { ...game, recentStory: snapshot.continuation ?? boundStory([{ role: "assistant", text: snapshot.summary }], "history", true), recentChatId: snapshot.sourceChatId };
       const base = [...records.filter(r => !(r.kind === "binding" && r.id === binding.id) && !(r.kind === "world" && r.id === worldId)), { kind: "binding" as const, id: binding.id, data: binding }, { kind: "world" as const, id: world.id, data: { ...world, sharedGame: game } }];
       const activation = planWorldGameActivation(base, { chatId: targetChatId, chatUrl: binding.chatUrl, worldId, expectedRevision: game.revision, mode: "attach" });
       const keys = new Set([...activation.records, ...activation.removed].map(r => r.kind + ":" + r.id));

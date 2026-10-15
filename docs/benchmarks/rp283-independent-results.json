@@ -1,0 +1,5980 @@
+{
+  "version": 1,
+  "scope": "Fresh agent-authored synthetic accepted-memory audit, not blind external or live model evaluation",
+  "baselineDigest": "a7f1ebae6c2225c16058d44ef7884d0d433f046e0b06b409729cbdc725c5f4a4",
+  "inputDigest": "403a32eb11e7b67d7e35be3897b59e682234c45117365259ec3dba845d6179e8",
+  "goldDigest": "2e73908bfd89f9daf53fd407f308e60738511f05693864fc5436e60fe574676b",
+  "fingerprints": {
+    "src/adapters/adaptive-layout.ts": "260f3a5c27cfe796d03aeba951a72bb08037b742034907215dbb360ab0e59690",
+    "src/adapters/cast-coordinator.ts": "07c40714f77f18c606dee550b2338ee2bf0a695b975f52776f178181f111c62f",
+    "src/adapters/cast-reply-capture.ts": "04b690910a7cf0fd09b16ac5fde95026a6b4b04ee9ac335838245e25d095063b",
+    "src/adapters/cast-thinking.ts": "d29ff06cd782ad9b4af7ea76a0daf43ba798ed2d41e53ff287a114937befb824",
+    "src/adapters/cast-worker.ts": "953a85c7a59d00090d640ce0a62496c732a47c557de230c7ad3cbe23aa5f2b18",
+    "src/adapters/character-discovery-client.ts": "57eed2573575eb8612fd279d4c2adab87ebeb6b5a06584eef52d810422edf70e",
+    "src/adapters/chat-layout.ts": "a6b950c949f5b826660132b4c3863186d217ad50ce9294375a432f19a075a6d6",
+    "src/adapters/choice-scroll-follow.ts": "4968e2583c6b515177b48cb734a9bf61455d68d4a2302ad581f69eceb8310cff",
+    "src/adapters/deepseek-characters-dom.ts": "42aa8e794a7d605a2eb661467e15f18ab2f0409a45443fc953bcc20c24282a25",
+    "src/adapters/deepseek-choices-dom.ts": "a1e333baef0d89303ccd6d741387a0a62db769c45bf77b2fee5e14d504caa6f8",
+    "src/adapters/deepseek-dom.ts": "aa94138ff3191375bbf8c80fdcb8508ffba4b63b295260aa8a78a57067a65a77",
+    "src/adapters/deepseek-handoff-dom.ts": "02409fc4813aae56a9c6944d92f7c9588854aa4f29622f75bfad0975510cabeb",
+    "src/adapters/deepseek-message-dom.ts": "83c939dd3e64e9067abf21e6e2aa98badbd461f6e3c72937286788da7d8de4c8",
+    "src/adapters/deepseek-reply-recovery.ts": "37f4eab356afa2613762d87992eff03d767caf3e2eff1cee89ae56548eb26927",
+    "src/adapters/deepseek-service-dom.ts": "c90bbc0c0b3210a7b36a92978baaf391ba2ea2d147423e603da040448ae39bf2",
+    "src/adapters/discovery-profile-queue.ts": "5c90a5675b6749f8bda1a2c367a2a2bbc21adf4418f15a621604b736471ebd7c",
+    "src/adapters/field-history-client.ts": "8d73e59d281eeff4823d659e451c6f47332b9bb1ea3b68826b1f6d67f60f79e4",
+    "src/adapters/field-service-screen.ts": "0c49d58177749f6851321cd4a7ca310680df18c01e42459f8dce2bbf155ffb12",
+    "src/adapters/hidden-message-layout.ts": "3b7bc229692ae0ea6db582b54c24686f78bdd7153ab9738f65e53e19a0a8903f",
+    "src/adapters/illustration-layout.ts": "014733268b312f55ac46181ac2832cf58d5118564594ce3e0f5dfff0e38ee027",
+    "src/adapters/illustrations-dom.tsx": "1a612e5a025391b79ede897ba6e017c378c75af5b94baab56aa8f294d5d3a8fd",
+    "src/adapters/image/background-handler.ts": "6da6a53570ccc74101a135973c50c6c52cd77fabb15856ca3c990f82d20c94b0",
+    "src/adapters/image/image-codec.ts": "26bf497de31adf14da5f37c75c14a163850214ab48eb15ba732fa3c109848163",
+    "src/adapters/image/index.ts": "99490b40c4a59b3e295444bce9f847754369f877f9b8b9e0940399a6e0a21259",
+    "src/adapters/image/openai-images.ts": "574ed32b660c6367d3d8e8a28886a2c5a8dfe18573440190dc225a15d8d72497",
+    "src/adapters/image/transport.ts": "5ba3bc437d1c712a9a27fee7dfa4771070ae2d29a778e05c838288ff061f2d3e",
+    "src/adapters/image/venice-native.ts": "d86bdc8c8ceb76903a432b4870766c8351157e3e7b021404272c6568b5b30ec0",
+    "src/adapters/image/worker-operation.ts": "178dee606af2a7494c5745f49cd43e8ef8073e482a2a3b07cbbcb163360ff17b",
+    "src/adapters/inline-choices.ts": "2640444f0313254d9012a6554013c54963f043bde1ada29e88a245a9f7c650d4",
+    "src/adapters/isolated-field-client.ts": "37347d8b4b2a800b2a8a48d1bf4a2061386d3aa093dfa6941af25a0f1fdeb5d5",
+    "src/adapters/isolated-field-coordinator.ts": "97409c2e9dbcb9114650d73d3dda8d788065cd34ae1b938a09826e7f54c1009e",
+    "src/adapters/isolated-field-worker.ts": "3f91c5bf9423045b434b6001dbf273f36b835f1ccfd30adcdd066d613a97289a",
+    "src/adapters/native-start-lane.ts": "4939e2be3fd61c075ff1d795682430bf6b25ac8bfe96f641b0a8f73bd7b3e506",
+    "src/adapters/photo-loader.ts": "b925eea0432d942d2d65f57f850314acf9521478ec03ba33febf182d91806325",
+    "src/adapters/pinned-choice-space.ts": "5230b78cfa6c4693d0681bf8c6d8eeba52ccae9723d16f386d48868f8443eac4",
+    "src/adapters/pinned-choices.ts": "91f89615fbefdfbc33c6fc6d389e3e84be6b6914dff2df386aae14e338b39725",
+    "src/adapters/portrait-stage.ts": "fb9cd9cb05a59e81827150b70ffabb71cf61eca0974f63de29af059f5678dbd3",
+    "src/adapters/portrait-viewer.ts": "e1a3b6b8df89d599c721f09213af9d055a5e0b624db54ab05014f62afcd7684e",
+    "src/adapters/reasoning-presentation.ts": "dabd708a93478e348eff95bab9fb30640fed1be644d71a5b6b1c7a6381696d73",
+    "src/adapters/scene-photos-dom.ts": "ebc15c120aced285f8489ae2e932a80c3aded271793184403cd399b9b17ff1df",
+    "src/adapters/story-checkpoint-client.ts": "791e6cc32158985b5eb137f709264cf7238fbf454cceee9451f0e8664060133a",
+    "src/adapters/story-diagnostics-client.ts": "fba6524b26f8579ad44abae2a1e2a9479269bdb9dc4ff2460b3d19065e8d424e",
+    "src/adapters/story-dispatch-capture-client.ts": "ea3e57ba7982dd7d5ecaa5f37070a149348cecca5434c1daceb9598c507d84ca",
+    "src/adapters/story-dispatch-reply-client.ts": "f3541a226365fc3a4935aa26ffb9ada3c8488a55d878ccdbb2fef54e69305e1c",
+    "src/adapters/story-game-client.ts": "aa484850e739bc127d333c644f7d9e3d2287ec8db29e89365e2b5f65fcea43c5",
+    "src/adapters/story-history-dom.ts": "28715b927c2b1d5e03c910e74c96101468d4647a4166395d801246168dfa74ec",
+    "src/adapters/story-identity-dom.ts": "be288e27e9157fa3b71aa63dd3f854fb8ce2db4182f7f5b9dc80529b6dba8f07",
+    "src/adapters/story-native-history-probe.ts": "175463e04e0754fe6e45449e8049cc24d1f0ba6961af1fb794b6a44e9250f677",
+    "src/adapters/story-repair-client.ts": "600fd07f4976b7a1ef3159945900d9d578a0d0f6411bff4da91830c694b1bde1",
+    "src/adapters/story-review-client.ts": "32a4b27aeb6e85d668a44878ca14d9420988f90420500c42ceae48ea95ae8c26",
+    "src/core/action-compat.ts": "dc45cb7298468e95cb47be5971076a46048b3e8f3486286e195aa9ba2464150d",
+    "src/core/action-policy-i18n.ts": "36c8bb310818d87a3ef6dea8163232773789dbd118e8f9e9060f11786faf6d88",
+    "src/core/action-renames.ts": "6e1c0fac5034eeeea00c473a78e9877a5c2252de1ee13adb591a82dfdf0cda95",
+    "src/core/adaptive-layout.ts": "85f7b8ba743b673e13dfabb1e39b5e318f9f0ad3d491d9659813b9bc2dbc67e6",
+    "src/core/assistant-i18n.ts": "9f9717b1842062766be5a75d7400ca3e0824df13168b3e7cda3ffdc1c4e40a1b",
+    "src/core/attributes.ts": "4bd976b171b8215e0a8bbb9d02af17271bc213661f33b3a043e2e8ad77f0073f",
+    "src/core/bds-import.ts": "ac8dd209de49c755e4b49da8cf8a23e1c6a259f7d6784a0b88d9de104f5ab80d",
+    "src/core/cast-batches.ts": "081a79cd44300351270390fd586543fb23a7e6169831fdf5dedeb29510ed74d8",
+    "src/core/cast-chat.ts": "4c43402f59c78448aff9e78b4866b8f5ce3989bf8c3081f14f71a23f267fcc29",
+    "src/core/cast-i18n.ts": "95b26e7ebcdd00332bf47c84e2e8e6d17c0ccc1e468f2a853bae8a8ea9de238f",
+    "src/core/cast-initialization.ts": "1584d201cf5768162b8d0f142e3cf37d18e7b772e52b1107a156542794edb678",
+    "src/core/cast-large-lore.ts": "8b22e333a31a29417a016dfcb75f303e0bbae251f569a56dcdcce79e4de5b9ba",
+    "src/core/cast-notices.ts": "888f8cbcbe5eb0f8c9ebae7bd87b0727f16a3ec5eab735da8e03868151fac033",
+    "src/core/cast-popup.ts": "eec8a949a5320c535895e1dcd2619bb76bac14255c607f8c524dae44c226a6cd",
+    "src/core/cast-progress-i18n.ts": "ae3e9b6ec0a8e20f7debcb1cd7123032671e61d938e6dd1e60f57b071ed7d8f4",
+    "src/core/cast-progress.ts": "99c537d6fd31b3592082a86bae639e2abacaef92cdf300b3550958a76db20908",
+    "src/core/cast-review.ts": "c4c8fa29a567e79f71c91a18a4f5af186cffdd5c0e1185a73713b3d5d0057d95",
+    "src/core/cast-service.ts": "f9e85bd2559e47a3d53b09c0c68696b6b64830aa35eac21a593c1d8928b36e72",
+    "src/core/cast-validation.ts": "3c885572712b691c014942b8cd1b7f126c92db82a3dab22601292e0a81576877",
+    "src/core/character-actions.ts": "1ca49b323a2e8e704a0e6d3b1ff80647232fce0d60024ba85ec11e5e28345d75",
+    "src/core/character-context.ts": "858b6b0166e94d903b38d5394f132ad588f4d30b202c1613024f5dd6a121fb3f",
+    "src/core/character-discovery-i18n.ts": "bfa6e8a08bb2a891354c1a75384a58874b4f4d2363b90979d6862718cd44406e",
+    "src/core/character-edit.ts": "b5f6a27ec8721fc5d580f60264045949af4d71eba528095778cc9ee08645b82c",
+    "src/core/character-library-i18n.ts": "003c10c736937b9ddeccdf9456cb9982e1c5312c2742710cafca91494b952cdb",
+    "src/core/character-profile-i18n.ts": "ae3b459b761bcc9f0b12b39e3897e9cf62a238dadb53c2ccbe40bef1b9d40fca",
+    "src/core/character-profile.ts": "4e084a288f040ccfd6eeac0cd2fd5490fe658c885cb8b533e415b4066d552a93",
+    "src/core/character-text-queue.ts": "f27a8ea24c15d1d844bf1de1c9a3252fe9f34cd68ba1161d4cf47bcb5d13bae7",
+    "src/core/character-text.ts": "b356d61aad3f039c689faa4b358191365201976505214177e5dbb58bae39af2c",
+    "src/core/character-update-i18n.ts": "dc3d11966b6ba3a0da17006d72a41d90644c3479569ae60b76c98c07dd126c61",
+    "src/core/characters.ts": "8721f6f036c8309a48d8e182f15555a028dd82ff411aebec3a98a15336ae6199",
+    "src/core/chat-history.ts": "ea85107ac5f9412117fda25e0fd49cf066f5a923174a8cb99e2f08c780a86228",
+    "src/core/chat-scope.ts": "23ced40717f06159cdce22e7585de1ce7cd5aa52503a60142164bceb8540b2a3",
+    "src/core/context-budget-i18n.ts": "8ca36016247c2e79cc2c3517a9d43452332ee3cabd4c09dc5ef3f8bd1d448f46",
+    "src/core/context-capacity.ts": "1919bb975a2beeeb854e9dfd4c77fadd5cbf3919f3f6842faf247e8ff18b6c68",
+    "src/core/context.ts": "b9fd74b5a231afbae8f0b903bf7c88ca24c51fb4e7794a3a48511252abcdbac0",
+    "src/core/continuation-flow.ts": "bda10a6359fd18e52f9d5fb3a520c9300b10a89523885d71ea7f61922fb32321",
+    "src/core/continuation-i18n.ts": "64e2e2d0f55efba863398b493f559c6c21d33fcd045436a8bfcb5326ba8e68ce",
+    "src/core/defaults.ts": "069e8ed774687a645d7fea97725e62afcbd63eb05c2e787db26fd7f4007b8881",
+    "src/core/discovery-profile-queue.ts": "14b544a22fdc8bfebb1ae60212b7e70700418177fee351f2c55bf87c3d8ae959",
+    "src/core/discovery-profile.ts": "555cd50a785428f210081677a6bd18ff6a07e5e87e92fafe0ee433af7cee176b",
+    "src/core/entry-links.ts": "ec14a91dbaf62d2653aa18addd41e8251b0bd55b44ba7a4eb57af24726de694a",
+    "src/core/experience-i18n.ts": "52253197245c56ea19019f1674726bcd6e51c32af810a6bdb1b399f40aab836a",
+    "src/core/export-i18n.ts": "05bd7ea0020aab28593ecc9cf93aef0e5805fe5336a350d66ab6f54939e78d1a",
+    "src/core/field-facts.ts": "61d547f4393210bef7351c12da5217052f7bcc35d9681c099333daadeda65556",
+    "src/core/field-history.ts": "0db4e5534248ddb5d45d7afd769c6e5dc8814c3824aa985237aed19bd1b46d3e",
+    "src/core/field-runtime.ts": "a2d3dec60bb3444a6110999e56e8708fc15e30a6d7cd434f01ac506c450eb479",
+    "src/core/field-service-screen.ts": "9c917b62bd2aa0665d1d1a49674824d36e657b4b74f578fb73fc0e92aab90c2a",
+    "src/core/field-validation.ts": "c59ad5c874c43f7a6e5e988b0d123ed64ff273aebfb311e4eb8c5d38dc42f497",
+    "src/core/game-context.ts": "3229cbd823b945d4b7d631ac4236e7da66d085caaf62dd13c2abd33bd586cbbf",
+    "src/core/game-memory-coverage-i18n.ts": "a7cd0ec4e0f8b4c5c8ece833502cff3b1896f19d84aa98668fcf03969de7035e",
+    "src/core/game-memory-coverage.ts": "a8d750f33d297cc346f1ee40c2c231f5959430a7d10ddf1ab90a8e335eccb0b2",
+    "src/core/game-search-index.ts": "8fb93a5d7e9d507d46ce33d36b26a272b6c5ce82b293ecd330b9d364f07d51c1",
+    "src/core/generated-images.ts": "3506ff143399ce6002e33294898ad34a956f147ef0bdd99772787a8b5564f53a",
+    "src/core/help.ts": "1b610f9a3015853290d29a71043c262467ea41b32dee423270592a0c71403a23",
+    "src/core/i18n.ts": "3949cad46743d13ee90caa6c160bdb5507adaf93aeb6fa3df16afc319dbac0b5",
+    "src/core/id.ts": "7a372ee544e3afd8b035eda43c851bf54e208a37929886e1620cb7fe74952004",
+    "src/core/image-diagnostics.ts": "d1dd40639be53f2197f0d679c540dafc6ce717429a1fe60cf08dd51e50719203",
+    "src/core/image-generation.ts": "73e0e38d4887f2d4d72453cd9ce6c9c98f4c8f8b43559f29fb4e6333d9f04620",
+    "src/core/image-i18n.ts": "a5c754e74c46f6c02662f62f02d0a46d6ff0d2019b7de3ee41b6067acfef67b7",
+    "src/core/image-messages.ts": "d01f0fdddc69271aab9554c7be9516a76c6ab4c0c7e6b4c03c419aa03e56fb3e",
+    "src/core/image-plan.ts": "4bed33dcc276d7bc9eac1be6f6fd3307c3e91cf78502b5954372dc50e9ea7ba7",
+    "src/core/image-prompt-budget.ts": "cb942a22de3ab51019f6ae079291bf3dc582e00d81924a19dcd9011e036c62f0",
+    "src/core/image-prompt.ts": "34361768ea3c84ca5cf20a264cb631f340ab2c8a9efd7b45926c62d836646ea8",
+    "src/core/image-references.ts": "9498f4aad034c3c674e87d6dc63f69dcf6a57941304cb61bfd8dac8199f47bb7",
+    "src/core/image-zoom.ts": "1921f6b2a4221f59b3f2a7f07b52b82af0b728513c0dd7f9337fcddecec74947",
+    "src/core/immersion-i18n.ts": "32cc551ae78310d5d8c168babcf4a890065071e4d7982ba255f479a988259d76",
+    "src/core/import-limits.ts": "e5d8b17b33ce00b1ba29874fad3a619080fc9d574e5edc335425555099818fe9",
+    "src/core/isolated-character-text.ts": "ef866bce2e2666ee4b77a30c6a94466f7484e0085a57bb0f58fa5a65026ed8e1",
+    "src/core/json-file.ts": "cf52f0bddd1506f23c9a18ccb9b258268637ddc53de30b3f011dd9f5cfe22149",
+    "src/core/lore-categories.ts": "00d983d35e3e7b82d70d9ded64940476524fbf358ffc82c8dd27a38387713ab6",
+    "src/core/lore-import.ts": "cf0858b4f9fdc4f6bfc840b7639a68f9ebc9c7b9c186dd96394484f518b69a63",
+    "src/core/lore-map.ts": "b1166421d46cd5cdf068b589fffc6cd6c10f4bd1393f784a37be0c3154b27fdb",
+    "src/core/map-i18n.ts": "69bd15f327db8c4dff644c3abd61985743a525af635b25ea0f42d339d585344c",
+    "src/core/map-ux.ts": "915c7431071deaac9518992e7b8ecad376ae94cc3e301b65476c7af4d2738908",
+    "src/core/memory-delivery-i18n.ts": "b7464614f2f52c085bcac77cf7648586b18b968d324424f28a2ff7598ac08cb1",
+    "src/core/memory-delivery-view.ts": "bc2cbea7c8ed7f03f177a4c31a4298406bafeae728ae8be07a5471e1c457e571",
+    "src/core/memory-engine.ts": "4dda999ac3932160e7cd3e6dafdc7f08589d860db1dab5e9029489f8b8875f4a",
+    "src/core/memory-experience.ts": "6094cc80bcc9adafa8b6f1eaa92bbde51fa991598e575355412937ff03e7d3cd",
+    "src/core/memory-guide.ts": "f09e7bce6790767e9c67c062862c7174e422df74d1e959879833a362f5e4d736",
+    "src/core/memory-proposals.ts": "f5116d817adc113e1de65e5017d4395718ec94a76f085125f9bc39d259a09c55",
+    "src/core/memory-search-index.ts": "c72381cc0a9a5e0d514525af9aa605a73ca7cbd500691581f1e0413d022a9968",
+    "src/core/memory-workspace.ts": "a3326e227358c8692c7e31b0ab15c093ee34e8211bdfa902cf5a5182863820d8",
+    "src/core/menu-i18n.ts": "7f99ca9ac551f8b1d0910974e9447a58353c47c1bd9a81a77906e0a505d4d0ba",
+    "src/core/messages.ts": "598f3bd40d6c404234a828ccb551c991c59810a7e134e21ecfadcf1b32f59721",
+    "src/core/navigation-i18n.ts": "c4b166275b081794831fd57f88c39ab9e7b88b2c0bd981dbe09213955210f8e9",
+    "src/core/old-chat-notice.ts": "ec7d48eb4dda4266bd4f18881020e4a4345994556bde834d6b2304baa7d1bffc",
+    "src/core/panel-width.ts": "5af07eae2af4b8c65ce4b8e3fa94eca81153a78d573e8279006e4bc8ec5afb3f",
+    "src/core/photo-assets.ts": "60ef3d20f4694c7001cb183338c3d2222ff321b8c6ca61cb173ad49fd2b63434",
+    "src/core/portable-photos.ts": "7777782d7e91ad581b4a0a8228c800efb72182d661f7dd46a732de41ee260c2f",
+    "src/core/portrait-action-search.ts": "375fbde998897df19be7b536b31b0e5cc29715b5a95402171cb9563af05d3f3d",
+    "src/core/portrait-layout.ts": "159bb579f81134f7fe0f6acab875e81fce841017a2ea5730c817c7e55fbc5df9",
+    "src/core/portrait-library.ts": "8c131e0cf0b0341ef88f221bc1b2901a09ceb4be4ff813d7a4fde13f8ef33241",
+    "src/core/portrait-upload-i18n.ts": "f162c0754b9723a6418a77cd90598e454266b4e03cc02a7608c7fcba19618716",
+    "src/core/portrait-upload.ts": "18176196317e6476885deef7ac2584e7d6d9ecdbcc7747c75656af4e95cf75f3",
+    "src/core/portrait-variations.ts": "6663cfac347ceb34fa47a70def2a031503d658df3841055a385213dd2cf780bc",
+    "src/core/profile-supplement-i18n.ts": "9c3731aeef61b78c1b32e7db5f0efedd39b415a6b9e70fe843d20ddce5668ac0",
+    "src/core/profile-supplements.ts": "d70d50d112c539d0c9149e56122ddf91e170280abaa8c154fa9c94b3cf23fee1",
+    "src/core/progress-i18n.ts": "63dd87bb56041682755dceb25edbbb7d98cb23a842ca016f3fc41cf4bf406e16",
+    "src/core/progress.ts": "fcc9f6cd038763e1d2697ae4baf03bb79b2be266c72d52c3a4dabfa7d822daf5",
+    "src/core/proposal-validation.ts": "5118ec82a7926cefbf22ebb84f5c44c12efc3a8b92dbde7c4fc675ad21751104",
+    "src/core/read-json-file.ts": "939e8c5e59e20053f2403d54a06aa9a666ca48eb36eb0d1edd364cb258dd234e",
+    "src/core/record-validation.ts": "e77659cf9f9197689bb4e3a938f5fa971e090b7d28c0b0f85dc57c2b43212d78",
+    "src/core/recovery-i18n.ts": "76f3f06ed32d76a2c0dceeab1bb597975f0f3d410e0f849c6a96184d91f7378b",
+    "src/core/relationship-handoff.ts": "ed3fb958350b2786cdcc556ad7fd9204d0ab346992d75c7483baa308a063ff68",
+    "src/core/relationship-i18n.ts": "1c7c3990ca32e8bcfa2bb7ed22de308d80b7d64370e421849e4a7dc79a6d80e6",
+    "src/core/relationship-setup.ts": "a1b2bbd707bb69796d8f804f92b33f844ccae22c4e34e7495fcde88182a330be",
+    "src/core/relationships.ts": "3db211bb164d184acd168f6f4749992e171814484e5f3d88d77c8035b683ec55",
+    "src/core/reply-recovery.ts": "e3a1f3b11b2ba2d28d66647f7ea85bbff3664392050b24a584ec38d272d7cad1",
+    "src/core/request-injection.ts": "96699df9efcb7e3517412fc3a21b76b7a02188942b59c6deee3130202a916797",
+    "src/core/scene-choices.ts": "3047ce6b7e321f8030a8b20f22de5e1478851f3003658ec6c95a5f0a146cda31",
+    "src/core/scene-i18n.ts": "25dbf3a9bf7763ccecc69583341c923f5642b695ee7af2c1d17faf7d50c4d593",
+    "src/core/scene.ts": "d26ea55142675deb4eb110d0a02266f606249a9b87eec97a3dad42d3eeed1f85",
+    "src/core/selfie-i18n.ts": "7dfa1df46ff8d2836739b79a5560fcc60bd149f26c5b3f6996f2942b66d3039d",
+    "src/core/selfies.ts": "8320fe0d57d1d006217cbe330403de851a5c3ca699c920981f35132b6e471c92",
+    "src/core/service-diagnostics-i18n.ts": "7ea9842e75af1101037ac2188927f68a97753b25cc4070f196057667fd8a6bdc",
+    "src/core/service-diagnostics.ts": "e0c83a1aa52bf9bbe8f1bd563c9ffe020b7f0162484bbc9f27ca6e0bb4247503",
+    "src/core/service-operations.ts": "e00aaecf41ed8120292626a4826fc3e9fa327cfe305b675197d98c24c6ccf653",
+    "src/core/service-outbox.ts": "fbac744a41cbb8730037f8cf032dac8e1e0861ff0ecd270ed9c6da864bc3c46a",
+    "src/core/service-protocol.ts": "a9ff0d88c610a201dff8bc776183deebddfd01b2beb35719321ec40ff9a6c2e6",
+    "src/core/service-validation-i18n.ts": "94797e5919ac12a2d7b1b54127321822be96c3d487672d8df1e0eb6533c0d28d",
+    "src/core/service-validation.ts": "c837820bcf9aade37759740451cbb0a3f79751b384fab135ca5a96dfd9107a25",
+    "src/core/startup.ts": "240e31e7a2f4089abff1f19cfcfceb80e8922440e71ed6ae2c0cf0b1033ea764",
+    "src/core/story-action-balance.ts": "a747746e038c2462b28fff7a0abb49f161c8de7fd10cba57b3b237d3ca2d6d72",
+    "src/core/story-automation-i18n.ts": "d70eaf93c77eb3db0a9919cd5023262cdc31540b0f2c8ba66af63790e1322c1b",
+    "src/core/story-automation-review.ts": "9e79cd50624954caee2ee35dd5df825dbfc58948b50894017ca473b5c5658d79",
+    "src/core/story-automation.ts": "cf6fab2c6700031710329baef30440a5ebcc42e2030de88f693defce178dd917",
+    "src/core/story-baseline-effects.ts": "062829bd7e2de2dd0674388840e450c718f1955335c136a1d7cd9d576c51c79a",
+    "src/core/story-budget-priority.ts": "cdd124c64352730df91011106e5b25f189827365bfe47baa7ab1ec58aa49f86f",
+    "src/core/story-character-discovery.ts": "0885c92de2c0eb807c7d97e62b7765f2da53dacdd242d26080abfd1e77c21e4d",
+    "src/core/story-character-identity.ts": "107c88b1070c3f8990406f55252c20dd7c7103f429b0c819b5184355a99507f4",
+    "src/core/story-character-merge.ts": "99261cf33458f6ae8f8be5d8a22a1b747180d123d5f448eed556da3f2a92ed4e",
+    "src/core/story-checkpoint-i18n.ts": "02d7c30affc14a1a410370309633fb9581456da18511615d17d57589e4992045",
+    "src/core/story-checkpoint.ts": "2632be557873413242c91098e86d8fb6537a689ede23a9a7463146b542f63185",
+    "src/core/story-circumstances.ts": "82d1ab444d96ca28b30f36ad2fe7a54a16934d5234a64eef0e880039d1ed886b",
+    "src/core/story-compound-action.ts": "b3de0b637416e4add703961f5b370328dc4dbabc10e3dec53a753b1363a34024",
+    "src/core/story-content-relevance.ts": "eea51b39838fb151dd86845f926f372856dd5277c5d375fa4287e86a13d81d2d",
+    "src/core/story-contextual-reference.ts": "3497232392a9dfe518d82cb9994ad58613247564e10d222875ea1483b11cc086",
+    "src/core/story-continuation-balance.ts": "85aabac52be78ea621e2bc5793b8c67556d59593737334902b4e2032089ab5c8",
+    "src/core/story-continuation.ts": "12d97923b13df56925cca2cb123372b4c35c6beef253dc3492dc2f49e241d6d3",
+    "src/core/story-diagnostics-i18n.ts": "b1d4d0d3563aab7e1872a7c9e6d504b13b994b5026d5e02203bbf21887363c01",
+    "src/core/story-diagnostics.ts": "6c33047dc15b52a94a6cc5c94cfddfb065fc708fb2e6a11ae05f6aceadcd5fe5",
+    "src/core/story-discussion-priority.ts": "1be9c642ac78744fb1fbf035f62c9fea11079612ce841d51b3053387ae219e50",
+    "src/core/story-dispatch-capture.ts": "1615151c95c9eeda0e3371599a3537ef7cc353cab31056e97a67e7496096ead9",
+    "src/core/story-dispatch-match.ts": "00c10a7e7211af694d3355febc90cbba69e88b93f8e5107a3b3792bada5bb2a7",
+    "src/core/story-dispatch.ts": "52124c4157abd0a1ba380671ba6b15c7dd3732b48517ac3c183207e6fd630a44",
+    "src/core/story-episode-i18n.ts": "c46ca7c834aaaecccfd5c61a543f4af37ac45327e9cc7ec037f1ee2f873c1f03",
+    "src/core/story-episodes.ts": "d30e69c8f7a30da08ea90df797a021b3f49755167668cf541eddcf4f03567363",
+    "src/core/story-exchange.ts": "8a09b281778f57856f4db8f5b8e362977c20c24bd5f52e3cc533bb4e91fd3f4a",
+    "src/core/story-fact-context.ts": "712e98eaf74008a9ed664bd53bc551314253eabd899ea1e49844498bf12b5c37",
+    "src/core/story-fact-search-index.ts": "9ee99f2ae054094b1c74b6d6b10e01b92cb7e01bc2c725527a53ed2432fd2c7c",
+    "src/core/story-flexible-priority.ts": "2df704333b179a2a913bd91ba0f62d14e8b38dc1aa061c289bf64b06c529c9cf",
+    "src/core/story-game.ts": "bbd83f7d1948fcdac66a2b822e334d7eada93757d83705d9aa6b3c71ae389fb3",
+    "src/core/story-guide.ts": "087985eccfe26abe5517951b45f30906102e69e85323208ea0d0f1cf753c9bc3",
+    "src/core/story-identity-i18n.ts": "b4da542c2805af5da4a1ca995dbd5cc3ab7241b6a7e4e40b107bb2a9a58d599e",
+    "src/core/story-identity-management.ts": "8da658d3c3def7f4c4a689712842cea66949be427aacfa49907add996b475368",
+    "src/core/story-lasting-recall.ts": "b84578fa342afba5ccbc3883147b848e6ea65e5a424278b9ac366f4fb6fd5cc7",
+    "src/core/story-lineage.ts": "4919cfc40415e798c406bc0c6ada5e5dcd49ed052d129f3c4e035b5de38b535a",
+    "src/core/story-memory-batch-i18n.ts": "2edd759b9b7fc87159bc69da64a6fb2039a825af970b02bd74e91bfaf308a2d8",
+    "src/core/story-memory-batch.ts": "6038695d47ae39dd18d2094d65114ee3a519f4ded5f3ca2c8a02bb6b4e3053ad",
+    "src/core/story-memory-lifecycle.ts": "d3c58a71ee9b53c23abf23407199608d2cabcdab67b2f660988ac6c351f7a9c4",
+    "src/core/story-memory-transport.ts": "b5493833d6f3e2491c76f1b41a19303b1cbf2a210c0afebfa67534d8d56c33b0",
+    "src/core/story-merge-i18n.ts": "7f30d8b0e7b7de55e24f1dee61c44a923ade87643b331277df26127c00563228",
+    "src/core/story-narrative-i18n.ts": "e6c132297e6a6a715684b8a87e9aa813fe0e97941f5c89b882d5617650f1f581",
+    "src/core/story-narrative.ts": "853625ed0f6e8e7199f02f3afcd2ff75b5c2dc8269f89a416f42ad8b6dffa629",
+    "src/core/story-native-history.ts": "986da8b1752847fd4ce732c0c17f14153c3e091d2c63746c35727cf36e595efa",
+    "src/core/story-native-reply.ts": "3b3c5a8148c53dcf11a29d4bfba612c446b3ed48a166941b5eb5a6baddd92955",
+    "src/core/story-native-snapshot.ts": "5093bb9691d320dcc5a2d44ae7012341e8c755adf880e90b4fe098da91c202db",
+    "src/core/story-native-stream.ts": "98e4acce17458dc482cd1ed71454c2642a7a0895dd172fec5b968b024eb0316d",
+    "src/core/story-natural-recall.ts": "01e8f792ecdbad5ef12674a68495a37125c97effd615c72351e13006884f1e27",
+    "src/core/story-owner-query.ts": "ac1304be6f31bcab0428f21d1921e8734f2fadf453df8eae35a0c2b4c71eb651",
+    "src/core/story-profile-view.ts": "303dca8e6d25cb76292288b3e159fccf1484a3e690f560fa0cf3438808c3aa88",
+    "src/core/story-projection.ts": "a2f51e6516b07849c9fa7fbd5ff2dc28f87dfd60b60a1be78c458fba34d32d43",
+    "src/core/story-purpose.ts": "6a8e998febf7f5e99278642420b633be275717bf8ea74c38f3eada59d26ca383",
+    "src/core/story-records.ts": "6db12fe995340f2d1ee2546fd0ee36ccef6cd59f3c601ee28a22009fb26a94e6",
+    "src/core/story-reference-recall.ts": "97dd7c5c1b20821e22e7ca22df73f26599506f48dbcda3f6c565963939ad1e6f",
+    "src/core/story-reply-probe.ts": "e007586a46caa9ec4aa65ad2948b958fe9e660ce07ca917c44f559f88ffbbaec",
+    "src/core/story-request-context.ts": "f66c3ba5a73ec72c41f49d59b2b227aa52a50c135f8c9cc6c8c92876e824abfb",
+    "src/core/story-retrieval-concepts.ts": "f09ee576e4fffd5acb80b47487d74a1f8f10072941d05a0ca6fc2841752a2201",
+    "src/core/story-retrieval-query.ts": "7fee6ba148659a965048b84e80359c5e0385a21d48d21d7696717337bcd95cd4",
+    "src/core/story-review-i18n.ts": "1b7072b5570b43d1dddbff20556367a0f1c8bf86b06f81fcfbc27e5f1416bb08",
+    "src/core/story-review.ts": "79e352eefca6194e81af0e6019d213d8f061ba0f2fd113e4d0caca5237488ab0",
+    "src/core/story-role-binding.ts": "550103e42be013a327117de6a0370c01afc6f4097a3d23ca5816cd9020e14e3f",
+    "src/core/story-sequence-priority.ts": "08d93b83fbbc129a89df03ed80c5e2a43296add9a20e48e8f868e1194d9abe3a",
+    "src/core/story-source-roles.ts": "d3527883e5b3d335e91e0677f2463444ad65b21940fe27ece76714bfe5cbdc4f",
+    "src/core/story-status-summary.ts": "b413b237a817bbef2754e105757babc1c2240d31450d0907fee78ffec2f0c9d1",
+    "src/core/story-task-goal.ts": "5bd57d73119f39aee429a669781576496917f3ae16b3abd599850e6fa13e5a19",
+    "src/core/story-task-i18n.ts": "10d7dc922f2f15b8ebfb549d8fd9e5231ede09a174a716f6c1a1e86b0a8142a1",
+    "src/core/story-time.ts": "a5a2304a59ed52d0968f9850c066e246b4c758d2e09add127a17ab3218e36ee2",
+    "src/core/story-transport.ts": "56749bec829ccaf2c3aa2e428cff1665e11d36582ea730888275f952f206528a",
+    "src/core/story-turn-effects.ts": "c8d88b2f1c2747251cf84ee3c683fd3f7cb94da236f8c9ff7614c7e8bf65107d",
+    "src/core/story-update-i18n.ts": "c81e9b87e079a7182c1f709059b623cdffc6790462f67731e8b6d2df38068dc3",
+    "src/core/story-update.ts": "5030ceb3aa9f82da8524b7dfef36c050f7fc23b7a25a2fa74b7d277bfea7837b",
+    "src/core/story-ux-i18n.ts": "0b02bd6e2f352456a59e4d8165aba361623f4e01b7e31821a051d9a0b13acddd",
+    "src/core/story-value.ts": "185aab0279ce837de706e828e5fd1a4cee61e4262f68f29c9db21788b393047c",
+    "src/core/text.ts": "eb3848372492511a7731a50458f8748add067c00c140f1da146648219b0075d4",
+    "src/core/tutorial-preset.ts": "306c23d10004c49ffc906df78e3b9f93f7f21ee17947c3fd5908174085425e16",
+    "src/core/types.ts": "993ff50e54db1521f5acca4e2f7d8c211d987bce7c4e980684077f3a30b5e07c",
+    "src/core/ui-i18n.ts": "d4cd1a11c732478d5d5651def68e29684b13cb2f5fe7fc1392cf4c004d3034ca",
+    "src/core/widget-spacing.ts": "43424daeccaf7555b53143046213f8fa4832eb1c2fd6fe6fff2f3c85f17fee9f",
+    "src/core/world-game.ts": "ffd0c879723648b4272a38c31d6f3689f685e48abee5e76688fe7b1325f325d0",
+    "src/core/world-reset-entries.ts": "c6e5eabf6bcb9dea6f744b0bb0c5cfa1f0b5c7f2311f106338e4406d5ac85762",
+    "src/core/world-reset-i18n.ts": "1a830aa7d44e130104f7f7e62f3a4352ba3385ae5243e4bd083e9ed39a93ce99",
+    "src/core/world-reset.ts": "3feac9bba9767791afe482b4663909ab592d8dde7d2c1eeadeabb7d1be746fa7",
+    "src/entrypoints/background.ts": "427ffca0ebd5016aae8708829ec909c02e9e80fe19ad510e2de99368e8a6e27c",
+    "src/entrypoints/content.tsx": "26b29eee688ca42814363362efc0b1c85c2e344d65da1066779e1c53cbd3b2c5",
+    "src/entrypoints/content/PageWidget.tsx": "1414765596b95784058a7f063b46dad87829260ff6c3c3f119d7b005c5786648",
+    "src/entrypoints/content/WidgetDeck.tsx": "9e4e33e43a02aaeac34582624bdef15b85cc0602a6e7d47805248485ecf4d3f3",
+    "src/entrypoints/image-permission/main.tsx": "8fd959c7f0e10c4456e31e18cee4693efbeeeade050a46dc761e768d0b58a02f",
+    "src/entrypoints/injected.ts": "f1371483476e5b2e15a83e5d7832b96fa269ea8c5fe16fc55f056d4793636ffb",
+    "src/entrypoints/recovery/main.ts": "51a433d4a51b553c5d53db368b71c98d7679b239e942d1ac45b3c8b18b4ee929",
+    "src/entrypoints/shared/ActionAvailability.tsx": "33f96c42b746c2cc7316713bde9a20ceea2852d395b021d36d7cac7d15504e7d",
+    "src/entrypoints/shared/ActionControls.tsx": "3e24bb8ee07689407e8fb90b58032f7db36ebdd86cf1908deea16e2abfadda59",
+    "src/entrypoints/shared/Attributes.tsx": "03aec33bfc5548c492473629b3b0de4423e4005b9bb96a500762a904b710aeea",
+    "src/entrypoints/shared/BackupRestore.tsx": "180293370e1295c23c944895435d86b2393e6a94534076ef42ab0cd16be30325",
+    "src/entrypoints/shared/CastDiagnostics.tsx": "adb5c1fb4bbe4b88440b5da291ed5ad55546ae5bacbd3f28e18746aa53fd8893",
+    "src/entrypoints/shared/CastSetup.tsx": "96e85a12d0d2c2cbc1ebdab8322410df5d72c5c3fa04a3faae6572fe9a0192b1",
+    "src/entrypoints/shared/CastStatus.tsx": "7148487cc018e6129669c7d0086e19ceaa8a0efc3e2b0a7b25bfe86d25e90953",
+    "src/entrypoints/shared/CharacterDiscovery.tsx": "7d62507197422a16ed56f1580808e6615e53f78f7690ce312b2e5ad503125a96",
+    "src/entrypoints/shared/CharacterPagination.tsx": "9a19cedc16e11b577ae8f18b995a8b07a09fc3b0a48f2d1ff07877c2d61cfa27",
+    "src/entrypoints/shared/CharacterProfileGenerator.tsx": "e9bf79a4cc6dfbbe9ebf21508e1f01103358be889673362eaf68adeeebcf9cda",
+    "src/entrypoints/shared/CharacterReference.tsx": "2b1935950835acffa3f0d81e403b1035e879fe7651ef20cbb73a0eb02b4fa645",
+    "src/entrypoints/shared/CharacterSheets.tsx": "386f251b63166d3daf4439c48d2c74496f8cde899699b53e1571be0b4a023e62",
+    "src/entrypoints/shared/CharacterTextField.tsx": "4e90860f7955526d9973a47d4fc257b341dd9587d9d36686af5709ed8eb7eb21",
+    "src/entrypoints/shared/CharacterUpdateNotice.tsx": "b21ad777a28fa2691b45d2482df3e6a2effc8501b7d45227922d806de03c889b",
+    "src/entrypoints/shared/ContextBudgetSummary.tsx": "fc0e859f78d77a4cf8dc401a6b18b335541d6c3df02bfa0b6f4e53647800bfd5",
+    "src/entrypoints/shared/ContextCapacityWarning.tsx": "b930500adcd60d70466d916277e9518529f271b6ddd5389f06c75d4fb884fea7",
+    "src/entrypoints/shared/DiscoveryIdentityPicker.tsx": "2c2e1be2b67d6f3e2e177d5ddcb35490f9af676f583e0bb85cfa2eb657bc0ae0",
+    "src/entrypoints/shared/DiscoveryProfileReview.tsx": "a8b2caec79a19c223df653f3e91500e5172c54f693e1046043861cd05dbab091",
+    "src/entrypoints/shared/GameMemoryNotice.tsx": "98953ddf841fedde2c41de5bf287a0c4fcb59a3a09e25cad26a9556fe99b38be",
+    "src/entrypoints/shared/Help.tsx": "bc27922efabef64aa1fa611bd5eb6f97cd133daf5ba8f96fc2ec1faf75c72551",
+    "src/entrypoints/shared/IllustrationEditor.tsx": "e98bb409307e43faa33597d24fa624ebbfb765e9cef2963833261a72fd513456",
+    "src/entrypoints/shared/IllustrationReply.tsx": "9577ef6ff4b5ab44f17374adf560355afbf06015b64daad783d4eca4affdc168",
+    "src/entrypoints/shared/ImageErrorDetails.tsx": "d1dc84579e09cc55ae79db1923ead33052418d527d253a8ad31265e7e62864f1",
+    "src/entrypoints/shared/ImageReferenceReview.tsx": "c5d59f5b1b0213982588016c5595ea33233b41df4fec4c4d59db30c672de9dda",
+    "src/entrypoints/shared/MemoryAssistant.tsx": "a4ce3d2b4c47c0ecee8ee2cb0adf6f476a0467483494c78e5fce6a48f58caa03",
+    "src/entrypoints/shared/MemoryDeliverySummary.tsx": "48a5f44e823b12b2cf6ed3bb1b0d2ad63c73b2575ebc415f554b3f795c3c3751",
+    "src/entrypoints/shared/MemoryGuide.tsx": "87de32eeb4900d0e5d7ce5c2be45ca0fcb78d317e57e15811ebe70a62b604bed",
+    "src/entrypoints/shared/MemoryModeControl.tsx": "d50f81041262e17655b5edcda26e256c53361e019bc9fd94782f968e64f62b1a",
+    "src/entrypoints/shared/MemoryStatus.tsx": "642935da89e139a19abc3fc12b223f083282904bb824a5aeebb97fcbee62ab8d",
+    "src/entrypoints/shared/Modal.tsx": "58ac9cf2d75c33475a54d81630dab944311f0940a45e28a74d50a123de10e0ca",
+    "src/entrypoints/shared/OldChatNotice.tsx": "106dea73cc72e2c1aac19ef7a0a78793fcaaf8347b8ea5cb992092ae8c9be1d1",
+    "src/entrypoints/shared/PanelWidthControl.tsx": "15cac1f49299cb2a4b2f77f173f9cf5a07ca0dde72fd4e547cf1832482bdf198",
+    "src/entrypoints/shared/PortraitLibrary.tsx": "e5aebcc338c343389a87930a492e015a47fb1895965c50a61d9d896b887d58a0",
+    "src/entrypoints/shared/PortraitUploadChoice.tsx": "e26e46391ac31aac801887fdc3c86645d3500a5c799c6ac72010d10761599e1c",
+    "src/entrypoints/shared/PortraitUploadSettings.tsx": "6107915f97ec44972041299854e45b4e7d47af35222f2958e48e266d8ba07c1d",
+    "src/entrypoints/shared/ProfileProtection.tsx": "031179cc3e21d2e98c357c58437c97508288f0cf9c177a27ab9bf7f324cc7e1b",
+    "src/entrypoints/shared/ProfileSupplements.tsx": "73bd0194a060603fa2bfbace2cfaf1c8b2370169089f21d519f93467434d50e7",
+    "src/entrypoints/shared/ProgressFeedback.tsx": "9f6a02514da893ab8333e55ddfe7ffeb1475d74a5a042d2571ae7fe0ff387624",
+    "src/entrypoints/shared/ProgressOutlook.tsx": "5339dd196f5de549101fbbb047bd007dfe310007ad02f3e340625daf3e7265b2",
+    "src/entrypoints/shared/ReferencePreviewSize.tsx": "8910afa3a58f3f6869b25d2e0a642110b6f7c30deaa656436a1d5a357a23e3ae",
+    "src/entrypoints/shared/RelationshipSetup.tsx": "5e7ef6d9e83f77426d9340a217bdb0ff291559f6695061da2d6839daf5729690",
+    "src/entrypoints/shared/Relationships.tsx": "dcbbdf8e550b4752a0a0a72bbde702e26d0a132974bab8cf1b1257178d8636a0",
+    "src/entrypoints/shared/SceneControls.tsx": "4e915f20f2e63a8771eea0e08ec569b64ded0b13fd891d7a5f073145db6c40b1",
+    "src/entrypoints/shared/Select.tsx": "e37e0992f24647117827924e791fc72a8c9f218796dd63001f382ec4ef5dcc75",
+    "src/entrypoints/shared/SelfieAccess.tsx": "79170a3dcaeb263bf41010505a501f189afee83c4db543a1e92d50a18c9a7760",
+    "src/entrypoints/shared/SelfieCategories.tsx": "c77fdc1134fe356ff42d5a1d009cca672f703dbbdab89401d450d5f698a7503f",
+    "src/entrypoints/shared/SelfieLibraryPicker.tsx": "1d54a459b9ca39027165a64547854027c68f74f9c4cff61d90c41360a98a96bd",
+    "src/entrypoints/shared/SelfieRequest.tsx": "6e1e56484f0460de86f6bce653499514bcdfbd6482326ef5cd8fe00626efa1a5",
+    "src/entrypoints/shared/ServiceDiagnostics.tsx": "e9177c4cd975ea73e80ae36ae44b3bf338fa42e6953b3fdf796981ad7385a72d",
+    "src/entrypoints/shared/SettingsHelp.tsx": "42c3b916a7ef520b77db6b35ecc1c89e2e12e5f55b61c65c606e9a37415e2846",
+    "src/entrypoints/shared/SettingsNavigation.tsx": "21c03db576755aeee195a911aacdb32d3b5bdc7b9515f3560adaeb0fcf928849",
+    "src/entrypoints/shared/StoryAutomationInbox.tsx": "5d3c5666be263caea8a942a124b7373f23242ea36cfde905aa02c7734619fd57",
+    "src/entrypoints/shared/StoryAutomationPanel.tsx": "723423e8c06f1b34673c6659837e65a11d5546e40baf9422cd418202168a9d19",
+    "src/entrypoints/shared/StoryCheckpoint.tsx": "377d7181787f49c036a895038a76cbce78a4dca533526e2329f0b9092fc39083",
+    "src/entrypoints/shared/StoryDiagnostics.tsx": "91c218fbfeb8a974d97cf698fefdaef2076232e59eaeac477d4d10feb1228750",
+    "src/entrypoints/shared/StoryEpisodePanel.tsx": "fa1def36f5ce55bd946759d41898ce79040b451ac533d822815e9759c8e0ed79",
+    "src/entrypoints/shared/StoryFacts.tsx": "12145304f383db22bb61bf09825f23f308bbd9a166f0364bc3c07f8211ec9233",
+    "src/entrypoints/shared/StoryIdentities.tsx": "38e62c6542181d49aeef2ccc8eea97039c3c9e9862332b293df855fcf6fdef9b",
+    "src/entrypoints/shared/StoryMemoryBatchPanel.tsx": "1c7c9b747ac4a030f04361e17a8eab51e46dcdcc19c85ca64b149997a05ba4fd",
+    "src/entrypoints/shared/StoryMerge.tsx": "5c3c7eac89b941518651ac1b4445431fe44c37a865a9806ad9ac0fad4bf4f866",
+    "src/entrypoints/shared/StoryReview.tsx": "0cb295549eb8eff0b72202820f4b7abad08214df76e4b2a800689f67bb033ccc",
+    "src/entrypoints/shared/StoryTaskPanel.tsx": "de10dc20638e7ec10ad5d31eb35e1d499323e65435b89b63667525d1b29a246e",
+    "src/entrypoints/shared/StoryUpdateSettings.tsx": "c1d0ddc4d5011890084688ae971627f8f88ac1b389f35e0feca005fb055d822d",
+    "src/entrypoints/shared/StoryWorkspace.tsx": "e7732dbe862466c451ef9805802d224712b57c4b34f3dec672ff148db5d763ce",
+    "src/entrypoints/shared/SupportDetails.tsx": "8ec142826df8379e8426dd7646f7fab524b747c7c6571d9a0f10996cd4b31845",
+    "src/entrypoints/shared/TooltipButton.tsx": "2c55d7025e963121ea2eda760a753ae24ca3b488fe6cee931d1a2ca804b53c67",
+    "src/entrypoints/shared/WorldGamePanel.tsx": "d9151940cb98a2174aa403ac4ceb50df5734bb4ddd13579e7aad4ee56b1c719a",
+    "src/entrypoints/shared/WorldResetNotice.tsx": "3279f3f7e293b076fc3f95901a40e36e26e8ca94704222247abaed47fbeb0cc3",
+    "src/entrypoints/shared/WorldResetSetup.tsx": "bb414843bdc0d52e832e51838623fe43e24e27d23de73aa3e563db9c72fa87f5",
+    "src/entrypoints/shared/control-label.ts": "bba6d890cbd792e6bdbb6b93ea9c39620705eb93387ee162378d8c308c662422",
+    "src/entrypoints/shared/portrait-file.ts": "b9503df932f669aaacbfa3fe02d4543c2a5994b5f199a96067c630bd53fdebf0",
+    "src/entrypoints/shared/useWorldResetJob.ts": "9e9f60f97d732cc5b879284ca17df57f2a272d3f3e3c616f68ee1195f5303005",
+    "src/entrypoints/sidepanel/App.tsx": "238d700776d1ff5f4ffc4fedd192b15a88a28686f01edad8dd13679072bd53fa",
+    "src/entrypoints/sidepanel/DeferredWorldsView.tsx": "9bab1078909425815879dd20bc51d1e1363e9d25ca810c8ca2e614d68372f750",
+    "src/entrypoints/sidepanel/ExportDialog.tsx": "25eaf3f1fa52331a052fb1661cf4e5f09e141b59231fc31f0a058760483776ef",
+    "src/entrypoints/sidepanel/ImageSettings.tsx": "f5d3d85df56687dfdb43e2e6f1dac4b81ef4425ca9add5f346c902dc62fb6742",
+    "src/entrypoints/sidepanel/LoreImportPreview.tsx": "e31955c2edb2e801e1b5ac12a1b98d6b78699cd8d4007c9bb6a36669512cdfa7",
+    "src/entrypoints/sidepanel/LoreMap.tsx": "1e95d2a932a59803399ce0efd902da6dcd4998f835520110d6f5ad6080616924",
+    "src/entrypoints/sidepanel/MapMemoryEditor.tsx": "127ea05589bb35d6c63d204bf568c80af2addb6125602f390cb596eb22e4e8d3",
+    "src/entrypoints/sidepanel/MapWorkspace.tsx": "c5aec8929199fa3de399f780f0e796413c6fb39b040d7e5c6c3a42e1fd8a9c2e",
+    "src/entrypoints/sidepanel/MemorySelectionSettings.tsx": "fc7a7d6bc2a40b166dc810e75b24c51458be4cb6d16db17b5d48065629d3699f",
+    "src/entrypoints/sidepanel/WorldsView.tsx": "562af6c8257a11c54702ddf872ca007c823a5000253010d9645151bd6e852334",
+    "src/entrypoints/sidepanel/main.tsx": "d91a774c12dd862fe7f680079244e017b2a189a56fb7bbb1a0a5f0207abac930",
+    "src/storage/action-settings.ts": "e8dfa62a13c464cb7c2965216d59e47031c3c1744d4e703288962cd7d313c5e4",
+    "src/storage/backup.ts": "e976ab913a2e4c58d014aeef6bfe6d16d5b4527cc87e176a0f6922da4c608f7d",
+    "src/storage/cast-initialization.ts": "e68b6d876f3985fd08263dcf03e51e1acc199aec20e942d366ab33ccd4ef6c44",
+    "src/storage/cast-service.ts": "5392dd669964da90948237e30e2da4462d6ccaa4b700135405f7e515047f0f55",
+    "src/storage/changes.ts": "4abb20168d8828ab55ab0d9fc61674dd922f0f320dd877c1d31cf5ce8a73f920",
+    "src/storage/characters.ts": "fc72dfdf6127076f985ada0621c491c87e599268943599c97efd7e67b720c638",
+    "src/storage/content-repository.ts": "51a53d32cb13a4a35d06841a7b81bb04b0b292abb234b1eb45f7606b1c1ad1e1",
+    "src/storage/crypto.ts": "7680e56839a386189a8deb80574b95deb18eb378f3b9856894d9eac91ed1d7c4",
+    "src/storage/database.ts": "d108ada6a667f4148735e5c1c159306bb832aa01bf868293ef10cb87a1ade87f",
+    "src/storage/discovery-profile-queue.ts": "b779ddaeeb00609cc0a8b8c27ec429fe1707e30bf26f6a66d0f106379dc80786",
+    "src/storage/discovery-profile.ts": "51e938946058fac204d5524ad2888f60a3a91705a195201139b4e140a73f0faa",
+    "src/storage/editing.ts": "d82501adb0565f10517fa2a8d47801bc2d504889bfc7d2eceba056c6b81d32ac",
+    "src/storage/export-file.ts": "536a61bf4aea4d7181377e2a702c61941b1a2820f889376c76f2f33480de4095",
+    "src/storage/field-service-validation.ts": "03fc455da52f6218b53f2be1a348d1262b93e254dbb504b17464fa0a76274445",
+    "src/storage/illustrations.ts": "9f83db586cbc9239a526ee0a70406393aca0190b13172517bdf99c4d1ecfb326",
+    "src/storage/image-attempts.ts": "1008d23e3b183012effd748111b23e21f538625f7a744cf6c3e3f13ec8d18595",
+    "src/storage/image-jobs.ts": "3fde009c7c34f8f07e5445bd34811cbcc0fbdc4b37d2edb2675c83cc5d150ab9",
+    "src/storage/image-keys.ts": "c893e2d1fd30fa1627f03e8c4ceeb482e8a6ef6b47d6ae41506b39f1da9877b2",
+    "src/storage/image-permissions.ts": "a3bacc53484309d56d5002c14e69f0b76b3121c7a3d9e0a302bc75be2891c956",
+    "src/storage/image-settings.ts": "46437f769652be00100968ad654468adacc87ea5008e8f8e37bc72467c92950a",
+    "src/storage/legacy-proposals.ts": "b7918dfda3ac801a9aa92e7c445d3fb5a45dc9e8ca367a42998ab3ebb8a41824",
+    "src/storage/library-lock.ts": "6aab0e44fd005ea785d491def86dc6bb693f19a0c80f87f6d14fe55ff1a3f3b0",
+    "src/storage/lore-map-history.ts": "900558ebd97a1ec71b2880cf391c594ba02f4b84bb46e401dd06805d7b6d6d4f",
+    "src/storage/lore-map.ts": "77a9aca54110e74a5c86549f27167f0a0cb6bfd4afff1e36e27137be42e2e5e1",
+    "src/storage/memory-proposals.ts": "8280c20a49247a91f6635c89042c85ea6d4c484de02b12b83fb3a77032f808d2",
+    "src/storage/old-chat-notice.ts": "736fbf8dc02cb47ba8e592a3c9fc88d22a19ad1eb97b0bd76d0c1ba34237962c",
+    "src/storage/photo-assets.ts": "111a1d232ff87de9868439b14134e3acf551f33bca70d466e5c609fd860b816f",
+    "src/storage/portrait-layout.ts": "bcfca34cfb6e1c561dee9edba1ab0c24639ff823d8ea92f6418c931c4215c4a5",
+    "src/storage/profile-supplements.ts": "0bb0b4ff70a1da286219de67fa82532ded12cc914d2a9c96d3c9455d6bf7d1bc",
+    "src/storage/recovered-replies.ts": "6c17383cad1657c79a26ceb511940539f586ed0d1706545e745ed3c46f81628d",
+    "src/storage/repository-stream.ts": "b622140b06ac19710ed64a3f9b8e5e7d0a148c7869817f86e4fee765688ee209",
+    "src/storage/repository.ts": "ee3a11a066df93afdb06f1825d5ef3ecb098478ae0ed888e9f030dfeac64685e",
+    "src/storage/selfie-images.ts": "c2a6a8570b63bc2b3dd5a0128971ff1e59ae29bf2d071799a31b5c3fa6970471",
+    "src/storage/service-diagnostics.ts": "432402f28aabf75dc3368ccaf60cac0d67fcf791588908fbe75e3e0d44da5fc3",
+    "src/storage/service-operations.ts": "d05e407719289295be4848a4b1a92d8e93e8d26d911d7d5a7cbc24341086a18e",
+    "src/storage/service-outbox.ts": "e29b6988bd05d4f4b7ebd3725542425ac007a0ed77e0cbab3f0716de916b5037",
+    "src/storage/service-validation.ts": "eebba9b70931047379d0cac8f41ed4211a4f5fd2ae579a590d4aa82d72402cab",
+    "src/storage/settings.ts": "55d3bdb23e28d8a1affdcacb75099b011137fe065f4555a2f34f3e86f2377a22",
+    "src/storage/story-automation-review.ts": "3e6cfa370f1c599120f3db9b218dbcc25c491898583bc139d98bc774ec081138",
+    "src/storage/story-automation.ts": "693a27d52deae548cd737a6bb1c5d89c33df3bd2327ddc331b926f9396264479",
+    "src/storage/story-character-discovery.ts": "3163c09e372dcadddf95ce654a598f766b975ddc5b8d58f8324e7df703acefff",
+    "src/storage/story-character-merge.ts": "be296805b6f8beff8965b03187644d4d6e8f83943fd2de368059a5f6a5a1f2ce",
+    "src/storage/story-checkpoint.ts": "86768140ea184e3446cb8bf4c7c84339a484962127f724a82441f65f7141ac2c",
+    "src/storage/story-continuation.ts": "79f8f56ecae3c303590b0eebd87a30a3c98c880de369b398b66a0404b234b660",
+    "src/storage/story-dispatch-capture.ts": "5ccb185c56b5a11707c1692315ce0fa0c93d743a38f9961899f760e20cfec425",
+    "src/storage/story-dispatch-ingestion.ts": "2edc0faf9f7b0ba37a05e3df9691b3410728f1230d65e32ea04c55b69ff876ff",
+    "src/storage/story-dispatch-reply.ts": "5c1af07dff73eaee0fa24c17ddf3516b893820c4eb2239d9cfce65d546d9ff01",
+    "src/storage/story-effect-replay.ts": "f0c6cdbefd1471ed5377e30f8646d6022f668644c2bb063d8d9698f4dd52b6ba",
+    "src/storage/story-exchange.ts": "ecf93b2498a752c5729cdf2441d781bb8eef424973ffccccaef7a5f1e6d21a28",
+    "src/storage/story-facts.ts": "4a6a03f46fb7e7a1c1fcf075dbf8c29c2350c5acc556a67cee992bc5ae5f0913",
+    "src/storage/story-game.ts": "58f4c28e3523654953db5514069b009d746497ce52a18acc3e42377da2abd33d",
+    "src/storage/story-history.ts": "6f3e75fcbae78d39f551034f38e7197330bf92dffeb3532e81b151127afe398c",
+    "src/storage/story-identity-management.ts": "84a105b70fa47d1cc20d5f01cf53f1ae0f5e48a1ba0ec621200983324bb2c657",
+    "src/storage/story-memory-batch.ts": "f4711c969f5bae2def1f3621042693af8ab544074a98faa248719b401e0b8401",
+    "src/storage/story-observer.ts": "905761b8faee51e19ad5eccb3671ba8b7c9d6d12c806aa97dc22cb4c2d50b5c1",
+    "src/storage/story-repair.ts": "c60dcb649a6770afce480bb17bf479de90e4ddb483f8bb324414f52a581d8936",
+    "src/storage/story-requests.ts": "4530142dd3b1ad89fe58412793200888117d49bd253ac51d8aa0e63ffe4ee010",
+    "src/storage/story-review.ts": "56583e9c733e90854e3909051ba1430ac821f6dd3508b8ee96ae8f7502090f06",
+    "src/storage/story-scene-owner.ts": "a76e518c11ef4f5ac33dfed05d12379fe992e380a0d292402a5532792aecfeed",
+    "src/storage/story-selection.ts": "fd05aa346639d5b523687bef5e3a1d9d38fec52dab128f2e84e7073f499068ce",
+    "src/storage/tab-session.ts": "8e4b31d19bd0fecbfee82f0ab370406b4a72aa13c2db085ace7e9bb4e77026ea",
+    "src/storage/world-game.ts": "5a40210e9fc40ddde651358fb617bf4d16a19087610843758c2028e89e3a0789",
+    "src/storage/world-reset.ts": "d0cb0b60f0117f6e88d505a170bd976a8c01edbf1b3726622720f0a5ce6485eb",
+    "src/storage/worlds.ts": "dccfe4bd1161f1321920cb70a981d50cfa98778a33c2e250b052550497603444",
+    "tests/fixtures/story-independent-sequences.ts": "05ea2f732e2b4eae4b86ad2b5c32a4428e7025cc20bfa88fd77e2cd46bf7bc77",
+    "scripts/story-search-independent-sequences.mjs": "cf9044d96b915f4cfd0ccdbb4a9510e34fc9b193e746a33ef90030a6a008ff6a",
+    "scripts/story-search-evaluation.mjs": "289ee1260fc4928a72cee9a99e9fd4800aba274ca972c6f8259e42e3706524c3",
+    "docs/INDEPENDENT-SEQUENCE-EVALUATION.md": "553ccc7f5880906aa50544cbcf3397dc26a003443553f19630d1d7404b8d3301"
+  },
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) i5-10400 CPU @ 2.90GHz"
+  },
+  "summary": {
+    "cases": 84,
+    "scored": 54,
+    "complete": 39,
+    "goldFacts": 312,
+    "missingFacts": 47,
+    "casesWithIntegrityIssues": 0
+  },
+  "groups": [
+    {
+      "family": "two-actions",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 21,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "two-actions",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 21,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "three-actions",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 2,
+      "goldFacts": 30,
+      "missingFacts": 1,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "three-actions",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 30,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "narrative-sequence",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 0,
+      "goldFacts": 30,
+      "missingFacts": 16,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "narrative-sequence",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 0,
+      "goldFacts": 30,
+      "missingFacts": 14,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "paraphrase",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 0,
+      "goldFacts": 12,
+      "missingFacts": 3,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "paraphrase",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 1,
+      "goldFacts": 12,
+      "missingFacts": 5,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "reference",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 12,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "reference",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 1,
+      "goldFacts": 12,
+      "missingFacts": 7,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "time-jump",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 12,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "time-jump",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 12,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "named-duty",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 3,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "named-duty",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 3,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "independent-duties",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 6,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "independent-duties",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 6,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "quoted-actions",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "quoted-actions",
+      "locale": "en",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "conditional-actions",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "conditional-actions",
+      "locale": "en",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "negated-actions",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "negated-actions",
+      "locale": "en",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "four-actions",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "four-actions",
+      "locale": "en",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "scale",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 3,
+      "complete": 2,
+      "goldFacts": 30,
+      "missingFacts": 1,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "scale",
+      "locale": "en",
+      "cases": 3,
+      "scored": 3,
+      "complete": 3,
+      "goldFacts": 30,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "budget",
+      "locale": "ru",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    },
+    {
+      "family": "budget",
+      "locale": "en",
+      "cases": 3,
+      "scored": 0,
+      "complete": 0,
+      "goldFacts": 0,
+      "missingFacts": 0,
+      "casesWithIntegrityIssues": 0
+    }
+  ],
+  "results": [
+    {
+      "id": "ru:museum:two-actions",
+      "family": "two-actions",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a0",
+        "b1",
+        "a1",
+        "b0",
+        "b2"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 8
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1377,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5489,
+      "outputDigest": "285e524500d0b02365d8a36bdb51401635b017614b4aedfe43b4ffac57a33d10",
+      "coldMs": 245.72130000000107,
+      "warmMs": 114.77050000000236
+    },
+    {
+      "id": "ru:museum:three-actions",
+      "family": "three-actions",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "b2",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1620,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6464,
+      "outputDigest": "a2fd7301525078d3fe3721cd4a675fb6270afaf33a091d87395494a049769028",
+      "coldMs": 222.58139999999912,
+      "warmMs": 162.27319999999963
+    },
+    {
+      "id": "ru:museum:narrative-sequence",
+      "family": "narrative-sequence",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "c0",
+        "scene-476",
+        "scene-454",
+        "scene-393",
+        "scene-371",
+        "scene-332"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1238,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 4934,
+      "outputDigest": "24f00ed716af23684cd029bad934387b265fd437d0ce72714885b76497a85634",
+      "coldMs": 109.73849999999948,
+      "warmMs": 56.389500000001135
+    },
+    {
+      "id": "ru:museum:paraphrase",
+      "family": "paraphrase",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "a2",
+        "scene-1",
+        "scene-40",
+        "a0",
+        "scene-433",
+        "scene-411",
+        "scene-372"
+      ],
+      "missing": [
+        "a1"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1354,
+        "required": 333,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5398,
+      "outputDigest": "341f9072c1e043293bb74996ba52102b9aad923451e600f777d9a3b3a4d62ae1",
+      "coldMs": 101.7635999999984,
+      "warmMs": 32.97910000000047
+    },
+    {
+      "id": "ru:museum:reference",
+      "family": "reference",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "scene-463",
+        "scene-456",
+        "scene-434"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1379,
+        "required": 333,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5500,
+      "outputDigest": "b5dc920fcf34fb8d47ea4f14f79c733a0dec90bce507e37dcb5d56b4ed514aab",
+      "coldMs": 80.53350000000137,
+      "warmMs": 30.925900000002002
+    },
+    {
+      "id": "ru:museum:time-jump",
+      "family": "time-jump",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "a0",
+        "a2",
+        "a1",
+        "b1",
+        "bridge",
+        "scene-471",
+        "scene-470"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1345,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 4,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5364,
+      "outputDigest": "62d3f9f7e755750b8400ba68d52a7ab431822d76bbf900a6f1cb04e29a188dfe",
+      "coldMs": 103.9910000000018,
+      "warmMs": 39.713700000000244
+    },
+    {
+      "id": "ru:museum:named-duty",
+      "family": "named-duty",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0"
+      ],
+      "selectedIds": [
+        "a0",
+        "bridge",
+        "a3",
+        "scene-471",
+        "scene-470",
+        "scene-469",
+        "scene-468",
+        "scene-463"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1284,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5118,
+      "outputDigest": "22c77075b7ad3797c93656abc7ac8d8f22ca13a8f887db72044b4087d41b8216",
+      "coldMs": 87.127199999999,
+      "warmMs": 43.28940000000148
+    },
+    {
+      "id": "ru:museum:independent-duties",
+      "family": "independent-duties",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "b1"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "b1",
+        "b2",
+        "b0",
+        "scene-463"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1379,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5500,
+      "outputDigest": "f5eaa4700f1754dc6c65ed2c0c0bec9fdb7e948e12b503c1cc28aadb403b2573",
+      "coldMs": 124.74860000000263,
+      "warmMs": 56.62680000000182
+    },
+    {
+      "id": "ru:museum:quoted-actions",
+      "family": "quoted-actions",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1398,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5573,
+      "outputDigest": "6c16aa566a2003af7feaa5de5425749cd0cec4b883acd22772271c95767bfcbb",
+      "coldMs": 103.96370000000024,
+      "warmMs": 40.9471999999987
+    },
+    {
+      "id": "ru:museum:conditional-actions",
+      "family": "conditional-actions",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a1",
+        "c2",
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1398,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5573,
+      "outputDigest": "0179843015e3a268e325c4d92c0922c5812c1261b7427f488ea02c6cfae1be6e",
+      "coldMs": 92.24599999999919,
+      "warmMs": 46.37640000000101
+    },
+    {
+      "id": "ru:museum:negated-actions",
+      "family": "negated-actions",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1398,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5573,
+      "outputDigest": "6c16aa566a2003af7feaa5de5425749cd0cec4b883acd22772271c95767bfcbb",
+      "coldMs": 93.40160000000105,
+      "warmMs": 45.881499999999505
+    },
+    {
+      "id": "ru:museum:four-actions",
+      "family": "four-actions",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "c2",
+        "c1",
+        "c0",
+        "a0",
+        "b1"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1392,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5550,
+      "outputDigest": "23bea3173fdba5b113ac698103c12913f8677939393ef742435a5d161e11f70d",
+      "coldMs": 98.32560000000012,
+      "warmMs": 66.65279999999984
+    },
+    {
+      "id": "ru:mountain:two-actions",
+      "family": "two-actions",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a0",
+        "b1",
+        "a1",
+        "b2",
+        "b0"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 8
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1387,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5530,
+      "outputDigest": "34dc3b75034e0b0e449465648e9f74553588e9678ef0750a38edc65f0bf414b9",
+      "coldMs": 160.05490000000282,
+      "warmMs": 105.92020000000048
+    },
+    {
+      "id": "ru:mountain:three-actions",
+      "family": "three-actions",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [
+        "c1"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 10
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1535,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 481,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 9,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6123,
+      "outputDigest": "ec8742a93d8e57e32c7fd9fda11df881136348be4f72561b6fa3a4f5da391d1e",
+      "coldMs": 221.09709999999905,
+      "warmMs": 159.64489999999932
+    },
+    {
+      "id": "ru:mountain:narrative-sequence",
+      "family": "narrative-sequence",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a1",
+        "c2",
+        "c0",
+        "a0",
+        "b1"
+      ],
+      "missing": [
+        "b0",
+        "b2",
+        "c1"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1369,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5460,
+      "outputDigest": "417ad657919c3af111e99ea163f30a9139505856a197955afc2e2e6c4dbfe027",
+      "coldMs": 123.88720000000103,
+      "warmMs": 36.79500000000189
+    },
+    {
+      "id": "ru:mountain:paraphrase",
+      "family": "paraphrase",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "scene-1",
+        "a0",
+        "a3",
+        "scene-433",
+        "scene-411",
+        "scene-372"
+      ],
+      "missing": [
+        "a1"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1341,
+        "required": 335,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5347,
+      "outputDigest": "1c2638f425c61e1163357318951f9f9f91fe602fa35d5b02076cd7a33438b747",
+      "coldMs": 85.69599999999991,
+      "warmMs": 27.029900000001362
+    },
+    {
+      "id": "ru:mountain:reference",
+      "family": "reference",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a0",
+        "b1",
+        "a1",
+        "a3",
+        "a2",
+        "scene-473",
+        "scene-471"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1358,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 7,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5415,
+      "outputDigest": "b9c8f1c628b1ea4ffce791383f1b0cca5252a41fb3af84ea3fb68d5bdfa11398",
+      "coldMs": 83.64320000000225,
+      "warmMs": 34.75930000000153
+    },
+    {
+      "id": "ru:mountain:time-jump",
+      "family": "time-jump",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "a0",
+        "a2",
+        "a1",
+        "b1",
+        "bridge",
+        "scene-459",
+        "scene-420"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1429,
+        "required": 335,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 4,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5698,
+      "outputDigest": "05466cc1e284629cf18b07b30c1344e77c387bac6ede8ed78b7199d965b8ce44",
+      "coldMs": 91.71450000000186,
+      "warmMs": 30.899100000002363
+    },
+    {
+      "id": "ru:mountain:named-duty",
+      "family": "named-duty",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "bridge",
+        "scene-459",
+        "scene-420",
+        "scene-398",
+        "scene-337",
+        "scene-315"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1325,
+        "required": 335,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5282,
+      "outputDigest": "a5012961560bc2563478a95ff8b75b551a0d417d23dd1af862e86456cb9b9370",
+      "coldMs": 88.33079999999973,
+      "warmMs": 55.82099999999991
+    },
+    {
+      "id": "ru:mountain:independent-duties",
+      "family": "independent-duties",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "b1"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "b2",
+        "b0",
+        "scene-473"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1390,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5544,
+      "outputDigest": "1820a3d105905f704afa2b848881dc832f9695a9c90e98b4b51830d6fa7b2428",
+      "coldMs": 138.7642999999989,
+      "warmMs": 49.14679999999862
+    },
+    {
+      "id": "ru:mountain:quoted-actions",
+      "family": "quoted-actions",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1411,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5627,
+      "outputDigest": "7081f2cf4eecfbdbaf26d852b8a62bdd1def2dd88df224feae3e01665dc95442",
+      "coldMs": 94.7989000000016,
+      "warmMs": 43.76090000000113
+    },
+    {
+      "id": "ru:mountain:conditional-actions",
+      "family": "conditional-actions",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1411,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5627,
+      "outputDigest": "7081f2cf4eecfbdbaf26d852b8a62bdd1def2dd88df224feae3e01665dc95442",
+      "coldMs": 88.1231000000007,
+      "warmMs": 45.059799999999086
+    },
+    {
+      "id": "ru:mountain:negated-actions",
+      "family": "negated-actions",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1411,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5627,
+      "outputDigest": "7081f2cf4eecfbdbaf26d852b8a62bdd1def2dd88df224feae3e01665dc95442",
+      "coldMs": 96.88230000000112,
+      "warmMs": 43.25790000000052
+    },
+    {
+      "id": "ru:mountain:four-actions",
+      "family": "four-actions",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a0",
+        "b1",
+        "a1",
+        "c2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1369,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5460,
+      "outputDigest": "0e4f3918efe82fff8ac298436f1e989c788a3f9c6ebb99f06874be4b62676602",
+      "coldMs": 87.31620000000112,
+      "warmMs": 40.50770000000193
+    },
+    {
+      "id": "ru:kitchen:two-actions",
+      "family": "two-actions",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "b1",
+        "a0",
+        "a3",
+        "a1",
+        "b2",
+        "b0"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 8
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1378,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5495,
+      "outputDigest": "58e9cd316d1e893d00fe774f8ffbd4f09b73eb9ef17db6410ac095ef181c2282",
+      "coldMs": 149.48660000000018,
+      "warmMs": 94.36419999999998
+    },
+    {
+      "id": "ru:kitchen:three-actions",
+      "family": "three-actions",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "b1",
+        "a0",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge",
+        "a3"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1617,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6451,
+      "outputDigest": "0755ee38e70892966054d5f3e925cebeacabe5c9e5099c84b9fb2f9f84ecc802",
+      "coldMs": 204.83680000000095,
+      "warmMs": 145.66849999999977
+    },
+    {
+      "id": "ru:kitchen:narrative-sequence",
+      "family": "narrative-sequence",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c0",
+        "c1",
+        "c2",
+        "a1",
+        "scene-466",
+        "scene-452",
+        "scene-430",
+        "scene-405"
+      ],
+      "missing": [
+        "a0",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1242,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 4951,
+      "outputDigest": "fd8d538fc066b90a7c353f5b61d1d5754a8cf63dbefe2b3ddeeed4e23dc47371",
+      "coldMs": 95.14600000000064,
+      "warmMs": 42.55710000000181
+    },
+    {
+      "id": "ru:kitchen:paraphrase",
+      "family": "paraphrase",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a1",
+        "b1",
+        "bridge",
+        "scene-471",
+        "scene-470",
+        "scene-469"
+      ],
+      "missing": [
+        "a2"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1412,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 5,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5631,
+      "outputDigest": "535a2f99a7d7ce18e050cfa61ab16ac07cc1555264f47fdb4170b353c8d6434e",
+      "coldMs": 87.03089999999793,
+      "warmMs": 27.57839999999851
+    },
+    {
+      "id": "ru:kitchen:reference",
+      "family": "reference",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a0",
+        "b1",
+        "a3",
+        "a1",
+        "a2",
+        "scene-463",
+        "scene-456"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1350,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 7,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5381,
+      "outputDigest": "edcb48355177059b16aa9da93bbefaa910bd71064db3ee70f80384a85c5a7e30",
+      "coldMs": 89.60210000000006,
+      "warmMs": 32.877300000000105
+    },
+    {
+      "id": "ru:kitchen:time-jump",
+      "family": "time-jump",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a3",
+        "a2",
+        "b1",
+        "bridge",
+        "scene-471",
+        "scene-470"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1338,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 4,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5336,
+      "outputDigest": "4924c40a8794ccda10b6cc6e45fa84ad8444468d82f36e936adf9a268bebeb48",
+      "coldMs": 114.29079999999885,
+      "warmMs": 39.362600000000384
+    },
+    {
+      "id": "ru:kitchen:named-duty",
+      "family": "named-duty",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a1",
+        "bridge",
+        "scene-471",
+        "scene-470",
+        "scene-469",
+        "scene-468"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1346,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5367,
+      "outputDigest": "a4f1388b7ef535365833daa87315c26821d9087c17a3083e756bcad461846a43",
+      "coldMs": 77.96759999999995,
+      "warmMs": 34.66430000000037
+    },
+    {
+      "id": "ru:kitchen:independent-duties",
+      "family": "independent-duties",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "b1"
+      ],
+      "selectedIds": [
+        "b1",
+        "b2",
+        "b0",
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "scene-463"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1378,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5495,
+      "outputDigest": "6af3c96f8047f85fa9c944808693af2b6ad34537683dde4b99758502b9f29fb2",
+      "coldMs": 91.20249999999942,
+      "warmMs": 48.28060000000187
+    },
+    {
+      "id": "ru:kitchen:quoted-actions",
+      "family": "quoted-actions",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b1",
+        "a0",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1393,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5554,
+      "outputDigest": "7615d4ee74e495524a71fbc36357656fe5cd39f0fb34d295d6492a7036c0dca6",
+      "coldMs": 82.52740000000267,
+      "warmMs": 36.938600000001315
+    },
+    {
+      "id": "ru:kitchen:conditional-actions",
+      "family": "conditional-actions",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a1",
+        "c1",
+        "b1",
+        "a2",
+        "c2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1393,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5554,
+      "outputDigest": "544effb31731a9fe3ee915b72476e601f82c79e86cc8fc602c02c3aefaa05da2",
+      "coldMs": 83.85429999999906,
+      "warmMs": 38.29910000000018
+    },
+    {
+      "id": "ru:kitchen:negated-actions",
+      "family": "negated-actions",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b1",
+        "a0",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1393,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5554,
+      "outputDigest": "7615d4ee74e495524a71fbc36357656fe5cd39f0fb34d295d6492a7036c0dca6",
+      "coldMs": 83.11480000000302,
+      "warmMs": 40.1929999999993
+    },
+    {
+      "id": "ru:kitchen:four-actions",
+      "family": "four-actions",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a1",
+        "b1",
+        "a0",
+        "a3",
+        "c1",
+        "c2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1390,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5544,
+      "outputDigest": "3e6854a657f1d8b0da39da6318aafec1226a4f0ce2854c2474f070ca670222e1",
+      "coldMs": 92.35550000000148,
+      "warmMs": 41.41660000000047
+    },
+    {
+      "id": "en:museum:two-actions",
+      "family": "two-actions",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a0",
+        "b1",
+        "a1",
+        "b2",
+        "b0"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 8
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1412,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5630,
+      "outputDigest": "e44468447c2dd076004e75cc7f1e707c8dc88a807d84c7c4f9f806065f202e02",
+      "coldMs": 144.90759999999864,
+      "warmMs": 86.18799999999828
+    },
+    {
+      "id": "en:museum:three-actions",
+      "family": "three-actions",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "c2",
+        "a3",
+        "a2",
+        "a1",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1658,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6614,
+      "outputDigest": "405e8c5fcfdc2a9d174af4e7986e2c232b566b1f640de68d7d750b213c28918c",
+      "coldMs": 169.7078999999976,
+      "warmMs": 132.49530000000232
+    },
+    {
+      "id": "en:museum:narrative-sequence",
+      "family": "narrative-sequence",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "c0",
+        "a1",
+        "a0",
+        "b1",
+        "scene-476",
+        "scene-454"
+      ],
+      "missing": [
+        "a2",
+        "a3",
+        "b0",
+        "b2"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1384,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5518,
+      "outputDigest": "6cbb1dc2de84fa59c1c29692f0492a8cd5b5a1f9679dfec192da3e58f4c3a0d8",
+      "coldMs": 103.04140000000189,
+      "warmMs": 40.633899999997084
+    },
+    {
+      "id": "en:museum:paraphrase",
+      "family": "paraphrase",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "a0",
+        "c2",
+        "a2",
+        "b1",
+        "bridge",
+        "scene-87",
+        "scene-48"
+      ],
+      "missing": [
+        "a1"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1380,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 4,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5501,
+      "outputDigest": "f2bdcf8898db434f2fd904c66e26ce20c5cebb9f280e8224edc94c4444c4ae61",
+      "coldMs": 93.34730000000127,
+      "warmMs": 31.12539999999717
+    },
+    {
+      "id": "en:museum:reference",
+      "family": "reference",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "scene-463",
+        "scene-456"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1464,
+        "required": 333,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 7,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5837,
+      "outputDigest": "55fe19565b1c55d21f994a67d7b2847beacc0b5264449a6b62b73f7c59c3f23c",
+      "coldMs": 71.17799999999988,
+      "warmMs": 25.945999999999913
+    },
+    {
+      "id": "en:museum:time-jump",
+      "family": "time-jump",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a3",
+        "a2",
+        "bridge",
+        "scene-87",
+        "scene-48",
+        "scene-26"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1298,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5174,
+      "outputDigest": "31f50a285786b87263827b2b4b76cb91c0f3979b40447f51c7c9b488a06c64b6",
+      "coldMs": 90.2400000000016,
+      "warmMs": 35.09909999999945
+    },
+    {
+      "id": "en:museum:named-duty",
+      "family": "named-duty",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0"
+      ],
+      "selectedIds": [
+        "a0",
+        "bridge",
+        "b1",
+        "a3",
+        "scene-87",
+        "scene-48",
+        "scene-26",
+        "scene-458"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1350,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5381,
+      "outputDigest": "003d3c49793d1d2b1c8077ece7f5a78aa52c9ee867e5602061470517483e3f03",
+      "coldMs": 82.42569999999978,
+      "warmMs": 39.7013999999981
+    },
+    {
+      "id": "en:museum:independent-duties",
+      "family": "independent-duties",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "b1"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "b2",
+        "a2",
+        "a1",
+        "b0",
+        "scene-463"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1416,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5648,
+      "outputDigest": "7784f4b4286e60f28deaca00f1373777b3e86599a3d9451b93e9df330b3b2ff5",
+      "coldMs": 98.44129999999859,
+      "warmMs": 46.54809999999998
+    },
+    {
+      "id": "en:museum:quoted-actions",
+      "family": "quoted-actions",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "c2",
+        "a3",
+        "a2",
+        "a1"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1431,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5705,
+      "outputDigest": "cc2ac1b345c60bda3fdc5600fcb6da4b4a800c60771fdd8fc0e10033894582d8",
+      "coldMs": 83.28529999999955,
+      "warmMs": 35.209600000001956
+    },
+    {
+      "id": "en:museum:conditional-actions",
+      "family": "conditional-actions",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "a1",
+        "c0",
+        "a0",
+        "b1",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1431,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5705,
+      "outputDigest": "75046bb1e3107ea596a0701876fccca6f3404b45460732557542b8b955507162",
+      "coldMs": 78.55630000000019,
+      "warmMs": 35.76009999999951
+    },
+    {
+      "id": "en:museum:negated-actions",
+      "family": "negated-actions",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "c2",
+        "a3",
+        "a2",
+        "a1"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1431,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5705,
+      "outputDigest": "cc2ac1b345c60bda3fdc5600fcb6da4b4a800c60771fdd8fc0e10033894582d8",
+      "coldMs": 79.43899999999849,
+      "warmMs": 34.47279999999955
+    },
+    {
+      "id": "en:museum:four-actions",
+      "family": "four-actions",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "c2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1424,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5678,
+      "outputDigest": "7e53d8ae35cca7b63c2fb4fb6d6393d412d1263f156a550e46ae66ebcd035eed",
+      "coldMs": 80.77929999999833,
+      "warmMs": 32.641899999998714
+    },
+    {
+      "id": "en:mountain:two-actions",
+      "family": "two-actions",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "b0",
+        "a0",
+        "b1",
+        "a1",
+        "b2"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 8
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1430,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5702,
+      "outputDigest": "2b03de0663e4d0e4d9649cb726bbb5b7774b424169ae1bfae370721e83b99308",
+      "coldMs": 140.6936999999998,
+      "warmMs": 84.99169999999867
+    },
+    {
+      "id": "en:mountain:three-actions",
+      "family": "three-actions",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1681,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6707,
+      "outputDigest": "da6a2054ed95b55e11b1e0dd97c04f5a390ad9e8ea03f354506b58cec7c09374",
+      "coldMs": 173.15360000000146,
+      "warmMs": 124.26699999999983
+    },
+    {
+      "id": "en:mountain:narrative-sequence",
+      "family": "narrative-sequence",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c0",
+        "a1",
+        "scene-468"
+      ],
+      "missing": [
+        "a0",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1310,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5224,
+      "outputDigest": "2430f30e15628d36e73e7ce42a37d499a8bbd00c968e649dc73f2cf92fbaeb08",
+      "coldMs": 95.29469999999856,
+      "warmMs": 43.40799999999945
+    },
+    {
+      "id": "en:mountain:paraphrase",
+      "family": "paraphrase",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "scene-1",
+        "scene-40",
+        "scene-35",
+        "scene-18",
+        "scene-433",
+        "scene-411",
+        "scene-372",
+        "scene-350"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1212,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 4832,
+      "outputDigest": "345cb7f86b3dc39b0c541efb80e1dbbae702e79f2050b86384a3c22b8954b51b",
+      "coldMs": 71.45739999999932,
+      "warmMs": 28.118500000000495
+    },
+    {
+      "id": "en:mountain:reference",
+      "family": "reference",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "bridge"
+      ],
+      "missing": [
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 3
+      },
+      "report": {
+        "limit": 16000,
+        "total": 976,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 3,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 488,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 3888,
+      "outputDigest": "d8582b72071229840be9487e75fa867d53f8fa4ebafe5c90f1ad1eacbf516180",
+      "coldMs": 67.65810000000056,
+      "warmMs": 21.0015999999996
+    },
+    {
+      "id": "en:mountain:time-jump",
+      "family": "time-jump",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a2",
+        "a0",
+        "a3",
+        "c0",
+        "a1",
+        "b0",
+        "bridge",
+        "c1"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1364,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5439,
+      "outputDigest": "f4bd8b51540d23d332a38813eb6debb7e60a437e31363859acbadbe38a21ac04",
+      "coldMs": 89.35160000000178,
+      "warmMs": 30.03610000000117
+    },
+    {
+      "id": "en:mountain:named-duty",
+      "family": "named-duty",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0"
+      ],
+      "selectedIds": [
+        "a0",
+        "bridge",
+        "a3",
+        "a1",
+        "scene-458",
+        "scene-397",
+        "scene-375",
+        "scene-336"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1389,
+        "required": 335,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5539,
+      "outputDigest": "2871a2836f3c5dfa89b05d3b3942f8703680a37d29e3c0d514af2ff54de3eb0f",
+      "coldMs": 67.51569999999992,
+      "warmMs": 35.693599999998696
+    },
+    {
+      "id": "en:mountain:independent-duties",
+      "family": "independent-duties",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "b1"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "b2",
+        "a1",
+        "b0",
+        "scene-473"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1430,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5704,
+      "outputDigest": "e3451d89f5d25a95e10f8bf08064b6de53fac0bd1f70873f9a0265e94da561f9",
+      "coldMs": 106.33580000000075,
+      "warmMs": 45.72330000000147
+    },
+    {
+      "id": "en:mountain:quoted-actions",
+      "family": "quoted-actions",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1442,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5750,
+      "outputDigest": "5355804d8e2d21ab72d4f7a8943762b6aacf1a66e40798f1b8409d4f107e54fe",
+      "coldMs": 90.23919999999998,
+      "warmMs": 38.62850000000253
+    },
+    {
+      "id": "en:mountain:conditional-actions",
+      "family": "conditional-actions",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1442,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5750,
+      "outputDigest": "5355804d8e2d21ab72d4f7a8943762b6aacf1a66e40798f1b8409d4f107e54fe",
+      "coldMs": 94.34709999999905,
+      "warmMs": 36.557199999999284
+    },
+    {
+      "id": "en:mountain:negated-actions",
+      "family": "negated-actions",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1442,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5750,
+      "outputDigest": "5355804d8e2d21ab72d4f7a8943762b6aacf1a66e40798f1b8409d4f107e54fe",
+      "coldMs": 80.07930000000124,
+      "warmMs": 32.31529999999839
+    },
+    {
+      "id": "en:mountain:four-actions",
+      "family": "four-actions",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "b0",
+        "a0",
+        "b1",
+        "c1",
+        "a1"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1422,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5670,
+      "outputDigest": "8dd939cfea301ac5b0faf18c78003c22654e785fcbbecdacfe70af3f9c7cd1f8",
+      "coldMs": 77.8734000000004,
+      "warmMs": 30.935300000001007
+    },
+    {
+      "id": "en:kitchen:two-actions",
+      "family": "two-actions",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a0",
+        "b1",
+        "a1",
+        "b2",
+        "b0"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 8
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1412,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5631,
+      "outputDigest": "6478e124739d349e8c3bb7f83fb61d806b807ff89cb2778053911ac68d2a46a4",
+      "coldMs": 136.40680000000066,
+      "warmMs": 80.15999999999985
+    },
+    {
+      "id": "en:kitchen:three-actions",
+      "family": "three-actions",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1655,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6604,
+      "outputDigest": "ed94b7cfca24c882a8b4568692f91468fcdbb58d48ac5d9d66f2f465884cb781",
+      "coldMs": 174.46749999999884,
+      "warmMs": 122.70729999999821
+    },
+    {
+      "id": "en:kitchen:narrative-sequence",
+      "family": "narrative-sequence",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c0",
+        "c1",
+        "c2",
+        "a1",
+        "scene-9",
+        "scene-452",
+        "scene-430",
+        "scene-369"
+      ],
+      "missing": [
+        "a0",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1241,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 4946,
+      "outputDigest": "e8aebf37d8f3919944a4337c21e7edc480f3a4792e35f0a1d0617c3d7fc3f0c3",
+      "coldMs": 95.42450000000099,
+      "warmMs": 54.04229999999734
+    },
+    {
+      "id": "en:kitchen:paraphrase",
+      "family": "paraphrase",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "a0",
+        "a1",
+        "c2",
+        "a2",
+        "b1",
+        "bridge",
+        "scene-471"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1385,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5521,
+      "outputDigest": "0f935365f124d18b68b301626b48119c0e19413b2dc80a1fc77c20a777ca36c0",
+      "coldMs": 110.24049999999988,
+      "warmMs": 33.92079999999987
+    },
+    {
+      "id": "en:kitchen:reference",
+      "family": "reference",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "bridge",
+        "scene-472",
+        "scene-450",
+        "scene-433",
+        "scene-411",
+        "scene-389",
+        "scene-372",
+        "scene-367"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1182,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 4711,
+      "outputDigest": "b7a00ab650176f50089290f49ef32d60b7d733f82b596bf1051993677545438e",
+      "coldMs": 78.65220000000045,
+      "warmMs": 25.607200000002194
+    },
+    {
+      "id": "en:kitchen:time-jump",
+      "family": "time-jump",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a3",
+        "a2",
+        "c2",
+        "c0",
+        "bridge",
+        "c1"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1367,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5449,
+      "outputDigest": "ad24c9b4a26a0197a827745958acb09d090ea68dfc41c026f1a54d870969e151",
+      "coldMs": 87.5570000000007,
+      "warmMs": 30.935700000001816
+    },
+    {
+      "id": "en:kitchen:named-duty",
+      "family": "named-duty",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a3",
+        "b1",
+        "bridge",
+        "scene-471",
+        "scene-470",
+        "scene-469"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1436,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5728,
+      "outputDigest": "1133fd9939dc0cfbcf60df5ba83d94df1ef2c8b19ae2002412774042e39077d7",
+      "coldMs": 74.02470000000176,
+      "warmMs": 27.272200000003068
+    },
+    {
+      "id": "en:kitchen:independent-duties",
+      "family": "independent-duties",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": true,
+      "gold": [
+        "a0",
+        "b1"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "b2",
+        "b0",
+        "scene-463"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1413,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5633,
+      "outputDigest": "ce34b46211075eba591e6bba43414691d70e27af78e8d3f1c48d84c610958ad5",
+      "coldMs": 98.32330000000002,
+      "warmMs": 45.09940000000279
+    },
+    {
+      "id": "en:kitchen:quoted-actions",
+      "family": "quoted-actions",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1426,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5687,
+      "outputDigest": "5b8f83544f9873ecd9d0550ad48964b97cb74f29b6dca9c8bb428275c8971b9b",
+      "coldMs": 85.53840000000127,
+      "warmMs": 36.66330000000016
+    },
+    {
+      "id": "en:kitchen:conditional-actions",
+      "family": "conditional-actions",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "c2",
+        "a3",
+        "b1",
+        "c1",
+        "a2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1426,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5687,
+      "outputDigest": "af0c8a21d288dc7c0885ef4e98ad852a4f52a489d652525e9ee6bd07132db17b",
+      "coldMs": 79.2403000000013,
+      "warmMs": 37.64519999999902
+    },
+    {
+      "id": "en:kitchen:negated-actions",
+      "family": "negated-actions",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1426,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 5687,
+      "outputDigest": "5b8f83544f9873ecd9d0550ad48964b97cb74f29b6dca9c8bb428275c8971b9b",
+      "coldMs": 77.46159999999873,
+      "warmMs": 39.75149999999849
+    },
+    {
+      "id": "en:kitchen:four-actions",
+      "family": "four-actions",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "bridge",
+        "a2",
+        "a3",
+        "a1",
+        "a0",
+        "b1",
+        "c1",
+        "c2"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": true,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1424,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 483,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0,
+          "persistentFacts": 1
+        }
+      },
+      "wireCharacters": 5677,
+      "outputDigest": "bd77ac15429bfeb448de215e0a05a9b9cca7fc1a032f05f523615dc3caffac40",
+      "coldMs": 102.60030000000188,
+      "warmMs": 38.789600000000064
+    },
+    {
+      "id": "ru:scale:250",
+      "family": "scale",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 250,
+      "acceptedFacts": 263,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "b2",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1620,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 250,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6464,
+      "outputDigest": "c833fab5c7a8f931ad23a46acacc70fdcff324fac3b9af28d2a04d248b8abb1c",
+      "coldMs": 150.18039999999746,
+      "warmMs": 179.57180000000153
+    },
+    {
+      "id": "ru:scale:1000",
+      "family": "scale",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 1000,
+      "acceptedFacts": 1013,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [
+        "c1"
+      ],
+      "complete": false,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 10
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1535,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 1001,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 9,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6124,
+      "outputDigest": "94bc512f0251cd0c9f94e8b9189a2e9ceac4174f5974530dc7d9e372afc9a65f",
+      "coldMs": 501.77189999999973,
+      "warmMs": 414.6986999999972
+    },
+    {
+      "id": "ru:scale:5000",
+      "family": "scale",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 5000,
+      "acceptedFacts": 5013,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "b1",
+        "a0",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge",
+        "a3"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1623,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 5000,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6473,
+      "outputDigest": "10cd0be6b412560a6fa3140fdfb38e9f78e0aabc7d3d843625555da7eb64e0bb",
+      "coldMs": 2170.416900000004,
+      "warmMs": 1386.7260000000024
+    },
+    {
+      "id": "en:scale:250",
+      "family": "scale",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 250,
+      "acceptedFacts": 263,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1",
+        "c0",
+        "a0",
+        "b1",
+        "c2",
+        "a3",
+        "a2",
+        "a1",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1658,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 250,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6614,
+      "outputDigest": "8b597a04b4d9fc0f2f563f62ef5ca4479d330b9a0d01f80b14698c369af0b702",
+      "coldMs": 119.53270000000339,
+      "warmMs": 79.86699999999837
+    },
+    {
+      "id": "en:scale:1000",
+      "family": "scale",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 1000,
+      "acceptedFacts": 1013,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1681,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 1000,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6708,
+      "outputDigest": "e05fcba64967f05d8bef63afafbe27292baad017901453294e989fcab4e49c79",
+      "coldMs": 387.0757999999987,
+      "warmMs": 266.08170000000246
+    },
+    {
+      "id": "en:scale:5000",
+      "family": "scale",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 5000,
+      "acceptedFacts": 5013,
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": true,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1661,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 5000,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6626,
+      "outputDigest": "b5a0d9ff0354de2291cebcbf49af99ee2d1e71e4babf617794108183b1a8d1b2",
+      "coldMs": 1708.2727999999988,
+      "warmMs": 1162.1902999999947
+    },
+    {
+      "id": "ru:budget:800",
+      "family": "budget",
+      "locale": "ru",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c0"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c1"
+      ],
+      "complete": null,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "budget",
+        "sources": 10,
+        "selected": 2
+      },
+      "report": {
+        "limit": 800,
+        "total": 775,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 489,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 2,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 3083,
+      "outputDigest": "68adb41d3dd052c86f05d3ffb6a16c6ad1fd023c580d5ad916e0f134dc40f0b9",
+      "coldMs": 633.5602999999974,
+      "warmMs": 604.1281000000017
+    },
+    {
+      "id": "ru:budget:1800",
+      "family": "budget",
+      "locale": "ru",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [
+        "c1"
+      ],
+      "complete": null,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 10
+      },
+      "report": {
+        "limit": 1800,
+        "total": 1535,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 481,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 9,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6123,
+      "outputDigest": "2434d5a87e2ee0b53fb7a334ea61fbadde3859b0ec94f254a794305a8bc6424e",
+      "coldMs": 246.59120000000257,
+      "warmMs": 163.6579000000056
+    },
+    {
+      "id": "ru:budget:4000",
+      "family": "budget",
+      "locale": "ru",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "b1",
+        "a0",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge",
+        "a3"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": false,
+      "compoundRecognized": false,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 4000,
+        "total": 1617,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6451,
+      "outputDigest": "b47f97438617819b6cc02391a2823d1e1d38104b60952de0a03f63f7f2f03670",
+      "coldMs": 216.65930000000662,
+      "warmMs": 151.2115999999951
+    },
+    {
+      "id": "en:budget:800",
+      "family": "budget",
+      "locale": "en",
+      "plot": "museum",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c2"
+      ],
+      "complete": null,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "budget",
+        "sources": 10,
+        "selected": 1
+      },
+      "report": {
+        "limit": 800,
+        "total": 734,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 1,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 490,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 2920,
+      "outputDigest": "211043c4b65ab70ae7c5272c825b62b4a3fe712d7500fe6fdc3126eb9f8bd884",
+      "coldMs": 385.97039999999834,
+      "warmMs": 362.4331999999995
+    },
+    {
+      "id": "en:budget:1800",
+      "family": "budget",
+      "locale": "en",
+      "plot": "mountain",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 1800,
+        "total": 1681,
+        "required": 256,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6707,
+      "outputDigest": "70d57541298adf28240794d66b6014c189f5657a10d064ff459b71ac34e6dce9",
+      "coldMs": 167.8058000000019,
+      "warmMs": 123.24040000000241
+    },
+    {
+      "id": "en:budget:4000",
+      "family": "budget",
+      "locale": "en",
+      "plot": "kitchen",
+      "noiseScenes": 480,
+      "acceptedFacts": 493,
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2",
+        "c0",
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "a0",
+        "b1",
+        "a3",
+        "c1",
+        "a2",
+        "a1",
+        "c2",
+        "c0",
+        "b2",
+        "b0",
+        "bridge"
+      ],
+      "missing": [],
+      "complete": null,
+      "rejectCompound": false,
+      "compoundRecognized": true,
+      "issues": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 11
+      },
+      "report": {
+        "limit": 4000,
+        "total": 1655,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 480,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 10,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "wireCharacters": 6604,
+      "outputDigest": "9b276fdfc328f7a639910da00d57f5d3227f5f6cd7603ae897096e02797d6948",
+      "coldMs": 330.01380000000063,
+      "warmMs": 126.55749999999534
+    }
+  ]
+}

@@ -1,5 +1,135 @@
 # DeepRole — roadmap
 
+## RP288 — guard коротких ссылок и уточнение буквальных префиксов
+
+- [x] Подтверждена причина4 потерь:generic adjective prefixes конкурировали с полными названиями на том же вхождении. Longest source-proved prefix в text+quote сцены;shadow только покрытых spans,равные labels сохраняют разные tasks/owners,вторые вхождения остаются ambiguous. Все source/scope/row/budget guards сохранены. [Мануал](docs/SHORT-REFERENCE-SAFETY.md).
+- [x] Short-reference guard определяется до выбора,входит в required/whole budget и остаётся при fallback. Эти запросы unverified/query;required-overflow/opt-out прежние.
+- [x] SEEN RP28762/62 vs58/62,250/250,0missing/integrity/confidence gaps;48/48 guard+unverified.26outputs/7coverage changes;2 исключённые посторонние vest records явно учтены,канон прежний.82others/6budget unchanged. SEEN RP28354/54,312/312,0loss/integrity/24rejection drift,83outputs+allcoverage unchanged. First reports/inputs/gold/protocol/seals не переписаны. [RP287 report](docs/benchmarks/rp288-rp287-reference-seen-results.json), [RP283 report](docs/benchmarks/rp288-rp283-reference-seen-results.json).
+- RP288:full unit7542pass/0fail/5 прежнихTODO из7547,74 новых checks;ранние260+71pass. TypeScript/diff-check0. Native isolated synthetic Edge10/10pass/0fail/0flaky за166.02s:expanded obligation2+contextual2+recap2+UI4(RUEN320/900,keyboard/axe/no overflow);новые scope/roles/quotes/retry503/fetch/XHR/reload/raw-only fallback,46POST. Первыйnative8pass/2test-fixture ID errors сохранён;mock helper исправлен поreadyevent,assertions не ослаблены. Frozen inputs/gold/protocol/firstseals прежние;412/414 fingerprints unchanged,2expected runtime edits. Chrome/Firefox build+ZIP0,старый>500KB warning. Live DeepSeek/nativeFirefox/fullE2E не проверялись,installed copy не обновлялась. 23/23 runtime и735 source entries проверены byte/CRC;3 canonical download copies SHA256 match,финальные notes повторно упакованы. Source ZIP исключает tests;для QA нужен Git checkout/Node22.
+- [ ] Новый frozen independent audit на других сюжетах/ссылках/разных обязательствах. RP-05/general semantics/true delta открыты.
+
+## RP287 — новый независимый audit похожих долгов и ложных ссылок
+
+- [x] Schema preflight и freeze до первого compiler:108 inputs/gold/protocol/runtime414 fingerprints,4 новых сюжета/RUEN,62scored/40controls/6budget,720scenes+scale250/1500/5000. Runtime RP286 неизменен. [Протокол](docs/OBLIGATION-HOLDOUT-EVALUATION.md).
+- [x] Первый **58/62 complete,244/250 records,6missing в4 short-reference cases**; остальные именные/парафразы/два владельца/terminal/scale полны.0 source/role/status/whole-budget/input/cache integrity issues во108. [Результаты](docs/OBLIGATION-HOLDOUT-RESULTS.md), [report](docs/benchmarks/rp287-obligation-holdout-results.json), [seal](docs/benchmarks/rp287-first-report-seal.json). Agent-authored synthetic accepted-memory audit,не blind external/live proof; общие шаблоны/переводы/фон ограничивают независимость.
+- [x] Confidence отдельно:23/48 unresolved inputs без model guard;7 изних complete вместо unverified(1 scored false-complete+6controls).16 других уже имеют UI unverified. Подмена владельца/несуществующий объект16/16 с guard/unverified;budget900 omissions отдельно.
+- [x] Short-reference fallback coverage/guard и4 source-group losses исправлены в RP288,с отдельными seen reports;первый58/62 и frozen gold/report/seal сохранены. RP-05/general semantics/true cross-turn delta открыты.
+- RP287:focused278/278(111новых checks),TypeScript/diff-check0;новый audit108inputs/62scored58complete сохранён. Все414 frozen fingerprints,включая410 runtime,прежние;старые reports/gold/seals проверены. Chrome/Firefox build+ZIP0,старый >500KB warning. Full unit/native/UI/live DeepSeek/full E2E заново не запускались:runtime/UI неизменны. Installed copy не обновлялась. 23/23 runtime и730 source entries проверены byte/CRC;3 canonical download copies SHA256 match,финальные notes повторно упакованы. Source ZIP исключает tests;для QA нужен Git checkout/Node22.
+
+## RP286 — перефразировки возвратов и короткие ссылки на прошлые договорённости
+
+- [x] Source-backed return inquiry/prose-title reference supplement, literal prefix2–6 terms repeated2othertexts, exact text+quote bridge, query-local cache. All current source/role/owner/status/canon/draft/budget guards и previous selection сохранены. Multiple candidate groups не становятся resolved IDs; new coverage unverified/query. RUEN help отражает реальное состояние. [Мануал](docs/OBLIGATION-RECALL.md).
+- [x] Seen54/54 vs47/54,312/312facts,0missing/integrity/control drift/prior loss;12 changed inquiries,72 outputs/coverage/24rejections/6budget unchanged. All12 unverified; EN false-complete этого набора устранён. First report/gold/seals и прежние seen unchanged. [Report](docs/benchmarks/rp286d-obligation-seen-results.json).
+- [x] Финальный full unit7357pass/0fail/5 прежних TODO из7362,78 новых checks pass;focused384/384. TypeScript/diff-check0. Native isolated Edge RUEN12/12pass/0fail/0flaky за190.28s:новые obligation2+прежние contextual2/paragraph2/recap2+UI4(RUEN320/900,5states,keyboard/axe/no overflow). Новые2:26 exact sources/task/roles/revision IDs/conditions,503/retry/fetch/XHR/reload/raw draft/canon unchanged и28 scopedPOST. Дополнительные4 unit cases за5000 scenes прошли.406/411 fingerprints прежние,5 expected edits+3 added modules;72 other outputs/coverage unchanged,old reports/seals/gold прежние. Chrome/Firefox build+ZIP0;старый >500KB warning,live model/Firefox native/full E2E не проверены,installed copy не обновлялась. [QA report](docs/benchmarks/rp286-qa-results.json)
+- [x] 23/23 runtime и724 source entries проверены byte/CRC,3 canonical download copies SHA256 match;финальные notes повторно упакованы. Source ZIP исключает tests,для QA нужен Git checkout/Node22.
+- [x] Новый independent frozen long-history набор с несколькими долгами/владельцами/terminal statuses/unknown references выполнен в RP287 выше; найдены4 losses/23 guard gaps. General semantics/RP-05/true cross-turn delta пока открыты.
+
+## RP285 — формы коротких названий предметов
+
+- [x] Подтверждена причина c1:сани→сани/саней→сан. Локальное сравнение short plural/case без изменения shared tokenizer/index; whole adjacent qualifiers/one source field/clause, masked names, duplicate case guard в compound/narrative. Canon/roles/quotes/draft/settings/model неизменны. [Мануал](docs/OBJECT-FORMS.md).
+- [x] Отдельный seen report47/54 вместо44/54,297/312facts,15missing вместо18,paragraph6/6. Только3 scored c1 +1 budget1800(1631tokens) changes;80 outputs/coverage/24 rejections прежние.0 integrity/prior loss. controlsDrift1 сохранён, rejectionControlsDrift0/budgetOutputChanges1; старые first39/54/seen44/54/seals/gold не переписаны. [Report](docs/benchmarks/rp285b-forms-seen-results.json).
+- [x] Финальный full unit7279pass/0fail/5 прежних todo из7284,53 новых checks pass; focused547/547 и report2/2. TypeScript/diff-check0. Native isolated Edge RU/EN8/8pass/0fail/0flaky за159.48s:новые forms2+paragraph2+natural2+recap2; новые2 проверяют12 whole quotes/task/claim/roles/revision IDs,503/retry/fetch/XHR/reload/unchanged canon и38 scopedPOST.407/411 original fingerprints прежние,4 ожидаемых edits+2 added runtime modules;80 прочих outputs/coverage unchanged,old reports/seals/gold сохранены. Chrome/Firefox build+ZIP0,старый >500KB warning остаётся;live model/Firefox native/full E2E не проверены,installed copy не обновлялась. [QA report](docs/benchmarks/rp285-qa-results.json)
+- [x] 23/23 runtime и716 source entries проверены byte/CRC,3 canonical download copies SHA256 match;финальные notes повторно упакованы. Исходники ZIP исключают tests:для QA нужен Git checkout/Node22.
+- [ ] Далее paraphrase/короткие EN references/оставшийся EN semantic false-complete, затем новый independent набор. General morphology/синонимы/RP-05/true delta не закрыты.
+
+## RP284 — целые источники для действий внутри абзаца
+
+- [x] Отдельный конечный paragraph grammar2–4 предложения/1200chars/2–3 предметных действия, обстановка/место/помощник. Whole-query guards/name masking/identity/source/budget/точный rollback, исходный draft и старый короткий формат сохранены. Нет записей событий из черновика/дополнительных model calls/settings. [Мануал](docs/NARRATIVE-ACTIONS.md).
+- [x] Seen повтор прежних84 случаев:44/54 complete vs39/54,294/312 facts,18missing vs47; narrative5/6 vs0/6.0 integrity/control drift/lost prior. Все6 новых абзацев остаются unverified/query;3 прежних false-complete не объявлены исправленными. [Отчёт](docs/benchmarks/rp284-narrative-seen-results.json), first independent39/54 и gold не переписаны.
+- [x] Исторический RP272 registered algorithm сохранён точным LF snapshot, исходный hash08d93b83…/registration/gold/report прежние. Current runtime тестируется отдельно. После guard/snapshot preparation focused461/461pass.
+- [x] Финальный full unit7226pass/0fail/5 прежних todo из7231,56 новых checks pass;focused461/461pass. TypeScript/diff-check0. Native isolated Edge RU/EN6/6pass/0fail/0flaky за114.69s:новые paragraph2+прежние natural2+recap2;новые2 проверяют12 whole source quotes/roles/revision IDs,503/retry/reload/unchanged canon и38 scopedPOST. Из411 historical fingerprints409 прежние,2 ожидаемых edits+1 added module;все78 non-paragraph outputs/coverage unchanged,старые reports/seals/registration/gold сохранены. Chrome/Firefox build+ZIP0. 23/23 runtime и710 source entries byte/CRC match,3 canonical download copies SHA256 match; финальные notes повторно упакованы. Старый >500KB warning остаётся;live model/Firefox native/full E2E не проверены,installed copy не обновлялась. [QA report](docs/benchmarks/rp284-qa-results.json)
+- [ ] Далее c1/формы слов и полные смысловые группы, paraphrase/короткие EN references,3 старых semantic false-complete. После fixes новый independent набор. RP-05/межходовая дельта остаются открыты.
+
+## RP283 — новая проверка длинных историй после исправления составных действий
+
+- [x] До первой оценки закреплены новые3 сюжета/RUEN/84 cases,54 scored,24 controls,6 budget probes; текущий runtime неизменен. Исправление единственной schema-метки до compiler eval сохранено как отдельная preflight-версия, gold прежний. [Протокол](docs/INDEPENDENT-SEQUENCE-EVALUATION.md).
+- [x] Первый результат39/54 complete,265/312 facts,47 пропусков в15 cases;0 data/source/budget/cache/input integrity issues. Narrative0/6,paraphrase1/6,reference4/6,plain-three5/6; остальные и scale — в [результатах](docs/INDEPENDENT-SEQUENCE-RESULTS.md). Это synthetic accepted-memory audit, не blind external/live proof; исходный report/seal не переписывать.
+- [ ] Найдены3 scored false-complete relative-to-gold statuses (ru mountain triple/scale1000,en mountain reference). Уточнить contract/UI confidence вместе с устранением потерь;0 integrity не означает semantic полноту.
+- [ ] Исправить natural действия внутри абзаца, затем свободные названия/короткие ссылки и c1. Данные теперь seen; нужен отдельный regression report при фиксе, затем следующий independent набор. RP-05/true delta открыты.
+- [x] Финальный full unit7170pass/0fail/5 прежних todo из7175,89 новых checks pass; fixture/source/gold/seal/report checks сохраняют результат39/54. Первый общий прогон неполный:695pass/1timeout и276 suites с ENOENT временного transform-cache; он сохранён в docs/benchmarks/rp283-unit-first-environment.json. Повтор выполнен с отдельными TEMP/TMP,1 worker,после сборок,без изменения thresholds/runtime. TypeScript/diff-check0;411 RP283 fingerprints/first report/input/gold/seal неизменны, прежние RP280/281 seals также прошли. Chrome/Firefox build+ZIP0. 23/23 runtime и704 source entries byte/CRC match,3 canonical download copies SHA256 match; финальные notes повторно упакованы. Старый >500KB warning остаётся. Production/UI не менялись; native/browser/live model/full E2E не повторялись. Tests исключены из source ZIP, для воспроизведения нужен Git checkout/Node22. Installed copy не обновлялась
+
+## RP282 — исправление исторической QA
+
+- [x] Исторические lasting/evidence/grounding проверки переведены на явный RP268 comparison profile; прежние5→16 и full input/gold/provenance hashes сохраняются. Это не old binary emulation. CRLF зарегистрированного fixture восстановлены без изменения его кода. [Методика](docs/HISTORICAL-SEARCH-QA.md).
+- [x] Текущий runtime отдельно проверяется на224 старых сценариях: whole sources/quotes/task/claim/uniqueness/budget/no mutation/cold-warm equality; плюс lasting16/32 и gold-label independence. Нынешняя память не ограничена8 ради старого эксперимента. Production/UI/storage не менялись.
+- [x] Финальный full unit:7081pass/0fail/5 прежних todo из7086,226 новых pass,8 historical failures устранены. TypeScript/diff0; полные старые digests/11 historical files unchanged,409/411 long-history fingerprints прежние,только2 ожидаемых RP281 parser edits. [QA report](docs/benchmarks/rp282-qa-results.json). Chrome/Firefox0,23/23 runtime bytes/CRC match. 695 source entries byte/CRC match,3 canonical download copies SHA256 match; финальные notes повторно упакованы. Native/live/full E2E не повторялись: production/UI на этом этапе прежние; личный мир/installed copy не менялись.
+- [ ] Следующий шаг — новый independent long-history набор после RP281. RP-05/true cross-turn delta открыты; исторические отчёты не переписаны, seen60/60 не считается новым holdout.
+
+## RP281 — естественные составные действия
+
+- [x] Исправлены comma-separated2–3 object clauses и конечные RU/EN examine/untie/connect/disconnect/move формы. Goal grammar и длина/число частей прежние; whole-query guards/name masking/empty-part rejection сохранены. Источники и бюджет проверяются существующими слоями, canon/settings/model/UI не меняются. [Мануал](docs/COMPOUND-ACTIONS.md).
+- [x] Шесть RP280 losses закрыты на неизменных input/gold.78 теперь seen cases:60/60 complete vs54/60,missing/integrity/control drift/prior source loss0. Первый independent report54/60 и historical baseline не переписаны. [Новый report](docs/benchmarks/rp281-natural-seen-results.json).
+- [x] Проверки выполнены: новые57/57pass и focused158pass; full6847pass/8 historical fail/5todo (полный suite НЕ зелёный). TypeScript/diff0. Native synthetic Edge RU/EN10/10pass/0fail/0flaky; новые2 natural12sources/38POST/503/retry/reload/unchanged canon.409/411 fingerprints unchanged, только2 ожидаемых parser edits. Chrome/Firefox build+ZIP0,23/23 runtime/693 source entries byte/CRC/3 SHA256 copies, final notes упакованы. Личный мир/installed copy/live model/Firefox native не проверены/не менялись; детали — верх CODEX-HANDOFF.
+- [ ] После исправления нужна новая заранее замороженная независимая оценка; RP-05 в целом и true cross-turn delta пока открыты. Общий словарь не означает понимание любых действий/реальное исполнение/согласие.
+- [ ] Найден долг исторической QA: full6847pass/8fail/5todo; все8 failing tests воспроизводятся с точными old pre-RP281 parsers (7 одинаковых messages, lasting count8→9 вместо давно устаревших5). [Доказательство](docs/benchmarks/rp281-legacy-comparison.json). Исправить frozen compiler/provenance coupling в lasting/evidence/grounding tests, отдельно проверить current runtime; старый gold/reports не подгонять, нынешний подбор не урезать до8. Full suite не считать зелёным.
+
+## RP280 — пункт4: независимая проверка длинных историй
+
+- [x] До запуска frozen новые3 сюжета/78 сценариев RU/EN, ожидаемые факты/цитаты/task/claim/source IDs и текущий runtime. Старые fixtures/gold/protocols не использованы как новый holdout; runtime не менялся. [Протокол](docs/LONG-HISTORY-EVALUATION.md), [результат](docs/LONG-HISTORY-RESULTS.md).
+- [x] Первый результат:48/54 основных полных набора +6/6 scale250/1000/5000 =54/60,330/348 gold facts.18 control cases отдельно;78/78 evidence/budget/immutability/cold-warm integrity без нарушений. Не универсальный semantic/live-model claim; общие anchors/короткие формы, agent-authored plots и procedural noise оговорены.
+- [x]6 failures three-actions сохранены: sequence parser0→общий cap8,18 пропущенных условий/обещаний/статусов при свободном бюджете. Запятые/ограниченный словарь actions, не недостаток configured budget. Диагностика отдельно и уже seen; исходный результат/gold не переписываются.
+- [ ] Следующее: естественные составные действия с разделителями/формами глаголов, целиком все источники при доступном бюджете, без ослабления guards и source integrity. Эти6 failures — seen regression; для нового независимого результата нужен новый frozen набор. RP-05 не закрыт, пункт3 true delta тоже открыт.
+- [x] Финально15 selected files/1138 unit pass/0fail (80 новых), TypeScript/diff-check0;411 frozen fingerprints/first report/baseline unchanged. Chrome/Firefox build+ZIP0,23/23 runtime/690 source entries byte/CRC,3 copies SHA256; финальные notes упакованы. Это QA стенда/прежних safeguards, independent quality result остаётся54/60. Runtime/UI не менялись; native/live/full suite checks не повторялись.
+
+## RP279 — пункт3: самостоятельные запросы с меньшим повторением полей
+
+- [x] Проверено ограничение native контракта: сохранённая история/receipt не гарантируют наличие старой памяти в model window. Каждый запрос остаётся self-contained; нет «already sent» omission или скрытого cross-request словаря.
+- [x] Обратимые sparse column tables + прежние refs, строгий decoder/schema/max128/backward-only/unknown/malformed rejection. Полный guide и prompt учитываются; выбирается только уменьшение символов И оценённых токенов. Canon/формат новых фактов/receipts не меняются. [Границы](docs/SELF-CONTAINED-MEMORY.md).
+- [x]128 seen comparisons при одинаковых данных:102 table,26 old;839113→827945 chars,210331→207539 estimated tokens(~1.3%). Это небольшой дополнительный выигрыш поверх прежнего encoding, не независимый quality test и не полная межходовая дельта. Первые отчёты сохранены.
+- [ ] Межходовая передача только изменений: **не реализована**, требуется подтверждённая доступная модели основа/контракт провайдера и безопасное восстановление. Не закрывать этот пункт как полный delta transport.
+- [x] Финально796 selected unit pass/0fail, TypeScript/diff-check0; native synthetic Edge RU/EN16/16pass/0fail/0flaky, включая503/retry/reload и всю continuation-chain. Chrome/Firefox build+ZIP0,23/23 runtime/682 source entries byte/CRC,3 copies SHA256; итоговая передача упакована. Full suite/live model interpretation не проверены; подробности — начало CODEX-HANDOFF.
+- [ ] Следующий prompt пользователя — пункт4: новый независимый набор длинных историй. Все данные RP279 уже seen, не использовать их как fresh holdout.
+
+## RP278 — пункт 2: индекс только изменившихся поисковых данных
+
+- [x] Scoped in-memory lexical owners переживают storage clones, обновляют изменённые поля/факты, удаляют отсутствующие, очищаются при смене world/game/branch/vault. Fresh ranked copies сохраняют подготовку без старой metadata.
+- [x] Подбор/статусы/источники/частоты/сцена/бюджет по-прежнему актуальные, результат сравнивается целиком с cold path; одинаковые тексты не объединяют факты. Подпись имён инвалидирует зависимый от неё разбор. Title groups сохраняются между клонами, clear освобождает private snapshots.
+- [x] Измеряется реальная работа:1000 lore clones→0 tokenizations, single content edit→1; cloned compiler→0 fact-keyword builds, single fact edit→1. Перезагрузка страницы выполняет cold build; O(N) сверка набора остаётся. [Описание](docs/INCREMENTAL-SEARCH.md).
+- [x]762 selected unit pass/0fail,138 новых, TypeScript/diff0, frozen64 unchanged; cold/warm128 old scenarios exact. Native Edge RU/EN6/6pass/0fail/0flaky,66 scoped POST, actual edit/disable/manual/delete/restore/world/reload + whole-source/notice/canon regressions. Chrome/Firefox build+ZIP0,23/23 runtime/678 sources byte/CRC/3 copies SHA256; final notes включены. Full backup/reset workflows/full suites/live model не заявлены.
+- [ ] Следующий отдельный prompt — пункт3: повторная передача неизменной памяти. После него остановиться до пункта4: независимые длинные истории. RP-05 пока открыт.
+
+## RP277 — контекстные ссылки, пункт 1 из 4 RP-05
+
+- [x] Новый ограниченный RU/EN source-backed подбор для «её подарок», «то обещание», вопросов и напоминаний; явная зацепка в последней accepted scene, literal label из title или gift copula, без угадывания местоимений/ownership.
+- [x] Весь связанный набор + вся prior selection проходят полный budget атомарно; exact quotes/ID/negation/conditions/claims/task status/guard сохраняются. При неизвестности или недостатке места — exact prior result/counters. Подарок без задачи и название из одного слова поддержаны.
+- [x] До алгоритма frozen64 input/gold/baseline; baseline уже16/16 positive complete, новый16/16,48 exact controls/source loss0. Это не свидетельство улучшения на независимом corpus. Отдельные seen stress15-record/204-scene tests показывают дополнение старого cap8 пути. [Метод и ограничения](docs/CONTEXTUAL-MEMORY.md).
+- [x] Финальные580 selected unit pass/0fail (96 новых), TypeScript/diff-check0; frozen64 exact baselines сохранены. Native RU/EN4/4pass; после финального object-ID guard новые2/2 повторены на текущей сборке,18 scoped POST/13 whole records/reload/unchanged canon. Chrome/Firefox build+ZIP0,23/23 runtime/676 source files byte/CRC и3 copies SHA256; итоговая передача повторно упакована. Личный аккаунт/full suite/live качество не заявлены.
+- [ ] **Следующий prompt «продолжай»: пункт 2** — индексировать только изменившиеся данные с проверкой корректности invalidation. Пункт 3 — сократить повторную передачу неизменной памяти. Пункт 4 — отдельный независимый набор длинных историй. Не выполнять их за пользователя в текущем запросе.
+
+RP-05 целиком остаётся открыт. Настоящая модель/личный аккаунт/полный актуальный регресс не объявлены проверенными.
+
+## RP276 — полная цепочка проверки памяти и переноса
+
+- [x] Синтетический installed Edge full flow RU/EN: analysis→review/no changes→summary→fresh chat→HTTP acceptance→local commit;10 current native cases pass. Review reload не запускает analysis повторно, summary использует принятую память; серверный wire prompt скрыт в DOM, reasoning не передаётся.
+- [x] Недоступная home503 не подтверждает перенос; source остаётся active. Отказ library/session writes после HTTP больше не теряется молча: видна локальная кнопка завершения без нового model request.
+- [x] Сохранение receipt до commit, reload в той же вкладке/page-local fallback при отказе session storage; pending handoff не обходит ordinary draft promotion. fetch и XHR не отправляют дубликат даже при выключенной strict-memory preference. Настоящее изменение игры/новый token/другая цель по-прежнему конфликтуют.
+- [x] Targeted browser34pass/18 штатных Edge-only Firefoxskip/0fail/0flaky;11 selected files245unitpass, TypeScript/diff-check0. UI RU/EN320/900/360/1280/axe/keyboard и hidden wire recap. Полный регресс/real model не заявлены; финальная упаковка и последний native repeat — верх CODEX-HANDOFF.
+- [x] На последней сборке повторены10 full-chain native cases:10pass/0fail/0flaky, включая repeated failed local retry и fetch/async+syncXHR blocking;28 scoped POST. Chrome/Firefox build+ZIP0,23/23 runtime/669 source files byte/CRC и3 copies SHA256 сверены, итоговые notes включены.
+- [ ] Закрытие вкладки/browser restart при незавершённом accepted receipt — отдельная доработка; session/page-local состояние этого не гарантирует.
+
+Финальные targeted regression/build/package результаты — начало CODEX-HANDOFF. Реальная модель/личный мир/full suite не являются проверенными. Далее независимый corpus/масштаб/full regression/performance/RP-08; [руководство](docs/SAFE-CHAT-CONTINUATION.md).
+
+## RP275 — сохранность при продолжении в новом чате
+
+- [x] Исправлен повторный automatic transcript fallback при готовой сжимке; следующий сегмент получает explicit handoff reference. Оригинальные сообщения и структурированная память сохраняются отдельно. Legacy handoff и ручное подключение без snapshot поддерживаются.
+- [x]11 selected files/241 unit pass;4 усиленных long RU/EN tests повторно pass. >200 selected messages/невыбранная альтернатива/whole source IDs/роли/3 статуса задач/Day12/ручная правка/reload/retry/rollback/two repositories. TypeScript/diff-check0.
+- [x]12 browser pass/4 Edge-only Firefox skip/0fail/0flaky: RU/EN360/1280 UI + native saved recap/rejected send/reload/retry/ownership и существующий two-chat runtime. Первые harness failures сохранены в передаче.
+- [x]Chrome/Firefox build+ZIP0,23/23 runtime/668 source files byte/CRC audit и3 canonical copies SHA256 match; итоговая документация включена. >500KB warning остаётся, installed copy не обновляется автоматически.
+- [x] Полный synthetic model-service цикл analysis→review→summary→fresh chat, недоступное открытие и локальная ошибка после принятого POST закрыты следующим RP276. RP275 native сам по себе использовал уже подготовленную сжимку.
+
+[Поведение и границы](docs/SAFE-CHAT-CONTINUATION.md). Финальная упаковка — верх CODEX-HANDOFF. Весь endless RP/full regression/live качество остаются открыты.
+
+## RP274 — видимый дефицит важной памяти
+
+15 октября 2026, первый следующий приоритет после pull7005aa6.
+
+- [x] Отдельный диагностический observer: целый найденный набор/доказанная нехватка локального бюджета/unknown source или query/защитный предел/обязательный overflow. Текст, selection, report/counters и exact rollback компилятора сохранены.
+- [x] Спокойное предупреждение на странице и в «Игре», раскрытие подробностей; нет модального окна, перехвата фокуса, блокировки отправки и нового model request. Неизвестность и второстепенные omissions не маркируются как бюджетный сбой; подготовка не выдаётся за доставку.
+- [x] Transient page-state передаёт причину отдельно, обновляет sidepanel даже при прежнем prefix; после reload пересчитывается. Историческая квитанция и канон не меняются. Frozen RP273 compiler сохранён отдельным CRLF snapshot, старые protocols/gold/reports не переписаны.
+- [x] Финально15files953 selected unit pass, TypeScript/diff-check0, baselineUnchanged64;32 UI checks RU/EN320/900px Edge/Firefox,2 current native Edge checks/2 штатных Firefox skip,0fail/0flaky.28 POST/whole12 sources/draft/sidepanel reason changes/reload/canon сохранены. Первые harness failures и дополнительный required-guard контроль описаны в передаче, assertions/таймауты не ослаблены. Chrome/Firefox build+ZIP,23/23 runtime/667 source files byte/CRC/SHA256 copies audit; итоговые notes упакованы. [Руководство](docs/IMPORTANT-MEMORY-STATUS.md).
+
+Далее — проверка/доведение существующего continuation на длинной synthetic игре. Весь RP-05–08, свободная речь, live качество и performance не закрываются этой UI-диагностикой.
+
 ## Передача на рабочий ПК — пакет RP269–RP273
 
 - [x] Сохранена сводка всей накопленной работы15 октября, проверок/ограничений, исходников и следующих задач в CODEX-HANDOFF, HOME-CODEX-NEXT и дневнике. Пользователь запросил push пакета в main; старые «локально/push не запрошен» ниже исторические.

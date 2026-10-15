@@ -8,6 +8,9 @@ const keys = (v: Record<string,unknown>, allowed: readonly string[]) => Object.k
 const oneOf = (v:unknown, allowed:readonly string[]) => typeof v==="string"&&allowed.includes(v);
 export const safeMemoryJson = (value: unknown) => JSON.stringify(value).replaceAll("<","\\u003c").replaceAll(">","\\u003e");
 const roleKeys = ["speaker","recipient","promisor","planner","believer"] as const;
+const factFields = ["kind","text","sourceQuote","sourceQuoteRef","claim","task","sourceRoles","sourceRolesRef","sourceIdentity","episodeSource","episodeSourceRef","timeStatus"] as const;
+const COLUMN_FORMAT = "deeprole-memory-columns-v1";
+const COLUMN_GUIDE = 'Self-contained table: rows follow columns; null and omitted tail cells mean absent. Expand to objects, then resolve refs ONLY in THIS request. Keep all data exact; never output this transport in updates.';
 const personKeys = ["id","name","sourceId","sourceName","unavailable"];
 const fail = (): never => { throw new Error("Invalid request-local memory reference"); };
 const copy = <T>(v:T):T => structuredClone(v);
@@ -25,10 +28,20 @@ function equal(a:unknown,b:unknown):boolean {
  * Only direct backward references in this exact array are accepted. It never
  * consults a previous request, the current roster or canonical storage. */
 export function decodeStoryMemory(value: unknown): StoryMemoryHint[] {
+  if(object(value)) {
+    if(!keys(value,["format","columns","rows"])||Object.keys(value).length!==3||value.format!==COLUMN_FORMAT||!Array.isArray(value.columns)||!Array.isArray(value.rows)||value.rows.length>128||
+      value.columns.length<2||value.columns.length>factFields.length||new Set(value.columns).size!==value.columns.length||
+      !Array.from(value.columns).every(field=>typeof field==="string"&&factFields.includes(field as typeof factFields[number]))||value.columns[0]!=="kind"||value.columns[1]!=="text")return fail();
+    const columns=value.columns as string[];
+    value=value.rows.map(row=>{
+      if(!Array.isArray(row)||row.length<2||row.length>columns.length)return fail();
+      return Object.fromEntries(columns.flatMap((field,i)=>i>=row.length||row[i]===null?[]:[[field,row[i]]]));
+    });
+  }
   if(!Array.isArray(value)||value.length>128)return fail();
   const decoded:Record<string,unknown>[]=[];
   for(const [index,row] of value.entries()) {
-    if(!object(row)||!owns(row,"kind")||!owns(row,"text")||!keys(row,["kind","text","sourceQuote","sourceQuoteRef","claim","task","sourceRoles","sourceRolesRef","sourceIdentity","episodeSource","episodeSourceRef","timeStatus"])||
+    if(!object(row)||!owns(row,"kind")||!owns(row,"text")||!keys(row,factFields)||
       !oneOf(row.kind,["event","promise","plan","belief","secret","task"])||typeof row.text!=="string")return fail();
     const hint=copy(row);
     for(const field of ["sourceQuote","sourceRoles","episodeSource"] as const) {
@@ -85,7 +98,7 @@ export function decodeStoryMemory(value: unknown): StoryMemoryHint[] {
 /** Reversible candidates only. The caller pays for each complete guide and
  * chooses against the complete request cost, not merely the JSON byte count.
  * Existing exact quote sharing remains the baseline, including its guide. */
-export function memoryTransportCandidates(inline:StoryMemoryHint[],baseline:MemoryPayload):MemoryPayload[] {
+export function memoryTransportCandidates(inline:StoryMemoryHint[],baseline:MemoryPayload,columns=false):MemoryPayload[] {
   const result=[baseline], seen=new Set([baseline.json]);
   for(let mask=1;mask<8;mask++) {
     const rows=JSON.parse(baseline.json) as Record<string,unknown>[], used=new Set<string>();
@@ -127,6 +140,15 @@ export function memoryTransportCandidates(inline:StoryMemoryHint[],baseline:Memo
     ].filter(Boolean).join(" ");
     try {if(!equal(decodeStoryMemory(rows),inline))continue;}catch{continue;}
     seen.add(json);result.push({json,guide});
+  }
+  if(columns)for(const candidate of [...result]) {
+    const rows=JSON.parse(candidate.json) as Record<string,unknown>[];
+    const frequency=new Map(factFields.map(field=>[field,rows.filter(row=>owns(row,field)).length]));
+    const fields=["kind","text",...factFields.filter(field=>field!=="kind"&&field!=="text"&&frequency.get(field)!).sort((a,b)=>frequency.get(b)!-frequency.get(a)!||factFields.indexOf(a)-factFields.indexOf(b))];
+    const table={format:COLUMN_FORMAT,columns:fields,rows:rows.map(row=>{const cells=fields.map(field=>owns(row,field)?row[field]:null);while(cells.length>2&&cells.at(-1)===null)cells.pop();return cells;})};
+    const json=safeMemoryJson(table);if(seen.has(json))continue;
+    try{if(!equal(decodeStoryMemory(table),inline))continue;}catch{continue;}
+    seen.add(json);result.push({json,guide:[COLUMN_GUIDE,candidate.guide].filter(Boolean).join(" ")});
   }
   return result;
 }

@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "scope": "RP286 final automated QA. Seen accepted-memory corpus and synthetic Edge/UI checks, not fresh independent/live model quality.",
+  "seenReport": "docs/benchmarks/rp286d-obligation-seen-results.json",
+  "seenReportSha256": "7689c1d9bc50f47bbfb84597a4ec873b48dc6bb6adfe4645a6f3e1b4c8164914",
+  "seenSummary": {
+    "cases": 84,
+    "scored": 54,
+    "baselineComplete": 47,
+    "complete": 54,
+    "goldFacts": 312,
+    "baselineMissingFacts": 15,
+    "missingFacts": 0,
+    "integrityIssues": 0,
+    "controlsDrift": 0,
+    "rejectionControlsDrift": 0,
+    "budgetOutputChanges": 0,
+    "lostPriorFacts": 0,
+    "changedOutputs": 12,
+    "narrativeComplete": 6,
+    "narrativeCases": 6,
+    "narrativeReportedComplete": 0
+  },
+  "unit": {
+    "numPassedTests": 7357,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 5,
+    "numTotalTests": 7362
+  },
+  "newTests": 78,
+  "focusedSevenFiles": {
+    "passed": 384,
+    "failed": 0
+  },
+  "native": {
+    "startTime": "2026-10-15T12:45:44.111Z",
+    "duration": 190281.71,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "newNativeAssertions": {
+    "wholeSourcesPerCase": 26,
+    "completionPOSTsAcrossBothLocales": 28,
+    "includes": [
+      "prose promise title",
+      "cross-clause exact accepted quote bridge",
+      "paraphrase without literal object label",
+      "503/manual retry",
+      "fetch/XHR/reload",
+      "exact roles/revision IDs/task status/condition/raw draft",
+      "unchanged canonical facts/role seeds/episode sources"
+    ]
+  },
+  "ui": {
+    "locales": [
+      "ru",
+      "en"
+    ],
+    "widths": [
+      320,
+      900
+    ],
+    "coverageStatesPerCase": 5,
+    "checks": [
+      "keyboard",
+      "no horizontal overflow",
+      "scoped WCAG axe"
+    ]
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "builds": {
+    "chromeExitCode": 0,
+    "firefoxExitCode": 0,
+    "existingLargeChunkWarning": true
+  },
+  "sourceIntegrity": {
+    "originalComparedFiles": 411,
+    "expectedExistingChanges": 5,
+    "addedRuntimeFiles": 3,
+    "otherOriginalFingerprintsUnchanged": 406,
+    "oldReportsAndGoldSealsUnchanged": true,
+    "all72OtherOutputsAndCoverageUnchanged": true,
+    "seenSummary": {
+      "cases": 84,
+      "scored": 54,
+      "baselineComplete": 47,
+      "complete": 54,
+      "goldFacts": 312,
+      "baselineMissingFacts": 15,
+      "missingFacts": 0,
+      "integrityIssues": 0,
+      "controlsDrift": 0,
+      "rejectionControlsDrift": 0,
+      "budgetOutputChanges": 0,
+      "lostPriorFacts": 0,
+      "changedOutputs": 12,
+      "narrativeComplete": 6,
+      "narrativeCases": 6,
+      "narrativeReportedComplete": 0
+    },
+    "native": {
+      "startTime": "2026-10-15T12:45:44.111Z",
+      "duration": 190281.71,
+      "expected": 12,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "qaFilesSha256": {
+    "tests/story-obligation-recall.test.ts": "95083c85ebf1406665ba4e773bf2ba5e011a5095b4008acc2c5aef4c60a9a9a4",
+    "tests/story-obligation-report.test.ts": "66c2adc3a2afea1999bb3dd97c7d378dc6bb8ce99e1bbba009d8a55e95e0624a",
+    "tests/e2e/story-obligation-runtime.spec.ts": "f002f2c8e3f2eb8855c33fd970997c028f19680b7b26e96b7261b384ee3477cc",
+    "playwright.ux.config.ts": "e3685e3c69f9db21d7081b6b18320b4ae6d0b41d5728281a4a4f849134d88789"
+  },
+  "boundaries": [
+    "New retrieval is bounded to return obligations and a source-backed short reference, not general semantic search.",
+    "Every new successful group remains unresolved and semantic coverage unverified.",
+    "All84 benchmark inputs are now seen; old reports/gold/seals preserved. Fresh independent evaluation is next.",
+    "No live DeepSeek model/account, native Firefox or full E2E validation.",
+    "Personal world/user profile/installed browser copy untouched; manual reload required.",
+    "Source ZIP excludes tests; Git checkout/Node22 required for reproduction."
+  ]
+}

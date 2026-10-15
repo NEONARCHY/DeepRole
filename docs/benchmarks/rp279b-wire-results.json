@@ -1,0 +1,1938 @@
+{
+  "version": 1,
+  "scope": "128 seen synthetic scenarios; 20000-token comparison budget, same complete selected data; no provider/model window assertion",
+  "compilerDigest": "4cd06d1e494141f5433b582206f401e2ae9886139a320328321b7471eccdf734",
+  "transportDigest": "2724e64a35f564ebaa2d12fee86a3c187f63fbd306cfb83216e491857a99893f",
+  "totals": {
+    "characters": [
+      839113,
+      827945
+    ],
+    "estimatedTokens": [
+      210331,
+      207539
+    ]
+  },
+  "rows": [
+    {
+      "id": "ru:rp273:observatory:nine-single",
+      "inputDigest": "ddb97e6076adfcabcf4958ba835df7a9ca2ab2a5aadaeba382346ce9aa5ded5a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5612,
+        5539
+      ],
+      "estimatedTokens": [
+        1407,
+        1389
+      ],
+      "selected": 9
+    },
+    {
+      "id": "ru:rp273:observatory:twelve-single",
+      "inputDigest": "cab6da9b0a9ded16c32850cad72d5000ff197c429b35d0f07442e948974623b8",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6717,
+        6490
+      ],
+      "estimatedTokens": [
+        1684,
+        1627
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:observatory:nine-dual",
+      "inputDigest": "455c529828b6efbbba6d5d98e50bae1520e46f7639f2befcda0eb265c7b2f4d7",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5600,
+        5527
+      ],
+      "estimatedTokens": [
+        1404,
+        1386
+      ],
+      "selected": 9
+    },
+    {
+      "id": "ru:rp273:observatory:twelve-dual",
+      "inputDigest": "8975d40e6083abc283e7b8ed2214d2d35e297a120c27e8d8e878ffa4d673697d",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6699,
+        6472
+      ],
+      "estimatedTokens": [
+        1679,
+        1622
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:observatory:sixteen-triple",
+      "inputDigest": "802d93802322cbc21d86874a50b474031d8d4162473fccc5ae52c09063a8dc42",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        8011,
+        7593
+      ],
+      "estimatedTokens": [
+        2007,
+        1903
+      ],
+      "selected": 16
+    },
+    {
+      "id": "ru:rp273:observatory:info",
+      "inputDigest": "90730c388f07579d2993303112a4376711c8b8ac1bbf9571b5c9b3624c4ed98a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6717,
+        6490
+      ],
+      "estimatedTokens": [
+        1684,
+        1627
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:observatory:wrapped",
+      "inputDigest": "8370d8e9f64963a95658320e8f94d88c9e1aec6240ffdef67d019f860a1bc670",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6699,
+        6472
+      ],
+      "estimatedTokens": [
+        1679,
+        1622
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:observatory:no-repeats",
+      "inputDigest": "f03d02aff420f306ce3ceb7fb369eac685eed2f89db0467999240f175861184d",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6699,
+        6472
+      ],
+      "estimatedTokens": [
+        1679,
+        1622
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:observatory:edited",
+      "inputDigest": "c95ea3abb16b31dde7b9b92308c704fff82f3b9615457d04620db1543db515cc",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        4915,
+        4915
+      ],
+      "estimatedTokens": [
+        1233,
+        1233
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:observatory:missing-source",
+      "inputDigest": "8c5c7ff4eda24c851a6fb9769d1824d4ead913babc2d8bc160f792a4a1b028c7",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        4915,
+        4915
+      ],
+      "estimatedTokens": [
+        1233,
+        1233
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:observatory:replacement",
+      "inputDigest": "4a19da265a8db50b7443b795da86d840a68a90d17a889c89be89e0ff6e0472b2",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5035,
+        5035
+      ],
+      "estimatedTokens": [
+        1263,
+        1263
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:observatory:unavailable",
+      "inputDigest": "1c9c27b4534fdd132c98cdac5cbc6f732e8a973e727298bb6acf5f1f34de401d",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5035,
+        5035
+      ],
+      "estimatedTokens": [
+        1263,
+        1263
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:observatory:unknown-tail",
+      "inputDigest": "1c6b644c3cdc99aa970dbac4592457fe1ac395d09b0694bbe67afdfc34e6e1ee",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        4915,
+        4915
+      ],
+      "estimatedTokens": [
+        1233,
+        1233
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:observatory:conditional",
+      "inputDigest": "d078bf973b7681b146f6d1bb66b2838baad2189b68be5ea76041b1a0c65c9900",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        4915,
+        4915
+      ],
+      "estimatedTokens": [
+        1233,
+        1233
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:observatory:required",
+      "inputDigest": "d7560adde1424d426e588c4f6718bfc6e11d7e83dc7ffd3e03819bfaf1e8548a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        35501,
+        35274
+      ],
+      "estimatedTokens": [
+        8880,
+        8823
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:observatory:speaker",
+      "inputDigest": "5463081d93e29f485e0364740945e4db5e0d89b70ef0489eed6efa1efd30c46f",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        4984,
+        4984
+      ],
+      "estimatedTokens": [
+        1250,
+        1250
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:nine-single",
+      "inputDigest": "16e9b6fb1ace686456548da56f8b27543a335bd9b275427d06e756fb6afbbbe2",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5576,
+        5503
+      ],
+      "estimatedTokens": [
+        1398,
+        1380
+      ],
+      "selected": 9
+    },
+    {
+      "id": "ru:rp273:expedition:twelve-single",
+      "inputDigest": "82f9f5a0fc1e42bdb9c460f4114aa23c947f42cef0d43b849608df958d005851",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6667,
+        6440
+      ],
+      "estimatedTokens": [
+        1671,
+        1614
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:expedition:nine-dual",
+      "inputDigest": "82da4f673c6f913126124623ca946236a16cfd6716ccde0ee97dc9406269c842",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5576,
+        5503
+      ],
+      "estimatedTokens": [
+        1398,
+        1380
+      ],
+      "selected": 9
+    },
+    {
+      "id": "ru:rp273:expedition:twelve-dual",
+      "inputDigest": "07ba244abac0656f9c13bfb5af000dfd02ffa85354391822d4f095f951931ade",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6667,
+        6440
+      ],
+      "estimatedTokens": [
+        1671,
+        1614
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:expedition:sixteen-triple",
+      "inputDigest": "fe2372fa994bedd30b36ee692dc8cdd4929e2b0288071232b9bc68d6fff220e1",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        7987,
+        7569
+      ],
+      "estimatedTokens": [
+        2001,
+        1897
+      ],
+      "selected": 16
+    },
+    {
+      "id": "ru:rp273:expedition:info",
+      "inputDigest": "84bda2057cd91747234424ee0eda0e4dec32beee053fd7d66110ba546e9f790f",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6667,
+        6440
+      ],
+      "estimatedTokens": [
+        1671,
+        1614
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:expedition:wrapped",
+      "inputDigest": "5d312fd359db7edba520ccaba498f1ba476b534ccb37b676f092fe9bb8fffb4a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6667,
+        6440
+      ],
+      "estimatedTokens": [
+        1671,
+        1614
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:expedition:no-repeats",
+      "inputDigest": "6ed055125e5435efdcc49b3b2adb02ed7817028240a3f4727c1a9749311ebbae",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6667,
+        6440
+      ],
+      "estimatedTokens": [
+        1671,
+        1614
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:expedition:edited",
+      "inputDigest": "f43ca579d8e517309c3466d37dd5ea3aa33d5693fba6f97fd02a214ddb471542",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5204,
+        5204
+      ],
+      "estimatedTokens": [
+        1305,
+        1305
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:missing-source",
+      "inputDigest": "2a2e9a9c5d18569745c491f3123fb1f53f8a03849b0bbb41bb79f46034b1cdfa",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5204,
+        5204
+      ],
+      "estimatedTokens": [
+        1305,
+        1305
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:replacement",
+      "inputDigest": "a6783f30df1c6383e8908bc8fb0d7161a462e7c91d7e0a0880da2fcc40717806",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5315,
+        5301
+      ],
+      "estimatedTokens": [
+        1333,
+        1330
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:unavailable",
+      "inputDigest": "dc6f4b5f2cf99a2b4a7fe3f52e1e74b07148ff459638c0f26180e706788053de",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5315,
+        5301
+      ],
+      "estimatedTokens": [
+        1333,
+        1330
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:unknown-tail",
+      "inputDigest": "c61823d489dd61aba18b222723323964bca891a6a1e4e16e94ccb6eb361eb267",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5204,
+        5204
+      ],
+      "estimatedTokens": [
+        1305,
+        1305
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:conditional",
+      "inputDigest": "000f8f232d5be6a498b07ac47acdfba1682a348422e275ee0b43b70b17733999",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5204,
+        5204
+      ],
+      "estimatedTokens": [
+        1305,
+        1305
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:rp273:expedition:required",
+      "inputDigest": "8fccc400cda1480eac8d4b5cbef63385f8a0e3d9b173cfcf6308be063645ebc2",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        35469,
+        35242
+      ],
+      "estimatedTokens": [
+        8872,
+        8815
+      ],
+      "selected": 12
+    },
+    {
+      "id": "ru:rp273:expedition:speaker",
+      "inputDigest": "d763a7b1cac52ab4a65dd62e1b556e7def84d12ac662f776e3553b436878745a",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        4968,
+        4968
+      ],
+      "estimatedTokens": [
+        1246,
+        1246
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:nine-single",
+      "inputDigest": "ba0008f01c971269597bf569cb51385781b4a5a101d07720c05bb07e775503e0",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5624,
+        5551
+      ],
+      "estimatedTokens": [
+        1410,
+        1392
+      ],
+      "selected": 9
+    },
+    {
+      "id": "en:rp273:observatory:twelve-single",
+      "inputDigest": "d610b3dd4fa3e0412063797b2b382a75a823a9cc8bd62d3d20716963712af89a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6747,
+        6520
+      ],
+      "estimatedTokens": [
+        1691,
+        1634
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:observatory:nine-dual",
+      "inputDigest": "4ca537f8765b5cd7b01c8327d1887909b312aecfa094a1b6b74b38509562a3c4",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5612,
+        5539
+      ],
+      "estimatedTokens": [
+        1407,
+        1389
+      ],
+      "selected": 9
+    },
+    {
+      "id": "en:rp273:observatory:twelve-dual",
+      "inputDigest": "c14cae93b3febc2a583b5d1129d8d2627f8bb850fff299528ba853eb3f17926b",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6729,
+        6502
+      ],
+      "estimatedTokens": [
+        1687,
+        1630
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:observatory:sixteen-triple",
+      "inputDigest": "b19462555128ac1be4866200eb79bdeb3fe4cd41866125603f29ae739a31bf86",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        8032,
+        7614
+      ],
+      "estimatedTokens": [
+        2012,
+        1908
+      ],
+      "selected": 16
+    },
+    {
+      "id": "en:rp273:observatory:info",
+      "inputDigest": "235d341f1109b0b8b8f4f4065c867ac6b24d70a7e18dfdc4c0961cbdb5c80218",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6747,
+        6520
+      ],
+      "estimatedTokens": [
+        1691,
+        1634
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:observatory:wrapped",
+      "inputDigest": "dca800852edc64af7507dc1e9984ad366790a0d0027c8fdc32fae48de7e6328c",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6729,
+        6502
+      ],
+      "estimatedTokens": [
+        1687,
+        1630
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:observatory:no-repeats",
+      "inputDigest": "780c726c76e1ab05a55bafb0b119b208f2971fec308b06ee7c77162fd815c288",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6729,
+        6502
+      ],
+      "estimatedTokens": [
+        1687,
+        1630
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:observatory:edited",
+      "inputDigest": "bd384a1eef49d57104e8be1dbb3e93f6cf64f9cbfbdace43ca0b1af74c72406f",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5190,
+        5190
+      ],
+      "estimatedTokens": [
+        1302,
+        1302
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:missing-source",
+      "inputDigest": "22673143ef8c422c74f59071e86f4065625be1351b677d295d783964a231c88e",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5190,
+        5190
+      ],
+      "estimatedTokens": [
+        1302,
+        1302
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:replacement",
+      "inputDigest": "de014463d1aaefed7d68c0885c3b256ccd810483a91aa16d47ec4b0c78d2d726",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5301,
+        5287
+      ],
+      "estimatedTokens": [
+        1330,
+        1326
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:unavailable",
+      "inputDigest": "ffd1e1591b30764dd4f36a176eaeb063e079699360e7fc0d62af6c66ff52017b",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5301,
+        5287
+      ],
+      "estimatedTokens": [
+        1330,
+        1326
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:unknown-tail",
+      "inputDigest": "03da05b19f6f206653033cd2e9c21df77a9f4572361159b1ebca9a74ac53f0a7",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5077,
+        5077
+      ],
+      "estimatedTokens": [
+        1274,
+        1274
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:conditional",
+      "inputDigest": "a6156d558e13eb35c0a5ed4c7d2d5a83a6d8585bce3d7d25ad66357f7ffcaf53",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5369,
+        5369
+      ],
+      "estimatedTokens": [
+        1347,
+        1347
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:observatory:required",
+      "inputDigest": "61946ea6172757fe4aa1cfc90665776451bd875d7b7623eec5141e9123f240f0",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        35531,
+        35304
+      ],
+      "estimatedTokens": [
+        8887,
+        8830
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:observatory:speaker",
+      "inputDigest": "33ad7fdc17a575ca69401000daa03fa76399e27f2f566b19a1747d2c5b321660",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        3723,
+        3723
+      ],
+      "estimatedTokens": [
+        935,
+        935
+      ],
+      "selected": 4
+    },
+    {
+      "id": "en:rp273:expedition:nine-single",
+      "inputDigest": "5e8b7bb1cee3e63267365495eca7f0f1c3a15ee65798dfe3f4f4e944eed48422",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5636,
+        5563
+      ],
+      "estimatedTokens": [
+        1413,
+        1395
+      ],
+      "selected": 9
+    },
+    {
+      "id": "en:rp273:expedition:twelve-single",
+      "inputDigest": "5d1b51e2c50afc81cc5675f631014d0a55927e8e6c093baa7bc42fbb72a10b49",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6765,
+        6538
+      ],
+      "estimatedTokens": [
+        1696,
+        1639
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:expedition:nine-dual",
+      "inputDigest": "111d20823c263bdf21e19635dfca22cf03c00cd05ea7e91c8e3992fa42289989",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5624,
+        5551
+      ],
+      "estimatedTokens": [
+        1410,
+        1392
+      ],
+      "selected": 9
+    },
+    {
+      "id": "en:rp273:expedition:twelve-dual",
+      "inputDigest": "5f21541dec0be381aa564d2da07d5ebe64cfa53961a3ab96549a835d8f97667a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6747,
+        6520
+      ],
+      "estimatedTokens": [
+        1691,
+        1634
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:expedition:sixteen-triple",
+      "inputDigest": "4469e9bf5d82949d962f31f24e7214c0f7a23b663457429277a036fefed8c647",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        8040,
+        7622
+      ],
+      "estimatedTokens": [
+        2014,
+        1910
+      ],
+      "selected": 16
+    },
+    {
+      "id": "en:rp273:expedition:info",
+      "inputDigest": "12f09998f28e9f8bc7b9b9e85ce71ac91aafbec3e89c55d474ab26874e4f35d1",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6765,
+        6538
+      ],
+      "estimatedTokens": [
+        1696,
+        1639
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:expedition:wrapped",
+      "inputDigest": "20151ced908c4d0153d2355589fb464fd9cfc43276a5da00fcf2d5df9781d9f7",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6747,
+        6520
+      ],
+      "estimatedTokens": [
+        1691,
+        1634
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:expedition:no-repeats",
+      "inputDigest": "1593191e9d0e08d4fa705cb17fe724e3060e75b699740e662aa714554de47883",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        6747,
+        6520
+      ],
+      "estimatedTokens": [
+        1691,
+        1634
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:expedition:edited",
+      "inputDigest": "6881b58381ee17a28b7d46e83600e6c3c130c4a2230976d8f39ce8d49d5eb4e4",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5200,
+        5200
+      ],
+      "estimatedTokens": [
+        1304,
+        1304
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:expedition:missing-source",
+      "inputDigest": "54c5598696ac7d6a611bccabb5fabead8acf8f00f960aab82efdafa4000902ef",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5200,
+        5200
+      ],
+      "estimatedTokens": [
+        1304,
+        1304
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:expedition:replacement",
+      "inputDigest": "0815d3d6c75cdf1c4748d2879a47dd5124b068b1cd0ae8cd547295972f66ad18",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5311,
+        5297
+      ],
+      "estimatedTokens": [
+        1332,
+        1329
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:expedition:unavailable",
+      "inputDigest": "862b1d0735cf2ffd84398f7406576d1f7a65ba9bfc9be83e9063b1c10bcff91f",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5311,
+        5297
+      ],
+      "estimatedTokens": [
+        1332,
+        1329
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:expedition:unknown-tail",
+      "inputDigest": "f6612730b6501fe4d9f148d5e97cb93520b57292c4b85f97dd64f509682ba8ae",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5088,
+        5088
+      ],
+      "estimatedTokens": [
+        1276,
+        1276
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:expedition:conditional",
+      "inputDigest": "165465be4095deb36876d39c4b25302faf4dd16eca3aadc4b090b1794310cdb2",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5379,
+        5379
+      ],
+      "estimatedTokens": [
+        1349,
+        1349
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:rp273:expedition:required",
+      "inputDigest": "beefccaf191b8a1646e40e25286e0482e692289ae352f3ec41ecf7917f9cba55",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        35549,
+        35322
+      ],
+      "estimatedTokens": [
+        8892,
+        8835
+      ],
+      "selected": 12
+    },
+    {
+      "id": "en:rp273:expedition:speaker",
+      "inputDigest": "cd978ea3e44306df5a05c3cf3a9e1ba7b4c480e00b32ee373d1c705e6333e6b6",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        3727,
+        3727
+      ],
+      "estimatedTokens": [
+        936,
+        936
+      ],
+      "selected": 4
+    },
+    {
+      "id": "ru:glassworks:gift-short",
+      "inputDigest": "cf246d1549dd986e0ebb538e404f2bcdc6a6e70368d1ffbc19cfe549946d07c5",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5835,
+        5774
+      ],
+      "estimatedTokens": [
+        1463,
+        1448
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:gift-question",
+      "inputDigest": "4f9af50b490fcdec3c79b26da4412cb037890c2532561e2a9fdfe0e454351a87",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5835,
+        5774
+      ],
+      "estimatedTokens": [
+        1463,
+        1448
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:promise-short",
+      "inputDigest": "68327331c6a7f9e49d65968260dbfc8a442c01e513609cd6d765715932ca784e",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5521,
+        5460
+      ],
+      "estimatedTokens": [
+        1385,
+        1369
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:promise-verb",
+      "inputDigest": "c6a1f2a5d3469dd0311272f93b561b0fe8b2af4854c652b471667a55e985140f",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5835,
+        5774
+      ],
+      "estimatedTokens": [
+        1463,
+        1448
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:no-anchor",
+      "inputDigest": "179a6f979a1b7ccbdd66958598d72989bde421b9b5316b560795554011366a3d",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5174,
+        5122
+      ],
+      "estimatedTokens": [
+        1298,
+        1285
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:old-anchor",
+      "inputDigest": "9e115e5a9c2c69cd1e43b7bf793b479092a5854361d9c0ee3408a32632c95f6d",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5303,
+        5242
+      ],
+      "estimatedTokens": [
+        1330,
+        1315
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:missing-proof",
+      "inputDigest": "ec67b0ad4cefb1d9c424ce4936a5248da61e3e23d6c25f8ac63cad2247a7c251",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5203,
+        5163
+      ],
+      "estimatedTokens": [
+        1305,
+        1295
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:edited-quote",
+      "inputDigest": "4736d7d45b6bb07ddd395db69157dbb13565df00ea90b01f9806a69918b6208e",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5775,
+        5775
+      ],
+      "estimatedTokens": [
+        1448,
+        1448
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:deleted-owner",
+      "inputDigest": "6a78711e551a7518d3aaf850596432e02dc51782373cc259f8384e443b3404f2",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5419,
+        5358
+      ],
+      "estimatedTokens": [
+        1359,
+        1344
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:replacement",
+      "inputDigest": "af75f5156a66d61baf90997117a4117e28b1bade135122ae73cc9595ae009da3",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5573,
+        5552
+      ],
+      "estimatedTokens": [
+        1398,
+        1392
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:two-topics",
+      "inputDigest": "cf98dc07ff086378066d5564474952a6b5ee305574a0c1e3a642070c1e6e4815",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5302,
+        5241
+      ],
+      "estimatedTokens": [
+        1330,
+        1315
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:unknown-topic",
+      "inputDigest": "5dcce269dbe93d4d97abd8d1b04efe62b87a7eca705f2a18d1f59b7d8dd7d23c",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5302,
+        5241
+      ],
+      "estimatedTokens": [
+        1330,
+        1315
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:quoted",
+      "inputDigest": "66a1203f7d1cf0408782dfb7e97ffaadc57068fd79c9d8057e9fbff9a6997b2f",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        4987,
+        4926
+      ],
+      "estimatedTokens": [
+        1251,
+        1236
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:action",
+      "inputDigest": "9796eda00a3a842e3c3fe3eaa353f3a7456793371ac7527d4229a93cb8008212",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5302,
+        5241
+      ],
+      "estimatedTokens": [
+        1330,
+        1315
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:conditional",
+      "inputDigest": "84f1b6d79fb6b00eef3f0957be9801eecc19ba40de7ddfdcea384e4f4dc26318",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5302,
+        5241
+      ],
+      "estimatedTokens": [
+        1330,
+        1315
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:glassworks:restart",
+      "inputDigest": "5c01aaf567b56d01e23f27a0257eee6ce821c54f74524b68f7d18985b6b88316",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5283,
+        5222
+      ],
+      "estimatedTokens": [
+        1325,
+        1310
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:gift-short",
+      "inputDigest": "e4d61f829693fc0c76d35a2e6cc2a402942e8242255d286a838284040ddb3189",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5765,
+        5704
+      ],
+      "estimatedTokens": [
+        1446,
+        1430
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:gift-question",
+      "inputDigest": "1921c5a972338a9669fc7560fb81008241c0c167e0f16bac5ad889181055e590",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5765,
+        5704
+      ],
+      "estimatedTokens": [
+        1446,
+        1430
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:promise-short",
+      "inputDigest": "27fda085006c54ef219ee264074393e7ecc018ac418da66200aa448ac911558e",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5451,
+        5390
+      ],
+      "estimatedTokens": [
+        1367,
+        1352
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:promise-verb",
+      "inputDigest": "1343628c74fcd79ed586227d0410e4123510ab3183c2d1a7163642fc9ab2b45f",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5765,
+        5704
+      ],
+      "estimatedTokens": [
+        1446,
+        1430
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:no-anchor",
+      "inputDigest": "31b81353c88ba0fb0292f82ae9f1c5a362576025543055adc49987f740ce663e",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5136,
+        5084
+      ],
+      "estimatedTokens": [
+        1288,
+        1275
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:old-anchor",
+      "inputDigest": "d52d659218282492653fe2f9c98fa21cece4b2848664cc028000d79f61ea9541",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5233,
+        5172
+      ],
+      "estimatedTokens": [
+        1313,
+        1297
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:missing-proof",
+      "inputDigest": "61da057456b2390f0e22f0ce137a61fdf942b09dc6698f59825f5099c74963ef",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5136,
+        5096
+      ],
+      "estimatedTokens": [
+        1288,
+        1278
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:edited-quote",
+      "inputDigest": "7a706eb30dfce299457b1ce4367b2d9ca9d7b24418a5aefed775a5e3eedef9d1",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5702,
+        5702
+      ],
+      "estimatedTokens": [
+        1430,
+        1430
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:deleted-owner",
+      "inputDigest": "8e2164bb93cffbe777726a80ad5a3f7576e91f074f61944fc6af1a6b13e5645a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5349,
+        5288
+      ],
+      "estimatedTokens": [
+        1342,
+        1326
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:replacement",
+      "inputDigest": "84cd324e2bbe6e23070ddda5260044804ceb97b645097cbc23a185ae3ebe1ae5",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5502,
+        5481
+      ],
+      "estimatedTokens": [
+        1380,
+        1375
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:two-topics",
+      "inputDigest": "6b4d87852ae42901eecafbf6c6f0acd43471f9aa9b1de40794c965cd032b5287",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5232,
+        5171
+      ],
+      "estimatedTokens": [
+        1312,
+        1297
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:unknown-topic",
+      "inputDigest": "3f0a4a4e31a8691d80137243b53819234f55f6979cceabc1d2b1b8cd31d1c2f4",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5232,
+        5171
+      ],
+      "estimatedTokens": [
+        1312,
+        1297
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:quoted",
+      "inputDigest": "b8be97f169270d17863f42a4af00b10c09f7f84fbc7c0902cf8e509dc2d83caa",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        4917,
+        4856
+      ],
+      "estimatedTokens": [
+        1234,
+        1218
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:action",
+      "inputDigest": "55d46fff69ab24019b21c0b8a8fcff870fcfed53bc0b3516c3fdccf7e4e98012",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5232,
+        5171
+      ],
+      "estimatedTokens": [
+        1312,
+        1297
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:conditional",
+      "inputDigest": "07799a530ac22e66c8853ee7bcef3dcd7c606bbb0d65380308a3b32ad001211a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5232,
+        5171
+      ],
+      "estimatedTokens": [
+        1312,
+        1297
+      ],
+      "selected": 8
+    },
+    {
+      "id": "ru:harbour:restart",
+      "inputDigest": "9acc790b2f7b435e27055ee9eacbb15a7dda1239ec412d25eff9052b98093cba",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5213,
+        5152
+      ],
+      "estimatedTokens": [
+        1308,
+        1292
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:gift-short",
+      "inputDigest": "2422722806d104e3251e1877661c0c73d2fbb330d9cb7293facabdcfeb6c1051",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5779,
+        5718
+      ],
+      "estimatedTokens": [
+        1449,
+        1434
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:gift-question",
+      "inputDigest": "0a4798cf075045bf2459a7bd6a573b867f48e110f2a5ddde119f9273821ec887",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5779,
+        5718
+      ],
+      "estimatedTokens": [
+        1449,
+        1434
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:promise-short",
+      "inputDigest": "94db65052ce03904680ebca45ac0ace4c0caa0446c3b738043ed03580b661e13",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5465,
+        5404
+      ],
+      "estimatedTokens": [
+        1371,
+        1355
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:promise-verb",
+      "inputDigest": "fb119ffe703b61f4f12dd7246e940fdc4769bf26b3b1bf55f14d8697e1befcd5",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5779,
+        5718
+      ],
+      "estimatedTokens": [
+        1449,
+        1434
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:no-anchor",
+      "inputDigest": "f8b3fa2bbfdd3ef043e8d1305f8f46c0b68134fd7a19ebe7cc1ea4151b78b966",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5123,
+        5071
+      ],
+      "estimatedTokens": [
+        1285,
+        1272
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:old-anchor",
+      "inputDigest": "e963d812fca8dbeb4308fd0b25dcfd029d452bb7bd01076a0dc115ce61f5d471",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5247,
+        5186
+      ],
+      "estimatedTokens": [
+        1316,
+        1301
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:missing-proof",
+      "inputDigest": "8e1de9bce3bddc0d55f8217792d4349112dd92044ffc8e9a8e18530ce81d9744",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5147,
+        5107
+      ],
+      "estimatedTokens": [
+        1291,
+        1281
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:edited-quote",
+      "inputDigest": "1bc1b97780419f11d7257bcdfdf350889198f6255809d0e779cc8d0685fb47ab",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5715,
+        5715
+      ],
+      "estimatedTokens": [
+        1433,
+        1433
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:deleted-owner",
+      "inputDigest": "44809daae6fd442e32c8fe327a188970e6a5b26aea5cd767d0488f60c3d17625",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5363,
+        5302
+      ],
+      "estimatedTokens": [
+        1345,
+        1330
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:replacement",
+      "inputDigest": "1988be981e6d47ab20686f4560bd5378b76776c4f8fabffee2778c5eb7ba25a5",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5517,
+        5496
+      ],
+      "estimatedTokens": [
+        1384,
+        1378
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:two-topics",
+      "inputDigest": "92ef0fb8e96c5e5849cde42d368cee88f2c99a867bdbda1bd31c04b9ef34a95e",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5246,
+        5185
+      ],
+      "estimatedTokens": [
+        1316,
+        1301
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:unknown-topic",
+      "inputDigest": "d2434ec8b92e10dc0ed6fa0a261b2f98e7d63eeeb8aa482a4a2231dae0ab2561",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5246,
+        5185
+      ],
+      "estimatedTokens": [
+        1316,
+        1301
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:quoted",
+      "inputDigest": "32923db4e179c95f2a93376b186c11488f1dc92d15eb0580a7808b06ad077e0a",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        4931,
+        4870
+      ],
+      "estimatedTokens": [
+        1237,
+        1222
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:action",
+      "inputDigest": "70a994c20873178699b5cde367e4601b8274bb99aa3c76cf6a355c3be268ddf2",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5246,
+        5185
+      ],
+      "estimatedTokens": [
+        1316,
+        1301
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:conditional",
+      "inputDigest": "969c5f2ad45b91a9ce9d804639c4da0da08b919850a9e60387be4c6deaae1429",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5246,
+        5185
+      ],
+      "estimatedTokens": [
+        1316,
+        1301
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:glassworks:restart",
+      "inputDigest": "bb8ebb8aa3b87302ea950cc451e30ee3d18af8c159ff97c4a47d34a689c162d3",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5227,
+        5166
+      ],
+      "estimatedTokens": [
+        1311,
+        1296
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:gift-short",
+      "inputDigest": "6ff5c43dd8f27a9525aa07340d229bd604a960e3c5c2997f05017480971e6b29",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5740,
+        5679
+      ],
+      "estimatedTokens": [
+        1439,
+        1424
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:gift-question",
+      "inputDigest": "276b81f4ff20ddd0c538f9991d18b0f3bc8b5393261a72127e364c9d2f8d51a9",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5740,
+        5679
+      ],
+      "estimatedTokens": [
+        1439,
+        1424
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:promise-short",
+      "inputDigest": "ad66735018265a1326136eca5ddee0b39cc5ee0d6647f665af23602f5446b926",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5426,
+        5365
+      ],
+      "estimatedTokens": [
+        1361,
+        1346
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:promise-verb",
+      "inputDigest": "9a66edc933eaee70f90d9f8cb74ea4679a2c8ac6f12ea0a89b4b91b310ebb6f2",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5740,
+        5679
+      ],
+      "estimatedTokens": [
+        1439,
+        1424
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:no-anchor",
+      "inputDigest": "419fa30a978801c90972799f1e016c2a52cd6e51d740f77356dd304b18c1d56d",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5101,
+        5049
+      ],
+      "estimatedTokens": [
+        1280,
+        1267
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:old-anchor",
+      "inputDigest": "0cff16f81391c091fb068441a23e10a9a155bf93a10ffec2ec61e5890efdf830",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5208,
+        5147
+      ],
+      "estimatedTokens": [
+        1306,
+        1291
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:missing-proof",
+      "inputDigest": "a889f61c41ceeba1c60847a559d265b434dcbbbc51d42d162bb1ab4c9e1e85ed",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5111,
+        5071
+      ],
+      "estimatedTokens": [
+        1282,
+        1272
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:edited-quote",
+      "inputDigest": "faaf03c8bebc33ac70ba851255439dfd2b06a058cfe9d8f45b44f00d8905c496",
+      "sameSelectedData": true,
+      "columns": false,
+      "characters": [
+        5676,
+        5676
+      ],
+      "estimatedTokens": [
+        1423,
+        1423
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:deleted-owner",
+      "inputDigest": "db3df32a81d375d95ceffc07c48bb7952999e776d55da8a3ec34d178b584a7e8",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5324,
+        5263
+      ],
+      "estimatedTokens": [
+        1335,
+        1320
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:replacement",
+      "inputDigest": "106a23dae47861a699e32f40898993f9abf40f0ec753f3e45d9d8203e666df98",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5477,
+        5456
+      ],
+      "estimatedTokens": [
+        1374,
+        1368
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:two-topics",
+      "inputDigest": "71e899742ce29fbcbcdeeb8d859cfc4eafd7a8837bb950cb1cf6a5a76028e814",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5207,
+        5146
+      ],
+      "estimatedTokens": [
+        1306,
+        1291
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:unknown-topic",
+      "inputDigest": "37e3c62cf120e339a61a33fd136d2a3ac4fb484a2bf3248f8b077fc9f7d9ddc2",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5207,
+        5146
+      ],
+      "estimatedTokens": [
+        1306,
+        1291
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:quoted",
+      "inputDigest": "6ff0eae2cc7f23352b8fdcdfffcf5e33a46d8924d999e771e74a04fd5675b4d8",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        4892,
+        4831
+      ],
+      "estimatedTokens": [
+        1227,
+        1212
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:action",
+      "inputDigest": "0ddaebe13117cfa2cb738968f34dca02720626c306949b0c731e293e4fa15a32",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5207,
+        5146
+      ],
+      "estimatedTokens": [
+        1306,
+        1291
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:conditional",
+      "inputDigest": "354aa0e02796b3361458e7cac388cf70c4704a8ea3fa289542578f9d19d0bfae",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5207,
+        5146
+      ],
+      "estimatedTokens": [
+        1306,
+        1291
+      ],
+      "selected": 8
+    },
+    {
+      "id": "en:harbour:restart",
+      "inputDigest": "b6e09e0fad4103359909d926d59af9fdc01b23a964a144e1198cf0b9fa40ef08",
+      "sameSelectedData": true,
+      "columns": true,
+      "characters": [
+        5188,
+        5127
+      ],
+      "estimatedTokens": [
+        1301,
+        1286
+      ],
+      "selected": 8
+    }
+  ]
+}

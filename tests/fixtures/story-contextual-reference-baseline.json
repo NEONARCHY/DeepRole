@@ -1,0 +1,616 @@
+{
+  "version": 1,
+  "prior": "RP276",
+  "inputDigest": "943913b215a81795bc3804f7e60feab897b253b0254623ebced5e16a180df145",
+  "goldDigest": "698d3b634ae0739e2e52f88cd260cd4349667eb36c6891df3fd1ac7f969755e8",
+  "rows": [
+    {
+      "id": "ru:glassworks:gift-short",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "dc7568594eb36822c6f656735fe51119c332803d5b304e08afce92df73908752",
+      "gold": [
+        "Лида обещала: «Я обещаю вернуть предмет серебряный медальон только после разрешения хранителя».",
+        "Лида сказала: «Предмет серебряный медальон хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Олег сказал: «Проверка предмета серебряный медальон завершена, но обещание вернуть его не выполнено».",
+        "Олег сказал: «Отправка предмета серебряный медальон отменена; возврат не отменён».",
+        "Лида сказала: «Мой подарок — предмет серебряный медальон. Обещание вернуть предмет серебряный медальон остаётся в силе»."
+      ],
+      "baselineDigest": "15787119a12c0767fad0903324a9e3781ffc16158511874cd0f391af310aedda"
+    },
+    {
+      "id": "ru:glassworks:gift-question",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "f55b42c956f6cc38214b9fda59604ccd7cea51f16415700c48407ec741a7ace4",
+      "gold": [
+        "Лида обещала: «Я обещаю вернуть предмет серебряный медальон только после разрешения хранителя».",
+        "Лида сказала: «Предмет серебряный медальон хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Олег сказал: «Проверка предмета серебряный медальон завершена, но обещание вернуть его не выполнено».",
+        "Олег сказал: «Отправка предмета серебряный медальон отменена; возврат не отменён».",
+        "Лида сказала: «Мой подарок — предмет серебряный медальон. Обещание вернуть предмет серебряный медальон остаётся в силе»."
+      ],
+      "baselineDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:promise-short",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "87402daa199fd6d350c5f6dffea87b794bc2d2d6261aedbbd033cf6fbdf6a362",
+      "gold": [
+        "Лида обещала: «Я обещаю вернуть предмет серебряный медальон только после разрешения хранителя».",
+        "Лида сказала: «Предмет серебряный медальон хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Олег сказал: «Проверка предмета серебряный медальон завершена, но обещание вернуть его не выполнено».",
+        "Олег сказал: «Отправка предмета серебряный медальон отменена; возврат не отменён».",
+        "Лида сказала: «Мой подарок — предмет серебряный медальон. Обещание вернуть предмет серебряный медальон остаётся в силе»."
+      ],
+      "baselineDigest": "1199508b5c2a70360399539d9bf0fabb088f4792a78a9ea95dfa1e4fd59af5a3"
+    },
+    {
+      "id": "ru:glassworks:promise-verb",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "e81f549b1601a2b64b306a4fb6b4236e5a17243b4ee381bf7922b6a2291f19c9",
+      "gold": [
+        "Лида обещала: «Я обещаю вернуть предмет серебряный медальон только после разрешения хранителя».",
+        "Лида сказала: «Предмет серебряный медальон хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Олег сказал: «Проверка предмета серебряный медальон завершена, но обещание вернуть его не выполнено».",
+        "Олег сказал: «Отправка предмета серебряный медальон отменена; возврат не отменён».",
+        "Лида сказала: «Мой подарок — предмет серебряный медальон. Обещание вернуть предмет серебряный медальон остаётся в силе»."
+      ],
+      "baselineDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:no-anchor",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "95d655e89edacd5e8f4d6ac84fccd45d0bf4dd20a1928a498ba1ec1dbf94b436",
+      "gold": [],
+      "baselineDigest": "8b2f2980ee6516fec259fcad51572be4a68d294d6bea6377ff9ba09699c0fbf4"
+    },
+    {
+      "id": "ru:glassworks:old-anchor",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "9598ec8817fd353aedab58f8261aada271dec560bf154dac020490cbe73ccd38",
+      "gold": [],
+      "baselineDigest": "25c767d8216d055cb821c1d4f5a8a59e58c9d0825d08dae346f63aefce1a25e1"
+    },
+    {
+      "id": "ru:glassworks:missing-proof",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "8c24bb2106e22d9ef59b1339d6eb8ffadcb115b310abb8a58c91a18ce2e5fe22",
+      "gold": [],
+      "baselineDigest": "7c77d69bff767ff2c934d8b820dda8a87df8aad7b53d763c9df266b023550abb"
+    },
+    {
+      "id": "ru:glassworks:edited-quote",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "cf1f124f416b70eef76a607e1b7416dbc2fc6e76abf53c6a8deb50e31b6123bd",
+      "gold": [],
+      "baselineDigest": "0e35f82609eb4d16d299fb6e6a2435eec839737f1fff26c54bc2934c2112ab3d"
+    },
+    {
+      "id": "ru:glassworks:deleted-owner",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "fd759e67862435eb03f8be18d8d58fceca385275fdefc9c4a9602ebbb2813616",
+      "gold": [],
+      "baselineDigest": "76a00aa3fde81029d28e6a042580fcf555ce80f777998fba5426ddb65f1494b0"
+    },
+    {
+      "id": "ru:glassworks:replacement",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "faf4017e818dc08ac2e734a40b4fc2f991c96a585e0d1bcfe354da1ec3b0cfb5",
+      "gold": [],
+      "baselineDigest": "ced1fa2fa22364bf76a9d062983c78aefb20902e81ef8d563b3f3e0e36f0b5df"
+    },
+    {
+      "id": "ru:glassworks:two-topics",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "7e20fb19eb037b1f0beafc9f014c7c83100d4449c104d4ef95c8be9317a5d056",
+      "gold": [],
+      "baselineDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:unknown-topic",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "d9cc0bc48a3400fb24d5967a0587dd7a9423dc9046f715830d8a86dcb5415aa5",
+      "gold": [],
+      "baselineDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:quoted",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "32e1d52a5bf64f3145f395a38ea0a3270a0c1e84095798d45cba16683b78051d",
+      "gold": [],
+      "baselineDigest": "70f4f32a2a1b8b98501bb96a923e767a5dbbb3830ddf2455a6091fb40d2bbe14"
+    },
+    {
+      "id": "ru:glassworks:action",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "7fc099f6cdaea090d5d1c7b4176111e8bc9962d9fc51e40567913f329529f5a7",
+      "gold": [],
+      "baselineDigest": "15787119a12c0767fad0903324a9e3781ffc16158511874cd0f391af310aedda"
+    },
+    {
+      "id": "ru:glassworks:conditional",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "16fd27dc0a87d2aca797d1014d843ddab02db2d3eb75b89f334cfe3451f3571c",
+      "gold": [],
+      "baselineDigest": "22a3ac5b65ac5e016adce3093d1dfe373f061e6bd195827d3d18f68d312beb00"
+    },
+    {
+      "id": "ru:glassworks:restart",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "084c0f48e7f4a042320097ec89ba5096050981495945c067509e9ea0d7accdcf",
+      "gold": [],
+      "baselineDigest": "423a96e160194b02258a40d658e8400c35fe0895d54f10114729416d25d60a50"
+    },
+    {
+      "id": "ru:harbour:gift-short",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "fa1d0470e9e3c1b7600b3b413ccb3aa019946f5d3eec865763c86604d56b7d26",
+      "gold": [
+        "Вера обещала: «Я обещаю вернуть предмет синий браслет только после разрешения хранителя».",
+        "Вера сказала: «Предмет синий браслет хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Борис сказал: «Проверка предмета синий браслет завершена, но обещание вернуть его не выполнено».",
+        "Борис сказал: «Отправка предмета синий браслет отменена; возврат не отменён».",
+        "Вера сказала: «Мой подарок — предмет синий браслет. Обещание вернуть предмет синий браслет остаётся в силе»."
+      ],
+      "baselineDigest": "688321297f4b0dfe40516ac041e6d1e69ccc7b588a859ed4b6d18db63f18d736"
+    },
+    {
+      "id": "ru:harbour:gift-question",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "6ff557dc9c8e05d1621dad8c0da2815c6027fcd63fd870ba6298683bfa65471e",
+      "gold": [
+        "Вера обещала: «Я обещаю вернуть предмет синий браслет только после разрешения хранителя».",
+        "Вера сказала: «Предмет синий браслет хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Борис сказал: «Проверка предмета синий браслет завершена, но обещание вернуть его не выполнено».",
+        "Борис сказал: «Отправка предмета синий браслет отменена; возврат не отменён».",
+        "Вера сказала: «Мой подарок — предмет синий браслет. Обещание вернуть предмет синий браслет остаётся в силе»."
+      ],
+      "baselineDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:promise-short",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "7f6888dbfd3927c02ffde77e1baf836d6ed1e17dc1151911a97d082f7c472644",
+      "gold": [
+        "Вера обещала: «Я обещаю вернуть предмет синий браслет только после разрешения хранителя».",
+        "Вера сказала: «Предмет синий браслет хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Борис сказал: «Проверка предмета синий браслет завершена, но обещание вернуть его не выполнено».",
+        "Борис сказал: «Отправка предмета синий браслет отменена; возврат не отменён».",
+        "Вера сказала: «Мой подарок — предмет синий браслет. Обещание вернуть предмет синий браслет остаётся в силе»."
+      ],
+      "baselineDigest": "c91e9aa38150ec2ef063777468f2852c11bc8b4537979bb86a27fd4863269e22"
+    },
+    {
+      "id": "ru:harbour:promise-verb",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "e76c2e9fa469ad9cd1fa63deca6d5d1a8f1d199f314a82e8d6b6fa6d6ae741f1",
+      "gold": [
+        "Вера обещала: «Я обещаю вернуть предмет синий браслет только после разрешения хранителя».",
+        "Вера сказала: «Предмет синий браслет хранится в сейфе; действующий код — 8426, это не разрешение его брать».",
+        "Борис сказал: «Проверка предмета синий браслет завершена, но обещание вернуть его не выполнено».",
+        "Борис сказал: «Отправка предмета синий браслет отменена; возврат не отменён».",
+        "Вера сказала: «Мой подарок — предмет синий браслет. Обещание вернуть предмет синий браслет остаётся в силе»."
+      ],
+      "baselineDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:no-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "0683259b8fab61c989741ae7a96551bdb9fd8f49f97f406519e8762506315aeb",
+      "gold": [],
+      "baselineDigest": "0b68ed8c46206678885a5916b8a1bb5e34c15889232881663bcc12a7b6cdbbc6"
+    },
+    {
+      "id": "ru:harbour:old-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "fd9e65c4f7883d3715399fe8a95c290ffc5fd91dbd62eda3ef475c53cd6a790c",
+      "gold": [],
+      "baselineDigest": "ccc52473469ebf00122feffbebc948d717b9e2223833f95df89481542d6ff890"
+    },
+    {
+      "id": "ru:harbour:missing-proof",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "63d6d98ecabfa853fc087b3d582d9a008bba2d80d8c5c7777d277d32096f46c5",
+      "gold": [],
+      "baselineDigest": "462966584584ed5d0c0ac020d61a6220301d12c9e0acfd7da01778e302bbcc19"
+    },
+    {
+      "id": "ru:harbour:edited-quote",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "e9382f3e902f4850b8c8261b4e80cd355f4fb76296216ff44b492a03c06b13ef",
+      "gold": [],
+      "baselineDigest": "581ce38b065bf2f88b24877904dd9fc44130e63413d648553e747826548e7e10"
+    },
+    {
+      "id": "ru:harbour:deleted-owner",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "216480013c0bf9f0bb613ac383e86f3a05b6ba5334e983a0d23c50f7442b7b50",
+      "gold": [],
+      "baselineDigest": "4fc05cdb0c224e1d23ecc3c090d1b62eacda62f166bdbd449de2cf9e15d21a3e"
+    },
+    {
+      "id": "ru:harbour:replacement",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "9a77aaf8baa16e20f54f254153b2c1a3735d848ed8289eda1db6f20130095616",
+      "gold": [],
+      "baselineDigest": "35034602f0012524de92c163cefea2d86515ad2b5e7ca51c7c1a282c14a98d28"
+    },
+    {
+      "id": "ru:harbour:two-topics",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "d94c114c614be7ffebc89b6081d12995c499889f261ba3bb434786b66c495930",
+      "gold": [],
+      "baselineDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:unknown-topic",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "cf1a9a730e2bd92f0b34d50d08c2ba90e4e07952571c464e1b3cd0b7db32fb15",
+      "gold": [],
+      "baselineDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:quoted",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "1722e1fc915cd9fd5d753da7afc8cbc704f05e306ca298ebdf01845075021b09",
+      "gold": [],
+      "baselineDigest": "e30932dabe4462509192a54c56fa686740db92cf6a281b0b5d07c22a55d875ac"
+    },
+    {
+      "id": "ru:harbour:action",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "abe5bb3f71ce6624db2244c2b81c1efa4528e96938abf2880298da6da759660a",
+      "gold": [],
+      "baselineDigest": "688321297f4b0dfe40516ac041e6d1e69ccc7b588a859ed4b6d18db63f18d736"
+    },
+    {
+      "id": "ru:harbour:conditional",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "cb01b35c0fb3502d03cc9449a05fea0bbdc548151329b9fdd9bb4c69a64217fc",
+      "gold": [],
+      "baselineDigest": "d9fd3e65f7b58bb3651596b7ea2007e21167626b8e9d78930de240ec4993551c"
+    },
+    {
+      "id": "ru:harbour:restart",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "73e02d34ee09e3adf0a15bb34ca5ff3200262b643cf473cee31afc41b44e5b2e",
+      "gold": [],
+      "baselineDigest": "9539c0440bb72cfc94c99469f3697337a49d03c4ce78ee725cd9d5702f005bb1"
+    },
+    {
+      "id": "en:glassworks:gift-short",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "1f45797835a7ac16a7ab75401d86c6d412774a4631041bda60bf9050f459594b",
+      "gold": [
+        "Lida promised: “I promise to return the silver medallion only after the custodian gives permission.”",
+        "Lida said: “The silver medallion is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Oren said: “Checking the silver medallion is complete, but the promise to return it is not fulfilled.”",
+        "Oren said: “Dispatch of the silver medallion is cancelled; its return is not cancelled.”",
+        "Lida said: “My gift is the silver medallion. The promise to return the silver medallion still stands.”"
+      ],
+      "baselineDigest": "0004449e031b4049c41c46a494ad51cba4ff60d7bda24e4eff49d807b13e4305"
+    },
+    {
+      "id": "en:glassworks:gift-question",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "45b3e4ff4504d379182a3e3d5f61985673681a03d6915b2ead982ddd5c28bc17",
+      "gold": [
+        "Lida promised: “I promise to return the silver medallion only after the custodian gives permission.”",
+        "Lida said: “The silver medallion is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Oren said: “Checking the silver medallion is complete, but the promise to return it is not fulfilled.”",
+        "Oren said: “Dispatch of the silver medallion is cancelled; its return is not cancelled.”",
+        "Lida said: “My gift is the silver medallion. The promise to return the silver medallion still stands.”"
+      ],
+      "baselineDigest": "0004449e031b4049c41c46a494ad51cba4ff60d7bda24e4eff49d807b13e4305"
+    },
+    {
+      "id": "en:glassworks:promise-short",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "362ab8fa22ec2af471b63425c89d8ab61644c4433a6852e7966f77e16f54cf11",
+      "gold": [
+        "Lida promised: “I promise to return the silver medallion only after the custodian gives permission.”",
+        "Lida said: “The silver medallion is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Oren said: “Checking the silver medallion is complete, but the promise to return it is not fulfilled.”",
+        "Oren said: “Dispatch of the silver medallion is cancelled; its return is not cancelled.”",
+        "Lida said: “My gift is the silver medallion. The promise to return the silver medallion still stands.”"
+      ],
+      "baselineDigest": "a5c83ac2fee9bfa76556d23135e7d8ef9f79960e57436940957785c77adf2535"
+    },
+    {
+      "id": "en:glassworks:promise-verb",
+      "split": "development",
+      "positive": true,
+      "inputDigest": "511a59bf2d2102c377c2d3c2fe1118a81b61cf5e45853b14b325e53edd8f9a60",
+      "gold": [
+        "Lida promised: “I promise to return the silver medallion only after the custodian gives permission.”",
+        "Lida said: “The silver medallion is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Oren said: “Checking the silver medallion is complete, but the promise to return it is not fulfilled.”",
+        "Oren said: “Dispatch of the silver medallion is cancelled; its return is not cancelled.”",
+        "Lida said: “My gift is the silver medallion. The promise to return the silver medallion still stands.”"
+      ],
+      "baselineDigest": "f748eb5464f6ba8b46a6b0de6be82a77c6e1e20d5359d9cfac7de6cff8b9737a"
+    },
+    {
+      "id": "en:glassworks:no-anchor",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "a438d7e559c1836947a805495d44147da2c18b83dfecc5fd2ece72a81aa90186",
+      "gold": [],
+      "baselineDigest": "29aca54d855d95b2f04fabc69d0c80bed2bd7cb7739380880b0662eccb08292b"
+    },
+    {
+      "id": "en:glassworks:old-anchor",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "9eddcf78428fabe92f98b2be2afe9cf7881861917081b00b38bd2da1acb64f0f",
+      "gold": [],
+      "baselineDigest": "1b59c6f917e4ea7d6d3a7e1ee894800b73c44b9c219fe63cc35dc2261d44f8f4"
+    },
+    {
+      "id": "en:glassworks:missing-proof",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "6d0e69c834480bc14e30939c8740fa1ee8e0a57a8569d7751852115d52a27479",
+      "gold": [],
+      "baselineDigest": "4526893a454a95f1ec8edc94ac71aa51dee21789f81a3cc7dcc8df7af1ba5186"
+    },
+    {
+      "id": "en:glassworks:edited-quote",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "2088b01e5ba9bbabfc8d15b75951e0ffc4742c6f1932627189408e5516370774",
+      "gold": [],
+      "baselineDigest": "5d82c8fd79bfa3734f5ce522c8c01dbeae007822e8b481ddf2499594ce89bd81"
+    },
+    {
+      "id": "en:glassworks:deleted-owner",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "352c4bfd79dc61180b8f9da83d08cdcebe7bb75d30e2c0f9f839b81a0348b168",
+      "gold": [],
+      "baselineDigest": "22c121a6aef4613f20c9278b0389472731f1faa94921149d85763fe6ed47de6b"
+    },
+    {
+      "id": "en:glassworks:replacement",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "32a67771072ddb6738d6ed23048d55876d334e38ee7c2b65e4018bf9599feb68",
+      "gold": [],
+      "baselineDigest": "22568e0b19e8e15d09fbfbfe98d29a3e2792737446d2ab43caa750de2ed2008d"
+    },
+    {
+      "id": "en:glassworks:two-topics",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "9260df2d83d7d1dacb4cf12b9139cc452bb16e17641ae2adb89ab8301a4cb7a2",
+      "gold": [],
+      "baselineDigest": "0004449e031b4049c41c46a494ad51cba4ff60d7bda24e4eff49d807b13e4305"
+    },
+    {
+      "id": "en:glassworks:unknown-topic",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "4a3e26a2f1a5b2e79ccc7243f45ab607bc735a12bb25e4d003450584093ae9fe",
+      "gold": [],
+      "baselineDigest": "0004449e031b4049c41c46a494ad51cba4ff60d7bda24e4eff49d807b13e4305"
+    },
+    {
+      "id": "en:glassworks:quoted",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "92c633994b8312af433be8f78928a4faf2b29b4d3b3d7a8bcdee6160c6016b10",
+      "gold": [],
+      "baselineDigest": "87b7e2f7d7ef9363a00005230e17dbc9f2e8cdd68029b536a1b9773d06c5fa86"
+    },
+    {
+      "id": "en:glassworks:action",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "774bfc1fd6d20dc0b827bd68016bf01d5df1014048cffceddf19fdaf37a65f9f",
+      "gold": [],
+      "baselineDigest": "23b9f74745ccbe7224ed5be3ee4ba9636cf812c2f654b9d49ff61123f8ae82d6"
+    },
+    {
+      "id": "en:glassworks:conditional",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "b7bc0ebc7c046adc8950a971aae88e5cce561d51f59da0ed77a5fc1d589812a3",
+      "gold": [],
+      "baselineDigest": "9790f73eb9658a5e29c36e83ba349cdfa60d527160d71ecd568953f3dd1b3265"
+    },
+    {
+      "id": "en:glassworks:restart",
+      "split": "development",
+      "positive": false,
+      "inputDigest": "437624284475444004cc90be91c84dab86e8189455f29740729315f2b46c256e",
+      "gold": [],
+      "baselineDigest": "69719b054f8b8667cc76f08bfe18b7348cc94bb2aa45f20d7452718341e870d1"
+    },
+    {
+      "id": "en:harbour:gift-short",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "7724f97f22bfed0adff58baddc0a0945207be0122e00abe0e9cc2ed199082ff1",
+      "gold": [
+        "Vera promised: “I promise to return the blue bracelet only after the custodian gives permission.”",
+        "Vera said: “The blue bracelet is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Boris said: “Checking the blue bracelet is complete, but the promise to return it is not fulfilled.”",
+        "Boris said: “Dispatch of the blue bracelet is cancelled; its return is not cancelled.”",
+        "Vera said: “My gift is the blue bracelet. The promise to return the blue bracelet still stands.”"
+      ],
+      "baselineDigest": "a2284246280da889241d78bb9428f2b091d3dc38d328b2f98f27fe36a62e570c"
+    },
+    {
+      "id": "en:harbour:gift-question",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "94f7c8ab6837ed25698709e1850967b32def076a9c2054e5bffc001951247818",
+      "gold": [
+        "Vera promised: “I promise to return the blue bracelet only after the custodian gives permission.”",
+        "Vera said: “The blue bracelet is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Boris said: “Checking the blue bracelet is complete, but the promise to return it is not fulfilled.”",
+        "Boris said: “Dispatch of the blue bracelet is cancelled; its return is not cancelled.”",
+        "Vera said: “My gift is the blue bracelet. The promise to return the blue bracelet still stands.”"
+      ],
+      "baselineDigest": "a2284246280da889241d78bb9428f2b091d3dc38d328b2f98f27fe36a62e570c"
+    },
+    {
+      "id": "en:harbour:promise-short",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "8eec39a6f134f24bef8db43c1eabd07a1647ce85266af165781a96b0aac024e3",
+      "gold": [
+        "Vera promised: “I promise to return the blue bracelet only after the custodian gives permission.”",
+        "Vera said: “The blue bracelet is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Boris said: “Checking the blue bracelet is complete, but the promise to return it is not fulfilled.”",
+        "Boris said: “Dispatch of the blue bracelet is cancelled; its return is not cancelled.”",
+        "Vera said: “My gift is the blue bracelet. The promise to return the blue bracelet still stands.”"
+      ],
+      "baselineDigest": "0cdd0a1d7b0e0e092db42998b3d33137d91f7253863337a8a25412811ec3d456"
+    },
+    {
+      "id": "en:harbour:promise-verb",
+      "split": "evaluation",
+      "positive": true,
+      "inputDigest": "527b3980c574a2375d6882c51291158dec8ea3e2c14a32f14205edf33f7ae1c4",
+      "gold": [
+        "Vera promised: “I promise to return the blue bracelet only after the custodian gives permission.”",
+        "Vera said: “The blue bracelet is in the safe; the current code is 8426, this is not permission to take it.”",
+        "Boris said: “Checking the blue bracelet is complete, but the promise to return it is not fulfilled.”",
+        "Boris said: “Dispatch of the blue bracelet is cancelled; its return is not cancelled.”",
+        "Vera said: “My gift is the blue bracelet. The promise to return the blue bracelet still stands.”"
+      ],
+      "baselineDigest": "775bccf78a84fbe529540c624256723b89e241f333106d4d5b14f7ca6d4803f7"
+    },
+    {
+      "id": "en:harbour:no-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "189ba762d0c7b92abaff01041fb426ef4c42fb2aa7bf0ad86d4ac2b88f32e5b7",
+      "gold": [],
+      "baselineDigest": "f523f7e17672cd8e0312d40c52c49a5ddcc500226899e8222cca931901b2382b"
+    },
+    {
+      "id": "en:harbour:old-anchor",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "c140848a777911201b246bda5d4108433063e85c7f98dd8c55124ff42806947f",
+      "gold": [],
+      "baselineDigest": "364b0ec0ba534a16e4dc54226b53aad347bb4459033aa579d5c2f2c7ac89ba7e"
+    },
+    {
+      "id": "en:harbour:missing-proof",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "e958a5afaae22abb5b01c17c2a8baa5ed1b61fbd6cf27411f65c53552831f6a9",
+      "gold": [],
+      "baselineDigest": "2d27047b560ff9c95b1bff9f8f7534c96672925336fc62783b62fbbef5fa3e2a"
+    },
+    {
+      "id": "en:harbour:edited-quote",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "ce9a2208c645c39443585b55aaf5d150dd467f4290566edfc79c80a63994aac4",
+      "gold": [],
+      "baselineDigest": "f4b13cff20c8333d0330f37e0999109cb24f76f0b5336f91b038f3d9e4035453"
+    },
+    {
+      "id": "en:harbour:deleted-owner",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "bb16126e7a774acecfc67e1d9bd902220352119eb3ae5e2c6a36dceedb7b3fa0",
+      "gold": [],
+      "baselineDigest": "dfa3fdace0eb8174c9c09354197d8486bef3f8656b6f55aa7b754ee7814b4605"
+    },
+    {
+      "id": "en:harbour:replacement",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "95054403168f458089910df445022091dc12f205ae4f6ac7f9ff81d28cfd9071",
+      "gold": [],
+      "baselineDigest": "18727b974b4cb5d3c3e19c219303fc41caf806864df69f5acf92fa3d27a11465"
+    },
+    {
+      "id": "en:harbour:two-topics",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "9d71a6f906932eb22030bf66086041a563b4ca70f40ae3dc8777a7f4a856a7e7",
+      "gold": [],
+      "baselineDigest": "a2284246280da889241d78bb9428f2b091d3dc38d328b2f98f27fe36a62e570c"
+    },
+    {
+      "id": "en:harbour:unknown-topic",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "829cb02987927f7c7c7f92464ad8dca42b4680ad1b4bdcd22a060bf9b73d61b6",
+      "gold": [],
+      "baselineDigest": "a2284246280da889241d78bb9428f2b091d3dc38d328b2f98f27fe36a62e570c"
+    },
+    {
+      "id": "en:harbour:quoted",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "c5c76696dbd3feda7bcc6a5844b217f1752a36b3650663e234c6e6f886779e62",
+      "gold": [],
+      "baselineDigest": "f9d98681a82b2d8649f5a512c055db71cb8eb404949a578ad444d612304a70dd"
+    },
+    {
+      "id": "en:harbour:action",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "178344c73c0f19d4b0925e45840f606ec0d084ccec734f66753e4fbb10791410",
+      "gold": [],
+      "baselineDigest": "2c0a9fd4666771d2e5a05819658a9a37e322df842fd2951df56ffb5f29c9a927"
+    },
+    {
+      "id": "en:harbour:conditional",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "5a3d5bdd3320ce3f988310a7573a3cf8bedee78dd946a750a521c059a281624d",
+      "gold": [],
+      "baselineDigest": "352fdd7fe35416a88e06af2e406f8d017bdcbc546f29324aad51b715adf84d9f"
+    },
+    {
+      "id": "en:harbour:restart",
+      "split": "evaluation",
+      "positive": false,
+      "inputDigest": "81e983caa24d8a4129bc4df43ef1c0347361875976bd0ed602846e49b9844582",
+      "gold": [],
+      "baselineDigest": "ae7ec078a66717266eed400f25708220a8c59d39ec8da62deed9ad0820e44135"
+    }
+  ]
+}

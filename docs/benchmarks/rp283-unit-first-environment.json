@@ -1,0 +1,18 @@
+{
+  "success": false,
+  "numTotalTestSuites": 284,
+  "numFailedTestSuites": 277,
+  "numTotalTests": 696,
+  "numPassedTests": 695,
+  "numFailedTests": 1,
+  "scope": "First full-unit attempt, incomplete because transform-cache files were missing; independent RP283 quality report unchanged",
+  "suiteMessagesWithMissingTemporaryFiles": 276,
+  "failedAssertions": [
+    {
+      "name": "one hundred bounded portions have no pending routine questions, survive reload, and no duplicated profiles",
+      "file": "C:/Users/User/Desktop/Projects/DeepRole/tests/story-automation.test.ts",
+      "firstMessage": "Error: Test timed out in 30000ms."
+    }
+  ],
+  "retryPlan": "Run sequentially with a new repository-owned TEMP/TMP directory after both builds finish; do not alter test thresholds or runtime."
+}

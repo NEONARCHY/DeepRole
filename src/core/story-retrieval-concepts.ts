@@ -1,5 +1,7 @@
 import type { StoryFact } from "./story-update";
 import { normalizeText } from "./text";
+import { storyFactSearchEntry } from "./story-fact-search-index";
+import type { MemoryEntry } from "./types";
 
 // Small, explicit retrieval dictionary, not a language model or truth parser.
 // Recognized actions only add a bounded candidate bonus. They never establish
@@ -17,7 +19,7 @@ const actions = {
 type Action = keyof typeof actions;
 const patterns = Object.entries(actions).map(([id, pattern]) => [id as Action, new RegExp(`(?:^| )${pattern.source}(?= |$)`, "u")] as const);
 const clauses = (text: string) => text.split(/[.!?;:\r\n]+/u).map(normalizeText);
-const cache = new WeakMap<StoryFact, { text: string; title: string; names: string; actions: Set<Action> }>();
+const cache = new WeakMap<MemoryEntry, { text: string; title: string; names: string; actions: Set<Action> }>();
 
 /** Does not expand the user prompt. Known names (including ambiguous aliases)
  * are masked so a character named "Help" cannot manufacture an action match. */
@@ -35,12 +37,13 @@ export function storyConceptSearch(query: string, excludedNames: Iterable<string
     score(fact: StoryFact) {
       if (!requested.size) return 0;
       const text = fact.text, title = fact.task?.title ?? "";
-      let prepared = cache.get(fact);
+      const key = storyFactSearchEntry(fact);
+      let prepared = cache.get(key);
       if (!prepared || prepared.text !== text || prepared.title !== title || prepared.names !== signature) {
         // Separate fields: never join an action phrase across a text/title
         // boundary, or use opaque claim/task keys and original quotes as tags.
         prepared = { text, title, names: signature, actions: new Set([...extract(text), ...extract(title)]) };
-        cache.set(fact, prepared);
+        cache.set(key, prepared);
       }
       return Math.min(2, [...requested].filter(id => prepared.actions.has(id)).length) * 14;
     },

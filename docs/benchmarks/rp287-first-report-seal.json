@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-obligation-holdout-baseline.json",
+  "report": "docs/benchmarks/rp287-obligation-holdout-results.json",
+  "baselineHash": "bbd2174a2957e71c460e26b37717278f97c0a057a8606e913d1f9abefe997478",
+  "reportHash": "7ba773d99c4d9099276d19e8c06f58151187474bf2c9b785fb614b0dd3b84c5d",
+  "inputDigest": "c64be554b81af580155d336569eaac6b1812309b5d33cd5fa07415f9cf51142b",
+  "goldDigest": "d53fe5d9247bff89b46298a31f4a98ff49f9c6664c9a24287b496640164b12fe"
+}

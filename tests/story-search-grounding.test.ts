@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { groundingScenarios, groundingCase, groundingTokens, groundingWorld } from './fixtures/story-search-grounding';
+import { groundingScenarios, groundingTokens, groundingWorld } from './fixtures/story-search-grounding';
+import { historicalGroundingCase as groundingCase } from './fixtures/historical-search-context';
 import { groundingCandidates, evaluateGrounding } from '../scripts/story-search-grounding.mjs';
 import { digest } from '../scripts/story-search-evaluation.mjs';
 import { validStoryFact } from '../src/core/story-update';

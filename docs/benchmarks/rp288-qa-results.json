@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "scope": "RP288 short-reference guard and qualified source-backed prefix correction; SEEN evaluation, not a new independent/live-model result",
+  "status": "complete",
+  "runtimeFilesChanged": [
+    "src/core/game-context.ts",
+    "src/core/story-obligation-recall.ts"
+  ],
+  "rp287": {
+    "cases": 108,
+    "scored": 62,
+    "baselineComplete": 58,
+    "complete": 62,
+    "goldFacts": 250,
+    "missingFacts": 0,
+    "confidenceGapCases": 0,
+    "uncertaintyExpected": 48,
+    "lostPriorFacts": 2,
+    "lostPriorExplanation": "Only en:theatre:proved-reference c1/c2, unrelated completed waistcoat return; canonical records preserved"
+  },
+  "rp283": {
+    "cases": 84,
+    "scored": 54,
+    "complete": 54,
+    "goldFacts": 312,
+    "missingFacts": 0,
+    "lostPriorFacts": 0,
+    "rejectionControlsDrift": 0
+  },
+  "focusedEarlier": {
+    "passed": 260,
+    "failed": 0
+  },
+  "newRuntimeTests": {
+    "passed": 71,
+    "failed": 0
+  },
+  "fullUnit": {
+    "numPassedTests": 7542,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 5,
+    "numTotalTests": 7547
+  },
+  "native": {
+    "startTime": "2026-10-15T13:45:02.304Z",
+    "duration": 166017.437,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "typecheckExit": 0,
+  "diffCheckExit": 0,
+  "chromeZipExit": 0,
+  "firefoxZipExit": 0,
+  "buildWarning": "existing minified chunks over 500 kB",
+  "liveDeepSeek": "not run",
+  "nativeFirefox": "not run",
+  "fullE2E": "not run",
+  "installedUserCopyReloaded": false,
+  "pushRequested": true,
+  "publicationBranch": "codex/rp274-rp288-memory-safety",
+  "packages": {
+    "chromeFiles": 23,
+    "firefoxFiles": 23,
+    "sourceFiles": 735,
+    "byteAndCRCAudited": true,
+    "canonicalDownloadSHA256Matches": true,
+    "finalNotesRepackaged": true,
+    "testsExcludedFromSourceZIP": true
+  },
+  "frozenFingerprintsUnchanged": 412,
+  "runtimeUnchangedSinceRP287": 408,
+  "expectedRuntimeEdits": [
+    "src/core/game-context.ts",
+    "src/core/story-obligation-recall.ts"
+  ],
+  "originalInputsGoldProtocolsAndFirstSealsUnchanged": true,
+  "newChecks": 74,
+  "nativeScope": "10 isolated Edge synthetic cases: expanded obligation2/contextual2/recap2/UI4 RUEN320/900 keyboard/axe/no overflow;46 completion POST in expanded obligation2",
+  "firstNativeAttempt": {
+    "passed": 8,
+    "failed": 2,
+    "cause": "New mock accept helper used previous selected row IDs after retries; fixed to match actual ready-event IDs, canonical roster/source assertions retained. Empty role comparison was not relaxed. English synthetic second owner now uses actual roster name.",
+    "report": ".output/rp288-native.json",
+    "error": "Expected empty stored role object {}; decoded sourceRoles undefined. The mock answer had no matching request-frozen roster because its native IDs disagreed with ready-event IDs."
+  }
+}
