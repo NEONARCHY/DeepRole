@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "scope": "New repair regression checks on unchanged RP300 before runtime edits",
+  "passed": 21,
+  "failed": 8,
+  "failedNames": [
+    "ru 1: whole publication and consent candidates, guarded and unverified",
+    "ru 3: whole publication and consent candidates, guarded and unverified",
+    "en 1: whole publication and consent candidates, guarded and unverified",
+    "en 3: whole publication and consent candidates, guarded and unverified",
+    "preparation inquiry supplies intent, never permission: Контрольная сумма сошлась, значит те материалы уже можно выложить или ещё рано?",
+    "preparation inquiry supplies intent, never permission: Черновик готов, значит тот отчёт уже можно опубликовать или ещё рано?",
+    "preparation inquiry supplies intent, never permission: The checksum matches, so may we put those bird materials online already, or is it too early?",
+    "preparation inquiry supplies intent, never permission: The draft is ready, so may we publish that report already, or is it too early?"
+  ]
+}

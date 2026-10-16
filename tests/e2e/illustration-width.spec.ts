@@ -68,8 +68,9 @@ for (const locale of ["ru", "en"]) for (const pinned of [false, true]) for (cons
     await page.evaluate(() => (window as any).streamTest.removeOptions());
     const recovery = page.locator("[data-deeprole-choices-recovery] .box"); await expect(recovery).toBeVisible();
     await expect.poll(async () => {
-      const a = (await recovery.boundingBox())!, b = (await image.locator(".dr-illustration-reply").boundingBox())!;
-      return Math.max(Math.abs(a.x - b.x), Math.abs(a.width - b.width));
+      const a = (await recovery.boundingBox())!, b = (await image.locator(".dr-image-generate").boundingBox())!;
+      // Recovery is now a compact toolbar action, not a full-width panel.
+      return Math.max(Math.abs(a.y - b.y), Math.abs(a.height - b.height), Math.abs(a.x - b.x - b.width - 8));
     }).toBeLessThan(1);
     expect(await page.evaluate(() => (window as any).imageCreates)).toBe(2);
     await expect(page.locator("textarea")).toHaveValue("My unsent draft.");

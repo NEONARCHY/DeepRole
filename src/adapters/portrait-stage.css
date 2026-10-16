@@ -41,8 +41,11 @@
 .dr-cast-frame[data-adaptive-compact][data-short=true] img{height:40px}
 .dr-cast-frame[data-adaptive-compact][data-short=true] small{display:none}
 @media (hover:hover) and (pointer:fine){
+  /* Reserve the measured height so revealing details never moves the portraits. */
+  .dr-cast-highlights{opacity:0;visibility:hidden;transition:opacity .15s ease,visibility .15s ease}
+  .dr-cast-widget:hover .dr-cast-highlights,.dr-cast-widget:focus-within .dr-cast-highlights{opacity:1;visibility:visible}
   .dr-cast-move,.dr-cast-resize{opacity:0;transition:opacity .15s ease}
   .dr-cast-widget:hover .dr-cast-move,.dr-cast-widget:hover .dr-cast-resize,.dr-cast-widget:focus-within .dr-cast-move,.dr-cast-widget:focus-within .dr-cast-resize,.dr-cast-widget:has(.is-dragging) .dr-cast-move,.dr-cast-widget:has(.is-dragging) .dr-cast-resize{opacity:1}
 }
-@media(prefers-reduced-motion:reduce){.dr-cast-move,.dr-cast-resize{transition:none}}
+@media(prefers-reduced-motion:reduce){.dr-cast-move,.dr-cast-resize,.dr-cast-highlights{transition:none}}
 :host([data-deeprole-choices-pinned=true]) .dr-cast-toolbar{display:none}

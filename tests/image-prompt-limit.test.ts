@@ -1,7 +1,7 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import {EMPTY_CHARACTER} from '../src/core/characters';
 import {DEFAULT_IMAGE_SETTINGS,type ImageProviderConfig,type ImageModelInfo} from '../src/core/image-generation';
-import {planImageInput,imagePlanInstruction} from '../src/core/image-plan';
+import {planImageInput,imagePlanInstruction,imagePlanPromptComposition} from '../src/core/image-plan';
 import {ImageJobs} from '../src/storage/image-jobs';
 import {DeepRoleDatabase} from '../src/storage/database';
 import {DeepRoleRepository} from '../src/storage/repository';
@@ -33,6 +33,31 @@ it('protects a 1500-character edit budget by shortening only application boilerp
 });
 it('includes an actual combined prompt-budget instruction in the DeepSeek plan',()=>{
  expect(imagePlanInstruction({name:'Scene',promptBudget:{generate:3000,edit:1500}})).toContain('Final image prompt budget: 1500');
+});
+it('measures real fixed costs, including full identities beyond the roster excerpt, without exposing image bytes',()=>{
+ const full=entities.map(e=>({...e,characterSheet:{...e.characterSheet!,imageGeneration:{...e.characterSheet!.imageGeneration!,canonical:'Full known identity '.repeat(80),referenceContext:'Neutral outfit.',suggestiveReferenceContext:'Alternate outfit.'}}}));
+ const before=structuredClone({full,settings});
+ const costs=imagePlanPromptComposition(full,settings);
+ expect(costs.generateModel).toBe(config.modelId);expect(costs.editModel).toBe(config.editModelId);
+ expect(costs.people[0]!.textCharacters).toBeGreaterThan(1600);
+ expect(JSON.stringify(costs)).not.toContain('data:image');expect(JSON.stringify(costs)).not.toContain('Full known identity');
+ const data={...plan,characters:plan.characters.slice(0,1)};
+ const prompt=planImageInput(data,target,full,settings,{}, {generate:1,edit:1}).prompt;
+ const person=costs.people[0]!;
+ const available=1500-costs.baseCharacters-person.referenceCharacters.neutral-costs.generatedFieldReserve-costs.safetyCharacters;
+ expect(available).toBeLessThan(0);expect(prompt.length).toBeGreaterThan(1500);
+ expect(imagePlanInstruction({promptBudget:{generate:3000,edit:1500},promptComposition:costs})).toContain('fixed costs already exhaust the limit');
+ expect({full,settings}).toEqual(before);
+});
+it.each([0,1,2,40])('bounds compact assembly for %i selected people, charging only their costs',count=>{
+ const people=Array.from({length:40},(_,i)=>({...entities[i%2]!,id:'cast-'+i,name:'Person '+i}));
+ const chosen=people.slice(0,count).map(e=>({...plan.characters[0]!,id:e.id,appearance:'A blue coat.',action:'Standing.',position:'Left of the door.'}));
+ const data={scene:plan.scene,characters:chosen},costs=imagePlanPromptComposition(people,settings);
+ const prompt=planImageInput(data,target,people,settings,{}, {generate:1,edit:1}).prompt;
+ const fixed=costs.baseCharacters+(count>1?costs.groupCharacters:0)+costs.safetyCharacters+costs.people.slice(0,count).reduce((n,p,i)=>n+(i<3?p.referenceCharacters.neutral:p.textCharacters)+costs.generatedFieldReserve,0);
+ const generated=data.scene.length+chosen.reduce((n,p)=>n+p.appearance.length+p.action!.length+p.position!.length,0);
+ expect(prompt.length).toBeLessThanOrEqual(fixed+generated);
+ expect(costs.people).toHaveLength(40);
 });
 it.each(['generate','edit'] as const)('blocks an oversized complete %s prompt before the paid call',async mode=>{
  const f=await fixture(),before=await f.repo.rawRecords(),input={...target,providerId:config.id,prompt:'x'.repeat(mode==='edit'?1501:3001),referenceKeys:mode==='edit'?[selfieImageKey(image)]:[],...(mode==='edit'?{entityId:entities[0]!.id}:{})};

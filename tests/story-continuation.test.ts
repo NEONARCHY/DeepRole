@@ -26,6 +26,17 @@ describe("story transfer payload", () => {
     expect(readStoryHistory(input, "2")!.turns.at(-1)!.text).toBe("It stays closed");
     expect(readStoryHistory(input, "3")!.turns).not.toContainEqual(expect.objectContaining({ text: "It stays closed" }));
   });
+  it("cleans the whole injection before bounding native history, keeping the actual player action", () => {
+    const action = "Я держу ключ Миры и блокнот Леона; ничего не возвращаю.\n[User message]\nЭту цитату оставить.";
+    const result = readStoryHistory(history([{ role: "USER", content: `<deeprole_character_mode>${"prefix ".repeat(40000)}</deeprole_character_mode>\n<deeprole_profile_excerpts>[]</deeprole_profile_excerpts>\n<deeprole_choice_mode>options</deeprole_choice_mode>\n\n[User message]\n${action}` }]))!;
+    expect(result.turns).toEqual([{ role: "user", text: action }]);
+    expect(result.partial).toBe(false);
+  });
+  it("reads the actual assistant body without the separate native thinking heading", () => {
+    document.body.innerHTML = '<div class="ds-message"><div>Thought for 8 seconds</div><div class="ds-think-content">Private</div><div class="ds-assistant-message-main-content">Мира ждёт подписи.</div></div>';
+    expect(visibleStoryHistory().turns).toEqual([{ role: "assistant", text: "Мира ждёт подписи." }]);
+    document.body.innerHTML = "";
+  });
   it("rejects failed, unrecognized, cyclic or reasoning-only history", () => {
     expect(readStoryHistory({ code: 1, messages: [] })).toBeNull();
     expect(readStoryHistory({ data: { biz_code: 1 } })).toBeNull();

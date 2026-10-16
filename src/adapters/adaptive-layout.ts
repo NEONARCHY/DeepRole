@@ -40,6 +40,10 @@ function fitIllustrationRecovery(host: HTMLElement): boolean {
 }
 
 export function fitAdaptiveChoices(host: HTMLElement) {
+  if (host.slot === "scene-choices") {
+    for (const key of ["width", "left", "margin-left"]) host.style.removeProperty(key);
+    return;
+  }
   const doc = host.ownerDocument;
   if (!listening.has(doc)) {
     listening.add(doc);

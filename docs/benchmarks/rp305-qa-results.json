@@ -1,0 +1,19 @@
+{
+  "iteration": "RP305",
+  "date": "2026-10-16",
+  "scope": "First completion after a fresh chat route is allocated before POST",
+  "before": {"newEarlyRouteTest": "failed", "failedAssertion": "snapshot.appliedAt remained undefined", "report": ".output/rp305-before.json", "liveFailuresPreserved": 2},
+  "after": {
+    "unit": {"files": 4, "passed": 38, "failed": 0},
+    "chain": {"passed": 18, "failed": 0, "flaky": 0, "durationMs": 137178.14, "languages": ["ru", "en"], "report": ".output/rp305-chain.json"},
+    "uiAndRecap": {"passed": 18, "skipped": 2, "failed": 0, "flaky": 0, "durationMs": 44422.75, "widths": [320, 360, 900, 1280], "skipReason": "Installed Edge runtime tests are skipped in Firefox", "report": ".output/rp305-ui.json"},
+    "typecheckExit": 0,
+    "diffCheckExit": 0,
+    "chromeBuildExit": 0,
+    "firefoxBuildExit": 0,
+    "packages": {"chromeFiles": 23, "firefoxFiles": 23, "sourceFiles": 914, "checks": ["entry contents equal current disk files", "ZIP CRC", "runtime membership equals build directories", "canonical download copies SHA256 equal output archives"]},
+    "liveRepeat": {"passed": true, "sourceChat": "1874cefc-b0e5-4437-b2f5-f556b8eed778", "targetChat": "9a68d51d-1958-4a62-9c5b-506d876f73b7", "observed": ["separate memory review", "automatic new chat with context", "same world and three characters", "binding persists after reload", "exact owners, receipt condition, tomorrow morning deadline and two unfulfilled promises", "old source notice points to target"]}
+  },
+  "environmentIssues": ["Initial webServer cwd was wrong, fixed in temporary test config", "First UI launch stopped to avoid concurrent extension rebuild; own Vite4189 verified by PID and reused", "Initial Chrome build hit esbuild system-TEMP Access denied; workspace TEMP build succeeded"],
+  "limits": ["Full unit/full E2E not rerun", "One synthetic world tested against real DeepSeek account", "Blank Codex-controlled iframe menu remains", "Raw instruction visibility/recent-scene extraction remains", "Off-scene profile coverage remains", "Other cast/reset/export/image/live-language checks remain"]
+}

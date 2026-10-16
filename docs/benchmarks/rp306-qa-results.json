@@ -1,0 +1,40 @@
+{
+  "milestone": "RP306",
+  "date": "2026-10-16",
+  "unit": { "files": 8, "passed": 130, "failed": 0 },
+  "typecheck": { "exitCode": 0 },
+  "diffCheck": { "exitCode": 0 },
+  "ui": {
+    "files": ["continuation-ui.spec.ts", "scene-choices.spec.ts", "illustration-order.spec.ts", "illustration-width.spec.ts"],
+    "browsers": ["chromium", "firefox"], "locales": ["ru", "en"],
+    "widths": [320, 360, 900, 1280], "workers": 1,
+    "passed": 126, "failed": 0, "flaky": 0, "skipped": 0,
+    "firstExpandedAttempt": {
+      "passed": 77, "failed": 25,
+      "outdatedFullWidthRecoveryAssertions": 16,
+      "hiddenAncestorInnerTextAssertions": 8,
+      "firefoxContextCloseProtocolErrors": 1,
+      "runtimeChangedToFixTheseFailures": false,
+      "notes": "Toolbar geometry assertions now match the user request. Transport-only turns assert retained payload and actual invisibility; hidden innerText returns raw textContent. Final rerun uses one worker, with no retries or timeout increase. A separate initial compact-actions run found unequal neutral backgrounds, fixed by shared design effects."
+    }
+  },
+  "live": {
+    "world": "ТЕСТ DeepRole — Архив 16.10.2026",
+    "prefixRepairInstalledByUser": true,
+    "repeatedReloadHiddenPrefix": "passed",
+    "intentAndHypotheticalNotCompletion": "passed",
+    "manualFourChoices": "passed",
+    "choiceFillsDraftWithoutSend": "passed",
+    "review": { "proposals": 2, "accepted": 0 },
+    "recapRecentTurns": { "count": 6, "injectedPrefixes": false, "thinkingHeadings": false },
+    "targetChatId": "125a5a3d-54ec-4171-8321-866ffcee8321",
+    "targetReloadExactOwnershipAndOpenPromises": "passed",
+    "oldChatNotice": "passed",
+    "compactToolbarInstalledVerification": "passed after second user update: 40px, matching computed styles, 8px gap; Enter returned four real options without scene advancement",
+    "unverified": ["menu under automation", "full cast preparation", "world reset", "export/import", "actual image provider result", "off-scene profile coverage"],
+    "personalWorldModified": false, "chatsDeleted": false
+  },
+  "packages": { "chrome": "built and verified", "firefoxAndSources": "built and verified; sources regenerated after final docs", "files": [23, 23, 917], "validation": "every ZIP entry CRC and bytes compared to runtime/source; canonical copy SHA equal", "installedCopyAutoReloadedByBuild": false },
+  "fullUnitAndFullE2ERepeated": false,
+  "pushOrMergeRequested": false
+}

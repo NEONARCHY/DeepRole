@@ -11,7 +11,7 @@ import { profile, realPng, world } from "../image-fixtures";
 for (const locale of ["ru", "en"] as const) test("installed reference review revises a hidden plan before generation, " + locale, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Isolated installed MV3 extension"); test.setTimeout(90000);
   const profiles = path.join(info.project.outputDir, "profiles"); await mkdir(profiles, { recursive: true });
-  const directory = await mkdtemp(path.join(profiles, "reference-review-")), extension = path.resolve(".output/chrome-mv3");
+  const directory = await mkdtemp(path.join(profiles, "reference-review-")), extension = path.resolve(process.env.DEEPROLE_QA_EXTENSION ?? ".output/chrome-mv3");
   const context = await chromium.launchPersistentContext(directory, { channel: "msedge", headless: true, args: ["--disable-extensions-except=" + extension, "--load-extension=" + extension] });
   context.setDefaultTimeout(10000);
   const t = (key: Parameters<typeof imageText>[1]) => imageText(locale, key);
@@ -25,8 +25,25 @@ for (const locale of ["ru", "en"] as const) test("installed reference review rev
         return new Response(JSON.stringify({ data: [{ b64_json: png }] }), { headers: { "content-type": "application/json" } });
       };
     }, realPng);
-    await context.route("https://chat.deepseek.com/**", route => route.fulfill({ contentType: "text/html", body: '<!doctype html><html lang="' + locale + '"><head><title>Reference review test</title><style>body{margin:0;background:#151a20;color:#eef3f7;font:14px system-ui}main{box-sizing:border-box;max-width:660px;margin:80px auto;padding:16px}article{margin-bottom:24px}form textarea{box-sizing:border-box;width:100%}</style></head><body><main><h1>Test chat</h1><article data-role="assistant" data-message-id="review-story">Mira and Noah study a chart at the observatory, wearing everyday coats.</article><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main></body></html>' }));
-    await context.route("**/api/v0/chat/completion", route => { prompts.push(route.request().postDataJSON().prompt); return route.fulfill({ json: {} }); });
+    await context.exposeBinding('captureReviewPlan', (_source, prompt: string) => { prompts.push(prompt); });
+    await context.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => {
+      if (location.pathname !== '/' || !location.search.includes('deeprole_field_job')) return;
+      const owned='service-'+new URLSearchParams(location.search).get('deeprole_field_job')!.slice(-8);
+      document.querySelector<HTMLAnchorElement>('aside a')!.href='/chat/s/'+owned;
+      document.querySelector('form')!.addEventListener('submit',event=>{
+        event.preventDefault();const area=document.querySelector('textarea')!,prompt=area.value;area.value='';
+        void (window as any).captureReviewPlan(prompt);history.replaceState({},'', '/chat/s/'+owned);
+        const user=document.createElement('article');user.dataset.role='user';user.dataset.messageId='service-user';user.textContent=prompt;
+        const reply=document.createElement('article');reply.dataset.role='assistant';reply.dataset.messageId='service-reply';reply.className='ds-assistant-message-main-content';
+        reply.textContent=JSON.stringify({scene:prompt.includes('"referenceOverrides"')?'Revised reference guidance: Mira and Noah study the same chart at the same observatory moment.':'Mira and Noah study an observatory chart in their everyday coats.',characters:['mira','noah'].map(id=>({id,reference:'neutral',look:'ordinary',appearance:'Everyday coat.',action:'Studying a chart',position:id==='mira'?'Left of table':'Right of table',focus:'primary',referenceReason:document.documentElement.lang==='ru'?'В сцене описано обычное пальто.':'The scene establishes an everyday coat.'}))});
+        document.querySelector('main')!.append(user,reply);
+      });
+      document.querySelector('#more')!.addEventListener('click',()=>{const menu=document.createElement('div');menu.setAttribute('role','menu');const remove=document.createElement('button');remove.textContent='Delete';remove.addEventListener('click',()=>{const dialog=document.createElement('div');dialog.setAttribute('role','dialog');const confirm=document.createElement('button');confirm.textContent='Delete';confirm.addEventListener('click',()=>{document.querySelector('aside')!.remove();dialog.remove();history.replaceState({},'', '/');});dialog.append(confirm);document.body.append(dialog);});menu.append(remove);document.body.append(menu);});
+    }); });
+    await context.route("https://chat.deepseek.com/**", route => {
+      const service=new URL(route.request().url()).pathname==='/',aside='<aside><div><a href="/chat/s/service-field">Temporary</a><button id="more" aria-label="More">…</button></div></aside>';
+      return route.fulfill({ contentType: "text/html", body: '<!doctype html><html lang="' + locale + '"><head><title>Reference review test</title><style>body{margin:0;background:#151a20;color:#eef3f7;font:14px system-ui}main{box-sizing:border-box;max-width:660px;margin:80px auto;padding:16px}article{margin-bottom:24px}form textarea{box-sizing:border-box;width:100%}</style></head><body>'+(service?aside:'')+'<main><h1>Test chat</h1>'+(service?'':'<article data-role="assistant" data-message-id="review-story">Mira and Noah study a chart at the observatory, wearing everyday coats.</article>')+'<form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main></body></html>' });
+    });
     const panel = await context.newPage(); await panel.goto("chrome-extension://" + id + "/sidepanel.html");
     await panel.evaluate(async ({ settings, locale, config, key }) => {
       await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true }, deeprole_image_settings: settings, deeprole_image_keys: { [config.id]: key } });
@@ -43,30 +60,17 @@ for (const locale of ["ru", "en"] as const) test("installed reference review rev
     }, { world, entities });
     const chat = await context.newPage(); await chat.goto("https://chat.deepseek.com/chat/s/reference-review");
     await chat.getByRole("combobox", { name: locale === "ru" ? "Мир" : "World", exact: true }).selectOption(world.id);
-    const mockForm = (start: number) => {
-      let sequence = start;
-      document.querySelector("form")!.addEventListener("submit", event => {
-        event.preventDefault(); const box = document.querySelector("form textarea") as HTMLTextAreaElement, prompt = box.value; box.value = "";
-        const n = ++sequence, user = document.createElement("article"), reply = document.createElement("article");
-        user.dataset.role = "user"; user.dataset.messageId = "review-user-" + n; user.id = user.dataset.messageId; user.textContent = prompt;
-        reply.dataset.role = "assistant"; reply.dataset.messageId = "review-answer-" + n; reply.id = reply.dataset.messageId;
-        for (const row of [user, reply]) { const shell = document.createElement("div"); shell.id = row.id + "-shell"; shell.dataset.virtualListItemKey = row.id; shell.style.cssText = "min-height:180px;padding:20px"; shell.append(row); document.querySelector("main")!.insertBefore(shell, document.querySelector("form")); }
-        void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, chat_session_id: "reference-review" }) }).then(() => {
-          reply.innerHTML = '<div class="ds-think-content">Private thoughts</div><div class="ds-assistant-message-main-content"><p></p><button>Copy</button></div>';
-          reply.querySelector("p")!.textContent = JSON.stringify({ scene: n === 2 ? "Revised reference guidance: Mira and Noah study the same chart at the same observatory moment." : "Mira and Noah study an observatory chart in their everyday coats.", characters: ["mira", "noah"].map(id => ({ id, reference: "neutral", look: "ordinary", appearance: "Everyday coat.", action: "Studying a chart", position: id === "mira" ? "Left of table" : "Right of table", focus: "primary", referenceReason: document.documentElement.lang === "ru" ? "В сцене описано обычное пальто." : "The scene establishes an everyday coat." })) });
-        });
-      });
-    };
-    await chat.evaluate(mockForm, 0);
     const host = chat.locator('[data-message-id="review-story"] [data-deeprole-illustrations]');
     await host.getByRole("button", { name: t("generate"), exact: true }).click();
-    await expect(host.getByRole("region", { name: t("reviewTitle"), exact: true })).toBeVisible();
+    await expect(host.getByRole("region", { name: t("reviewTitle"), exact: true })).toBeVisible({timeout:45000});
     const requests = () => worker.evaluate(() => (globalThis as any).imageRequests as { body: string; headers: unknown }[]);
     expect(await requests()).toHaveLength(0); expect(prompts).toHaveLength(1);
     expect(prompts[0]).toContain("[DeepRole Image Plan]"); expect(prompts[0]).not.toContain("data:image"); expect(prompts[0]).not.toContain(key);
-    await expect(chat.locator("#review-user-1")).toBeHidden(); await expect(chat.locator("#review-answer-1")).toBeHidden();
+    expect(prompts[0]).toContain('"promptComposition"');
+    await expect(chat.locator('[data-message-id="service-user"]')).toHaveCount(0);
+    await expect.poll(()=>context.pages().length).toBe(3);
     // Reload a pending approval: no provider request and no new hidden query.
-    await chat.reload(); await chat.evaluate(mockForm, 1);
+    await chat.reload();
     await expect(host.getByRole("region", { name: t("reviewTitle"), exact: true })).toBeVisible();
     expect(await requests()).toHaveLength(0); expect(prompts).toHaveLength(1);
     const mira = host.getByRole("group", { name: "Mira · " + t("referencePolicy"), exact: true }), noah = host.getByRole("group", { name: "Noah · " + t("referencePolicy"), exact: true });
@@ -84,10 +88,12 @@ for (const locale of ["ru", "en"] as const) test("installed reference review rev
       expect(axe.violations).toEqual([]);
     }
     await host.getByRole("button", { name: t("reviewGenerate"), exact: true }).click();
-    await expect(host.getByRole("button", { name: t("view"), exact: true })).toBeVisible();
+    await expect(host.getByRole("button", { name: t("view"), exact: true })).toBeVisible({timeout:45000});
     expect(prompts).toHaveLength(2); expect(prompts[1]).toContain('"previousPlan"'); expect(prompts[1]).toContain('"referenceOverrides":{"mira":"suggestive","noah":"neutral"}');
     expect(prompts[1]).not.toContain("data:image"); expect(prompts[1]).not.toContain(key);
-    await expect(chat.locator("#review-user-2")).toBeHidden(); await expect(chat.locator("#review-answer-2")).toBeHidden();
+    expect(prompts[1]).toContain('"promptComposition"');
+    await expect(chat.locator('[data-message-id="service-user"]')).toHaveCount(0);
+    await expect.poll(()=>context.pages().length).toBe(3);
     const calls = await requests(); expect(calls).toHaveLength(1);
     const body = JSON.parse(calls[0]!.body);
     expect(body.prompt).toContain("Revised reference guidance"); expect(body.prompt).toContain("Alternate evening coat"); expect(body.prompt).toContain("16:9"); expect(body.size).toBe("1536x1024");
@@ -99,7 +105,12 @@ for (const locale of ["ru", "en"] as const) test("installed reference review rev
     await expect(host.getByRole("list", { name: t("referenceResult"), exact: true })).toContainText("Mira" + t("referenceSuggestive"));
     const storedEntities = await panel.evaluate(async () => {
       const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open("deeprole"); r.onsuccess = () => resolve(r.result); });
-      const records = await new Promise<any[]>(resolve => { const r = db.transaction("records").objectStore("records").getAll(); r.onsuccess = () => resolve(r.result); }); db.close(); return records.filter(r => r.kind === "entity").map(r => r.data).sort((a,b) => a.id.localeCompare(b.id));
+      const records = await new Promise<any[]>(resolve => { const r = db.transaction("records").objectStore("records").getAll(); r.onsuccess = () => resolve(r.result); });
+      // Startup externalizes data URLs into the photo store. Compare hydrated
+      // bytes as well as all profile fields, not the legacy storage representation.
+      const people=records.filter(r => r.kind === "entity").map(r => r.data).sort((a,b) => a.id.localeCompare(b.id));
+      for(const person of people)person.characterSheet.portraitLibrary=await Promise.all(person.characterSheet.portraitLibrary.map((value:string)=>value.startsWith('deeprole-photo:')?new Promise<string>((resolve,reject)=>{const r=db.transaction('photos').objectStore('photos').get(value);r.onsuccess=()=>{const data=r.result?.data;if(data instanceof Blob){void data.text().then(resolve,reject);}else if(typeof data==='string')resolve(data);else reject(new Error('Missing photo bytes'));};r.onerror=()=>reject(r.error);}):value));
+      db.close(); return people;
     });
     expect(storedEntities).toEqual(entities);
     await host.getByRole("button", { name: t("retrySame"), exact: true }).click();
@@ -108,7 +119,7 @@ for (const locale of ["ru", "en"] as const) test("installed reference review rev
     expect((await requests())[1]!.body).toBe(calls[0]!.body); expect(prompts).toHaveLength(2);
     // A new review can be cancelled without creating another paid request.
     await host.getByRole("button", { name: t("referenceEdit"), exact: true }).click();
-    await expect(host.getByRole("region", { name: t("reviewTitle"), exact: true })).toBeVisible();
+    await expect(host.getByRole("region", { name: t("reviewTitle"), exact: true })).toBeVisible({timeout:45000});
     expect(prompts).toHaveLength(3); expect(await requests()).toHaveLength(2);
     await host.getByRole("button", { name: t("reviewCancel"), exact: true }).click();
     await expect(host.getByRole("region", { name: t("reviewTitle"), exact: true })).toHaveCount(0);

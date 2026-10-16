@@ -52,6 +52,31 @@ export function imagePlanRoster(entities: SceneEntity[]) {
   return entities.filter(e => e.kind === "character").slice(0, MAX_IMAGE_SCENE_CHARACTERS).map(e => ({ id: e.id, name: e.name, protagonist: !!e.characterSheet?.protagonist, appearance: (e.characterSheet?.imageGeneration?.canonical || e.characterSheet?.appearance || "").slice(0, 600), description: e.description.slice(0, 300),
     referencePolicy: e.characterSheet?.imageGeneration?.referencePolicy ?? "auto", references: { neutral: { available: imageReferences(e.characterSheet).some(r => r.key === e.characterSheet?.imageGeneration?.referenceKey), context: e.characterSheet?.imageGeneration?.referenceContext ?? "" }, suggestive: { available: imageReferences(e.characterSheet).some(r => r.key === e.characterSheet?.imageGeneration?.suggestiveReferenceKey), context: e.characterSheet?.imageGeneration?.suggestiveReferenceContext ?? "" } } }));
 }
+const COMPACT_GROUP = (count: number) => `Show all ${count} people, distinct faces/bodies, anatomically plausible poses, stated positions/focus; do not hide background people. Preserve identities/features, no extra people. Scene outfits/actions override reference pose/outfit.`;
+function compactDescription(chosen: ImageScenePlan['characters'][number], person: SceneEntity, attached: boolean, hasReference = false) {
+  const profile = person.characterSheet?.imageGeneration;
+  return [person.name+": "+(profile?.canonical||person.characterSheet?.appearance||chosen.appearance||person.description.slice(0,600)),chosen.appearance&&"Look: "+chosen.appearance,chosen.action&&"Action: "+chosen.action,chosen.position&&"Position: "+chosen.position,"Focus: "+chosen.focus,!attached&&(hasReference?"Text identity: reference limit reached.":"Text identity: no reference.")].filter(Boolean).join('\n');
+}
+const compactReference = (person: SceneEntity, index: number, look: string | undefined) => `Reference ${index}: ${person.name} identity only; use scene outfit/pose/place. `+(look??'');
+/** Counts only; no secrets, image bytes, copied style or full private profiles. */
+export function imagePlanPromptComposition(entities: SceneEntity[], settings: ImageSettings) {
+  const config = settings.profiles.find(p => p.id === settings.profileByLevel[settings.contentLevel] && p.enabled);
+  return {
+    generateModel: config?.modelId, editModel: config?.editModelId || config?.modelId,
+    baseCharacters: [settings.stylePrefix, "Landscape illustration, 16:9. ", settings.styleSuffix].filter(Boolean).join('\n\n').length,
+    groupCharacters: COMPACT_GROUP(MAX_IMAGE_SCENE_CHARACTERS).length + 2,
+    generatedFieldReserve: 48, safetyCharacters: 96,
+    people: entities.filter(e => e.kind === 'character').slice(0, MAX_IMAGE_SCENE_CHARACTERS).map(person => {
+      const profile = person.characterSheet?.imageGeneration;
+      const chosen = {id:person.id, reference:'none' as const, appearance:'', focus:'background' as const};
+      const attached = compactDescription(chosen, person, true).length + 2;
+      return {id:person.id,
+        identityFromAppearance: !profile?.canonical && !person.characterSheet?.appearance,
+        textCharacters: Math.max(compactDescription(chosen, person, false).length, compactDescription(chosen, person, false, true).length) + 2,
+        referenceCharacters: {neutral: attached + compactReference(person, MAX_IMAGE_SCENE_CHARACTERS, profile?.referenceContext).length + 2,
+          suggestive: attached + compactReference(person, MAX_IMAGE_SCENE_CHARACTERS, profile?.suggestiveReferenceContext).length + 2}};
+    })};
+}
 export function imagePlanInstruction(reference: Record<string, unknown>): string {
   return ["[DeepRole Service]", "[DeepRole Image Plan]", "Prepare ONE illustration of completedScene. Return ONLY a JSON object, no explanation, Markdown, choices or character updates.",
     'Schema: {"scene":"visual description, 12–1200 characters","characters":[{"id":"exact roster ID","reference":"neutral|suggestive|none","appearance":"visible outfit, expression and appearance, up to 600 characters","look":"ordinary|alternate|unknown","referenceReason":"brief factual reason, up to 240 characters","action":"what this person is doing now, up to 320 characters","position":"placement, orientation and distance from other people, up to 240 characters","focus":"primary|supporting|background"}]}.',
@@ -66,7 +91,7 @@ export function imagePlanInstruction(reference: Record<string, unknown>): string
     "Assigned ordinary references are attached automatically, even if you return none; none means no matching alternate look, not permission to discard a user's identity image. Do not fill unused reference slots with absent characters, extra variations or invented images. Reference numbers will be mapped to their exact owners by DeepRole; describe the cast, not image bytes.",
     "The configured contentLevel controls the requested rendering. For off use neutral/non-explicit framing; suggestive is non-explicit romance. Do not change the chosen preset or settings. Do not contradict ages or personal boundaries.",
     "Keep the entire JSON within " + MAX_IMAGE_PLAN_TEXT + " characters. Use concise but specific per-person details rather than repeating the whole scene for each person.",
-    imagePlanBudgetInstruction(reference.promptBudget), "Reference data:", JSON.stringify(reference)].filter(Boolean).join("\n");
+    imagePlanBudgetInstruction(reference.promptBudget, reference.promptComposition), "Reference data:", JSON.stringify(reference)].filter(Boolean).join("\n");
 }
 export function validImageReplay(v: unknown): v is ImageReplay {
   if (!object(v) || !validImageProviderConfig(v.config) || !object(v.input) || !validImageContentLevel(v.contentLevel)) return false;
@@ -112,13 +137,10 @@ export function planImageInput(plan: ImageScenePlan, target: ImageTarget, entiti
   if(prompt.length>imagePromptLimit(limits,references.length>0)) {
     // Only our repeated explanatory boilerplate changes. Every user/plan value
     // remains whole, in the same order; references and canonical storage do not change.
-    const compactDescriptions=cast.map(({chosen,person,selected,attached})=>{
-      const profile=person.characterSheet?.imageGeneration;
-      return [person.name+": "+(profile?.canonical||person.characterSheet?.appearance||chosen.appearance||person.description.slice(0,600)),chosen.appearance&&"Look: "+chosen.appearance,chosen.action&&"Action: "+chosen.action,chosen.position&&"Position: "+chosen.position,"Focus: "+chosen.focus,!attached&&(selected?"Text identity: reference limit reached.":"Text identity: no reference.")].filter(Boolean).join('\n');
-    });
-    prompt=[settings.stylePrefix,"Landscape illustration, 16:9. "+plan.scene,ids.length>1&&`Show all ${ids.length} people, distinct faces/bodies, anatomically plausible poses, stated positions/focus; do not hide background people. Preserve identities/features, no extra people. Scene outfits/actions override reference pose/outfit.`,...compactDescriptions,...references.map((r,index)=>{
+    const compactDescriptions=cast.map(({chosen,person,selected,attached})=>compactDescription(chosen,person,attached,!!selected));
+    prompt=[settings.stylePrefix,"Landscape illustration, 16:9. "+plan.scene,ids.length>1&&COMPACT_GROUP(ids.length),...compactDescriptions,...references.map((r,index)=>{
       const person=entities.find(e=>e.id===r.entityId)!,profile=person.characterSheet?.imageGeneration,look=cast.find(c=>c.person.id===r.entityId)?.reference==='suggestive'?profile?.suggestiveReferenceContext:profile?.referenceContext;
-      return `Reference ${index+1}: ${person.name} identity only; use scene outfit/pose/place. `+(look??'');
+      return compactReference(person,index+1,look);
     }),settings.styleSuffix].filter(Boolean).join('\n\n');
   }
   if (prompt.length > 12000) throw new Error("promptTooLong");

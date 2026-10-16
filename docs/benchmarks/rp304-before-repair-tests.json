@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "scope": "Repair regressions on unchanged RP302 before edits",
+  "passed": 28,
+  "failed": 16,
+  "failedNames": [
+    "ru:0:1 restores whole source candidates without identity or completion inference",
+    "ru:0:2 restores whole source candidates without identity or completion inference",
+    "ru:0:3 restores whole source candidates without identity or completion inference",
+    "ru:1:1 restores whole source candidates without identity or completion inference",
+    "ru:1:2 restores whole source candidates without identity or completion inference",
+    "ru:1:3 restores whole source candidates without identity or completion inference",
+    "en:0:1 restores whole source candidates without identity or completion inference",
+    "en:0:2 restores whole source candidates without identity or completion inference",
+    "en:0:3 restores whole source candidates without identity or completion inference",
+    "en:1:1 restores whole source candidates without identity or completion inference",
+    "en:1:2 restores whole source candidates without identity or completion inference",
+    "en:1:3 restores whole source candidates without identity or completion inference",
+    "ru:0 raw-only short reference has a guard but supplies no accepted bridge",
+    "ru:1 raw-only short reference has a guard but supplies no accepted bridge",
+    "en:0 raw-only short reference has a guard but supplies no accepted bridge",
+    "en:1 raw-only short reference has a guard but supplies no accepted bridge"
+  ]
+}

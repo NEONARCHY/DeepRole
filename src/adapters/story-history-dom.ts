@@ -6,7 +6,9 @@ export function visibleStoryHistory(root: ParentNode = document): StoryContinuat
   const turns = nativeMessageRows(root).filter(row => !row.matches("[data-deeprole-service-reply], [data-deeprole-memory-request], [data-deeprole-character-text-hidden]")).map(row => {
     const clone = row.cloneNode(true) as HTMLElement;
     clone.querySelectorAll(`${REASONING}, button, [data-deeprole-characters-result], [data-deeprole-choices-host], [data-deeprole-choices-loading], [data-deeprole-handoff-visible], [data-deeprole-scene-photos], [data-deeprole-memory-card], [data-deeprole-service-preloader]`).forEach(node => node.remove());
-    return { role: isUserMessage(row) ? "user" as const : "assistant" as const, text: clone.textContent ?? "" };
+    const user = isUserMessage(row);
+    const content = user ? clone : clone.querySelector(".ds-assistant-message-main-content") ?? clone;
+    return { role: user ? "user" as const : "assistant" as const, text: content.textContent ?? "" };
   });
   return boundStory(turns, "page", true);
 }

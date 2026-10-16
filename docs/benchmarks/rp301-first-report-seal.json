@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-embargo-audit-baseline.json",
+  "report": "docs/benchmarks/rp301-embargo-results.json",
+  "baselineHash": "f53a330cd470e13c04bae572b89a4b78947ec6257ef1e641133a5a8b56d7ac26",
+  "reportHash": "97ed7994561d4a4bae45cb52192c4ee4c68c1dc06855176df5670f149b6fef37",
+  "inputDigest": "7ad9393d2b7e0c5eccd495db8f6390b46499a27d70e0094cdbee4160eb558015",
+  "goldDigest": "dae3694da950aa16069dae0de6e9ab0b4a4143ce537ac0311cd9e4d1b96fc279"
+}

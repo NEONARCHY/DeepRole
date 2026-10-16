@@ -1,0 +1,259 @@
+{
+  "version": 1,
+  "milestone": "RP302",
+  "date": "2026-10-16",
+  "scope": "SEEN source-bound publication and consent repair; not independent or live DeepSeek proof",
+  "changedRuntime": [
+    "src/core/game-context.ts",
+    "src/core/story-obligation-recall.ts"
+  ],
+  "historicalSnapshotPinsVerified": 414,
+  "firstRP301Preserved": {
+    "complete": 14,
+    "scored": 24,
+    "missing": 12,
+    "guardGaps": 2
+  },
+  "seen": [
+    {
+      "stage": "rp301",
+      "path": "docs/benchmarks/rp302-rp301-seen-results.json",
+      "cases": 40,
+      "scored": 24,
+      "complete": 24,
+      "gold": 114,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp299",
+      "path": "docs/benchmarks/rp302-rp299-seen-results.json",
+      "cases": 38,
+      "scored": 22,
+      "complete": 22,
+      "gold": 100,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp297",
+      "path": "docs/benchmarks/rp302-rp297-seen-results.json",
+      "cases": 64,
+      "scored": 38,
+      "complete": 38,
+      "gold": 176,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp295",
+      "path": "docs/benchmarks/rp302-rp295-seen-results.json",
+      "cases": 60,
+      "scored": 34,
+      "complete": 34,
+      "gold": 160,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp292",
+      "path": "docs/benchmarks/rp302-rp292-seen-results.json",
+      "cases": 96,
+      "scored": 60,
+      "complete": 60,
+      "gold": 306,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp289",
+      "path": "docs/benchmarks/rp302-rp289-seen-results.json",
+      "cases": 96,
+      "scored": 54,
+      "complete": 54,
+      "gold": 204,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp287",
+      "path": "docs/benchmarks/rp302-rp287-seen-results.json",
+      "cases": 108,
+      "scored": 62,
+      "complete": 62,
+      "gold": 250,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp283",
+      "path": "docs/benchmarks/rp302-rp283-seen-results.json",
+      "cases": 84,
+      "scored": 54,
+      "complete": 54,
+      "gold": 312,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    }
+  ],
+  "totals": {
+    "cases": 586,
+    "scored": 348,
+    "complete": 348,
+    "gold": 1622,
+    "missing": 0,
+    "integrityCases": 0,
+    "confidenceGapCases": 0,
+    "lostPriorFacts": 0
+  },
+  "targetBudgetObservations": [
+    {
+      "id": "ru:budget:900",
+      "wanted": 7,
+      "missing": [
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3"
+      ],
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 1
+      }
+    },
+    {
+      "id": "ru:budget:3000",
+      "wanted": 7,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:budget:6000",
+      "wanted": 7,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:budget:900",
+      "wanted": 7,
+      "missing": [
+        "a1",
+        "a3",
+        "c1",
+        "c2",
+        "c3"
+      ],
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 2
+      }
+    },
+    {
+      "id": "en:budget:3000",
+      "wanted": 7,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:budget:6000",
+      "wanted": 7,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    }
+  ],
+  "checks": {
+    "beforeRepair": {
+      "passed": 21,
+      "failed": 8
+    },
+    "fullUnit": {
+      "passed": 8534,
+      "failed": 0,
+      "todo": 5,
+      "files": 309
+    },
+    "finalRepairAndReportTests": {
+      "passed": 48,
+      "failed": 0
+    },
+    "unified": {
+      "passed": 492,
+      "failed": 0,
+      "integrityPassed": true,
+      "recallComplete": true,
+      "pairs": 2427,
+      "configurations": 57
+    },
+    "typecheckExit": 0,
+    "diffCheckExit": 0,
+    "chromeZipExit": 0,
+    "firefoxZipExit": 0
+  },
+  "packaging": {
+    "verified": true,
+    "archives": [
+      {
+        "archive": "deeprole-0.1.0-chrome.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-firefox.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-sources.zip",
+        "files": 888
+      }
+    ],
+    "checks": [
+      "CRC",
+      "exact build membership",
+      "all source and build member bytes equal disk",
+      "source exclusions",
+      "atomic canonical copies and SHA256"
+    ]
+  },
+  "limits": [
+    "Caps remain16 tasks/4 labels/128 rows; small budgets may omit whole groups",
+    "No semantic identity, permission, fulfillment or owner inference",
+    "First fixtures, gold, protocols, runners, reports and seals untouched",
+    "No native/live DeepSeek or installed-extension checks this iteration",
+    "Installed copy not reloaded; user worlds untouched",
+    "Source ZIP excludes tests/private-assets; QA requires Git checkout",
+    "RP-05 general semantics and true cross-turn delta remain open",
+    "No push requested"
+  ],
+  "next": "A new independent preregistered plot is needed for unseen quality; keep this corpus labeled SEEN. Do not declare RP-05 complete."
+}

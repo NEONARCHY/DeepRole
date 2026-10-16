@@ -1,5 +1,60 @@
 # Download DeepRole
 
+RP308 (16 October 2026): compact character cards give the action a full-width row.
+Floating portrait stat chips appear on hover or keyboard focus, with stable geometry;
+touch devices keep them visible. No character data or generation changes.
+Chrome/Firefox/source packages include this change; installed copies need manual reload.
+
+RP307 (16 October 2026): image planning includes measured fixed prompt costs and
+selected Venice model IDs, in addition to the existing live-catalog limits. DeepSeek
+is instructed to budget the remaining space across the scene and all actual cast
+members. Unknown mode caps are not borrowed from a shared ID's other mode.
+Full local preflight and unchanged user identities/style remain in force.
+[Details and limits](../docs/IMAGE-MODEL-BUDGETS.md). Installed copy needs a separate update.
+
+RP306 (16 October 2026): ordinary injected memory/character/choice context stays
+hidden after reload; recent scene history is cleaned before bounding. A real
+DeepSeek repeat passed reload, intent versus completion, manual options, review,
+recap, a second new chat and exact memory after reload. Recovery is now a compact
+neutral action beside Create illustration, with wrapping on narrow screens.
+[Behavior and limits](../docs/INJECTED-TEXT-AND-REPLY-ACTIONS.md).
+Replacing/reloading the installed extension remains a separate action; rebuilding
+the repository does not update it. Latest QA status is at the top of CODEX-HANDOFF.
+
+RP305 (16 October 2026): fixes lost recap/world context when DeepSeek allocates
+the new chat route before its first completion request. Game activation still
+waits for accepted delivery. Native chain18/18, focused unit38/38, UI/recap18pass
+and2Firefox skips. A real DeepSeek repeat after updating the installed extension
+passed: new chat, world/3 characters, reload and exact open promises. Other live
+findings remain open. [Repair and limits](../docs/CONTINUATION-FIRST-SEND-REPAIR.md).
+
+RP304 (16 October 2026): repairs supported conversational readiness, short
+anaphoric references and first/then action-plus-recall requests. Target SEEN40/40,
+204/204 records,0 missing/guard gaps; original first25/40 is preserved.
+[Behavior and limits](../docs/RELAY-REPAIR.md),
+[QA](../docs/benchmarks/rp304-qa-results.json). Reload installed extension separately;
+user worlds untouched. QA requires Git checkout; source ZIP excludes tests/private-assets.
+
+RP303 (16 October 2026): audit-only, gameplay remains RP302. Two fresh authored
+RU/EN refuge/regatta settings, gold frozen before first run:25/40 complete,
+181/204 expected records,12 reference-guard gaps,0 source integrity issues.
+[Results and next task](../docs/RELAY-RESULTS.md),
+[QA](../docs/benchmarks/rp303-qa-results.json). No need to install for this audit;
+installed extension and user worlds unchanged. QA requires Git checkout.
+
+RP302 (16 October 2026): repairs publication-readiness recall, display/publication
+compound recall and missing uncertainty guards. Target SEEN24/24,114/114 records;
+first RP30114/24 remains preserved. No permission, identity or completion inferred.
+[Behavior and limits](../docs/EMBARGO-REPAIR.md),
+[QA](../docs/benchmarks/rp302-qa-results.json). Reload the installed extension
+separately; user worlds untouched. Source ZIP excludes tests; QA needs Git checkout.
+
+RP301 (16 October 2026): audit-only, gameplay remains RP300. Fresh preregistered
+research-station audit:14/24 complete,102/114 required records,2 guard gaps,
+0 source integrity issues. [Results and next task](../docs/EMBARGO-RESULTS.md).
+The first baseline/report/seal are preserved. Installing just for this audit is
+unnecessary; tests require Git checkout. Installed extension and worlds unchanged.
+
 RP300 (16 October 2026): restores source-bound recall of accepted prohibitions pending permission, including supported preparation/completion questions and compound actions. Seen theatre audit22/22,100/100 required records,0missing/guard gaps; permissions and task states are not inferred or rewritten. [Behavior and limits](../docs/EXCEPTION-REPAIR.md), [QA](../docs/benchmarks/rp300-qa-results.json). Reload installed extension separately; worlds untouched.
 
 RP299 (16 October 2026): audit-only refresh; gameplay remains RP298. Fresh RU/EN flooded-theatre scenarios found15/22complete,11missing records in7queries and5reference-guard gaps; source integrity issues0. [Findings and next task](../docs/EXCEPTION-RESULTS.md). Installing only for the audit is unnecessary; tests require Git checkout, installed copy unchanged.

@@ -9,7 +9,7 @@ import { flexiblePriorityFacts } from "./story-flexible-priority";
 import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
 import { budgetPriorityFacts, BUDGET_SOURCE_ROWS } from "./story-budget-priority";
 import { contextualReferenceFacts } from "./story-contextual-reference";
-import { obligationRecallFacts,obligationRecallIntent,obligationPremiseQuestion,UNPROVED_OBLIGATION_PREMISE } from './story-obligation-recall';
+import { obligationRecallFacts,obligationRecallIntent,obligationPremiseQuestion,materialRecallAction,sequenceRecallAction,UNPROVED_OBLIGATION_PREMISE } from './story-obligation-recall';
 import { storyFactIdentity } from "./story-memory-lifecycle";
 import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
 import {storyActionBalance} from "./story-action-balance";
@@ -73,7 +73,11 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
  let proof:PriorityProof|undefined,coverage:GameMemoryCoverage={kind:'not-applicable'};
  const prior=compileBudgetContext(input,options,observe?c=>{coverage=c}:undefined,p=>{proof=p});
  const finish=(result:typeof prior,next=coverage)=>{observe?.(result.report.required>result.report.limit?{kind:'required-overflow'}:premiseGuardEnabled(input,options)&&next.kind==='complete'?{kind:'unverified',reason:'query'}:next);return result;};
- if(options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||!input.story||input.restart||input.character?.[9]||!proof||proof.roles?.question||proof.referenceGuard===AMBIGUOUS_STORY_NAME)return finish(prior);
+  const material=obligationRecallIntent(input.draft)==='compound-inquiry'&&(materialRecallAction(input.draft)||sequenceRecallAction(input.draft));
+  // Publication/display/sequence groups may retain several explicitly named
+  // sources. The original ambiguous-name guard stays in the rendered prompt;
+  // this does not resolve a shared alias or grant permission.
+  if(options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||!input.story||input.restart||input.character?.[9]||!proof||proof.roles?.question||proof.referenceGuard===AMBIGUOUS_STORY_NAME&&!material)return finish(prior);
  if(obligationRecallIntent(input.draft)==='compound-inquiry'&&(options.actionBalance===false||options.compoundActionBalance===false))return finish(prior);
  const literal=contextualReferenceFacts(proof.facts,input.draft,input.recentMessages,proof.names,proof.roles,proof.episodes);
  const group=literal??obligationRecallFacts(proof.facts,input.draft,input.recentMessages,proof.names,proof.roles,proof.episodes);

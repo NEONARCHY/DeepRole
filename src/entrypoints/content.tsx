@@ -47,7 +47,7 @@ import { visibleStoryHistory } from "../adapters/story-history-dom";
 import { validStoryTransportIdentity } from "../core/story-transport";
 import { clearSelfieImageCache, isSelfieRequest, SELFIE_DELAY } from "../core/selfies";
 import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
-import { imagePlanRoster, parseImageScenePlan, type ImagePlanReview, type ImageScenePlan } from "../core/image-plan";
+import { imagePlanRoster, imagePlanPromptComposition, parseImageScenePlan, type ImagePlanReview, type ImageScenePlan } from "../core/image-plan";
 import { imagePlanCast, imageReviewContextKey, sameImagePlanCast, type ImageReferenceOverrides } from "../core/image-references";
 import { IllustrationsPresenter, illustrationSceneText } from "../adapters/illustrations-dom";
 import { getImageSettings, IMAGE_SETTINGS_KEY } from "../storage/image-settings";
@@ -56,7 +56,7 @@ import { imageText, imageErrorKey } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
 import { oldChatNotice, oldChatNoticePrompt, type OldChatNoticeEdit } from "../core/old-chat-notice";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
-import { continuationKey, continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, type ContinuationFlow, type ContinuationReceipt } from "../core/continuation-flow";
+import { continuationKey, continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchesProvisionalContinuationTarget, type ProvisionalContinuationTarget, type ContinuationFlow, type ContinuationReceipt } from "../core/continuation-flow";
 import { boundStory } from "../core/story-continuation";
 import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
@@ -239,6 +239,7 @@ class PageController {
   private memoryReceiptGeneration = 0;
   private appliedSnapshot: HandoffSnapshot | null = null;
   private snapshotToken: string | null = null;
+  private provisionalContinuationTarget: ProvisionalContinuationTarget | null = null;
   private pendingContinuationCommit: ContinuationReceipt | null = null;
   private continuationCommitBusy = false;
   private readonly deliveries = new Map<string, ContextDelivery>();
@@ -528,7 +529,7 @@ class PageController {
     let phase: "plan" | undefined = "plan";
     try {
       const {limits:promptBudget}=await this.imageCall({type:'DR_IMAGE_BUDGET',target,id:attempt.id});this.checkIllustrationScope(target,text);
-      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(entities), referenceBudget, promptBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
+      const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Scene illustration", completedScene: text, roster: imagePlanRoster(entities), referenceBudget, promptBudget, promptComposition: imagePlanPromptComposition(entities,settings), contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
       this.checkIllustrationScope(target, text);
       const parsed = parseImageScenePlan(value);
       const plan: ImageScenePlan = { ...parsed, characters: imagePlanCast(parsed, target.worldId, entities).map(c => ({ ...c.chosen, id: c.person.id })) };
@@ -559,7 +560,7 @@ class PageController {
         const attempt = { ...target, id, status: "preparing" as const, createdAt: Date.now(), updatedAt: Date.now() };
         const referenceBudget = settings.profiles.find(p => p.id === settings.profileByLevel[settings.contentLevel])?.maxReferences ?? 1;
         const {limits:promptBudget}=await this.imageCall({type:'DR_IMAGE_BUDGET',target,id});this.checkIllustrationScope(target,review.sceneText);
-        const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Reviewed scene illustration", completedScene: review.sceneText, previousPlan: review.plan, referenceOverrides: overrides, roster: imagePlanRoster(entities), referenceBudget, promptBudget, contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
+        const value = await this.generateCharacterText({ field: { key: "image-plan", label: imageText(this.state.locale, "prompt"), scope: "scene", maxLength: MAX_IMAGE_PLAN_TEXT }, currentText: "", reference: { name: "Reviewed scene illustration", completedScene: review.sceneText, previousPlan: review.plan, referenceOverrides: overrides, roster: imagePlanRoster(entities), referenceBudget, promptBudget, promptComposition: imagePlanPromptComposition(entities,settings), contentLevel: settings.contentLevel, interfaceLocale: this.state.locale } }, attempt);
         plan = parseImageScenePlan(value);
         if (!sameImagePlanCast(review.plan, plan)) throw new Error("invalidPlan");
       }
@@ -639,7 +640,7 @@ class PageController {
     this.pageChatEstimates.clear();
     syncSceneChoiceCards(false, false, this.state.locale, async () => false);
     this.entries = []; this.books = []; this.bindings = []; this.snapshots = [];
-    this.worlds = []; this.entities = []; this.documents = []; this.appliedSnapshot = null; this.snapshotToken = null;
+    this.worlds = []; this.entities = []; this.documents = []; this.appliedSnapshot = null; this.snapshotToken = null; this.provisionalContinuationTarget = null;
     this.pendingContinuationCommit = null; this.state.continuationCommitPending = false;
     this.deliveries.clear(); this.proposals = []; this.changes = []; this.pendingService = null;
     this.serviceFeedback = null;
@@ -710,7 +711,10 @@ class PageController {
 
   private currentScene(): SceneState {
     const binding = this.currentBinding();
-    const raw: SceneState = this.adapter.getChatId() ? binding ? { worldId: binding.worldId ?? null, focusIds: binding.focusIds ?? [], bookId: binding.bookId } : { ...EMPTY_SCENE } : this.draftScene;
+    const chatId = this.adapter.getChatId(), snapshot = this.appliedSnapshot;
+    const provisional = matchesProvisionalContinuationTarget(this.provisionalContinuationTarget, snapshot?.id, this.snapshotToken, snapshot?.sourceChatId, chatId, !!binding);
+    const raw: SceneState = chatId ? binding ? { worldId: binding.worldId ?? null, focusIds: binding.focusIds ?? [], bookId: binding.bookId }
+      : provisional && snapshot ? { worldId: memoryWorld(snapshot, this.books), focusIds: snapshot.focusIds ?? [], bookId: snapshot.bookId } : { ...EMPTY_SCENE } : this.draftScene;
     const worldId = this.worlds.some((w) => w.id === raw.worldId) ? raw.worldId : null;
     return { worldId, focusIds: raw.focusIds.filter((id) => this.entities.some((e) => e.id === id && e.worldId === worldId)), bookId: this.books.some((b) => b.id === raw.bookId && (b.worldId ?? null) === worldId && b.active) ? raw.bookId : null };
   }
@@ -1975,6 +1979,13 @@ class PageController {
     const promoteDraft = !this.previousChatId && !!chatId;
     const nextScene = this.draftScene;
     const nextOverrides = this.draftOverrides;
+    // DeepSeek can allocate /a/chat/s/:id before its first completion POST.
+    // Keep the queued scene available for that request without promoting the
+    // binding/world until the existing accepted-delivery transaction succeeds.
+    if (promoteDraft && this.appliedSnapshot && this.snapshotToken && !this.currentBinding()
+      && chatId !== this.appliedSnapshot.sourceChatId && nextScene.worldId === memoryWorld(this.appliedSnapshot, this.books)) {
+      this.provisionalContinuationTarget = { snapshotId: this.appliedSnapshot.id, snapshotToken: this.snapshotToken, targetChatId: chatId!, expiresAt: Date.now() + 90_000 };
+    } else if (this.provisionalContinuationTarget?.targetChatId !== chatId) this.provisionalContinuationTarget = null;
     if (promoteDraft && this.pendingService && !this.pendingService.chatId) {
       this.pendingService = { ...this.pendingService, chatId: chatId! }; await this.saveTabState({ service: this.pendingService });
     }

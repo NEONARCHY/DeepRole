@@ -1,0 +1,244 @@
+{
+  "version": 1,
+  "milestone": "RP301",
+  "date": "2026-10-16",
+  "runtime": "RP300 unchanged",
+  "scope": "Fresh agent-authored synthetic accepted-memory audit; not blind external, live extraction or model answer proof",
+  "frozen": {
+    "fingerprints": 414,
+    "inputDigest": "7ad9393d2b7e0c5eccd495db8f6390b46499a27d70e0094cdbee4160eb558015",
+    "goldDigest": "dae3694da950aa16069dae0de6e9ab0b4a4143ce537ac0311cd9e4d1b96fc279",
+    "allCurrentFingerprintsMatch": true,
+    "firstSealValid": true
+  },
+  "first": {
+    "cases": 40,
+    "scored": 24,
+    "complete": 14,
+    "goldFacts": 114,
+    "missingFacts": 12,
+    "integrityCases": 0,
+    "confidenceGapCases": 2,
+    "falseCompleteCases": 0
+  },
+  "observations": {
+    "recallFailureCases": [
+      {
+        "id": "ru:paraphrase",
+        "missing": [
+          "a2",
+          "a3"
+        ]
+      },
+      {
+        "id": "ru:compound",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "en:paraphrase",
+        "missing": [
+          "a2",
+          "a3"
+        ]
+      },
+      {
+        "id": "en:compound",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "ru:scale:700",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "ru:scale:3200",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "ru:scale:9000",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "en:scale:700",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "en:scale:3200",
+        "missing": [
+          "c1"
+        ]
+      },
+      {
+        "id": "en:scale:9000",
+        "missing": [
+          "c1"
+        ]
+      }
+    ],
+    "guardGapCases": [
+      {
+        "id": "ru:paraphrase",
+        "issues": [
+          "guard-missing"
+        ]
+      },
+      {
+        "id": "en:paraphrase",
+        "issues": [
+          "guard-missing"
+        ]
+      }
+    ],
+    "controls": 10,
+    "budgets": [
+      {
+        "id": "ru:budget:900",
+        "wanted": 7,
+        "missing": [
+          "a1",
+          "a2",
+          "a3",
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "coverage": {
+          "kind": "unverified",
+          "reason": "query"
+        }
+      },
+      {
+        "id": "ru:budget:3000",
+        "wanted": 7,
+        "missing": [
+          "c1"
+        ],
+        "coverage": {
+          "kind": "unverified",
+          "reason": "query"
+        }
+      },
+      {
+        "id": "ru:budget:6000",
+        "wanted": 7,
+        "missing": [
+          "c1"
+        ],
+        "coverage": {
+          "kind": "unverified",
+          "reason": "query"
+        }
+      },
+      {
+        "id": "en:budget:900",
+        "wanted": 7,
+        "missing": [
+          "a1",
+          "a3",
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "coverage": {
+          "kind": "unverified",
+          "reason": "query"
+        }
+      },
+      {
+        "id": "en:budget:3000",
+        "wanted": 7,
+        "missing": [
+          "c1"
+        ],
+        "coverage": {
+          "kind": "unverified",
+          "reason": "query"
+        }
+      },
+      {
+        "id": "en:budget:6000",
+        "wanted": 7,
+        "missing": [
+          "c1"
+        ],
+        "coverage": {
+          "kind": "unverified",
+          "reason": "query"
+        }
+      }
+    ]
+  },
+  "checks": {
+    "auditAndPriorSealTests": {
+      "passed": 46,
+      "failed": 0
+    },
+    "finalNewSealTests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "unified": {
+      "passed": 492,
+      "failed": 0,
+      "integrityPassed": true,
+      "recallComplete": true,
+      "pairs": 2427,
+      "configurations": 57
+    },
+    "typecheckExit": 0,
+    "diffCheckExit": 0,
+    "chromeZipExit": 0,
+    "firefoxZipExit": 0
+  },
+  "environment": {
+    "initialChromeBuild": "Failed esbuild removal in Windows user TEMP: access denied. Repeated with project-local TEMP/TMP; no runtime changes.",
+    "warnings": [
+      "Existing Vite chunk size warning retained"
+    ]
+  },
+  "packaging": {
+    "verified": true,
+    "archives": [
+      {
+        "archive": "deeprole-0.1.0-chrome.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-firefox.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-sources.zip",
+        "files": 874
+      }
+    ],
+    "checks": [
+      "CRC",
+      "exact build membership",
+      "all member bytes equal disk",
+      "source exclusions",
+      "atomic canonical copies and SHA256"
+    ]
+  },
+  "limits": [
+    "Full unit suite not repeated in this audit-only iteration",
+    "No new browser UI/native/live DeepSeek checks",
+    "One authored plot translated into RU/EN; background repeats four templates",
+    "No runtime repair; RP-05 remains open",
+    "Source ZIP excludes tests/private-assets; QA requires Git checkout",
+    "Installed extension not reloaded; personal worlds untouched",
+    "No push requested"
+  ],
+  "next": "Snapshot exact RP300 runtime before repairs, reproduce 10 incomplete cases and 2 guard gaps, separate SEEN repair plus seven old RP300a corpora. Preserve first baseline, gold, runner, protocol, report and seal."
+}

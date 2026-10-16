@@ -14,6 +14,14 @@ it('uses the actual edit ID and preserves separate mode limits for a shared ID',
  expect(modelPromptLimits(config,[{id:'shared',label:'New',promptLimit:4000},{id:'separate',label:'Edit',promptLimit:1500}])).toEqual({generate:4000,edit:1500});
 });
 it('does not apply explicitly incompatible catalog metadata',()=>expect(modelPromptLimits(config,[{id:'shared',label:'Edit only',supportsGenerate:false,promptLimit:500},{id:'separate',label:'Generate only',supportsEdit:false,promptLimit:600}])).toEqual({}));
+it('never borrows a known limit from the other mode when a shared-ID catalog omits its own',()=>{
+ expect(modelPromptLimits({...config,editModelId:'shared'},[{id:'shared',label:'Shared',supportsGenerate:true,supportsEdit:true,promptLimit:1500,editPromptLimit:1500}])).toEqual({edit:1500});
+ expect(modelPromptLimits({...config,editModelId:'shared'},[{id:'shared',label:'Shared',promptLimit:4000,generatePromptLimit:4000}])).toEqual({generate:4000});
+});
+it('supports every new model ID with its API limit without a model-name table',()=>{
+ const models=Array.from({length:75},(_,i)=>({id:'catalog-model-'+i,label:'Model '+i,promptLimit:1000+i*100}));
+ for(const model of models)expect(modelPromptLimits({...config,modelId:model.id,editModelId:model.id},models)).toEqual({generate:model.promptLimit,edit:model.promptLimit});
+});
 it('keeps the local payload safeguard and a conservative UTF16 character count',()=>{
  expect(imagePromptLimit({generate:32768},false)).toBe(12000);expect(imagePromptOverflow('🙂'.repeat(751),config,{generate:1500},false)).toMatchObject({promptLength:1502,promptLimit:1500});
  expect(imagePromptOverflow('Ж'.repeat(1500),config,{generate:1500},false)).toBeUndefined();
@@ -21,6 +29,12 @@ it('keeps the local payload safeguard and a conservative UTF16 character count',
 it.each([undefined,null,{},[],{generate:'1500'},{generate:0}])('unknown planning budget %j adds no guessed instruction',value=>expect(imagePlanBudgetInstruction(value)).toBe(''));
 it('provides a combined budget rather than a per-character quota or JSON cap',()=>{
  const text=imagePlanBudgetInstruction({generate:3000,edit:1500});expect(text).toContain('Final image prompt budget: 1500');expect(text).toContain('unchanged stored identities');expect(text).toContain('every present participant');expect(text).not.toContain('qwen');
+});
+it('explains per-mode cost accounting only when measured composition is supplied',()=>{
+ const text=imagePlanBudgetInstruction({generate:3000,edit:1500},{baseCharacters:100});
+ expect(text).toContain('generate=3000; edit=1500');expect(text).toContain('zero attached images uses generate');
+ expect(text).toContain('TOTAL allowance');expect(text).toContain('Subtract that sum');expect(text).toContain('Do not charge absent roster members');
+ expect(imagePlanBudgetInstruction({generate:3000},null)).not.toContain('promptComposition provides');
 });
 it('records only model and numeric bounds, not the full prompt',()=>{
  const text='Private data '.repeat(200),d=imagePromptOverflow(text,config,{generate:1500},false)!;expect(validImageDiagnostic(d)).toBe(true);expect(JSON.stringify(d)).not.toContain('Private');

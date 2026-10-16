@@ -1,5 +1,150 @@
 # DeepRole — roadmap
 
+## RP308 — читаемые эмоции и показатели при наведении
+
+- [x] «Спокойствие» в списке персонажей занимает отдельную строку всей ширины.
+- [x] Первые два показателя floating portrait скрыты до hover/клавиатурного фокуса;
+  touch оставляет их видимыми. Геометрия не меняется, reduced motion учтён.
+- [x] Руководство обновлено;42unit pass,typecheck0.
+- [x] Финальный последовательный E2E:18pass,0fail,Chromium/Firefox,RU/EN320–1280px;
+  прежний constructor покрывает drag/resize/reload,сохранность scene и axe.
+- [x] Chrome/Firefox и source ZIP пересобраны; canonical copies проверяются CRC/bytes/SHA.
+- Первый E2E:2pass/8fail из-за ошибочного порога150px нового теста (полная ширина148px).
+  Второй:9pass/1Firefox teardown protocol error. Финальный18pass без retries.
+- Живую установленную копию не обновляли; прошлые ограничения RP307 сохраняются.
+
+## RP307 — лимиты изображения заранее в плане DeepSeek
+
+- [x] Использовать существующий динамический Venice model catalog, без таблицы
+  названий; не приписывать неизвестному режиму лимит другого режима shared ID.
+- [x] Передавать расходы style/full identities/reference guidance и выбранные
+  модели, правило остатка для сцены/всех участников; initial и changed-ref review.
+- [x] Сохранить source data, cast, reference mapping,12000guard и полный preflight.
+- [x]87unit; native budget RU/EN на mocks передаёт реальные catalog1500/3000 в prompt.
+- [x] Финальный E2E12pass/4Edge-only skips вFirefox,0fail/flaky; typecheck/diff0.
+  Обе сборки/архивы и source ZIP включают актуальный код/документы; final CRC/bytes check.
+- [Описание и ограничения](docs/IMAGE-MODEL-BUDGETS.md). Платный/live provider не проверен.
+
+## RP306 — служебный текст после reload и действия под ответом
+
+- [x] Скрывать обычные memory/character/profile/choice prefixes, сохранять native
+  сообщение и текст игрока; очищать историю до ограничения размера пересказа.
+- [x] Проверить настоящий установленный Chrome после ручного обновления: повторный
+  reload, скрытые prefixes, условие != исполнение, 4 ручных варианта, draft без send.
+- [x] Компактная recovery-кнопка рядом с иллюстрацией; единый neutral стиль,
+  подсказка title/aria, перенос на узком экране; compact-actions8/8 RU/EN в двух браузерах.
+- [x] Повторный live перенос/reload/OOC: владельцы/условия/оба open сохранены;
+  native recap request содержит6чистых turns. Финальные130unit/126E2E,tsc/diff0.
+- [x] Проверить новый toolbar в установленной копии после отдельного обновления:
+  реальные40px/одинаковые стили/gap8px, клавиатурный запуск. Chrome/Firefox/source
+  ZIP собраны и сверены по CRC/bytes,23/23/917entries. Source ZIP после итоговых docs
+  включает итоговые docs; ограничения live ниже остаются открыты.
+- [ ] Отдельно остаются off-scene profile coverage и недоступные menu/cast/reset/
+  export/images live проверки. RP-05 целиком не закрыт.
+
+## RP305 — первый запрос продолжения в новом чате
+
+- [x] Воспроизвести live timing: native route ДО первого completion. Новый тест
+  на прежней сборке упал, первые live отказы сохранены.
+- [x] Добавить exact page-local target/snapshot/token fallback без ранней записи
+  binding/активации мира; ограничить TTL90сек, чужие/истёкшие/закрытые состояния.
+- [x] Native chain18/18 RU/EN, HTTP/commit/receipt отказы, no-resend и source
+  ownership; unit38/38; tsc/diff0. UI+recap18pass/2Firefoxskip/0fail/flaky.
+- [x] Повторить настоящий DeepSeek после обновления: review→сжимка→новый чат,
+  сохранение после reload, точные владельцы/условие/срок/open tasks, old-chat notice.
+- [ ] Следующий найденный live дефект: raw character prefix виден после reload
+  и попадает вместо пользовательского действия в recent scenes для сжимки.
+- [ ] Остальные live проверки и off-scene profile coverage остаются открыты.
+- [Описание и пределы](docs/CONTINUATION-FIRST-SEND-REPAIR.md).
+
+## Живые проверки DeepSeek — 16 октября 2026 (не завершены)
+
+- [x] Создать отдельный синтетический чат, получить правильный контрольный ответ,
+  проверить сохранение истории после reload.
+- [ ] Устранить блокер: установленное меню DeepRole открывается пустой белой
+  панелью; проверить путь/актуальность установленной копии с помощью пользователя.
+- [x] Частичный live маршрут без меню: ручной import пользователем, реальные
+  ответы, обновление 3 персонажей, 2 обещания с владельцами/условием/сроком,
+  сохранность состояний после reload, review 5 предложений / принято 1.
+- [x] Проверить review перед continuation: ещё 4 предложения без дубликата
+  принятого обещания, закрытие/reload восстанавливают подтверждение, сжимка готова.
+- [x] Исправить critical live FAIL: первый запрос в новом чате отправлен без
+  сжимки, выбранный мир None. Повторено автоматическим и ручным send. Добавить
+  regression route-before-first-POST и повторить live после фикса — RP305 выполнено.
+- [ ] Проверить видимый raw служебный prefix после reload и пропуск off-scene
+  анкеты при вопросе о предмете; отдельный fail выбора мира в target chat.
+- [ ] Остальные live сценарии: полная подготовка cast, reset/export/import,
+  изображения, настройки, RU/EN и узкая панель. Не помечать весь набор зелёным.
+- План и фактические ограничения: [LIVE-QA](docs/LIVE-QA-2026-10-16.md).
+
+## RP304 — разговорные вопросы, анафора и последовательности
+
+- [x] Проверить 414 pins и RP302 snapshots до правок; RP303 first25/40/23missing/
+  12guard gaps и его input/gold/fixture/protocol/runner/report/seal сохранить.
+- [x] Восстановить 15 неполных входов и 12 guards: целевой SEEN40/40/204gold,
+  0 missing/integrity/guards/lost prior. [Описание](docs/RELAY-REPAIR.md).
+- [x] Ограниченные conversational readiness/anaphora/first-then формы, без
+  owner/identity/permission/completion inference. Caps, opt-outs и fallback прежние.
+- [x] Все девять SEEN наборов:650inputs/388scored/1826gold,388/388 полных,
+  0missing/integrity/guard gaps/lost prior. Отдельные controls/budget не считать
+  пройденными независимыми историями. QA:docs/benchmarks/rp304-qa-results.json.
+- [x] Full unit8600pass/0fail/5existingTODO; финальные62repair/report checks;
+  TypeScript/diff0,Chrome/Firefox ZIP собраны. Первый concurrent strict storage
+  timeout сохранён, изолированный исходный тест прошёл без правки лимита.
+- [x] Финальный strict без внешних тяжёлых прогонов492pass/0fail,2427pairs/
+  57configs. Первый timeout сохранён; runtime/test/timeout неизменны. Архивы
+  23/23/910entries CRC/bytes/canonicalSHA verified. Budget4200=8/8 во всех
+  новыхplot-locale,1000неполон. Неnative/live,installedcopy не перезагружалась.
+- [ ] Новая независимая preregistered выборка; нынешние девять корпусов — SEEN.
+  RP-05/general semantics/true delta остаются открытыми.
+
+## RP303 — независимые новые сюжеты и формулировки
+
+- [x] Fresh RU/EN winter-refuge/regatta,ручнойgold ДО первогоcompiler-run,
+  64inputs/40scored/204gold/16controls/8budget,414frozenhashes. Runtime RP302unchanged.
+- [x] Первый25/40,181/204records,23missing в15inputs,12guardgaps,
+  0integrity/false-complete. First input/gold/fixture/protocol/runner/report/seal
+  сохранены. [Результаты](docs/RELAY-RESULTS.md).
+- [x] Сохранить точные RP302 snapshots obligation/game-context поfrozenhashes.
+- [x] QA: 21 audit/prior-report test + 492 strict checks, 0 fail; финальные
+  7 first-result checks повторены. TypeScript/diff 0, Chrome/Firefox ZIP собраны,
+  23/23/896 entries проверены CRC/bytes/canonical SHA. Не full unit/native/live.
+- [x] Исправить15неполных входов и12guardgaps вновойитерации;SEENRP303+8старых
+  наборовRP302. Не угадыватьвладельца/разрешение,не увеличиватьcap,не менятьgold.
+  Выполнено в RP304; результаты первого аудита сохранены.
+- RP-05/general semantics/true delta открыты. Accepted-memory audit,неliveDeepSeek.
+
+## RP302 — исправление подборки публикации и согласия
+
+- [x] До правок414 pins иточные snapshots RP300; первый RP30114/24/12missing/
+  2guard gaps, его input/gold/fixture/protocol/runner/seal сохранены.
+- [x] Восстановить10 неполных входов и2guard gaps: целевойSEEN24/24/114gold,
+  0missing/integrity/guards/lostprior. [Поведение](docs/EMBARGO-REPAIR.md).
+- [x] Source-bound readiness/publication/compound/named-material recall;
+  никаких owner/permission/completion inference, caps/rollback/optouts прежние.
+- [x] Все8SEEN наборов:586inputs/348scored/1622gold,348/348/0missing/integrity/
+  guard gaps/lost prior. 48новых repair/report/seal checks pass. Итоговая QA:
+  docs/benchmarks/rp302-qa-results.json. Не live model и не новая blind выборка.
+- [x] Fullunit8534pass/0fail/5existingTODO,309files;final48repair/report checks;
+  unified492strictpass;tsc/diff0. ChromeFirefox ZIP0,23/23/888archive entries,
+  CRC/bytes/canonicalSHAchecked. Budget3000/6000полон;900неполон сbudgetstatus.
+  Неnative/live;installedcopy не перезагружалась.
+- [ ] Новая независимая preregistered проверка другими историями/формулировками.
+  RP-05/general semantics/true delta остаются открытыми.
+
+## RP301 — независимая проверка публикации, условий и запретов
+
+- [x] Новый RU/EN сюжет научной станции, ручные ожидания до первого запуска:
+  40 inputs/24 scored/114 gold/10 controls/6 budget; 414 frozen fingerprints.
+- [x] Неизменённый RP300: первый14/24,102/114 records,12 missing в10 входах,
+  2 guard gaps,0 integrity/false-complete. [Разбор](docs/EMBARGO-RESULTS.md).
+- [x] Сохранить baseline, первый report/seal и cold/warm проверки без подгонки.
+- [x] QA:46 audit/prior tests +492 strict checks,0fail; TypeScript/diff0,
+  Chrome/Firefox ZIP rebuilt, CRC/bytes/source exclusions/canonical SHA verified.
+- [ ] Следующая итерация: snapshots RP300 до правок, исправить парафраз a2/a3
+  и guard, compound/scale c1. Отдельный SEEN плюс семь старых наборов.
+- RP-05 остаётся открыт; синтетическая accepted-memory проверка не live DeepSeek.
+
 ## RP300 — исправление условий запрета до разрешения
 
 - [x] Сохранить точные RP298 snapshots до runtimeправки; RP299 first15/22/gold/seal оставить неизменными.

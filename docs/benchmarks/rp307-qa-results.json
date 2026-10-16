@@ -1,0 +1,26 @@
+{
+  "milestone": "RP307",
+  "date": "2026-10-16",
+  "unit": { "passed": 87, "failed": 0, "files": 5 },
+  "typecheckExitCode": 0,
+  "diffCheckExitCode": 0,
+  "e2e": {
+    "passed": 12, "failed": 0, "flaky": 0, "skipped": 4,
+    "locales": ["ru", "en"], "widths": [320, 900],
+    "uiChromiumFirefox": 8, "nativeEdgeMV3": 4,
+    "skipReason": "Edge MV3 installation scenarios are not run by the Firefox project",
+    "providerAndDeepseekMocked": true,
+    "coverage": ["actual initial prompt contains model IDs, per-mode caps and composition", "changed-reference prompt contains composition", "oversize preflight before paid call", "unsent draft preserved", "reference pixels and owner mapping", "pending review reload", "temporary worker cleanup", "no service turns in main chat", "unchanged hydrated profiles and exact photo data URLs", "exact frozen retry", "cancel without generation"],
+    "firstAttempt": { "passed": 2, "failed": 10, "skipped": 4, "causes": ["8 stale selectors expected a single SupportDetails disclosure", "2 reference-review fixtures expected the previous in-chat worker"] },
+    "priorRP306ReviewProbe": { "passed": 0, "failed": 2, "sameInitialReviewFailure": true },
+    "intermediateAttempts": [
+      { "passed": 10, "failed": 2, "skipped": 4, "cause": "fixture compared legacy data URLs to migrated photo-store addresses" },
+      { "passed": 10, "failed": 2, "skipped": 4, "cause": "fixture serialized photo-store Blob instead of reading its text" },
+      { "passed": 10, "failed": 2, "skipped": 4, "cause": "fixture read data-URL text Blob as binary image; corrected to PhotoAssets.read Blob.text contract" }
+    ]
+  },
+  "runtime": { "existingDynamicCatalogReused": true, "newModelNameWhitelist": false, "sharedIdMissingModeCapNotBorrowed": true, "fullCanonicalCosts": true, "storedDataTruncated": false, "paidAutomaticRetry": false, "local12000CapUnchanged": true },
+  "packages": { "chrome": "rebuilt", "firefoxAndSources": "rebuilt with final documentation", "validation": "every ZIP entry CRC/bytes against runtime/source; canonical copies SHA equal" },
+  "verificationLimits": { "actualAuthenticatedVeniceCatalogAllModelsAudited": false, "paidVeniceGenerationRun": false, "liveDeepseekInterpretationTested": false, "personalWorldModified": false, "installedUserCopyUpdated": false, "fullUnitAndE2ESuitesRepeated": false },
+  "pushOrMergeRequested": false
+}

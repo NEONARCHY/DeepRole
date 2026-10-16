@@ -1,5 +1,204 @@
 # Codex на другом ПК: откуда продолжать после pull
 
+## Актуальная передача — RP308, 16 октября 2026
+
+Последняя правка: эмоция в узком списке на отдельной строке; первые два показателя
+портретов показываются при hover/focus, touch без hover сохраняет их видимость.
+Данные и генерация не менялись. См. верх CODEX-HANDOFF/ROADMAP; установленная копия
+сама не обновляется. Дальнейшие живые проверки из RP307 остаются открытыми.
+
+## Предыдущая передача — RP307, 16 октября 2026
+
+Пользователь попросил заранее учитывать модельные лимиты Venice при подготовке
+плана картинки. Читай верх CODEX-HANDOFF/ROADMAP и IMAGE-MODEL-BUDGETS.md.
+PromptComposition даёт model IDs и measured fixed costs; сохранённые identities,
+style и состав не обрезаются. Unknown mode cap не заимствует cap другого режима.
+87unit/tsc0,2native budget pass; первые E2E fixtures оказались устаревшими, review
+повторён на RP306 и тоже fail. Final12E2E pass/4Firefox Edge-only skip,0fail/flaky;
+fixtures обновлены для isolated workers и полной гидратации photo-store bytes.
+Обе сборки/архивы обновлены, final byte/CRC check. Установленная пользовательская
+копия остаётся RP306, новый ZIP требует отдельного обновления. Детали/QA сверху handoff.
+После задачи вернуться к off-scene/live хвосту RP306. Push не запрошен.
+
+## Актуальная передача — RP306, 16 октября 2026
+
+Начни с текущего CODEX-HANDOFF и LIVE-QA-2026-10-16. Prefix после reload исправлен
+в injected-user-text/story-continuation/deepseek-handoff-dom/story-history-dom.
+Пользователь обновил установленную копию, повторный reload успешен. Реальные OOC
+условия и manual choices проверены. Второй перенос открыл125a5a3d; финальная
+проверка прошла: после reload оба предмета у Алекса/unsigned receipt/два open;
+сам native handoff request содержит6чистых turns. Личные миры не менять,
+исходные тестовые чаты не удалять.
+
+Дополнительно перенесена «Предложить варианты» в toolbar рядом с иллюстрацией,
+через slot, без изменения wire/state/signature. Эта правка ПОСЛЕ последнего
+пользовательского обновления; затем пользователь обновил ЕЩЁ РАЗ и live toolbar
+проверен:40px/одинаковые стили/8px, Enter запустил запрос и появились4варианта.
+Final130unit/126E2E,tsc/diff0; первый77pass/25fail разобран в RP306 описании,
+не скрыт. Пакеты Chrome/Firefox/source23/23/917 CRC/bytes/canonicalSHA verified,
+итоговые docs включены в source. Следом off-scene coverage и оставшиеся
+доступные live случаи; глобальный RP05 открыт. Push не запрошен.
+
+## Актуальная передача — RP305, 16 октября 2026
+
+Начни с верхних CODEX-HANDOFF/ROADMAP и CONTINUATION-FIRST-SEND-REPAIR.md.
+RP304 сохранён. Реальная проверка нашла потерю сжимки при первом запросе нового
+чата: native адрес создаётся до POST. Исправлены content.tsx/continuation-flow.ts,
+временный exact target для контекста без ранней активации. Новый pre-fix тест
+упал; post-fix chain18/18, unit38/38, UI+recap18pass/2Firefoxskip, tsc/diff0.
+После ручного обновления пользователем реальный automatic Continue прошёл до
+target9a68d51d «Архивное утро»: мир/3 персонажа/reload/точные владельцы и оба
+незавершённых обещания/old-chat notice. FirstFAIL не скрыты, см. LIVE-QA-2026-10-16.
+
+Следующая конкретная задача: видимый raw character prefix после reload и его
+попадание в recent scenes вместо текста user action. Затем проверка off-scene
+анкеты по вопросу о её предмете. Не повторять закрытый RP304 corpus repair и не
+объявлять весь RP05/live suite завершённым. Menu srcdoc limitation/reset/cast/
+export/images требуют других live проверок. Личный мир не менять. Push не запрошен.
+
+## Актуальная передача — RP304, 16 октября 2026
+
+Начни с верхних CODEX-HANDOFF/ROADMAP и `docs/RELAY-REPAIR.md`.
+Прежняя задача исправления RP303 выполнена: целевой SEEN 40/40, 204/204 записей,
+0 missing/integrity/guard gaps/lost prior. Первый результат 25/40 сохранён.
+
+- Runtime: story-obligation-recall.ts/game-context.ts. Распознаются ограниченные
+  conversational readiness, anaphora и first/then action-plus-recall запросы.
+  Условия и источники берутся из принятых записей, не из утверждений игрока.
+- Короткая ссылка требует exact accepted latest-turn quote. Raw-only и unknown
+  tail не создают связь. Исходный ambiguous-name guard и исторические роли
+  сохраняются при передаче нескольких кандидатов.
+- Нет owner/identity/permission/completion inference, canonical writes или
+  повышения caps. Старое cancelled и новое open поручения остаются раздельными.
+  Opt-outs и exact source/budget fallback проверяются.
+- RP303 input/gold/fixture/protocol/runner/report/seal неизменны; RP302 snapshots
+  до правок сверены с 414 hashes. Исторические RP302 tests теперь проверяют
+  снимки, новые `story-relay-seen-report.test.ts` — текущий runtime.
+- Runner: `scripts/story-search-relay-seen.mjs`, отчёты `rp304-*-seen-results.json`,
+  итоговая QA: `docs/benchmarks/rp304-qa-results.json`.
+- Все девять корпусов:650 входов/388 scored/1826 gold,388/388 полных,
+  0 missing/integrity/guard gaps/lost prior. Controls и budget не считаются
+  полноценными пройденными историями.
+
+**Следующий шаг:** новая независимая preregistered проверка другими текстами.
+Все нынешние девять корпусов — известные; не называть их повтор слепым.
+General semantics, RP-05 и true cross-turn delta ещё открыты. Не начинать заново
+RP303 repair. Личные миры/installed copy не менялись; live DeepSeek не запускался.
+Push этой итерации не запрошен. Source ZIP без tests/private-assets, нужен Git checkout.
+Ниже RP303 и раньше — история.
+
+RP304 full unit:8600 pass/0 fail/5 прежних TODO; финальные62repair/report/first
+checks прошли отдельно. TypeScript/diff0,Chrome/Firefox собраны. Первый concurrent
+strict:491pass/1timeout в storage test на100порций (30s), попытка сохранена.
+Изолированный повтор прошёл с прежним timeout и тем же runtime. На этой машине
+запускать strict после full/corpus нагрузок; исходные сведения:rp304 QA report.
+
+Финальный strict без внешних тяжёлых прогонов:492pass/0fail,2427pairs57configs.
+Первый timeout сохранён; runtime и исходный automation test/timeout не менялись.
+Packages23Chrome/23Firefox/910sources entries: CRC/bytes/canonical SHA verified.
+Source ZIP без tests/private-assets. При4200tokens новый корпус8/8RU/EN по двум
+сюжетам; при1000 —неполон сbudgetstatus. Native/live/installedcopy не проверялись.
+
+## Актуальная передача — RP303, 16 октября 2026
+
+Начни здесь ивверхних CODEX-HANDOFF/ROADMAP; детали `docs/RELAY-RESULTS.md`.
+Свежая независимая проверка уже выполнена на неизменённом RP302. Не запускать
+вновь --freeze/--evaluate поверх первых файлов и не называть повтор независимым.
+
+- Два новых авторских сюжета: winter refuge/regatta в RU/EN. 64 inputs/40 scored/
+  204gold/16controls/8budget/24uncertainty.414hashes/input/gold/ownrunner/protocol
+  frozen ДО первогоcompiler-run. Переводы ипараметризованный фон коррелированы.
+- Первый результат: 25/40, 181/204 records, 23 missing в 15 queries, 12 guard gaps,
+  0integrity/false-complete. Прямые,partial-condition,negative,revoked,replacement
+  полны. Разговорные перефразировки/новаяанафора/first-then sequences неполны.
+- Guard отсутствует в 4 paraphrase, 4 accepted-reference, 4 raw-only; coverage unverified
+  сохраняется. Не смешивать это с12ошибками интерфейса илиложнымcomplete.
+- First baseline `tests/fixtures/story-relay-audit-baseline.json`, fixture
+  `story-relay-audit.ts`,runner `scripts/story-search-relay-audit.mjs`,protocol
+  `docs/RELAY-EVALUATION.md`,report/seal `docs/benchmarks/rp303-*.json` неизменяемы.
+- Точные mutable runtime snapshots уже есть: `rp302-final-game-context.txt` и
+  `rp302-final-obligation.txt`;сверяются с414hashes. При правке другихфайлов
+  сохранить их исходныеверсии тоже. Тест `story-relay-audit.test.ts` pin-итfirstscore.
+
+**Следующая задача:** воспроизвести15recall cases/12guards, исправить без owner/
+permission/completion inference и capincrease. Отдельный SEEN RP303 +8старых
+наборовRP302. Не менятьgold чтобы получитьзелёныйрезультат. RP-05/semantics/
+true delta открыты. Личные миры/installedcopy unchanged,неliveDeepSeek;
+push этойитерации не запрошен. QA:`docs/benchmarks/rp303-qa-results.json`.
+Для воспроизведения нужен Git checkout:sourceZIP excludes tests/private-assets.
+Ниже RP302ираньше — история, их прежний следующий freshaudit уже выполнен.
+
+RP303 QA: 21 audit/prior-report test + 492 unified strict checks, 0 fail;
+финальные 7 first-result checks повторены. TypeScript/diff 0. Chrome/Firefox
+ZIP: 23/23/896 entries, CRC/bytes/canonical SHA проверены. Full unit/native/live
+не повторяли: runtime/UI прежние. Первые 25/40 и 12 guard gaps остаются открытыми.
+
+## Актуальная передача — RP302, 16 октября 2026
+
+Начни с верхнего CODEX-HANDOFF, ROADMAP и `docs/EMBARGO-REPAIR.md`.
+Ниже RP301/RP300 — история, их старые следующие задачи уже выполнены.
+
+- Исправлены10 неполных RP301 входов и2 пропуска guard: целевой SEEN24/24,
+  114/114 записей,0 missing/integrity/guard gaps/lost prior.
+- Вопрос о готовности к публикации подбирает целые группы условий/места/статуса
+  и сохраняет uncertainty. Publication/display compound подбирает именованный
+  материал по повторённому принятому title/text/quote, не по одному говорящему.
+- Runtime:2файла story-obligation-recall.ts/game-context.ts. Caps/rollback/optouts
+  прежние, нет записи канона или вывода согласия/завершения/владельца. Общий alias
+  не разрешается: исходный guard остаётся при подборе отдельных кандидатов.
+- До исправления сохранены RP300 runtime snapshots по414 RP301 hashes.
+  Frozen first14/24/input/gold/fixture/protocol/runner/report/seal не переписаны.
+- SEEN runner:`scripts/story-search-embargo-seen.mjs`; текущая QA:
+  `docs/benchmarks/rp302-qa-results.json`; отчёты`rp302-*-seen-results.json`.
+- Все8наборов:586inputs/348scored/1622gold,348/348 complete,0missing/integrity/
+  guard gaps/lost prior. Controls/budget отдельно; не586пройденныхисторий.
+  Новые48repair/report/seal checks прошли; первые результаты сохранены.
+
+**Дальше:** новый независимый preregistered сюжет с gold до первого compiler-run,
+затем отдельный первый неизменяемый результат. Все нынешние8корпусов — известные.
+General semantics/RP-05/true delta не закрыты. Не начинать снова RP301 repair.
+Личные миры/installed extension unchanged, live DeepSeek не проверялся; push в
+этой итерации не запрошен. Для тестов нужен Git checkout, sourceZIP excludes tests.
+
+Финальные проверки RP302:fullunit8534pass/0fail/5existingTODO,309files;48final
+repair/report/seal checks отдельно;unifiedstrict492pass/2427pairs57configs;
+TypeScript/diff0. ZIPs23Chrome/23Firefox/888source entries,CRC/bytes/canonicalSHA
+verified. Старый chunkwarning остаётся. Budget3000/6000=7/7RUEN;900=1/7RU,
+2/7EN сbudgetstatus — не обещать полную память при900tokens. Браузерныйnative
+иliveDeepSeek вэтойитерации не запускались. Для сборки наэтомWindows использованы
+TEMP/TMP `.output/rp302-build-tmp`, исключая прежнийuserTEMP/esbuild access-denied.
+
+## Актуальная передача — RP301, 16 октября 2026
+
+Новое независимое измерение уже выполнено на неизменённом RP300. Сначала читать
+`docs/EMBARGO-RESULTS.md` и верх CODEX-HANDOFF/ROADMAP. Ниже RP300 — история.
+
+- До первого запуска заморожены входы/ручной gold/протокол/runner/414 хешей:
+  `tests/fixtures/story-embargo-audit-baseline.json`.
+- Первый итог: 40 входов, 24 scored, 114 expected records; **14/24 полных,
+  102/114 записей**, 12 пропусков в 10 входах, 2 guard gaps, 0 integrity и
+  false-complete. 10 негативных контролей пройдены. 6 budget — отдельные наблюдения.
+- `ru/en:paraphrase`: нет a2/a3 и guard. `ru/en:compound` и шесть `scale`:
+  отсутствует c1. Это уточнение «сжатие фото не заменяет согласия»; отмена и
+  запрет сохранены. Вопрос/убеждение не подтверждают разрешение.
+- Результаты и seals: `docs/benchmarks/rp301-embargo-results.json`,
+  `rp301-first-report-seal.json`. Не менять их, fixture, protocol или runner.
+
+**Следующая работа:** перед runtime-правкой сохранить точные RP300 snapshots
+по baseline-хешам, воспроизвести эти пропуски, затем source-bound исправление
+отдельным SEEN плюс семь прежних rp300a наборов. Не увеличивать cap и не
+подменять неподтверждённую ссылку уверенностью. Новый корпус уже известен.
+RP-05 не закрыт, general semantic recall и true cross-turn delta не решены.
+QA: `docs/benchmarks/rp301-qa-results.json`. Live DeepSeek/installed copy не
+проверялись, личные миры не менялись. Push этой итерации не запрошен.
+
+Проверки этой итерации:46 audit/prior-seal tests +492 unified strict,0fail,
+TypeScript/diff0; финальные4 seal checks повторены. Chrome/Firefox пересобраны,
+три canonical ZIP:23/23/874 entries,CRC/bytes/SHA проверены. Fullunit и native
+браузер не повторялись. Первый Chrome build был заблокирован Windows TEMP;
+повтор с `.output/rp301-build-tmp` через TEMP/TMP успешен. SourceZIP без tests:
+для воспроизведения нужен Git checkout.
+
 ## Актуальная передача — RP300, 16 октября 2026
 
 Начинай здесь, затем прочитай верхние разделы `CODEX-HANDOFF.md`, `ROADMAP.md` и дневник `docs/HANDOFF-2026-10-16.md`. Разделы ниже исторические: не возобновляй старые задачи RP289/RP292, уже исправленные позже. Пользователь попросил отправить весь накопленный результат RP289–RP300 на GitHub и передать работу другому Codex.

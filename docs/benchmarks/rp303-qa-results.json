@@ -1,0 +1,413 @@
+{
+  "version": 1,
+  "milestone": "RP303",
+  "date": "2026-10-16",
+  "runtime": "RP302 unchanged",
+  "scope": "Fresh agent-authored synthetic accepted-memory audit in two settings; translations and repeated background are correlated. Not externally blind, live extraction or model answer proof.",
+  "frozen": {
+    "fingerprints": 414,
+    "inputDigest": "26396139b02a1cabb8d2c8c536e406cfb0d6a9b2b8542f2ba19e0ddf0abf8828",
+    "goldDigest": "6cd4d5b250ceffeef8b3da75632cb7539335474fe16075c0fb83879ad033ca40",
+    "currentRuntimeAndMaterialsMatch": true,
+    "originalRuntimeSnapshotsMatch": true,
+    "firstSealValid": true
+  },
+  "first": {
+    "cases": 64,
+    "scored": 40,
+    "complete": 25,
+    "goldFacts": 204,
+    "missingFacts": 23,
+    "integrityCases": 0,
+    "confidenceGapCases": 12,
+    "falseCompleteCases": 0
+  },
+  "recallFailures": [
+    {
+      "id": "ru:0:paraphrase",
+      "missing": [
+        "a2"
+      ]
+    },
+    {
+      "id": "ru:1:paraphrase",
+      "missing": [
+        "a1",
+        "a2"
+      ]
+    },
+    {
+      "id": "ru:1:accepted-reference",
+      "missing": [
+        "a1",
+        "a2"
+      ]
+    },
+    {
+      "id": "ru:1:compound-sequence",
+      "missing": [
+        "c1"
+      ]
+    },
+    {
+      "id": "en:0:paraphrase",
+      "missing": [
+        "a0",
+        "a2",
+        "a3"
+      ]
+    },
+    {
+      "id": "en:0:compound-sequence",
+      "missing": [
+        "c1"
+      ]
+    },
+    {
+      "id": "en:1:paraphrase",
+      "missing": [
+        "a2"
+      ]
+    },
+    {
+      "id": "en:1:accepted-reference",
+      "missing": [
+        "a2",
+        "a3"
+      ]
+    },
+    {
+      "id": "en:1:compound-sequence",
+      "missing": [
+        "a2",
+        "c1"
+      ]
+    },
+    {
+      "id": "ru:1:scale:900",
+      "missing": [
+        "c1"
+      ]
+    },
+    {
+      "id": "ru:1:scale:8200",
+      "missing": [
+        "c1"
+      ]
+    },
+    {
+      "id": "en:0:scale:900",
+      "missing": [
+        "c1"
+      ]
+    },
+    {
+      "id": "en:0:scale:8200",
+      "missing": [
+        "c1"
+      ]
+    },
+    {
+      "id": "en:1:scale:900",
+      "missing": [
+        "a2",
+        "c1"
+      ]
+    },
+    {
+      "id": "en:1:scale:8200",
+      "missing": [
+        "a2",
+        "c1"
+      ]
+    }
+  ],
+  "confidenceGaps": [
+    {
+      "id": "ru:0:paraphrase",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:0:accepted-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:0:raw-only-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:1:paraphrase",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:1:accepted-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:1:raw-only-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:0:paraphrase",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:0:accepted-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:0:raw-only-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:1:paraphrase",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:1:accepted-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:1:raw-only-reference",
+      "issues": [
+        "guard-missing"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    }
+  ],
+  "budgets": [
+    {
+      "id": "ru:0:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:0:budget:4200",
+      "wanted": 8,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:1:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:1:budget:4200",
+      "wanted": 8,
+      "missing": [
+        "c1"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:0:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a1",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:0:budget:4200",
+      "wanted": 8,
+      "missing": [
+        "c1"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:1:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "c1",
+        "c2",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:1:budget:4200",
+      "wanted": 8,
+      "missing": [
+        "a2",
+        "c1"
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    }
+  ],
+  "checks": {
+    "auditAndPriorReportTests": {
+      "passed": 21,
+      "failed": 0
+    },
+    "finalFirstResultTests": {
+      "passed": 7,
+      "failed": 0
+    },
+    "unified": {
+      "passed": 492,
+      "failed": 0,
+      "integrityPassed": true,
+      "recallComplete": true,
+      "pairs": 2427,
+      "configurations": 57
+    },
+    "typecheckExit": 0,
+    "diffCheckExit": 0,
+    "chromeZipExit": 0,
+    "firefoxZipExit": 0
+  },
+  "packaging": {
+    "verified": true,
+    "archives": [
+      {
+        "archive": "deeprole-0.1.0-chrome.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-firefox.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-sources.zip",
+        "files": 896
+      }
+    ],
+    "checks": [
+      "CRC",
+      "exact build membership",
+      "all source/build member bytes equal disk",
+      "source exclusions",
+      "atomic canonical copies and SHA256"
+    ]
+  },
+  "limits": [
+    "No runtime fix in this audit-only iteration",
+    "Full unit/native/live DeepSeek not repeated; latest RP302 full unit is historical",
+    "Old seen reports verified by tests, not rerun as independent histories",
+    "One source corpus per setting translated to RU/EN, six repeated background templates",
+    "40 scored includes correlated scale repeats; 8 budget inputs are separate observations",
+    "Source ZIP excludes tests/private-assets; QA needs Git checkout",
+    "Installed extension not reloaded; user worlds untouched",
+    "RP-05/general semantics/true cross-turn delta remain open",
+    "No push requested"
+  ],
+  "next": "Reproduce15 incomplete inputs and12 reference-guard gaps on the known RP303 corpus. Preserve all first materials and snapshots. Snapshot any other runtime files before repair; separate SEEN repair plus eight RP302 corpora."
+}

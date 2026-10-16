@@ -1,5 +1,33 @@
 import { expect, test } from "@playwright/test";
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
+  test(`compact scene actions share one row, ${locale} ${width}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/tests/fixtures/illustration-stream.html?locale=${locale}`);
+    await expect.poll(() => page.evaluate(() => !!(window as any).streamTest)).toBe(true);
+    await page.evaluate(() => { (window as any).streamTest.prose(); (window as any).streamTest.setGenerating(false); });
+    const image = page.locator('[data-message-id="story"] [data-deeprole-illustrations]');
+    const generate = image.getByRole("button", { name: locale === "ru" ? "Создать иллюстрацию" : "Create illustration", exact: true });
+    const request = image.getByRole("button", { name: locale === "ru" ? "Предложить варианты" : "Suggest options", exact: true });
+    await expect(generate).toBeVisible(); await expect(request).toBeVisible();
+    await expect(page.locator('[data-deeprole-choices-recovery]')).toHaveCount(1);
+    await expect(page.locator('[data-deeprole-choices-recovery]')).toHaveAttribute("slot", "scene-choices");
+    const a = (await generate.boundingBox())!, b = (await request.boundingBox())!;
+    expect(Math.abs(a.height - b.height)).toBeLessThanOrEqual(1);
+    if (width === 900) { expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1); expect(b.x - a.x - a.width).toBeCloseTo(8, 0); }
+    for (const key of ["backgroundColor", "borderRadius", "fontSize", "color"]) {
+      const style = (node: Element, key: string) => getComputedStyle(node).getPropertyValue(key.replace(/[A-Z]/g, m => "-" + m.toLowerCase()));
+      expect(await request.evaluate(style, key)).toBe(await generate.evaluate(style, key));
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await generate.focus(); await page.keyboard.press("Tab"); await expect(request).toBeFocused();
+    await page.screenshot({ path: info.outputPath(`compact-actions-${locale}-${width}.png`) });
+    await page.keyboard.press("Enter");
+    await expect.poll(() => page.evaluate(() => (window as any).choiceRequests)).toBe(1);
+    expect(await page.evaluate(() => (window as any).imageCreates)).toBe(0);
+  });
+}
+
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for (const pinned of [false, true]) {
   test(`illustration waits for complete reply and stays before options, ${locale} ${width}, pinned=${pinned}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });

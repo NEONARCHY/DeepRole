@@ -251,14 +251,24 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
   if (loader instanceof HTMLElement && loader.matches(LOADING)) followTarget(root, loader);
   if (settlingReply && !generating && !recovery?.busy) state.timer = setTimeout(() => syncSceneChoiceCards(enabled, generating, locale, onPick, root, recovery, presentation), 1250 - (Date.now() - state.changedAt));
   root.querySelectorAll<HTMLElement>(RECOVERY).forEach((host) => {
-    if (host.previousElementSibling !== target?.row || host.dataset.deeproleChoicesSignature !== target?.signature
+    if (sourceRows.get(host) !== target?.row || host.dataset.deeproleChoicesSignature !== target?.signature
       || host.dataset.deeproleChoicesLocale !== locale || host.dataset.busy !== String(recovery?.busy) || !host.shadowRoot) host.remove();
   });
-  if (target && recovery && !target.row.nextElementSibling?.matches(RECOVERY)) {
-    target.row.after(createRecoveryCard(locale, target.signature, recovery, target.row.ownerDocument));
+  let recoveryCard = [...root.querySelectorAll<HTMLElement>(RECOVERY)].find(host => sourceRows.get(host) === target?.row);
+  if (target && recovery && !recoveryCard) {
+    recoveryCard = createRecoveryCard(locale, target.signature, recovery, target.row.ownerDocument);
+    sourceRows.set(recoveryCard, target.row);
   }
-  const recoveryCard = target?.row.nextElementSibling;
-  if (recoveryCard instanceof HTMLElement && recoveryCard.matches(RECOVERY)) {
+  if (recoveryCard && target) {
+    const row = nativeMessageRow(target.row) ?? target.row;
+    const illustration = row.querySelector<HTMLElement>(":scope > [data-deeprole-illustrations]");
+    if (illustration) {
+      recoveryCard.slot = "scene-choices";
+      if (recoveryCard.parentElement !== illustration) illustration.append(recoveryCard);
+    } else {
+      recoveryCard.removeAttribute("slot");
+      if (target.row.nextElementSibling !== recoveryCard) target.row.after(recoveryCard);
+    }
     recoveryCard.dataset.deeproleAdaptive = String(presentation?.adaptiveLayout !== false);
     fitAdaptiveChoices(recoveryCard);
   }
@@ -381,11 +391,12 @@ function createRecoveryCard(locale: Locale, signature: string, recovery: { busy:
   host.dataset.busy = String(recovery.busy);
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = `${designTokens}:host{display:block;margin:var(--dr-space-4) 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-text)}.box{width:100%;padding:var(--dr-space-4);border:1px solid var(--dr-border);border-radius:var(--dr-radius);background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card);box-sizing:border-box}button{min-height:40px;padding:9px 14px;border:1px solid var(--dr-action);border-radius:10px;background:var(--dr-action);color:var(--dr-on-action);font:600 13px/1.4 system-ui,sans-serif;cursor:pointer}button:hover{background:var(--dr-action-hover)}button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}button:disabled{opacity:.65;cursor:wait}p{margin:var(--dr-space-2) 0 0;color:var(--dr-muted);font-size:12px;overflow-wrap:anywhere}${designEffects}`;
-  const box = doc.createElement("div"); box.className = "box";
-  const button = doc.createElement("button"); button.type = "button"; button.className = "dr-accent-action"; button.disabled = recovery.busy;
+  style.textContent = `${designTokens}:host{display:block;margin:var(--dr-space-3) 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-text)}:host([slot="scene-choices"]){display:inline-flex;margin:0}button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 12px;border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-raised);color:var(--dr-text);font:400 12px/1.35 system-ui,sans-serif;cursor:pointer}button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}button:disabled{opacity:.65;cursor:wait}p{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}${designEffects}`;
+  const box = doc.createElement("div"); box.className = "box dr-root";
+  const button = doc.createElement("button"); button.type = "button"; button.className = "button secondary"; button.disabled = recovery.busy;
   button.textContent = sceneChoiceText(locale, recovery.busy ? "waiting" : "request");
   const hint = doc.createElement("p"); hint.textContent = sceneChoiceText(locale, recovery.busy ? "waitingHint" : "requestHint");
+  button.title = hint.textContent;
   button.setAttribute("aria-describedby", "request-hint"); hint.id = "request-hint";
   button.addEventListener("click", () => {
     button.disabled = true;

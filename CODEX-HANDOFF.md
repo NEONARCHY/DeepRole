@@ -1,5 +1,323 @@
 # Передача Codex — 16 октября 2026
 
+## Актуальная точка RP308 — подпись эмоции и показатели портретов
+
+«Спокойствие» в компактной карточке теперь отдельной строкой на полную ширину,
+вместо сжимаемой боковой колонки. Первые два показателя floating portrait появляются
+при hover/focus-within; на touch видны постоянно, компактная полоса без изменений.
+Скрытие сохраняет измеренную высоту, чтобы наведение не двигало состав сцены.
+Файлы characters.css/portrait-stage.css; данные и запросы не менялись.
+42unit pass,tsc0. Браузерные проверки RU/EN320/1280,hover/leave/keyboard,
+геометрии,reduced-motion,touch и прежнего constructor — результат в RP308 ROADMAP.
+Первый запуск: неверный порог нового теста150px при полной ширине148px; исправлен
+на сравнение с шириной контента. Второй: Firefox teardown protocol error после
+успешных assertions; выполнен финальный последовательный прогон.
+Пакеты требуют ручного обновления установленной копии. Живой DeepSeek этой правкой
+не проверен; без push. Следующие живые задачи RP307/RP306 ниже остаются актуальны.
+
+## Предыдущая точка RP307 — модельный бюджет иллюстрации Venice
+
+Пользователь показал2732символа при лимите1500 (lustify-v8) и попросил заранее
+учитывать лимиты всех моделей в промпте DeepSeek. Базовая загрузка constraints
+promptCharacterLimit и числовая подсказка уже были в RP255. Теперь добавлен measured
+promptComposition: выбранные IDs, расходы style/framing/group и per-person текст/
+neutral/suggestive references; полные identities учитываются сверх roster excerpt.
+Общие compact helpers используются и счётчиками, и итоговым prompt assembler.
+Оба пути content.tsx (initial и changed-reference review) передают данные DeepSeek.
+Отдельно исправлено заимствование лимита другого режима у shared model ID, когда
+API не сообщил собственный. Каталог применяется динамически, name whitelist нет.
+
+Итог:87unit pass,tsc/diff0. Native prompt-budget RU/EN подтвердили передачу composition,
+edit1500/generate3000, reference mapping и сохранение draft на mock API/DeepSeek.
+Первый расширенный E2E:2pass/10fail/4skip;8устаревших selectors SupportDetails,
+2review fixtures ожидали старый основной чат. Review2fail повторены на прежнем
+RP306 ZIP. Fixtures обновлены для isolated worker/cleanup и hydrated photo bytes;
+полные поля/исходные dataURLs по-прежнему сравниваются точно. Final E2E12pass/4skip
+(Firefox не выполняет Edge MV3 install),0fail/flaky;4native сценария RUEN,8UI320/900px.
+Проверены changed-ref promptComposition, selected reference pixels, pending review
+reload, cancel, exact frozen retry и отсутствие service turns в основном чате.
+Chrome/Firefox/source ZIP пересобраны; CRC/bytes/canonicalSHA сверяются финальным
+packaging pass. [QA](docs/benchmarks/rp307-qa-results.json). Пользовательскую
+установку/личный лор/платную Venice генерацию не трогали. Push не запрошен.
+
+Важно: если style+полные identities уже превышают1500, подсказка не может это
+исправить без потерь. Preflight остаётся, stored данные/состав/изображения не режем,
+повтор платного запроса не запускаем. Общий12000cap прежний. Повтор старого запроса
+frozen, новый план — через Create illustration. [Описание](docs/IMAGE-MODEL-BUDGETS.md).
+После этого вернуться к off-scene profile coverage и открытым live сценариям RP306;
+RP05 не объявлять закрытым. Ниже RP306 — история.
+
+## Актуальная точка RP306 — скрытый контекст и компактные действия ответа
+
+Исправлен live дефект: presentHiddenHandoffs скрывал только handoff/notice,
+а обычные memory/character/profile/choice prefixes оставались после reload.
+Общий injectedUserText узнаёт начальный служебный блок и завершённую границу
+[User message]; сохраняет оставшийся текст игрока, включая повторные метки.
+Native DOM/wire не переписываются. storyText очищает prefix ДО ограничения истории;
+DOM fallback читает assistant main content без отдельного thinking heading.
+
+Пользователь обновил установленный Chrome ZIP с этой правкой. В настоящем target
+9a68d51d обычное сообщение и handoff скрыты после повторного reload, по одному
+presentation host. OOC намерение/гипотетический возврат не исполнили обещания.
+Manual «Предложить варианты» дал 4 хода; выбор заполнил draft без send, draft очищен.
+Новая review предложила 2 записи, обе НЕ приняты; предложение об обещаниях сохранило
+unsigned receipt/обоих владельцев/оба open. Continue without changes автоматически
+создал target125a5a3d-54ec-4171-8321-866ffcee8321 с тем же миром/3 персонажами.
+После reload нового target отдельный OOC ответ точно сохранил владельцев, оба
+предмета у Алекса, unsigned receipt, notebook tomorrow morning и оба open.
+Read-only DOM исходного handoff request подтвердил: recent scenes = 6 чистых
+user/assistant turns, без protocol prefix, thinking headings и вариантов как событий.
+Старый чат показал ссылку на125a5a3d и «Продолжить здесь»; её не нажимали.
+
+Дополнительная просьба пользователя: компактная «Предложить варианты» справа от
+«Создать иллюстрацию», тот же нейтральный стиль, без отдельной большой панели.
+Recovery host назначается в scene-choices slot в toolbar IllustrationReply;
+без изображений остаётся отдельной компактной кнопкой. Подсказка title/aria-describedby,
+на узком экране перенос без переполнения. Генерация/подтверждение/сохранение не менялись.
+Пользователь затем обновил архив ЕЩЁ РАЗ. Live toolbar проверен: обе кнопки40px,
+background rgb(54,62,70),font12px,radius10px,text rgb(238,243,247),gap8px.
+Recovery реально находится в slot справа от image button; Enter запустил запрос,
+DeepSeek вернул4варианта без продолжения сцены. Их не выбирали/не отправляли.
+
+Итоговая QA:130/130 unit в8файлах,126/126 E2E RU/EN Chromium/Firefox, один worker,
+0fail/skip/flaky; tsc/diff0. Первый расширенный102прогон77pass/25fail сохранён:
+16устаревших full-width assertions заменены проверкой compact toolbar,8innerText
+на полностью скрытом ancestor заменены retained payload + actual visibility;
+1Firefox context-close protocol error без UI assertion failure. Отдельный первый
+compact8прогон выявил разные neutral фоны; исправлено общими design effects.
+[Поведение и пределы](docs/INJECTED-TEXT-AND-REPLY-ACTIONS.md),
+[QA](docs/benchmarks/rp306-qa-results.json). Chrome/Firefox/source ZIP собраны,
+23/23/917entries CRC и bytes сверены с runtime/source, canonical downloads SHA
+равны исходным архивам. Source ZIP без tests/private-assets; QA нужен Git checkout.
+Итоговые docs включены в source ZIP; финальная сверка повторяется после сборки. Ниже RP305 — история.
+Следом: off-scene profile coverage; menu/reset/cast/export/images live всё ещё открыты.
+Личный Sunset Valley не трогали, chats не удаляли; push/merge не запрошены.
+
+## Актуальная точка RP305 — первый запрос переноса исправлен и проверен живьём
+
+При native переходе с home на ещё не привязанный target ДО completion контекст
+терялся. Новый page-local provisional target связывает exact chat/snapshot/token
+на 90сек только для подготовки контекста. Binding и active world по-прежнему
+меняются после accepted delivery; ранней активации нет. Clear private state,
+чужой binding/ID/token/snapshot, source и expiry не получают новый fallback.
+Runtime: content.tsx + core/continuation-flow.ts. RP304 recall-файлы не изменялись
+этой правкой; весь прежний uncommitted результат сохранён. [Описание](docs/CONTINUATION-FIRST-SEND-REPAIR.md).
+
+QA: до правки новый native RU early-route упал (appliedAt undefined); после —
+18/18 chain RU/EN, включая early-route/HTTP503/commit/receipt failures, источник
+активен до accepted POST, при сбое нет target binding; retries не повторяют send.
+38/38 focused unit, tsc/diff0. UI/recap18pass/2Edge-only skips вFirefox/0fail/flaky,
+RU/EN 320/360/900/1280px. Full unit/full E2E не повторяли. Обе сборки успешны;
+в системе TEMP первый esbuild Access denied, workspace TEMP решил это без кода.
+
+LIVE ПОСЛЕ ПРАВКИ: пользователь обновил Chrome ZIP и reload установленной копии.
+Заново нажали Continue в source1874cefc, получили review4/ничего нового не приняли,
+сжимку и automatic target9a68d51d-1958-4a62-9c5b-506d876f73b7 «Архивное утро».
+Мир/3 персонажа/50-50 сохранились после reload. Отдельный OOC ответ точно назвал
+владельцев Миры/Леона, предметы у Алекса, unsigned receipt, notebook tomorrow
+morning и оба обещания open. Старый чат показал напоминание/ссылку на target;
+там ничего не отправляли и «Продолжить здесь» не нажимали. Первые два liveFAIL
+сохранены ниже/[отчёт](docs/LIVE-QA-2026-10-16.md), не заменены synthetic green.
+
+Следом: видимый служебный prefix после reload и загрязнение recent scenes этим
+prefix (он режется вместо user action); затем off-scene profile coverage в первом
+вопросе о блокноте. Не расширять RP05 поисковые словари ради этих UI/transport
+проблем. Menu Codex srcdoc, cast/reset/export/images/full RU/EN live остаются
+отдельными открытыми проверками. Личный Sunset Valley не трогали, chats не удаляли.
+Chrome/Firefox/source ZIP подготовлены: 23/23/914 файлов, побайтовая/CRC сверка
+и SHA равенство canonical downloads копиям. Установленная
+Chrome-копия уже обновлена пользователем до текущего runtime. Push/merge не просили.
+
+## История живой диагностики до RP305 — сбой первого запроса переноса
+
+Актуальный результат: пользователь вручную импортировал и выбрал тестовый мир.
+Без меню работают composer и панели чата. Реальные ответы проверены: персонажи
+и их состояния обновились, оба обещания/владельцы/условие/срок сохранились после
+reload; сверка дала 5 предложений, принят только 1, toast подтвердил сохранение.
+Continuation сделал отдельную сверку без дубликата обещания, 4 предложения,
+подтверждение пережило закрытие/reload. После подтверждения сжимка подготовилась.
+
+КРИТИЧЕСКИЙ FAIL: новый чат 0aba770f-5bc5-4c76-a11c-f5f52e0edf59 открылся «Без
+мира»; DeepSeek сообщил «Контекст не прикрепился». Ручной первый send с той же
+queued-сжимкой в новом 0b8e8861-bdf9-43ca-9834-8933a8123871 повторил отсутствие
+контекста. Явный выбор мира в нём дал generic save/scene failure. Source chat и
+сохранённая память целы; ни один transfer не считать успешным. Также raw служебный
+prefix виден в user bubble после reload; исходный off-scene блокнот не попал
+в первый ответ. Полные факты/пределы: [LIVE-QA](docs/LIVE-QA-2026-10-16.md).
+
+СЛЕДУЮЩАЯ ЗАДАЧА: воспроизвести в isolated regression смену native route на target
+ДО first completion POST/response. В content.tsx currentScene() даёт EMPTY при
+chatId без binding, а handleNavigation пропускает promoteDraft при appliedSnapshot;
+нынешний chain fixture меняет URL только ПОСЛЕ response. Это рабочая гипотеза,
+не доказанная правка. Сохранить accepted-delivery-before-world-activation guards,
+не исправлять ранней активацией/удалением защит. После исправления tests/typecheck/
+две сборки+ZIP и повторить live на обновлённой установленной копии. Runtime в этой
+итерации не менялся; только отчёт/передача/тестовый portable JSON. Menus/reset/
+export/images/full cast preparation/RU-EN narrow live остаются непроверенными.
+
+### История диагностики недоступного меню (частично преодолено)
+
+После обновления пользователем прочитаны DOM-атрибуты пустого iframe: правильный
+chrome-extension src, но также `srcdoc=""`, который выбирает пустой about:srcdoc.
+В src и сгенерированных Chrome content/chunks нет кода srcdoc. Кто добавляет
+атрибут, пока не доказано; пользователь связывает это с автоматизацией. Ожидается
+ответ, работает ли меню после ручного reload/открытия до действий Codex. Не
+удалять атрибут принудительно ради обхода ограничений браузерного инструмента.
+
+Следующая проверка: пользователь подтвердил нормальное ручное открытие меню.
+Одно getTab новой пользовательской вкладки 602384194 без кликов уже вернуло
+about:srcdoc; read-only DOM подтвердил srcdoc="". Сбой воспроизводится при
+подключении инструмента управления, конкретный внутренний инжектор не установлен.
+Код расширения не менялся; на этом этапе живые проверки ещё были заблокированы.
+
+Пользователь разрешил сообщения в отдельном тестовом чате. План, ожидания и
+ссылка: [LIVE-QA-2026-10-16](docs/LIVE-QA-2026-10-16.md). Контрольное сообщение
+получило правильный ответ, после reload история сохранилась. Меню установленного
+DeepRole дважды открылось пустой белой панелью (about:srcdoc), в том числе после
+reload страницы. Путь/ревизия установленной копии пока не подтверждены. Browser
+tool запрещает edge://extensions/; пользователь получил просьбу вручную
+перезагрузить DeepRole и сообщить путь. Не обходить запрет другим способом.
+После ответа пользователя проверки продолжены на отдельном синтетическом мире,
+не Sunset Valley; актуальные результаты и следующий шаг выше. Пересборка для
+этой документальной записи не нужна.
+
+## Актуальная точка RP304 — исправление разговорных ссылок и последовательностей
+
+Исправлены 15 неполных входов RP303 и 12 пропусков reference guard. Целевой
+SEEN: **40/40 полных, 204/204 записей**, 0 пропусков, искажений, guard gaps и
+потерь прежней памяти. Первый RP303 25/40, его input/gold/fixture/protocol/
+runner/report/seal сохранены. До правок сверены 414 pins и точные RP302 snapshots.
+[Поведение](docs/RELAY-REPAIR.md), QA: docs/benchmarks/rp304-qa-results.json.
+
+Два runtime-файла: story-obligation-recall.ts и game-context.ts. Добавлены
+ограниченные формы разговорного readiness-вопроса, короткой анафоры и first/then
+sequence с запросом условий. Topic условленность/understanding участвует в
+проверке принятой цитаты; raw-only не даёт положительную связь. Последовательность
+может передать отдельные группы названных кандидатов, сохраняя неоднозначность.
+Caps16/4/128, source/budget fallback и opt-outs прежние. Нет записи канона,
+вывода владельца, тождества, разрешения или выполнения из слов пользователя.
+
+Прежние pins RP302 seen-report tests переведены на точные исторические snapshots;
+новые relay seen-report tests сверяют текущий runtime. Первые отчёты не менялись.
+Текущие отчёты: rp304-*-seen-results.json, SEEN.
+Все девять наборов проверены: 650 входов, 388 оцениваемых случаев, 1826 ожидаемых
+записей. Полны 388/388, 0 missing/integrity/guard gaps/lost prior. Controls и
+budget входят в 650 отдельно; это не 650 независимо сыгранных историй.
+Новый корпус теперь тоже известный: дальнейшую независимую проверку делать с новыми текстами и gold
+до первого запуска. RP-05/general semantics/true delta остаются открытыми.
+Личные миры и установленная копия не менялись, live DeepSeek не проверялся.
+Push в этой итерации не запрошен. Ниже исторические этапы и старые next steps.
+
+RP304 full unit: 8600 pass, 0 fail, 5 прежних TODO. Финальные 62 проверки
+исправления, новых отчётов и first-score pins прошли отдельно; новый report test
+добавлен после старта полного прогона. TypeScript/diff 0, Chrome/Firefox ZIP собраны.
+Первый strict запуск вместе с full unit и девятью корпусами:491 pass/1 timeout
+в100-portion storage test (30000ms). Попытка сохранена вrp304-first-strict-attempt.json.
+Тот же тест отдельно прошёл без изменения кода и timeout. Для этой машины
+повторять strict после завершения full/corpus нагрузок; не повышать timeout.
+
+RP304 final QA: strict повтор без внешней тяжёлой нагрузки —492 pass/0 fail,
+2427 пар/57 конфигураций; исходный100-portion test отдельно1pass. Runtime между
+попытками неизменён, automation test вместе с timeout совпадает с HEAD. Первый
+таймаут сохранён, не заменён успешным результатом. Архивы23Chrome/23Firefox/
+910sources entries проверены CRC/состав/байты/SHA256 canonical copies. Source ZIP
+без tests/private-assets, нужен Git checkout. При4200 tokens новый corpus8/8
+во всех четырёх сочетаниях; при1000 остаётся неполным с честным budget status.
+Live/native/installed extension в этой итерации не проверялись и не обновлялись.
+
+## Актуальная точка RP303 — независимая проверка новых сюжетов
+
+Рабочий код RP302 не менялся. Два новых авторских сюжета: горное убежище и
+учебная регата, RU/EN. Всего 64 входа: 40 оцениваемых, 16 контрольных и
+8 бюджетных; 204 ожидаемые записи, до 8 200 фоновых событий.
+До первого запуска отдельный --freeze сохранил ручные ожидания и 414 хешей.
+Первый результат: **25/40 полных, 181/204 записей**, 23 пропуска в 15 входах,
+12 пропусков reference guard, 0 нарушений источников и ложного complete.
+[Разбор](docs/RELAY-RESULTS.md), протокол RELAY-EVALUATION.md.
+Первый отчёт/seal: rp303-relay-results.json/rp303-first-report-seal.json.
+
+Полны explicit/partial-condition/negative/revoked/replacement во всех четырёх
+сочетаниях сюжета и языка. Paraphrase 0/4, accepted-reference 2/4, sequence 1/4,
+scale 2/8. Guard отсутствует в 4 paraphrase, 4 reference и 4 raw-only;
+UI coverage остаётся unverified. Это два сюжета с переводами и повторным фоном,
+а не 64 независимо сыгранных романа.
+
+Следом исправить 15 неполных входов и 12 пропусков guard отдельной SEEN-итерацией
+плюс восемь прежних корпусов RP302. Не переписывать RP303 input/gold/fixture/
+protocol/runner/report/seal. Точные RP302 obligation/game-context snapshots уже
+сохранены по frozen hashes; перед изменением других runtime-файлов сохранить их.
+Не угадывать владельца, тождество, разрешение или выполнение; не увеличивать caps.
+RP-05/general semantics/true delta открыты. Установленная копия и личные миры не
+менялись; живой DeepSeek не проверялся, push не запрошен.
+QA: docs/benchmarks/rp303-qa-results.json. Ниже исторические точки.
+
+RP303 QA: 21 тест фиксации первого результата и прежних отчётов прошёл; финальные
+7 проверок нового first score повторены. Unified strict: 492 pass, 0 fail,
+2427 пар/57 конфигураций. TypeScript/diff: 0. Chrome/Firefox ZIP собраны;
+23/23/896 файлов, CRC/состав/байты и SHA256 canonical copies проверены.
+Полный unit/native/live в этой итерации не повторялись: runtime/UI не менялись.
+Исходный первый результат остаётся 25/40; зелёные QA checks его не исправляют.
+Source ZIP без tests/private-assets; для воспроизведения нужен Git checkout.
+
+## Актуальная точка RP302 — исправление публикации и согласия
+
+Исправлены10 неполных входов RP301 и2 пропуска guard. Целевой SEEN:24/24,
+114/114 записей,0 missing/integrity/guard gaps/lost prior. Первый RP30114/24,
+его frozen input/gold/fixture/protocol/runner/report/seal сохранены. До правок
+проверены414 хешей и сохранены точные RP300 snapshots obligation/game-context.
+[Поведение и ограничения](docs/EMBARGO-REPAIR.md), QA:benchmarks/rp302-qa-results.json.
+
+Два runtime-файла:story-obligation-recall.ts иgame-context.ts. Добавлены bounded
+readiness-versus-publication inquiry иpublication/display compound. Названный
+материал допускается только через буквальный source-name/object span из task
+title, повторённый вего записи идвух других текстах. Не query-derived identity.
+Shared-alias guard сохраняется даже при передаче нескольких candidate groups.
+Caps16/4/128, opt-outs, exact-source/budget fallback неизменны; нет permission,
+completion, owner inference или canonical writes. Отмена/согласие не выводятся.
+
+Текущие отчёты:rp302-*-seen-results.json, **SEEN**, не новая независимая проверка.
+Все8 наборов:586inputs/348scored/1622gold,348/348 complete,0missing/integrity/
+guard gaps/lost prior. Среди586 есть отдельные controls/budget, не586полных
+историй. Первыеgold/seals не изменены; новые48 repair/report/seal checks pass.
+Следом — новый заранее зарегистрированный независимый сюжет/формулировки;
+не объявлять RP-05 закрытым. General semantics иtrue delta открыты. Установленная
+копия и личные миры не менялись. Push этой итерации не запрошен.
+Ниже — исторические точки и прежние next steps.
+
+RP302 finalQA:fullunit8534pass/0fail/5existingTODO,309files. Финальные48repair/
+report/seal checks pass отдельно (новые report tests добавлены после начала full
+run). Unified strict492pass,2427pairs/57configs;TypeScript/diff0. Chrome/Firefox
+ZIP0,старый chunkwarning. Архивы23Chrome/23Firefox/888source entries проверены
+CRC/состав/байты/SHAcanonicalcopies;sourceZIP excludes tests/private-assets.
+Budget3000/6000=7/7RUEN;900=1/7RU,2/7EN сявнымbudgetstatus. Не live/native,
+installedextension не перезагружалась. Все выводы вrp302-qa-results.json.
+
+## Актуальная точка RP301 — свежий аудит, без runtime-правок
+
+По запросу пользователя проведён новый preregistered аудит похожих обязательств,
+условий и запретов на научной станции. До первого compiler-run отдельный freeze:
+40 inputs / 24 scored / 114 gold / 10 controls / 6 budget / 414 fingerprints.
+Первый результат **14/24 complete, 102/114 records**, 12 пропусков в 10 входах,
+2 guard gaps, 0 integrity/false-complete. Пропуски: RU/EN парафраз публикации
+теряет a2/a3 и guard; compound + шесть scale теряют c1 (низкое разрешение не
+заменяет согласия). Прямые/accepted-reference/negative/revoked/terminal cases полны.
+[Подробности и следующий шаг](docs/EMBARGO-RESULTS.md).
+
+Дальше: сохранить RP300 snapshots по frozen hashes ДО правок, исправлять эти
+случаи отдельным SEEN и прогнать семь старых наборов. Не переписывать RP301
+baseline/fixture/protocol/runner/first report/seal. Не увеличивать caps и не
+угадывать владельца/согласие. RP-05/general semantics/true delta открыты.
+Этот корпус теперь известный; повтор не называть независимым. Личный мир,
+аккаунт и установленное расширение не менялись. Push в этой итерации не запрошен.
+QA: docs/benchmarks/rp301-qa-results.json; текущий маршрут HOME-CODEX-NEXT.md.
+
+RP301 QA:46 audit/prior-seal tests +492 unified strict checks passed,0fail;
+финальные4 seal checks повторно pass. TypeScript/diff0. Chrome/Firefox ZIP0;
+первый Chrome esbuild TEMP access-denied, успешный повтор с project-local TEMP.
+Старый chunk warning остаётся. Fullunit/native/live не повторялись: runtime/UI
+не менялись. Архивы23Chrome/23Firefox/874source проверены по CRC/составу/байтам
+и SHA256 трёх canonical copies. SourceZIP без tests/private-assets; нужен Git checkout.
+
 ## Публикация RP289–RP300 и смена Codex
 
 По прямому запросу пользователя весь накопленный результат отправляется в GitHub `NEONARCHY/DeepRole`, ветка main. Короткий актуальный маршрут для другого Codex: [HOME-CODEX-NEXT](docs/HOME-CODEX-NEXT.md). Там перечислены выполненное, ограничения проверок, точные команды и следующая задача. Прежние «push не запрошен» ниже — исторические записи, отменённые нынешним запросом на публикацию. Пользователь не просил менять установленную копию, личные миры или аккаунт.

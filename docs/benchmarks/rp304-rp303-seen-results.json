@@ -1,0 +1,3887 @@
+{
+  "version": 1,
+  "scope": "SEEN regression, not independent or live-model proof",
+  "currentDigests": {
+    "src/core/game-context.ts": "d90a8bd7486330d0bbd70255058e10a15fef7ca348b9544c129b635e6a7b1b86",
+    "src/core/story-obligation-recall.ts": "691af4628b91b76f58ce14511bc85c49eb224e322acca287848964b9cd7de176"
+  },
+  "runnerDigest": "11b66b6a915cbc3cd091f032688f5ffc90293b8dcca42f7b536297f955f90422",
+  "baselineDigest": "52845c6a89c28e2b23424f7a3ba4743ae9451cbc4c1aafb9115d66c71a7adabc",
+  "previousReportDigest": "c23105d688b37f03a9e5aad680f78cef831aefd3c78a3088bb68ab845d45cd18",
+  "summary": {
+    "cases": 64,
+    "scored": 40,
+    "complete": 40,
+    "gold": 204,
+    "missing": 0,
+    "integrityCases": 0,
+    "confidenceGapCases": 0,
+    "lostPriorFacts": 0
+  },
+  "results": [
+    {
+      "id": "ru:0:explicit",
+      "family": "explicit",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "b2",
+        "a0",
+        "a2",
+        "a1",
+        "b3",
+        "b1",
+        "d0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1473,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "2015e10a14e2fd7cabae157cf397d7c62f31395f966df0563bf0e593ba422846",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:paraphrase",
+      "family": "paraphrase",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "d0",
+        "latest",
+        "background-2199"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1969,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 14,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2201,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 1,
+          "openTasks": 3,
+          "recentFallback": 7
+        }
+      },
+      "outputDigest": "cb29dc0c47a4f61a92fbf63a688bb57aea29e0050c898baaaf1e5b12e602e113",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:0:accepted-reference",
+      "family": "accepted-reference",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "latest"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1527,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "a89bb4d1e5b6a8e54a3b2bd2033b22296e0938829e80dbf0bb64c0d57810fbb8",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:0:compound-sequence",
+      "family": "compound-sequence",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1888,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "40b9bc35f5895c72229f07a8beaafcca245ca24332cbc3dcadea03f9dc9f8de0",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:0:partial-condition",
+      "family": "partial-condition",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b3"
+      ],
+      "selectedIds": [
+        "b2",
+        "a3",
+        "b3",
+        "a1",
+        "a0",
+        "b1",
+        "a2",
+        "d2"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1536,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "56cf798d47d3368380f097f102ab1a759f4da92589aafada77ae59a26304cadb",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:negative-duty",
+      "family": "negative-duty",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d0",
+        "d3"
+      ],
+      "selectedIds": [
+        "d0",
+        "d3",
+        "a2",
+        "b2",
+        "d2",
+        "b1",
+        "c3",
+        "a0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1526,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 0,
+          "openTasks": 2,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "aee99f83415f0cbedd7b391fc578234a7059debf39b7e7df6f5cdca4c568d7f4",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:revoked-access",
+      "family": "revoked-access",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d2"
+      ],
+      "selectedIds": [
+        "d2",
+        "d3",
+        "c4",
+        "a3",
+        "d0",
+        "c3",
+        "a0",
+        "latest"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1425,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 1,
+          "openTasks": 3,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4f29dee666c12332135c10811f5637f3dcfe742caa5364b19924eb533e5c8165",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:replacement-task",
+      "family": "replacement-task",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "c4",
+        "c3",
+        "c2",
+        "c1",
+        "d2",
+        "b2",
+        "a2",
+        "d0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1543,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 0,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "b325d8146bb98733434d928ad2dc4b9030eaa7be3da399a7040fcc8278ddbde7",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:wrong-promisor",
+      "family": "wrong-promisor",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "a3",
+        "a2",
+        "a1",
+        "b3",
+        "b1",
+        "a0",
+        "b2"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1508,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "957a47b9aba19b2345ecc414ef861b2827b091d36b0f8480fc7398db165b1d5d",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:unknown-work",
+      "family": "unknown-work",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "b2",
+        "d0",
+        "c3",
+        "a0",
+        "c2",
+        "latest",
+        "background-2199",
+        "background-2198"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1643,
+        "required": 425,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "a209876b75cdc10bfb5639c0d3cd52332a721e8dc65752d5a2d34e7923e5da41",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:ambiguous-name",
+      "family": "ambiguous-name",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b2",
+        "a3",
+        "d0",
+        "c3",
+        "latest",
+        "background-2199",
+        "background-2198"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1511,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 1,
+          "openTasks": 2,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "66a7a36d513e5b70488821f1c95e0fcb0dd68f7e1454b4020ee8bdb8e684f20f",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:raw-only-reference",
+      "family": "raw-only-reference",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "b2",
+        "d0",
+        "c3",
+        "a0",
+        "latest",
+        "background-2199",
+        "background-2198",
+        "background-2197"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1548,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 1,
+          "openTasks": 3,
+          "recentFallback": 4
+        }
+      },
+      "outputDigest": "985773966603bfb82c10ccebef100373141515051989fcddca2c3ba0a37516fc",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:explicit",
+      "family": "explicit",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a1",
+        "a0",
+        "a3",
+        "a2",
+        "b3",
+        "b1",
+        "b2",
+        "c3"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1500,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4239219a0a19f01b0cbcdf68cf5362726b3b54c18e5247b9bf09e43dd65a8a3f",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:paraphrase",
+      "family": "paraphrase",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "d0",
+        "latest",
+        "background-2199",
+        "background-2198",
+        "background-2197"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 2052,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 16,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2199,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 1,
+          "openTasks": 3,
+          "recentFallback": 11
+        }
+      },
+      "outputDigest": "c40b87bc538aa458081b26ce7c5447b2695f8ed498309f63352c246245008e96",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:accepted-reference",
+      "family": "accepted-reference",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "latest",
+        "c3",
+        "d0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1705,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2205,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 8,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d615b8e7b5092a43e8c73ae212fe25f445f5a04e39140388655e1c6105baa615",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:compound-sequence",
+      "family": "compound-sequence",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1891,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "20847afae89e237aeea7ccfeb0439906762d0626f03da8245962981093a4e247",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:partial-condition",
+      "family": "partial-condition",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b3"
+      ],
+      "selectedIds": [
+        "a3",
+        "b3",
+        "b1",
+        "a0",
+        "b2",
+        "a2",
+        "a1",
+        "d0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1473,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "ebc44e13332328011d776e3844fdb8751cf2d0953b86fc291073c9ff659cbe1c",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:negative-duty",
+      "family": "negative-duty",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d0",
+        "d3"
+      ],
+      "selectedIds": [
+        "d0",
+        "d3",
+        "a2",
+        "b3",
+        "b1",
+        "c3",
+        "a0",
+        "latest"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1381,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 2,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4bc0302d293c86c72eb284329163748bfdba388a3ed808a0a2cbe66bbc283173",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:revoked-access",
+      "family": "revoked-access",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d2"
+      ],
+      "selectedIds": [
+        "d2",
+        "c4",
+        "d3",
+        "a3",
+        "d0",
+        "c3",
+        "a0",
+        "latest"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1420,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 1,
+          "openTasks": 3,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "00c75c4fe478c3e1be1346e12e6962e86de327c36b4b840edd26a25c02269821",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:replacement-task",
+      "family": "replacement-task",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "c4",
+        "c3",
+        "c2",
+        "c1",
+        "d2",
+        "b2",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1521,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "2e13bf1073c22449fb0e1d3afde92f935a34ea7bae95e130ae594dce6e27b7d3",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:wrong-promisor",
+      "family": "wrong-promisor",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "a3",
+        "a2",
+        "a1",
+        "b3",
+        "b1",
+        "a0",
+        "c4"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1459,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "77d048fb626d11ded846e39e9150fdb4e57890971bbb8d3147e2c818bae3ab76",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:unknown-work",
+      "family": "unknown-work",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "d0",
+        "c3",
+        "a0",
+        "b2",
+        "latest",
+        "background-2199",
+        "background-2198"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1645,
+        "required": 425,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "ca159955bbde4229732abdff4bbd212a17bf8bc2fe2bd7653f3991ef6fc91890",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:ambiguous-name",
+      "family": "ambiguous-name",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b2",
+        "d0",
+        "c3",
+        "latest",
+        "background-2199",
+        "background-2198",
+        "background-2197"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1489,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 2,
+          "recentFacts": 1,
+          "openTasks": 2,
+          "recentFallback": 3
+        }
+      },
+      "outputDigest": "9efc49e4ccc6946c8a59ac49b9c53d8193bab5a27673cbbdbebb20967943ec72",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:raw-only-reference",
+      "family": "raw-only-reference",
+      "locale": "ru",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "d0",
+        "c3",
+        "a0",
+        "latest",
+        "background-2199",
+        "background-2198",
+        "background-2197",
+        "background-2196"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1484,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 0,
+          "openTasks": 3,
+          "recentFallback": 5
+        }
+      },
+      "outputDigest": "5cb08482d97f5325a9fc5a4c0c099c868525aa856dd5b24c9cd526f01eb4229c",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:explicit",
+      "family": "explicit",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a2",
+        "a3",
+        "a1",
+        "b3",
+        "b2",
+        "b1",
+        "d3"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1404,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "33ec7ce47093768e1c7c64385666c44aac9a0c1db502869781395a9db3393deb",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:paraphrase",
+      "family": "paraphrase",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "background-2195",
+        "background-2189",
+        "background-2184",
+        "background-2178",
+        "background-2173",
+        "background-2167"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 2077,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 17,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2198,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 1,
+          "openTasks": 2,
+          "recentFallback": 3
+        }
+      },
+      "outputDigest": "16cb27bf038493354455667c77d87832a4e5e9659bd2bea9946379f93d73c888",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:accepted-reference",
+      "family": "accepted-reference",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "latest"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1546,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "7f4bd521f26ec0b7c8014397513cf685805f2c1d276ace41897a0af62af71d51",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:compound-sequence",
+      "family": "compound-sequence",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1851,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "60e51d6de4b27f3faf85a54ab428007c6042cc87595bbd904ab5f3088b9a35a4",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:partial-condition",
+      "family": "partial-condition",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b3"
+      ],
+      "selectedIds": [
+        "b2",
+        "b3",
+        "a2",
+        "a3",
+        "a0",
+        "b1",
+        "a1",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1408,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "e43384303a1ef854b59f5e94e566f6ed60a93323236b15ce841e5c828006fa7d",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:negative-duty",
+      "family": "negative-duty",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d0",
+        "d3"
+      ],
+      "selectedIds": [
+        "d0",
+        "d3",
+        "c3",
+        "b1",
+        "d2",
+        "a2",
+        "b2",
+        "a0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1544,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 0,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4ee4693358460b46d682fccdb4ac1d2d9291d5e5bfba64cfb6a124a93d5b261c",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:revoked-access",
+      "family": "revoked-access",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d2"
+      ],
+      "selectedIds": [
+        "d2",
+        "d3",
+        "b1",
+        "c1",
+        "d0",
+        "a0",
+        "a3",
+        "c2"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1581,
+        "required": 339,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "5b4cde5fc21aa3ba104d3b37a3ee09d38b1ac0a714d781911ed95115eb134c61",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:replacement-task",
+      "family": "replacement-task",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "c4",
+        "c2",
+        "c3",
+        "c1",
+        "d2",
+        "a2",
+        "b1",
+        "b2"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1537,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4c422d82076e9f6fd0c6ea33ce378c819294b81989ffc20ec8bf5cf736241ec4",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:wrong-promisor",
+      "family": "wrong-promisor",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "a2",
+        "a3",
+        "a1",
+        "a0",
+        "b3",
+        "b1",
+        "c3"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1621,
+        "required": 425,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "7c970ccaf4f702f257f49f533dcbf8d55d9e475d5565e05de280a6c220b996cb",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:unknown-work",
+      "family": "unknown-work",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "d0",
+        "c3",
+        "a0",
+        "b2",
+        "c2",
+        "latest",
+        "background-2197",
+        "background-2191"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1668,
+        "required": 425,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "20c50a9422d77444327595f39a3962b46d94ebc7e398a1409d4730efbb0609a0",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:ambiguous-name",
+      "family": "ambiguous-name",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b2",
+        "d0",
+        "c3",
+        "c2",
+        "b1",
+        "a2",
+        "b3"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1601,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d2d76bf03b291889ed46edbd66932b5cbe5e1fc23292752edd55365bbbdca6f8",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:raw-only-reference",
+      "family": "raw-only-reference",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "d0",
+        "c3",
+        "a0",
+        "b1",
+        "b2",
+        "c2",
+        "latest",
+        "background-2199"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1651,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 6,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "8852b17971b39e4c93e1b240ba78dab4b1d917836d94fc2ef78895f6f063a0d1",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:explicit",
+      "family": "explicit",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a1",
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "b3",
+        "b2",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1396,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "78d56eebc5f2715e3eaa124248bbf881fafada703448eed62b33850a9a29c0d3",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:paraphrase",
+      "family": "paraphrase",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "d0",
+        "latest",
+        "background-2199",
+        "background-2198"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 2041,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 15,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2200,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 1,
+          "openTasks": 2,
+          "recentFallback": 9
+        }
+      },
+      "outputDigest": "0e28f9936ff192012b7da433813724d7e1f2cf6d4446a7d0745acff6c5eb0b0f",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:accepted-reference",
+      "family": "accepted-reference",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "latest",
+        "d0",
+        "c3"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1726,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2205,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 7,
+          "openTasks": 2,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "8ce08a40cc79b0560264038d77aa19d7b2d4e7d33633a6343331edd79e981d4d",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:compound-sequence",
+      "family": "compound-sequence",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1839,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "e706db9da6586de2ffc2b65c6e162dd3c914c6ae88aba26f7f20785ac98ab1a0",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:partial-condition",
+      "family": "partial-condition",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b3"
+      ],
+      "selectedIds": [
+        "a1",
+        "b3",
+        "b2",
+        "b1",
+        "a0",
+        "a3",
+        "a2",
+        "d0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1415,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "6b7ea364aa6ff4d36d2e15ca8bb57f7a4b4a2b1ce88afd022b0a4a114602a4df",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:negative-duty",
+      "family": "negative-duty",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d0",
+        "d3"
+      ],
+      "selectedIds": [
+        "d0",
+        "d3",
+        "c4",
+        "c3",
+        "c2",
+        "c1",
+        "b1",
+        "a2"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1453,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "3324c7b40e0ca7f0e68b49e1b913c7d81fac005ae8023b56519ad5762a829cc8",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:revoked-access",
+      "family": "revoked-access",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "d2"
+      ],
+      "selectedIds": [
+        "d2",
+        "d3",
+        "a3",
+        "a2",
+        "d0",
+        "c3",
+        "a0",
+        "latest"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1540,
+        "required": 339,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 1,
+          "openTasks": 3,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "e766c6bab7e822d3970ae1cd1f38d16d4c0e7fb4e936553865d5933fbdc9c1c3",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:replacement-task",
+      "family": "replacement-task",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "c4",
+        "c2",
+        "c3",
+        "c1",
+        "d2",
+        "b2",
+        "b1",
+        "d0"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1534,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "efe0fb73e8ed47540f02d48997205b3464ea50c4e3038a8869bca8c56012f151",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:wrong-promisor",
+      "family": "wrong-promisor",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "c2",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "a0",
+        "b3",
+        "c3"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1614,
+        "required": 425,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "5be47449fdc2067505d069d7782f90ba5d13629549edc3e154ec5b572b773a68",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:unknown-work",
+      "family": "unknown-work",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "d0",
+        "c3",
+        "a0",
+        "b2",
+        "c2",
+        "latest",
+        "background-2199",
+        "background-2198"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1665,
+        "required": 425,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "43e435a184c807d842de9fbc3f6fa744d7bda118e7036789139b58129a7dd201",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:ambiguous-name",
+      "family": "ambiguous-name",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b2",
+        "d0",
+        "c3",
+        "c2",
+        "b3",
+        "b1",
+        "a3"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1617,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "93cda98fa6cfd26e9ff50c6ce2cc77a763baa3f3349452e91c090ff170700ed4",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:raw-only-reference",
+      "family": "raw-only-reference",
+      "locale": "en",
+      "score": false,
+      "control": true,
+      "budget": false,
+      "gold": [],
+      "selectedIds": [
+        "d0",
+        "c3",
+        "a0",
+        "latest",
+        "background-2199",
+        "background-2198",
+        "background-2197",
+        "background-2196"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1493,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2207,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 0,
+          "openTasks": 3,
+          "recentFallback": 5
+        }
+      },
+      "outputDigest": "3f4ca397814a99951db6c7f2a428a7ea2c57f16bd33e33497f576947c38e1568",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:0:scale:900",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1884,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 904,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "3c8cd1de659f5949f0775f38b50fc26293081ef816e824dac3db2e5d04b8b32b",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:0:scale:8200",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1889,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "96f7678684eac6376edd563d730ac9071baf74b8d1e730b647a7c0a955298d7c",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:scale:900",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1887,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 904,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "0c584846b3d162580b51d4aabc6dea88c1e620d5b8ae71e25d75bd4d4f906160",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:scale:8200",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1893,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "2d651d17d089561cdf633c77041374c125937c0bd73cbc2b391aad2eea3e4f59",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:scale:900",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1847,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 904,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "6508111cca07cb46a05600b7795dcd0088dd1fc3242b6049f4078e8c9efc7553",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:scale:8200",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1853,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "de3ca31f3110ca2b3ec04f4952dee1aaf4159e28e1bc1ad82a66f83130ec1d36",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:scale:900",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1835,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 904,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "521feefc6137b79f46e103571cd8d7b76bc7d38261dbfda882dc6f019d15c574",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:scale:8200",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "control": false,
+      "budget": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 16000,
+        "total": 1841,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "43700a906118cd01f3b858b16214b6f689e3e3fff3dd0a8e5de7c5967f0d8c82",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:0:budget:1000",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "c3",
+        "c2"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c4"
+      ],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 2
+      },
+      "report": {
+        "limit": 1000,
+        "total": 975,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2213,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 2,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "b8f85f61dadee6e80d193b39299a0eee0704cf7e8a316f5f83793eb23b7628fd",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:0:budget:4200",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 4200,
+        "total": 1888,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "89fe8667b78cfcaefce567183c29c0cdbb2900e073f98c71ab1cb45a3d036347",
+      "outputChanged": true
+    },
+    {
+      "id": "ru:1:budget:1000",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "c3"
+      ],
+      "missing": [
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c4"
+      ],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 2
+      },
+      "report": {
+        "limit": 1000,
+        "total": 992,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2213,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 2,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c8c2add091a2680375f6ff61a9a4ab65bab96c384364cd68b4082716b2627215",
+      "outputChanged": false
+    },
+    {
+      "id": "ru:1:budget:4200",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 4200,
+        "total": 1891,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "9ccc0c7c5ef8863548b593f7a01f5ff7145438a72c2a2e19ee627cd0808bb7d9",
+      "outputChanged": true
+    },
+    {
+      "id": "en:0:budget:1000",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a2",
+        "a3"
+      ],
+      "missing": [
+        "a1",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 3
+      },
+      "report": {
+        "limit": 1000,
+        "total": 961,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 3,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2212,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "181cf162a954594c0030c8c23aef4c774c7160209a8f5688dd13240b5a04d28a",
+      "outputChanged": false
+    },
+    {
+      "id": "en:0:budget:4200",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 4200,
+        "total": 1851,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "6d54fa6e999cc09b3c0668f726a6fe32d2e6599299b108cf6437d8403c813f47",
+      "outputChanged": true
+    },
+    {
+      "id": "en:1:budget:1000",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "c3",
+        "b1",
+        "a3",
+        "latest"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "c1",
+        "c2",
+        "c4"
+      ],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": false,
+      "coverage": {
+        "kind": "budget",
+        "sources": 12,
+        "selected": 4
+      },
+      "report": {
+        "limit": 1000,
+        "total": 994,
+        "required": 260,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 4,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2211,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "72dba35d5f02072fd745e91d26db0baf94fabca88c2cd94b4a008a2a0d884232",
+      "outputChanged": false
+    },
+    {
+      "id": "en:1:budget:4200",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "control": false,
+      "budget": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2",
+        "b3",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "missing": [],
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "confidenceIssues": [],
+      "guard": true,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "report": {
+        "limit": 4200,
+        "total": 1839,
+        "required": 393,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2204,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 11,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "f3d348896587b3adbf0b4cfa71360edf7f9b0344137b7b8067e217e61b8fc673",
+      "outputChanged": true
+    }
+  ]
+}

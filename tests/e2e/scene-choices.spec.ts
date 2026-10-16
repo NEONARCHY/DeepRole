@@ -140,7 +140,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await page.evaluate(() => (window as any).choicesTest.setHistory('<article data-role="assistant" data-message-id="manual"><div class="ds-markdown">Preparing the next move.</div></article>'));
     await expect(loader).toHaveCount(0); await expect(request).toHaveCount(0);
     await page.evaluate(html => (window as any).choicesTest.setHistory(html), `<article data-role="assistant" data-message-id="manual"><div class="ds-markdown">${payload.slice(0, 70).replaceAll("<", "&lt;")}</div></article>`);
-    await expect(loader).toHaveCount(1); await expect(page.locator(".ds-markdown")).not.toContainText("deeprole_choices", { useInnerText: true });
+    await expect(loader).toHaveCount(1);
+    // A transport-only turn is hidden as a whole. innerText on a hidden ancestor
+    // returns raw textContent; assert actual visibility and retained wire instead.
+    await expect(page.locator(".ds-markdown [data-deeprole-choices-payload]")).toHaveCount(1);
+    await expect(page.locator(".ds-markdown")).toBeHidden();
     await page.evaluate(html => (window as any).choicesTest.setHistory(html), history);
     await page.evaluate(() => (window as any).choicesTest.update({ generating: false, busy: false }));
     await expect(loader).toHaveCount(0); await expect(page.locator("[data-deeprole-choices-host] .grid button")).toHaveCount(4);

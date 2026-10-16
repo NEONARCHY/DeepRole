@@ -17,6 +17,30 @@ for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`acce
 });
 
 for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
+  test(`ordinary injected user text survives reload cleanly, ${locale}, ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 820 });
+    await page.goto(`/tests/fixtures/page-widget.html?locale=${locale}`);
+    const action = locale === "ru" ? "Я жду.\n[User message]\nЭто моя цитата." : "I wait.\n[User message]\nThis is my quotation.";
+    for (let pass = 0; pass < 2; pass++) {
+      if (pass) await page.reload();
+      await page.evaluate(async action => {
+        const { presentHiddenHandoffs } = await import(String("/src/adapters/deepseek-handoff-dom.ts"));
+        const { visibleStoryHistory } = await import(String("/src/adapters/story-history-dom.ts"));
+        const row = document.createElement("div"); row.className = "ds-message"; row.dataset.messageId = "ordinary";
+        row.innerHTML = '<div class="ds-collapsible-text"><div></div></div>';
+        row.querySelector(".ds-collapsible-text > div")!.textContent = '<deeprole_character_mode>PRIVATE PROFILES</deeprole_character_mode>\n<deeprole_profile_excerpts>[]</deeprole_profile_excerpts>\n<deeprole_choice_mode version="1">PRIVATE OPTIONS</deeprole_choice_mode>\n\n[User message]\n' + action;
+        document.body.prepend(row); presentHiddenHandoffs(); presentHiddenHandoffs();
+        (window as any).cleanStory = visibleStoryHistory().turns.find((t: { role: string; text: string }) => t.role === "user")?.text;
+      }, action);
+      const row = page.locator('[data-message-id="ordinary"]');
+      await expect(row.locator("[data-deeprole-handoff-visible]")).toHaveText(action);
+      expect(await row.innerText()).not.toContain("PRIVATE");
+      expect(await row.textContent()).toContain("PRIVATE PROFILES");
+      expect(await page.evaluate(() => (window as any).cleanStory)).toBe(action);
+      await expect(row.locator("[data-deeprole-handoff-visible]")).toBeVisible();
+    }
+    await page.screenshot({ path: info.outputPath(`ordinary-context-${locale}-${width}.png`) });
+  });
   test(`continuation stages and hidden recap, ${locale}, ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 820 });
     await page.goto(`/tests/fixtures/page-widget.html?locale=${locale}`);

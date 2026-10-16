@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "milestone": "RP304",
+  "date": "2026-10-16",
+  "scope": "SEEN conversational/anaphoric/sequence recall repair; not independent or live model proof",
+  "changedRuntime": [
+    "src/core/game-context.ts",
+    "src/core/story-obligation-recall.ts"
+  ],
+  "historicalSnapshotPinsVerified": 414,
+  "firstRP303Preserved": {
+    "complete": 25,
+    "scored": 40,
+    "missing": 23,
+    "guardGaps": 12
+  },
+  "seen": [
+    {
+      "stage": "rp303",
+      "path": "docs/benchmarks/rp304-rp303-seen-results.json",
+      "cases": 64,
+      "scored": 40,
+      "complete": 40,
+      "gold": 204,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp301",
+      "path": "docs/benchmarks/rp304-rp301-seen-results.json",
+      "cases": 40,
+      "scored": 24,
+      "complete": 24,
+      "gold": 114,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp299",
+      "path": "docs/benchmarks/rp304-rp299-seen-results.json",
+      "cases": 38,
+      "scored": 22,
+      "complete": 22,
+      "gold": 100,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp297",
+      "path": "docs/benchmarks/rp304-rp297-seen-results.json",
+      "cases": 64,
+      "scored": 38,
+      "complete": 38,
+      "gold": 176,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp295",
+      "path": "docs/benchmarks/rp304-rp295-seen-results.json",
+      "cases": 60,
+      "scored": 34,
+      "complete": 34,
+      "gold": 160,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp292",
+      "path": "docs/benchmarks/rp304-rp292-seen-results.json",
+      "cases": 96,
+      "scored": 60,
+      "complete": 60,
+      "gold": 306,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp289",
+      "path": "docs/benchmarks/rp304-rp289-seen-results.json",
+      "cases": 96,
+      "scored": 54,
+      "complete": 54,
+      "gold": 204,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp287",
+      "path": "docs/benchmarks/rp304-rp287-seen-results.json",
+      "cases": 108,
+      "scored": 62,
+      "complete": 62,
+      "gold": 250,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    },
+    {
+      "stage": "rp283",
+      "path": "docs/benchmarks/rp304-rp283-seen-results.json",
+      "cases": 84,
+      "scored": 54,
+      "complete": 54,
+      "gold": 312,
+      "missing": 0,
+      "integrityCases": 0,
+      "confidenceGapCases": 0,
+      "lostPriorFacts": 0
+    }
+  ],
+  "totals": {
+    "cases": 650,
+    "scored": 388,
+    "complete": 388,
+    "gold": 1826,
+    "missing": 0,
+    "integrityCases": 0,
+    "confidenceGapCases": 0,
+    "lostPriorFacts": 0
+  },
+  "budgets": [
+    {
+      "id": "ru:0:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 2
+      }
+    },
+    {
+      "id": "ru:0:budget:4200",
+      "wanted": 8,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "ru:1:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a1",
+        "a2",
+        "a3",
+        "c1",
+        "c2",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 2
+      }
+    },
+    {
+      "id": "ru:1:budget:4200",
+      "wanted": 8,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:0:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a1",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "budget",
+        "sources": 11,
+        "selected": 3
+      }
+    },
+    {
+      "id": "en:0:budget:4200",
+      "wanted": 8,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "id": "en:1:budget:1000",
+      "wanted": 8,
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "c1",
+        "c2",
+        "c4"
+      ],
+      "coverage": {
+        "kind": "budget",
+        "sources": 12,
+        "selected": 4
+      }
+    },
+    {
+      "id": "en:1:budget:4200",
+      "wanted": 8,
+      "missing": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    }
+  ],
+  "checks": {
+    "beforeRepair": {
+      "passed": 28,
+      "failed": 16
+    },
+    "fullUnit": {
+      "passed": 8600,
+      "failed": 0,
+      "todo": 5,
+      "files": 312
+    },
+    "finalRepairAndReportTests": {
+      "passed": 62,
+      "failed": 0
+    },
+    "unified": {
+      "passed": 492,
+      "failed": 0,
+      "integrityPassed": true,
+      "recallComplete": true,
+      "pairs": 2427,
+      "configurations": 57
+    },
+    "typecheckExit": 0,
+    "diffCheckExit": 0,
+    "chromeZipExit": 0,
+    "firefoxZipExit": 0
+  },
+  "firstStrictAttempt": {
+    "path": "docs/benchmarks/rp304-first-strict-attempt.json",
+    "outcomes": [
+      {
+        "name": "combinations",
+        "exitCode": 0,
+        "counts": {
+          "passed": 162,
+          "failed": 0,
+          "pending": 0,
+          "suites": 2
+        }
+      },
+      {
+        "name": "lifecycle",
+        "exitCode": 1,
+        "counts": {
+          "passed": 329,
+          "failed": 1,
+          "pending": 0,
+          "suites": 34
+        }
+      }
+    ],
+    "failures": [
+      {
+        "name": "one hundred bounded portions have no pending routine questions, survive reload, and no duplicated profiles",
+        "durationMs": 30009.850500000004,
+        "message": "Error: Test timed out in 30000ms."
+      }
+    ],
+    "followup": "Repeat original test and strict suite after other heavy runs complete, without code or timeout changes",
+    "isolatedPassed": 1,
+    "runtimeUnchanged": true,
+    "automationTestSameAsHEAD": true
+  },
+  "packaging": {
+    "verified": true,
+    "archives": [
+      {
+        "archive": "deeprole-0.1.0-chrome.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-firefox.zip",
+        "files": 23
+      },
+      {
+        "archive": "deeprole-0.1.0-sources.zip",
+        "files": 910
+      }
+    ],
+    "checks": [
+      "CRC",
+      "exact build membership",
+      "all source/build member bytes equal disk",
+      "source exclusions",
+      "atomic canonical copies and SHA256"
+    ]
+  },
+  "limits": [
+    "Bounded lexical grammar, not arbitrary semantic understanding",
+    "Caps16 tasks/4 labels/128 source rows unchanged; small budgets may omit groups",
+    "No canonical writes, owner/identity/permission/completion inference",
+    "First fixtures, gold, protocols, runners, reports and seals preserved",
+    "No native browser/live DeepSeek in this iteration",
+    "Installed extension not reloaded; user worlds untouched",
+    "Source ZIP excludes tests/private-assets; QA needs Git checkout",
+    "RP-05/general semantics/true cross-turn delta remain open",
+    "No push requested"
+  ],
+  "next": "Use a fresh independent preregistered corpus to measure unseen quality, keep the nine existing sets labeled SEEN; do not declare RP-05 complete."
+}

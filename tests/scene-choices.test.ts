@@ -206,6 +206,27 @@ describe("history restoration and explicit recovery", () => {
     await Promise.resolve(); expect(request).toHaveBeenCalledOnce();
     expect(pick).not.toHaveBeenCalled();
   });
+  it("places one compact recovery next to the illustration action without changing reply identity", async () => {
+    const row = answer("The gate opens.");
+    const target = latestSceneChoiceTarget()!;
+    const illustration = document.createElement("div"); illustration.dataset.deeproleIllustrations = "true";
+    illustration.attachShadow({ mode: "open" }).innerHTML = '<button>Create illustration</button><slot name="scene-choices"></slot>';
+    row.append(illustration); sync(); sync();
+    expect(recovery()?.parentElement).toBe(illustration);
+    expect(recovery()?.slot).toBe("scene-choices");
+    expect(document.querySelectorAll("[data-deeprole-choices-recovery]")).toHaveLength(1);
+    expect(latestSceneChoiceTarget()?.signature).toBe(target.signature);
+    expect(recovery()?.style.width).toBe("");
+    const button = recovery()!.shadowRoot!.querySelector("button")!;
+    expect(button.title).toContain("Отправит запрос в чат");
+    expect(button.classList.contains("dr-accent-action")).toBe(false);
+    button.click(); await Promise.resolve(); expect(request).toHaveBeenCalledOnce();
+    expect(request).toHaveBeenCalledWith(target.signature);
+    illustration.remove(); sync();
+    expect(recovery()?.previousElementSibling).toBe(row);
+    expect(recovery()?.hasAttribute("slot")).toBe(false);
+    sync("en", false); expect(recovery()).toBeNull();
+  });
   it("picks text only through the supplied draft handler", async () => {
     answer("Scene\n" + payload); sync();
     const button = host()!.shadowRoot!.querySelector<HTMLButtonElement>(".grid button")!; button.click(); await Promise.resolve();

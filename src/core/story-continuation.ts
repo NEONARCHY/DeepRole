@@ -1,9 +1,12 @@
 import type { StoryContinuation, StoryTurn } from "./types";
+import { injectedUserText } from "./injected-user-text";
 
 export const MAX_STORY_CHARACTERS = 220_000;
 export const MAX_STORY_TURNS = 2000;
 /** Remove protocol and reasoning, not story prose, names, ages or facts. */
 export function storyText(value: string): string {
+  const user = injectedUserText(value);
+  if (user !== null) return user.trim();
   return value
     .replace(/<deeprole_(context|characters|choices|data)\b[^>]*>[\s\S]*?(?:<\/deeprole_\1>|$)/giu, "")
     .replace(/^\s*\[User message\]\s*/u, "").trim();

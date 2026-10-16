@@ -1,4 +1,5 @@
 import { isUserMessage, nativeMessageRows } from "./deepseek-message-dom";
+import { injectedUserText } from "../core/injected-user-text";
 
 /** Presentation only. The original user turn stays intact for DeepSeek/copy/history. */
 export function presentHiddenHandoffs(root: ParentNode = document): void {
@@ -10,19 +11,15 @@ export function presentHiddenHandoffs(root: ParentNode = document): void {
   }
   for (const row of nativeMessageRows(root).filter(isUserMessage)) {
     const body = [...row.querySelectorAll<HTMLElement>(".ds-markdown, .ds-collapsible-text")].reverse()
-      .find(node => (node.textContent?.includes("<deeprole_handoff") || node.textContent?.includes("<deeprole_chat_notice")) || node.hasAttribute("data-deeprole-handoff-body")) ?? row;
+      .find(node => injectedUserText(node.textContent ?? "") !== null || node.hasAttribute("data-deeprole-handoff-body")) ?? row;
     const clone = body.cloneNode(true) as HTMLElement;
     clone.querySelectorAll("[data-deeprole-handoff-visible]").forEach(node => node.remove());
     const text = clone.textContent ?? "";
-    // Only extension handoffs, never arbitrary player prose or other user messages.
-    const separator = text.lastIndexOf("[User message]");
-    const contextEnd = text.lastIndexOf("</deeprole_context>", separator);
-    const marker = [text.indexOf('<deeprole_handoff version="1">'), text.indexOf('<deeprole_chat_notice version="1">')].filter(index => index >= 0).sort((a, b) => a - b)[0] ?? -1;
+    const message = injectedUserText(text);
     let host = body.querySelector<HTMLElement>(":scope > [data-deeprole-handoff-visible]");
-    if (!text.trimStart().startsWith("<deeprole_context") || marker < 0 || contextEnd < marker || separator < contextEnd) {
+    if (message === null) {
       delete body.dataset.deeproleHandoffBody; host?.remove(); continue;
     }
-    const message = text.slice(separator + "[User message]".length).trim();
     body.dataset.deeproleHandoffBody = "true";
     if (!host) { host = doc.createElement("div"); host.dataset.deeproleHandoffVisible = "true"; body.append(host); }
     if (host.textContent !== message) host.textContent = message;

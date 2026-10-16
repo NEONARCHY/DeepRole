@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "scope": "First strict run concurrent with full unit and nine-corpus evaluation. Original timeout retained; no threshold change.",
+  "integrityPassed": false,
+  "recallComplete": true,
+  "outcomes": [
+    {
+      "name": "combinations",
+      "exitCode": 0,
+      "counts": {
+        "passed": 162,
+        "failed": 0,
+        "pending": 0,
+        "suites": 2
+      }
+    },
+    {
+      "name": "lifecycle",
+      "exitCode": 1,
+      "counts": {
+        "passed": 329,
+        "failed": 1,
+        "pending": 0,
+        "suites": 34
+      }
+    }
+  ],
+  "runtimeDigests": {
+    "src/core/game-context.ts": "d90a8bd7486330d0bbd70255058e10a15fef7ca348b9544c129b635e6a7b1b86",
+    "src/core/story-obligation-recall.ts": "691af4628b91b76f58ce14511bc85c49eb224e322acca287848964b9cd7de176"
+  },
+  "failures": [
+    {
+      "name": "one hundred bounded portions have no pending routine questions, survive reload, and no duplicated profiles",
+      "durationMs": 30009.850500000004,
+      "message": "Error: Test timed out in 30000ms."
+    }
+  ]
+}

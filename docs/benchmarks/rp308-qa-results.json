@@ -1,0 +1,15 @@
+{
+  "iteration": "RP308",
+  "date": "2026-10-16",
+  "scope": "Full-width character action row; portrait stat chips on hover or keyboard focus; touch fallback",
+  "unit": { "passed": 42, "files": ["characters-dom.test.ts", "portrait-layout.test.ts"] },
+  "typecheckExitCode": 0,
+  "e2e": { "passed": 18, "failed": 0, "skipped": 0, "workers": 1, "browsers": ["chromium", "firefox"], "locales": ["ru", "en"], "widths": [320, 1100, 1280], "report": ".output/rp308-verified-e2e.json" },
+  "earlierAttempts": [
+    { "report": ".output/rp308-e2e.json", "passed": 2, "failed": 8, "cause": "New test assumed >150px instead of comparing full content width; actual width 148px" },
+    { "report": ".output/rp308-final-e2e.json", "passed": 9, "failed": 1, "cause": "Firefox browserContext.close protocol error after assertions; serial rerun passed" }
+  ],
+  "liveDeepSeekVerified": false,
+  "installedExtensionUpdated": false,
+  "dataAndNetworkBehaviorChanged": false
+}

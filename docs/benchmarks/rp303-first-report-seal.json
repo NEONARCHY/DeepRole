@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-relay-audit-baseline.json",
+  "report": "docs/benchmarks/rp303-relay-results.json",
+  "baselineHash": "aa7bc2c92aa0c8480e0cc32cdbd0ff742b9a21bfe105aea130e88fbfc44d2e76",
+  "reportHash": "87cc7e3219c1a894cc50f583fe3900834f16da798309bc26be4589c146a9b303",
+  "inputDigest": "26396139b02a1cabb8d2c8c536e406cfb0d6a9b2b8542f2ba19e0ddf0abf8828",
+  "goldDigest": "6cd4d5b250ceffeef8b3da75632cb7539335474fe16075c0fb83879ad033ca40"
+}

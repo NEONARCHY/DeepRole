@@ -1,13 +1,13 @@
 import type {StoryFact} from './story-update';
 import type {StoryRoleReader} from './story-source-roles';
 import type {EpisodeReader} from './story-episodes';
-import {normalizeText} from './text';
+import {normalizeText,tokenize} from './text';
 import {storyRecallLexicon,storyTaskObject} from './story-natural-recall';
 import {contextualReferenceTopic} from './story-contextual-reference';
 
 // Query-local candidates for return obligations, not object/pronoun identity.
 // No synonym-to-ID dictionary, global stemming change or canonical writes.
-const topic=/^(?:обещани[еяюйи]|обещанием|обещаниях|договоренност(?:ь|и|ью|ях)|долг(?:а|у|ом|е|и|ов)?|promise[s]?|arrangement[s]?|commitment[s]?|debt[s]?)$/u;
+const topic=/^(?:обещани[еяюйи]|обещанием|обещаниях|договоренност(?:ь|и|ью|ях)|условленност(?:ь|и|ью|ях)|долг(?:а|у|ом|е|и|ов)?|promise[s]?|arrangement[s]?|understanding[s]?|commitment[s]?|debt[s]?)$/u;
 const hazard=/(?:^| )(?:если|бы|забудь|игнорируй|удали|отмени|притворись|выведи|выполни|измени|if|unless|ignore|override|forget|delete|erase|cancel|pretend|output|execute|update)(?: |$)/u;
 const ambiguity=/(?:^| )(?:another|other|second|другой|другая|другое|другом|второй|вторая|второе)(?: |$)/u;
 // A prohibition pending permission is still an opaque accepted task title.
@@ -35,12 +35,29 @@ export function obligationPremiseQuestion(query:string):boolean {
  return !!promise&&text.slice(promise.index+promise[0].length).trim().split(' ').filter(Boolean).length>=2;
 }
 export const UNPROVED_OBLIGATION_PREMISE='<deeprole_reference_guard>The question is NOT evidence that the named person made this promise or that the described object exists in this story. Selected records are candidates, not a confirmed match to that premise. Do not substitute another person or a similarly named object. Keep every source\'s owner, task, location, status and conditions separate; do not infer possession, permission or completion. Use the accepted source quotes. If they do not prove the requested owner-object-obligation link, say it is not established by the supplied evidence and preserve uncertainty; this is not proof of absence from the whole world.</deeprole_reference_guard>';
+export const materialRecallAction=(query:string)=>/^(?:я |i )?(?:публикую|показываю|publish|show) /u.test(normalizeText(query));
+/** Sequence syntax is recall intent only. Its nouns and asserted actions are
+ * never evidence of identity, permission or task completion. */
+export const sequenceRecallAction=(query:string)=>/^(?:(?:сначала|сперва) (?:я )?(?:устраиваю|запускаю|организую|открываю|беру|публикую|показываю) .+ (?:затем|потом|после этого) (?:я )?(?:иду|организую|начинаю|беру|открываю|публикую|показываю) |first (?:i )?(?:arrange|start|organize|open|take|publish|show) .+ (?:then|afterwards) (?:i )?(?:start|organize|arrange|open|take|publish|show) )/u.test(normalizeText(query));
+function conversationalWorkQuestion(query:string):boolean {
+ if(!/[?？]$/u.test(query.trim()))return false;
+ const parts=query.trim().replace(/[?？]$/u,'').split(/\.\s*/u);
+ if(parts.length!==2||parts.some(p=>!p.trim()||/[!?？]/u.test(p)))return false;
+ const text=normalizeText(parts[1]!);
+ return /^(?:(?:ну (?:и )?)?(?:как|что) с .+ (?:вопрос уже решен|можно считать все улаженным)|so is .+ (?:all sorted now|all squared away))$/u.test(text);
+}
 /** Finite information requests and explicit action-plus-recall requests.
  * Quoted commands and conditionals cannot provide a positive source bridge. */
 export function obligationRecallIntent(query:string):'reference'|'return-inquiry'|'delivery-inquiry'|'compound-inquiry'|'work-inquiry'|undefined {
  if(!query.trim()||query.length>600||/[«»“”"`\r\n()[\]{}<>]|(?<![\p{L}\p{N}])'|'(?![\p{L}\p{N}])/u.test(query))return;
- const text=normalizeText(query);if(hazard.test(text))return;
- const compound=/^(?:я |i )?(?:открываю|беру|достаю|open|take) /u.test(text)&&/(?:обещани|условия|ограничени|договоренност|что (?:нужно|необходимо) соблюсти|recall|conditions|restrictions|promise|what must be respected)/u.test(text);
+ const text=normalizeText(query),conversational=conversationalWorkQuestion(query);
+ // In a bounded readiness question, a hyphenated adjective (pretend-danger)
+ // is not an imperative "pretend". Only hazard detection uses this spelling;
+ // the original draft and all source text remain unchanged. Other commands,
+ // extra sentences and actual "pretend ..." instructions stay excluded.
+ const hazardText=conversational?normalizeText(query.replace(/\bpretend-(?=\p{L})/giu,'simulated-')):text;
+ if(hazard.test(hazardText))return;
+ const compound=(/^(?:я |i )?(?:открываю|беру|достаю|публикую|показываю|open|take|publish|show) /u.test(text)||sequenceRecallAction(query))&&/(?:обещани|обязательств|условия|ограничени|запрет|договоренност|что (?:нужно|необходимо) соблюсти|recall|conditions|restrictions|prohibitions|obligations|agreements|promise|what must be respected)/u.test(text);
  if(query.includes(';')&&!compound)return;
  // Finite requests to recall agreed restrictions. This supplies intent ONLY;
  // the latest accepted quote must still prove a literal retrieval bridge.
@@ -48,13 +65,20 @@ export function obligationRecallIntent(query:string):'reference'|'return-inquiry
  if(/^(?:мы (?:ведь )?о чем то условились|о чем мы договорились|we had an understanding(?: didn t we)?|what did we agree) (?:и )?(?:что пока нельзя делать|какие запреты еще в силе|what remains forbidden|and which prohibitions remain in force)$/u.test(text))return 'reference';
  if(/^(?:вернемся к тому на чем сошлись|вернись к нашей прежней договоренности|back to what we settled on|return to our earlier understanding) (?:что нас еще сдерживает|какие препятствия еще остались|what is still holding us back|which obstacles are still outstanding)$/u.test(text))return 'reference';
  if(/^(?:на чем мы остановились с этим делом и что пока мешает|where did we leave that business and what is still in the way)$/u.test(text))return 'reference';
+ if(/^(?:как там с тем что я обещал|чем кончилась та наша условленность|how is the thing i gave my word about coming along|whatever became of that understanding of ours)$/u.test(text))return 'reference';
  if(compound)return 'compound-inquiry';
  if(contextualReferenceTopic(query)==='promise')return 'reference';
  const ref=/^(?:(?:а |так )?что (?:там )?с |напомни (?:мне )?(?:о|об|про) |(?:so )?what about |remind me (?:about|of) )(?:(?:ее|его|их|это|этот|эта|то|тот|та|той|том|тому|этом|этому|тем|her|his|their|this|that|the) )?(\p{L}+)$/u.exec(text);
  if(ref&&topic.test(ref[1]!))return 'reference';
+ if(conversational&&!/(?:^| )(?:я|i|открой|открываю|беру|open|take|add|generate|create)(?: |$)/u.test(text))return 'work-inquiry';
  // A bounded preparation-versus-completion QUESTION supplies intent only.
  // Its object description never supplies a source label or changes task state.
  if(/^(?:раз .+ мы уже разобрались или еще рано|the .+ so are we all done with .+ or is it too soon)$/u.test(text)
+  &&/[?？]$/u.test(query.trim())&&!/[.!?？].*\p{L}/u.test(query)
+  &&!/(?:^| )(?:я|i|открой|открываю|беру|open|take|add|generate|create)(?: |$)/u.test(text))return 'work-inquiry';
+ // A readiness-versus-permission question is only candidate-recall intent.
+ // Neither the alleged readiness nor the user's noun phrase proves permission.
+ if(/^(?:.+ значит .+ уже можно (?:выложить|опубликовать) или еще рано|the .+ so may we (?:put .+ online|publish .+) already or is it too early)$/u.test(text)
   &&/[?？]$/u.test(query.trim())&&!/[.!?？].*\p{L}/u.test(query)
   &&!/(?:^| )(?:я|i|открой|открываю|беру|open|take|add|generate|create)(?: |$)/u.test(text))return 'work-inquiry';
  if(/^(?:(?:ну )?что (?:там )?с (?:проверкой|настройкой)|как (?:обстоят дела|дела) с (?:проверкой|настройкой)|как там дела с (?:той|тем|этой|этим)|(?:ну )?что там с (?:той|тем|этой|этим)|(?:how are things with|any word on) (?:that|this|the)|(?:where are we with|any news on) (?:examining|tuning|checking)) /u.test(text)
@@ -91,10 +115,14 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
  const intent=obligationRecallIntent(query);
  if(!intent||!roles||!episodes||roles.question)return;
  const lex=storyRecallLexicon(names),maskedQuery=lex.mask(query);
- if(maskedQuery.includes('__deeprole_name__'))return;
+ const material=intent==='compound-inquiry'&&(materialRecallAction(query)||sequenceRecallAction(query));
+ if(maskedQuery.includes('__deeprole_name__')&&!material)return;
  const hasTopic=(s:string)=>lex.mask(s).split(' ').some(w=>topic.test(w));
  const cache=new WeakMap<StoryFact,string[][]>(),texts=new WeakMap<StoryFact,string[][]>();
  const textFields=(f:StoryFact)=>{let p=texts.get(f);if(!p){p=lex.clauses(f.text);texts.set(f,p);}return p;};
+ const rawClauses=(s:string)=>s.split(/[.!?;,\r\n:]+/u).map(tokenize);
+ const namedTexts=new WeakMap<StoryFact,string[][]>();
+ const namedFields=(f:StoryFact)=>{let p=namedTexts.get(f);if(!p){p=rawClauses(f.text);namedTexts.set(f,p);}return p;};
  const fields=(f:StoryFact)=>{let p=cache.get(f);if(!p){p=[...textFields(f),...lex.clauses(f.task?.title??'')];cache.set(f,p);}return p;};
  const contains=(parts:string[][],terms:string[])=>parts.some(words=>words.some((_,at)=>terms.every((w,i)=>words[at+i]===w)));
  const textContains=(s:string,terms:string[])=>contains(lex.clauses(s),terms);
@@ -132,10 +160,10 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
   }
   for(const key of seen)counts.set(key,(counts.get(key)??0)+1);
  }
- const labels=new Map<string,{terms:string[];tasks:StoryFact[];sentence:boolean}>();
+ const labels=new Map<string,{terms:string[];tasks:StoryFact[];sentence:boolean;named?:boolean}>();
  for(const task of tasks){
   const title=lex.mask(task.task!.title),conditional=conditionalSpans.has(task),sentence=conditional||/^(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) /u.test(title);
-  let terms:string[]|undefined;
+  let terms:string[]|undefined,named=false;
   if(conditional){
    const unique=[...new Map(conditionalSpans.get(task)!.filter(span=>(counts.get(span.join(' '))??0)>=3).map(span=>[span.join(' '),span])).values()];
    const maximal=unique.filter(span=>uncovered(lex.clauses(task.task!.title),span,unique));
@@ -154,10 +182,25 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
     // or unavailable sources; never derive a label from only its trusted half.
     if(facts.filter(f=>f!==task&&contains(textFields(f),candidate)).length>=2){terms=candidate;break;}
    }
+   // A publication/exhibition title may repeat only the person's underlying
+   // material in its other sources. Derive an explicit historical name-object
+   // span from the accepted title, never from the draft or speaker similarity.
+   // The title's own record plus TWO other texts must contain it literally.
+   if(!terms&&material&&proved(task)){
+    const person=roles.read(task)?.promisor,name=person&&tokenize(person.sourceName??person.name);
+    const candidates:string[][]=[];
+    if(name?.length&&name.length<=4)for(const words of rawClauses(rest))for(let at=0;at<words.length;at++)for(let n=name.length+1;n<=6&&at+n<=words.length;n++){
+     const span=words.slice(at,at+n);
+     if(contains([span],name)&&contains(namedFields(task),span)&&contains(rawClauses(task.quote),span)&&facts.filter(f=>f!==task&&contains(namedFields(f),span)).length>=2)candidates.push(span);
+    }
+    const unique=[...new Map(candidates.map(span=>[span.join(' '),span])).values()];
+    const maximal=unique.filter(span=>!unique.some(long=>long.length>span.length&&contains([long],span)));
+    if(maximal.length===1){terms=maximal[0];named=true;}
+   }
   }
   if(!terms?.length)continue;
-  if(!contains(textFields(task),terms)||!textContains(task.quote,terms))return;
-  const key=terms.join(' '),group=labels.get(key)??{terms,tasks:[],sentence:false};group.tasks.push(task);group.sentence||=sentence;labels.set(key,group);
+  if(named?(!contains(namedFields(task),terms)||!contains(rawClauses(task.quote),terms)):(!contains(textFields(task),terms)||!textContains(task.quote,terms)))return;
+  const key=(named?'named:':'')+terms.join(' '),group=labels.get(key)??{terms,tasks:[],sentence:false,named};group.tasks.push(task);group.sentence||=sentence;labels.set(key,group);
  }
  // Broad inquiries still admit at most four labels. A short reference has an
  // accepted-scene scope: unrelated historical labels must not use its slots.
@@ -200,7 +243,7 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
   for(const sentence of latest.split(/[.!?;\r\n]+/u))if(ambiguity.test(lex.mask(sentence))){
    if(hasTopic(sentence)||!textContains(sentence,pair.terms)||!pair.anchors.some(a=>a.quote.includes(sentence.trim())))return;
   }
-  selected=[{terms:pair.terms,tasks:[...new Set(pair.tasks)],sentence:true}];anchors=[...new Set(pair.anchors)];
+   selected=[{terms:pair.terms,tasks:[...new Set(pair.tasks)],sentence:true}];anchors=[...new Set(pair.anchors)];
   // Topic and label may occupy adjacent clauses in the SAME accepted quote.
   // Extra raw scene text can veto it, never supply a positive bridge itself.
   let remainder=latest;for(const anchor of anchors)remainder=remainder.replace(anchor.quote,' ');
@@ -218,10 +261,11 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
   const requested=lex.clauses(query);
   // A shortened noun is a candidate key, never a unique object or owner.
   // All same-labelled candidates keep their own conditions and task states.
-  selected=selected.filter(g=>contains(requested,g.terms)||g.terms.length>=2&&contains(requested,[g.terms.slice(0,3).at(-1)!]));
+   selected=selected.filter(g=>g.named?contains(rawClauses(query),g.terms):contains(requested,g.terms)||g.terms.length>=2&&contains(requested,[g.terms.slice(0,3).at(-1)!]));
   if(!selected.length)return;
  }
- const group=[...new Set([...anchors,...facts.filter(f=>selected.some(g=>contains(fields(f),g.terms)))])];
+  const group=[...new Set([...anchors,...facts.filter(f=>selected.some(g=>g.named?contains(namedFields(f),g.terms):contains(fields(f),g.terms)))])];
+  if(selected.some(g=>g.named&&group.some(f=>contains(namedFields(f),g.terms)&&!contains(rawClauses(f.quote),g.terms))))return;
  if(!group.length||group.some(f=>!proved(f))||selected.some(g=>g.tasks.some(f=>!proved(f)||!roles.read(f)?.promisor)))return;
  return group.sort((a,b)=>episodes.position(a)-episodes.position(b));
 }

@@ -6,7 +6,10 @@ import {EMPTY_CHARACTER} from '../../src/core/characters';
 import {selfieImageKey} from '../../src/core/selfies';
 import {profile,world,realPng} from '../image-fixtures';
 for(const locale of ['ru','en'] as const)for(const width of [320,900])test(`model prompt limit UI ${locale} ${width}`,async({page},info)=>{
- await page.setViewportSize({width,height:950});await page.goto('/tests/fixtures/image-prompt-limit.html?locale='+locale);const summary=page.locator('summary');await summary.focus();await page.keyboard.press('Enter');await expect(page.getByText(locale==='ru'?'Лимит выбранной модели':'Selected model limit',{exact:true})).toBeVisible();
+ await page.setViewportSize({width,height:950});await page.goto('/tests/fixtures/image-prompt-limit.html?locale='+locale);
+ const support=page.locator('.dr-support-details > summary'),summary=page.locator('.dr-support-details > details > summary');
+ await support.focus();await page.keyboard.press('Enter');await expect(page.getByText(locale==='ru'?'Лимит выбранной модели':'Selected model limit',{exact:true})).not.toBeVisible();
+ await summary.focus();await page.keyboard.press('Enter');await expect(page.getByText(locale==='ru'?'Лимит выбранной модели':'Selected model limit',{exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);if(info.project.name==='chromium')await page.screenshot({path:info.outputPath(`image-limit-${locale}-${width}.png`),fullPage:true});
  await summary.focus();await page.keyboard.press('Enter');await expect(page.getByText(locale==='ru'?'Лимит выбранной модели':'Selected model limit',{exact:true})).not.toBeVisible();
 });
@@ -37,7 +40,7 @@ for(const locale of ['ru','en'] as const)test(`installed frame with unsent draft
   const host=chat.locator('[data-deeprole-illustrations]');await expect(host).toHaveCount(1);await host.getByRole('button',{name:locale==='ru'?'Создать иллюстрацию':'Create illustration',exact:true}).click();
   await expect(host.locator('img')).toHaveCount(1,{timeout:45000});await expect(composer).toHaveValue(draft);await expect.poll(()=>context.pages().length).toBe(3);expect(await chat.locator('[data-message-id="service-user"]').count()).toBe(0);
   const calls=await worker.evaluate(()=>(globalThis as any).imageBudgetCalls),paid=calls.filter((c:any)=>c.body);expect(paid).toHaveLength(1);expect(paid[0].url).toContain('/image/multi-edit');expect(paid[0].body.modelId).toBe('edit-scene');expect(paid[0].body.prompt.length).toBeLessThanOrEqual(1500);expect(paid[0].body.images).toHaveLength(2);expect(paid[0].body.prompt).toContain(plan.scene);
-  expect(servicePrompt).toContain('Final image prompt budget: 1500');expect(servicePrompt).not.toContain('SYNTHETIC-KEY');expect(servicePrompt).not.toContain('data:image');
+   expect(servicePrompt).toContain('Final image prompt budget: 1500');expect(servicePrompt).toContain('"promptComposition"');expect(servicePrompt).toContain('"generateModel":"new-scene"');expect(servicePrompt).toContain('"editModel":"edit-scene"');expect(servicePrompt).toContain('Subtract that sum');expect(servicePrompt).not.toContain('SYNTHETIC-KEY');expect(servicePrompt).not.toContain('data:image');
   await panel.evaluate(async()=>{const api=(globalThis as any).chrome,settings=(await api.storage.local.get('deeprole_image_settings')).deeprole_image_settings;await api.storage.local.set({deeprole_image_settings:{...settings,stylePrefix:'STYLE '.repeat(180)}});});
   await chat.reload();await expect(host.locator('img')).toHaveCount(1);await composer.fill(draft);
   await chat.bringToFront();await host.getByRole('button',{name:locale==='ru'?'Создать иллюстрацию':'Create illustration',exact:true}).click();await expect(host.getByRole('alert')).toContainText(locale==='ru'?'не помещается':'exceeds',{timeout:45000});await expect(composer).toHaveValue(draft);await expect.poll(()=>context.pages().length).toBe(3);
