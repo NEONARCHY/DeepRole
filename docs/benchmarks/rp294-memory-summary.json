@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "scope": "Local synthetic memory interactions and existing storage journeys, no live model/account",
+  "directory": "C:\\Users\\lxstevxl\\Desktop\\Projects\\BDS\\.pull-main-20261003\\.output\\memory-tests\\2026-10-15T23-10-35.388Z-2104",
+  "integrityPassed": true,
+  "recallComplete": true,
+  "outcomes": [
+    {
+      "name": "combinations",
+      "exitCode": 0,
+      "counts": {
+        "passed": 162,
+        "failed": 0,
+        "pending": 0,
+        "suites": 2
+      }
+    },
+    {
+      "name": "lifecycle",
+      "exitCode": 0,
+      "counts": {
+        "passed": 330,
+        "failed": 0,
+        "pending": 0,
+        "suites": 34
+      }
+    }
+  ],
+  "pairwise": {
+    "pairs": 2427,
+    "rows": 57,
+    "factors": {
+      "locale": [
+        "ru",
+        "en"
+      ],
+      "plot": [
+        0,
+        1,
+        2
+      ],
+      "noise": [
+        450,
+        1100,
+        6500
+      ],
+      "budget": [
+        900,
+        2400,
+        16000
+      ],
+      "transport": [
+        "legacy",
+        "compact",
+        "columns"
+      ],
+      "variant": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "cache": [
+        false,
+        true
+      ],
+      "lore": [
+        "enabled",
+        "disabled",
+        "excluded"
+      ],
+      "profiles": [
+        false,
+        true
+      ],
+      "recap": [
+        false,
+        true
+      ],
+      "choices": [
+        false,
+        true
+      ],
+      "required": [
+        false,
+        true
+      ],
+      "contentRelevance": [
+        false,
+        true
+      ],
+      "topicAdmission": [
+        false,
+        true
+      ],
+      "continuationBalance": [
+        false,
+        true
+      ],
+      "actionBalance": [
+        false,
+        true
+      ],
+      "taskGoalBalance": [
+        false,
+        true
+      ],
+      "compoundActionBalance": [
+        false,
+        true
+      ],
+      "naturalRecall": [
+        false,
+        true
+      ],
+      "lastingRecall": [
+        false,
+        true
+      ],
+      "referenceRecall": [
+        false,
+        true,
+        "guard"
+      ],
+      "referenceBundle": [
+        false,
+        true
+      ],
+      "discussionPriority": [
+        false,
+        true
+      ],
+      "flexiblePriority": [
+        false,
+        true
+      ],
+      "sequencePriority": [
+        false,
+        true
+      ],
+      "budgetPriority": [
+        false,
+        true
+      ],
+      "contextualRecall": [
+        false,
+        true
+      ]
+    }
+  },
+  "recall": {
+    "scored": 60,
+    "complete": 60,
+    "missingRecords": 0,
+    "confidenceGaps": 0
+  },
+  "limits": [
+    "Not all possible texts, histories or multiway combinations",
+    "Pairwise compiler dimensions do not imply lifecycle Cartesian coverage",
+    "Existing corpora are seen, not a new blind evaluation",
+    "No native browser or DeepSeek completion tested"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-cross-owner-audit-baseline.json",
+  "report": "docs/benchmarks/rp292-cross-owner-results.json",
+  "baselineHash": "667b818a59d8fb96585633a281ada3c36601f807b1d9610104e4c4322857cb59",
+  "reportHash": "1adab8040dde5ff5cc4d94da7bbf3591582131ef683a05e0bbbf0fec0f7913b0",
+  "inputDigest": "8061f0cdf153845fba17ba08aa337f6a6b950eb73fe01f033c28af63a9aa8390",
+  "goldDigest": "708b318b11c20c96b37ba96c5f8e8558a5a44054460938efbece4fa133d179c9"
+}

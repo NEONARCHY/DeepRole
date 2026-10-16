@@ -98,5 +98,52 @@ for(const locale of ['ru','en'] as const)test(`installed obligation recall ${loc
    const rawSaved=(await rows(panel)).find(r=>r.kind==='world').data.sharedGame;
    for(const useFetch of [false,true]){await send(newReference,useFetch);expect(outgoing.endsWith(newReference)).toBe(true);expect(outgoing).toContain('<deeprole_reference_guard>');expect(outgoing).toContain('NOT resolved by DeepRole');expect(readHints().some(h=>h.text.includes('silver stage helmet')||h.text.includes('серебряный сценический шлем'))).toBe(false);}
    const end=(await rows(panel)).find(r=>r.kind==='world').data.sharedGame;expect(end.facts).toEqual(rawSaved.facts);expect(end.factRoleSeeds).toEqual(rawSaved.factRoleSeeds);expect(end.episodeSources).toEqual(rawSaved.episodeSources);expect(posts).toBe(23);expect(errors).toEqual([]);
+   // RP290: delivery + a similarly labelled repair, with access/destination
+   // conditions learned through accepted in-game replies, not injected hints.
+   const crate=f.s('закрытый медный ящик','sealed copper crate'),dispenser=f.s('закрытый медный дозатор','sealed copper dispenser');
+   const deliveryTitle=f.s(`Я обещаю доставить ${crate} после проверки пломбы.`,`I promise to deliver ${base.entities[0]!.name}’s ${crate} after the seal is checked.`);
+   const repairTitle=f.s(`Я обещаю починить ${dispenser} после отключения питания.`,`I promise to repair ${base.entities[1]!.name}’s ${dispenser} after power is isolated.`);
+   const delivery=[source(deliveryTitle,0,{key:'rp290-delivery',title:deliveryTitle,status:'open'}),
+    source(f.s(`Предмет ${crate} хранится в холодной кладовой; вход разрешает только заведующая.`,`The ${crate} is in the cold storeroom; only the manager grants entry.`)),
+    source(f.s(`Предмет ${crate} теперь принимают у грузового подъёмника; торговая дверь закрыта.`,`The ${crate} is now accepted at the freight lift; the shop door is closed.`)),
+    source(f.s(`Предмет ${crate} погрузили на тележку, но доставка ещё не состоялась.`,`The ${crate} was loaded onto the trolley, but delivery has not happened.`))];
+   const repair=[source(repairTitle,1,{key:'rp290-repair',title:repairTitle,status:'open'}),
+    source(f.s(`Предмет ${dispenser} за защитной решёткой; доступ разрешает электрик.`,`The ${dispenser} is behind a safety grille; the electrician approves access.`),1),
+    source(f.s(`Предмет ${dispenser} осмотрен, но ремонт ещё не выполнен.`,`The ${dispenser} was inspected, but repair remains unfinished.`),1)];
+   const deliveryAnchor=source(f.s(`То обещание — доставить ${crate} после проверки пломбы.`,`That promise means delivering the ${crate} after the seal check.`));
+   await accept(delivery);await accept(repair);await accept([deliveryAnchor]);
+   const deliverySaved=(await rows(panel)).find(r=>r.kind==='world').data.sharedGame;
+   const short=f.s('Что с тем обещанием?','What about that promise?'),shipping=f.s('Как там отправка груза: тележку подготовили — значит обещанное исполнено?','How is shipping that cargo going: does preparing the trolley fulfil the promise?');
+   failNext=true;await send(short);const failedDelivery=readHints();await send(short);expect(readHints()).toEqual(failedDelivery);
+   for(const reload of [false,true]){
+    if(reload){await chat.reload();await chat.bringToFront();await expect(chat.locator('.dr-character-row')).toHaveCount(2,{timeout:12000});}
+    for(const query of [short,shipping]){
+     await send(query,reload);expect(outgoing.endsWith(query)).toBe(true);expect(outgoing).toContain('<deeprole_reference_guard>');expect(outgoing).toContain('NOT resolved by DeepRole');
+     const hints=readHints();
+     for(const fact of delivery){const h=hints.find(h=>h.text===fact.text)!;expect(h).toBeDefined();expect(h.sourceQuote??h.text).toBe(fact.quote);expect(h.task).toEqual(fact.task);const seed=deliverySaved.factRoleSeeds.find((v:any)=>v.binding.quote===fact.quote);expect(h.sourceRoles).toEqual(seed.binding.roles);expect(h.episodeSource?.revisionId).toBe(seed.binding.sourceRevisionId);}
+     expect(hints.find(h=>h.task?.key==='rp290-delivery')?.task?.status).toBe('open');
+     const other=hints.find(h=>h.task?.key==='rp290-repair');if(other)expect(other.sourceRoles?.promisor?.id).toBe(base.entities[1]!.id);
+    }
+   }
+   const deliveryEnd=(await rows(panel)).find(r=>r.kind==='world').data.sharedGame;
+   expect(deliveryEnd.facts).toEqual(deliverySaved.facts);expect(deliveryEnd.factRoleSeeds).toEqual(deliverySaved.factRoleSeeds);expect(deliveryEnd.episodeSources).toEqual(deliverySaved.episodeSources);expect(posts).toBe(32);expect(context.pages()).toHaveLength(pages);expect(errors).toEqual([]);
+   // RP291: a question cannot assign Lida's promise to Oleg/Oren or establish
+   // a new object. Keep all transported historical bindings untouched.
+   const wrongOwner=f.s(`Куда ${base.entities[1]!.name} обещал доставить ${crate}?`,`Where did ${base.entities[1]!.name} promise to deliver the ${crate}?`);
+   const invented=f.s('Что с обещанием починить хрустальный термометр?','What about the promise to repair the crystal thermometer?');
+   failNext=true;await send(wrongOwner);const failedPremise=readHints();await send(wrongOwner);expect(readHints()).toEqual(failedPremise);
+   for(const reload of [false,true]){
+    if(reload){await chat.reload();await chat.bringToFront();await expect(chat.locator('.dr-character-row')).toHaveCount(2,{timeout:12000});}
+    for(const query of [wrongOwner,invented]){
+     await send(query,reload);expect(outgoing.endsWith(query)).toBe(true);expect(outgoing).toContain('The question is NOT evidence');expect(outgoing).toContain('Do not substitute another person');
+     for(const h of readHints()){
+      const fact=deliverySaved.facts.find((v:any)=>v.text===h.text)!;expect(fact).toBeDefined();expect(h.sourceQuote??h.text).toBe(fact.quote);expect(h.task).toEqual(fact.task);
+      const seed=deliverySaved.factRoleSeeds.find((v:any)=>v.binding.quote===fact.quote);expect(h.sourceRoles).toEqual(seed.binding.roles);expect(h.episodeSource?.revisionId).toBe(seed.binding.sourceRevisionId);
+     }
+     expect(readHints().some(h=>h.text.includes('crystal thermometer')||h.text.includes('хрустальный термометр'))).toBe(false);
+    }
+   }
+   const premiseEnd=(await rows(panel)).find(r=>r.kind==='world').data.sharedGame;
+   expect(premiseEnd.facts).toEqual(deliverySaved.facts);expect(premiseEnd.factRoleSeeds).toEqual(deliverySaved.factRoleSeeds);expect(premiseEnd.episodeSources).toEqual(deliverySaved.episodeSources);expect(posts).toBe(38);expect(context.pages()).toHaveLength(pages);expect(errors).toEqual([]);
  }finally{await context.close();}
 });

@@ -1,0 +1,18 @@
+{
+ "stage":"RP300",
+ "date":"2026-10-16",
+ "scope":"Repair of source-bound recall for accepted prohibition-until-permission tasks; seen synthetic scenarios, not live-model evaluation",
+ "runtimeChanged":["src/core/story-obligation-recall.ts"],
+ "history":"RP298 obligation/context snapshots saved before runtime change; RP299 first15/22/input/gold/seal/protocol/runner untouched",
+ "before":{"failedRepairChecks":11,"passedRepairChecks":49,"complete":15,"scored":22,"gold":100,"missing":11,"confidenceGapCases":5},
+ "focused":{"passed":345,"failed":0,"files":4,"newRepairChecks":60,"oldRepairChecks":285},
+ "targetSeen":{"complete":22,"scored":22,"gold":100,"missing":0,"integrityCases":0,"confidenceGapCases":0,"lostPriorFacts":0},
+ "sevenSeenCorpora":{"status":"passed","inputs":546,"scored":324,"complete":324,"gold":1508,"missing":0,"integrityCases":0,"confidenceGapCases":0,"lostPriorFacts":0,"finalReportPrefix":"rp300a","firstAttempt":"Five reports saved before Vite watcher EBUSY on concurrent native browser temporary Cookies; original attempt runner retained; retry disables filesystem watching only"},
+ "fullUnit":{"status":"passed","passed":8501,"failed":0,"todo":5,"files":307,"durationSeconds":233.84},
+ "unifiedStrict":{"passed":492,"failed":0,"pairs":2427,"configurations":57,"complete":60,"scored":60,"missing":0,"confidenceGaps":0},
+ "typecheckExitCode":0,
+ "build":{"chromeExitCode":0,"firefoxExitCode":0,"warnings":["Existing chunk larger than500KB"]},
+ "native":{"status":"passed","passed":2,"failed":0,"flaky":0,"durationSeconds":88.281,"contextsClosed":true,"scope":"Existing isolated RU/EN synthetic Edge tests, not live DeepSeek or new plot response quality"},
+ "packages":{"status":"passed","chromeFiles":23,"firefoxFiles":23,"sourceFiles":868,"sha256AgainstDisk":true,"canonicalCopies":3,"sourceExcludesTests":true,"testExecutionRequiresGitCheckout":true},
+ "limits":["Finite lexical intents, not universal language understanding","Accepted tasks/roles given; not extractor proof","Small900-token probes remain incomplete","No permission or fulfillment inferred","RP-05/general semantics/true delta open","Installed extension and worlds unchanged","No push requested"]
+}

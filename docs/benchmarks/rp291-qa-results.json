@@ -1,0 +1,22 @@
+{
+  "stage": "RP291",
+  "date": "2026-10-16",
+  "runtimeChanges": ["src/core/story-obligation-recall.ts", "src/core/game-context.ts"],
+  "fingerprints": { "originalBaseline": 414, "unchanged": 412, "expectedEdits": 2, "sourceFiles": 410, "addedRuntimeFiles": 0, "finalRP290SnapshotsPreserved": true },
+  "seen": {
+    "scope": "SEEN regression against RP290b, not a new independent or live-model evaluation",
+    "rp289": { "cases": 96, "complete": 54, "scored": 54, "goldRecords": 204, "missing": 0, "confidenceGaps": 0, "expectedUncertainty": 42, "guardedUnverified": 42, "changedOutputs": 23, "changedCoverage": 0 },
+    "rp287": { "cases": 108, "complete": 62, "scored": 62, "goldRecords": 250, "missing": 0, "confidenceGaps": 0, "changedOutputs": 1, "changedCoverage": 0 },
+    "rp283": { "cases": 84, "complete": 54, "scored": 54, "goldRecords": 312, "missing": 0, "confidenceGaps": 0, "changedOutputs": 2, "changedCoverage": 0 },
+    "allSelections": "All 288 selected source ID arrays and order unchanged",
+    "integrityIssues": 0,
+    "lostPriorRecords": 0,
+    "budgetOutputChanges": 0,
+    "rejectionControlChanges": 0,
+    "provenance": "Original inputs/gold/first reports/seals and RP290b reports unchanged; runtime digests equal before and after each dataset."
+  },
+  "tests": { "reproducedBeforeFix": "12/12 missing-warning failures", "newRuntime": 27, "newReports": 3, "focused": "72 runtime plus 6 historical/current report checks passed", "fullUnit": { "files": 297, "passed": 7720, "failed": 0, "existingTodo": 5, "total": 7725, "durationSeconds": 320.54 }, "typecheck": "passed", "diffCheck": "passed" },
+  "native": { "engine": "isolated synthetic Edge MV3", "passed": 4, "failed": 0, "flaky": 0, "durationSeconds": 181.810645, "localScopedPosts": 102, "checks": ["RU/EN wrong promisor and invented object warning in actual outgoing POST", "Exact quotes/task/source roles/revisions preserved", "No fabricated item", "503 retry", "XHR/fetch/reload", "Old delivery/return/gift regressions", "Canon unchanged", "Contexts closed in finally" ] },
+  "packages": { "chromeEntries": 23, "firefoxEntries": 23, "sourceEntries": 765, "builds": "passed", "content": "Every entry SHA256 matches disk; all three canonical download copies match", "exclusions": "No private assets/tests/nested ZIPs in sources", "warning": "Existing >500KB chunk warning", "installedCopyReloaded": false },
+  "limits": ["Finite supported question grammar, not a semantic truth classifier", "No live DeepSeek/model/account or native Firefox/full E2E", "Personal lore and installed extension unchanged", "No additional model/API calls", "No commit or push requested", "Next: fresh preregistered independent plots/phrasing"]
+}

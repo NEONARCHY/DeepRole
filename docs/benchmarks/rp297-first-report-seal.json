@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-conditional-audit-baseline.json",
+  "report": "docs/benchmarks/rp297-conditional-results.json",
+  "baselineHash": "09a9a0f5e78e3944d36f696f4f6384e51aa3e6e57b7ab965e8e1d1348336005a",
+  "reportHash": "f868230ca2efa8b40d1d3c00992b04407c519330902baea13539dd11770ce4ee",
+  "inputDigest": "3d4d987d273ee86e9d0ebb2a4b427ca6fee97fd7afea584e034e721fbb4a4e60",
+  "goldDigest": "fbff95701f6ec7f1051cf6a7ad04fc7e906f0e694f13d90f7ed691aaea3c8cb6"
+}

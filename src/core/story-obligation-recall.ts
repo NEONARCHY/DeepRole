@@ -10,14 +10,62 @@ import {contextualReferenceTopic} from './story-contextual-reference';
 const topic=/^(?:обещани[еяюйи]|обещанием|обещаниях|договоренност(?:ь|и|ью|ях)|долг(?:а|у|ом|е|и|ов)?|promise[s]?|arrangement[s]?|commitment[s]?|debt[s]?)$/u;
 const hazard=/(?:^| )(?:если|бы|забудь|игнорируй|удали|отмени|притворись|выведи|выполни|измени|if|unless|ignore|override|forget|delete|erase|cancel|pretend|output|execute|update)(?: |$)/u;
 const ambiguity=/(?:^| )(?:another|other|second|другой|другая|другое|другом|второй|вторая|второе)(?: |$)/u;
-/** Only an information request. An action, quotation, condition or unknown
- * trailing sentence cannot activate this supplementary retrieval path. */
-export function obligationRecallIntent(query:string):'reference'|'return-inquiry'|undefined {
- if(!query.trim()||query.length>600||/[«»“”"`\r\n;()[\]{}<>]|(?<![\p{L}\p{N}])'|'(?![\p{L}\p{N}])/u.test(query))return;
+// A prohibition pending permission is still an opaque accepted task title.
+// Admitting it for literal grouping does NOT infer permission or fulfillment.
+const conditionalTitle=(title:string)=>/^(?:если|когда|после|как только|пока|без|if|when|after|once|following|unless|without)(?: |$)/u.test(normalizeText(title));
+/** Literal suffix after an explicit affirmative prose promise, NOT a verb or
+ * object identity parser. The suffix is usable only if repeated in at least
+ * two other accepted texts and the entire resulting group proves its sources. */
+function prosePromiseObject(title:string):string|undefined {
+ const match=/^(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to)\s+(.+)$/iu.exec(title.trim());
+ if(!match||/^(?:не|not|never)(?:\s|$)/iu.test(match[1]!))return;
+ const action=/^(?:give back|hand over|\p{L}{2,40})\s+(.+)$/iu.exec(match[1]!);
+ if(!action)return;
+ return action[1]!.replace(/^(?:the|a|an)\s+/iu,'');
+}
+/** Detect a supported question's explicit obligation premise, not whether its
+ * named owner/object exists. No retrieval key or canonical identity is created.
+ * Bare role questions ("What did Zoe promise?") retain their existing path. */
+export function obligationPremiseQuestion(query:string):boolean {
+ if(!query.trim()||query.length>600||/[«»“”"`\r\n;()[\]{}<>]|(?<![\p{L}\p{N}])'|'(?![\p{L}\p{N}])/u.test(query)||/[.!?？].*\p{L}/u.test(query))return false;
+ const text=normalizeText(query);if(hazard.test(text))return false;
+ if(!/^(?:а |так |so )?(?:куда|где|кто|что|как|кому|когда|зачем|почему|напомни|where|what|who|how|when|why|remind)(?: |$)/u.test(text))return false;
+ if(/(?:^| )(?:я |i )?(?:открываю|открой|беру|возьми|добавь|создай|open|take|add|generate|create)(?: |$)/u.test(text))return false;
+ const promise=/(?:^| )(?:обещани[еяюйи]|обещанием|обещаниях|обещал[аи]?|пообещал[аи]?|обещает|обещают|promise[s]?|promised|commitment[s]?)(?: |$)/u.exec(text);
+ return !!promise&&text.slice(promise.index+promise[0].length).trim().split(' ').filter(Boolean).length>=2;
+}
+export const UNPROVED_OBLIGATION_PREMISE='<deeprole_reference_guard>The question is NOT evidence that the named person made this promise or that the described object exists in this story. Selected records are candidates, not a confirmed match to that premise. Do not substitute another person or a similarly named object. Keep every source\'s owner, task, location, status and conditions separate; do not infer possession, permission or completion. Use the accepted source quotes. If they do not prove the requested owner-object-obligation link, say it is not established by the supplied evidence and preserve uncertainty; this is not proof of absence from the whole world.</deeprole_reference_guard>';
+/** Finite information requests and explicit action-plus-recall requests.
+ * Quoted commands and conditionals cannot provide a positive source bridge. */
+export function obligationRecallIntent(query:string):'reference'|'return-inquiry'|'delivery-inquiry'|'compound-inquiry'|'work-inquiry'|undefined {
+ if(!query.trim()||query.length>600||/[«»“”"`\r\n()[\]{}<>]|(?<![\p{L}\p{N}])'|'(?![\p{L}\p{N}])/u.test(query))return;
  const text=normalizeText(query);if(hazard.test(text))return;
+ const compound=/^(?:я |i )?(?:открываю|беру|достаю|open|take) /u.test(text)&&/(?:обещани|условия|ограничени|договоренност|что (?:нужно|необходимо) соблюсти|recall|conditions|restrictions|promise|what must be respected)/u.test(text);
+ if(query.includes(';')&&!compound)return;
+ // Finite requests to recall agreed restrictions. This supplies intent ONLY;
+ // the latest accepted quote must still prove a literal retrieval bridge.
+ if(/^(?:помнишь (?:нашу договоренность|о чем договаривались)|как насчет нашего уговора|remember (?:our arrangement|what we agreed)|how about our understanding) (?:какие условия все еще действуют|что еще не разрешено|что еще остается под запретом|which conditions still apply|what is still not permitted|which restrictions still stand)$/u.test(text))return 'reference';
+ if(/^(?:мы (?:ведь )?о чем то условились|о чем мы договорились|we had an understanding(?: didn t we)?|what did we agree) (?:и )?(?:что пока нельзя делать|какие запреты еще в силе|what remains forbidden|and which prohibitions remain in force)$/u.test(text))return 'reference';
+ if(/^(?:вернемся к тому на чем сошлись|вернись к нашей прежней договоренности|back to what we settled on|return to our earlier understanding) (?:что нас еще сдерживает|какие препятствия еще остались|what is still holding us back|which obstacles are still outstanding)$/u.test(text))return 'reference';
+ if(/^(?:на чем мы остановились с этим делом и что пока мешает|where did we leave that business and what is still in the way)$/u.test(text))return 'reference';
+ if(compound)return 'compound-inquiry';
  if(contextualReferenceTopic(query)==='promise')return 'reference';
- const ref=/^(?:(?:а |так )?что (?:там )?с |напомни (?:мне )?(?:о|об|про) |(?:so )?what about |remind me (?:about|of) )(?:(?:ее|его|их|это|этот|эта|то|тот|та|том|тому|этом|этому|тем|her|his|their|this|that|the) )?(\p{L}+)$/u.exec(text);
+ const ref=/^(?:(?:а |так )?что (?:там )?с |напомни (?:мне )?(?:о|об|про) |(?:so )?what about |remind me (?:about|of) )(?:(?:ее|его|их|это|этот|эта|то|тот|та|той|том|тому|этом|этому|тем|her|his|their|this|that|the) )?(\p{L}+)$/u.exec(text);
  if(ref&&topic.test(ref[1]!))return 'reference';
+ // A bounded preparation-versus-completion QUESTION supplies intent only.
+ // Its object description never supplies a source label or changes task state.
+ if(/^(?:раз .+ мы уже разобрались или еще рано|the .+ so are we all done with .+ or is it too soon)$/u.test(text)
+  &&/[?？]$/u.test(query.trim())&&!/[.!?？].*\p{L}/u.test(query)
+  &&!/(?:^| )(?:я|i|открой|открываю|беру|open|take|add|generate|create)(?: |$)/u.test(text))return 'work-inquiry';
+ if(/^(?:(?:ну )?что (?:там )?с (?:проверкой|настройкой)|как (?:обстоят дела|дела) с (?:проверкой|настройкой)|как там дела с (?:той|тем|этой|этим)|(?:ну )?что там с (?:той|тем|этой|этим)|(?:how are things with|any word on) (?:that|this|the)|(?:where are we with|any news on) (?:examining|tuning|checking)) /u.test(text)
+  && /[?？]$/u.test(query.trim())&&!/[.!?？].*\p{L}/u.test(query)
+  && !/(?:^| )(?:я |i )?(?:открываю|беру|open|take|add|generate|create)(?: |$)/u.test(text))return 'work-inquiry';
+ // A shipment paraphrase is a request for candidate delivery obligations, not
+ // proof that "that cargo" names a particular object. Only one question; no
+ // appended action/condition may enter this supplementary lane.
+ if(/^(?:как (?:там|идет|продвигается) (?:отправка|доставка|перевозка|выдача|передача)|(?:ну )?как с (?:выдачей|передачей|доставкой)|что (?:там )?с (?:отправкой|доставкой|перевозкой|выдачей|передачей)|(?:how is|any progress|what became of) (?:the )?(?:shipping|shipment|delivery|transport|releasing)) /u.test(text)
+  && !/(?:^| )(?:я |i )?(?:открываю|открой|беру|возьми|добавь|создай|open|take|add|generate|create)(?: |$)/u.test(text)
+  && /[?？]$/u.test(query.trim())&&!/[.!?？].*\p{L}/u.test(query))return 'delivery-inquiry';
  const parts=query.trim().replace(/[.!?]+$/u,'').split(/[.!?]+\s*/u);
  if(!parts.length||parts.length>2||parts.some(p=>!p.trim()))return;
  const first=normalizeText(parts[0]!);
@@ -56,16 +104,51 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
   return occurrences(parts,terms).some(hit=>!longer.some(span=>span.clause===hit.clause&&span.at<=hit.at&&span.end>=hit.end));
  };
  const proved=(f:StoryFact)=>roles.status?.(f)==='bound'&&!!episodes.read(f)&&Object.values(roles.read(f)??{}).every(p=>!p.unavailable);
- const tasks=facts.filter(f=>f.task&&/^(?:(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) )?(?:вернуть|возвратить|возврат|return|give back) /u.test(lex.mask(f.task.title)));
+ const tasks=facts.filter(f=>f.task&&(intent==='return-inquiry'
+  ?/^(?:(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) )?(?:вернуть|возвратить|возврат|return|give back) /u
+  :intent==='delivery-inquiry'
+   ?/^(?:(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) )?(?:доставить|доставка|перевезти|передать|deliver|delivery|transport|hand over) /u
+   :/^(?:(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) )?(?:вернуть|возвратить|возврат|return|give back|доставить|доставка|перевезти|передать|deliver|delivery|transport|hand over|починить|ремонтировать|заменить|repair|fix|mend|replace) /u).test(lex.mask(f.task.title))||!!f.task&&intent!=='return-inquiry'&&intent!=='delivery-inquiry'&&(prosePromiseObject(f.task.title)!==undefined||conditionalTitle(f.task.title)));
  if(!tasks.length||tasks.length>16)return;
+ // Opaque accepted task titles can put their conditions BEFORE the action.
+ // Count literal 2..6-token spans once per fact; a task plus two OTHER texts
+ // must repeat the span. Never derive a label from the user's query or resolve
+ // a conditional into fulfillment. Multiple independent maximal spans veto it.
+ const conditionalSpans=new Map<StoryFact,string[][]>(),keys=new Set<string>();
+ for(const task of tasks)if(conditionalTitle(task.task!.title)){
+  const spans:string[][]=[];
+  for(const words of lex.clauses(task.task!.title))for(let at=0;at<words.length;at++)for(let n=2;n<=6&&at+n<=words.length;n++){
+   const span=words.slice(at,at+n);if(span.some(t=>t.startsWith('__deeprole_')))continue;
+   spans.push(span);keys.add(span.join(' '));
+  }
+  conditionalSpans.set(task,spans);
+ }
+ if(keys.size>4096)return;
+ const counts=new Map<string,number>();
+ if(keys.size)for(const fact of facts){
+  const seen=new Set<string>();
+  for(const words of textFields(fact))for(let at=0;at<words.length;at++)for(let n=2;n<=6&&at+n<=words.length;n++){
+   const key=words.slice(at,at+n).join(' ');if(keys.has(key))seen.add(key);
+  }
+  for(const key of seen)counts.set(key,(counts.get(key)??0)+1);
+ }
  const labels=new Map<string,{terms:string[];tasks:StoryFact[];sentence:boolean}>();
  for(const task of tasks){
-  const title=lex.mask(task.task!.title),sentence=/^(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) /u.test(title);
+  const title=lex.mask(task.task!.title),conditional=conditionalSpans.has(task),sentence=conditional||/^(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to) /u.test(title);
   let terms:string[]|undefined;
-  if(!sentence)terms=storyTaskObject(task.task!.title,names)?.terms;
+  if(conditional){
+   const unique=[...new Map(conditionalSpans.get(task)!.filter(span=>(counts.get(span.join(' '))??0)>=3).map(span=>[span.join(' '),span])).values()];
+   const maximal=unique.filter(span=>uncovered(lex.clauses(task.task!.title),span,unique));
+   if(maximal.length!==1)return;
+   terms=maximal[0];
+  }
+  else if(!sentence)terms=storyTaskObject(task.task!.title,names)?.terms;
   else {
-   const rest=task.task!.title.replace(/^(?:я (?:обещаю|обещал[аи]?)|i promise(?:d)? to)\s+(?:вернуть|возвратить|возврат|return|give back)\s+(?:(?:the|a|an)\s+)?/iu,'');
-   const prefix=lex.clauses(rest)[0]??[];
+   const rest=prosePromiseObject(task.task!.title);if(rest===undefined)continue;
+   // "deliver Zoe's sealed crate": a known leading possessive is a barrier,
+   // not part of the literal object label. Historical owner stays in roles.
+   let prefix=lex.clauses(rest)[0]??[];
+   if(/^__deeprole_name__ s /u.test(lex.mask(rest)))prefix=prefix.slice(2);
    for(let count=Math.min(6,prefix.length);count>=2;count--){const candidate=prefix.slice(0,count);if(candidate.some(t=>t.startsWith('__deeprole_')))continue;
     // Proof is checked for the entire resulting group below, including failed
     // or unavailable sources; never derive a label from only its trusted half.
@@ -76,10 +159,17 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
   if(!contains(textFields(task),terms)||!textContains(task.quote,terms))return;
   const key=terms.join(' '),group=labels.get(key)??{terms,tasks:[],sentence:false};group.tasks.push(task);group.sentence||=sentence;labels.set(key,group);
  }
- if(!labels.size||labels.size>4)return;
+ // Broad inquiries still admit at most four labels. A short reference has an
+ // accepted-scene scope: unrelated historical labels must not use its slots.
+ // The task scan is still bounded by sixteen; at most four matching labels
+ // may survive below, and only one effective literal bridge is permitted.
+ if(!labels.size||intent!=='reference'&&labels.size>4)return;
  let selected=[...labels.values()],anchors:StoryFact[]=[];
  if(intent==='reference'){
-  const latest=recent.at(-1);if(!latest||ambiguity.test(lex.mask(latest)))return;
+  const latest=recent.at(-1);if(!latest)return;
+  // A source explicitly distinguishing two like-labelled items is not proof
+  // of one identity. Keep BOTH candidate groups, with their original roles.
+  // Other/second unnamed obligations still veto the bridge below.
   // Existing terse-label contextual handling owns that path. This supplement
   // only bridges full prose titles and an exact accepted latest-turn quote.
   selected=selected.filter(g=>g.sentence);
@@ -99,10 +189,17 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
    const qualified=matches.filter(other=>other.anchor===m.anchor).map(other=>other.terms);
    return uncovered(textFields(m.anchor),m.terms,qualified)&&uncovered(lex.clauses(m.anchor.quote),m.terms,qualified);
   });
+  if(new Set(specific.map(m=>m.group)).size>4)return;
   const pairs=new Map<string,{terms:string[];tasks:StoryFact[];anchors:StoryFact[]}>();
   for(const m of specific){const key=m.terms.join(' '),p=pairs.get(key)??{terms:m.terms,tasks:[],anchors:[]};p.tasks.push(...m.group.tasks);p.anchors.push(m.anchor);pairs.set(key,p);}
   if(pairs.size!==1)return;
   const pair=[...pairs.values()][0]!;
+  // An explicitly separate like-labelled item is still a candidate, not one
+  // identity. Any ambiguous sentence must itself belong to an accepted anchor,
+  // repeat this label and introduce no extra promise. Raw additions cannot help.
+  for(const sentence of latest.split(/[.!?;\r\n]+/u))if(ambiguity.test(lex.mask(sentence))){
+   if(hasTopic(sentence)||!textContains(sentence,pair.terms)||!pair.anchors.some(a=>a.quote.includes(sentence.trim())))return;
+  }
   selected=[{terms:pair.terms,tasks:[...new Set(pair.tasks)],sentence:true}];anchors=[...new Set(pair.anchors)];
   // Topic and label may occupy adjacent clauses in the SAME accepted quote.
   // Extra raw scene text can veto it, never supply a positive bridge itself.
@@ -116,6 +213,13 @@ export function obligationRecallFacts(facts:StoryFact[],query:string,recent:stri
     break;
    }
   }
+ }
+ if(intent==='compound-inquiry'){
+  const requested=lex.clauses(query);
+  // A shortened noun is a candidate key, never a unique object or owner.
+  // All same-labelled candidates keep their own conditions and task states.
+  selected=selected.filter(g=>contains(requested,g.terms)||g.terms.length>=2&&contains(requested,[g.terms.slice(0,3).at(-1)!]));
+  if(!selected.length)return;
  }
  const group=[...new Set([...anchors,...facts.filter(f=>selected.some(g=>contains(fields(f),g.terms)))])];
  if(!group.length||group.some(f=>!proved(f))||selected.some(g=>g.tasks.some(f=>!proved(f)||!roles.read(f)?.promisor)))return;

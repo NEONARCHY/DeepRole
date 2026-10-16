@@ -1,0 +1,16 @@
+{
+  "stage":"RP297",
+  "date":"2026-10-16",
+  "scope":"Fresh authored synthetic conditional-commitment audit, not blind external or live-model evaluation",
+  "runtime":"RP296 unchanged; all 414 fingerprints, including 410 src, checked before and after",
+  "preflight":"Before freeze and any compiler execution, invalid ended claim.value was corrected to the full fact.text; authored prose and manual gold unchanged",
+  "firstAudit":{"inputs":64,"scored":38,"complete":23,"gold":176,"missing":38,"incompleteQueries":15,"integrityCases":0,"confidenceGapCases":4,"falseCompleteCases":0},
+  "qa":{"newChecks":68,"oldRegressionChecks":369,"unifiedChecks":492,"passed":929,"failed":0,"files":29,"unifiedStrictExitCode":0,"oldScoredComplete":"60/60; 0 missing; 0 guard gaps"},
+  "typecheckExitCode":0,
+  "diffCheckExitCode":0,
+  "chromeBuildZipExitCode":0,
+  "firefoxBuildZipExitCode":0,
+  "packages":{"chromeFiles":23,"firefoxFiles":23,"sourceFiles":824,"sha256AgainstDisk":true,"canonicalCopies":3},
+  "warnings":["Existing chunk larger than 500KB"],
+  "limits":["No runtime repair in this iteration","New corpus is now seen","Full unit/native/browser/live model not rerun","User worlds and installed extension unchanged","No push requested"]
+}

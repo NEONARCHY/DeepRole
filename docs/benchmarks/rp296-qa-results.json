@@ -1,0 +1,20 @@
+{
+  "stage":"RP296",
+  "date":"2026-10-16",
+  "scope":"Seen synthetic repair; not blind external or live model validation",
+  "runtimeChanged":["src/core/story-obligation-recall.ts","src/core/game-context.ts"],
+  "fullUnit":{"passed":8245,"failed":0,"todo":5,"files":303,"seconds":225.97,"workers":2},
+  "newChecks":83,
+  "beforeRepair":{"reproducedFailures":12,"incompleteQueries":11,"missingConditions":23,"warningGaps":4},
+  "seen":{"inputs":444,"scored":264,"gold":1232,"complete":264,"missing":0,"integrityCases":0,"confidenceGapCases":0,"lostPriorFacts":0,"datasets":["34/34","60/60","54/54","62/62","54/54"]},
+  "unified":{"passed":492,"failed":0,"strictExitCode":0,"scored":60,"complete":60,"missing":0,"confidenceGaps":0},
+  "native":{"browser":"isolated synthetic Edge MV3","passed":2,"failed":0,"skipped":0,"flaky":0,"seconds":86.26,"contextsClosed":true},
+  "typecheckExitCode":0,
+  "diffCheckExitCode":0,
+  "chromeBuildZipExitCode":0,
+  "firefoxBuildZipExitCode":0,
+  "packages":{"chromeFiles":23,"firefoxFiles":23,"sourceFiles":815,"sha256AgainstDisk":true,"canonicalCopies":3},
+  "history":"Two exact RP294 source snapshots preserve RP295 original fingerprints; first23/34 report/gold/seal and old runners/reports unchanged",
+  "warnings":["Existing chunk larger than 500KB"],
+  "limits":["Bounded literal evidence retrieval, not general semantic understanding","900-token compound probes remain incomplete; 2600/5200 now full","All corpora are seen","Existing native critical paths, not live new plots","No live DeepSeek/native Firefox/full E2E test","User worlds and installed extension unchanged","No push requested"]
+}

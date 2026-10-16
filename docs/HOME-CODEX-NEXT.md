@@ -1,5 +1,79 @@
 # Codex на другом ПК: откуда продолжать после pull
 
+## Актуальная передача — RP300, 16 октября 2026
+
+Начинай здесь, затем прочитай верхние разделы `CODEX-HANDOFF.md`, `ROADMAP.md` и дневник `docs/HANDOFF-2026-10-16.md`. Разделы ниже исторические: не возобновляй старые задачи RP289/RP292, уже исправленные позже. Пользователь попросил отправить весь накопленный результат RP289–RP300 на GitHub и передать работу другому Codex.
+
+### Что уже сделано
+
+- Условия обещаний подбираются полными группами подтверждённых записей: кто обещал, доступ, место, подготовка, незавершённость, отмена и запреты. Упаковка или просушка не означают выполнение.
+- Похожие названия предметов и общие короткие имена не дают права объединять владельцев или обязательства. Завершённая задача другого персонажа не закрывает текущую.
+- Вопрос пользователя не считается доказательством, что названный предмет или обещание существуют. Добавлены предупреждения при неподтверждённой связи; сомнительные кандидаты не становятся новым каноном.
+- Расширены поддерживаемые вопросы о доставке/ремонте/договорённости, короткие ссылки и составные действия с просьбой напомнить условия. Поддержаны принятые заголовки «если/когда/после», «пока…не», «без разрешения…не», unless/without. Это ограниченный буквальный поиск, не универсальная семантика.
+- Добавлен единый `npm run test:memory -- --strict-recall`: комбинации настроек и длительные пути хранения. Он не заменяет независимые новые сюжетные проверки.
+- Новые независимые замеры RP289/RP292/RP295/RP297/RP299 выявляли реальные пропуски; их исправления имеют отдельные SEEN-отчёты. Первые результаты и ручные ожидания сохранены, не переименованы в успешные.
+
+Пример последнего исправления: «Пока вода не уйдёт и завхоз не выдаст пропуск, плащ не понесу». Поддерживаемый вопрос «с той серебристой одеждой уже разобрались?» теперь подтягивает условие, пропуск, новое место и отсутствие передачи. Расширение не решает за модель, что вода уже ушла или пропуск получен.
+
+### Точная проверенная точка
+
+Последний первый аудит RP299:15/22,11 пропущенных записей в7 вопросах,5 пропусков guard. После RP300:22/22 и100/100 записей. Итоговые **семь SEEN-наборов `rp300a-*`:324/324 оцениваемых случаев,1508/1508 записей**,0 нарушений источников/guard gaps/потери ранее выбранных фактов. Всего546 входов, включая контрольные и бюджетные; не называй их546 полноценно пройденными сюжетами.
+
+Full unit8501 pass,0fail,5 прежних TODO,307 файлов; unified492 checks,2427 пар в57 конфигурациях,60/60 recall; TypeScript0. Два изолированных synthetic Edge теста прошли; окна закрыты. Chrome/Firefox собраны. Итоговые отчёты: `docs/benchmarks/rp300-qa-results.json`, `rp300a-*-seen-results.json`, `rp300-native.json`. Сборки и три canonical ZIP находятся в `downloads/`. Установленная копия отдельно не перезагружалась.
+
+Первый частичный SEEN-прогон `rp300-*` прервался из-за Vite watcher/EBUSY временных Cookies параллельного браузера. Пять отчётов и исходный runner сохранены; итоговый повтор `rp300a-*` использует `watch:null`. Это исправление тестового инструмента, не изменение игровой логики. Проверки живого DeepSeek и качества ответа модели на новом театральном сюжете не проводились.
+
+### Что делать дальше
+
+1. Подготовить действительно новые сюжеты и формулировки с ручными ожиданиями **до первого запуска**. Не ограничиваться очередным переименованием плаща и фонаря; проверить другие виды условий/обязательств и неоднозначные ссылки.
+2. Зафиксировать входы, gold, собственный runner/протокол и текущий runtime. Сделать первый неизменяемый замер. Новый корпус после этого считается известным, не слепым.
+3. Если найдены пропуски — воспроизвести, сохранить точные runtime-снимки перед исправлением, затем отдельный SEEN-замер плюс регрессия семи нынешних наборов. Не подгонять первые ожидания под реализацию.
+4. После стабилизации возвращаться к открытым задачам RP-05/общей семантики и настоящей межходовой дельты передачи памяти. Они **не закрыты** этими тестами. Не обещать пользователю универсальную память, любые тексты или бесконечный нативный контекст DeepSeek.
+5. Для живой проверки пользователь должен обновить установленную копию расширения и страницу DeepSeek; архив не делает этого автоматически. Не трогать личный мир, историю и аккаунт без отдельной необходимости/разрешения.
+
+### Команды и ограничения
+
+Работать из корня актуального checkout, не из родительской старой копии BDS. После pull проверить `git status`, не стирать чужие изменения. Для тестов нужен Git checkout: source ZIP исключает `tests/` и `private-assets/`.
+
+```sh
+npm run typecheck
+npm run test:memory -- --strict-recall
+npm test -- --maxWorkers=2
+npx playwright test tests/e2e/story-obligation-runtime.spec.ts --project=chromium --workers=1
+```
+
+Не перезапускать audit с `--freeze`/`--evaluate` поверх уже сохранённых первых отчётов; не перезаписывать SEEN-отчёты. Их скрипты создают новые результаты через wx/суффикс попытки. Для тестовых Vite runner отключать filesystem watch; браузерный TEMP держать вне наблюдаемых деревьев. При Windows esbuild TEMP access-denied сборку можно направить в отдельную временную папку.
+
+Не повышать лимиты ради зелёного теста и не обрезать цитаты. При900-токенном бюджете часть памяти всё ещё не помещается. Сохранять условия, роли, владельцев, отменённые разрешения, whole-group rollback и пользовательские правки. Проверки retrieval не доказывают автоматическое извлечение событий. После каждой итерации обновлять roadmap/передачу, писать пользователю кратко по-русски с примером.
+
+### История ниже — справочная, не текущая очередь
+
+## RP292 — первый новый audit:39/60,следом условия и свободные ссылки
+
+Новые истории RU/EN: дирижабль, караван и типография,до6500фоновыхзаписей.96inputs:60scored/30controls/6budget. Первый39/60,264/306gold;42missing в21case:paraphrase9records,same-label10,free-reference11,composite12.0integrity/falsecomplete;42UIunverified,36guard/6gaps толькоfree-reference. Namedhandover/replacement/twojobs/cancel/consent/scale полны. [Результаты](CROSS-OWNER-RESULTS.md), [protocol](CROSS-OWNER-EVALUATION.md), [firstreport](benchmarks/rp292-cross-owner-results.json). RuntimeRP291неизменён,414frozenfingerprints/firstseals/oldreports прежние. QA1056/1056checks в11files,100новых;TypeScript/diff-check0.3ZIP23/23/771entries/canonicalSHA256checked,notesупакованы. Fullunit/native/live не повторялись:код/UI прежние. Syntheticacceptedmemory,неlive/externalblindproof;новые кейсы теперьseen. [QA](benchmarks/rp292-qa-results.json).
+
+Перваязадача:repro21losses+6free-referenceguards,неповторновыполнятьRP291wrong-owner12cases. Same-labelliteralнеobjectID:сохранитьобегруппыA/B,разныероли/taskkeys/доступ/отмену. Проверитьпределproseverbs handover/replace,нонеугадыватьпричинувсехпотерь. БудущийfixтолькоseparateseenсрегрессомRP289/RP287/RP283;first39/60/gold/report/sealнепереписывать. RP-05/general semantics/true delta открыты,личныймир/installedcopyпрежние,pushнезапрошен.
+
+## RP291 — владелец/предмет из вопроса не считаются фактом
+
+12guard gaps закрыты metered premise warning отдельно от retrieval/reference logic. Ни owner/object identity,ни новыйканон,нискрытый synonym mapping не создаются. Поддержаны finite RUEN вопросы;bare role questions/opt-out/restart/reference-only прежние. Все288 прежних selectedIds/порядок иcoverage совпали,только23/1/2outputs RP289/RP287/RP283 изменились предупреждением. Всеgold54/54,62/62,54/54 иquotes/roles/status/revisions целы;42RP289unresolved guarded/unverified,0gaps. [Контракт/пример](OBLIGATION-PREMISES.md). Fullunit7720pass/0fail/5TODO,297files,27runtime+3reportnew;TypeScript/diff-check0. Isolated Edge4/4pass/0fail/0flaky,181.81s,102localPOST,contextsclosed.3ZIP23/23/765entries/canonicalSHA256checked,notesупакованы;live model/nativeFirefox/fullE2Eнепроверены,installedcopy прежняя. [QA](benchmarks/rp291-qa-results.json).
+
+Следующее:новый preregistered independent audit на других сюжетах/формулировках. First reports/gold/seals/RP290b/RP291seen не переписывать;2RP290snapshots фиксируют его runtime. Личныймир/installedcopy прежние,push не запрошен. General semantics/RP-05/true delta открыты.
+
+## RP290 — доставка и короткие обещания
+
+Исправлены2runtime files по найденным11 потерям RP289. Delivery/repair prose tasks и shipping inquiry получают whole source-backed conditions,EN known-name possessive не часть label. Reference candidate cap4 считается после accepted-scene scope:иначе старые посторонние обещания блокировали новый сюжет. Scan16tasks/128rows/whole-budget/неоднозначность/исторические роли и неизменность канона сохранены. Final seen RP28954/54,204/204,0loss/integrity;RP28762/62,RP28354/54,все192outputs прежние. Fullunit7690pass/0fail/5TODO,45runtime+3reportnew;TypeScript/diff-check0. Native Edge4/4pass/0fail/0flaky,133.25s,90localPOST.3ZIP23/23/757entries/canonicalSHA256 проверены,notes упакованы. Live model/nativeFirefox/fullE2E не проверены,installedcopy прежняя. [Контракт/пример](MIXED-OBLIGATION-REPAIR.md), [QA](benchmarks/rp290-qa-results.json).
+
+Final reports — `rp290b-*`;rp290/rp290a предварительные сохранены,первый native2pass/2fail выявил настоящий scope bug. First RP289/RP287/RP283 gold/report/seals не менять. Следующее:12explicit guard gaps swapped-owner/invented-object,затем новый независимый frozen audit;RP-05/general semantics/true delta открыты. Личный лор/installedcopy прежние,push не запрошен.
+
+## Текущий этап RP289 Новые типы обязательств проверены
+
+Первый новый audit на неизменённом RP288:96inputs/3новыхplots/RUEN/до6000scenes,54scored43complete,187/204gold,17missing в11cases. Все6paraphrases и5proved-reference теряют access/destination/preparation evidence;named delivery/repair/two-jobs/payment/cancelled/secrecy/scale полны.0integrity/false-complete,42/42UIunverified и12missingexplicitguards(swapped owner/invented object). [Результаты](MIXED-OBLIGATION-RESULTS.md), [protocol](MIXED-OBLIGATION-EVALUATION.md), [первыйreport](benchmarks/rp289-mixed-obligation-results.json). Будущий fix оценивается только как seen на этих данных.
+
+Runtime/UI/storage/settings/model и old reports/seals не менялись. Initial preflight self-runner-path metadata issue исправлен ДО первого compiler новымv2manifest;исходныйmanifest/snapshot/input/gold сохранены,414fingerprints. QA:1068/1068tests в12files,100новых;TypeScript/diff-check0.3ZIP пересобраны,финальная проверка содержимого — CODEX-HANDOFF. Fullunit/native/live не запускались:runtime/UI прежние. Личный лор/аккаунт не использовали,push не запрошен.
+
+Дальше:прочитать фактические11 missing cases,доказать причину a1 по exact delivery bridge и paraphrase a1/a2/a3,отдельно12guard gaps;не переименовывать первый43/54 в зелёный. Fix в следующей итерации с отдельным seen report и старыми RP283/RP287 tests,после него новый независимый корпус. Минимум действий игрока/whole sources/условия/source roles/canon/ambiguity/budget safeguards обязательны. General semantics/RP-05/true cross-turn delta пока открыты.
+
 ## Выпуск RP274–RP288: публикация в main
 
 Выпуск публикуется через [PR #2](https://github.com/NEONARCHY/DeepRole/pull/2) из `codex/rp274-rp288-memory-safety` по запросу пользователя;актуальный статус слияния доступен в PR. После обновления `main` начинать с RP288 ниже: новые независимые истории/формулировки и обязательства,сначала protocol/input/gold/runtime freeze,затем замер. Фиксы коротких ссылок уже готовы,7542unit pass/0fail/5TODO и10/10 synthetic Edge подтверждены;RP-05 остаётся открытым. Исторические «push не запрошен» ниже относятся к прежним этапам.

@@ -1,0 +1,12 @@
+{
+  "stage": "RP289",
+  "date": "2026-10-16",
+  "runtime": "RP288 unchanged; 410 source files verified against frozen manifests",
+  "audit": { "inputs": 96, "scored": 54, "complete": 43, "goldRecords": 204, "missingRecords": 17, "incompleteCases": 11, "integrityFailures": 0, "falseComplete": 0, "explicitGuardGaps": 12 },
+  "unit": { "files": 12, "passed": 1068, "failed": 0, "newChecks": 100, "durationSeconds": 161.05 },
+  "typecheck": "passed",
+  "priorSeals": "verified by unit tests",
+  "preflight": "Initial self-runner fingerprint path corrected before any compiler evaluation; original manifest and runner snapshot preserved; v2 retains identical input/gold/rows/runtime.",
+  "limits": ["Synthetic accepted-memory audit, not live DeepSeek", "Full unit suite and native browser suite not rerun", "No installed extension or personal world changed", "New corpus is now seen; preserve first report and seal"],
+  "packages": { "chrome": 23, "firefox": 23, "sources": 743, "builds": "passed", "warning": "Existing chunk size >500KB warning", "entryContent": "SHA256 matches disk", "canonicalCopies": "All three SHA256 match", "exclusions": "No tests/private assets/nested ZIPs in source archive" }
+}

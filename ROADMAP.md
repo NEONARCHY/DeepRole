@@ -1,5 +1,105 @@
 # DeepRole — roadmap
 
+## RP300 — исправление условий запрета до разрешения
+
+- [x] Сохранить точные RP298 snapshots до runtimeправки; RP299 first15/22/gold/seal оставить неизменными.
+- [x] Подбирать полные source-bound группы для пока/без/unless/without; не объявлять разрешение полученным или условие выполненным.
+- [x] Восстановить7 неполных случаев и5guardgaps:60 новых repair checks, целевойSEEN22/22/100gold/0missing. Budget2800/5600=8/8RUEN,900неполон.
+- [x] СемьSEENнаборов rp300a:324/324/1508gold,0missing/integrity/guards/lostprior. Fullunit8501pass/5existingTODO,unified492pass,TypeScript/diff0,native syntheticEdge2/2,ChromeFirefoxbuildZIP0. Первый watcherEBUSY сохранён,повтор watch:null;неliveDeepSeek.
+- [ ] Следом новая независимая frozen выборка; general semantics/RP-05/true delta остаются открытыми.
+
+[Описание](docs/EXCEPTION-REPAIR.md), [финальная QA](docs/benchmarks/rp300-qa-results.json).
+
+## RP299 — новый аудит запрета до условия
+
+- [x] Новые RU/EN тексты театра;38inputs/22scored/100gold,414 fingerprints до compiler, immutable first report/seal.
+- [x] Первый15/22,11missing в7queries,5guardgaps;0integrity/falsecomplete. [Результаты](docs/EXCEPTION-RESULTS.md). Runtime RP298 неизменён; исходный fixture сохранён перед техническим переименованием unusedparams.
+- [x] QA887pass/27files,TypeScript/diff0,ChromeFirefoxbuildZIP0;старыйunified60/60не отменяет новые пропуски. Full/native/live не повторяли.
+- [x] Исправление7 неполных случаев и5 предупреждений выполнено в RP300 выше; RP298 snapshots и первый результат сохранены. RP-05/general semantics/true delta открыты.
+
+## RP298 — исправление условных обязательств
+
+- [x] Сохранить RP296 snapshots; оставить RP297 первый замер и ожидания неизменными.
+- [x] Подбирать полные source-bound группы условной задачи, не выводя выполнение условия; отказ при двух независимых предметах и неподтверждённом заголовке.
+- [x] Исправить четыре пропуска предупреждения о неопределённости; не угадывать владельца по короткому имени.
+- [x] 86 repair checks; шесть SEEN наборов:302/302,1408/1408,0 потерь старых фактов; unified strict492pass.
+- [x] Full unit8399pass/5existingTODO, TypeScript0, native synthetic Edge2/2, Chrome/Firefox buildZIP0. Не live-model проверка.
+- [x] Независимая выборка проведена в RP299 выше; найдены новые пропуски. RP-05/general semantics/true delta не закрыты.
+
+[Описание](docs/CONDITIONAL-REPAIR.md), [финальная QA](docs/benchmarks/rp298-qa-results.json).
+
+
+## RP297 — условные обязательства и отозванные права
+
+- [x] FreshRUENвулканическаяпочта/обсерватория:conditionalбезI promise to,open/completedодноимённыевещи,qualifiedneighbour,общийalias,negative/endedpermission.64inputs/38scored/176gold/20controls/6budget/28uncertainty,до7500background. Доcompiler414frozenhashes иwxfirstreport/seal,separatefreeze/evaluate;endedschemaисправлендоfreeze/первогозапуска.
+- [x] Первый23/38,138/176gold,38missingв15queries,4freerefguardgaps;0integrity/falsecomplete. Paraphrase0/4,compound0/4,samelabel1/4,freeref0/4;explicit/qualified/negative/permission/scaleполны. [Результат](docs/CONDITIONAL-RESULTS.md), [firstreport](docs/benchmarks/rp297-conditional-results.json).
+- [x] QA929pass/0fail/29files:68new+369old+492unifiedstrict;old60/60/0gapsнеотменяетnewlosses. TypeScript/diff0,414hashes/oldseals/seenпрежние. Fullunit/native/liveнеповторяли,RP296runtimeunchanged. [QA](docs/benchmarks/rp297-qa-results.json).
+- [x] Исправление 15 неполных случаев и 4 предупреждений выполнено в RP298 выше; snapshots и первый результат сохранены. RP-05/true delta открыты.
+- [x] FinalChromeFirefoxbuildZIP0/старыйchunkwarning;23/23runtime/824source entriesSHA256/canonicalcopieschecked,финальныеnotesупакованы;installedcopy/worldunchanged,pushнепросили.
+
+## RP296 — условия без словаря глаголов для prose-обещаний
+
+- [x] До правки snapshots2RP294files;historicalRP295pinsпоним,first23/34/gold/sealсохранены. Воспроизведены12failingchecks(11неполных+одинполныйбезguard).
+- [x] Положительный explicit-prose заголовок даёт literalprefix только с повторением в2другихacceptedtexts иproofвсейгруппы;неverbsemantics/objectidentity. Отрицаниянеadmitpositivekey;старыеreturn/delivery/tersepaths/caps/wholebudget/rollback/owners/statusesпрежние. Boundedwork/agreement/action-recallформы;workguardприfallback. [Описание](docs/ACCESS-REPAIR.md).
+- [x] SEENновый34/34/160gold иold60/60,54/54,62/62,54/54:444inputs/264scored/1232gold,0missing/integrity/guardgaps/lostprior. Budget900неполон,2600/5200новые7/7RUEN.83newchecks,unifiedstrict492pass/60/60/0gaps.
+- [x] Fullunit8245pass/0fail/5existingTODO в303files,225.97s;unifiedstrict492pass;nativeisolatedsyntheticEdgeRUEN2/2pass/0flaky,86.26s,contextsclosed. TypeScript/diff0,ChromeFirefoxbuildZIP0/старыйchunkwarning;неliveDeepSeek/nativeFirefox/fullE2E. [QA](docs/benchmarks/rp296-qa-results.json).
+- [ ] Следующаяоценка:новыйfrozenindependentcorpus,необъявлятьSEENуниверсальнымпониманием. RP-05/true deltaоткрыты;first/gold/seals иhistoricalsnapshotsсохранить.
+- [x] Finalpackages23/23runtime/815source entriesSHA256against disk/canonicalcopieschecked;финальныеnotes/reportsупакованы. Installedcopy отдельноreload,миры прежние,pushнепросили.
+
+## RP295 — независимые новые условия доступа
+
+- [x] НовыеавторскиеRUENистории:оранжерея/затопленныймузей,калибровка/вскрытие/удостоверение/публикация;60inputs,34scored,160gold,20controls,6budget,28uncertainty,до7000background. Доcompilerfrozen414fingerprints/schema/input/gold/protocol/runner;separateevaluate,wxfirstreport/seal,before-afterruntimeunchanged.
+- [x] Первый23/34,137/160gold,23missing в11queries,0integrity/falsecomplete;28UIunverified,24guard/4gapsfreeref. Составные0/4,одноимённыессылки1/4,свободныессылки1/4;явные/границыразрешения/доступкпубликации/scaleполны. [Результаты](docs/ACCESS-RESULTS.md), [первыйreport](docs/benchmarks/rp295-access-results.json).
+- [x] QA778pass/0fail/27files:64newaudit+222old+492unifiedstrict;старый60/60/0gapsнеотменяетnewlosses. TypeScript/diff0,414hashes/oldseals/seen сохранены. Fullunit/native/live не повторяли,кодигрыRP294прежний. [QA](docs/benchmarks/rp295-qa-results.json).
+- [ ] Следомfix11lossqueries/4guardgapsотдельнымseen+oldregressions. ДоизмененийsnapshotRP294sources по414hashes;first23/34/gold/sealнепереписывать. Неcapincrease/objectmerge/permissionguess. Новыйcorpusтеперьseen;RP-05/true deltaоткрыты.
+- [x] FinalChromeFirefoxbuildZIP0/старыйchunkwarning;23/23runtime/802source entries/canonicalcopiesSHA256checked,финальныеnotesупакованы;installedcopyнеобновлялась,pushнепросили.
+
+## RP294 — исправление потерь условий из unified suite
+
+- [x] Сохранены два точных RP291 source snapshot; historical RP292 fingerprints и RP291 reports проверяются по ним, first reports/gold/seals неизменны.
+- [x] Supplement: handover/replacement prose, выдача/releasing, конечные свободные вопросы о договорённости, action-plus-recall; целые source-bound кандидаты, отдельные owners/tasks/status. Старые именованные return-вопросы сохраняют прежний путь; caps и whole-budget rollback не увеличены.
+- [x] Добавлены116 focused checks, включая quote/episode/budget failures и action opt-outs; strict unified также требует0guard gaps.
+- [x] Finalunifiedstrict492/492,60/60/0missing/0gaps;oldseen54/54,62/62,54/54,0lostprior/integrity на384inputs. Fullunit8098pass/0fail/5existingTODO в301files,261.71s;116newchecks. Native syntheticEdgeRUEN2/2pass/0flaky,93.58s,contextsclosed. TypeScript/diff0,ChromeFirefoxbuildZIP0/старыйchunkwarning;неlive/nativeFirefox/fullE2E. [QA](docs/benchmarks/rp294-qa-results.json).
+- [ ] Следом новая заранееfrozen независимая выборка других сюжетов/формулировок;60/60SEEN неgeneral semantics. Не переписыватьfirst/gold/seals;RP-05/true delta открыты.
+- [x] Finalpackages23/23runtime/793source entries SHA256against disk и3canonicaldownloads проверены,финальныеnotes/reportsупакованы;installedcopy отдельноreload.
+
+## RP293 — единый комбинаторный набор памяти
+
+- [x] `npm run test:memory`:57 детерминированных конфигураций, все2427 пар значений27 факторов, независимый oracle;96 default RP292 observations. Язык/сюжет/длина/бюджет/transport/поиск сочетаются с лором, анкетой, recap, choices и required correction.
+- [x] 8 дополнительных multiway/cache-scope проверок:другой мир,ветка без фактов,возврат;все опции on/off ×3transports ×6500background ×required overflow. Целостность текста/ролей/источников,нет superseded/дублей/disabled-excluded lore,whole meter,input/cold-warm.
+- [x] Подключены20 existing lifecycle suites, включая >100 длинных синтетических сцен,manual correction/task statuses/alternate branch/continuation/reload/retry/concurrent tabs/backup/encryption/reset. Не Cartesian product lifecycle×search.
+- [x] Финал492/492 checks(162+330),22files;strict-recall exit1:39/60complete,42missing,6guardgaps. Дополнительно historical fingerprints/seals/seen106/106;TypeScript/diff-check0. Runtime RP291/first RP292/gold неизменны. [Описание](docs/MEMORY-TEST-SUITE.md), [итог](docs/benchmarks/rp293-memory-summary.json).
+- [ ] Следом исправлять21RP292 incomplete/6guards отдельнымseenreport;расширятьstorage→compile journeys. Все возможные тексты/тройки/live этим набором не покрыты.
+- [x] Chrome/Firefox build+ZIP0;старыйchunkwarning.23/23runtime и777source entries/canonicalcopies SHA256checked;финальныеnotes/reportsупакованы. Installedcopy не обновлялась.
+
+## RP292 — новые истории, одноимённые вещи и свободные формулировки
+
+- [x] Новый авторский RUEN corpus:дирижабль/солянойкараван/типография,передать/hand over и заменить/replace,одинаковые labels разных owners,отмена/подготовка/узкие разрешения/составные действия.96inputs/60scored/30controls/6budget,306goldrecords,42uncertainty expectations,до6500backgroundrecords. [Протокол](docs/CROSS-OWNER-EVALUATION.md).
+- [x] До compiler frozen schema/input/gold/protocol/ownrunner/all410src:414fingerprints;separate evaluate,wx first report/seal и before/after hashes. Runtime RP291 неизменён;old first reports/seals/seen прежние.
+- [x] Первый39/60complete,264/306gold,42missing в21case,0integrity/falsecomplete;42UIunverified,36guard/6gaps толькоrephrased-reference. Named handover/replacement/twojobs/cancel/consent/scale полны;paraphrase/same-label/free-reference/composite теряют условия. [Результаты/пример](docs/CROSS-OWNER-RESULTS.md). Synthetic неlive/externalblindproof.
+- [x] Финальная QA: 1056/1056 checks в11files,100новых,57.38s;первый1055pass доanchor сохранён. TypeScript/diff-check0,414fingerprints иoldseals/RP291digests прежние. Chrome/Firefox build+ZIP0;23/23runtime и771source entries/canonicalcopies SHA256checked,notes повторно упакованы. [QA](docs/benchmarks/rp292-qa-results.json). Fullunit/native/live заново не запускались:runtime/UI прежние,installedcopy не обновлялась,push не запрошен. Следующийfix толькоseparate seen+oldRP289/RP287/RP283. First39/60/gold/seal сохранить.
+
+## RP291 — предупреждение о неподтверждённом владельце/предмете
+
+- [x] До исправления12/12 swapped-owner/invented-object RUEN cases воспроизвели отсутствие guard; сохранённые роли не были ошибкой. Вопрос с объектной предпосылкой не является доказательством owner/object/promise.
+- [x] Добавлен finite premise-question detector и metered warning отдельно от retrieval reference. Не создаёт identity/label,не отключает обычный поиск,не меняет canon/quotes/roles/status. Complete не обещается для такой предпосылки;budget/overflow/opt-out/restart/reference-only сохраняются.
+- [x] 27 новых checks:12исходных случаев+RUEN malformed source/deleted person/budget/overflow/opt-out/restart играницы синтаксиса;вместе45previousrepair checks72/72pass. [Описание](docs/OBLIGATION-PREMISES.md).
+- [x] Финальный SEEN RP28954/54/204records,42guard+unverified/0gaps;RP28762/62/250 иRP28354/54/312;все288selections/order/coverage прежние,0missing/integrity/loss/budget/rejection drift.23/1/2outputs изменились предупреждением. Fullunit7720pass/0fail/5existingTODO в297files,320.54s;TypeScript/diff-check0. Native isolated Edge4/4pass/0fail/0flaky,181.81s,102localPOST;quotes/roles/revisions/retry/XHR/fetch/reload/unchangedcanon.3ZIP23/23runtime/765source entries SHA256/canonicalcopies проверены,notes упакованы. [QA](docs/benchmarks/rp291-qa-results.json). Live model/nativeFirefox/fullE2E не проверены,installedcopy прежняя,push не запрошен. Next — новый independent frozen corpus,не называть seen новой независимой оценкой.
+
+## RP290 — полные условия доставки и коротких ссылок
+
+- [x] Подтверждены return-only task/intent gate и English leading possessive barrier. Добавлены delivery-inquiry и source-backed delivery/repair prose references; цитаты, роли, статусы, канон и токенизатор не меняются.
+- [x] Native RU/EN выявил старые посторонние labels, занимавшие4slots до проверки сцены. Воспроизведено двумя failing tests; для reference4slots считаются после accepted-scene scope,scan16tasks/128rows/whole-budget/один effective bridge сохранены. Broad inquiry сохраняет прежние4labels.
+- [x] 45 новых runtime tests проходят: полные условия, repair/access, похожие/одинаковые labels разных владельцев, source/quote/roles/raw bridge/commands/opt-out/capacity/budget. First RP28943/54 и остальные gold/seals сохранены. [Контракт/примеры](docs/MIXED-OBLIGATION-REPAIR.md).
+- [x] Финальный seen `rp290b`:RP28954/54,204/204,0missing/integrity/lostPrior,12outputs/0coverage changes;RP28762/62 иRP28354/54 с прежними outputs/coverage. Full unit7690pass/0fail/5existingTODO в295files;TypeScript/diff-check0. Повтор isolated Edge4/4pass,0fail/0flaky,133.25s,90localPOST.3ZIP:23/23runtime/757source entries SHA256/canonical copies проверены;notes повторно упакованы. [QA](docs/benchmarks/rp290-qa-results.json). Предварительные reports/native failure сохранены.12guard gaps swapped-owner/invented-object остаются отдельной задачей;live model/Firefox native/fullE2E не проверены,installedcopy прежняя,push не запрошен.
+
+## RP289 Новый независимый audit разных обязательств
+
+- [x] Новые авторские RU/EN сюжеты:пекарня/ледник/планетарий;доставка/ремонт/оплата/сопровождение/секрет.84 main+6scale+6budget=96inputs,54scored/36controls/6budget,42 uncertainty expectations;gold до compiler.
+- [x] Schema preflight и freeze до compiler:414fingerprints;metadata-only own-runner path correction отдельнымv2manifest с прежними input/gold/rows/runtime,initialmanifest/preflight snapshot сохранены. Compiler только после separate frozen evaluation gate.
+- [x] Первый43/54complete,187/204gold,17missing в11cases;0source/role/status/canon/budget/cache integrity,42UIunverified/0false-complete/12explicit guard gaps. First report/seal wx сохранены,old reports/gold/seals не менялись. [Результаты](docs/MIXED-OBLIGATION-RESULTS.md). Runtime RP288 неизменён,synthetic не live/externalblindproof.
+- [x] Проверки воспроизводимости и сохранности старых seals:1068/1068 tests в12files,включая100новых;TypeScript/diff-check0. Передача обновлена;3 canonical ZIP пересобраны,итоговая проверка содержимого указана в CODEX-HANDOFF. Runtime/UI не менялись,live/native/full suite заново не запускались. Следующий fix — только отдельный seen замер.
+
 ## RP288 — guard коротких ссылок и уточнение буквальных префиксов
 
 - [x] Подтверждена причина4 потерь:generic adjective prefixes конкурировали с полными названиями на том же вхождении. Longest source-proved prefix в text+quote сцены;shadow только покрытых spans,равные labels сохраняют разные tasks/owners,вторые вхождения остаются ambiguous. Все source/scope/row/budget guards сохранены. [Мануал](docs/SHORT-REFERENCE-SAFETY.md).

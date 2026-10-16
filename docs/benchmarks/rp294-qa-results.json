@@ -1,0 +1,19 @@
+{
+  "stage": "RP294",
+  "date": "2026-10-16",
+  "scope": "Seen synthetic memory repair; not live DeepSeek or blind external validation",
+  "fullUnit": {"passed": 8098, "failed": 0, "todo": 5, "files": 301, "seconds": 261.71, "workers": 2},
+  "unified": {"passed": 492, "failed": 0, "strictExitCode": 0, "pairs": 2427, "configurations": 57, "scored": 60, "complete": 60, "missing": 0, "confidenceGaps": 0},
+  "newFocusedChecks": 116,
+  "oldSeen": {"rp289": "54/54", "rp287": "62/62", "rp283": "54/54", "lostPriorFacts": 0, "sourceIntegrityIssues": 0},
+  "native": {"browser": "isolated synthetic Edge MV3", "passed": 2, "failed": 0, "skipped": 0, "flaky": 0, "seconds": 93.58, "contextsClosed": true},
+  "typecheckExitCode": 0,
+  "diffCheckExitCode": 0,
+  "chromeBuildZipExitCode": 0,
+  "firefoxBuildZipExitCode": 0,
+  "packages": {"chromeFiles": 23, "firefoxFiles": 23, "sourceFiles": 793, "sha256AgainstDisk": true, "canonicalCopies": 3},
+  "warnings": ["Existing chunk larger than 500KB"],
+  "initialFailedRuns": "Preserved in .output; four overload timeouts and named-query/semicolon assertions in first full run; two semantic failures corrected, final complete suite passed without timeout increases",
+  "history": "RP291 two-source snapshots pin historical runtime; RP292 first report39/60, gold, seals and old reports unchanged; intermediate59/60 reports preserved separately",
+  "limits": ["Finite lexical grammar, not arbitrary semantic understanding", "All corpora are now seen", "Live DeepSeek, native Firefox and full E2E not tested", "Installed extension and user worlds unchanged", "No commit or push requested"]
+}

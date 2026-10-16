@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-access-audit-baseline.json",
+  "report": "docs/benchmarks/rp295-access-results.json",
+  "baselineHash": "b2ec973c868ffc3efdf3b24cebeaacaa33b851a5eef6f264636effdd3219b413",
+  "reportHash": "da8560c78ef8ad4eab7cff23d3e26f6d5c024a5f11175aed893536be567a422a",
+  "inputDigest": "e29137dba2e920bf5119308f8dbecf8f1e91483e012b84e2705ad5d8715a54e9",
+  "goldDigest": "f64e421af7947e585224b60a66d98f00ce2e39d4627939893ffc5cbb653146eb"
+}

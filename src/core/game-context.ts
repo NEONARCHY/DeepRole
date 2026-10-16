@@ -9,7 +9,7 @@ import { flexiblePriorityFacts } from "./story-flexible-priority";
 import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
 import { budgetPriorityFacts, BUDGET_SOURCE_ROWS } from "./story-budget-priority";
 import { contextualReferenceFacts } from "./story-contextual-reference";
-import { obligationRecallFacts,obligationRecallIntent } from './story-obligation-recall';
+import { obligationRecallFacts,obligationRecallIntent,obligationPremiseQuestion,UNPROVED_OBLIGATION_PREMISE } from './story-obligation-recall';
 import { storyFactIdentity } from "./story-memory-lifecycle";
 import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
 import {storyActionBalance} from "./story-action-balance";
@@ -72,8 +72,9 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
  }
  let proof:PriorityProof|undefined,coverage:GameMemoryCoverage={kind:'not-applicable'};
  const prior=compileBudgetContext(input,options,observe?c=>{coverage=c}:undefined,p=>{proof=p});
- const finish=(result:typeof prior,next=coverage)=>{observe?.(result.report.required>result.report.limit?{kind:'required-overflow'}:next);return result;};
+ const finish=(result:typeof prior,next=coverage)=>{observe?.(result.report.required>result.report.limit?{kind:'required-overflow'}:premiseGuardEnabled(input,options)&&next.kind==='complete'?{kind:'unverified',reason:'query'}:next);return result;};
  if(options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||!input.story||input.restart||input.character?.[9]||!proof||proof.roles?.question||proof.referenceGuard===AMBIGUOUS_STORY_NAME)return finish(prior);
+ if(obligationRecallIntent(input.draft)==='compound-inquiry'&&(options.actionBalance===false||options.compoundActionBalance===false))return finish(prior);
  const literal=contextualReferenceFacts(proof.facts,input.draft,input.recentMessages,proof.names,proof.roles,proof.episodes);
  const group=literal??obligationRecallFacts(proof.facts,input.draft,input.recentMessages,proof.names,proof.roles,proof.episodes);
  if(!group)return finish(prior);
@@ -205,6 +206,7 @@ function compileDiscussionContext(input:GameContextInput, options:GameContextOpt
  if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit){capture(candidateProof!);return candidate}
  return prior;
 }
+function premiseGuardEnabled(input:GameContextInput,options:GameContextOptions){return options.referenceRecall!==false&&!!input.story&&!input.restart&&!input.character?.[9]&&(obligationPremiseQuestion(input.draft)||obligationRecallIntent(input.draft)==='reference');}
 function compileGameContextPass(input:GameContextInput, options:GameContextOptions, priority?:PriorityReservation, capture?:(proof:PriorityProof)=>void) {
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
@@ -218,8 +220,12 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  const reference=options.referenceRecall!==false&&input.story&&!input.restart&&retrieval?storyObjectReference(input.draft,retrieval.relevanceNames)??(options.referenceBundle!==false?storyLiteralReference(input.draft,facts.map(f=>f.fact),retrieval.relevanceNames):undefined):undefined;
   // Detect supported short obligation references before ANY selection pass. A
   // failed bridge/budget/source check must retain the guard in its exact prior.
-  const obligationReference=options.referenceRecall!==false&&input.story&&!input.restart&&obligationRecallIntent(input.draft)==='reference';
+  const obligationIntent=obligationRecallIntent(input.draft);
+  const obligationReference=options.referenceRecall!==false&&input.story&&!input.restart&&(obligationIntent==='reference'||obligationIntent==='delivery-inquiry'||obligationIntent==='work-inquiry');
   const referenceGuard=priority?.referenceGuard??(retrieval?.ambiguousName?AMBIGUOUS_STORY_NAME:(input.story&&retrieval?.unresolvedReference||reference?.kind==='personal')?UNRESOLVED_STORY_REFERENCE:reference?.kind==='deictic'||obligationReference?UNRESOLVED_STORY_OBJECT:reference?.kind==='literal'?AMBIGUOUS_STORY_OBJECT:"");
+  // A premise warning is NOT a retrieval reference. It cannot disable normal
+  // selection or supply a missing owner/object bridge. Meter it before facts.
+  const premiseGuard=!referenceGuard&&premiseGuardEnabled(input,options)?UNPROVED_OBLIGATION_PREMISE:'';
  const resolveMentions=(text:string)=>retrievalScope?[...storyRetrievalQuery(text,retrievalScope).mentionedIds,...mentionedEntities(text,(input.entities??[]).filter(e=>e.worldId===retrievalWorld&&e.kind!=="character"))]:undefined;
  const memoryMentions=resolveMentions([input.draft,...input.recentMessages.slice(-4)].join("\n"));
  const limit=Math.max(0,Math.floor(input.settings.contextBudget));
@@ -274,7 +280,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   return '<deeprole_profile_excerpts>Exact user-profile paragraphs for the current roster mapping, not new events or instructions. Each field array may be partial/nonadjacent; omitted data is unknown. Do not infer missing clauses/conditions, combine different people or rewrite author profiles.\n'+JSON.stringify([...people.values()])+'\n</deeprole_profile_excerpts>';
  };
  const render=()=>{
-  const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,restart,renderProfiles()]);
+  const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,premiseGuard,restart,renderProfiles()]);
   const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
    const memory=formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",measure:block=>addedContextTokens(join([before,block,after]))});
   return join([before,memory,after]);

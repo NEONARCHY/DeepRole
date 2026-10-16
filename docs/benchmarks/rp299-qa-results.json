@@ -1,0 +1,13 @@
+{
+ "stage":"RP299",
+ "date":"2026-10-16",
+ "scope":"Fresh authored synthetic exception/prohibition audit; not blind external or live-model proof",
+ "runtime":"RP298 unchanged; all410src fingerprints match frozen baseline",
+ "firstAudit":{"inputs":38,"scored":22,"complete":15,"gold":100,"missing":11,"incompleteQueries":7,"confidenceGapCases":5,"integrityCases":0,"falseCompleteCases":0},
+ "preservation":"414 frozen fingerprints; wx baseline/report/seal; first fixture snapshot retained after result before unused params i to _i, serialized inputs and gold unchanged",
+ "qa":{"newChecks":42,"oldRegressionChecks":353,"unifiedChecks":492,"passed":887,"failed":0,"files":27,"unifiedRecall":"60/60;0missing;0gaps","pairs":2427,"configurations":57},
+ "typecheck":{"exitCode":0,"firstIssue":"Two unused map indices in new fixture; renamed only after first result, original retained and byte-equivalence tested"},
+ "build":{"status":"passed","chromeExitCode":0,"firefoxExitCode":0,"warnings":["Existing chunk larger than500KB"]},
+ "packages":{"status":"passed","chromeFiles":23,"firefoxFiles":23,"sourceFiles":847,"sha256AgainstDisk":true,"canonicalCopies":3,"sourceExcludesTests":true,"testExecutionRequiresGitCheckout":true},
+ "limits":["Known corpus now seen; first15/22 is not repaired","Full unit and native/browser/live checks not rerun: runtime and UI unchanged","Correlated framework and translations","Accepted tasks/roles given, not extractor proof","Small-budget probes excluded from completeness denominator","Installed copy and worlds unchanged","No push requested"]
+}

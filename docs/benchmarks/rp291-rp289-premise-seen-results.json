@@ -1,0 +1,5641 @@
+{
+  "version": 1,
+  "scope": "SEEN rp289 regression after RP291 obligation premise warnings; not independent or live-model proof",
+  "historicalBaselineDigest": "dfbaf4d2e25433cac618ef8591a76f5fb743a1ec651bf8497bf76cb39101d7f0",
+  "firstReportDigest": "846bbf61e813963f00181d5d386de8408c936810c98cf4cb70d96bfb273c2dad",
+  "firstReportSealDigest": "21ebfa081f30bfd6586ac2b9e8c5664a4cae807b13bf8d5c0ea06cfe45c95501",
+  "previousSeenReportDigest": "81b4d8f18795e64d87606adae52824d30d3ddf562b63832eee095ab31964afd9",
+  "runtimeBaseDigest": "dfbaf4d2e25433cac618ef8591a76f5fb743a1ec651bf8497bf76cb39101d7f0",
+  "changedRuntime": [
+    "src/core/game-context.ts",
+    "src/core/story-obligation-recall.ts"
+  ],
+  "currentDigests": {
+    "src/core/game-context.ts": "cba9505dcff93f4f2e0cd709fb29064a85e29d7d5409521eec549d0575e94936",
+    "src/core/story-obligation-recall.ts": "4609e43c71f276c93afc3be00ecef58b11444969dead27a1b5f35fb12a8e5eba"
+  },
+  "runnerDigest": "17ee13159af242354724a1e0489c3fa1321107c627609b3af1013578b65c6fe0",
+  "summary": {
+    "cases": 96,
+    "scored": 54,
+    "baselineComplete": 54,
+    "complete": 54,
+    "goldFacts": 204,
+    "missingFacts": 0,
+    "casesWithIntegrityIssues": 0,
+    "uncertaintyExpected": 42,
+    "confidenceGapCases": 0,
+    "falseCompleteCases": 0,
+    "lostPriorFacts": 0,
+    "changedOutputs": 23,
+    "changedCoverage": 0,
+    "rejectionControlsDrift": 0,
+    "budgetOutputChanges": 0
+  },
+  "results": [
+    {
+      "id": "ru:bakery:delivery",
+      "family": "delivery",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a3",
+        "a0",
+        "a1",
+        "a2",
+        "b0",
+        "c2",
+        "e0",
+        "b2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1576,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "cb0e0553e8b6f5fd493f47c1fc712e0439a5261cc20d4150a863944b6b37a4cf",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:paraphrase-delivery",
+      "family": "paraphrase-delivery",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "d2",
+        "e0",
+        "b0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1631,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 963,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 3,
+          "openTasks": 2,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "8f47e21c5fed9bdcff8848e6599d44c9e8cbf115ba7efaa3abe9ccfa91b0077a",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:repair",
+      "family": "repair",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b2",
+        "b0",
+        "b1",
+        "a3",
+        "a0",
+        "a2",
+        "a1",
+        "background-116"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1505,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "f80b8a78369ce9d95e2ca2616fe119ea9d34009a389dd9fbdfba59a35b65f59e",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:two-jobs",
+      "family": "two-jobs",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a3",
+        "b2",
+        "a2",
+        "a1",
+        "b1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1352,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "729434fd603679eb4fe21e0f4d8ad4a3f15c861e9485aef452ec162d90885096",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:payment-completed",
+      "family": "payment-completed",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1",
+        "c2",
+        "e0",
+        "b0",
+        "a0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1394,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 3,
+          "openTasks": 2,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c7c51a194efdcbd59af3d9bfa33d18266259e0734033bd398eb9b971e475410f",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:escort-cancelled",
+      "family": "escort-cancelled",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "d1",
+        "d2"
+      ],
+      "selectedIds": [
+        "d1",
+        "d2",
+        "b0",
+        "a0",
+        "a3",
+        "b2",
+        "e0",
+        "c1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1482,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "08d462abb32d81feafc05914b6ab5596bb0566258da753713b721846fb7c4425",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:secrecy",
+      "family": "secrecy",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "e0"
+      ],
+      "selectedIds": [
+        "e0",
+        "c2",
+        "a3",
+        "b0",
+        "a0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1357,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "a257f07e4d8d7a73571289ae1681190771a44bc6cdb90ee9e19951962a116f94",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:proved-reference",
+      "family": "proved-reference",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "latest",
+        "b0",
+        "e0",
+        "d1",
+        "c1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1687,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 9,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 964,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 4,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "48fc049e82f1dc4110f606b9247cde7f6f7f712cf4b74ccab67799c8267ce7c6",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:no-bridge",
+      "family": "no-bridge",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "e0",
+        "b0",
+        "a0",
+        "d1",
+        "c1",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1575,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d2f92fd9190a9f79cb279985740e00fd7e0fb170b3a51b7df4870373549c84a9",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:false-raw-bridge",
+      "family": "false-raw-bridge",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1575,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 3
+        }
+      },
+      "outputDigest": "ef4e7422acc6bd8d490020681bd48c331f6bb6cf44d00b80777aa48e704c99d5",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:independent-mentions",
+      "family": "independent-mentions",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "e0",
+        "d1",
+        "c1",
+        "latest",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1631,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "1bf6fc4e8fee1b57d5505e5a46ec8d9bd17ede8cd350426a35092c4ceccfa7ce",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:swapped-owner",
+      "family": "swapped-owner",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "c2",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1517,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "364c683c800fb758f04f5ff52577640505a4d56c2a540c5617750f3120dbc603",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:invented-object",
+      "family": "invented-object",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1620,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "2fd78231b54cf795679d1c0bac688348989d08731d52eb363425db2d48a4ef69",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:bakery:unknown-tail",
+      "family": "unknown-tail",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "e0",
+        "d1",
+        "c1",
+        "latest",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1620,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "fc071b4b5322e9468099ccb792508766dbaa43e8c0c6c68b8eade5f80b45a912",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:delivery",
+      "family": "delivery",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a1",
+        "a2",
+        "b0",
+        "b2",
+        "b1",
+        "background-548"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1532,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "110643861d93403fb35b484708db3b1b61bf67adf0d24aef96994fdd899c5e8f",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:paraphrase-delivery",
+      "family": "paraphrase-delivery",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "d1",
+        "e0",
+        "b0",
+        "c1",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1778,
+        "required": 389,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 963,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "60f6658970fafb60d657d5a18df64403a20706bd419f32f9f4402d60ee71b52a",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:repair",
+      "family": "repair",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "background-197",
+        "background-196"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1445,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4c03bcea998dfe1585079090ea136381bcde2ce4edcabd3ab689ea8a426489ac",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:two-jobs",
+      "family": "two-jobs",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1377,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "80be605053a86236492fa0e2f7fc80435d2a85553763e7e37b948330ae03de8e",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:payment-completed",
+      "family": "payment-completed",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "e0",
+        "b0",
+        "a0",
+        "a3",
+        "d1",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1508,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "b0ff659095668e622d7f16b84d85a21e52504f087ec05f624c5e3602090b84a4",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:escort-cancelled",
+      "family": "escort-cancelled",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "d1",
+        "d2"
+      ],
+      "selectedIds": [
+        "d2",
+        "d1",
+        "b0",
+        "a0",
+        "e0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1439,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 4,
+          "recentFacts": 3,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "62e26c977c98c3956f9880bb371ebc2a21cbccf9c1c7193630c30c33b49175d2",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:secrecy",
+      "family": "secrecy",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "e0"
+      ],
+      "selectedIds": [
+        "e0",
+        "c2",
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1440,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "72f962a531161eb0e53457cb9d7c13f253014f11db0e3ccb1ad65beab55f3260",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:proved-reference",
+      "family": "proved-reference",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "latest",
+        "b0",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1587,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "b2ba0c2deab88e4b5e39a619ab91c65be5f7b54b1d742f7d3a046fdf22b34783",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:no-bridge",
+      "family": "no-bridge",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "latest",
+        "background-959",
+        "background-958",
+        "background-957",
+        "background-956",
+        "background-955",
+        "background-954",
+        "background-953"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1195,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "e402b0c8dc98f9471ac9f8fa1b69325672dd95f0cf244685e27ae48a3689035d",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:false-raw-bridge",
+      "family": "false-raw-bridge",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "d1",
+        "b2",
+        "e0",
+        "b0",
+        "a0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1518,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 2,
+          "openTasks": 3,
+          "recentFallback": 3
+        }
+      },
+      "outputDigest": "25a40d2a85ef9f666d1687545f9b065a58fd6ea903d1a5d073808e3aa482c340",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:independent-mentions",
+      "family": "independent-mentions",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "latest",
+        "a0",
+        "b2",
+        "b1",
+        "a3",
+        "a2",
+        "a1",
+        "b0"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1466,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "11fc1e4022812cdc80d315f911fa64725f087977438b9f131e36765fa797beb2",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:swapped-owner",
+      "family": "swapped-owner",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "b2",
+        "b1",
+        "d2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1538,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "591346976c8894d4112ca983118348db1aaa891c8c78ee56c91f5aaa4f510993",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:invented-object",
+      "family": "invented-object",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "d1",
+        "b0",
+        "b2",
+        "e0",
+        "a0",
+        "c1",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1656,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d322d02220050fb3c5056d5d7614c7ff01f2cb555e53a45ca18bff90e6b6d143",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:glacier:unknown-tail",
+      "family": "unknown-tail",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "latest",
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1454,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 0,
+          "recentFacts": 8,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d77f6e103846c404c271a9813c0d1c5319618a46b174a3759fa2e2dd8a751223",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:delivery",
+      "family": "delivery",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a3",
+        "a2",
+        "b0",
+        "b2",
+        "b1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1550,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "616d1f56065afa88569779903d13833955c8dc4933ee5492d28a761b9fb5bd4c",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:paraphrase-delivery",
+      "family": "paraphrase-delivery",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "c2",
+        "b0",
+        "e0",
+        "latest",
+        "background-959",
+        "background-958",
+        "background-957"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1816,
+        "required": 470,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 11,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 962,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 4,
+          "openTasks": 1,
+          "recentFallback": 3
+        }
+      },
+      "outputDigest": "50b52fe0731d6123741ae378a1b91012045d6bd8dbb5b753c0808c4c8a92e1a3",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:repair",
+      "family": "repair",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "b1",
+        "a2",
+        "a3",
+        "a1",
+        "background-314",
+        "background-313"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1462,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "0dbd5f769b2c7fddbc0b11161aef2107e82b494c75828068dd7618efacd2e641",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:two-jobs",
+      "family": "two-jobs",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a2",
+        "b2",
+        "b1",
+        "a3",
+        "a1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1461,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "a8b16b1e9ba385159b0185b57403e5c54da4ee1fc6e4ab07a72ae5ffa0911a1f",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:payment-completed",
+      "family": "payment-completed",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1",
+        "c2",
+        "e0",
+        "background-957",
+        "background-956",
+        "background-950",
+        "background-943",
+        "background-937"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1284,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "75a7477c3a6d08548c0c3f67c7dba010ac09d07571c186eb6c8767e76dda8ed6",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:escort-cancelled",
+      "family": "escort-cancelled",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "d1",
+        "d2"
+      ],
+      "selectedIds": [
+        "d1",
+        "d2",
+        "b0",
+        "a0",
+        "a3",
+        "e0",
+        "c1",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1508,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "12b224c6cdd0bc17ecf41ed717122fc2f5a335e37f719bd0d26d1979a7b60653",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:secrecy",
+      "family": "secrecy",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "e0"
+      ],
+      "selectedIds": [
+        "e0",
+        "b0",
+        "a2",
+        "b2",
+        "b1",
+        "a0",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1435,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 2,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "01b3bf4572079248f070d89e01a9ca550c4c4141181da3427b1a63f13249836d",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:proved-reference",
+      "family": "proved-reference",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "latest",
+        "b0",
+        "e0",
+        "d1",
+        "c1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1740,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 9,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 964,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 4,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "615005f1190dd1ab98fa1d4c1129962bfd3cf67720adb7df63e0071cb72d182e",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:no-bridge",
+      "family": "no-bridge",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "e0",
+        "b0",
+        "a0",
+        "d1",
+        "c1",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1622,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "836742f6e7c6036318ff993148011b6a6f40035b86a9eab4d98b71afd62e9e44",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:false-raw-bridge",
+      "family": "false-raw-bridge",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "a2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1651,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "16eed07b0e787f715d23b3c910157e99afc5dca1e8c83996573c91f8003cafe6",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:independent-mentions",
+      "family": "independent-mentions",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "e0",
+        "d1",
+        "c1",
+        "latest",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1670,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d1e5eedaf41b30dfefe21b7cc702f0b5514d589d93f144b8056b6b8e3ae7e65e",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:swapped-owner",
+      "family": "swapped-owner",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "b2",
+        "b1",
+        "d2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1553,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "cea04c5170ca93eb02dda95cabc96506d731ae6a276dc0f55ed3ce934495ff96",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:invented-object",
+      "family": "invented-object",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "d1",
+        "b0",
+        "e0",
+        "a2",
+        "a0",
+        "c1",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1682,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "b859a4ba8e88855f8d5089689c85c1da6b812a18226d2c72d03985a180d2f9cd",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:planetarium:unknown-tail",
+      "family": "unknown-tail",
+      "locale": "ru",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "e0",
+        "d1",
+        "c1",
+        "latest",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1671,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "cc4bbe11fc14a06a919fbb69dbb6d4d954bbbaa4927a7c5f331d9594a8b77d42",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:delivery",
+      "family": "delivery",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "b0",
+        "a1",
+        "a2",
+        "c2",
+        "e0",
+        "b2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1585,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "e2a896ed1126e08916db899ee4ff2af841bfb22c30ebff2e04fa6adf3bd09b7b",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:paraphrase-delivery",
+      "family": "paraphrase-delivery",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "e0",
+        "d1",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1675,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 9,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 964,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 9,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "139f84530163208a3aca70fd6d2582a088c17fc08fc8cf17b08aa78b5bc38b90",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:repair",
+      "family": "repair",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "b1",
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "background-116"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1500,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c774d0eda534ced88ecf8e3a2e99b7b8c4a6ffff5a5873e2bca068c60076a85a",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:two-jobs",
+      "family": "two-jobs",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1426,
+        "required": 333,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "8ea03f2f3c71c55108aef0fbb71938913faec6ac6f8a0bfc34f76302aec2003c",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:payment-completed",
+      "family": "payment-completed",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1",
+        "c2",
+        "e0",
+        "b0",
+        "a0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1419,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 3,
+          "recentFacts": 3,
+          "openTasks": 2,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "3bbc91704ceb0b98ad2a135dcdb5a2df40f63a3fa5c0e3407ed7592e244ea844",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:escort-cancelled",
+      "family": "escort-cancelled",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "d1",
+        "d2"
+      ],
+      "selectedIds": [
+        "d1",
+        "d2",
+        "a0",
+        "b0",
+        "e0",
+        "c1",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1484,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "40a697da9ceb28f0e316f3c27329e1d5a7da61a09057e491445af1bc1e038bdb",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:secrecy",
+      "family": "secrecy",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "e0"
+      ],
+      "selectedIds": [
+        "e0",
+        "a0",
+        "c2",
+        "a3",
+        "b0",
+        "b1",
+        "c1",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1444,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d2c211643a339c7dc7c49df63c0cd125ec53257e482a5f72870a7bff39d9ae8d",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:proved-reference",
+      "family": "proved-reference",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "latest",
+        "b0",
+        "e0",
+        "d1",
+        "c1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1707,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 9,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 964,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "06a09854d6d477b4468d99291a140fb04142c029b31fd9955fe5a69804fb7b97",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:no-bridge",
+      "family": "no-bridge",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "e0",
+        "b0",
+        "a0",
+        "d1",
+        "c1",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1607,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c6f61836dc3697834a3089e77a625217d76afee4978045410cbced10f2bca494",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:false-raw-bridge",
+      "family": "false-raw-bridge",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "b2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1622,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "32a2b049b5f2f98da078c62a6a39f87b8d39b11bc08a0b29264acdb417594f90",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:independent-mentions",
+      "family": "independent-mentions",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "e0",
+        "d1",
+        "c1",
+        "latest",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1660,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c270407895d657ca6711186b0773d1bb3fc92b8e7d2f1b2cb4ca010594ec23a8",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:swapped-owner",
+      "family": "swapped-owner",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "a3",
+        "a2",
+        "a1",
+        "d1",
+        "e0",
+        "d2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1635,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "6ece5408f11a6d9a5987e904fc0a6619011a25a76f77c1f989895e5611c1a3dc",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:invented-object",
+      "family": "invented-object",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "b2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1653,
+        "required": 419,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "87605a2582fb36169e3218f68aafb0aabaa9b6e85912073c27813e8ed1464b23",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:bakery:unknown-tail",
+      "family": "unknown-tail",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "e0",
+        "d1",
+        "latest",
+        "c1",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1640,
+        "required": 388,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "9d0f901fb667b1e1dbef4aa69ec418a0f152384a59a63f69ea4aeef3102767e6",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:delivery",
+      "family": "delivery",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a3",
+        "a1",
+        "a2",
+        "b0",
+        "b2",
+        "b1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1464,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "b958be14f41e54b71ca9f9658f45d6b9b454ba6151a188cd9bf4838eed7d03d5",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:paraphrase-delivery",
+      "family": "paraphrase-delivery",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "e0",
+        "b0",
+        "d1",
+        "c1",
+        "d2",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1818,
+        "required": 389,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 963,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "c08227002de821945002e6b4f99c6f23cc985627bdb1d0949d5c0a5e26025b75",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:repair",
+      "family": "repair",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "b1",
+        "a0",
+        "a3",
+        "a2",
+        "a1",
+        "background-197"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1533,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "f0c6c0ed03b98dd27ec5bff46cafffebb828855c8b75f8bb83666b2f42963b3c",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:two-jobs",
+      "family": "two-jobs",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b2",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1379,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "6c2802160abdfb64bd2922ad8f29e4f7ac0d6f02240d175af7af5f25d9c6074e",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:payment-completed",
+      "family": "payment-completed",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c2",
+        "c1",
+        "e0",
+        "b0",
+        "a0",
+        "d1",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1513,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "37e77878f559cd9808c678e24eafa7736ffe29eee33f5da820c1b4d552b85e96",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:escort-cancelled",
+      "family": "escort-cancelled",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "d1",
+        "d2"
+      ],
+      "selectedIds": [
+        "d1",
+        "d2",
+        "a0",
+        "latest",
+        "b0",
+        "e0",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1456,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 2,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d333834df7392d185ab39d37069e8544438bdd73538b62c22700d52b5472d3fb",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:secrecy",
+      "family": "secrecy",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "e0"
+      ],
+      "selectedIds": [
+        "e0",
+        "a0",
+        "c2",
+        "a3",
+        "a2",
+        "a1",
+        "b0",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1451,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "da20787f8f8cec64312da6d9c448d0ef6d9875ed2a5b89df66784f9d9d202afd",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:proved-reference",
+      "family": "proved-reference",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "latest",
+        "d1",
+        "b0",
+        "e0",
+        "c1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1838,
+        "required": 467,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 9,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 964,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "9009e4433bda9eb335ff25a3d7280d37e977ac0f9a006164419f9f136d4ea8e8",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:no-bridge",
+      "family": "no-bridge",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "d1",
+        "e0",
+        "b0",
+        "a0",
+        "c1",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1582,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "d6329784c72b60b6e5ebf391ded1c4a4bab39afdfc3485e369ee74d560129bbe",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:false-raw-bridge",
+      "family": "false-raw-bridge",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "d1",
+        "b0",
+        "e0",
+        "a0",
+        "c1",
+        "b2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1593,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "32c83afb9a185eea57ff5e99f25b8ea67df1d3d3d1eece104cd1a655b659d383",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:independent-mentions",
+      "family": "independent-mentions",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "d1",
+        "b0",
+        "a0",
+        "e0",
+        "c1",
+        "latest",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1622,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "41217594baf248c16369d182f2b644c3d14244752ff58b87a421f178614b3a98",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:swapped-owner",
+      "family": "swapped-owner",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "a3",
+        "a2",
+        "a1",
+        "d1",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1596,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "66ccd16f5532223d596df77b289b617d2b78f45766a4b98f5d89718f297bf834",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:invented-object",
+      "family": "invented-object",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "b2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1679,
+        "required": 420,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "667834f3108459e51dd31c97ae24a2b588955e2ee0397c348ee3044a791d6000",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:glacier:unknown-tail",
+      "family": "unknown-tail",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "latest",
+        "d1",
+        "a0",
+        "b0",
+        "e0",
+        "c1",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1637,
+        "required": 334,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "9860059639ae56b9d76906332e1451c88188de4e069c38f8b57c632fbf735392",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:delivery",
+      "family": "delivery",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a3",
+        "a2",
+        "b0",
+        "b2",
+        "b1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1649,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "0f37202caf5552c139192226d7d631599e39b614ec4fa6ca3fdf952bdae1c4bf",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:paraphrase-delivery",
+      "family": "paraphrase-delivery",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "c2",
+        "e0",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1704,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 10,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 963,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "05ca6abdbd2e32ecee9fccec0ff9fea47b79cec0de47617da566108e2d5d257b",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:repair",
+      "family": "repair",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "b1",
+        "a2",
+        "e0",
+        "a0",
+        "a3",
+        "a1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1649,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "477c2a136ca6b7d0e23bdb98e7988260896bbda43c9a53ed389adb5980981b99",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:two-jobs",
+      "family": "two-jobs",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a2",
+        "b2",
+        "b1",
+        "a3",
+        "a1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1484,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "01ec0d7a0a6cee3a987302d81f478ac0445c628e703f1b1a74430c06aab9235a",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:payment-completed",
+      "family": "payment-completed",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "c1",
+        "c2"
+      ],
+      "selectedIds": [
+        "c1",
+        "c2",
+        "e0",
+        "b0",
+        "a0",
+        "b2",
+        "d1",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1542,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "2eb24368e48adba24735e2db1f3001c9dac537f0d1549aac3a5555e58c2535f7",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:escort-cancelled",
+      "family": "escort-cancelled",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "d1",
+        "d2"
+      ],
+      "selectedIds": [
+        "d1",
+        "d2",
+        "b0",
+        "a0",
+        "e0",
+        "c1",
+        "b1",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1542,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 7,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "e1ba4ca2f5d0f88babf2359272f44dd571fb9ca72e4360722a2b4ddac780b7bd",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:secrecy",
+      "family": "secrecy",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "e0"
+      ],
+      "selectedIds": [
+        "e0",
+        "b0",
+        "a2",
+        "b2",
+        "b1",
+        "c1",
+        "a0",
+        "latest"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1516,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 1,
+          "openTasks": 1,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "131a008a4e99e6116dea13ecfb3b16e51564bdfece354d80e6f7b83d8a06020c",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:proved-reference",
+      "family": "proved-reference",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3"
+      ],
+      "selectedIds": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "latest",
+        "b0",
+        "e0",
+        "d1",
+        "c1"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1771,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 9,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 964,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "bf80e23ebda7dd9f1438dd3290477211dc7cef154eed5c147fe5cf5f99f3e4fc",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:no-bridge",
+      "family": "no-bridge",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "e0",
+        "b0",
+        "a0",
+        "d1",
+        "c1",
+        "latest",
+        "background-959",
+        "background-958"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1652,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "f4b3220a3aeb7e9ac79d37798ea4b98e8c8b2453ceb5e322358d585f04a8eca9",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:false-raw-bridge",
+      "family": "false-raw-bridge",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "a2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1681,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 2
+        }
+      },
+      "outputDigest": "4a57c7d61480881e2b1941d1e4cc87c26906b8aed7ea120e95b61083c45e3083",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:independent-mentions",
+      "family": "independent-mentions",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "e0",
+        "d1",
+        "c1",
+        "latest",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1703,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 5,
+          "recentFacts": 3,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "a56f4f5d6e5cceb46b960e53e0d362feef16f97032145f83817d635710897c1f",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:swapped-owner",
+      "family": "swapped-owner",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "a3",
+        "a2",
+        "a1",
+        "d1",
+        "b2",
+        "b1"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1617,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "9d970963247f60d29384a3fba8a83cb61d48a0859cd7b07580f305002db6d479",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:invented-object",
+      "family": "invented-object",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "b0",
+        "e0",
+        "a0",
+        "d1",
+        "c1",
+        "a2",
+        "latest",
+        "background-959"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1713,
+        "required": 423,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "7feabd62fb587c1bd0cf16dbdeefdb0883fa47740e8b9ee0648752a57d83d0a9",
+      "outputChanged": true,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:planetarium:unknown-tail",
+      "family": "unknown-tail",
+      "locale": "en",
+      "score": false,
+      "gold": [],
+      "selectedIds": [
+        "a0",
+        "b0",
+        "e0",
+        "d1",
+        "latest",
+        "c1",
+        "a3",
+        "a2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": true,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1703,
+        "required": 392,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 6,
+          "recentFacts": 2,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c9aa0d6f2de4769168c60c3c35b37639db6e0b09f7c10ac6e4c835bc7b93e54f",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:scale:320",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a3",
+        "b2",
+        "a2",
+        "a1",
+        "b1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1350,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 325,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "2ae7e52b0079b6ae5a208560b9db76cb532d59146e256a19972ccdd86423c686",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:scale:1800",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1378,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 1805,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "4ee32a90df04c8f12cb2d2b9a3a471c495a1ae458ff9689ed2d2e2195822cbd4",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:scale:6000",
+      "family": "scale",
+      "locale": "ru",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a2",
+        "b2",
+        "b1",
+        "a3",
+        "a1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1463,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 6005,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "c118db073042e8510b073ca9498bb2f21ae476cc21ccfe2bca46003d2ece6b66",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:scale:320",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 16000,
+        "total": 1424,
+        "required": 333,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 325,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "0ed21e6f98fff1b5a216e1fc74c988258874d46dc570055c25421ab7eb209755",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:scale:1800",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b2",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1379,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 1805,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "9ba6a4cde3e193ca6351f03bb2d6499eeecd8d3a6664e46151e3686525e8b93f",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:scale:6000",
+      "family": "scale",
+      "locale": "en",
+      "score": true,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a2",
+        "b2",
+        "b1",
+        "a3",
+        "a1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": true,
+      "complete": true,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 16000,
+        "total": 1486,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 6005,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "14683b25c1734849524692b686873e5e1b0aa995ae296b805e359b371a2665e4",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:budget:900",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0"
+      ],
+      "missing": [
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2"
+      ],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 900,
+        "total": 897,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 971,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 2,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "1f4b56fcfe64d0bd2209ba7d46fac0bb2930e32efdb3dba55ed417f9af7ab4f0",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:budget:2200",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "b2",
+        "a0",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 2200,
+        "total": 1377,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "ef8260ae57aadaca82e03c5762f148c1ec8faf1a261584eda41f645d7fa99ce4",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "ru:budget:5000",
+      "family": "budget",
+      "locale": "ru",
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a2",
+        "b2",
+        "b1",
+        "a3",
+        "a1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 5000,
+        "total": 1461,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "54ed3f23805f0471e77d4413169bf274be49ebf24edfddfed9977e7418319659",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:budget:900",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "background-952"
+      ],
+      "missing": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b1",
+        "b2"
+      ],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": true,
+      "report": {
+        "limit": 900,
+        "total": 900,
+        "required": 333,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 2,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 971,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 1,
+          "recentFacts": 1,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "087743d8bb04679712659155de056b57e841dc37bf27ebba17a934a410ff8da8",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:budget:2200",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "b2",
+        "a3",
+        "b1",
+        "a2",
+        "a1",
+        "c2"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 2200,
+        "total": 1379,
+        "required": 255,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "35a2bb22fdbfd22dc9b350d84da56acf55c402e0eeb3d5d7f707522a9a3a105b",
+      "outputChanged": false,
+      "coverageChanged": false
+    },
+    {
+      "id": "en:budget:5000",
+      "family": "budget",
+      "locale": "en",
+      "score": false,
+      "gold": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "b0",
+        "b1",
+        "b2"
+      ],
+      "selectedIds": [
+        "b0",
+        "a0",
+        "a2",
+        "b2",
+        "b1",
+        "a3",
+        "a1",
+        "e0"
+      ],
+      "missing": [],
+      "baselineComplete": null,
+      "complete": null,
+      "lostPrior": [],
+      "issues": [],
+      "uncertaintyExpected": false,
+      "confidenceIssues": [],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "guard": false,
+      "report": {
+        "limit": 5000,
+        "total": 1484,
+        "required": 258,
+        "selected": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 8,
+          "continuation": 0
+        },
+        "omitted": {
+          "lore": 0,
+          "profiles": 0,
+          "facts": 965,
+          "continuation": 0
+        },
+        "explanation": {
+          "draftFacts": 8,
+          "recentFacts": 0,
+          "openTasks": 0,
+          "recentFallback": 0
+        }
+      },
+      "outputDigest": "6e9359d585f3c81f60cc828a1af5e4f89ad25a476634cd5fb660f71e57d4fdf4",
+      "outputChanged": false,
+      "coverageChanged": false
+    }
+  ]
+}

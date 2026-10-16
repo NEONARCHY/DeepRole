@@ -1,0 +1,11 @@
+{
+  "stage": "RP292",
+  "date": "2026-10-16",
+  "runtime": "RP291 unchanged; audit-only iteration",
+  "fingerprints": { "frozen": 414, "sourceFiles": 410, "unchanged": 414, "ownRunnerIncluded": true, "verifiedBeforeAndAfterEvaluation": true },
+  "firstResult": { "cases": 96, "scored": 60, "complete": 39, "goldRecords": 306, "selectedGold": 264, "missing": 42, "incompleteCases": 21, "integrityFailures": 0, "uncertainty": 42, "guardedUnverified": 36, "warningGaps": 6, "falseComplete": 0 },
+  "tests": { "firstFocused": { "files": 11, "passed": 1055, "failed": 0, "newChecks": 99, "durationSeconds": 56.95 }, "finalFocused": { "files": 11, "passed": 1056, "failed": 0, "newChecks": 100, "durationSeconds": 57.38 }, "typecheck": "passed", "diffCheck": "passed", "priorReportsSealsAndRP291Digests": "verified" },
+  "packages": { "chromeEntries": 23, "firefoxEntries": 23, "sourceEntries": 771, "builds": "passed", "content": "Every entry SHA256 matches disk; all three canonical download copies match", "sourceExclusions": "No tests/private assets/nested ZIPs", "warning": "Existing >500KB chunk warning", "installedCopyReloaded": false },
+  "limits": ["New author-generated synthetic accepted-memory plots, not blind external/live-model proof", "Shared skeleton/translations/background records correlate", "6500 background records are not 6500 fully played scenes", "Roles are supplied accepted seeds, not live role extraction", "All new examples are now seen", "Full unit/native/browser/live-model/full E2E not rerun: runtime/UI unchanged", "No personal lore/account/API/model or installed-copy changes", "No commit or push requested"],
+  "next": "Investigate 21 incomplete queries (42 records) and 6 free-reference guard gaps; fix only in a separate seen report while retaining original corpus/gold/report/seal."
+}

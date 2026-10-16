@@ -1,0 +1,17 @@
+{
+  "stage": "RP290",
+  "date": "2026-10-16",
+  "runtimeChanges": ["src/core/story-obligation-recall.ts", "src/core/game-context.ts"],
+  "fingerprints": { "baselineFiles": 414, "unchanged": 412, "expectedEdits": 2, "sourceFiles": 410, "newRuntimeFiles": 0, "originalSnapshotsPreserved": true },
+  "seen": {
+    "finalAttempt": "rp290b",
+    "rp289": { "cases": 96, "complete": 54, "scored": 54, "goldRecords": 204, "missing": 0, "integrityIssues": 0, "lostPrior": 0, "changedOutputs": 12, "changedCoverage": 0, "remainingExplicitGuardGaps": 12, "budgetOutputChanges": 0 },
+    "rp287": { "cases": 108, "complete": 62, "scored": 62, "goldRecords": 250, "missing": 0, "integrityIssues": 0, "lostPrior": 0, "changedOutputs": 0, "changedCoverage": 0 },
+    "rp283": { "cases": 84, "complete": 54, "scored": 54, "goldRecords": 312, "missing": 0, "integrityIssues": 0, "lostPrior": 0, "changedOutputs": 0, "changedCoverage": 0 },
+    "provenance": "Final runner verifies original snapshots, unchanged fixtures/gold/seals and equal runtime digests before/after. First independent reports are preserved; this is SEEN regression."
+  },
+  "tests": { "newRuntimeChecks": 45, "newSeenReportChecks": 3, "fullUnit": { "files": 295, "passed": 7690, "failed": 0, "existingTodo": 5, "total": 7695, "durationSeconds": 231.55 }, "typecheck": "passed", "diffCheck": "passed", "earlierRuns": "Before native scope fix: 7671 and 7682 passes; extra capacity test initially duplicated identical records and was corrected to distinct bound tasks without weakening the cap assertion." },
+  "browser": { "engine": "isolated synthetic Edge MV3", "passed": 4, "failed": 0, "flaky": 0, "durationSeconds": 133.248985, "localScopedPosts": 90, "checks": ["RU/EN delivery access/destination/not-delivered sources", "Existing return and contextual gift regressions", "Whole quote/task/source roles/revision identity", "503 retry equality", "XHR and fetch", "Reload", "No canonical memory mutations", "Contexts closed in finally"], "firstAttempt": "2 contextual passed / 2 obligation failed: unrelated labels exhausted cap before accepted-scene scope; trace and failing regression preserved" },
+  "packages": { "chromeEntries": 23, "firefoxEntries": 23, "sourceEntries": 757, "builds": "passed", "content": "Every entry SHA256 matches disk; three canonical download copies match", "sourceExclusions": "No tests/private assets/nested ZIPs", "warning": "Existing >500KB chunk warning", "installedCopyReloaded": false },
+  "limits": ["No live DeepSeek/model/account test", "Native Firefox and full E2E not rerun", "Supported finite lexical forms, not general semantic matching", "12 swapped-owner/invented-object guard gaps remain a separate task", "Personal lore and installed extension untouched", "No commit or push requested"]
+}

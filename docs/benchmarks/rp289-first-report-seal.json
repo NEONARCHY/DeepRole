@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-mixed-obligation-audit-v2-baseline.json",
+  "report": "docs/benchmarks/rp289-mixed-obligation-results.json",
+  "baselineHash": "cfdf40465fedaf6cfd1853f11e8bc6fa264820955d8688f6054eb3ced3c7beff",
+  "reportHash": "ae48330152c309cc4e6233e89cdcfd19a3c29bd03f48e0b824c7401bf7208793",
+  "inputDigest": "3502ee09e3a14517028703fea179e531c17ab659b7f77b19777bdd72b7579d0c",
+  "goldDigest": "885699f71383f184a0f1cdeda9bf31fa98cb1fcc908607edbc91a7ab2c2e4799"
+}

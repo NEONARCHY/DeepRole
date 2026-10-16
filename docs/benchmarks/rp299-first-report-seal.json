@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "baseline": "tests/fixtures/story-exception-audit-baseline.json",
+  "report": "docs/benchmarks/rp299-exception-results.json",
+  "baselineHash": "760f5af60b31249b42d385247cf373e17e5de9e1c999f21fef80e61cc37d21a2",
+  "reportHash": "a7014e1b1dcc5bf88775e7eab366775504d630af30ab43ba78a98b0b1e64de96",
+  "inputDigest": "ff92f2b9b1927100e6c140b10875e6c6c539c1d676dc19efc5e924362ebb0ce9",
+  "goldDigest": "b0ca22b3b8cfb7fe196174c307e0851e89380bccb871261bf11b00b1f9b14355"
+}

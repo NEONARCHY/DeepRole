@@ -1,0 +1,18 @@
+{
+  "stage": "RP298",
+  "date": "2026-10-16",
+  "scope": "Conditional accepted-task recall repair; seen synthetic corpora, not live model evaluation",
+  "runtimeChanged": ["src/core/story-obligation-recall.ts"],
+  "historicalEvidence": "RP297 first result/gold/seal unchanged; RP296 obligation and context snapshots saved before runtime edit",
+  "before": {"scored":38,"complete":23,"gold":176,"missing":38,"confidenceGapCases":4},
+  "after": {"scored":38,"complete":38,"gold":176,"missing":0,"confidenceGapCases":0},
+  "sixSeenCorpora": {"inputs":508,"scored":302,"complete":302,"gold":1408,"missing":0,"integrityCases":0,"confidenceGapCases":0,"lostPriorFacts":0},
+  "focusedChecks":86,
+  "fullUnit": {"passed":8399,"failed":0,"todo":5,"files":305,"durationSeconds":238.37},
+  "unifiedStrict": {"passed":492,"failed":0,"pairs":2427,"configurations":57,"scored":60,"complete":60,"missing":0,"confidenceGaps":0},
+  "typecheck": {"finalExitCode":0,"initialIssue":"Unused imports in new repair test; removed before successful rerun"},
+  "build": {"status":"passed","chromeExitCode":0,"firefoxExitCode":0,"firstAttempt":"Chrome esbuild could not remove shared TEMP file; successful retry uses project-local TEMP","warnings":["Existing chunk larger than 500KB"]},
+  "native": {"status":"passed","passed":2,"failed":0,"flaky":0,"durationSeconds":84.675,"contextsClosed":true,"scope":"Existing isolated RU/EN synthetic Edge extension tests, no account or live DeepSeek"},
+  "packages": {"status":"passed","chromeFiles":23,"firefoxFiles":23,"sourceFiles":838,"sha256AgainstDisk":true,"canonicalCopies":3,"sourceExcludesTests":true,"testExecutionRequiresGitCheckout":true},
+  "limits": ["Finite supported query forms, not general language understanding", "Very small context budgets can remain incomplete", "No canonical condition fulfillment inferred", "RP-05 and true delta remain open", "Installed extension and user worlds unchanged", "No push requested"]
+}
