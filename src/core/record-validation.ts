@@ -47,6 +47,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
     case "story": return validStoryRecord(d);
     case "illustration": return validIllustration(d);
     case "world":
+      if (d.bracketedOoc !== undefined && typeof d.bracketedOoc !== "boolean") return false;
       if(d.resetArchives!==undefined&&(!Array.isArray(d.resetArchives)||!d.resetArchives.every(validResetArchive)))return false;
       if (d.storyMemoryBatch !== undefined && !validMemoryBatchPolicy(d.storyMemoryBatch)) return false;
       if (d.storyAutomation !== undefined && !validStoryAutomationPolicy(d.storyAutomation)) return false;

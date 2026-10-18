@@ -9,7 +9,14 @@ const scenarios = flexibleScenarios();
 for (const c of scenarios) it(`RP271 frozen actual compiler: ${c.id}`, () => {
   const input = structuredClone(c.input), untouched = structuredClone(input), baseline = priorFlexibleContext(input), now = compileGameContext(input, { budgetPriority: false }), selected = flexibleHints(now.text);
   const snapshot = frozen.cases.find(r => r.id === c.id)!;
-  expect(digest(input)).toBe(snapshot.inputDigest); expect(digest(baseline)).toBe(snapshot.baselineDigest);
+  // Pin the original wire bytes without rewriting its registered digest. The
+  // default transport may improve, but cannot change any selected evidence.
+  const frozenBaseline = compileGameContext(input, { flexiblePriority: false, memoryPrefixTables: false });
+  expect(digest(input)).toBe(snapshot.inputDigest); expect(digest(frozenBaseline)).toBe(snapshot.baselineDigest);
+  expect(flexibleHints(baseline.text)).toEqual(flexibleHints(frozenBaseline.text));
+  expect(baseline.report.selected).toEqual(frozenBaseline.report.selected);
+  expect(baseline.report.omitted).toEqual(frozenBaseline.report.omitted);
+  expect(baseline.report.total).toBeLessThanOrEqual(frozenBaseline.report.total);
   if (!c.positive) expect(now).toEqual(baseline);
   else {
     for (const fact of c.wanted) {

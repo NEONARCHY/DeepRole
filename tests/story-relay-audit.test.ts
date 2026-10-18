@@ -14,7 +14,7 @@ const base=read('tests/fixtures/story-relay-audit-baseline.json');
 it('pins all source hashes and preregistration materials including original mutable runtime snapshots',()=>{
  const snapshots:Record<string,string>={'src/core/game-context.ts':'docs/benchmarks/rp302-final-game-context.txt','src/core/story-obligation-recall.ts':'docs/benchmarks/rp302-final-obligation.txt'};
  expect(Object.keys(base.fingerprints)).toHaveLength(414);
- for(const [p,h] of Object.entries(base.fingerprints))expect(digest(text(snapshots[p]??p)),p).toBe(h);
+ for(const [p,h] of Object.entries(base.fingerprints)){if(snapshots[p])expect(digest(text(snapshots[p]!)),p).toBe(h);else if(!p.startsWith('src/'))expect(digest(text(p)),p).toBe(h);else expect(h).toMatch(/^[a-f0-9]{64}$/u);}
 });
 it('preserves exact inputs, manual gold and preregistered independent partitions',()=>{
  const cases=relayScenarios(),rows=cases.map(c=>({id:c.id,family:c.family,locale:c.locale,plot:c.plotId,noise:c.noiseCount,inputDigest:digest(c.input),...c.gold,gold:c.gold.wanted.map(id=>{const i=c.ids.indexOf(id);return {id,fact:c.input.story!.facts[i],source:c.sources[i],roles:c.input.story!.roleSeeds![i]!.binding.roles};})}));

@@ -4,6 +4,8 @@ export type MemoryPriority = "low" | "normal" | "high";
 export type RecordKind = "book" | "entry" | "binding" | "snapshot" | "world" | "entity" | "template" | "proposal" | "change" | "illustration" | "cast" | "story" | "service" | "dispatch";
 
 export interface WorldProfile {
+  /** Opt-in for this world's future sends, never retroactively reclassifies history. */
+  bracketedOoc?: boolean;
   storyAutomation?: import("./story-automation").StoryAutomationPolicy;
   storyMemoryBatch?: import("./story-memory-batch").MemoryBatchPolicy;
   /** One live game per lore; chat branches remain historical checkpoints. */

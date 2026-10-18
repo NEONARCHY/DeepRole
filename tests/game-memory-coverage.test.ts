@@ -1,22 +1,30 @@
 // @vitest-environment node
 import {expect,it} from "vitest";
 import {readFileSync} from "node:fs";
-import {compileGameContext,type GameContextInput} from "../src/core/game-context";
+import {compileGameContext,type GameContextInput,type GameContextOptions} from "../src/core/game-context";
+import {decodeStoryMemory} from "../src/core/story-memory-transport";
 import {memoryCoverageIssue,type GameMemoryCoverage} from "../src/core/game-memory-coverage";
 import {budgetWorld,budgetScenarios,priorBudgetContext} from "./fixtures/story-budget-priority";
 import {digest} from "../scripts/story-search-evaluation.mjs";
 
-function inspect(input:GameContextInput){
+function inspect(input:GameContextInput,options:GameContextOptions={}){
  const observations:GameMemoryCoverage[]=[];
- const before=structuredClone(input),context=compileGameContext(input,{},state=>observations.push(state));
- expect(context).toEqual(compileGameContext(input));expect(input).toEqual(before);
+ const before=structuredClone(input),context=compileGameContext(input,options,state=>observations.push(state));
+ expect(context).toEqual(compileGameContext(input,options));expect(input).toEqual(before);
  expect(observations).toHaveLength(1);
  expect(context.selection).not.toHaveProperty("memoryCoverage");
  return {context,coverage:observations[0]!};
 }
 const original=JSON.parse(readFileSync("docs/benchmarks/rp273c-budget-results.json","utf8"));
 for(const c of budgetScenarios())it(`diagnostics preserve the exact registered RP273 output, not only its text: ${c.id}`,()=>{
- expect(digest(inspect(c.input).context)).toBe(original.rows.find((row:any)=>row.id===c.id).outputDigest);
+ const prior=inspect(c.input,{memoryPrefixTables:false}).context,current=inspect(c.input).context;
+ expect(digest(prior)).toBe(original.rows.find((row:any)=>row.id===c.id).outputDigest);
+ const hints=(text:string)=>{const block=text.split('<deeprole_story_memory>')[1]?.split('</deeprole_story_memory>')[0];return block?decodeStoryMemory(JSON.parse(block.split('\n')[1]!)):[];};
+ expect(hints(current.text)).toEqual(hints(prior.text));
+ expect(current.report.selected).toEqual(prior.report.selected);
+ expect(current.report.omitted).toEqual(prior.report.omitted);
+ expect(current.report.explanation).toEqual(prior.report.explanation);
+ expect(current.report.total).toBeLessThanOrEqual(prior.report.total);
 });
 for(const locale of ["ru","en"] as const){
  for(const count of [4,8,12])it(`complete identified bundle is preparation, independent of optional omissions: ${locale}/${count}`,()=>{

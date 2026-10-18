@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+import { shouldOpenWelcome } from "../core/first-run";
 import { REPOSITORY_PORT, serveJsonPort } from "../storage/repository-stream";
 import { getImageSettings } from "../storage/image-settings";
 import { approveSelfie } from "../storage/selfie-images";
@@ -357,7 +358,10 @@ export default defineBackground(() => {
       return handleMessage(request as DeepRoleMessage, sender);
     });
   });
-  browser.runtime.onInstalled.addListener(() => {
+  browser.runtime.onInstalled.addListener(details => {
+    void getSettings().then(settings => {
+      if (shouldOpenWelcome(details.reason, settings.onboardingComplete)) return browser.tabs.create({ url: browser.runtime.getURL('/sidepanel.html'), active: true });
+    }).catch(() => undefined);
     void browser.contextMenus.removeAll().then(() => {
       browser.contextMenus.create({
         id: "deeprole-save-selection",

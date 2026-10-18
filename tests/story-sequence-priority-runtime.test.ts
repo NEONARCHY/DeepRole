@@ -11,7 +11,12 @@ for (const c of scenarios) it(`RP272 whole compiler and frozen baseline: ${c.id}
   // have a separate fresh corpus; never rewrite this frozen gold/baseline.
   const input = structuredClone(c.input), untouched = structuredClone(input), prior = priorSequenceContext(input), current = compileGameContext(input, { budgetPriority: false }), hints = sequenceHints(current.text);
   const row = frozen.cases.find(row => row.id === c.id)!;
-  expect(digest(input)).toBe(row.inputDigest); expect(digest(prior)).toBe(row.baselineDigest);
+  const frozenPrior = compileGameContext(input, { sequencePriority: false, memoryPrefixTables: false });
+  expect(digest(input)).toBe(row.inputDigest); expect(digest(frozenPrior)).toBe(row.baselineDigest);
+  expect(sequenceHints(prior.text)).toEqual(sequenceHints(frozenPrior.text));
+  expect(prior.report.selected).toEqual(frozenPrior.report.selected);
+  expect(prior.report.omitted).toEqual(frozenPrior.report.omitted);
+  expect(prior.report.total).toBeLessThanOrEqual(frozenPrior.report.total);
   if (!c.positive) expect(current).toEqual(prior);
   else {
     for (const fact of c.wanted) {

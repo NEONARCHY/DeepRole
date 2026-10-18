@@ -7,6 +7,7 @@ import { profileRelatedNames, visibleFieldHistory } from "../core/field-history"
 import { fieldSceneReference, type CharacterTextOutcome, type IsolatedFieldInput } from "../core/isolated-character-text";
 import { StoryDiagnosticsClient } from "../adapters/story-diagnostics-client";
 import { StoryDispatchCaptureClient } from "../adapters/story-dispatch-capture-client";
+import { validStoryDispatchCapture } from "../core/story-dispatch-capture";
 import { StoryDispatchReplyClient } from "../adapters/story-dispatch-reply-client";
 import { StoryGameClient } from "../adapters/story-game-client";
 import { worldGameBinding, worldGamePeople, type WorldGameActivation } from "../core/world-game";
@@ -38,6 +39,8 @@ import { DeepSeekReplyRecovery, recoveredReplyContext } from "../adapters/deepse
 import { pendingRecoveredReply, replyRecoveryText } from "../core/reply-recovery";
 import type { RecoveredReplyEdit } from "../storage/recovered-replies";
 import { nativeMessageIdentity, nativeMessageRows, isUserMessage } from "../adapters/deepseek-message-dom";
+import { explicitOutOfCharacter } from "../core/story-message-mode";
+import { storyReplyPurpose, storyReplyProofChanged } from "../core/story-reply-purpose";
 import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
 import { hideCharacterTextServices, plainCharacterReplyText, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
@@ -183,7 +186,7 @@ class PageController {
   private readonly dispatchReplies = new StoryDispatchReplyClient(window, () => ({ chatId: this.adapter.getChatId(), worldId: this.currentScene().worldId, url: location.href, locked: this.state.vaultLocked }), repository);
   private readonly storyGame = new StoryGameClient(window, () => {
     const worldId = this.currentScene().worldId;
-    return { chatId: this.adapter.getChatId(), worldId, managed: this.sharedGameActive() && this.trackedBindings.has(this.currentBinding()?.id ?? ""), base: characterRevision(this.entities.filter(e => e.worldId === worldId && e.kind === "character" && characterInChat(e, this.adapter.getChatId())), worldId ? this.currentBinding()?.characterScenes?.[worldId] : undefined), url: location.href, locked: this.state.vaultLocked, generating: this.adapter.isGenerating() };
+    return { chatId: this.adapter.getChatId(), worldId, managed: this.sharedGameActive() && this.trackedBindings.has(this.currentBinding()?.id ?? ""), base: characterRevision(this.entities.filter(e => e.worldId === worldId && e.kind === "character" && characterInChat(e, this.adapter.getChatId())), worldId ? this.currentBinding()?.characterScenes?.[worldId] : undefined), url: location.href, locked: this.state.vaultLocked, generating: this.adapter.isGenerating(), replySignature: latestCharacterResponse()?.text };
   }, repository);
   private storyGameScanKey: string | null = null;
   private trackedBindings = new Set<string>();
@@ -606,6 +609,7 @@ class PageController {
   }
   private clearPrivateState() {
     this.searchIndex.clear();
+    this.storyGame.resetPresentation();
     ++this.memoryReceiptGeneration;
     this.memoryDispatchRecords = [];
     this.dispatchCaptures.reset();
@@ -687,13 +691,31 @@ class PageController {
       const receipt = await repository.get<import("../core/story-dispatch-capture").StoryDispatchCapture>("dispatch", id);
       if (generation !== this.memoryReceiptGeneration || this.state.vaultLocked || location.href !== scope.url
         || this.adapter.getChatId() !== scope.chatId || this.currentScene().worldId !== worldId || this.currentBinding()?.id !== bindingId || !receipt) return;
+      const prior=this.memoryDispatchRecords.find(v=>(v as {id?:string}).id===id);
+      const proofChanged=storyReplyProofChanged(prior,receipt);
+      if(proofChanged)this.storyGame.resetPresentation();
       this.memoryDispatchRecords = [...this.memoryDispatchRecords.filter(v => (v as {id?:string}).id !== id), receipt];
+      // A late ordinary receipt can invalidate proof AFTER that reply's scan.
+      // Rescan it too, otherwise cards-off would remain pending indefinitely.
+      if (receipt.delivery?.status === 'accepted' && (receipt.purpose === 'out-of-character' || proofChanged)) { this.characterScan = null; this.storyGameScanKey = null; this.syncSceneChoices(); this.scheduleScan(); }
       this.render();
     } catch { /* Read-only receipt failure cannot stop the native request. */ }
   }
   private sharedBinding(): ChatBinding | undefined {
     const binding = this.currentBinding();
     return worldGameBinding(binding, this.worlds.find(w => w.id === binding?.worldId));
+  }
+  private isOutOfCharacterReply(row: HTMLElement): boolean {
+    const binding = this.currentBinding(), worldId = this.currentScene().worldId, chatId = this.adapter.getChatId();
+    const nativeRow = row.closest<HTMLElement>('article, [data-message-id], [data-virtual-list-item-key]') ?? row;
+    return !this.state.vaultLocked && !!binding && !!worldId && !!chatId && storyReplyPurpose(this.memoryDispatchRecords, { bindingId: binding.id, worldId, chatId }, nativeMessageIdentity(nativeRow), this.storyGame.presentationSnapshot()) === 'out-of-character';
+  }
+  private hasOutOfCharacterCapture(): boolean {
+    const binding=this.currentBinding(),worldId=this.currentScene().worldId,chatId=this.adapter.getChatId();
+    return !this.state.vaultLocked && !!binding && !!worldId && !!chatId && this.memoryDispatchRecords.some(c=>validStoryDispatchCapture(c) && c.origin==='local' && c.purpose==='out-of-character' && c.worldId===worldId && c.bindingId===binding.id && c.identity.chatId===chatId && c.injection!=='unconfirmed' && c.delivery?.status==='accepted');
+  }
+  private choicesPurposePending(): boolean {
+    return this.sharedGameActive() && this.hasOutOfCharacterCapture() && this.storyGame.presentationPending();
   }
   private sharedGameActive(): boolean {
     const binding = this.currentBinding(), game = this.worlds.find(w => w.id === binding?.worldId)?.sharedGame;
@@ -796,9 +818,11 @@ class PageController {
     const overrides = this.overrides();
     const snapshot = this.appliedSnapshot && memoryWorld(this.appliedSnapshot, this.books) === scene.worldId ? this.appliedSnapshot : null;
     const choicesEnabled = Boolean(world && (this.settings.sceneChoicesEnabled ?? true));
+    const readOnly = this.currentBinding()?.nextStoryMessageMode === "out-of-character" || explicitOutOfCharacter(draft,world?.bracketedOoc===true);
     let memoryCoverage:import("../core/game-memory-coverage").GameMemoryCoverage|undefined;
     const compiled = compileGameContext({
       draft,
+      readOnly,
       recentMessages,
       entries: this.entries,
       activeBookId: scene.bookId,
@@ -806,8 +830,8 @@ class PageController {
       manualIds: overrides.includedIds,
       excludedIds: overrides.excludedIds,
       settings: world ?? this.settings,
-      character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService || this.currentBinding()?.nextStoryMessageMode === "out-of-character",this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
-      story: tracked && gameBranch && world && chatId && !this.pendingService && this.currentBinding()?.nextStoryMessageMode !== "out-of-character" ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : undefined,
+      character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
+      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : undefined,
       snapshot,
       continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
       restart: !!recentGame?.restartPending && !this.pendingService,
@@ -1107,7 +1131,7 @@ class PageController {
     // New recovery requests still require the connected-world feature flag.
     syncSceneChoiceCards((this.settings.sceneChoicesEnabled ?? true) && !this.state.vaultLocked, this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, this.state.sceneChoicesEnabled ? {
       busy, loading: !busy || this.pendingService?.type === "scene-choices" || this.serviceFeedback?.type === "scene-choices", requestSignature: this.pendingService?.type === "scene-choices" ? this.pendingService.sceneSignature : undefined, onRequest: (signature) => this.requestSceneChoices(signature),
-    } : undefined, { adaptiveLayout: this.settings.adaptiveLayout !== false, pinSceneChoices: !!this.settings.pinSceneChoices, pinPortraits: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), onToggle: key => this.toggleChoicePin(key) });
+    } : undefined, { allowReply: row => !this.choicesPurposePending() && !this.isOutOfCharacterReply(row), adaptiveLayout: this.settings.adaptiveLayout !== false, pinSceneChoices: !!this.settings.pinSceneChoices, pinPortraits: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), onToggle: key => this.toggleChoicePin(key) });
     const characters = this.state.characters;
     const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;
     const resetAt = this.settings.portraitLayoutResetAt ?? 0;
@@ -1150,12 +1174,18 @@ class PageController {
 
   private async scanStoryWithoutCards() {
     if (!this.sharedGameActive()) return;
-    if (!this.trackedBindings.has(this.currentBinding()?.id ?? "") || this.state.vaultLocked || this.adapter.isGenerating() || this.pendingService) return;
+    if (this.state.vaultLocked || this.adapter.isGenerating() || this.pendingService) return;
+    const tracked=this.trackedBindings.has(this.currentBinding()?.id ?? '');
+    if(!tracked&&!this.hasOutOfCharacterCapture())return;
     const response = latestCharacterResponse(); if (!response) return;
     const key = JSON.stringify([this.adapter.getChatId(), this.currentScene().worldId, nativeMessageIdentity(response.row), response.signature]);
-    if (this.storyGameScanKey === key) return;
+    if (this.storyGameScanKey === key && !this.choicesPurposePending()) return;
     this.storyGameScanKey = key;
-    try { const result = await this.storyGame.run(); if (result.active) this.clearStoryGameWarning(); this.queueMetadataRepair(result); if (result.changed) await this.reload(); }
+    try {
+      if(tracked){const result = await this.storyGame.run(); if (result.active) this.clearStoryGameWarning(); this.queueMetadataRepair(result); if (result.changed) await this.reload();}
+      if(this.hasOutOfCharacterCapture()&&!this.storyGame.presentationSnapshot())await this.storyGame.readForPresentation();
+      this.syncSceneChoices();
+    }
     catch (error) { this.storyGameWarning = this.state.warning = storyReviewText(this.state.locale, storyReviewError(error)); this.render(); }
   }
 
@@ -1260,18 +1290,24 @@ class PageController {
     const scope = `${characters.worldId}:${characters.chatId}`;
     const turnKey = response.turn ? characterTurnKey(response.turn) : response.signature;
     const key = JSON.stringify([nativeMessageIdentity(response.row), response.signature, turnKey]);
-    if (this.characterScan?.scope === scope && this.characterScan.key === key && this.characterScan.done) return;
+    if (this.characterScan?.scope === scope && this.characterScan.key === key && this.characterScan.done && !this.choicesPurposePending()) return;
     if (this.characterScan?.scope !== scope || this.characterScan.key !== key) this.characterScan = { scope, key, since: Date.now(), done: false };
     if (Date.now() - this.characterScan.since < 1200) { window.setTimeout(() => this.scheduleScan(), 1250); return; }
     this.characterScan.done = true;
+    let outOfCharacter = this.isOutOfCharacterReply(response.row);
     try {
       const synced = await this.storyGame.run();
+      // Managed sync already read the native history. Legacy/UI-only mode may
+      // need one bounded GET for an accepted OOC whose SSE link is unavailable.
+      if (!outOfCharacter && !this.storyGame.presentationSnapshot() && this.hasOutOfCharacterCapture()) await this.storyGame.readForPresentation();
+      if (this.state.vaultLocked || this.currentScene().worldId!==characters.worldId || this.adapter.getChatId()!==characters.chatId || latestCharacterResponse()?.signature!==response.signature) return;
+      outOfCharacter = this.isOutOfCharacterReply(response.row);
       if (synced.active) {
-        this.queueMetadataRepair(synced);
+        if (!outOfCharacter) this.queueMetadataRepair(synced);
         this.clearStoryGameWarning();
         if (synced.changed) await this.reload();
-        const status: CharacterCopyKey = synced.update ? synced.update.status === "accepted" || synced.update.status === "partial" ? "updated" : synced.update.status === "missing" ? "missing" : "invalidUpdate" : response.turn ? "updated" : response.text.includes("<deeprole_characters>") ? "invalidUpdate" : "missing";
-        if (synced.update && synced.update.status !== "accepted") this.storyGameWarning = this.state.warning = storyUpdateText(this.state.locale, synced.update.status);
+        const status: CharacterCopyKey = outOfCharacter ? "outOfCharacter" : synced.update ? synced.update.status === "accepted" || synced.update.status === "partial" ? "updated" : synced.update.status === "missing" ? "missing" : "invalidUpdate" : response.turn ? "updated" : response.text.includes("<deeprole_characters>") ? "invalidUpdate" : "missing";
+        if (!outOfCharacter && synced.update && synced.update.status !== "accepted") this.storyGameWarning = this.state.warning = storyUpdateText(this.state.locale, synced.update.status);
         this.characterStatus = status;
         if (this.state.characters) this.state.characters.status = status;
         if (response.turn || response.text.includes("<deeprole_characters>")) foldCharacterPayload(response.row, this.state.locale, status);
@@ -1290,6 +1326,12 @@ class PageController {
       return;
     }
     const rawTurn = response.turn;
+    if (outOfCharacter) {
+      if (!this.state.characters || `${this.state.characters.worldId}:${this.state.characters.chatId}` !== scope) return;
+      this.characterStatus = 'outOfCharacter'; this.state.characters.status = 'outOfCharacter';
+      if (rawTurn) foldCharacterPayload(response.row, this.state.locale, 'outOfCharacter');
+      this.syncSceneChoices(); this.render(); return;
+    }
     if (rawTurn?.request) this.characterReceipt = (await browser.runtime.sendMessage({ type: "DR_GET_TAB_STATE" } satisfies DeepRoleMessage) as TabSessionState | undefined)?.characterRequest ?? null;
     const turn = rawTurn?.request ? bindCharacterTurn(rawTurn, this.characterReceipt, characters) : rawTurn;
     let status: CharacterCopyKey = "missing";
@@ -1309,7 +1351,7 @@ class PageController {
           await this.reload();
         } catch (error) {
           const reason = error instanceof Error ? error.message : "";
-          status = reason === "character-story-managed" ? "historyManaged" : reason === "character-conflict" ? "stale" : reason === "character-scope" ? "otherChat" : reason === "character-unknown" ? "unknown" : reason === "character-invalid" ? "invalidUpdate" : reason === "character-limit" ? "limit" : "autoFailed";
+          status = reason === "character-read-only" ? "idle" : reason === "character-story-managed" ? "historyManaged" : reason === "character-conflict" ? "stale" : reason === "character-scope" ? "otherChat" : reason === "character-unknown" ? "unknown" : reason === "character-invalid" ? "invalidUpdate" : reason === "character-limit" ? "limit" : "autoFailed";
         }
         finally { this.characterSaving = false; }
       }
@@ -1322,6 +1364,8 @@ class PageController {
 
   private async requestSceneChoices(signature: string): Promise<boolean> {
     if (this.state.vaultLocked || !this.state.sceneChoicesEnabled) return false;
+    const target = latestSceneChoiceTarget();
+    if (!target || target.signature !== signature || this.choicesPurposePending() || this.isOutOfCharacterReply(target.row)) return false;
     const result = await this.runService({ id: createId("service"), type: "scene-choices", sceneSignature: signature, bookId: this.currentScene().bookId, createdAt: Date.now() });
     if (!result.ok) this.showToast(sceneChoiceText(this.state.locale,
       result.error === "draft-not-empty" ? "draftBusy" : result.error === "scene-changed" ? "changed" : result.error === "busy" ? "busy" : "unavailable"));
@@ -1361,7 +1405,7 @@ class PageController {
   }
 
   private async pickSceneChoice(choice: SceneChoice, signature: string): Promise<boolean> {
-    if (this.state.vaultLocked || this.settings.sceneChoicesEnabled === false || this.adapter.isGenerating() || this.preparingService || this.currentActivity()?.phase === "waiting") {
+    if (this.state.vaultLocked || this.settings.sceneChoicesEnabled === false || this.adapter.isGenerating() || this.preparingService || this.choicesPurposePending() || this.currentActivity()?.phase === "waiting") {
       this.showToast(sceneChoiceText(this.state.locale, "unavailable")); return false;
     }
     const draft = this.adapter.getDraft();
@@ -2079,8 +2123,16 @@ class PageController {
           await this.replyRecovery.flush();
           await this.recoveryReceiptTask;
           await this.oldChatNoticeReceiptTask;
-          let task = this.reload();
+          // Reuse the page's current library snapshot. Storage changes and chat
+          // navigation already schedule reloads; starting another full
+          // IndexedDB read for every outgoing message makes large worlds miss
+          // the bounded injection handshake. If a refresh is already running,
+          // follow its newest task before compiling this request's context.
+          let task = this.reloadTask;
           let loaded = await task;
+          // A first request can race extension startup before its initial load
+          // has been scheduled (for example, immediately after creating a chat).
+          if (!loaded && !this.state.pageReady) { task = this.reload(); loaded = await task; }
           // Follow the newest in-flight snapshot instead of starting competing reads.
           for (let attempt = 0; attempt < 5 && (!loaded || task !== this.reloadTask); attempt++) {
             task = this.reloadTask; loaded = await task;
@@ -2113,6 +2165,19 @@ class PageController {
           const generation = this.reloadGeneration;
           const sceneKey = this.contextScopeKey();
           const scene = this.currentScene();
+          // A library notification can be delayed/missed while this tab stays
+          // open. Never compile a send's mode from that cached world policy:
+          // durable capture below reads the saved world too. Read just this
+          // record (not the entire lore/history) before creating either prompt
+          // or character receipt. Only refresh the policy field; game state
+          // continues to use the consistently loaded snapshot above.
+          if (scene.worldId && !this.pendingService) {
+            const policyScope = this.pageScope();
+            const savedWorld = await repository.get<WorldProfile>("world", scene.worldId);
+            this.assertScope(policyScope);
+            if (!savedWorld || generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
+            this.worlds = this.worlds.map(world => world.id === scene.worldId ? { ...world, bracketedOoc: savedWorld.bracketedOoc === true } : world);
+          }
           const currentChatId = this.adapter.getChatId();
           // An API request to another existing chat must not receive this page's lore.
           if (requestChatId && currentChatId && requestChatId !== currentChatId) throw new Error("context-changed");
@@ -2137,7 +2202,7 @@ class PageController {
           if (await repository.isLocked()) { this.publishContext(""); throw new Error("vault-locked"); }
           this.assertScope(delivery.scope);
           if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
-          if (!reminder && scene.worldId && characterChatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked) {
+          if (!reminder && !explicitOutOfCharacter(draft,this.worlds.find(w=>w.id===scene.worldId)?.bracketedOoc===true) && this.currentBinding()?.nextStoryMessageMode !== "out-of-character" && scene.worldId && characterChatId && this.settings.characterSheetsEnabled && !this.state.vaultLocked) {
             const entities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character" && characterInChat(e, characterChatId));
             const characterScene = this.currentBinding()?.characterScenes?.[scene.worldId] ?? this.worlds.find(w => w.id === scene.worldId)?.sharedGame?.scene ?? handoffCharacterScene(this.appliedSnapshot, scene.worldId);
             delivery.characterRequest = { id, worldId: scene.worldId, chatId: characterChatId, base: characterRevision(entities, characterScene), createdAt: Date.now(), accepted: false, generatedSelfiesEnabled: !this.pendingService && this.imageSettings.enabled && isSelfieRequest(draft), relationshipsEnabled: !this.pendingService && this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === scene.worldId)?.relationshipsEnabled !== false };
@@ -2193,7 +2258,7 @@ class PageController {
         if (receipt) { this.pendingContinuationCommit = receipt; this.state.continuationCommitPending = true; this.state.pendingHandoff = undefined; await this.updateContext().catch(() => this.render()); }
       });
     } else if (!event.data.ok && event.data.url === location.href && (this.selection.entries.length > 0 || this.appliedSnapshot)) {
-      this.state.warning = this.t("incompatible");
+      this.state.warning = this.injectionWarning(event.data.reason);
     }
     this.render();
   }
@@ -2428,6 +2493,16 @@ class PageController {
 
   private t(key: MessageKey, vars?: Record<string, string | number>): string {
     return translate(this.state.locale, key, vars);
+  }
+
+  private injectionWarning(reason: unknown): string {
+    const key: MessageKey = reason === "context-timeout" || reason === "context-unavailable" ? "memoryInjectWait"
+      : reason === "page-changed" ? "memoryInjectPageChanged"
+      : reason === "unsupported-request-shape" || reason === "invalid-json" || reason === "invalid-request" ? "memoryInjectUnsupported"
+      : reason === "memory-already-present" ? "memoryInjectAlreadyPresent"
+      : reason === "synchronous-request" ? "memoryInjectSync"
+      : "memoryInjectFailed";
+    return this.t(key);
   }
 }
 

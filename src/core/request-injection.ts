@@ -1,6 +1,61 @@
 export interface InjectionResult {
   changed: boolean;
   body: string;
+  failure?: "invalid-json" | "unsupported-request-shape" | "memory-already-present";
+}
+
+/** Spend more time refreshing a request only when a memory preview already exists. */
+export function contextHandshakeTimeoutMs(hasPublishedContext: boolean, managedStory: boolean): number {
+  return hasPublishedContext || managedStory ? 12_000 : 5_000;
+}
+
+const DEEPROLE_MARKER = /^\s*<(?:deeprole_context|deeprole_choice_mode|deeprole_character_mode|deeprole_story_memory|deeprole_story_update_mode|deeprole_recovered_reply)\b/iu;
+const TEXT_PART_TYPES = new Set(["text", "input_text", "output_text", "request"]);
+
+function isMarked(text: string): boolean { return DEEPROLE_MARKER.test(text); }
+
+/** Read only textual parts; never stringify image/file payloads into the search query. */
+function textContent(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    const parts = value.map(textContent).filter((part): part is string => part !== null);
+    return parts.length ? parts.join("\n") : null;
+  }
+  if (!value || typeof value !== "object") return null;
+  const part = value as Record<string, unknown>;
+  const type = typeof part.type === "string" ? part.type.toLowerCase() : "";
+  if (typeof part.text === "string" && (!type || TEXT_PART_TYPES.has(type))) return part.text;
+  if (typeof part.content === "string" && (!type || TEXT_PART_TYPES.has(type))) return part.content;
+  return null;
+}
+
+/** Prepend memory to the first recognized text segment, preserving non-text parts. */
+function prependText(value: unknown, prefix: string): boolean {
+  if (typeof value === "string") return false;
+  if (Array.isArray(value)) {
+    for (const part of value) {
+      if (!part || typeof part !== "object" || Array.isArray(part)) continue;
+      const item = part as Record<string, unknown>;
+      const type = typeof item.type === "string" ? item.type.toLowerCase() : "";
+      const key = typeof item.text === "string" && (!type || TEXT_PART_TYPES.has(type))
+        ? "text"
+        : typeof item.content === "string" && (!type || TEXT_PART_TYPES.has(type)) ? "content" : null;
+      if (!key) continue;
+      if (isMarked(item[key] as string)) return false;
+      item[key] = `${prefix}\n\n[User message]\n${item[key] as string}`;
+      return true;
+    }
+    return false;
+  }
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  const type = typeof item.type === "string" ? item.type.toLowerCase() : "";
+  const key = typeof item.text === "string" && (!type || TEXT_PART_TYPES.has(type))
+    ? "text"
+    : typeof item.content === "string" && (!type || TEXT_PART_TYPES.has(type)) ? "content" : null;
+  if (!key || isMarked(item[key] as string)) return false;
+  item[key] = `${prefix}\n\n[User message]\n${item[key] as string}`;
+  return true;
 }
 
 /** Destination from the site's request, never from generated text or an old URL. */
@@ -26,11 +81,12 @@ export function outgoingParentMessageId(body: string): string | undefined {
 export function outgoingUserText(body: string): string | null {
   try {
     const payload = JSON.parse(body) as Record<string, unknown>;
-    if (typeof payload?.prompt === "string") return payload.prompt;
+    const prompt = textContent(payload?.prompt);
+    if (prompt !== null) return prompt;
     for (const messages of findMessageArrays(payload)) {
       for (let index = messages.length - 1; index >= 0; index--) {
         const message = messages[index] as Record<string, unknown> | undefined;
-        if (message?.role === "user" && typeof message.content === "string") return message.content;
+        if (message?.role === "user") return textContent(message.content);
       }
     }
   } catch { /* Unrecognized requests must remain untouched. */ }
@@ -38,11 +94,22 @@ export function outgoingUserText(body: string): string | null {
 }
 
 export function injectIntoJsonBody(body: string, memoryContext: string): InjectionResult {
-  const payload = JSON.parse(body) as Record<string, unknown>;
+  let payload: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { changed: false, body, failure: "unsupported-request-shape" };
+    payload = parsed as Record<string, unknown>;
+  } catch { return { changed: false, body, failure: "invalid-json" }; }
+
   if (typeof payload.prompt === "string") {
-    if (payload.prompt.includes("<deeprole_context") || payload.prompt.includes("<deeprole_choice_mode") || payload.prompt.includes("<deeprole_character_mode") || payload.prompt.includes("<deeprole_story_memory") || payload.prompt.includes("<deeprole_story_update_mode") || payload.prompt.includes("<deeprole_recovered_reply")) return { changed: false, body };
+    if (isMarked(payload.prompt)) return { changed: false, body, failure: "memory-already-present" };
     payload.prompt = `${memoryContext}\n\n[User message]\n${payload.prompt}`;
     return { changed: true, body: JSON.stringify(payload) };
+  }
+  if (payload.prompt !== undefined) {
+    const promptText = textContent(payload.prompt);
+    if (promptText !== null && isMarked(promptText)) return { changed: false, body, failure: "memory-already-present" };
+    if (prependText(payload.prompt, memoryContext)) return { changed: true, body: JSON.stringify(payload) };
   }
 
   for (const messages of findMessageArrays(payload)) {
@@ -50,14 +117,19 @@ export function injectIntoJsonBody(body: string, memoryContext: string): Injecti
       const message = messages[index] as Record<string, unknown> | undefined;
       if (message?.role !== "user") continue;
       // Never move backwards into an older user turn on retries/unsupported content.
-      if (typeof message.content === "string" && !message.content.includes("<deeprole_context") && !message.content.includes("<deeprole_choice_mode") && !message.content.includes("<deeprole_character_mode") && !message.content.includes("<deeprole_story_memory") && !message.content.includes("<deeprole_story_update_mode") && !message.content.includes("<deeprole_recovered_reply")) {
-        message.content = `${memoryContext}\n\n[User message]\n${message.content}`;
+      const content = message.content;
+      const plainText = textContent(content);
+      if (typeof content === "string") {
+        if (isMarked(content)) return { changed: false, body, failure: "memory-already-present" };
+        message.content = `${memoryContext}\n\n[User message]\n${content}`;
         return { changed: true, body: JSON.stringify(payload) };
       }
-      return { changed: false, body };
+      if (plainText !== null && isMarked(plainText)) return { changed: false, body, failure: "memory-already-present" };
+      if (plainText !== null && prependText(content, memoryContext)) return { changed: true, body: JSON.stringify(payload) };
+      return { changed: false, body, failure: "unsupported-request-shape" };
     }
   }
-  return { changed: false, body };
+  return { changed: false, body, failure: "unsupported-request-shape" };
 }
 
 /** Replace only the newest outgoing user message; preserve the rest of DeepSeek's payload. */

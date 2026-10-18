@@ -1,6 +1,7 @@
 import {chromium,expect,test,type Page} from "@playwright/test";
 import path from "node:path";
 import {transportWorld} from "../fixtures/story-memory-transport";
+import {prefixTransportWorld} from "../fixtures/story-memory-prefixes";
 import {decodeStoryMemory} from "../../src/core/story-memory-transport";
 import {storyFactHint} from "../../src/core/story-fact-context";
 import {createEpisodeReader} from "../../src/core/story-episodes";
@@ -9,13 +10,13 @@ import {createStoryTimeReader} from "../../src/core/story-time";
 const rows=(page:Page)=>page.evaluate(()=>new Promise<any[]>((resolve,reject)=>{
   const open=indexedDB.open("deeprole");open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction("records"),read=tx.objectStore("records").getAll();read.onsuccess=()=>resolve(read.result);read.onerror=()=>reject(read.error);tx.oncomplete=()=>db.close();};
 }));
-for(const locale of ["ru","en"] as const)test(`installed compact memory ${locale}: exact mixed scene, next POST, reload and no canonical refs`,async({},info)=>{
+for(const locale of ["ru","en"] as const)for(const variant of ["metadata","prefix-table"] as const)test(`installed compact memory ${locale}/${variant}: exact mixed scene, next POST, reload and no canonical refs`,async({},info)=>{
   test.skip(info.project.name!=="chromium","Installed Edge MV3 with synthetic DeepSeek, no account");test.setTimeout(120000);
   const extension=path.resolve(".output/chrome-mv3"),context=await chromium.launchPersistentContext("",{channel:"msedge",headless:true,args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});
   try {
     const worker=context.serviceWorkers()[0]??await context.waitForEvent("serviceworker"),panel=await context.newPage();
     await panel.goto(`chrome-extension://${new URL(worker.url()).host}/sidepanel.html`);await expect(panel.locator(".onboarding")).toBeVisible();
-    const fixture=transportWorld(locale),f=fixture.base;f.world.contextBudget=8000;
+    const fixture=variant==="prefix-table"?prefixTransportWorld(locale):transportWorld(locale),f=fixture.base;f.world.contextBudget=8000;
     await panel.evaluate(async({records,locale})=>{
       await new Promise<void>((resolve,reject)=>{const open=indexedDB.open("deeprole");open.onerror=()=>reject(open.error);open.onsuccess=()=>{const db=open.result,tx=db.transaction("records","readwrite");for(const row of records)tx.objectStore("records").put({pk:`${row.kind}:${row.id}`,...row,updatedAt:Date.now()});tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};});
       await (globalThis as any).chrome.storage.local.set({deeprole_settings:{locale,onboardingComplete:true,showChatContextMeter:false,automaticMetadataRepair:false},deeprole_library_change:{token:"transport-seed"}});
@@ -36,24 +37,33 @@ for(const locale of ["ru","en"] as const)test(`installed compact memory ${locale
     const branch=(await read()).guard.branchId,count=context.pages().length;
     const send=(draft:string)=>chat.evaluate(({draft,parent})=>new Promise<void>(resolve=>{const xhr=new XMLHttpRequest();xhr.open("POST","/api/v0/chat/completion");xhr.onload=()=>resolve();xhr.send(JSON.stringify({chat_session_id:"synthetic-a",parent_message_id:parent,prompt:draft}));}),{draft,parent:selected});
     await send("Continue.");
+    // This is the transport/codec happy path, not a race before the observed
+    // native stream has been persisted. OOC/next-turn tests cover that ordering.
+    await expect.poll(async()=>{const c=(await rows(panel)).find(r=>r.kind==='dispatch')?.data;return [c?.delivery?.status,c?.wire?.phase,c?.wire?.sawFinish];},{timeout:12000}).toEqual(['accepted','closed',true]);
     const answer=fixture.quote+"<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat:f.binding.chatId,branch,updates:[],facts:fixture.facts.map(fact=>({...fact,risk:"ordinary"}))})+"</deeprole_characters>";
     messages.push(message(42,41,"USER",outgoing),message(43,42,"ASSISTANT",answer));selected=43;
     await chat.evaluate(({answer})=>{const row=document.querySelector("article")!;row.setAttribute("data-message-id","43");row.querySelector(".ds-markdown")!.textContent=answer;},{answer});
     await expect.poll(async()=>(await read()).update?.facts,{timeout:12000}).toBe(8);
+    await expect(chat.locator('.dr-character-status')).toHaveText(locale==='ru'?'Обновлено после ответа':'Updated after reply',{timeout:12000});
     // Uncertain/terminal/unlinked details remain in the real review queue.
     // Confirm them explicitly; do not weaken production acceptance gates.
     for(let i=0;i<10;i++) {
       const r=(await rpc({type:"DR_AUTOMATION_READ",input:{worldId:f.world.id,chatId:f.binding.chatId,query:""}})).data,item=r.items[0];if(!item)break;
-      expect(await rpc({type:"DR_AUTOMATION_RESOLVE",input:{worldId:f.world.id,chatId:f.binding.chatId,guard:r.guard,gameRevision:r.gameRevision,eventId:item.id,accept:true,fields:[],entityId:null,name:"",replaceKeys:item.conflicts.map((x:any)=>x.key)}})).toMatchObject({ok:true});
+      const result=await rpc({type:"DR_AUTOMATION_RESOLVE",input:{worldId:f.world.id,chatId:f.binding.chatId,guard:r.guard,gameRevision:r.gameRevision,eventId:item.id,accept:true,fields:[],entityId:null,name:"",replaceKeys:item.conflicts.map((x:any)=>x.key)}});
+      // A concurrent projection refresh must reject stale scope, not force a
+      // write. Retry ONLY these bounded transient guards with a fresh queue.
+      if(!result.ok)expect(['story-native-line-unavailable','story-review-stale','story-binding-conflict']).toContain(result.error);
     }
     await expect.poll(async()=>(await read()).facts?.length,{timeout:12000}).toBe(8);
-    for(let i=0;i<10;i++){const r=await read(),candidate=r.facts.find((x:any)=>!x.accepted&&!x.superseded);if(!candidate)break;expect(await rpc({type:"DR_STORY_FACT",input:{worldId:f.world.id,chatId:f.binding.chatId,guard:r.guard,eventId:candidate.eventId,text:candidate.text,accept:true}})).toMatchObject({ok:true});}
+    for(let i=0;i<10;i++){const r=await read(),candidate=r.facts.find((x:any)=>!x.accepted&&!x.superseded);if(!candidate)break;const result=await rpc({type:"DR_STORY_FACT",input:{worldId:f.world.id,chatId:f.binding.chatId,guard:r.guard,eventId:candidate.eventId,text:candidate.text,accept:true}});if(!result.ok)expect(['story-native-line-unavailable','story-review-stale','story-binding-conflict']).toContain(result.error);}
     const saved=(await rows(panel)).find(r=>r.kind==="world").data.sharedGame;expect(saved.facts).toHaveLength(8);
     const episodes=createEpisodeReader(saved.factRoleSeeds,saved.episodeSources),time=createStoryTimeReader(saved.facts,episodes);
     const check=()=>{
       const block=outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!,raw=JSON.parse(block.split("\n")[1]!),decoded=decodeStoryMemory(raw);
       expect(decoded).toHaveLength(8);expect(block).toContain("Transport refs resolve ONLY in THIS array");
-      expect(raw.some((x:any)=>x.episodeSourceRef!==undefined||x.claim?.valueRef!==undefined||x.task?.titleRef!==undefined)).toBe(true);
+      const rows = Array.isArray(raw) ? raw : raw.format==="deeprole-memory-prefixes-v1"?raw.rows:raw.rows.map((cells:any[]) => Object.fromEntries(raw.columns.map((field:string,index:number) => [field,cells[index]])));
+      if(variant==="prefix-table"){expect(raw.format).toBe("deeprole-memory-prefix-table-v1");expect(block).toContain("Prefix table:");expect(block).toContain("Text prefixes:");}
+      expect(rows.some((x:any)=>x.episodeSourceRef!==undefined||x.claim?.valueRef!==undefined||x.task?.titleRef!==undefined)).toBe(true);
       for(const fact of saved.facts){const hint=decoded.find(x=>x.text===fact.text)!;expect(hint).toMatchObject(storyFactHint(fact,undefined,episodes,time));expect(hint.sourceQuote).toBe(fixture.quote);}
       expect(decoded.find(x=>x.task?.key==="gate")?.task?.status).toBe("open");expect(decoded.find(x=>x.task?.key==="letter")?.task?.status).toBe("completed");
       expect(decoded.find(x=>x.claim?.key==="reading")?.timeStatus).toBe("ended");expect(decoded.find(x=>x.kind==="belief")?.kind).toBe("belief");
@@ -61,7 +71,9 @@ for(const locale of ["ru","en"] as const)test(`installed compact memory ${locale
     };
     await send(fixture.input.draft);check();
     await chat.reload();await chat.bringToFront();await expect(chat.locator(".dr-character-row")).toHaveCount(2,{timeout:12000});await send(fixture.input.draft);check();
-    const after=(await rows(panel)).find(r=>r.kind==="world").data.sharedGame;expect(after.facts).toEqual(saved.facts);expect(after.factRoleSeeds).toEqual(saved.factRoleSeeds);expect(after.episodeSources).toEqual(saved.episodeSources);
+    const persisted=await rows(panel),after=persisted.find(r=>r.kind==="world").data.sharedGame;
+    if(after.facts.length!==saved.facts.length)console.info('Transport replay diagnostic',JSON.stringify(persisted.filter(r=>r.kind==='story').map(r=>{const d=r.data;return {type:d.type,id:d.id,branch:d.branchId,head:d.headRevisionId,parent:d.parentRevisionId,native:d.nativeMessageKey,completion:d.completion,accepted:d.acceptedEventIds?.length,revision:d.revisionId};})));
+    expect(after.facts).toEqual(saved.facts);expect(after.factRoleSeeds).toEqual(saved.factRoleSeeds);expect(after.episodeSources).toEqual(saved.episodeSources);
     expect(JSON.stringify(after.facts)).not.toMatch(/(?:valueRef|titleRef|sourceQuoteRef|episodeSourceRef|sourceRolesRef)/);expect(posts).toBe(3);expect(context.pages()).toHaveLength(count);expect(errors).toEqual([]);
   }finally{await context.close();}
 });

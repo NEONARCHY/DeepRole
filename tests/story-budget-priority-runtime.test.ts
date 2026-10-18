@@ -21,7 +21,12 @@ for (const c of sequenceScenarios()) it(`RP272 current default regression, with 
 for (const c of scenarios) it(`RP273 whole fresh sources and exact RP272 baseline: ${c.id}`, () => {
   const input = structuredClone(c.input), untouched = structuredClone(input), prior = priorBudgetContext(input), current = compileGameContext(input), hints = budgetHints(current.text);
   const row = frozen.cases.find(row => row.id === c.id)!;
-  expect(digest(input)).toBe(row.inputDigest); expect(digest(prior)).toBe(row.baselineDigest);
+  const frozenPrior = compileGameContext(input, { budgetPriority: false, memoryPrefixTables: false });
+  expect(digest(input)).toBe(row.inputDigest); expect(digest(frozenPrior)).toBe(row.baselineDigest);
+  expect(budgetHints(prior.text)).toEqual(budgetHints(frozenPrior.text));
+  expect(prior.report.selected).toEqual(frozenPrior.report.selected);
+  expect(prior.report.omitted).toEqual(frozenPrior.report.omitted);
+  expect(prior.report.total).toBeLessThanOrEqual(frozenPrior.report.total);
   if (!c.positive) expect(current).toEqual(prior);
   else {
     for (const fact of c.wanted) {

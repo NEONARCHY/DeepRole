@@ -1,4 +1,1173 @@
-# Передача Codex — 16 октября 2026
+# Передача Codex — 19 октября 2026
+
+## Точка передачи после push — RP309–UX328
+
+Пользователь попросил отправить работу на GitHub и передать другому Codex
+всё сделанное за день и остаток. Краткая полная карта —
+`docs/HANDOFF-2026-10-19.md`; читать её ПЕРЕД старыми разделами ниже.
+Последний прежний main — 49a4dc3, поэтому пакет включает накопившийся код
+RP309–RP322 и сегодняшние проверки/исправления RP323–UX328. Последний browser
+архив — DeepRole-Brave-guided-start-20261019.zip, включает предыдущие этапы.
+
+Перед push заново пройден весь актуальный unit набор: 334 файла, 9608 passed,
+5 прежних todo, 0 failed; TypeScript clean. Это НОВЫЙ общий прогон после UX328,
+а не исторические 9529 RP325 или 200 targeted UX328. JSON в
+`.output/ux328-push-unit.json`, локален. Runtime после финальной UX328 сборки
+не менялся. Browser матрицы и пределы live описаны ниже и в дневном файле.
+Именованный/canonical Chrome SHA прежний; финальный source ZIP включает новые
+документы передачи. Пользовательские удаления downloads README/старого QA json
+включены в пакет как уже выполненная очистка; `.tmp-*` и старые промежуточные
+именованные ZIP остаются только локально и не входят в push.
+
+Следующее: после update пользователя личный bracket live и проход обучения;
+далее RP-05 независимая точность/полное покрытие составных действий, затем RP-08
+replay. Не считать RP324 учебный live проверкой нового RP325 retrieval;
+не считать synthetic browser tests личным Brave live. Подробные критерии и
+команды — в новом дневном файле. Не удалять основное расширение ради welcome.
+
+## Текущая работа — UX328: интерактивное знакомство
+
+Новая задача пользователя: приветствие при первой установке и воронка важных
+функций. Дополнение: пользователь САМ открывает настоящие кнопки/меню,
+подсказка ждёт перехода и ведёт дальше; не просто слайды с «Дальше».
+
+Реализованы WelcomeFlow (3 экрана, RU/EN, сразу выбор языка, skip), каталог
+8 глав / 31 шага, кнопка-книга в header, локальный progress/resume/replay.
+Background открывает sidepanel.html только при install и незавершённом
+onboarding; update не прерывает старую игру. Старым пользователям доступна
+книга, принудительно заново welcome не включаем.
+
+LearningGuide не вызывает click/submit/nav/API за пользователя. Action step
+ждёт видимую destination по data-dr-guide; read steps имеют «Понятно, дальше».
+Недоступные шаги объясняются, можно отложить. Нет backdrop над рабочим
+интерфейсом, только pointer-events:none highlight и отдельная сворачиваемая
+карточка. Hub — существующий Modal с trap/return focus. Чужие формы/диалоги
+ставят подсказку на паузу, не закрываются. Settings/story формы остаются mounted.
+Данные tutorial хранятся отдельно от settings/лора, ключ deeprole_learning_v1.
+Только этот storage change не запускает полный refresh библиотеки.
+
+Найден и исправлен реальный UI edge: закрытый details может сохранять layout
+box у descendants; getClientRects недостаточно. visibility дополнительно
+проверяет closed details и разрешает только его первый summary. До исправления
+расширенный runtime застрял на continuation-toggle из-за преждевременного
+advance и перекрытия. Red trace: test-results-ux328-regression/...ru/320/trace.zip;
+прогон остановлен после первого timeout, не объявлять его успешным.
+После исправления расширенные 4 RU/EN × 320/900 прошли за 31.1s. Затем уточнены
+реальные подписи кнопок, lang и пауза на inline form. Полный production прогон
+28/28 прошёл за 4 min, test-results-ux328-release: 4 обучения + 20 bracket
+runtime + 4 world UI. После этого добавлен только startupDeadline чтения
+optional learning progress, чтобы незавершённый storage read не держал весь
+App в loader. Новый unit проверяет timeout и игнорирование позднего результата.
+Typecheck clean; targeted unit/component/startup/compat 9 файлов / 200 passed.
+После последнего bounded-read build все 4 обучения заново прошли за 31.9s,
+test-results-ux328-final-bounded. Не выдавать это за повтор всех 28 после guard,
+полного unit набора проекта или личный DeepSeek live. Content/injection binary
+не менялся: content.js SHA256 4BDBDEA7DD0E8DE709059C750E78AAB2645428BCF4EC945F3CF703899883C898.
+
+Финальный архив: downloads/DeepRole-Brave-guided-start-20261019.zip,
+SHA256 0B68AF2D7E21A76205BA451629F65A7BFD3DDEC6480D13943B098B0D94D5C5C8.
+Canonical Chrome и .output Chrome ZIP скопированы из этого же build без
+повторной сборки. Firefox MV3/ZIP пересобран, UI/live Firefox не проверен.
+Runtime ZIP проверяются по байтам с папками сборки; source ZIP актуализирован
+финальными документами. Снимки: docs/benchmarks/ux328-welcome-ru-320-20261019.png,
+ux328-tour-en-320-20261019.png, ux328-guide-en-900-20261019.png. Проверены обе
+локали на 320/900, tight 320×520, keyboard/Escape, reduced-motion, scoped axe,
+real navigation/summary, profiles editor pause, отсутствие model POST и
+изменений records до отдельного synthetic seed. Собственных headless root
+browser processes после тестов не осталось. Личный Brave не использован.
+
+Подробности и источники дизайна: docs/ONBOARDING.md. Lazyweb/Impeccable Onboard,
+Operate и Emil motion применены без установки внешних scripts/skills. Skills
+ux-copy/i18n/testing-qa: короткий язык, паритет переводов, synthetic/live отдельно.
+Личный браузер не использовался, личное расширение автоматически не обновлено.
+Тестовые профили создаёт/закрывает Playwright; чаты пользователя не менялись.
+
+После установки пользователем: нажать книгу в меню, проверить welcome на
+чистом профиле при необходимости. Не предлагать удалять основное расширение
+или данные ради первого запуска. Затем вернуться к RP-05 precision / RP-08
+replay и личному bracket live, которые UX328 не заменяет.
+До отдельного запроса пользователя о push эту реализацию не коммитили;
+сводка пакета передачи теперь находится в новом верхнем разделе.
+
+## Текущая работа — RP327, свежая политика мира перед отправкой
+
+После неуспешного RP326 live пользователь разрешил исправление. Добавлена
+репродукция `silent-setting` в tests/e2e/story-bracket-runtime.spec.ts:
+открытая страница загрузила false, сохранённая политика изменилась на true
+без change notification. На прежнем Chrome binary actual POST содержал normal
+character/choice mode вместо read-only: точное assertion failure, не timeout,
+`.output/rp327-stale-policy-red.log`. Это доказанная ошибка класса stale snapshot,
+но не доказательство единственной причины прежнего live: saved boolean там
+не удалось проверить. Пользователь не понял вопрос о выборе мира; не винить его.
+
+В REQUEST_CONTEXT перед updateContext теперь repository.get только выбранного
+world. После await проверяются исходный page scope, generation и context scope;
+только bracketedOoc заменяется в loaded worlds, игровой snapshot не подменяется
+несогласованными sharedGame данными. Полную библиотеку на каждый send не читаем.
+Durable capture по-прежнему классифицирует по сохранённому миру и сохраняет
+purpose навсегда для данного запроса. Не скрываем choices по стилю ответа.
+
+Новые silent-setting сценарии: on без уведомления -> OOC actual POST/capture;
+off до malicious reply -> запрет эффектов и OOC после reload; silent on перед
+mixed turn -> notes + обычные updates; silent off -> whole bracket обычный
+игровой, старый capture всё ещё OOC. XHR/fetch × RU/EN. Legacy сценарии теперь
+действительно включают через UI Save в уже открытом чате (раньше только seed).
+Первое UI прохождение 1/1 прошло; матрица UI 3/4, EN XHR не прикрепил notes ко
+второму POST, ранее был и startup timeout. Повторить на исправленном binary;
+не объявлять эти старые результаты финальными. Assertions/timeouts не ослаблены.
+
+Финальные targeted: 5 файлов / 180 passed; дополнительно capture/client/injection/
+service compatibility 4 файла / 98 passed. Всего 278, без изменения assertion
+limits. TypeScript clean. Это не повтор полного 9k unit набора. Окончательный
+Chrome build 105 s, затем 4/4 новых silent-setting runtime прошли на одном binary
+в serial за 1.1 min: `.output/rp327-stale-policy-green.log`. Полная матрица
+runtime+production UI также завершён: 24/24 passed одним serial прогоном за
+3.8 min, `.output/rp327-runtime-final.log`, `test-results-rp327-final`.
+Это 20 bracket runtime (XHR/fetch × RU/EN × managed/legacy/manual/cards-off/
+silent-setting) и 4 production UI (RU/EN × 320/900). Прежние 16 отдельных
+story-ooc-runtime НЕ запускались заново в этой итерации; не выдавать 24 за весь
+набор browser tests. Старые неуспехи до исправления выше не скрыты.
+
+Chrome/Brave архив `downloads/DeepRole-Brave-bracket-send-fix-20261019.zip`,
+SHA256 `7F5713887E2F1A355DDD1C4D16C40EA09411F23FF5B4947BF7AC2E8A2835BE9F`.
+Создан непосредственно из протестированной .output/chrome-mv3 без нового build;
+canonical Chrome совпадает. FF MV3 build/zip прошёл за 13.5s. Runtime ZIP по 23
+SHA-matched files; source 974 (добавились 2 RP326 live screenshots), forbidden
+paths/duplicates 0. Финальные QA документы синхронизированы в source ZIP
+без пересборки проверенного Chrome. FF live/UI не подтверждены.
+
+Личный Brave в этой итерации пока не менялся. Попытка открыть extension sidepanel
+напрямую через browser tools отклонена URL security policy; обходов не делали.
+Не пытаться читать его через raw CDP/файлы профиля. Можно проверять собственные
+synthetic temporary profiles и готовить новую сборку для установки пользователем.
+Для личного live после установки использовать НОВЫЙ вопрос; прежние неудачные
+bracket sends не переклассифицируются задним числом. Вопрос пользователю о
+настройке мира не дал подтверждения её сохранения — не утверждать обратное.
+Пакет готов к установке поверх прежней папки, затем reload расширения и DeepSeek;
+повторный импорт лора не нужен. Code/runtime после успешной матрицы не менялись.
+Следующее — личный live по bracket whole -> mixed -> bracket -> reload после
+обновления пользователем; затем прежний RP-05 precision / RP-08 replay.
+Ничего не коммитили/не пушили, несвязанные локальные изменения сохранены.
+
+## Предыдущая live-проверка RP326 — скобки НЕ прошли
+
+После сообщения пользователя об обновлении расширения и включении настройки
+проверен прежний личный Brave/DeepSeek чат «Проверка памяти», мир
+«RP319 — Чистая мастерская (тест)». Новые вкладки/окна не создавали.
+
+- Введён `[Кто сейчас находится в мастерской и было ли передано что-нибудь во
+  время последнего обмена кивками? Ответь кратко.]`. До отправки AX показывал
+  «Вне игры — состояние сцены не меняется». После ответа — «Обновлено после
+  ответа» и четыре игровых варианта. DeepSeek ответил только на вопрос.
+- Перезагрузка страницы НЕ устранила наблюдаемое поведение: второй
+  `[Напомни, кто сейчас в мастерской. Ответь одним предложением.]` снова
+  получил четыре варианта. После перезагрузки уже в черновике не наблюдалась
+  внеигровая плашка. Не делать вывод, что boolean точно сохранился/сбросился:
+  редактор настройки в этом live не удалось прочитать (меню — белый iframe).
+- Смешанный ход `Я, Мира, спокойно киваю Норе, оставаясь на прежнем месте в
+  мастерской. [Опиши только короткий ответный кивок, без новых обещаний и
+  передачи предметов.]` дал короткий ответный кивок и четыре игровых варианта.
+  Это ожидаемый вид ответа, но НЕ доказательство передачи новой инструкции.
+- Контроль `OOC: Напомни, кто сейчас в мастерской и передавались ли предметы
+  во время последнего обмена кивками. Ответь одним предложением.` работает:
+  внеигровая плашка, вариантов 0, после reload это сохраняется.
+- После финального reload DOM-зеркала сохранённых пользовательских запросов
+  показывают у ОБОИХ whole-bracket запросов normal character/choice instructions,
+  read-only блока нет; у mixed нет bracket-notes блока; у явного OOC read-only
+  есть, choice instruction нет. Это чтение DOM истории, НЕ перехват actual POST
+  и НЕ аудит IndexedDB. Отметка теряется не только на этапе показа вариантов.
+- В финале Мира/Нора: в сцене 2, всего 2, обе «Спокойствие», новых людей нет;
+  поле ввода пустое, меню закрыто. Хранилище фактов напрямую не проверяли.
+
+Скриншоты: `docs/benchmarks/rp326-live-brackets-before-reload-20261019.png`
+и `docs/benchmarks/rp326-live-ooc-control-20261019.png`. Исходный код/ZIP не
+менялись: пользователь просил проверить, не исправлять. Эти QA заметки новее
+документации внутри прежнего source ZIP. Не объявлять RP326 live зелёным.
+
+Следующее: проверить сохранённый bracketedOoc у ТОГО ЖЕ мира и его прохождение
+через refresh / REQUEST_CONTEXT / updateContext / durable capture. Отделить
+неприменённую настройку от ошибки отправки; пока причина не доказана. Нельзя
+просто скрыть варианты постфактум или угадывать OOC по стилю ответа DeepSeek.
+После разрешения на исправление — минимальная репродукция и regression test,
+затем новый пакет и повтор live. Общие остатки full runtime/Firefox QA ниже
+по-прежнему открыты. Commit/push не выполнялись.
+
+## Новая актуальная точка — RP326, сообщения в квадратных скобках
+
+Пользователь явно выбрал: целое `[сообщение]` — вне игры; пояснение в `[]`
+внутри хода не выключает игру; настройка отдельная у каждого мира.
+`WorldProfile.bracketedOoc?: boolean`, по умолчанию false/undefined. Никакой
+миграции или пересмотра старой истории. Редактор: Миры → Мир и профили → Изменить.
+Опция сохраняется только Save, через прежний putIfUnchanged; экспорт/clone
+сохраняют boolean. RU/EN copy и видимая область действия, не глобальный settings.
+
+Новый iterative literal-aware parser `story-brackets.ts`: внешняя пара вокруг
+всего непустого текста, вложенность/переносы; inline notes не переводят весь ход
+в OOC. Quoted text/backtick+tilde code/Markdown links/escapes остаются данными.
+Для распознавания старых stand-alone OOC команд скобки маскируются, в том числе
+незакрытые и labels: спрятанная внутри них команда не должна выключать весь ход.
+Оригинальный транспорт/цитаты/история НЕ режутся. Старый явный `[OOC] text`
+и остальные explicit/manual режимы сохранены. Whole `[]` intentionally only opt-in.
+
+Frontend compile + character request gate + durable pre-send transaction используют
+правило текущего мира. Режим capture заморожен, его не пересматривают при изменении
+настройки; полный OOC не получает roleRoster/accompaniment и не даёт записи даже
+при ошибочных metadata модели. Для mixed turn добавляется бюджетируемый короткий
+`deeprole_bracket_notes`, normal updates/choices работают. Это инструкция модели,
+НЕ гарантированный семантический фильтр любых придуманных в ответе событий.
+Поиск целого OOC снимает внешнюю оболочку только локально, прошлый retrieval сохранён.
+
+UI QA нашла существующий конфликт React keys: WorldEditor и соседний CastSetup
+получали один world.id. Cancel оставлял orphan form, reopen давал две формы.
+WorldEditor key теперь namespaced `world-editor:...`. Проверка не ослаблена:
+после Cancel ожидается 0 forms, повторное открытие показывает несохранённое off.
+
+Unit: 332 files, полный прогон `.output/rp326-unit-first.json`: 9 571 passed,
+20 timeout (18 × 5s, 2 × 30s), 5 прежних todo. Ровно все 20 timeout затем
+повторены serial с прежними timeout и без изменений runtime/tests: 20/20 passed,
+`.output/rp326-unit-timeout-rerun.json`. Совокупно все 9 591 прошли, но НЕ называть
+это одним чистым полным прогоном. Целевые mode/retrieval/storage/UI 147/147,
+включая новые 58 core + 2 control и две дополнительные backend OOC вариации.
+UI Chromium RU/EN 320/900 4/4 прошло после key fix. Повторные dev-server UI
+попытки (в том числе Firefox 4/4) упёрлись в page/module-load timeout до нового
+переключателя. Отдельно добавлена проверка production UI на установленной MV3,
+чтобы проверять реальное сохранение/reload независимо от Vite/HMR. Firefox UI
+пока не считать проверенным. Не меняли assert/guard/timeout ради зелёного отчёта.
+
+После full прогона уточнена ТОЛЬКО область mixed instruction: ONLY original
+draft in [User message], never supplied lore/profiles/memory. Это не смена parser,
+retrieval или guards. На окончательном коде повторены targeted 147/147 и TypeScript,
+Chrome build clean. Последняя сборка на нагруженном ПК заняла 253 s, не прежние 10.5s.
+Первый параллельный installed прогон: новые 16/16 прошли; в прежних OOC сценариях
+появились ошибки ожидания, дальнейший прогон прерван (rp326-runtime.log/results).
+Найдено несоответствие synthetic fixture: RU composer, но POST следующего хода
+жёстко английский. Старый fixture теперь отправляет ТОЧНЫЙ локализованный gameDraft,
+как новый, и дополнительно проверяет exact suffix; assertions не удаляли.
+Окончательный production UI — 4/4 pass RU/EN × 320/900, Save/Cancel/Space,
+world isolation/reload/scoped axe. Скриншоты docs/benchmarks/rp326-brackets-*-narrow-
+20261019.png просмотрены. На окончательном Chrome binary serial story дал 5 pass,
+но остановлен после ready(false) вместо closed(true) за 15s и startup empty
+context за 12s (до работы нового режима). Без Vite повтор также остановился на
+startup timeout, НЕ считать прогон зелёным. Логи rp326-story-final / focused-final /
+clean и test-results-rp326-* локальные; их нет в Git/source ZIP.
+
+Добавлен `playwright.extension.config.ts` только для трёх absolute-URL production
+specs: им Vite не нужен. Для дальнейшего прогона — этот config, workers=1; не
+мешать с unit/build. Временные browser profiles лучше держать вне watched project,
+но текущий Windows запуск нестабилен и там. Возможную нагрузку watcher не выдавать
+за доказанную причину всех failures. Уже использованный обход ESBuild — TEMP/TMP
+в .tmp-rp319-esbuild-build: попытка Firefox в системной Temp дала remove Access
+denied, повтор упаковки идёт через workspace Temp. Не увеличивали assertion limits.
+Остаток QA: чистый полный installed прогон на стабильной машине и live после
+обновления пользователем. Firefox UI не подтверждён. Нельзя писать «всё прошло».
+
+Пакеты ГОТОВЫ: Chrome/Firefox по 23 entries, исходники 972. Browser entries
+побайтово совпали с output, forbidden entries 0; финальные docs синхронизированы
+в source ZIP отдельно, без повторной пересборки проверенного Chrome. Chrome
+23/23 runtime files неизменны относительно production UI/serial проверок.
+Новый архив: `downloads/DeepRole-Brave-bracket-messages-20261019.zip`, SHA256
+`F1D967FCC4A24C6EC9CCDFD682497E6931CCCB208FCE5A4ED74E040EE29FD28B`.
+Canonical Chrome/Firefox/sources обновлены; установленный Brave — НЕТ.
+Финальный TypeScript после добавления test config clean. Firefox workspace-TEMP
+повтор build/zip прошёл за 22.5s; первоначальный Access denied сохранён в log.
+Ни Code/UI, ни assertions не переписывали после этого ради успешного пакета.
+Нет нового live в личном DeepSeek. Реализация готова к пользовательской проверке,
+но чистый полный browser run остаётся отдельной незакрытой QA задачей.
+Новый browser fixture
+проверяет XHR/fetch × RU/EN × managed/legacy/manual/cards-off, read-only actual POST,
+malicious scene/fact/choices, reload и следующий mixed game turn. Личный DeepSeek
+не трогали. Документ пользователя: docs/BRACKET-MESSAGE-MODE.md.
+
+Следующий основной этап остаётся RP-05 precision и RP-08 replay; новые скобки —
+отдельный запрос пользователя, не закрытие всех задач бесконечного RP. Push не просили.
+
+## Предыдущий этап — RP325, новый осторожный отбор памяти
+
+Реализован `src/core/story-repeat-selection.ts` + `compileRepeatContext` перед
+старым task-progress recall. `repeatSelection:false` — внутреннее сравнение,
+не пользовательская настройка. Frozen RP268 opts явно отключают новый этап.
+Новый этап не меняет прежние classifiers/digests/fixtures/gold.
+
+Только точная целая прямая речь с доступным frozen speaker, episode и явным
+отсутствием новых сведений/действий/обязательств считается пустым повтором.
+Task/claim/пересказ/неизвестная роль/код/новое условие/«новых событий не было»
+не подходят. Все неповторные matching + прежде выбранные substantive sources
+сохраняются атомарно до 128 rows и полного бюджета, иначе exact prior.
+Хранилище, авторский лор, история и фактическое выполнение задач не меняются.
+У вопроса о целом многословном предмете есть literal fallback, даже если вся
+память об одном предмете; имена/местоимения/числа/команды не дают такого proof.
+Одиночное действие использует прежний parser, ambiguity guard остаётся на wire.
+Составные действия без полного покрытия остаются старым fallback.
+После принятия нового набора obsolete budget warning прошлого большого bundle
+заменяется на unverified/query, не на обещание полного понимания сюжета.
+
+Независимый fixture (создан до реализации): RU/EN маяк/занавес, Ирис/Лев,
+семь источников: разные владельцы обещаний, два условия, частичный прогресс,
+отдельное completed, belief, новое условие в разговоре, revoked claim.
+0/80/400 повторов. 16/16 целевых вопросов/одиночных действий с повторениями
+содержат все семь sources. 36 сравнений: 51878 → 42392 estimated tokens
+добавки, 8 более коротких запросов, 238 повторных выбранных строк не переданы.
+Некоторые запросы ДЛИННЕЕ: полные факты дороже прежней неполной выборки.
+Старые 588 RP323 extras НЕ удалены/не объявлены пустыми. Не API tokenizer.
+
+Тестовые assets RP319-world/probe/RP324-probe перенесены из прежнего sources ZIP
+в tests/fixtures; все три byte-identical. Ни один тест больше не читает downloads.
+Пользовательские D downloads/README.md и deeprole-live-qa-2026-10-16.json остаются.
+
+ФИНАЛЬНЫЙ unit: 330 файлов, 9 529 passed, 5 прежних todo, 0 failed,
+`.output/rp325-unit-final.json`. Все 129 новых прошли, включая 2 проверки stale
+coverage warning. Первый full run сохранён как rp325-unit-first.json: два failure
+были ссылками на удалённый downloads/README; RU/EN ссылки переведены на папку,
+пользовательское удаление не отменялось. TypeScript повторён после E2E harness,
+clean. Runtime/unit fixtures не менялись после финального полного прогона.
+
+Installed MV3: прежние 28 compatibility прошли; новый
+`story-repeat-selection-runtime.spec.ts` повторён по 3 раза RU/EN: 6/6 passed,
+1,4 min. Actual POST после обычного review/accept 23 facts содержит все 7 важных
+sources без 16 пустых повторов: вопрос/действие/OOC, reload. Все facts, frozen role
+seeds и episodeSources остаются structurally equal, два promisor ID раздельны.
+Всего 30 разных browser scenarios / 34 успешных исполнения в двух прогонах.
+Первый общий browser run: 28 passed, 2 новых failed; diagnostic repeat EN passed,
+RU failed на последнем OOC. Trace: предыдущий dispatch ready, OOC waiting,
+correct 7-source report уже готов; тест слал следующий probe/reload до durable
+stream close после XHR load. Исправлен ТОЛЬКО harness: обычный draft fill и
+ожидание accepted/closed/sawFinish для ТОЧНОГО native assistant key перед next/reload.
+Никаких sleeps/увеличения timeout/ослабления production guards. Все contexts
+закрыты finally. First traces в test-results / test-results-rp325-debug,
+6/6 final в test-results-rp325-verified; не входят в source ZIP. Живого аккаунта нет.
+
+Chrome/Brave и Firefox MV3 собраны/упакованы; 23/23 файлов каждого browser ZIP
+и все 965 source entries сверены SHA с диском, forbidden private/temp/test/nested
+ZIP entries 0. Source ZIP перепакован после финальных docs. Chrome НЕ пересобирали
+после installed tests; четыре critical binary SHA совпадают с tested build.
+FF — build/package, НЕ установленный Firefox E2E.
+Новый: downloads/DeepRole-Brave-memory-selection-20261019.zip, идентичен canonical
+chrome ZIP. SHA256: 2CF93ADE94CF8DD7F9AEEC82A11FF768AB349CA73FFB0C7FDA5DFA0AB8A62B19.
+Старые именованные ZIP не удаляли. Не делали commit/push и не обновляли личный Brave.
+Подробности/границы — docs/RP05-REPEAT-SELECTION-RESULTS.md.
+
+Дальше: новые независимые естественные формулировки и составные действия с
+полным покрытием ВСЕХ предметов (нынешний непокрытый compound — exact fallback),
+затем RP-08 replay. Для нового live нужен update пользователем; старый RP324
+live ниже НЕ проверка нового отбора. Не повторять пройденную QA как новую работу.
+
+## Актуальная точка — RP324 LIVE ПРОЙДЕН, 19 октября 2026
+
+Пользователь обновил Brave и оставил тот же чат «Проверка памяти», мир
+`RP319 — Чистая мастерская (тест)`. Выполнены три НОВЫЕ пары:
+- rows 27/28: составной prefix-table, прежние 8 учебных sources, 6/6 ответов
+  верны. UI 2 → 2, вне игры, choices/recovery 0. Этот набор уже был в истории,
+  поэтому отдельно не доказывает чтение новой таблицы.
+- rows 29/30: обычный игровой ход, Мира и Нора обмениваются спокойными кивками,
+  обе остаются на местах. Статус обновления, 4 готовых варианта; НЕ выбирали.
+  Нора теперь «Обращается к герою» — допустимое игровое изменение после кивка.
+- rows 31/32: независимые НОВЫЕ Эйра/Дан, янтарный диск/карта/колба/бирка/
+  антенна, код 7396. Gold задан ДО отправки. 6/6 ответов верны: отсутствие
+  согласия при присутствии второго человека запрещает передачу; чехол обязателен;
+  завершённая карта не отменена, belief не факт, код не открывает радиорубку,
+  бирка не получена, антенна только план. Эти тестовые персонажи не добавились.
+
+Reload сохранил тот же мир, две карточки и их title относительно игрового хода,
+внеигровой статус, choices/recovery 0 и пустой composer. DOM server readback:
+user row 29 — read_only false/choice_mode true; row 31 — наоборот. Пакет в row
+31 имеет новый format, 6 строк и JSON точно равен отправленному свежему packet.
+Это DOM readback, НЕ перехват POST. Память подавалась ЯВНЫМ учебным сообщением,
+не автоматическим retrieval из канона. Backward metadata refs, auto extraction,
+полная DB/events неизменность и память за пределами native context этим live
+НЕ доказаны. Runtime/пакеты не меняли; новая установка/импорт НЕ нужны.
+
+5 снимков `docs/benchmarks/rp324-live-{before,ooc,game,fresh,reloaded}-20261019.png`.
+Последний снимок показывает все 6 новых ответов/две карточки/пустой composer.
+Исходную вкладку оставили открытой, новых вкладок/окон не создавали. Длинный
+paste сайт дважды оформил unsent .txt; нажали Paste original ДО Enter, оба раза
+отправлен обычный OOC-текст, не вложение. Нажатие Control+End на body не прошло;
+не повторяли вслепую. Для финального обзора помогла обычная Shift+Tab навигация.
+Отчёт и заранее заданный fresh gold: `docs/RP05-REPEAT-PACKING-LIVE-20261019.md`.
+
+ВАЖНО: loose QA probe-файлы/тест-мир и README в downloads удалены вне этой
+итерации. Пользовательские удаления НЕ отменяли. Старый probe прочитан из
+source ZIP. Тесты пока ссылаются на эти отсутствующие loose assets, поэтому
+9400 passed ниже — результат ДО этой очистки, не новый unit-прогон. Перед
+следующим code milestone перенести неизменные QA assets из source snapshot
+в tests/fixtures и отвязать тесты от downloads; не восстанавливать удалённый
+пользователем мусор без необходимости. Source ZIP остаётся build-time snapshot
+ДО этих doc-only live заметок; браузерные пакеты по-прежнему актуальны.
+
+Далее: RP-05 точность отбора/меньше лишних sources (588 в прежнем корпусе),
+без потери условий/обещаний/владельцев; затем RP-08 replay. Отдельное UX-наблюдение:
+4 готовых игровых кнопки существовали, но на game-снимке нижняя часть была под
+composer/краем viewport. Это не ошибка памяти; при следующем UX-проходе проверить.
+Не повторять этот smoke/установку без новой причины. Push не запрошен.
+
+## Реализация RP324 — история сборки и автоматических проверок
+
+Ниже статус на момент выдачи пакета; актуальный живой результат — ВЫШЕ.
+
+Запрос: сокращать лишние повторы в передаваемой памяти без потери фактов,
+условий/обещаний. Выбран lossless transport, НЕ эвристическое удаление разговоров.
+«Новых событий не было» недостаточно для вывода, что сведений/условий тоже нет.
+
+Новый `deeprole-memory-prefix-table-v1` совмещает точные literal text prefixes
+с таблицей полей; decoder сначала расширяет text [p,s], затем старый строгий
+columns/refs reader. Все выбранные строки и metadata восстанавливаются точно.
+Candidate допускается только после decode == inline и полного request-meter.
+Тот же admission без prefixes; новая упаковка только в финальном render.
+НЕТ изменения выбора фактов, хранилища, авто-выполнения задач/канона. Старые
+форматы decoder сохранены. `memoryPrefixTables:false` отключает только новый
+кандидат для сравнения; исторический RP268 profile дополнен false, gold не меняли.
+
+Три runtime-файла этой итерации: story-memory-transport, story-fact-context,
+game-context. В них уже были старые dirty правки RP319–323; НЕ откатывать целиком.
+Новые тесты story-memory-prefix-tables (35) и story-rp05-repeat-packing-audit
+(165); e2e transport prefix variant теперь требует новый составной формат.
+Вначале TDD 4 expected failures; после реализации 364/364 targeted (включая
+старый RP323 long horizon) и ранее 208/208 старые prefix/column + новые decoder.
+TypeScript clean. Chrome build готов, ZIP 23/23 SHA matched:
+`DCDC21482B39B42D4C54964214749422D74773B1B4947D7E232F74D2B82CA0A4`.
+Первый полный unit: 56 failures (52 historical-byte digests + 4 timing waits).
+Golden files/registrations НЕ меняли: original format pin с новым encoder OFF,
+дополнительное точное сравнение decoded hints и старых selection/counters.
+Все 8 файлов: 583/583. Затем весь unit: 329 files / 9399 passed / 5 todo / 0 failed.
+После него уточнён audit до ФАКТИЧЕСКОГО профиля `memoryTransport:'columns'` из
+content.tsx (165/165, цифры те же) и добавлена проверка нового live probe (1 test).
+ФИНАЛЬНЫЙ full unit после этих двух test-only уточнений ПРОЙДЕН: 329 файлов,
+9400 passed / 5 прежних todo / 0 failed, `.output/rp324-unit-final.json`.
+TypeScript повторно clean. Runtime с Chrome build не менялся.
+Installed synthetic Edge MV3 28/28 ПРОЙДЕН, 3,1 min, без параллельного unit/build.
+`.output/rp324-e2e-final.log`: RU/EN actual POST/reload с НОВЫМ prefix-table,
+8 точных сохранённых facts/roles/episodes, old metadata path, 24 OOC/next-game
+regressions fetch/XHR/no markers × managed/legacy/manual/cards-off. Все headless
+contexts закрыты finally. Это synthetic site, НЕ новый live пользовательского Brave.
+
+На неизменённых 144 RP323 inputs: все hints/selected/omitted/explanation
+точно как при `memoryPrefixTables:false`, цели 144/144. 72 запроса выигрывают,
+суммарно 348 276 → 343 156 расчётных tokens (−5 120, −1,47% добавляемого context);
+1 390 608 → 1 370 118 chars. RU reef/400/completed: те же 9 строк,
+2714 → 2638 tokens. Это локальный estimator добавки без user draft/native history,
+не API и не «на 588
+записей меньше»: прежние 588 extra records остались точными отдельными строками.
+Подробности: `docs/RP05-REPEAT-PACKING-RESULTS.md`, ROADMAP RP324.
+
+Chrome/Brave/Firefox/source ZIP ГОТОВЫ: все 23 файла каждого browser ZIP сверены
+по SHA с build directories; source — 14 critical code/docs/probe/package files,
+961 entry, forbidden private/temp/test entries 0. Chrome — ровно binary,
+прошедший installed E2E; FF — build/package verification, НЕ Firefox live E2E.
+Финальные doc-only заметки включаются повторной source-сборкой и той же SHA-сверкой;
+Chrome binary после E2E НЕ пересобирается. Canonical Chrome/Firefox/source ZIP
+в downloads обновлены; старые именованные архивы не удалялись.
+Новый Brave: `downloads/DeepRole-Brave-repeat-memory-20261019.zip`.
+Он ещё не установлен; распаковать поверх существующей папки, ↻ карточку
+расширения, обновить DeepSeek. НЕ удалять расширение/мир, НЕ импортировать заново.
+Старый RP323 ниже УЖЕ проходил live, новый transport — нет.
+После поставки нужен живой smoke интерпретации таблицы моделью, decoder/mock не
+доказывает её качество. Пользовательский Brave не трогали в этой итерации,
+новых вкладок/окон нет. Не закрывать исходный чат, не удалять старые архивы.
+Новый probe: `downloads/DeepRole-RP324-live-probe-20261019.txt`. Это тот же
+набор 8 вымышленных sources из неизменённого RP319 probe, новый transport;
+ручное decode comparison прошло. OOC framing + шестой вопрос о футляре ключа.
+При живом smoke ожидать: red tube требует присутствия Норы; blue journal уже
+передан, отсутствие Норы не отменяет прошлое; green capsule — belief; code не
+открывает подвал/личные комнаты; spare letter не получено; brass key только
+в опечатанном футляре. НЕ считать эти тестовые данные каноном текущего мира.
+Дальше: после подтверждения обновления — живой smoke нового transport этим
+OOC probe, проверить 6 ответов + нейтральную плашку/отсутствие choices/неизменность
+сцены; затем обычный ход должен вернуть игровой UI. При отключённом browser
+connection не обходить канал, не выдавать mock за live. В последний раз real
+Brave connection отключился уже после RP323 smoke. Исходный чат «Проверка
+памяти», мир `RP319 — Чистая мастерская (тест)`, два персонажа; Нора сделала
+один шаг ближе, предметы не переданы. Ни новых пользовательских вкладок, ни
+окна, ни записей в игре эта кодовая итерация не создала.
+Затем RP-05 precision (без грубого удаления 588 записей) и RP-08 replay.
+Commit/push не запрошены. Существующие чужие/ранние dirty изменения сохранены.
+
+## Предыдущая точка — RP323 live после обновления ПРОЙДЕН
+
+19 октября пользователь подтвердил обновление. В том же Brave-чате «Проверка
+памяти», мир `RP319 — Чистая мастерская (тест)`, три НОВЫЕ пары:
+1. «Вне игры:» — гипотетическое отсутствие Норы / условия передачи тубуса.
+   Ответ отделил гипотезу/разрешение от передачи. Видимый состав 2 → 2,
+   нейтральная плашка, нет recovery/готовых вариантов.
+2. Игровой ход — Мира разрешает Норе сделать шаг ближе; Нора делает шаг.
+   Предмет не передан, обещаний нет. Видимый состав 2 → 2, статус обновления,
+   четыре готовых варианта; их НЕ выбирали. Нора теперь «В сцене», не
+   «Обращается к герою». Это последнее актуальное игровое положение.
+3. `OOC:` — различить разрешение шага, состоявшийся шаг и передачу предмета.
+   Ответ: тубус не передавался. Карточки/видимый состав после игрового хода
+   не изменились, нейтральная плашка, нет recovery/готовых вариантов.
+
+Reload сохранил тот же мир, две карточки, OOC-статус, отсутствие вариантов,
+пустой composer. Readback восстановленного DOM: user rows 21/25 — read-only,
+без choice-mode; игровой row 23 — наоборот. Это локальные номера smoke, не
+правило продукта и НЕ network interception. Full DB/events до/после в live не
+сравнивали; их защита проверялась installed mocks. Ответы используют и текущую
+переписку; новый auto extraction/за-контекстная память этим тестом не доказаны.
+
+DOM sampling через read-only API: 100 отсчётов после первого OOC, 250 сразу
+после отправки игрового, 250 сразу после второго OOC; пауза 50ms + API latency.
+Recovery не наблюдался. В первом отсчёте отправки второго OOC ещё был СТАРЫЙ
+игровой host при optimistic row -7, затем исчез. При новом assistant row 26
+choices/recovery не было. Старый текст плашки кратко сохранялся до native GET.
+Sampling НЕ MutationObserver всех кадров: нельзя заявлять математический ноль
+любых однокадровых эффектов в live. Installed observer ранее проверен отдельно.
+
+Снимки: `docs/benchmarks/rp323-live-{before,ooc,game,ooc-after-game,reloaded}-20261019.png`.
+После всех проверок/итогового снимка browser connection отключился на попытке
+необязательной прокрутки к ответу. Не обходили управление, новых вкладок/окон
+не создавали, личный лор не открывали, исходный чат не закрывали. На последнем
+снимке видны статус/две карточки, часть последнего ответа перекрыта composer;
+сам ответ прочитан DOM до reload. Runtime/архивы НЕ менялись, новая установка
+НЕ нужна. Source ZIP остаётся build-time snapshot до этих doc-only live заметок.
+
+Следующее — RP-05: независимая проверка компактности, сокращать лишние повторы
+в передаваемом контексте, НЕ канон/одиночные пересказы/первые раскрытия/условия.
+В прежнем корпусе остаются 588 extra selected records. Затем RP-08 replay.
+Не повторять пройденный smoke/установку как новую задачу. Push не запрошен.
+
+## Реализация RP323 — мигание вариантов и старый прогресс
+
+Запрос: убрать transient recovery после OOC и продолжить точность на длинной
+истории. Runtime изменён, установленный у пользователя RP322 сам не обновился.
+Новый пакет ГОТОВ: `downloads/DeepRole-Brave-progress-memory-20261018.zip`.
+Распаковать поверх существующей папки расширения, ↻ на его карточке, обновить
+DeepSeek. Не удалять расширение, не импортировать мир повторно.
+
+Chrome/Firefox/source ZIP и обе build directories обновлены. Каждый browser ZIP
+совпадает по SHA со всеми 23 build files; source — с 11 critical code/docs files,
+без private/temp entries. Firefox — build/package verification, не Firefox live E2E.
+Chrome ZIP создан из tested build; финальные изменения документации включены
+в source ZIP отдельно. Push/commit не выполнялись, прежний dirty work сохранён.
+
+Финальный installed MV3 28/28 на окончательной Chrome сборке, 2.1 min;
+`.output/rp323-e2e-final.log`. Все 24 OOC/next-game + 4 exact-memory transport,
+включая RU/EN delayed native GET с MutationObserver (0 transient insertions),
+200 px, malicious JSON, scope/scene/profiles/events unchanged, POST/reload.
+Это synthetic Edge MV3, НЕ новый живой тест пользовательского Brave.
+Chrome ZIP упакован ИЗ ЭТОЙ проверенной сборки (без нового build timestamp),
+все 23 файла сверены по SHA. SHA256 Brave:
+`7090E7477C12A582F2848DADEF26CB542FDFEAF698EF34330642A94880B8B038`.
+
+Финальный полный unit: 327 файлов, 9 200 passed, 5 прежних todo, 0 failed;
+`.output/rp323-unit-final.json`. TypeScript clean. Это повтор ВСЕГО набора после
+всех runtime-правок, включая qualifiedOwners и readiness transitions, не только
+выборочный rerun упавшего теста.
+
+Мигание воспроизведено installed Edge MV3: задержать native history GET,
+MutationObserver считает вставки recovery/choices, на старом binary получено 1
+вместо 0. `StoryGameClient.presentationPending()` закрывает интервал ДО scanner
+GET, scope/anchor/reply signature/epoch сохраняют принадлежность. Ошибка/9s
+timeout освобождает ожидание для этой попытки; не даёт purpose/write authority.
+Content скрывает варианты и блокирует stale direct clicks, пока purpose pending;
+неактивная shared game не ждёт scanner, который там не запускается. RU/EN
+delayed GET на новой сборке 2/2, ноль вставок; полный installed regression ниже.
+
+Первый общий installed regression 27/28 выявил пропуск возврата recovery на
+следующем игровом ответе fetch/RU/cards-off. Поздний accepted ordinary receipt
+тоже должен сбросить scan keys/планировать scan, когда имеется OOC. Done-key
+теперь не пропускает ещё pending proof. Повтор проблемного случая 3/3; таймауты
+не увеличивали. Дополнительный cross-owner TDD показал: нельзя брать владельцев
+для completed sources из ВСЕХ selected tasks — только из qualified groups.
+Это исправлено; полный финальный regression повторяется после этих правок.
+
+Ещё один общий installed прогон: 27/28, normal EN metadata не принят в историю
+до ожидания. Happy-path не ждёт durable wire-finish; тест/timeout не ослаблялись.
+Обобщён readiness reset: `storyReplyProofChanged(prior,next)` только для valid
+local accepted, при новом accepted или новом closed+finish. И ordinary, и OOC;
+дубли/restored/malformed/unconfirmed не дают upgrade. Обычный stream-finish,
+пришедший после scan done, также запускает сверку, даже без OOC history.
+Readiness НЕ даёт write authority и не посылает сообщение модели. 5 новых
+transition unit сначала fail, затем 58/58 client+purpose. TypeScript clean.
+Окончательные full unit/installed данные — верх секции; промежуточные ошибки
+ниже сохранены как история, не актуальный blocked status.
+
+Поздний общий повтор: 24/24 OOC, но один codec happy-path получил
+story-native-line-unavailable в manual resolve (trace подтверждён). Fixture
+теперь ждёт наблюдаемое durable wire-finish/обновлённый UI; safety-guards
+native-line/stale/binding повторяет только с заново прочитанной очередью в
+прежних 10 итерациях. Unknown errors и финальные 8 exact persisted facts/POST/
+reload не ослаблены. Runtime/таймауты для этого шага не менялись. Не называть
+это ослаблением native authority или полным пропуском errors.
+
+Новый авторский корпус `story-rp05-long-horizon`: 3 независимых сюжета, RU/EN,
+0/80/400 повторов, бюджеты 6000/10000, 4 запроса = 144 комбинации (108 тематических
+и 36 owner-controls). Найдены потеря старого частичного прогресса и лишние
+события у RU «Известно, кому принадлежит…». Добавлен узкий query-only
+`taskProgressRecall`: целое короткое название выбранной open-задачи, явные
+слова статуса, сохранённые source/owner IDs. Speaker/promisor progress должен
+совпасть с сохранённым владельцем, не именем/порядком roster. Дополнение только
+полным bundle вместе со ВСЕЙ старой выбранной памятью и полным бюджетом. При
+недостатке места старый результат возвращается целиком. Не стирает разговоры,
+не закрывает задачи, не выводит отсутствующие условия и не меняет канон.
+
+Итог нового корпуса 144/144, 0 потерь quote/kind/task/role/episode/invariants;
+18 tight-budget, 2 OOC-equivalence, 12 helper controls. 588 дополнительных
+выбранных записей — компактность не идеальна, следующий RP-05 именно об этом.
+Bindings в fixtures заданы явно, НЕ доказательство автоматического извлечения
+из живой переписки. Первичный report `.output/rp323-memory-before.json` до
+добавления явного promisor в seed согласно исходному обещанию; остальные тексты
+и gold не менялись. Полный первый regression нашёл один дефект TEST fixture:
+новые clones oversized-group не имели frozen speaker, поэтому тест ожидал
+не тот путь. Исправлена только заглушка roles, не production guard/лимит.
+Historical RP268 option profile явно выключает новый supplement.
+
+Следующее: независимая проверка лишних повторных обсуждений/разных источников
+и снижения контекста без потери substantive evidence; затем RP-08 replay.
+Новый live после установки RP323 ещё нужен. Повторно импортировать мир НЕ нужно;
+тот же RP319 чат: Мира + Нора, Нора у двери. Пользовательский лор/Brave этим
+этапом не трогали, тесты запускались в отдельных synthetic headless контекстах,
+закрывающихся в finally. Не говорить, что mocks равны живому DeepSeek.
+Подробности: `docs/RP05-LONG-HORIZON-RESULTS.md`. Commit/push не запрошены.
+
+## Предыдущая точка RP322 — живой повтор пройден после обновления Brave
+
+Пользователь подтвердил установку RP322. В том же синтетическом RP319 мире/чате
+последняя старая OOC-реплика уже получила нейтральную плашку без recovery.
+Затем три НОВЫЕ пары сообщений:
+1. «Вне игры:» — гипотетическое возвращение Норы, разрешение не стало передачей.
+   Состав 1 → 1, нейтральная плашка, нет игровых вариантов.
+2. Обычный игровой ход — Нора действительно возвращается к двери мастерской.
+   Состав 1 → 2 (Мира/Нора), статус «Обновлено после ответа», четыре варианта.
+3. «OOC:» — гипотетический уход Норы. Состав 2 → 2, плашка нейтральная,
+   recovery и готовые варианты убраны. После reload по-прежнему 2, статус OOC,
+   нет вариантов; выбранный тестовый мир сохранился, черновик пуст.
+
+Readback DOM восстановленной истории: новые user rows 15/19 содержат
+`<deeprole_read_only>` и не имеют choice-mode; игровой row 17 без read-only,
+с обычным character/choice-mode. Это readback страницы, НЕ actual POST перехват
+и НЕ установление точного fetch/XHR транспорта. Full DB/events до/после live
+не сравнивались; их защита проверена прежними installed mock-E2E. Нейтральный
+мир не пополняли структурированными фактами: правильные ответы про тубус
+используют также прежнюю переписку и не доказывают новое auto extraction.
+
+Переходный UX: сразу после последнего OOC-ответа до окончания GET кратко была
+видна recovery-кнопка, затем она исчезла вместе со сменой статуса на OOC.
+Установившийся UI и reload корректны. Отдельная необязательная UX-задача —
+убрать это краткое мигание без угадывания назначения неподтверждённого ответа.
+Runtime в живой проверке не менялся; новый Brave-пакет/повторная установка
+НЕ нужны. Кодовую проблему RP321 для settled UI этим smoke закрыли.
+Чат оставлен открытым, дополнительных окон/вкладок не создавали, личный лор
+не открывали. ВАЖНО: Нора теперь В СЦЕНЕ вместе с Мирой; прежние указания
+«Нора отсутствует» ниже — историческое состояние ДО этого теста.
+Снимки: `docs/benchmarks/rp322-live-{before,ooc,game,ooc-after-game,reloaded}-20261018.png`.
+Следующее — точность необязательного подбора RP-05 на разных сюжетах/бюджетах,
+затем нагрузочный replay RP-08. Не повторять уже пройденный smoke как новую задачу.
+
+Пользователь попросил исправить найденный RP321 live дефект до рабочего
+результата. `storyReplyPurpose` теперь может сверить завершённую серверную пару
+с точным локальным accepted capture: world/binding/chat, native parent, полный
+confirmedDispatchText, user/assistant IDs; wire link, если есть, не должен
+противоречить паре. Не требуется XHR finish для fetch. TDD два положительных
+кейса сначала падали, затем прошли. Не угадывать по словам OOC в ответе.
+
+`StoryGameClient` переиспользует уже прочитанный managed snapshot; legacy при
+принятом OOC читает native history через тот же bounded GET отдельно, без
+storyGameStatus/runStoryGame и без включения tracking. GET сериализуется с
+managed-read; cache привязан к scope/URL/native anchor и версии финального
+текста (только invalidation, не identity proof). Генерация, первая accepted
+отправка и lock/reset инвалидируют его; late result проверяет epoch/scope/base.
+Fetch response не клонировали/не читали, stream parser/transport не расширяли.
+
+Page scanner пересчитывает OOC ПОСЛЕ чтения пары, а не только до него;
+accepted OOC вызывает rescan и без XHR closed. Варианты фильтруются также при
+выключенных карточках. Native virtual-list identity проверяется тестовой DOM-
+обёрткой; обычный следующий ответ возвращает обычный статус/варианты.
+`matchingStoryUserCaptures` дополнен локальным OOC без wire link только для
+исключения игровых последствий по точному source/parent. Assistant fallback
+для XHR требует явно переданную завершённую user-пару. Игровой XHR без wire
+link/restored OOC этой поблажки не получает; роли/платные изображения не разрешены.
+
+Полный regression: 325 файлов, 9 013 passed, 5 прежних todo, 0 failed;
+`.output/rp322-unit-final.json`. Целевая группа до трёх дополнительных cache
+тестов: 160/160. TypeScript clean. Финальный installed MV3: 28/28, RU/EN ×
+fetch/XHR/XHR без маркеров × managed/legacy/manual/cards-off (24) плюс прежние
+memory transport POST/reload (4). Проверены скрытие recovery И присланных
+вариантов, неизменность состава/состояний/собеседников/профилей/событий, следующий
+игровой ход. RU/EN 200 px просмотрены. В первом расширенном прогоне 22 passed /
+6 failed: стенд ошибочно требовал character_mode при выключенных карточках;
+исправлено только ожидание, затем весь расширенный прогон 28/28. Личный Brave
+этим этапом не трогали; headless synthetic контексты
+закрываются в finally. Подробности: `docs/RP05-OOC-NATIVE-PAIR-RESULTS.md`.
+
+Пакет для установки: `downloads/DeepRole-Brave-ooc-native-pair-20261018.zip`;
+сборки Chrome/Firefox/source и canonical ZIP обновлены для этой точки, все 23
+entries каждого browser ZIP и критические source-файлы сверены по SHA.
+Исходная сборка фиксировала live как pending; актуальный результат — верх этой
+секции. Повторно обновлять установленный Brave для теста не требуется.
+
+Запланированный live RP322 выполнен после обновления, см. верх секции.
+Конкретный транспорт/причина RP321 не установлены сетевым наблюдением, но новый
+native-pair путь работает в проверенном живом клиенте. Не переходить к угадыванию
+по прозе при других неизвестных ответах. Дальше RP-05/RP-08.
+Commit/push не запрашивались. Ранний RP321 failed сохранён ниже как история.
+
+## Предыдущая точка RP321 — live smoke выявил ошибку UI, не закрыт
+
+После сообщения пользователя «обновил расширение, тот же мир и чат открыты»
+проведён live smoke в том же RP319 тестовом мире, личные миры не открывались.
+Два новых OOC-вопроса (один через Enter, второй штатной кнопкой DeepSeek):
+1. Гипотетическое возвращение Норы/передача тубуса: модель верно разделила
+   разрешение, выполнение и настоящую сцену. В панели осталась только Мира (1 → 1).
+2. Кому возвращена серебряная печать / передан ли тубус: модель верно ответила
+   «Норе», не смешала предметы. В панели по-прежнему одна Мира.
+НО оба раза сохранились старый missing-статус и кнопка «Предложить варианты».
+После reload та же ошибка. RP321 live НЕ ПРОЙДЕН; прежние 10/10 mock-E2E
+не являются доказательством работы в текущем веб-клиенте DeepSeek.
+
+Readback DOM восстановленной истории: обе новые пользовательские записи
+(native virtual keys 11 и 13) содержат `<deeprole_read_only>` и read-only
+character reference; ответы имеют native keys 12 и 14. Эти номера локальны
+только этому синтетическому smoke, не правило продукта. До reload оптимистичная
+строка показывала только draft — по ней нельзя судить об отсутствии инъекции.
+Это DOM readback, не actual-POST перехват. Full DB/events до/после не сравнивались.
+Нейтральный мир не содержит новых структурированных игровых фактов; верные
+ответы опираются и на существующую переписку, не доказывают новое извлечение.
+
+Панель доставки всё ещё показывала прежнюю игровую отправку в 21:25:25.
+Проверка кода `memoryDeliveryView` объяснила это: он намеренно фильтрует только
+purpose=user-turn. Это НЕ доказательство отсутствия OOC capture/памяти. Не чинить
+инъекцию на основании одного старого времени. Внешний API/native transport в
+живом браузере не установлен. При чтении кода найден важный пробел покрытия:
+`storyReplyPurpose` требует closed+finished native link, а stream observer сейчас
+только XHR; installed OOC тесты также посылают только XHR. Fetch — кандидат для
+следующей диагностики/покрытия, но не установленная причина текущего live-сбоя.
+Не ослаблять точную принадлежность до догадки по тексту/текущему draft.
+
+Нужно дальше: установить, где теряется доказательство принадлежности OOC-ответа
+в реальном клиенте; добавить релевантный транспортный regression, исправить и
+повторить live. Обычный игровой ход в этом smoke не посылался: сначала нужно
+закрыть OOC UI. Затем возвращаться к точности необязательного подбора RP-05 и
+нагрузочному RP-08. Это диагностическая итерация, runtime/архивы не менялись,
+новый пакет пользователю не требуется. Следующая реализация потребует обновления.
+Открытый исходный чат оставлен, черновик пуст, добавлены только две тестовые пары.
+Служебных вкладок/окон не оставлено. Снимок:
+`docs/benchmarks/rp321-live-ooc-failed-20261018.png`.
+Подробнее: `docs/RP05-OOC-UX-RESULTS.md`, верх ROADMAP. Push не выполнялся.
+
+## Реализация RP321 — OOC-плашка и поиск без помех от обёртки
+
+Запрос пользователя: исправить плашку после внеигрового ответа и продолжить
+roadmap. Новый статус RU/EN: «Вне игры — состояние сцены не меняется» / «Out of
+character — scene state is unchanged». Обычный missing/error не переименован.
+`storyReplyPurpose` использует одну валидную локальную accepted+finished native-
+пару с точными world/binding/chat/assistant ID. Не угадывает по прозе, черновику
+или порядку capture; restored/ambiguous/incomplete остаются unknown. Это только
+доказательство для UI, не новый допуск к записи. Присланные и ручные recovery
+варианты под таким OOC не показываются; прямой вызов также проверяет цель.
+При получении позднего receipt scanner повторяется. Следующий игровой ответ
+снова получает обычный статус/варианты. Защиты RP320 от записи сохраняются.
+
+Следующий узкий шаг RP-05: `readOnlySearchDraft` снимает только уже распознанную
+начальную OOC-обёртку с поисковой копии. `compileGameContext` делает это только
+для readOnly, включая лишь начальный draft связанных character references;
+recent suffix не переписывает. Исходные draft, dispatch, POST, факты/лоры
+не меняются. Естественная команда не продолжать сцену не режется на предложения.
+Mixed/quoted/unmarked остаются дословными. Глобальный pruning не включён.
+
+Контролируемая проверка на прежнем сюжете RP316: 12 вопросов × RU/EN × 2
+обёртки = 48 сравнений с тем же read-only вопросом без обёртки. До исправления
+14 отличий text/report, после 48/48 равны. Это не новый сюжет и не «14 потерянных
+условий». Полный unit: 324 файла, 8 975 passed, 5 прежних todo, 0 failed,
+`.output/rp321-unit-final.json`. TypeScript clean; целевой прогон 189/189.
+
+Installed Edge MV3 E2E: 10/10, RU/EN × managed/legacy/manual OOC (6), прежняя
+metadata/prefix передача памяти (4). Проверены статус до/после reload, отсутствие
+recovery, возвращение обычного статуса/кнопки следующим игровым ответом, отсутствие
+новых событий/изменений карточек даже при неправильном JSON, исходный draft и
+суффикс фактического POST. RU/EN 200 px снимки просмотрены; плашка помещается.
+Первый запуск
+дополненных E2E выявил неверный mock: reload рисовал старый native ID 41 вместо
+выбранного 43. Стенд теперь рисует выбранный ответ и явно ждёт сохранённого
+finish перед навигацией; не ослаблялись native-проверки production-кода.
+Вся проверка — headless Edge с синтетическим DeepSeek и отдельной БД. Личные
+миры/Brave не трогали; тестовые контексты закрываются в finally.
+
+Новый Brave-пакет: `downloads/DeepRole-Brave-ooc-status-search-20261018.zip`.
+Chrome/Firefox/source и canonical ZIP в downloads пересобраны для этой точки;
+SHA всех 23 entries каждого browser ZIP сверены со сборкой. Source ZIP сверяется
+по критическим изменённым исходникам/документам после финализации этой передачи.
+Единственные штатные предупреждения сборки — крупные chunks и LF/CRLF.
+
+Для следующего live smoke пользователь должен вручную обновить Brave-копию.
+Новый импорт не нужен: тот же `RP319 — Чистая мастерская (тест)`, тот же чат,
+Нора после RP320 вне сцены, осталась Мира. Проверить явный OOC-вопрос с гипотезой:
+нейтральная плашка, нет вариантов, сцена не меняется; затем обычное действие.
+Старая живая проверка RP320 не считается проверкой нового UI RP321.
+Дальше — точность необязательного подбора RP-05 на разных сюжетах/бюджетах,
+затем отдельный нагрузочный replay RP-08. Не заменять это обещанием «бесконечной
+памяти без потерь». Нужны независимые проверки условий/владельцев/продолжений.
+Подробности: `docs/RP05-OOC-UX-RESULTS.md`. Commit/push не запрашивались.
+
+## Предыдущая точка RP320 — live smoke пройден после обновления Brave
+
+Пользователь обновил расширение; Codex проверил тот же синтетический мир RP319
+и тот же чат, не открывая личные миры. Три живые пары сообщений:
+1. `Вне игры:` с гипотетическим уходом Норы — модель сохранила оба условия
+   тубуса, в видимой сцене остались Мира/Нора (2 → 2).
+2. Обычный игровой уход Норы — отыгран, карточка Норы исключена (2 → 1).
+3. `OOC:` с гипотетическим возвращением — разрешение не стало выполнением,
+   Нора не вернулась в карточки (1 → 1); после reload по-прежнему одна Мира.
+После перезагрузки в DOM восстановленной истории проверены исходные технические
+префиксы обеих OOC-реплик: `<deeprole_read_only>` есть, игровой update/choices
+режим не добавлен; у обычного хода — игровой режим. Это readback страницы,
+не сетевой перехват. В предпросмотре нейтрального мира было 0 игровых фактов:
+ответы про тубус опирались на прежнюю переписку, не на вновь извлечённую память.
+Полный DB до/после в live не сравнивали; защита от неправильного JSON и
+неизменность stored events ранее проверены отдельным installed mock-E2E.
+
+Снимки/результаты добавлены в `docs/RP05-OOC-RESULTS.md`. Чат оставлен открытым,
+новых вкладок/окон не создавали; в тестовой игре Нора теперь ушла. Новые
+обещания/передачи не разыгрывались. Runtime и архивы в live-итерации не менялись,
+снова обновлять расширение не нужно; новые unit/build не запускались.
+
+Следующее: поправить UX для известного OOC-ответа — сейчас статус «DeepSeek не
+прислал обновление. Карточки не изменены» выглядит как недочёт, хотя отсутствие
+обновлений ожидаемо. Также под OOC остаётся ручная кнопка «Предложить варианты»;
+решить её видимость по точной принадлежности ответа, не по словам модели.
+Это UI-замечания, в этой тестовой итерации не исправлялись. Затем продолжить
+точность необязательного подбора RP-05 и отдельный нагрузочный replay RP-08.
+
+Продолжен замеченный в live RP319 случай: непомеченная проверочная реплика
+считалась игровой и могла менять состав сцены. Реализован консервативный
+`explicitOutOfCharacter` только по исходящему локальному draft: начальное
+`Вне игры:` / `OOC:` / `[OOC]`, целое `(OOC: ...)`, отдельное «Не продолжай /
+не развивай сцену» или EN-команда в первом нецитируемом абзаце. Не угадывать
+намерение обычных вопросов, не классифицировать цитаты/код/явный mixed IC/OOC.
+Историю задним числом не переклассифицировали.
+
+`GameContextInput.readOnly` сохраняет подбор фактов/условий/профилей, но убирает
+игровые update/automation/choices/selfie запросы. Read-only character reference
+с готовым планом использует существующие компактные инструкции; старые сервисные
+запросы без плана сохранены. Проверен полный бюджет 2000 в RU/EN. Назначение пары
+сохраняется в dispatch. Managed-story уже исключает OOC; legacy writer теперь
+тоже блокирует эффекты по request ID ИЛИ точному native assistant link, даже если
+модель убрала request из JSON. Ни одной догадки по похожему тексту.
+
+Installed actual-POST тест выявил дополнительный сбой: снятие ручной одноразовой
+отметки в prepare вызывало reload и могло оборвать собственную инъекцию памяти.
+Теперь optional `consumeNonStoryMode:true` фиксируется перед отправкой, а снятие
+происходит только при первой точной сверке исходящего текста. Неверный source
+отметку не снимает; повтор старого подтверждения не снимает новую отметку.
+Старые capture читаются без нового поля; восстановленные capture не исполняются.
+
+Проверки: новые unit 26/26; четыре связанные группы 81/81 до последнего
+сокращения reference; затем три 87/87. TypeScript clean. Installed Edge MV3
+на синтетическом DeepSeek: 10/10, RU/EN × managed/legacy/manual OOC (6), плюс
+прежний metadata/prefix POST/reload (4). Проверены чтение памяти в POST,
+неизменность сцены/людей/событий при намеренно неправильном JSON с request
+и без него, перезагрузка и реальное обновление сцены следующим игровым ответом.
+Тестовые контексты закрываются в finally, личный Brave не трогали.
+Финальный полный прогон: 322 файла / 8 903 passed / 5 прежних todo / 0 failed,
+`.output/rp320-unit-final.json`. TypeScript clean, diff check без ошибок
+(обычные предупреждения LF/CRLF). Chrome/Firefox/source ZIP пересобраны для
+передачи: `downloads/DeepRole-Brave-ooc-memory-20261018.zip` — актуальный Brave.
+Три canonical ZIP в downloads соответствуют этой итерации. Сборки не заменяют
+отдельную проверку в живой модели и не перезагружают пользовательский Brave.
+
+Первый полный unit-прогон: 8901 pass / 1 fail / 5 todo — новый негативный кейс
+был добавлен, когда процесс уже закэшировал раннюю версию распознавателя.
+Стабильный целевой повтор прошёл; финальный полный повтор выполнен отдельно
+без сборки/браузерной нагрузки. Первые E2E обнаружили реальную гонку ручного
+режима (исправлена), затем один RU-кейс ошибочно спрашивал EN-текстом по RU
+smart-памяти; исправлен язык теста, не ослаблялись правила подбора.
+
+Выполненный сценарий после ручного обновления (повторять не требуется):
+1. Новый мир не требуется: тот же `RP319 — Чистая мастерская (тест)`, тот же чат.
+2. Codex сверяет видимую сцену и задаёт явный «Вне игры: ...» вопрос с
+   гипотетическим уходом Норы; гипотеза не должна менять состав карточек.
+3. Затем обычное игровое действие должно снова обновлять сцену.
+4. Live smoke RP320 выполнен, см. верх этой секции; прежние 9/9 RP319 — другой тест.
+5. Далее — OOC UX, точность необязательного подбора RP-05 и replay RP-08.
+Текущий код пользователя автоматически не обновляли. Push не выполнялся.
+Подробности: `docs/RP05-OOC-RESULTS.md`, верх `ROADMAP.md`.
+
+## Предыдущая точка RP319 — живой probe пройден, 9/9
+
+18 октября пользователь обновил Brave-копию, импортировал нейтральный мир и
+выбрал его в пустом чате. Codex отправил синтетический prefix-probe: 5/5 ответов
+верны. После перезагрузки того же чата ещё 4/4: ключ требует отдельного
+опечатанного футляра, разрешение не означает завершение передачи, мост ждёт
+разрешения охраны, печать уже возвращена Норе. Выбранный мир сохранился.
+Это проверка понимания формата живой моделью, НЕ доказательство автоматического
+извлечения/подбора этих фактов или работы за пределами нативного контекста.
+В тестовом сообщении факты переданы напрямую; native POST здесь не перехватывали.
+Детали/ответы/снимок: `docs/RP05-LIVE-PREFIX-RESULTS.md`.
+
+Новых изменений runtime и новых сборок в live-итерации нет. Исчезнувший probe
+восстановлен из уже собранного source ZIP. Старый RP-05 тестовый мир закреплён
+в `tests/fixtures/story-rp05-live-world.json`, чтобы уборка downloads не ломала
+проверку; остальные отсутствующие пользовательские файлы не восстанавливали.
+После закрепления fixture: три целевые группы 124/124, TypeScript clean;
+`git diff --check` без ошибок (только предупреждения LF/CRLF). Полный набор
+повторно в этой live-итерации не запускался; его предыдущий итог ниже.
+Личные миры/чаты не использовали, дополнительных вкладок не создавали; исходный
+тестовый чат оставлен открытым. Следующее — точность необязательного подбора
+RP-05 и отдельная нагрузочная проверка replay RP-08. Повторять импорт/probe
+не требуется. Дополнительно замечено: после внеигровых проверочных вопросов
+видимый состав сцены обновился (Мира/Нора); отделение OOC от состояния сцены
+не проверено и не считается закрытым этим probe.
+
+Контролируемая вариация RP316: для каждого вопроса свои недавние реплики,
+многотемный пересказ, посторонняя сцена и новый чат без переписки. 96 RU/EN
+сценариев, 128/128 целевых источников, 16/16 owner-контролей только с belief.
+Число дополнительных появлений одинаково при каждом хвосте, включая пустой:
+12 связанных и 84 прочих на 20 вопросов. Это уточняет прежний причинный вывод:
+недавние слова влияют на состав/порядок, а количество поддерживает резервный
+проход. Глобальное отсечение нулевых совпадений остаётся отклонённым.
+
+Реализован deeprole-memory-prefixes-v1: буквальное общее длинное начало текстов
+передаётся один раз, каждая строка содержит точное окончание. Ни одного факта,
+условия, роли, статуса или source ID не удаляем. Декодер восстанавливает тексты
+дословно; источник/quote refs разрешаются после соединения. Применяется лишь
+после окончательного отбора и при сокращении полного запроса вместе с guide;
+сэкономленное место не заполняется новыми необязательными строками. Сравнение
+memoryPrefixes:false сохранило все выбранные источники/причины в 96 сценариях.
+В 80 содержательных вопросах сэкономлено 2 768 оценочных токенов (около 1,3%).
+
+Проверки: полный набор 321 файл / 8 875 passed / 5 todo / 0 failed; TypeScript
+чистый; новые группы 123/123; импорт тестовых файлов проверен отдельно.
+Installed MV3 на синтетическом DeepSeek: RU/EN metadata + prefix, реальные
+POST/reload/точные статусы и неизменные canonical facts, 4/4 последовательно и
+4/4 параллельно. Собственные браузерные контексты закрыты. Первый запуск при
+одновременных full-unit/build нагрузках дал два RU-несовпадения итогового replay;
+оба чистых повтора прошли. Нагрузочная устойчивость этим не доказана; сохранить
+это наблюдение для RP-08, не объявлять старый мок полноценной моделью сервера.
+
+Chrome/Firefox/source пакеты пересобраны. Для ручного обновления Brave:
+`downloads/DeepRole-Brave-lossless-memory-20261018.zip`. Текущая установленная
+копия пользователя этой сборкой автоматически не обновлялась: пользователь
+обновил её вручную перед описанным выше live-probe. Личный лор/игра не менялись;
+push не выполнялся.
+
+Выполненный живой сценарий (повторять не требуется):
+1. Импортировать `downloads/DeepRole-RP319-test-world-20261018.json` и выбрать
+   `RP319 — Чистая мастерская (тест)` в новом пустом чате. Он специально не
+   содержит готовых ответов/условий в обычном лоре; генерация состава не нужна.
+2. Codex отправляет содержимое `downloads/DeepRole-RP319-live-probe-20261018.txt`.
+   В нём только синтетические данные с новым форматом, общий префикс несёт два
+   важных условия; полного дублирующего sourceQuote нет. От пользователя нужен
+   только импорт и выбранный чат, технический запрос отправляет Codex.
+3. Проверить 5 ответов: отсутствие Норы блокирует передачу тубуса; прошлый
+   факт передачи синего журнала остаётся завершённым; пустота капсулы лишь belief;
+   код не разрешает личные комнаты/подвал; запасное письмо не получено Мирой.
+   Это probe понимания формата моделью, не доказательство автоматического
+   извлечения памяти из длинной игры. Интеграция отправки проверена отдельным E2E.
+4. Теперь продолжить точность необязательного подбора RP-05 и отдельную нагрузочную
+   проверку replay. Использовать только тестовые миры.
+
+Подробности: `docs/RP05-RECENT-CONTEXT-RESULTS.md`, верх `ROADMAP.md`.
+
+## Предыдущая точка RP318 — предварительная классификация добавок
+
+Проверен и откачен кандидат: не добавлять общие факты с нулевым поисковым
+совпадением, когда вопрос уже нашёл свои факты. На RP316 это давало 96 → 42
+дополнительные записи и 32/32 целевых факта, но полный регрессионный прогон
+показал 222 падения в 13 файлах. Даже более узкий фильтр затронул 50 проверок
+цепочек действий/эталонных выходов. Код возвратил прежний fallback; эксперимент
+не попал в сборку. Историю и память пользователя не меняли.
+
+Классификация 96 дополнительных появлений по 20 запросам описала совпадения:
+38 также имели совпадение с вопросом, 58 совпали только с недавним контекстом.
+Во всех случаях `recentMessages` были одинаковы и содержали общий пересказ,
+перечисляющий почти все темы. Все 96 получали недавний балл; это 96 появлений
+в отдельных запросах, не 96 фактов одновременно. Эти записи сохраняются и при
+отключении специальных дорожек — их отбирает обычный резервный подбор. В основном
+это разные подтверждённые события, а не дубли для удаления.
+
+Следующий шаг по RP05 — заменить искусственно общий хвост на реалистичные,
+разные для каждого тестового вопроса отрывки переписки. Сравнить текущую сцену,
+длинный пересказ разных тем и недавнюю постороннюю сцену; отдельно отмечать
+поддержку ответа, условия/связанные состояния и случайные совпадения. Лишь потом
+проверять узкий резерв недавних фактов для ясных вопросов с найденным полным
+ответом. Продолжения игры, открытые задачи, условия, цепочки действий и
+неоднозначные ссылки оставить под прежним поведением. Не менять runtime, сборки
+или живую игру до безопасного результата на старых контролях. Подробности:
+`docs/RP05-COMPACTNESS-RESULTS.md`.
+
+После отката: полный набор — 319 файлов, 8 752 passed, 5 todo, 0 failed;
+typecheck чистый. Пакеты не пересобирались, live-синтетический чат не трогался.
+
+## Актуальная точка RP317 — live-проверка доставки памяти пройдена
+
+В синтетическом чате мира `RP-05 — Тихая пристань` до исправления предпросмотр
+выбирал нужную запись «Открытое обещание Тарена о подъёмнике», но реальная
+отправка иногда уходила без неё. Рост handshake до 12 секунд сам по себе не
+помог.
+
+После установки нового Brave-пакета пользователь повторил тот же вопрос.
+На приложенном скриншоте первый ответ — от старой версии, второй — после
+обновления: DeepSeek назвал обещание, оба условия и правильно указал, что ремонт
+ещё не начался. Live smoke для пользовательского сценария пройден.
+
+Проверки: TypeScript clean; полный unit-прогон — 319 файлов, 8 752 passed,
+5 todo; actual-POST E2E RU/EN — 2/2, включая попадание внешней правки памяти в
+следующий запрос. Chrome, Firefox и source ZIP собраны; SHA-256 совпадает с
+копиями в `downloads/`. Brave-пакет:
+`downloads/DeepRole-Brave-memory-refresh-fix-20261018.zip`.
+
+Следом: продолжить RP-05 — уменьшать слабые/повторные контекстные добавки,
+не теряя существенные факты, условия и связи. Live smoke подтверждает ответ после
+обновления, но не закрывает весь RP-05. Использовать только синтетические миры,
+не личный лор.
+
+## Актуальная точка RP316 — отдельный сюжет и замер контекстных добавок
+
+Новый сюжет воздушной обсерватории (RU/EN), не переиспользующий предыдущие
+RP-05 gold/fixtures: 24 сценария, 20/20 scored, 32/32 требуемых записей; 4/4
+owner-контроля сохранили source-backed `belief`; source/quote/kind/task-status/role/
+episode integrity — 0. Проверены перемещение тубуса, поздний прогресс причала,
+условия обещания, выполненная соседняя задача, раскрытие, цитата и 40 повторов.
+Добавлены bounded формы «keep coming back to», «известно, чей» и «есть
+подтверждение, что принадлежит».
+
+Важное измерение для контекстного окна: на 20 обычных вопросах выбрано ещё 96
+записей. Не считать их автоматически ошибкой или утечкой, но следующий шаг —
+понять, сколько повторов/слабых подсказок можно убрать без потери полезных связей.
+Полный прогон 319 файлов: 8 748 pass, 5 todo, 0 fail; TypeScript чистый. Chrome и
+Firefox MV3 сборки/ZIP прошли. Новая сборка в установленном DeepSeek ещё не
+проверена; предшествовавший live smoke test относился к предыдущей версии.
+
+Следом: вручную заменить файлы установленной копии и проверить только отдельный
+синтетический мир; затем продолжить оптимизацию компактности memory retrieval.
+Личный лор не использовать. RP-05 открыт. Подробно: `ROADMAP.md` / верх
+`docs/HOME-CODEX-NEXT.md`, `docs/RP05-INDEPENDENT-PLOT-RESULTS.md`.
+
+## Актуальная точка RP315 — свободные формулировки
+
+Новый независимый сюжет убежища, RU/EN:16 сценариев,14/14 scored и18/18 целевых
+записей. Исходный прогон нашёл, что «keep circling back»/«возвращались обсуждать»
+отсекало нужный хвост, а «whose»/«чей» смешивало owner-слух с соседними событиями.
+Добавлены узкие варианты форм и source-bound admission: запись должна содержать
+маркер владения и тему предмета; русский `владелец` теперь распознаётся.
+Повторный прогон:2/2 owner-контроля вернули только `belief`, event leakage0,
+source/quote/role/task-status/episode integrity0; история/входы не менялись.
+Полный прогон317 файлов:8722 pass,5 todo,0 fail; TypeScript clean.
+
+Runtime изменился; browser/source ZIP пересобраны и downloads SHA-256 совпадают
+со сборками. Установленная копия, DeepSeek и личный мир не трогались. Следом —
+ещё один новый сюжет, затем пользователь вручную обновит расширение и проверит
+только синтетический мир. RP-05 открыт. Результаты: `docs/RP05-NATURAL-DIALOGUE-RESULTS.md`;
+роадмап — вверху `ROADMAP.md`.
+
+## Актуальная точка RP314 — отделять повторы от нового прогресса
+
+Независимый новый сюжет насосной станции на RU/EN:16 сценариев,14/14 scored
+запросов и14/14 ожидаемых записей. Проверены аварийное действие, более поздний
+реальный ремонт с общими словами, обещание с двумя условиями,36 повторов,
+впервые раскрытые сведения, одиночный пересказ, цитата и непроверенный владелец.
+Новые действие/ремонт/информация не потерялись; прямой вопрос о повторах их
+нашёл;2/2 слуха остались `belief`. Event leakage0, source/quote/role/status/
+episode integrity0; бюджет и входы сохранены. 163 связанных теста и typecheck
+прошли. Runtime не менялся, архивы/установленная копия/DeepSeek/личный мир
+не трогались.
+
+Следом — ещё один независимый корпус со свободными формулировками; затем нужна
+живая проверка после ручного обновления расширения в отдельном синтетическом
+мире. RP-05 открыт. Итоги: `docs/RP05-PROGRESS-BOUNDARY-RESULTS.md`; план — вверху
+`ROADMAP.md`.
+
+## Актуальная точка RP313 — независимая перепроверка RP312
+
+На отдельном сюжете об обсерватории (RU/EN), не использующем RP311/RP312
+fixture, прошли 10 локаль-сценариев:8/8 scored-запросов,10/10 ожидаемых
+записей. Проверены действие, обещание с двумя открытыми условиями, хвост из32
+повторов, вопрос о самом обсуждении, одиночный пересказ, цитата и слух о
+владельце. Два контроля вернули только source-backed `belief`; event leakage0,
+source/quote/role/status/episode integrity0; бюджет и входы сохранены.
+Все11 новых тестов прошли. Runtime не менялся; архивы/установленная копия,
+DeepSeek и личный мир не трогались.
+
+Следом: ещё один независимый сюжет и затем live-проверка только на отдельном
+синтетическом мире после ручного обновления распакованной копии. RP-05 не закрыт.
+Результаты: `docs/RP05-CROSSPLOT-RESULTS.md`; статус — вверху `ROADMAP.md`.
+
+## Актуальная точка RP312 — retrieval не отдаёт приоритет повторным пересказам
+
+Исправлен RP-05 по результатам RP311: простые повествовательные записи, прямо
+говорящие «обсудили снова/вспомнили, новых действий или сведений не было», не
+вытесняют сыгранные действия, планы и открытые обещания, если найдено не менее3
+таких совпадающих с запросом пересказов. Одиночный источник остаётся; старый
+путь прямых цитат не менялся; вопросы о разговорах/словах всё ещё могут вернуть
+эти события. История не удаляется.
+
+Для прямых RU/EN-вопросов «кто владеет?» / «кому принадлежит?» добавлен ограниченный
+поиск по явным owner-словам и совпадению предметной темы. Сохранённый `kind`
+не меняется: слух остаётся `belief`, не объективным фактом. Новый набор:18/18
+scored,24/24 ожидаемых факта;4/4 unknown-owner контроля вернули только нужный
+belief; source/quote/role/status/episode integrity0. Полный прогон314 файлов:
+8673 pass,0 fail,5 todo;typecheck и diff-check чистые.
+
+Chrome/Firefox/source ZIP пересобраны (23/23/922 entries); downloads-копии совпали
+по SHA-256 с `.output`. Установленная копия/DeepSeek/личный мир не трогались.
+Следом пользователь вручную обновит распакованную копию и проверит
+синтетический чат. Затем нужны новые независимые сюжеты; RP-05 остаётся открыт.
+Подробности: `docs/RP05-GROUNDING-RESULTS.md`.
+
+## Актуальная точка RP311 — независимый поиск памяти по источникам
+
+Свежий заранее размеченный аудит (2 новых сюжета, RU/EN, 22 запроса, 48 поздних
+повторных обсуждений на сюжет): все ожидаемые записи нашлись в15/18 scored
+(RU6/9,EN9/9;21/24 факта). Три пропуска в RU вызваны вытеснением исходного плана/
+условного обещания повторениями. Во всех4 контролях неизвестного владельца
+подбор выдавал повторяющиеся события вместо source-belief записи. При этом
+выбранные записи не потеряли source/quote/role/task status/episode ID (0 нарушений),
+budget и входы сохранены. Новый focused audit:23/23; TypeScript и diff-check чистые.
+Подробно: `docs/RP05-GROUNDING-RESULTS.md`.
+
+В этой итерации runtime не менялся; установленная копия и DeepSeek не тронуты.
+Следом исправить ранжирование/выбор: защитить первичный источник и открытые
+условия от повторов, не превращать обсуждение/слух в установленный факт при
+неизвестном владельце. Затем прогнать frozen RP311 + зелёную регрессию и только
+после этого подготовить пакет. RP-05 остаётся открыт.
+
+## Актуальная точка RP310 — естественные вопросы о предметах вне сцены
+
+Расширен ограниченный поиск профиля для явных вопросов о предмете: кроме
+«где/у кого предмет?» поддерживаются «что мы знаем о предмете?», “What do we
+know about…?”, “Can you tell me about…?”, “Do you remember…?” и явные просьбы
+напомнить. Это всё ещё лексический поиск по полным словам темы; он не делает
+выводов о владельце/местонахождении. Простое повествование, разговорное
+воспоминание и неопределённое «её вещь» не подтягивают внесценные анкеты.
+
+Добавлено шесть позитивных RU/EN unit-кейсов и три отрицательных; близкий набор
+173/173. Полный unit-набор:313 файлов,8643 прошло,0 ошибок,5 todo; Chromium E2E
+actual POST RU/EN:2/2; `npm run typecheck` и `git diff --check` прошли. Первый
+build столкнулся с занятым системным TEMP; повтор через локальный TEMP прошёл.
+Порт E2E можно переопределить через `DEEPROLE_E2E_PORT`, поскольку дефолтный
+4173 занят посторонним/ранее запущенным сервером. Chrome/Firefox/source архивы
+пересобраны; canonical downloads совпадают побайтно, entry counts 23/23/921.
+Установленная копия и DeepSeek не тронуты. Следующий большой пункт — независимый RP-05 semantic
+retrieval audit; открытые menu/cast/reset/export/images live-сценарии остаются.
+
+## Актуальная точка RP309 — память по предмету владельца вне сцены
+
+В предыдущей live-проверке первый вопрос о блокноте не получил профиль Leon,
+потому что Leon не присутствовал и вопрос не называл его. Story facts при этом
+имеют отдельный поиск и могут содержать предмет/владельца/обещание, но профиль
+ограничивался сценой, фокусом и явным именем. Исправлен только `src/core/game-context.ts`:
+для ограниченного object-question (`где/куда` и `where is/are/was/were`, `who has/owns`,
+`what happened to/about`) или уже распознанного действия берутся целые абзацы
+анкеты отсутствующих персонажей, содержащие ВСЕ нормализованные слова предмета.
+Весь предметный запрос должен совпасть в профилях не более чем у двух людей;
+при совпадении у двух они передаются оба и отдельно. Местоименные запросы
+отсеиваются этой дорожкой. Добавленная инструкция прямо запрещает трактовать
+релевантность как доказательство владения или физического присутствия.
+
+Добавлены RU/EN unit-сценарии: Leon вне сцены, архивный блокнот, source-bound
+обещание на завтра только после подписи расписки, одинаковое название у двух
+людей, общий шум и unresolved pronoun. Дополнительно проверены независимые
+RU-компас и EN-ключ с off-scene профилями и условными обещаниями. Targeted:164/164
+unit; TypeScript прошёл;
+E2E Chromium actual POST RU/EN:2/2. Исторические sealed отчёты и gold не менялись.
+Fingerprint-манифесты проверяются как архивные данные, а сохранённые runtime-
+snapshots сравнивают компоненты, зафиксированные соответствующими тестами. Полный
+прогон:313 файлов,8632 pass,0 fail,5 todo; `npm run typecheck` и `git diff --check`
+прошли.
+Chrome/Firefox/source ZIP собраны; entry counts:23/23/921
+entries,0 mismatches;три canonical downloads копии побайтно совпадают с `.output`.
+Предупреждение о chunk >500 kB осталось прежним. Живой DeepSeek/установленная
+копия/личный мир не тронуты; пользователь должен обновить распакованную сборку
+отдельно.
+Затем вернуться к menu/cast/reset/export/images live-проверкам RP306/RP307, после
+этого — к независимому RP-05 semantic retrieval. Не объявлять RP-05 закрытым.
 
 ## Актуальная точка RP308 — подпись эмоции и показатели портретов
 

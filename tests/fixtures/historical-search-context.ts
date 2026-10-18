@@ -16,11 +16,11 @@ import type {GroundingCase} from '../../scripts/story-search-grounding.mjs';
  * Frozen full workload/provenance digests below its callers certify exact replay.
  * Current runtime contracts are tested separately with current defaults. */
 export const RP268_CONTEXT_OPTIONS=Object.freeze({
- memoryTransport:'compact',contentRelevance:true,topicAdmission:true,
+ memoryTransport:'compact',memoryPrefixes:false,memoryPrefixTables:false,contentRelevance:true,topicAdmission:true,
  continuationBalance:true,actionBalance:true,taskGoalBalance:true,
  compoundActionBalance:true,naturalRecall:true,lastingRecall:true,
  referenceRecall:true,referenceBundle:true,discussionPriority:false,
- flexiblePriority:false,sequencePriority:false,budgetPriority:false,contextualRecall:false,
+ flexiblePriority:false,sequencePriority:false,budgetPriority:false,contextualRecall:false,taskProgressRecall:false,repeatSelection:false,
 } satisfies Required<Omit<GameContextOptions,'searchIndex'>>);
 export const historicalSearchContext=(input:GameContextInput,lastingRecall=true)=>compileGameContext(input,{...RP268_CONTEXT_OPTIONS,lastingRecall});
 

@@ -127,12 +127,13 @@ describe("working selected story", () => {
     const f = await setup(); f.snapshot.messages[0]!.completion = "interrupted"; await f.play("start");
     f.snapshot.messages.push(f.message("3", "2", "user", "Act"), f.answer("4", "3", "A")); f.snapshot.selectedNativeKey = key("4"); await f.play(); expect((await f.scene()).states["person-1"]!.condition).toBe("A");
   });
-  it("the explicitly marked off-topic exchange is saved but never changes the scene", async () => {
-    const f = await setup(); await f.play("start"); await markNonStoryMessage(f.binding.chatId, f.world.id, f.repo);
+  it.each(['manual', 'ru', 'en'])("the explicitly marked off-topic exchange is saved but never changes the scene: %s", async mode => {
+    const f = await setup(); await f.play("start"); if (mode === 'manual') await markNonStoryMessage(f.binding.chatId, f.world.id, f.repo);
+    const draft = mode === 'ru' ? 'Вне игры: объясни правила.' : mode === 'en' ? 'Do not continue the scene. Explain the rules.' : 'Explain the rules';
     const binding = (await f.repo.list<ChatBinding>("binding"))[0]!, id = crypto.randomUUID();
     const identity = { chatId: binding.chatId, nativeParentKey: key("2") }, route = { requestId: id, identity, transport: "xhr" as const };
-    await prepareDispatchCapture({ id, worldId: f.world.id, bindingId: binding.id, identity, transport: "xhr", sceneRevision: (await f.scene()).revision, originalDraft: "Explain the rules", proposedContext: "PRIVATE_CONTEXT" }, 7, f.repo);
-    const wireText = "PRIVATE_CONTEXT\n\n[User message]\nExplain the rules";
+    await prepareDispatchCapture({ id, worldId: f.world.id, bindingId: binding.id, identity, transport: "xhr", sceneRevision: (await f.scene()).revision, originalDraft: draft, proposedContext: "PRIVATE_CONTEXT" }, 7, f.repo);
+    const wireText = "PRIVATE_CONTEXT\n\n[User message]\n" + draft;
     await confirmDispatchCapture({ ...route, outgoingText: wireText }, 7, f.repo); await advanceDispatchCapture({ ...route, phase: "started" }, 7, f.repo); await advanceDispatchCapture({ ...route, phase: "settled", delivery: { status: "accepted", httpStatus: 200 } }, 7, f.repo);
     const link = { requestId: id, chatId: binding.chatId, nativeParentKey: key("2"), userMessageKey: key("3"), assistantMessageKey: key("4") };
     await advanceDispatchCapture({ ...route, phase: "ready", link, sawFinish: false, issue: null }, 7, f.repo); await advanceDispatchCapture({ ...route, phase: "closed", link, sawFinish: true, issue: null }, 7, f.repo);

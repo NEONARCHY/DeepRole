@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, replaceOutgoingUserText, outgoingChatId } from "../src/core/request-injection";
+import { contextHandshakeTimeoutMs, deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, replaceOutgoingUserText, outgoingChatId } from "../src/core/request-injection";
 import { decryptJson, encryptJson } from "../src/storage/crypto";
 
 it("reads only a valid request destination, never one in model text or nested history", () => {
@@ -49,6 +49,13 @@ describe("encrypted backups", () => {
 describe("fail-open DeepSeek request injection", () => {
   const context = "<deeprole_context>memory</deeprole_context>";
 
+  it("allows a larger bounded refresh only when memory or managed story context exists", () => {
+    expect(contextHandshakeTimeoutMs(false, false)).toBe(5_000);
+    expect(contextHandshakeTimeoutMs(true, false)).toBe(12_000);
+    expect(contextHandshakeTimeoutMs(false, true)).toBe(12_000);
+    expect(contextHandshakeTimeoutMs(true, true)).toBe(12_000);
+  });
+
   it("injects into prompt and keeps the visible user text identifiable", () => {
     const result = injectIntoJsonBody(JSON.stringify({ prompt: "Hello" }), context);
     expect(result.changed).toBe(true);
@@ -73,7 +80,41 @@ describe("fail-open DeepSeek request injection", () => {
 
   it("returns the original body when DeepSeek changes to an unknown shape", () => {
     const body = JSON.stringify({ future_payload: { text: "ordinary message" } });
-    expect(injectIntoJsonBody(body, context)).toEqual({ changed: false, body });
+    expect(injectIntoJsonBody(body, context)).toEqual({ changed: false, body, failure: "unsupported-request-shape" });
+  });
+
+  it("injects memory into a structured prompt without touching image attachments", () => {
+    const image = { type: "image_url", image_url: { url: "data:image/png;base64,SECRET" } };
+    const body = JSON.stringify({ prompt: [{ type: "text", text: "Where is the key?" }, image] });
+    const result = injectIntoJsonBody(body, context);
+    const prompt = JSON.parse(result.body).prompt;
+    expect(result.changed).toBe(true);
+    expect(prompt[0].text).toContain("[User message]\nWhere is the key?");
+    expect(prompt[1]).toEqual(image);
+    expect(outgoingUserText(body)).toBe("Where is the key?");
+  });
+
+  it("injects into the latest text part of a rich user message and preserves other parts", () => {
+    const image = { type: "image", data: "private-image-data" };
+    const body = JSON.stringify({ data: { messages: [
+      { role: "user", content: "old" },
+      { role: "assistant", content: "reply" },
+      { role: "user", content: [{ type: "text", text: "What is in my hand?" }, image] },
+    ] } });
+    const result = injectIntoJsonBody(body, context);
+    const parsed = JSON.parse(result.body);
+    expect(result.changed).toBe(true);
+    expect(parsed.data.messages[0].content).toBe("old");
+    expect(parsed.data.messages[2].content[0].text).toContain("[User message]\nWhat is in my hand?");
+    expect(parsed.data.messages[2].content[1]).toEqual(image);
+    expect(outgoingUserText(body)).toBe("What is in my hand?");
+  });
+
+  it("does not mistake a quoted marker inside a user question for an already injected prompt", () => {
+    const body = JSON.stringify({ prompt: "What does <deeprole_context> mean?" });
+    const result = injectIntoJsonBody(body, context);
+    expect(result.changed).toBe(true);
+    expect(JSON.parse(result.body).prompt).toContain("[User message]\nWhat does <deeprole_context> mean?");
   });
 
   it("recognizes service requests so memory injection can skip them", () => {
@@ -89,7 +130,7 @@ describe("fail-open DeepSeek request injection", () => {
 
   it("never injects backwards into history if the newest user turn already contains context", () => {
     const body = JSON.stringify({ messages: [{ role: "user", content: "old" }, { role: "user", content: `${context}\nnew` }] });
-    expect(injectIntoJsonBody(body, context)).toEqual({ changed: false, body });
+    expect(injectIntoJsonBody(body, context)).toEqual({ changed: false, body, failure: "memory-already-present" });
   });
 
   it("correlates service failures by the current request header, not history or lore text", () => {

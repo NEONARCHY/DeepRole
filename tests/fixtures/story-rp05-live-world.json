@@ -1,0 +1,186 @@
+{
+  "format": "deeprole-world",
+  "version": 1,
+  "records": [
+    {
+      "kind": "world",
+      "id": "rp05-harbor-world",
+      "data": {
+        "id": "rp05-harbor-world",
+        "name": "RP-05 — Тихая пристань (тест памяти)",
+        "description": "Полностью вымышленный мир для проверки поиска памяти в длинной истории. Не содержит пользовательского лора.",
+        "color": "#65c9d0",
+        "contextBudget": 2200,
+        "relevanceThreshold": 6,
+        "createdAt": 1,
+        "updatedAt": 1,
+        "autoPrepareCharacters": false
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp05-vera",
+      "data": {
+        "id": "rp05-vera",
+        "worldId": "rp05-harbor-world",
+        "kind": "character",
+        "name": "Вера",
+        "description": "Главная героиня тестового сюжета; роль игрока.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp05-mika",
+      "data": {
+        "id": "rp05-mika",
+        "worldId": "rp05-harbor-world",
+        "kind": "character",
+        "name": "Мика",
+        "description": "Курьерка, сейчас отсутствует в портовой комнате.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp05-taren",
+      "data": {
+        "id": "rp05-taren",
+        "worldId": "rp05-harbor-world",
+        "kind": "character",
+        "name": "Тарен",
+        "description": "Мастер подъёмника, сейчас вне портовой комнаты.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp05-sena",
+      "data": {
+        "id": "rp05-sena",
+        "worldId": "rp05-harbor-world",
+        "kind": "character",
+        "name": "Сена",
+        "description": "Картографка, сейчас в городе.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp05-harbor-room",
+      "data": {
+        "id": "rp05-harbor-room",
+        "worldId": "rp05-harbor-world",
+        "kind": "location",
+        "name": "Портовая комната",
+        "description": "Небольшая комната над старой пекарней у пристани.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entry",
+      "id": "rp05-mika-bag",
+      "data": {
+        "id": "rp05-mika-bag",
+        "worldId": "rp05-harbor-world",
+        "entityIds": ["rp05-mika"],
+        "bookId": null,
+        "title": "Рюкзак Мики — последнее подтверждённое место",
+        "content": "Полевой рюкзак принадлежит Мике. Последний раз она оставила его в комнате над старой пекарней у пристани, прежде чем отправиться к северному маяку. После этого никто не подтверждал, что рюкзак переносили; его нынешнее местонахождение неизвестно.",
+        "keywords": ["Мика", "рюкзак", "полевой рюкзак", "пекарня", "северный маяк", "местонахождение", "вещь"],
+        "activation": "smart",
+        "priority": "high",
+        "enabled": true,
+        "source": {"type": "manual"},
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entry",
+      "id": "rp05-taren-lift-promise",
+      "data": {
+        "id": "rp05-taren-lift-promise",
+        "worldId": "rp05-harbor-world",
+        "entityIds": ["rp05-taren"],
+        "bookId": null,
+        "title": "Открытое обещание Тарена о подъёмнике",
+        "content": "Тарен обещал починить грузовой подъёмник после выполнения двух условий: восстановят питание и вернётся главный механик. Питание уже восстановлено. Главный механик ещё не вернулся, поэтому Тарен не начинал ремонт; обещание остаётся открытым.",
+        "keywords": ["Тарен", "подъёмник", "починка", "ремонт", "обещание", "условия", "механик", "питание"],
+        "activation": "smart",
+        "priority": "high",
+        "enabled": true,
+        "source": {"type": "manual"},
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entry",
+      "id": "rp05-sena-compass",
+      "data": {
+        "id": "rp05-sena-compass",
+        "worldId": "rp05-harbor-world",
+        "entityIds": ["rp05-sena"],
+        "bookId": null,
+        "title": "Латунный компас Сены",
+        "content": "Латунный компас принадлежит Сене. Последнее подтверждённое место — запертый шкаф в картографической мастерской. Передачи компаса другому человеку не подтверждали.",
+        "keywords": ["Сена", "латунный компас", "компас", "мастерская", "владелец", "принадлежит"],
+        "activation": "smart",
+        "priority": "normal",
+        "enabled": true,
+        "source": {"type": "manual"},
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entry",
+      "id": "rp05-blue-key-rumor",
+      "data": {
+        "id": "rp05-blue-key-rumor",
+        "worldId": "rp05-harbor-world",
+        "entityIds": [],
+        "bookId": null,
+        "title": "Непроверенный слух о синем ключе",
+        "content": "В порту ходит неподтверждённый слух, что синий ключ мог взять кто-то из грузчиков. Источник слуха не видел этого и не знает, кто именно; владелец и нынешнее местонахождение ключа не установлены.",
+        "keywords": ["синий ключ", "ключ", "грузчики", "слух", "владелец", "кому принадлежит"],
+        "activation": "smart",
+        "priority": "normal",
+        "enabled": true,
+        "source": {"type": "manual"},
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "template",
+      "id": "rp05-harbor-opening",
+      "data": {
+        "id": "rp05-harbor-opening",
+        "worldId": "rp05-harbor-world",
+        "name": "RP-05 — начать проверку",
+        "opening": "Вера возвращается в портовую комнату после обхода пристани. В комнате пока только она; за окном шумят лодки. Начни спокойную сцену и не вводи отсутствующих персонажей без сюжетной причины.",
+        "initialState": "Тестовый мир. Сохраняй различие между подтверждёнными сведениями, последним известным местом и слухами. Не объявляй неизвестного владельца установленным.",
+        "focusIds": ["rp05-vera", "rp05-harbor-room"],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    }
+  ]
+}

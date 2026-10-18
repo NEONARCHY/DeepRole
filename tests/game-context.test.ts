@@ -1,6 +1,7 @@
 import {expect,it} from "vitest";
 import {compileGameContext,addedContextTokens,type GameContextInput} from "../src/core/game-context";
 import {characterInstruction,DEFAULT_ACTIONS} from "../src/core/characters";
+import {roleSeed} from "../src/core/story-role-binding";
 import {storyWorld} from "./fixtures/story-worlds";
 function fixture(limit=2000,count=3) {
  const f=storyWorld("en",count);f.world.storyAutomation={mode:"automatic",revision:"policy"};
@@ -126,6 +127,76 @@ it("shared short names are guarded without selecting either off-scene profile",(
  f.entities[2]!.characterSheet!.background="OFFSCENE LEE PROFILE";f.entities[3]!.characterSheet!.background="OFFSCENE SMITH PROFILE";
  f.input.draft="Anna's promise";f.input.character![6]=f.input.draft;const r=compileGameContext(f.input);
  expect(r.text).toContain("multiple possible owners");expect(r.text).not.toContain("OFFSCENE LEE PROFILE");expect(r.text).not.toContain("OFFSCENE SMITH PROFILE");expect(r.report.total).toBeLessThanOrEqual(4000);
+});
+it.each([
+ ["Where is the blue notebook?","Leon keeps the blue notebook in the archive.","Leon promised Alex to deliver the blue notebook tomorrow morning, but only after Mira signs the receipt.","OFFSCENE NOTEBOOK PROFILE: Leon keeps the blue notebook in the archive."],
+ ["Где синий блокнот?","Леон хранит синий блокнот в архиве.","Леон обещал передать синий блокнот Алексу завтра утром, но только после того, как Мира подпишет расписку.","ВНЕСЦЕННЫЙ ПРОФИЛЬ БЛОКНОТА: Леон хранит синий блокнот в архиве."],
+] as const)("an object question retrieves the matching off-scene profile plus its owned item, promise and full condition: %s",(draft,location,promise,profile)=>{
+ const f=fixture(6000,4),leon=f.entities[2]!;leon.name=draft.startsWith("Где")?"Леон":"Leon";
+ leon.characterSheet!.background=profile;f.entities[3]!.characterSheet!.background="UNRELATED OFFSCENE PROFILE";
+ const holding={text:location,quote:location,kind:"event" as const,claim:{key:"leon.notebook.location",value:location,scope:"state" as const,lifetime:"persistent" as const}};
+ const task={text:promise,quote:promise,kind:"promise" as const,task:{key:"leon.notebook.delivery",title:draft.startsWith("Где")?"передать синий блокнот":"deliver the blue notebook",status:"open" as const}};
+ f.input.story!.facts=[holding,task];
+ f.input.story!.episodeSources=["notebook-location","notebook-promise"];
+ f.input.story!.roleSeeds=[
+  roleSeed(holding,{version:1,sourceRevisionId:"notebook-location",quote:location,roles:{speaker:{id:leon.id,name:leon.name}}}),
+  roleSeed(task,{version:1,sourceRevisionId:"notebook-promise",quote:promise,roles:{promisor:{id:leon.id,name:leon.name}}}),
+ ];
+ f.input.draft=draft;f.input.character![6]=draft;
+ const before=structuredClone(f.input),r=compileGameContext(f.input),memory=r.text.split("<deeprole_story_memory>")[1]?.split("</deeprole_story_memory>")[0]??"";
+ expect(r.text).toContain(profile);expect(r.text).not.toContain("UNRELATED OFFSCENE PROFILE");
+ expect(memory).toContain(location);expect(memory).toContain(promise);expect(memory).toContain('"status":"open"');
+ expect(memory).toContain(draft.startsWith("Где")?"но только после того":"only after Mira signs the receipt");expect(r.report.total).toBeLessThanOrEqual(6000);expect(f.input).toEqual(before);
+});
+it("shared item wording keeps every matching off-scene profile as a separate candidate",()=>{
+ const f=fixture(5000,5);f.entities[2]!.characterSheet!.background="Leon keeps the brass notebook.";f.entities[3]!.characterSheet!.background="Nora keeps the brass notebook.";
+ f.input.draft="Where is the brass notebook?";f.input.character![6]=f.input.draft;
+ const r=compileGameContext(f.input);expect(r.text).toContain("Leon keeps the brass notebook.");expect(r.text).toContain("Nora keeps the brass notebook.");
+ expect(r.text).toContain("relevance does NOT prove item ownership");expect(r.report.total).toBeLessThanOrEqual(5000);
+});
+it("does not fetch a missing character from generic chatter or an unresolved pronoun",()=>{
+ const f=fixture(5000,4);f.entities[2]!.characterSheet!.background="Leon keeps the blue notebook in the archive.";
+ f.input.draft="I walk to the archive.";f.input.character![6]=f.input.draft;expect(compileGameContext(f.input).text).not.toContain("Leon keeps the blue notebook");
+ f.input.draft="Where is her blue notebook?";f.input.character![6]=f.input.draft;expect(compileGameContext(f.input).text).not.toContain("Leon keeps the blue notebook");
+});
+it.each([
+ ["Что мы знаем о медном компасе?","ВНЕСЦЕННЫЙ КОМПАС: Илья хранит медный компас в обсерватории."],
+ ["Что помнишь о медном компасе?","ВНЕСЦЕННЫЙ КОМПАС: Илья хранит медный компас в обсерватории."],
+ ["What do we know about the blue notebook?","OFF-SCENE NOTEBOOK: Leon keeps the blue notebook in the archive."],
+ ["Do you remember the blue notebook?","OFF-SCENE NOTEBOOK: Leon keeps the blue notebook in the archive."],
+ ["Can you tell me about the silver key?","OFF-SCENE KEY: Nora carries the silver key in a canvas pouch."],
+ ["Напомни про медный компас","ВНЕСЦЕННЫЙ КОМПАС: Илья хранит медный компас в обсерватории."],
+] as const)("natural explicit object inquiry retrieves a matching off-scene profile: %s",(draft,expected)=>{
+ const f=fixture(5000,4);f.entities[2]!.characterSheet!.background=expected;f.entities[3]!.characterSheet!.background="UNRELATED OFFSCENE PROFILE";
+ f.input.draft=draft;f.input.character![6]=draft;const r=compileGameContext(f.input);
+ expect(r.text).toContain(expected);expect(r.text).not.toContain("UNRELATED OFFSCENE PROFILE");expect(r.report.total).toBeLessThanOrEqual(5000);
+});
+it.each([
+ ["We talked about the blue notebook earlier.","Leon keeps the blue notebook in the archive."],
+ ["I remember the blue notebook.","Leon keeps the blue notebook in the archive."],
+ ["What do we know about her notebook?","Leon keeps the blue notebook in the archive."],
+] as const)("natural recall or unresolved references do not broaden off-scene profile retrieval: %s",(draft,source)=>{
+ const f=fixture(5000,4);f.entities[2]!.characterSheet!.background=source;
+ f.input.draft=draft;f.input.character![6]=draft;
+ expect(compileGameContext(f.input).text).not.toContain(source);
+});
+it.each([
+ ["Где лежит медный компас?","Илья хранит медный компас в обсерватории.","Илья обещал вернуть компас Вере после того, как колокол прозвонит дважды.","ВНЕСЦЕННЫЙ КОМПАС: Илья хранит медный компас в обсерватории."],
+ ["Who has the silver key?","Nora carries the silver key in a canvas pouch.","Nora promised Ada to return the key after the bell rings twice.","OFF-SCENE KEY: Nora carries the silver key in a canvas pouch."],
+] as const)("independent off-scene object query retains a differently phrased profile and its promise condition: %s",(draft,location,promise,profile)=>{
+ const f=fixture(6000,4),person=f.entities[2]!;
+ person.name=draft.startsWith("Где")?"Илья":"Nora";person.characterSheet!.background=profile;
+ const locationFact={text:location,quote:location,kind:"event" as const,claim:{key:"offscene.object.location",value:location,scope:"state" as const,lifetime:"persistent" as const}};
+ const promiseFact={text:promise,quote:promise,kind:"promise" as const,task:{key:"offscene.object.return",title:draft.startsWith("Где")?"вернуть компас":"return the key",status:"open" as const}};
+ f.input.story!.facts=[locationFact,promiseFact];f.input.story!.episodeSources=["offscene-location","offscene-promise"];
+ f.input.story!.roleSeeds=[
+  roleSeed(locationFact,{version:1,sourceRevisionId:"offscene-location",quote:location,roles:{speaker:{id:person.id,name:person.name}}}),
+  roleSeed(promiseFact,{version:1,sourceRevisionId:"offscene-promise",quote:promise,roles:{promisor:{id:person.id,name:person.name}}}),
+ ];
+ f.input.draft=draft;f.input.character![6]=draft;
+ const r=compileGameContext(f.input),memory=r.text.split("<deeprole_story_memory>")[1]?.split("</deeprole_story_memory>")[0]??"";
+ expect(r.text).toContain(profile);expect(memory).toContain(location);expect(memory).toContain(promise);expect(memory).toContain('"status":"open"');
+ expect(r.report.total).toBeLessThanOrEqual(6000);
 });
 it("named groups retain their descriptions and member context",()=>{
  const f=fixture(4000,4);f.entities[3]!.characterSheet!.background="GROUP MEMBER PROFILE";

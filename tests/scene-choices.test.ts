@@ -16,6 +16,15 @@ function sync(locale: "ru" | "en" = "ru", enabled = true, generating = false) {
 }
 const host = () => document.querySelector<HTMLElement>("[data-deeprole-choices-host]");
 const recovery = () => document.querySelector<HTMLElement>("[data-deeprole-choices-recovery]");
+it('suppresses both recovery and supplied choices only for a proven excluded reply', () => {
+  const row=answer('Hypothesis. '+payload);
+  const presentation={pinSceneChoices:false,pinPortraits:false,onToggle:()=>{},allowReply:(node:HTMLElement)=>node!==row};
+  syncSceneChoiceCards(true,false,'ru',pick,document,{busy:false,onRequest:request},presentation);
+  expect(host()).toBeNull();expect(recovery()).toBeNull();
+  presentation.allowReply=()=>true;
+  syncSceneChoiceCards(true,false,'ru',pick,document,{busy:false,onRequest:request},presentation);
+  expect(host()).not.toBeNull();expect(request).not.toHaveBeenCalled();
+});
 
 beforeEach(() => {
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });

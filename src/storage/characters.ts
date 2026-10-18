@@ -18,6 +18,8 @@ import { currentStoryProfileEntities } from "../core/story-profile-view";
 import { PROFILE_FIELDS } from "../core/character-profile";
 import { assertWorldGameWriter } from "../core/world-game";
 import { boundStory } from "../core/story-continuation";
+import { validStoryDispatchCapture } from "../core/story-dispatch-capture";
+import { nativeStoryMessageKey, validNativeStoryId } from "../core/story-transport";
 import { storyReplyProse } from "../core/story-update";
 
 export interface CharacterScope { worldId: string; chatId: string; chatUrl: string; base: string; replyText?: string; replyIdentity?: string; replyCompletedAt?: number }
@@ -123,6 +125,11 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
  * inside the same transaction that records and selects the resulting effects. */
 export function planCharacterTurn(all: DataRecord[], scope: CharacterScope, turn: CharacterTurn, actions: string[] = DEFAULT_ACTIONS, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false, chronicle = false) {
     const { binding, entities, scene } = current(all, scope);
+    // A model cannot restore write authority by omitting its request ID. Match
+    // the trusted native assistant link as well; text similarity is never proof.
+    let nativeReply: string | undefined;
+    try { const key: unknown = JSON.parse(scope.replyIdentity ?? 'null'); if (Array.isArray(key) && key.length === 2 && ['message', 'virtual'].includes(key[0]) && validNativeStoryId(key[1])) nativeReply = nativeStoryMessageKey(key[1]); } catch { /* No native proof. */ }
+    if (all.some(row => row.kind === 'dispatch' && validStoryDispatchCapture(row.data) && row.data.worldId === scope.worldId && row.data.bindingId === binding.id && row.data.identity.chatId === scope.chatId && row.data.purpose === 'out-of-character' && (turn.request === row.id || !!nativeReply && row.data.wire.link?.assistantMessageKey === nativeReply))) throw Error('character-read-only');
     // A replay-owned scene must not be overwritten by the legacy DOM writer.
     // An unselected checkpoint does not disable ordinary roleplay updates.
     if (!chronicle && storySceneOwner(all, binding, scope.worldId)) throw new Error("character-story-managed");

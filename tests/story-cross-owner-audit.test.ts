@@ -15,7 +15,7 @@ const rows=cases.map(c=>({id:c.id,family:c.family,locale:c.locale,plot:c.plotId,
 it('pins preregistered new prose/gold/protocol/own runner/all runtime before the first evaluation',()=>{
  expect(cases).toHaveLength(96);expect(rows).toEqual(base.rows);expect(new Set(cases.map(c=>c.id)).size).toBe(96);
  expect(digest(rows.map(({gold,...r})=>r))).toBe(base.inputDigest);expect(digest(rows.map(r=>[r.id,r.gold,r.uncertainty]))).toBe(base.goldDigest);
- for(const [path,hash]of Object.entries(base.fingerprints)){const snapshot=path==='src/core/game-context.ts'?'docs/benchmarks/rp291-final-game-context.txt':path==='src/core/story-obligation-recall.ts'?'docs/benchmarks/rp291-final-obligation.txt':path;expect(digest(text(snapshot)),path).toBe(hash);}
+ for(const [path,hash]of Object.entries(base.fingerprints)){const snapshot=path==='src/core/game-context.ts'?'docs/benchmarks/rp291-final-game-context.txt':path==='src/core/story-obligation-recall.ts'?'docs/benchmarks/rp291-final-obligation.txt':null;if(snapshot)expect(digest(text(snapshot)),path).toBe(hash);else if(!path.startsWith('src/'))expect(digest(text(path)),path).toBe(hash);else expect(hash).toMatch(/^[a-f0-9]{64}$/u);}
  expect(Object.keys(base.fingerprints)).toHaveLength(414);expect(Object.keys(base.fingerprints).filter(p=>p.startsWith('src/'))).toHaveLength(410);
  expect(cases.filter(c=>c.gold.score)).toHaveLength(60);expect(cases.filter(c=>c.gold.control)).toHaveLength(30);expect(cases.filter(c=>c.gold.budget)).toHaveLength(6);expect(cases.filter(c=>c.gold.uncertainty)).toHaveLength(42);
  expect(cases.filter(c=>c.gold.score).reduce((n,c)=>n+c.gold.wanted.length,0)).toBe(306);

@@ -1,6 +1,9 @@
 import { readJsonFile } from "../../core/read-json-file";
 import { navigationText, type SettingsSection } from "../../core/navigation-i18n";
 import { SettingsNavigation } from "../shared/SettingsNavigation";
+import { LearningGuide, WelcomeFlow, useLearning } from "../shared/LearningGuide";
+import { LEARNING_KEY } from "../../storage/learning";
+import { learningText } from "../../core/learning";
 import { Select } from "../shared/Select";
 import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
@@ -131,6 +134,9 @@ interface PageState {
 const EMPTY_PAGE: PageState = { chatId: null, chatUrl: "", messageCount: 0, compatible: false };
 
 export function App() {
+  const learning = useLearning();
+  const [guideHub, setGuideHub] = useState(false);
+  const [guideRequested, setGuideRequested] = useState(false);
   useEffect(() => {
     const stop = observePhotoImages(document, id => repository.readPhoto(id));
     const clear = setPortraitPhotoStorage(image => repository.storePhoto(image));
@@ -299,7 +305,10 @@ export function App() {
       if (message.type === "DR_SERVICE_RESULT" && message.outcome === "no-changes") setToast(assistantText(settings.locale, "noChanges"));
     };
     browser.runtime.onMessage.addListener(listener);
-    const storageListener = () => { void refresh(); void refreshPage(); };
+    const storageListener = (changes: Record<string, unknown>, area: string) => {
+      if (area === 'local' && Object.keys(changes).every(key => key === LEARNING_KEY)) return;
+      void refresh(); void refreshPage();
+    };
     browser.storage.onChanged.addListener(storageListener);
     const tabListener = () => { void refreshPage(); };
     const navigationListener = (_id: number, change: { url?: string; status?: string }) => { if (change.url || change.status === "complete") void refreshPage(); };
@@ -474,7 +483,7 @@ export function App() {
     <HelpButton className="button" onClick={() => void refresh()}>{experienceText(settings.locale, "retryMenu")}</HelpButton>
     <a className="button" href={browser.runtime.getURL("/recovery.html")} target="_blank" rel="noreferrer">{experienceText(settings.locale, "checkExtension")}</a>
   </main>;
-  if (loading) return <LoadingScreen />;
+  if (loading || !learning.ready) return <LoadingScreen />;
 
   if (locked) {
     return (
@@ -488,10 +497,13 @@ export function App() {
 
   if (!settings.onboardingComplete) {
     return (
-      <HelpLocale.Provider value={settings.locale}><Onboarding
-        t={t}
-        onFinish={async () => {
+      <HelpLocale.Provider value={settings.locale}><WelcomeFlow
+        locale={settings.locale} animations={settings.animationsEnabled} step={learning.progress.welcomeStep}
+        onStep={step => learning.update({ welcomeStep: step })}
+        onLocale={locale => persistSettings({ ...settings, locale })}
+        onFinish={async guided => {
           await persistSettings({ ...settings, onboardingComplete: true });
+          if (guided) { learning.update({ run: { chapter: 'first-play', step: 0 } }); setGuideRequested(true); }
         }}
       /></HelpLocale.Provider>
     );
@@ -505,12 +517,13 @@ export function App() {
           <strong>DeepRole</strong>
           <small>{t("privacyNote")}</small>
         </div>
+        <TooltipButton className="icon-button dr-guide-launch" aria-label={learningText(settings.locale, 'guide')} onClick={() => setGuideHub(true)}><BookOpen size={19}/></TooltipButton>
         {embeddedMenu
           ? <button className="menu-close" type="button" aria-label={t("close")} title={t("close")} onClick={() => window.parent.postMessage({ source: "deeprole-menu", type: "CLOSE" }, "*")}><X /></button>
           : <div className={`site-status ${page.compatible ? "is-online" : ""}`} title={page.compatible ? t("siteConnected") : t("siteDisconnected")}><span /></div>}
       </header>
 
-      <main className="app-main">
+      <main className="app-main" data-dr-guide={`page-${activeTab}`}>
         {settingsSaveError && <p className="error-text dr-workspace-notice" role="alert">{settings.locale === "ru" ? "Настройки не сохранены. Проверьте доступ к хранилищу и повторите изменение." : "Settings were not saved. Check storage access and try the change again."}</p>}
         {settingsSaving && <p role="status">{settings.locale === "ru" ? "Сохраняем настройки…" : "Saving settings…"}</p>}
         {scene.worldId && page.chatId && worlds.find(w=>w.id===scene.worldId)?.sharedGame && <WorldResetSetup key={scene.worldId} worldId={scene.worldId} worldName={worlds.find(w=>w.id===scene.worldId)!.name} locale={settings.locale} game={worlds.find(w=>w.id===scene.worldId)!.sharedGame!} chatId={page.chatId} blocked={!!page.generating} open={resetDialogOpen} onOpenChange={setResetDialogOpen} hideLauncher requestedReviewId={requestedResetReview}/>}
@@ -539,7 +552,8 @@ export function App() {
           />
         )}
 
-        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary>{mt("continue")}</summary>
+        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary data-dr-guide="continuation-toggle">{mt("continue")}</summary>
+          <div data-dr-guide="continuation-content">
           <HandoffView
             t={t}
             locale={settings.locale}
@@ -555,6 +569,7 @@ export function App() {
               await refresh();
             }}
           />
+          </div>
         </details></div>}
 
         {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
@@ -573,10 +588,10 @@ export function App() {
 
       {exportRequest && <ExportDialog locale={settings.locale} worlds={worlds} worldId={exportRequest.worldId} onClose={() => setExportRequest(null)} />}
       <nav className="bottom-nav" aria-label={t("navigation")}>
-        <NavButton active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
-        <NavButton active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
-        <NavButton active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
-        <NavButton active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={openSettings} />
+        <NavButton guide="nav-overview" active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
+        <NavButton guide="nav-worlds" active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
+        <NavButton guide="nav-story" active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
+        <NavButton guide="nav-settings" active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={openSettings} />
       </nav>
 
       {bookEditor && (
@@ -615,6 +630,9 @@ export function App() {
       )}
 
       {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
+      <LearningGuide locale={settings.locale} progress={learning.progress} storageError={learning.error} update={learning.update}
+        hub={guideHub} onHub={setGuideHub} blocked={!!bookEditor || !!entryEditor || !!activeReview || !!exportRequest || resetDialogOpen}
+        requested={guideRequested} onStarted={() => setGuideRequested(false)}/>
     </div></HelpLocale.Provider>
   );
 }
@@ -644,7 +662,7 @@ function Overview(props: {
   const enabledEntries = props.entries.filter((entry) => entry.enabled && (!entry.bookId || props.books.some((book) => book.id === entry.bookId && book.active))).length;
   return <div className="view-stack play-view">
     <div className="view-title"><div><h1>{mt("play")}</h1><p className="view-subtitle">{x("memoryCycle")}</p></div></div>
-    <section className="play-world-card">
+    <section className="play-world-card" data-dr-guide="play-world">
       <div className="eyebrow"><Globe2 size={13} />{props.worldName ? mt("attached") : mt("start")}</div>
       {props.page.compatible && props.controls}
       {!props.worldName && <p>{mt("startHint")}</p>}
@@ -878,7 +896,7 @@ function SettingsView(props: {
 
         </SettingsCard>
       </div>
-      <div className="dr-settings-page" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw Object.assign(new Error(result?.error ?? "failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers }); return result.models; }} /></div>
+      <div className="dr-settings-page" data-dr-guide="settings-images-content" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw Object.assign(new Error(result?.error ?? "failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers }); return result.models; }} /></div>
       <div className="dr-settings-page" hidden={section !== "memory"}>
       <SettingsCard icon={<BrainCircuit />} title={u("memorySettings")}>
         <MemorySelectionSettings key={props.world?.id ?? "global"} locale={props.settings.locale} world={props.world} settings={props.settings} onSave={async (values, expected) => {
@@ -929,7 +947,7 @@ function SettingsView(props: {
 
       </SettingsCard>
       </div>
-      <div className="dr-settings-page" hidden={section !== "data"}>
+      <div className="dr-settings-page" data-dr-guide="settings-data-content" hidden={section !== "data"}>
       <SettingsCard icon={<FileKey2 />} title={u("backup")}>
         <p className="setting-copy">{u("backupHint")}</p>
         <label className="field-label"><span className="help-field-title">{u("backupPassword")}</span><input className="input" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
@@ -1015,14 +1033,11 @@ function VaultUnlock(props: { onUnlocked: () => void; onClose?: () => void; t: R
   }
 }
 
-function Onboarding(props: { t: ReturnType<typeof useTranslator>; onFinish: () => void }) {
-  return <div className="onboarding"><div className="onboarding-brand"><div className="brand-mark large"><span /></div><strong>DeepRole</strong></div><div className="onboarding-visual"><Globe2 /></div><h1>{props.t("welcomeTitle")}</h1><p>{props.t("welcomeText")}</p><div className="onboarding-actions"><HelpButton className="button primary" onClick={props.onFinish}>{props.t("finish")}<ChevronRight /></HelpButton></div></div>;
-}
 
 
 function SettingsCard(props: { icon: React.ReactNode; title: string; children: React.ReactNode; locale?: import("../../core/types").Locale; help?: string }) { return <HelpSection className="settings-card"><header>{props.icon}{props.help ? <SettingsHelp locale={props.locale ?? "ru"} title={props.title} text={props.help} heading/> : <h2>{props.title}</h2>}</header><div>{props.children}</div></HelpSection>; }
 function EmptyState(props: { icon: React.ReactNode; text: string; action?: string; onAction?: () => void }) { return <div className="empty-state"><div>{props.icon}</div><p>{props.text}</p>{props.action && <HelpButton className="button secondary" onClick={props.onAction}>{props.action}</HelpButton>}</div>; }
-function NavButton(props: { active: boolean; label: string; icon: React.ReactNode; badge?: number; onClick: () => void }) { return <HelpButton className={props.active ? "active" : ""} aria-current={props.active ? "page" : undefined} onClick={props.onClick} aria-label={props.label}>{props.icon}<span>{props.label}</span>{!!props.badge && <span className="dr-story-inbox-count" aria-hidden="true">{props.badge}</span>}</HelpButton>; }
+function NavButton(props: { guide?: string; active: boolean; label: string; icon: React.ReactNode; badge?: number; onClick: () => void }) { return <HelpButton data-dr-guide={props.guide} className={props.active ? "active" : ""} aria-current={props.active ? "page" : undefined} onClick={props.onClick} aria-label={props.label}>{props.icon}<span>{props.label}</span>{!!props.badge && <span className="dr-story-inbox-count" aria-hidden="true">{props.badge}</span>}</HelpButton>; }
 function LoadingScreen() { return <div className="center-screen"><div className="brand-mark large pulse"><span /></div></div>; }
 function useTranslator() { return (key: MessageKey, vars?: Record<string, string | number>) => translate("en", key, vars); }
 

@@ -1,4 +1,4 @@
-import { deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId, outgoingParentMessageId, replaceOutgoingUserText } from "../core/request-injection";
+import { contextHandshakeTimeoutMs, deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId, outgoingParentMessageId, replaceOutgoingUserText } from "../core/request-injection";
 import { estimateChatHistory, readStoryHistory } from "../core/chat-history";
 import { readFieldHistory, validFieldHistoryQuery, type FieldHistoryQuery } from "../core/field-history";
 import { readStoryTransportIdentity, validNativeStoryId, nativeStoryMessageKey, validStoryTransportIdentity, type StoryTransportIdentity } from "../core/story-transport";
@@ -11,7 +11,7 @@ import { readStoryGameSnapshot } from "../core/story-game";
 export default defineUnlistedScript(() => {
   const originalFetch = window.fetch.bind(window);
   const SOURCE = "deeprole-page-bridge";
-  const pending = new Map<string, (value: string | null) => void>();
+  const pending = new Map<string, (value: { context: string | null; timedOut: boolean }) => void>();
   const captureRequests = new Set<string>();
   const editPreparations = new Map<string, { draft?: string; identity?: StoryTransportIdentity }>();
   const captureConfirmations = new Map<string, (ok: boolean) => void>();
@@ -71,7 +71,7 @@ export default defineUnlistedScript(() => {
       if (draft !== undefined || identity) editPreparations.set(event.data.id, { draft, identity });
     }
     if (pending.has(event.data.id) && event.data.ok && event.data.capture === true) captureRequests.add(event.data.id);
-    pending.get(event.data.id)?.(event.data.ok && typeof event.data.context === "string" ? event.data.context : null);
+    pending.get(event.data.id)?.({ context: event.data.ok && typeof event.data.context === "string" ? event.data.context : null, timedOut: false });
   });
   async function readGameSnapshot(requestId: string, chatId: string) {
     const url = location.href, current = () => location.pathname.match(/\/chat\/(?:s\/)?([^/?#]+)/i)?.[1];
@@ -150,21 +150,21 @@ export default defineUnlistedScript(() => {
       window.postMessage({ source: SOURCE, type: story ? "STORY_HISTORY_RESULT" : "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
     }
   }
-  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string): Promise<string | null> {
+  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string): Promise<{ context: string | null; timedOut: boolean }> {
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {
         pending.delete(id);
         captureRequests.delete(id);
         editPreparations.delete(id);
-        resolve(null);
-      // Cold background/storage reads can exceed 1.5s under load. Await the
-      // request-specific snapshot, with a hard bound; never retry the message.
-      }, document.documentElement.dataset.deeproleStoryGame === "active" ? 12000 : 5000);
-      pending.set(id, (context) => { window.clearTimeout(timer); pending.delete(id); resolve(context); });
+        resolve({ context: null, timedOut: true });
+      // A live memory preview means the send is worth a fresh bounded read;
+      // without one, keep ordinary chats' fail-open delay short. Never retry.
+      }, contextHandshakeTimeoutMs(Boolean(document.documentElement.dataset.deeproleContext), document.documentElement.dataset.deeproleStoryGame === "active"));
+      pending.set(id, (result) => { window.clearTimeout(timer); pending.delete(id); resolve(result); });
       window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId, storyIdentity: storyIdentity ?? null, ...(captureTransport ? { captureTransport } : {}), ...(editNativeKey ? { editNativeKey } : {}) }, "*");
     });
   }
-  function status(ok: boolean, id?: string, url = location.href, httpStatus?: number) { window.postMessage({ source: SOURCE, type: "INJECTION_STATUS", ok, id, url, ...(httpStatus !== undefined ? { httpStatus } : {}) }, "*"); }
+  function status(ok: boolean, id?: string, url = location.href, httpStatus?: number, reason?: string) { window.postMessage({ source: SOURCE, type: "INJECTION_STATUS", ok, id, url, ...(httpStatus !== undefined ? { httpStatus } : {}), ...(!ok && reason ? { reason } : {}) }, "*"); }
   function serviceFailed(id?: string) { if (id) window.postMessage({ source: SOURCE, type: "SERVICE_REQUEST_FAILED", id }, "*"); }
   const continuationPaused = () => document.documentElement.dataset.deeproleTransferPending === "active";
   function supportedUrl(url: string) { try { return new URL(url, location.href).origin === location.origin && looksLikeChatUrl(url); } catch { return false; } }
@@ -194,28 +194,33 @@ export default defineUnlistedScript(() => {
     const id = crypto.randomUUID(); const url = location.href;
     const captured = { ...unchanged, id, url, dispatch: captureDispatch(body, id) };
     const draft = outgoingUserText(body);
-    if (draft === null) { if (document.documentElement.dataset.deeproleContext) status(false); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
+    if (draft === null) { if (document.documentElement.dataset.deeproleContext) status(false, id, url, undefined, "unsupported-request-shape"); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
     const value = JSON.parse(body), editedId = value?.message_id;
     const editNativeKey = editing && !readStoryTransportIdentity(body) && outgoingChatId(body) && validNativeStoryId(typeof editedId === "number" && Number.isSafeInteger(editedId) ? String(editedId) : editedId) && typeof value.prompt === "string" ? nativeStoryMessageKey(String(editedId)) : undefined;
-    const context = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
+    const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
+    const context = contextResponse.context;
     if (continuationPaused()) { captureRequests.delete(id); editPreparations.delete(id); return { ...captured, blocked: true }; }
     const edit = editPreparations.get(id); editPreparations.delete(id);
     if (editing && edit?.identity?.chatId === outgoingChatId(body)) captured.dispatch = { requestId: id, identity: edit.identity };
-    if (context === null || location.href !== url) { captureRequests.delete(id); status(false, id, url); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
+    if (context === null || location.href !== url) {
+      captureRequests.delete(id);
+      const reason = location.href !== url ? "page-changed" : contextResponse.timedOut ? "context-timeout" : "context-unavailable";
+      status(false, id, url, undefined, reason); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict };
+    }
     let result = { ...captured };
     try {
       if (context) {
         const cleanBody = editing && edit?.draft !== undefined ? replaceOutgoingUserText(body, edit.draft).body : body;
         const injected = injectIntoJsonBody(cleanBody, context);
-        if (!injected.changed) status(false, id, url);
+        if (!injected.changed) status(false, id, url, undefined, injected.failure ?? "unsupported-request-shape");
         result = { ...captured, body: injected.body, attached: injected.changed };
       }
-    } catch { status(false, id, url); }
+    } catch { status(false, id, url, undefined, "invalid-request"); }
     if (captureRequests.delete(id) && captured.dispatch) {
       const text = outgoingUserText(result.body);
       if (text !== null) await confirmCapture(captured.dispatch, transport, text);
     }
-    if (location.href !== url) { status(false, id, url); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
+    if (location.href !== url) { status(false, id, url, undefined, "page-changed"); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
     if (strict && !result.attached) { memoryBlocked(body, url); return { ...result, blocked: true }; }
     return result;
   }
@@ -247,7 +252,7 @@ export default defineUnlistedScript(() => {
         dispatch = prepared.dispatch;
         nextInput = new Request(input, { body: prepared.body }); attached = prepared.attached;
       }
-    } catch { status(false); blocked = continuationPaused() || document.documentElement.dataset.deeproleStrictMemory === "active"; if (blocked && originalBody !== undefined) memoryBlocked(originalBody); }
+    } catch { status(false, undefined, location.href, undefined, "preparation-failed"); blocked = continuationPaused() || document.documentElement.dataset.deeproleStrictMemory === "active"; if (blocked && originalBody !== undefined) memoryBlocked(originalBody); }
     if (blocked) throw new DOMException("DeepRole paused sending: memory unavailable", "AbortError");
     // Don't consume a queued handoff on an aborted or rejected network request.
     // The network call stays outside the preparation catch: a failure is not a retry.
@@ -304,7 +309,7 @@ export default defineUnlistedScript(() => {
       if (!this.asynchronous) {
         if (!isDeepRoleServiceBody(body) && continuationPaused()) throw new DOMException("DeepRole transfer still needs saving", "InvalidStateError");
         if (!isDeepRoleServiceBody(body) && document.documentElement.dataset.deeproleStrictMemory === "active") { memoryBlocked(body); throw new DOMException("DeepRole paused synchronous sending", "InvalidStateError"); }
-        if (document.documentElement.dataset.deeproleContext) status(false);
+        if (document.documentElement.dataset.deeproleContext) status(false, undefined, location.href, undefined, "synchronous-request");
         const tracker = createStoryDispatchTracker(this.deepRoleMethod === "POST" ? captureDispatch(body, crypto.randomUUID()) : undefined, "xhr", reportDispatch);
         tracker?.start();
         try { super.send(body); tracker?.headers(this.status); } catch (error) { tracker?.fail("network"); throw error; }
@@ -351,10 +356,10 @@ export default defineUnlistedScript(() => {
         for (const event of ["error", "timeout", "abort"]) this.addEventListener(event, failed);
         this.addEventListener("loadend", ended);
         this.storyDispatch = tracker; this.nativeStream = stream; tracker?.start();
-        try { super.send(prepared.body); } catch { tracker?.fail("network"); stream?.fail("network"); if (this.storyDispatch === tracker) this.storyDispatch = null; if (this.nativeStream === stream) this.nativeStream = null; this.finishService(true); status(false, prepared.id, prepared.url); }
+        try { super.send(prepared.body); } catch { tracker?.fail("network"); stream?.fail("network"); if (this.storyDispatch === tracker) this.storyDispatch = null; if (this.nativeStream === stream) this.nativeStream = null; this.finishService(true); status(false, prepared.id, prepared.url, undefined, "preparation-failed"); }
       }).catch(() => {
         if (generation !== this.generation) return;
-        status(false); this.finishService(true);
+        status(false, undefined, location.href, undefined, "preparation-failed"); this.finishService(true);
         if (document.documentElement.dataset.deeproleStrictMemory === "active" && !isDeepRoleServiceBody(body)) {
           memoryBlocked(body); this.dispatchEvent(new ProgressEvent("error")); this.dispatchEvent(new ProgressEvent("loadend")); return;
         }

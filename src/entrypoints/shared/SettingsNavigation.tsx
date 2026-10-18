@@ -15,20 +15,20 @@ export function SettingsNavigation({ locale, section, onSelect, worldName }: {
     if (initial.current) { initial.current = false; return; }
     heading.current?.focus();
   }, [section]);
-  const row = (id: Exclude<SettingsSection, "home">) => { const Icon = icons[id]; return <button key={id} type="button" className="dr-settings-route" aria-label={t(id)} onClick={() => onSelect(id)}>
+  const row = (id: Exclude<SettingsSection, "home">) => { const Icon = icons[id]; return <button data-dr-guide={`settings-${id}`} key={id} type="button" className="dr-settings-route" aria-label={t(id)} onClick={() => onSelect(id)}>
     <Icon size={19} aria-hidden="true"/><span><strong>{t(id)}</strong><small>{t(`${id}Hint`)}</small></span><ChevronRight size={18} aria-hidden="true"/>
   </button>; };
-  return <section className="dr-settings-directory" aria-label={t("settings")}>
+  return <section className="dr-settings-directory" data-dr-guide="settings-directory" aria-label={t("settings")}>
     {section === "home" ? <>
       <h2 ref={heading} tabIndex={-1}>{t("back")}</h2><p>{t("intro")}</p>
       <nav aria-label={t("settings")}>
         <section className="dr-settings-group"><h3>{t("everyday")}</h3>{row("app")}{row("appearance")}</section>
         <section className="dr-settings-group"><h3>{t("optional")}</h3>{row("characters")}{row("images")}</section>
         <section className="dr-settings-group"><h3>{t("dataGroup")}</h3>{row("safety")}{row("data")}</section>
-        <details className="dr-settings-advanced"><summary>{t("advanced")}</summary><p>{t("advancedHint")}</p>{row("memory")}<details><summary>{t("support")}</summary><p>{t("supportHint")}</p>{row("diagnostics")}</details></details>
+        <details className="dr-settings-advanced"><summary data-dr-guide="settings-advanced-toggle">{t("advanced")}</summary><p>{t("advancedHint")}</p>{row("memory")}<details><summary>{t("support")}</summary><p>{t("supportHint")}</p>{row("diagnostics")}</details></details>
       </nav>
     </> : <>
-      <button className="button secondary small" type="button" onClick={() => onSelect("home")}><ArrowLeft size={16} aria-hidden="true"/>{t("back")}</button>
+      <button data-dr-guide="settings-home" className="button secondary small" type="button" onClick={() => onSelect("home")}><ArrowLeft size={16} aria-hidden="true"/>{t("back")}</button>
       <h2 ref={heading} tabIndex={-1}>{t(section)}</h2><p>{t(`${section}Hint`)}</p>
       {(section === "app" || section === "appearance" || section === "safety") && <p className="dr-settings-scope">{t("globalScope")}</p>}
       {(section === "memory" || section === "characters") && <p className="dr-settings-scope">{worldName ? t(section === "memory" ? "worldScope" : "characterScope").replace("{name}", worldName) : t("defaultScope")}</p>}

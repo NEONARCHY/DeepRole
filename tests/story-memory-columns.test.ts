@@ -27,8 +27,9 @@ for(const locale of ['ru','en'] as const)it(`homogeneous records pay for the who
 });
 it('small data and a whole-prompt meter can keep the old format',()=>{
  const f=[{kind:'event' as const,text:'Short',quote:'Short'}];expect(formatStoryFacts(f,true,true,undefined,undefined,undefined,{columns:true})).toBe(formatStoryFacts(f,true,true));
- const large=budgetWorld('en',24,3),old=formatStoryFacts(large.facts,true,true);
- expect(formatStoryFacts(large.facts,true,true,undefined,undefined,undefined,{columns:true,measure:block=>block.includes('Self-contained table')?999999:0})).toBe(old);
+ const large=budgetWorld('en',24,3),measure=(block:string)=>block.includes('Self-contained table')?999999:0;
+ const old=formatStoryFacts(large.facts,true,true,undefined,undefined,undefined,{measure});
+ expect(formatStoryFacts(large.facts,true,true,undefined,undefined,undefined,{columns:true,measure})).toBe(old);
 });
 const invalid=[
  table(['kind','kind','text'],[['event','event','A']]),table(['kind','text','owner'],[['event','A','Nora']]),

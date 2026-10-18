@@ -1,6 +1,6 @@
 # Install DeepRole
 
-[Русская инструкция](../INSTALL.md) · [Download builds](../downloads/README.md)
+[Русская инструкция](../INSTALL.md) · [Download builds](../downloads/)
 
 ## Chrome, Brave or Edge
 

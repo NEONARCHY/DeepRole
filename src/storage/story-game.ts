@@ -196,7 +196,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
           const virtual = [...all.filter(r => r.id !== binding!.id && !prefixEffects.removed.some(x => x.kind === r.kind && x.id === r.id) && !prefixEffects.records.some(x => x.kind === r.kind && x.id === r.id)), ...prefixEffects.records, { kind: "binding" as const, id: binding!.id, data: prefixBinding }];
           const base = characterRevision(people(virtual, input.worldId, input.chatId), prefixScene);
           const parentSample = samples.get(sample.identity.nativeParentKey!);
-          const parentCapture = parentSample && matchingStoryAssistantCapture(matchingStoryUserCaptures(dispatches, dispatchScope, parentSample), sample);
+          const parentCapture = parentSample && matchingStoryAssistantCapture(matchingStoryUserCaptures(dispatches, dispatchScope, parentSample), sample, parentSample);
           const parsed = parseStoryUpdate(sample.content, { world: input.worldId, chat: input.chatId, branch: branch.id, base, entities: people(virtual, input.worldId, input.chatId), scene: prefixScene, requestId: parentCapture?.id });
           revision = { ...revision, updateDiagnostic: parsed.diagnostic }; write([storyRow(revision)]);
           const roleCapture = parentCapture?.origin === "local" && parentCapture.injection === "context" && parentCapture.purpose === "user-turn" && parentCapture.roleRoster !== undefined && parentCapture.wire.link?.assistantMessageKey === sample.identity.nativeMessageKey ? parentCapture : undefined;

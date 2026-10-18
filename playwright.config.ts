@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const port = Number(process.env.DEEPROLE_E2E_PORT ?? 4173);
+
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
@@ -9,12 +11,12 @@ export default defineConfig({
     { name: "firefox", use: { browserName: "firefox" } },
   ],
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: `http://127.0.0.1:${port}`,
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npx vite --host 127.0.0.1 --port 4173 --strictPort",
-    url: "http://127.0.0.1:4173/tests/fixtures/deepseek.html",
+    command: `npx vite --host 127.0.0.1 --port ${port} --strictPort`,
+    url: `http://127.0.0.1:${port}/tests/fixtures/deepseek.html`,
     reuseExistingServer: true,
   },
 });

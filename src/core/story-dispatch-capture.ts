@@ -9,6 +9,8 @@ import { validRoleRoster, type RolePerson } from "./story-role-binding";
 
 /** A durable outgoing-call journal, NOT a selected story request or event authority. */
 export interface StoryDispatchCapture {
+  /** One-shot UI mode observed before send; consume only on exact source confirmation. */
+  consumeNonStoryMode?: true;
   roleRoster?: RolePerson[];
   accompaniment?: StoryAutomationCapture;
   format: "deeprole-story-dispatch";
@@ -67,7 +69,9 @@ export function validStoryDispatchCapture(value: unknown): value is StoryDispatc
   const hasBranch = !!value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "storyBranchId");
   const hasAccompaniment = !!value && typeof value === "object" && Object.hasOwn(value, "accompaniment");
   const hasRoster = !!value && typeof value === "object" && Object.hasOwn(value, "roleRoster");
-  if (!shape(value, ["format", "contractVersion", "id", "worldId", "bindingId", "identity", "ownerTabId", "origin", "purpose", "transport", "sceneRevision", "originalDraft", "proposedContext", "injection", "started", "delivery", "wire", "createdAt", "updatedAt", ...(hasReply ? ["reply"] : []), ...(hasBranch ? ["storyBranchId"] : []), ...(hasAccompaniment ? ["accompaniment"] : []), ...(hasRoster ? ["roleRoster"] : [])])
+  const hasNonStoryMode = !!value && typeof value === "object" && Object.hasOwn(value, "consumeNonStoryMode");
+  if (!shape(value, ["format", "contractVersion", "id", "worldId", "bindingId", "identity", "ownerTabId", "origin", "purpose", "transport", "sceneRevision", "originalDraft", "proposedContext", "injection", "started", "delivery", "wire", "createdAt", "updatedAt", ...(hasReply ? ["reply"] : []), ...(hasBranch ? ["storyBranchId"] : []), ...(hasAccompaniment ? ["accompaniment"] : []), ...(hasRoster ? ["roleRoster"] : []), ...(hasNonStoryMode ? ["consumeNonStoryMode"] : [])])
+     || hasNonStoryMode && (value.consumeNonStoryMode !== true || value.purpose !== "out-of-character")
      || value.accompaniment !== undefined && !validStoryAutomationCapture(value.accompaniment)
      || value.roleRoster !== undefined && (!validRoleRoster(value.roleRoster) || value.purpose !== "user-turn")
      || value.format !== "deeprole-story-dispatch" || value.contractVersion !== 1 || !(value.worldId === null || id(value.worldId))

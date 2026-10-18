@@ -2,7 +2,7 @@
   <img src="public/icons/icon-128.png" width="76" alt="DeepRole icon">
   <h1>DeepRole</h1>
   <p>Keep your world, characters and story progress together in DeepSeek.</p>
-  <p><a href="downloads/README.md">Download</a> · <a href="docs/INSTALL.en.md">Install</a> · <a href="docs/README.ru.md">Русский</a></p>
+  <p><a href="downloads/">Download</a> · <a href="docs/INSTALL.en.md">Install</a> · <a href="docs/README.ru.md">Русский</a></p>
 </div>
 
 DeepRole is a browser extension for long-running roleplay stories in [DeepSeek](https://chat.deepseek.com/). Keep lore in a local library, give characters portraits and relationships, and choose your next move without losing track of what happened.
@@ -12,6 +12,8 @@ Photos are stored separately from profiles: name/text saves do not resend the im
 **New: automatic reply recovery with conversation continuity.** A captured reply replaced by DeepSeek's refusal reappears with a **Restored** label. Send your next message: DeepRole includes the recovered fragment automatically, with no extra recovery button. [How it works ↓](#restore-a-hidden-reply-and-continue-the-scene)
 
 **Automatic game accompaniment:** choose **Story → Game accompaniment → Automatic** to save supported played facts, find new people and append profile details during normal play. Conflicts and protected fields await review; original author lore stays intact. Existing installations retain review mode until you choose. Explicit lore-rewrite proposals still need approval. [Modes, examples and limits](docs/AUTOMATIC-MEMORY.md).
+
+**Optional square-bracket convention:** enable “[Brackets] mean out of character” in each world's editor. `[Remind me of the promise]` asks without changing the scene; `I open the door [describe slowly]` remains a game turn with explanatory guidance. Off by default, with no reclassification of past messages. [Examples and setup](docs/BRACKET-MESSAGE-MODE.md).
 
 **Restart from the original lore:** Story now offers a full reset plan prepared by DeepSeek in a temporary chat. Review starting relationships and memory cleanup, then confirm twice. Family ties and preexisting feelings can stay; portraits and references remain attached. The new game starts in an empty chat. [How it works](docs/WORLD-RESET.md).
 
@@ -293,7 +295,7 @@ Respect and thanks to [Better Deepseek (BDS)](https://github.com/EdgeTypE/better
 
 ## More help
 
-- [Download current packages](downloads/README.md)
+- [Download current packages](downloads/)
 - [Install and update](docs/INSTALL.en.md)
 - [Relationships and characteristics](docs/RELATIONSHIPS.md)
 - [Character and portrait details — Russian](docs/CHARACTERS.md)
@@ -313,4 +315,4 @@ npm run build
 npm run build:firefox
 ```
 
-The source and tests are in this repository; ready-to-install archives are in [downloads](downloads/README.md). Automated tests use synthetic scenes. They do not replace checking a live DeepSeek account: changes to the site's interface may require an extension update.
+The source and tests are in this repository; ready-to-install archives are in [downloads](downloads/). Automated tests use synthetic scenes. They do not replace checking a live DeepSeek account: changes to the site's interface may require an extension update.

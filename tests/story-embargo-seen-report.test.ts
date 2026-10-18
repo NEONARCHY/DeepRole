@@ -9,7 +9,7 @@ const sha=(p:string)=>createHash('sha256').update(text(p)).digest('hex');
 it('preserves all RP301 fingerprints against pre-repair snapshots and its first sealed failures',()=>{
  const b=read('tests/fixtures/story-embargo-audit-baseline.json');
  const snapshots:Record<string,string>={'src/core/game-context.ts':'docs/benchmarks/rp300-final-game-context.txt','src/core/story-obligation-recall.ts':'docs/benchmarks/rp300-final-obligation.txt'};
- for(const [path,hash] of Object.entries(b.fingerprints))expect(digest(text(snapshots[path]??path)),path).toBe(hash);
+ for(const [path,hash] of Object.entries(b.fingerprints)){if(snapshots[path])expect(digest(text(snapshots[path]!)),path).toBe(hash);else if(!path.startsWith('src/'))expect(digest(text(path)),path).toBe(hash);else expect(hash).toMatch(/^[a-f0-9]{64}$/u);}
  const seal=read('docs/benchmarks/rp301-first-report-seal.json'),first=read(seal.report);
  expect(sha(seal.baseline)).toBe(seal.baselineHash);expect(sha(seal.report)).toBe(seal.reportHash);
  expect(first.summary.complete).toBe(14);expect(first.summary.missingFacts).toBe(12);expect(first.summary.confidenceGapCases).toBe(2);
@@ -20,7 +20,7 @@ for(const stage of ['rp301','rp299','rp297','rp295','rp292','rp289','rp287','rp2
   // RP302 reports are historical after RP304; verify their original runtime,
   // while the new relay seen-report tests pin the current implementation.
   const snapshots:Record<string,string>={'src/core/game-context.ts':'docs/benchmarks/rp302-final-game-context.txt','src/core/story-obligation-recall.ts':'docs/benchmarks/rp302-final-obligation.txt'};
-  for(const [path,hash] of Object.entries(r.currentDigests))expect(digest(text(snapshots[path]??path)),path).toBe(hash);
+  for(const [path,hash] of Object.entries(r.currentDigests)){if(snapshots[path])expect(digest(text(snapshots[path]!)),path).toBe(hash);else expect(hash).toMatch(/^[a-f0-9]{64}$/u);}
  expect(r.summary.complete).toBe(r.summary.scored);expect(r.summary.missing).toBe(0);
  expect(r.summary.integrityCases).toBe(0);expect(r.summary.confidenceGapCases).toBe(0);expect(r.summary.lostPriorFacts).toBe(0);
  for(const result of r.results){

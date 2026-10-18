@@ -17,6 +17,17 @@ const user = (): NativeStorySample => ({ identity: { role: "user", nativeParentK
 const assistant = (): NativeStorySample => ({ identity: { role: "assistant", nativeParentKey: key("3"), nativeMessageKey: key("4") }, content: "Nora promised.", completion: "complete" });
 const match = (rows: StoryDispatchCapture[], u = user(), a = assistant()) => matchingStoryAssistantCapture(matchingStoryUserCaptures(rows, scope, u), a);
 
+it.each(['waiting','failed'] as const)('excludes only an exactly paired local OOC without SSE link (%s), without granting gameplay authority',phase=>{
+  const c=make();delete c.roleRoster;c.purpose='out-of-character';c.wire={phase,link:null,sawFinish:false,issue:phase==='failed'?'format':null};
+  expect(validStoryDispatchCapture(c)).toBe(true);
+  const u=user(),a=assistant(),before=structuredClone(c);
+  expect(matchingStoryAssistantCapture(matchingStoryUserCaptures([c],scope,u),a,u)?.purpose).toBe('out-of-character');expect(c).toEqual(before);
+  expect(matchingStoryAssistantCapture([c],a)).toBeUndefined();
+  expect(matchingStoryAssistantCapture([c],{...a,identity:{...a.identity,nativeParentKey:key('99')}},u)).toBeUndefined();
+  c.purpose='user-turn';expect(matchingStoryUserCaptures([c],scope,u)).toEqual([]);
+  c.purpose='out-of-character';c.origin='restored';expect(matchingStoryUserCaptures([c],scope,u)).toEqual([]);
+});
+
 it("uses an exact immutable wire pair, independent of record order", () => {
   const actual = make(), other = make(); other.id = "capture-other"; other.wire.link!.requestId = other.id; other.wire.link!.assistantMessageKey = key("99");
   expect(validStoryDispatchCapture(actual)).toBe(true); expect(validStoryDispatchCapture(other)).toBe(true);

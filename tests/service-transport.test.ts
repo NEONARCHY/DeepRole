@@ -80,7 +80,7 @@ describe("service transport lifecycle", () => {
     window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "LATE_RECORD" } }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]![1].body).toBe(original);
-    expect(posted.mock.calls.map((args: any[]) => args[0])).toContainEqual(expect.objectContaining({ type: "INJECTION_STATUS", ok: false, id: message.id }));
+    expect(posted.mock.calls.map((args: any[]) => args[0])).toContainEqual(expect.objectContaining({ type: "INJECTION_STATUS", ok: false, id: message.id, reason: "context-timeout" }));
   });
 
   it("releases a fetch service aborted after successful headers without consuming its response", async () => {

@@ -17,7 +17,7 @@ const HIDDEN = "[data-deeprole-choices-payload]";
 const RECOVERY = "[data-deeprole-choices-recovery]";
 const LOADING = "[data-deeprole-choices-loading]";
 export type ChoicePin = "pinSceneChoices" | "pinPortraits";
-export interface ChoicePresentation { adaptiveLayout?: boolean; pinSceneChoices: boolean; pinPortraits: boolean; onToggle: (key: ChoicePin) => void | Promise<void> }
+export interface ChoicePresentation { allowReply?: (row: HTMLElement) => boolean; adaptiveLayout?: boolean; pinSceneChoices: boolean; pinPortraits: boolean; onToggle: (key: ChoicePin) => void | Promise<void> }
 const managedCards = new WeakMap<ParentNode, Set<HTMLElement>>();
 const sourceRows = new WeakMap<HTMLElement, HTMLElement>();
 const inlineAnchors = new WeakMap<HTMLElement, HTMLElement>();
@@ -223,14 +223,16 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
   // enough that a fresh near-bottom check incorrectly says "not following".
   if (beforeConceal) beginFollowing(root, beforeConceal, wasNearBottom);
   concealChoicePayloads(root);
-  const current = currentChoice(root);
+  const candidate = currentChoice(root);
+  const current = candidate && presentation?.allowReply?.(candidate.row) !== false ? candidate : null;
   const signature = current?.signature ?? "";
   const active = !generating && current && dismissedChoice !== `${location.href}:${signature}` ? current : null;
   choiceCards(root).forEach((host) => {
     if (sourceRows.get(host) !== active?.row) { removeChoiceCard(host); managedCards.get(root)?.delete(host); }
     else host.style.display = generating ? "none" : "";
   });
-  const scene = latestSceneChoiceTarget(root);
+  const sceneCandidate = latestSceneChoiceTarget(root);
+  const scene = sceneCandidate && presentation?.allowReply?.(sceneCandidate.row) !== false ? sceneCandidate : null;
   const requestSource = recovery?.busy ? recovery.requestSignature ?? (previous?.busy ? previous.requestSource : previous?.signature) : undefined;
   const state: SettlingState = previous && previous.signature === scene?.signature ? previous : { signature: scene?.signature ?? "", changedAt: Date.now(), row: scene?.row, observedGeneration: previous?.row === scene?.row && !!previous?.observedGeneration };
   state.busy = !!recovery?.busy; state.requestSource = requestSource;

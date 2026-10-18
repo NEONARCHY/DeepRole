@@ -6,10 +6,12 @@ import type { MemoryEntry } from "./types";
 
 // Query framing, not facts or language understanding. Filtering changes only
 // this supplemental candidate score; none of these words are removed from data.
-const framing=uniqueTokens("what where when why how which do did does has have had can could would should me my we you our your now about remind reminder tell show list know known remember say said ask asked please give gave back continue continuation proceed go on next further happened happening occurred что чем где когда как кто кому какой какие какая какое каких почему зачем ли я мы ты вы мне нас наш мой твой сейчас напомни напомнить расскажи покажи перечисли пожалуйста известно знаем узнать спроси отдать отдал отдала отдали обратно дальше далее продолжай продолжить продолжим случилось произошло происходит");
+const framing=uniqueTokens("what where when why how which who do did does has have had can could would should me my we you our your now about remind reminder tell show list know known remember say said ask asked please give gave back continue continuation proceed go on next further happened happening occurred что чем где когда как кто кому какой какие какая какое каких почему зачем ли я мы ты вы мне нас наш мой твой сейчас напомни напомнить расскажи покажи перечисли пожалуйста известно знаем узнать спроси отдать отдал отдала отдали обратно дальше далее продолжай продолжить продолжим случилось произошло происходит");
 // Only a bounded, explicit information-request prefix. Ordinary narration,
 // name-led continuation and arbitrary language are not proof for tail pruning.
-const topicRequest=/^(?:please |пожалуйста )?(?:what|where|when|why|how|which|remind|tell|show|list|что|где|когда|почему|зачем|как|какой|какая|какие|напомни|расскажи|покажи|перечисли)(?= |$)/u;
+const topicRequest=/^(?:please |пожалуйста )?(?:what|where|when|why|how|which|who|remind|tell|show|list|что|где|когда|почему|зачем|как|кто|кому|какой|какая|какие|напомни|расскажи|покажи|перечисли)(?= |$)/u;
+const ownershipWord=(word:string)=>/^(?:own(?:s|ed|ing)?|owner(?:s|ship)?|belong(?:s|ed|ing)?|whose|владе(?:ю|ешь|ет|ем|ете|ют|ть|ние|ния|нию|нием)|владел(?:ец|ьц|иц)\p{L}*|собственник\p{L}*|принадлеж\p{L}*|чей|чья|чье|чьи|чь\p{L}*)$/u.test(word);
+const topicToken=(word:string)=>ownershipWord(word)?"__ownership__":word;
 const noMatch={score:(_:StoryFact)=>0,admission:undefined};
 const prepared=new WeakMap<MemoryEntry,{text:string;title:string;names:string;tokens:Set<string>}>();
 
@@ -21,14 +23,17 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
   const names=[...new Set([...excludedNames].map(normalizeText).filter(Boolean))].sort((a,b)=>b.length-a.length||a.localeCompare(b)),signature=names.join("\n");
   const pattern=names.length?new RegExp(`(^| )(?:${names.join("|")})(?= |$)`,"gu"):undefined;
   const mask=(text:string)=>{const value=normalizeText(text);return pattern?(" "+value+" ").replace(pattern,"$1#"):value;};
+  const normalizedQuery=normalizeText(mask(query));
+  const ownershipQuestion=/^(?:who owns |who is (?:the )?owner of |who does .+ belong to |(?:(?:do|does|did) (?:we|you|anyone) know )?whose |(?:is there|do we have) (?:any )?(?:evidence|proof|record|confirmation) (?:that )?.+ (?:belongs to|is owned by|owned by)|(?:does|did) (?:the )?(?:log|record|note|journal) (?:say|show|identify) (?:that )?.+ (?:belongs to|is owned by|owned by)|кто владеет |(?:(?:мы знаем|известно(?: ли)?) )?кому принадлежит |(?:(?:мы знаем|известно(?: ли)?|кто знает) )?(?:чей|чья|чье|чьи|чь\p{L}*) |(?:есть ли |есть )?(?:подтверждение|доказательство|запись|данные|сведения) (?:что |о том что ).+ (?:принадлежит|владеет|владелец))/u.test(normalizedQuery);
   // Recognize action forms BEFORE stemming (починить must not become an
   // unrecognized noun-like token). The existing action bonus owns that signal.
-  const requested=[...new Set(normalizeText(mask(query)).split(" ").filter(t=>!storyConceptSearch(t).concepts.length).flatMap(t=>[...uniqueTokens(t)]))].filter(t=>!framing.has(t));
+  const requested=[...new Set(normalizedQuery.split(" ").filter(t=>ownershipQuestion||!storyConceptSearch(t).concepts.length).flatMap(t=>ownershipQuestion&&ownershipWord(t)?["__ownership__"]:[...uniqueTokens(t)].map(topicToken)))].filter(t=>!framing.has(t));
   if(!requested.length)return noMatch;
   const tokens=(fact:StoryFact)=>{
     const text=fact.text,title=fact.task?.title??"",key=storyFactSearchEntry(fact),old=prepared.get(key);
     if(old&&old.text===text&&old.title===title&&old.names===signature)return old.tokens;
-    const value=new Set([...uniqueTokens(mask(text)),...uniqueTokens(mask(title))]);
+    const combined=mask(`${text} ${title}`),value=new Set([...uniqueTokens(combined)].map(topicToken));
+    if(normalizeText(combined).split(" ").some(ownershipWord))value.add("__ownership__");
     prepared.set(key,{text,title,names:signature,tokens:value});return value;
   };
   const frequency=new Map(requested.map(t=>[t,0]));
@@ -38,11 +43,16 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
   // All meaningful terms must exist, at least one must distinguish candidates,
   // and action-only/compound action requests keep the previous admission.
   // Coverage is checked AGAIN against whole facts actually admitted by budget.
-  const specific=topicRequest.test(normalizeText(query))&&total>0&&requested.every(term=>frequency.get(term)!>0)&&!storyConceptSearch(query,names).concepts.length;
+  const hasOwnership=frequency.get("__ownership__")!>0,hasObjectTerm=requested.some(term=>term!=="__ownership__"&&frequency.get(term)!>0);
+  const specific=(topicRequest.test(normalizeText(query))||ownershipQuestion)&&total>0&&(ownershipQuestion?hasOwnership&&hasObjectTerm:requested.every(term=>frequency.get(term)!>0))&&(!storyConceptSearch(query,names).concepts.length||ownershipQuestion);
   const admission=specific?{
     // An open obligation sharing even a common requested topic is not noise.
-    matches:(fact:StoryFact)=>weights.some(([term])=>tokens(fact).has(term))||fact.task?.status==="open"&&requested.some(term=>tokens(fact).has(term)),
-    covers:(selected:StoryFact[])=>requested.every(term=>selected.some(fact=>tokens(fact).has(term))),
+    matches:(fact:StoryFact)=>ownershipQuestion
+      ?tokens(fact).has("__ownership__")&&requested.some(term=>term!=="__ownership__"&&tokens(fact).has(term))
+      :weights.some(([term])=>tokens(fact).has(term))||fact.task?.status==="open"&&requested.some(term=>tokens(fact).has(term)),
+    covers:(selected:StoryFact[])=>ownershipQuestion
+      ?selected.some(fact=>tokens(fact).has("__ownership__")&&requested.some(term=>term!=="__ownership__"&&frequency.get(term)!==0&&tokens(fact).has(term)))
+      :requested.every(term=>selected.some(fact=>tokens(fact).has(term))),
   }:undefined;
   return {admission,score(fact:StoryFact){
     if(!total)return 0;

@@ -11,6 +11,10 @@ const roleKeys = ["speaker","recipient","promisor","planner","believer"] as cons
 const factFields = ["kind","text","sourceQuote","sourceQuoteRef","claim","task","sourceRoles","sourceRolesRef","sourceIdentity","episodeSource","episodeSourceRef","timeStatus"] as const;
 const COLUMN_FORMAT = "deeprole-memory-columns-v1";
 const COLUMN_GUIDE = 'Self-contained table: rows follow columns; null and omitted tail cells mean absent. Expand to objects, then resolve refs ONLY in THIS request. Keep all data exact; never output this transport in updates.';
+const PREFIX_FORMAT = "deeprole-memory-prefixes-v1";
+const PREFIX_GUIDE = 'Text prefixes: rows contain fact objects. text [p,s] means exact prefixes[p] followed by exact suffix s, with no added separator; string text is already complete. Expand texts before resolving other refs in rows or reasoning. Indices belong ONLY to this object. NEVER output this transport in fact proposals.';
+const PREFIX_TABLE_FORMAT = "deeprole-memory-prefix-table-v1";
+const PREFIX_TABLE_GUIDE = 'Prefix table: rows follow columns; null or omitted tail cells mean absent. Text prefixes: text [p,s] means exact prefixes[p] + exact suffix s, with no added separator; string text is complete. Expand text, then fields, then backward refs ONLY in THIS request. Keep every source and condition exact. NEVER output this transport in fact proposals.';
 const personKeys = ["id","name","sourceId","sourceName","unavailable"];
 const fail = (): never => { throw new Error("Invalid request-local memory reference"); };
 const copy = <T>(v:T):T => structuredClone(v);
@@ -23,11 +27,49 @@ function equal(a:unknown,b:unknown):boolean {
   if(Array.isArray(a)&&Array.isArray(b))return a.length===b.length&&a.every((v,i)=>equal(v,b[i]));
   return object(a)&&object(b)&&Object.keys(a).length===Object.keys(b).length&&Object.keys(a).every(k=>owns(b,k)&&equal(a[k],b[k]));
 }
+function expandText(text: unknown, prefixes: string[]): unknown {
+  if (!Array.isArray(text)) return text;
+  const [at, suffix] = text;
+  if (text.length !== 2 || typeof at !== 'number' || !Number.isInteger(at) || at < 0 || at >= prefixes.length || typeof suffix !== 'string') return fail();
+  return prefixes[at]! + suffix;
+}
+function columnTable(rows: Record<string, unknown>[]) {
+  const frequency = new Map(factFields.map(field => [field, rows.filter(row => owns(row, field)).length]));
+  const columns = ['kind', 'text', ...factFields.filter(field => field !== 'kind' && field !== 'text' && frequency.get(field)!).sort((a, b) => frequency.get(b)! - frequency.get(a)! || factFields.indexOf(a) - factFields.indexOf(b))];
+  return { format: COLUMN_FORMAT, columns, rows: rows.map(row => {
+    const cells = columns.map(field => owns(row, field) ? row[field] : null);
+    while (cells.length > 2 && cells.at(-1) === null) cells.pop();
+    return cells;
+  }) };
+}
 
 /** Strict transport reader, NOT a fact proposal validator or storage importer.
- * Only direct backward references in this exact array are accepted. It never
- * consults a previous request, the current roster or canonical storage. */
+ * Text parts refer only to this envelope's literal dictionary; field refs go
+ * directly backward within its rows. It never consults a previous request,
+ * the current roster or canonical storage. */
 export function decodeStoryMemory(value: unknown): StoryMemoryHint[] {
+  if (object(value) && value.format === PREFIX_TABLE_FORMAT) {
+    if (!keys(value, ['format', 'prefixes', 'columns', 'rows']) || Object.keys(value).length !== 4 ||
+      !Array.isArray(value.prefixes) || !value.prefixes.length || value.prefixes.length > 128 ||
+      !Array.from(value.prefixes).every(prefix => typeof prefix === 'string' && prefix.length > 0) ||
+      !Array.isArray(value.rows) || value.rows.length > 128) return fail();
+    const prefixes = value.prefixes as string[];
+    // Text is always column 1. The existing strict table reader below validates
+    // the complete column schema, row widths, missing cells and all field refs.
+    value = { format: COLUMN_FORMAT, columns: value.columns, rows: value.rows.map(row => {
+      if (!Array.isArray(row)) return fail();
+      return row.map((cell, index) => index === 1 ? expandText(cell, prefixes) : cell);
+    }) };
+  }
+  if(object(value)&&value.format===PREFIX_FORMAT) {
+    if(!keys(value,["format","prefixes","rows"])||Object.keys(value).length!==3||!Array.isArray(value.prefixes)||!Array.isArray(value.rows)||
+      !value.prefixes.length||value.prefixes.length>128||value.rows.length>128||!Array.from(value.prefixes).every(prefix=>typeof prefix==="string"&&prefix.length>0))return fail();
+    const prefixes=value.prefixes as string[];
+    value=value.rows.map(row=>{
+      if(!object(row)||!owns(row,"text"))return fail();
+      return {...row,text:expandText(row.text,prefixes)};
+    });
+  }
   if(object(value)) {
     if(!keys(value,["format","columns","rows"])||Object.keys(value).length!==3||value.format!==COLUMN_FORMAT||!Array.isArray(value.columns)||!Array.isArray(value.rows)||value.rows.length>128||
       value.columns.length<2||value.columns.length>factFields.length||new Set(value.columns).size!==value.columns.length||
@@ -98,7 +140,7 @@ export function decodeStoryMemory(value: unknown): StoryMemoryHint[] {
 /** Reversible candidates only. The caller pays for each complete guide and
  * chooses against the complete request cost, not merely the JSON byte count.
  * Existing exact quote sharing remains the baseline, including its guide. */
-export function memoryTransportCandidates(inline:StoryMemoryHint[],baseline:MemoryPayload,columns=false):MemoryPayload[] {
+export function memoryTransportCandidates(inline:StoryMemoryHint[],baseline:MemoryPayload,columns=false,textPrefixes=true,prefixTables=true):MemoryPayload[] {
   const result=[baseline], seen=new Set([baseline.json]);
   for(let mask=1;mask<8;mask++) {
     const rows=JSON.parse(baseline.json) as Record<string,unknown>[], used=new Set<string>();
@@ -143,12 +185,54 @@ export function memoryTransportCandidates(inline:StoryMemoryHint[],baseline:Memo
   }
   if(columns)for(const candidate of [...result]) {
     const rows=JSON.parse(candidate.json) as Record<string,unknown>[];
-    const frequency=new Map(factFields.map(field=>[field,rows.filter(row=>owns(row,field)).length]));
-    const fields=["kind","text",...factFields.filter(field=>field!=="kind"&&field!=="text"&&frequency.get(field)!).sort((a,b)=>frequency.get(b)!-frequency.get(a)!||factFields.indexOf(a)-factFields.indexOf(b))];
-    const table={format:COLUMN_FORMAT,columns:fields,rows:rows.map(row=>{const cells=fields.map(field=>owns(row,field)?row[field]:null);while(cells.length>2&&cells.at(-1)===null)cells.pop();return cells;})};
+    const table=columnTable(rows);
     const json=safeMemoryJson(table);if(seen.has(json))continue;
     try{if(!equal(decodeStoryMemory(table),inline))continue;}catch{continue;}
     seen.add(json);result.push({json,guide:[COLUMN_GUIDE,candidate.guide].filter(Boolean).join(" ")});
+  }
+  // Group literal long starts once per call, then preserve every differing
+  // suffix. No normalization, numeric slicing instructions or semantic merge.
+  // A short fixed grouping key bounds work; the complete request meter still
+  // pays for the dictionary/guide and can keep an older encoding instead.
+  if(textPrefixes&&inline.length<=128) {
+    const groups=new Map<string,{prefix:string;indices:number[]}>();
+    for(const [index,hint] of inline.entries()) {
+      if(hint.text.length<64)continue;
+      const key=hint.text.slice(0,64),group=groups.get(key);
+      if(!group){groups.set(key,{prefix:hint.text,indices:[index]});continue;}
+      let end=0;
+      while(end<group.prefix.length&&end<hint.text.length&&group.prefix.charCodeAt(end)===hint.text.charCodeAt(end))end++;
+      if(end&&/[\uD800-\uDBFF]/.test(group.prefix[end-1]!))end--;
+      group.prefix=group.prefix.slice(0,end);group.indices.push(index);
+    }
+    const shared=[...groups.values()].filter(group=>group.indices.length>1&&group.prefix.length>=64);
+    if(shared.length)for(const candidate of [...result]) {
+      const rows=JSON.parse(candidate.json) as unknown;
+      if(!Array.isArray(rows))continue;
+      const prefixes:string[]=[];
+      for(const {prefix,indices} of shared) {
+        const at=prefixes.length;
+        const saved=indices.reduce((sum,index)=>sum+safeMemoryJson(inline[index]!.text).length-safeMemoryJson([at,inline[index]!.text.slice(prefix.length)]).length,0);
+        if(saved<=safeMemoryJson(prefix).length+1)continue;
+        prefixes.push(prefix);
+        for(const index of indices)rows[index].text=[at,inline[index]!.text.slice(prefix.length)];
+      }
+      if(!prefixes.length)continue;
+      const packed={format:PREFIX_FORMAT,prefixes,rows},json=safeMemoryJson(packed);
+      if(seen.has(json))continue;
+      try{if(!equal(decodeStoryMemory(packed),inline))continue;}catch{continue;}
+      seen.add(json);result.push({json,guide:[PREFIX_GUIDE,candidate.guide].filter(Boolean).join(" ")});
+      // Compose both reversible encodings instead of forcing the caller to
+      // choose between repeating prose and repeating metadata field names.
+      // All rows survive, including changed suffixes, negations and promises.
+      // Admission still uses the old render; this only packs the final result.
+      if (prefixTables) {
+        const table = { ...columnTable(rows), format: PREFIX_TABLE_FORMAT, prefixes }, tableJson = safeMemoryJson(table);
+        if (seen.has(tableJson)) continue;
+        try { if (!equal(decodeStoryMemory(table), inline)) continue; } catch { continue; }
+        seen.add(tableJson); result.push({ json: tableJson, guide: [PREFIX_TABLE_GUIDE, candidate.guide].filter(Boolean).join(' ') });
+      }
+    }
   }
   return result;
 }

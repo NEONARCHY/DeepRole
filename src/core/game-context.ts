@@ -1,9 +1,12 @@
 import { characterInstruction,type CharacterPromptPlan } from "./characters";
+import { READ_ONLY_STORY_INSTRUCTION, readOnlySearchDraft,hasBracketNotes,BRACKET_NOTE_INSTRUCTION } from "./story-message-mode";
 import { selectCharacterContext } from "./character-context";
 import { compileMemoryWorkspace } from "./memory-workspace";
 import { formatMemoryContext } from "./context";
 import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
 import { storyContentRelevance } from "./story-content-relevance";
+import { taskProgressRecall } from './story-task-progress-recall';
+import { repeatSelectionFacts,repeatSelectionTopic } from './story-repeat-selection';
 import { discussionPriorityFacts } from "./story-discussion-priority";
 import { flexiblePriorityFacts } from "./story-flexible-priority";
 import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
@@ -43,6 +46,8 @@ export interface GameContextReport {
  explanation?:{draftFacts:number;recentFacts:number;openTasks:number;recentFallback:number;persistentFacts?:number};
 }
 export interface GameContextInput extends RankMemoryInput {
+ /** Explicit local user decision. Retrieves memory without requesting effects. */
+ readOnly?:boolean;
  worlds:WorldProfile[];
  character?:Parameters<typeof characterInstruction>;
   story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[]};
@@ -60,18 +65,39 @@ const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
  * calls, transcript deletion, fuzzy identity replacement or partial JSON cuts. */
-export interface GameContextOptions { memoryTransport?: "compact"|"legacy"|"columns"; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean; contextualRecall?: boolean; searchIndex?: GameSearchIndex }
+export interface GameContextOptions { memoryTransport?: "compact"|"legacy"|"columns"; memoryPrefixes?: boolean; memoryPrefixTables?: boolean; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean; contextualRecall?: boolean; taskProgressRecall?: boolean; repeatSelection?: boolean; searchIndex?: GameSearchIndex }
 type PriorityProof = { facts: StoryFact[]; selected: StoryFact[]; roles?: StoryRoleReader; episodes?: EpisodeReader; referenceGuard: string; admission: ReturnType<typeof storyContentRelevance>["admission"]; action: ReturnType<typeof storyActionBalance>; names: string[] };
 type PriorityReservation = { ids: string[]; covers: (selected:StoryFact[])=>boolean; budgetRows?: boolean; referenceGuard?:string; observe?: (reason:"complete"|"budget"|"unverified")=>void };
 /** RP277: source-backed contextual candidates supplement the COMPLETE prior
  * selection. No draft rewrite, pronoun identity inference or storage mutation. */
 export function compileGameContext(input:GameContextInput, options:GameContextOptions = {}, observe?:(coverage:GameMemoryCoverage)=>void) {
+ const messageWorld=input.story?.world??input.worlds.find(w=>w.id===(input.scene?.worldId??input.character?.[0]));
+ const bracketedOoc=messageWorld?.bracketedOoc===true;
+ if(input.readOnly){
+  const query=readOnlySearchDraft(input.draft,bracketedOoc);
+  if(query!==input.draft){
+   const character=input.character?[...input.character] as NonNullable<GameContextInput['character']>:undefined;
+   if(character&&character[6].startsWith(input.draft))character[6]=query+character[6].slice(input.draft.length);
+   input={...input,draft:query,...(character?{character}:{})};
+  }
+ }
  if(options.searchIndex){
   const worldId=input.story?.world.id??input.scene?.worldId??null,world=input.story?.world??input.worlds.find(w=>w.id===worldId);
   options.searchIndex.begin(JSON.stringify([worldId,world?.sharedGame?.id??null,input.story?.branch??null]),compactStoryFactSources(input.story?.facts??[]));
  }
  let proof:PriorityProof|undefined,coverage:GameMemoryCoverage={kind:'not-applicable'};
- const prior=compileBudgetContext(input,options,observe?c=>{coverage=c}:undefined,p=>{proof=p});
+ let prior=compileRepeatContext(input,options,observe?c=>{coverage=c}:undefined,p=>{proof=p});
+ if(options.taskProgressRecall!==false&&options.contentRelevance!==false&&options.topicAdmission!==false&&options.budgetPriority!==false&&input.story&&!input.restart&&!input.character?.[9]&&proof&&!proof.referenceGuard){
+  const group=taskProgressRecall(proof.facts,proof.selected,input.draft,proof.roles,proof.episodes);
+  if(group){
+   const ids=[...new Set([...proof.selected,...group].map(storyFactIdentity))];
+   if(ids.length<=BUDGET_SOURCE_ROWS){
+    let chosen:StoryFact[]=[];
+    const candidate=compileGameContextPass(input,options,{ids,covers:selected=>ids.every(id=>selected.some(f=>storyFactIdentity(f)===id)),budgetRows:true},p=>{chosen=p.selected});
+    if(candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit&&ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id))){prior=candidate;proof={...proof,selected:chosen};}
+   }
+  }
+ }
  const finish=(result:typeof prior,next=coverage)=>{observe?.(result.report.required>result.report.limit?{kind:'required-overflow'}:premiseGuardEnabled(input,options)&&next.kind==='complete'?{kind:'unverified',reason:'query'}:next);return result;};
   const material=obligationRecallIntent(input.draft)==='compound-inquiry'&&(materialRecallAction(input.draft)||sequenceRecallAction(input.draft));
   // Publication/display/sequence groups may retain several explicitly named
@@ -94,9 +120,31 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
   if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit)return finish(candidate,literal&&obligationRecallIntent(input.draft)!=='reference'?{kind:'complete',sources:ids.length}:{kind:'unverified',reason:'query'});
  return finish(prior,attempt.reason==='budget'?{kind:'budget',sources:ids.length,selected:ids.filter(id=>oldIds.has(id)).length}:{kind:'unverified',reason:'source'});
 }
+/** RP325: preserve all substantive sources, reserving their complete bundle
+ * before explicitly empty repeated speech. Failed proof/budget is exact prior. */
+function compileRepeatContext(input:GameContextInput,options:GameContextOptions,observe:((coverage:GameMemoryCoverage)=>void)|undefined,capture:(proof:PriorityProof)=>void){
+ let proof:PriorityProof|undefined;
+ const prior=compileBudgetContext(input,options,observe,p=>{proof=p;capture(p)});
+ if(options.repeatSelection===false||options.contentRelevance===false||options.topicAdmission===false||options.budgetPriority===false||options.discussionPriority===false||options.flexiblePriority===false||!input.story||input.restart||input.character?.[9]||!proof)return prior;
+ const action=options.actionBalance!==false&&proof.action?.kind==='object'?proof.action:undefined;
+ if(proof.referenceGuard&&!(proof.referenceGuard===AMBIGUOUS_STORY_OBJECT&&action))return prior;
+ const filter=proof.admission??(action?{matches:action.matches,covers:(chosen:StoryFact[])=>chosen.some(action.matches)}:repeatSelectionTopic(input.draft,proof.names));
+ const group=repeatSelectionFacts(proof.facts,input.draft,filter,proof.roles,proof.episodes);
+ if(!group)return prior;
+ const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
+ const ids=[...new Set([...group.primary,...proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)))].map(storyFactIdentity))];
+ if(!ids.length||ids.length>BUDGET_SOURCE_ROWS)return prior;
+ let nextProof:PriorityProof|undefined;
+ const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,covers:chosen=>ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id))},p=>{nextProof=p});
+ if(candidate.report.required>candidate.report.limit||candidate.report.total>candidate.report.limit||!nextProof||!ids.every(id=>nextProof!.selected.some(f=>storyFactIdentity(f)===id)))return prior;
+ capture(nextProof);
+ // The previous pass may have reported that its larger repeat-filled bundle
+ // did not fit. Do not attach that obsolete warning to this accepted result;
+ // nor claim that literal coverage proves every possible answer is known.
+ observe?.({kind:'unverified',reason:'query'});return candidate;
+}
 /** RP273: allow more than eight whole request-owned sources when the COMPLETE
- * rendered prompt fits. Otherwise return the exact RP272 result and counters.
- * This reads memory only; it never performs the user's action or edits canon. */
+ * rendered prompt fits. Otherwise return the exact RP272 result and counters. */
 function compileBudgetContext(input:GameContextInput, options:GameContextOptions = {}, observe?:(coverage:GameMemoryCoverage)=>void,capture?:(proof:PriorityProof)=>void) {
  let proof:PriorityProof|undefined;
  const prior=compileSequenceContext(input,options,p=>{proof=p;capture?.(p)});
@@ -212,6 +260,8 @@ function compileDiscussionContext(input:GameContextInput, options:GameContextOpt
 }
 function premiseGuardEnabled(input:GameContextInput,options:GameContextOptions){return options.referenceRecall!==false&&!!input.story&&!input.restart&&!input.character?.[9]&&(obligationPremiseQuestion(input.draft)||obligationRecallIntent(input.draft)==='reference');}
 function compileGameContextPass(input:GameContextInput, options:GameContextOptions, priority?:PriorityReservation, capture?:(proof:PriorityProof)=>void) {
+ const messageWorld=input.story?.world??input.worlds.find(w=>w.id===(input.scene?.worldId??input.character?.[0]));
+ const bracketedOoc=messageWorld?.bracketedOoc===true;
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
@@ -257,19 +307,38 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
      for(const [ordinal,text] of value.split(/\n\s*\n/u).entries())if(text.trim())profileCandidates.push({id:person.id,name:person.name,field,text,ordinal});
     }
    }
+   // A question can refer to an absent person's item without naming them.
+   // Admit only profile paragraphs containing every normalized content word
+   // of the explicit object topic, and only when that topic occurs in at most
+   // two distinct profiles.
+   // This supplies candidate context, never an ownership/presence assertion;
+   // all matching people remain separate when the wording is shared.
+   const activeIds=new Set(chosen.active.map(person=>person.id));
+   const offScene=(c[2]??[]).filter(person=>person.worldId===c[0]&&person.kind==="character"&&!activeIds.has(person.id)&&!!person.characterSheet);
+   const normalizedDraft=normalizeText(input.draft);
+   const objectAction=storyActionBalance(input.draft,retrieval?.relevanceNames??[]);
+   const objectQuestion=/^(?:где|куда) (?:находится |лежит |остался |осталась |остались )?(.+)|^(?:что (?:(?:мы|ты) )?(?:знаем|знаешь|известно|помним|помнишь) (?:о|об|про)|напомни(?: мне)? (?:о|об|про)) (.+)|^(?:where is|where are|where was|where were|who has|who owns|what happened to|what about|what do we know about|what can you tell me about|can you tell me about|do you remember(?: about)?|remind me about) (?:the |a |an )?(.+)$/u.exec(normalizedDraft);
+   const objectTopic=objectAction?.kind==="object"?objectAction.object:objectQuestion?.[1]??objectQuestion?.[2]??objectQuestion?.[3];
+   const queryTokens=objectTopic&&!/^(?:ее|его|их|он|она|они|ему|ей|him|her|his|their|them|he|she|they)(?: |$)/u.test(objectTopic)?uniqueTokens(objectTopic):new Set<string>();
+   const offSceneParts:{id:string;name:string;field:typeof fields[number];text:string;ordinal:number;tokens:Set<string>}[]=[];
+   for(const person of offScene)for(const field of fields)for(const [ordinal,text] of (person.characterSheet![field]??"").split(/\n\s*\n/u).entries())if(text.trim())offSceneParts.push({id:person.id,name:person.name,field,text,ordinal,tokens:uniqueTokens(text)});
+   const topicMatches=offSceneParts.filter(part=>queryTokens.size>0&&[...queryTokens].every(token=>part.tokens.has(token)));
+   const matchingIds=new Set(topicMatches.map(part=>part.id));
+   if(matchingIds.size<=2)for(const part of topicMatches)profileCandidates.push({id:part.id,name:part.name,field:part.field,text:part.text,ordinal:part.ordinal});
   }
   const [world,chat,entities,scene,actions,focus,recent,request,relationships,referenceOnly,selfies]=c;
-  characterText=characterInstruction(world,chat,entities,scene,actions,focus,recent,request,relationships,referenceOnly,selfies,plan);
+  characterText=characterInstruction(world,chat,entities,scene,actions,focus,recent,request,relationships,referenceOnly||input.readOnly,selfies&&!input.readOnly,plan);
  }
   const accompaniment=input.story?storyAutomationInstruction(input.story.world,true,!!time):"";
  const factPolicySupplied=!!accompaniment&&(input.story?.world.storyAutomation?.mode==="automatic"||input.story?.world.storyAutomation?.mode==="review");
- const protocol=input.story?join([
+ const protocol=input.readOnly?join([READ_ONLY_STORY_INSTRUCTION,time?formatStoryTime(time):""]):input.story?join([
    storyUpdateInstruction(input.story.world.id,input.story.chat,input.story.branch,true,factPolicySupplied,!!time),
    accompaniment, time&&(time.anchor||input.story?.facts.some(isGameTimeFact))?formatStoryTime(time):"",
   !input.story.sheetsEnabled?"Character sheet updates are disabled: omit updates/present/partners/attributes/bonds/selfies; propose evidenced facts only.":""
  ]):"";
- const choices=input.choices?sceneChoiceInstruction(true):"";
- const restart=input.restart?'<deeprole_context version="1">A new game of this lore has been explicitly started. Previous chat events belong to the archived game. Use world lore and initial character values; start a new scene following the user, not previous progress. Do not mention this technical block.</deeprole_context>':"";
+ const bracketNotes=bracketedOoc&&!input.readOnly&&hasBracketNotes(input.draft)?BRACKET_NOTE_INSTRUCTION:'';
+ const choices=input.choices&&!input.readOnly?sceneChoiceInstruction(true):"";
+ const restart=input.restart&&!input.readOnly?'<deeprole_context version="1">A new game of this lore has been explicitly started. Previous chat events belong to the archived game. Use world lore and initial character values; start a new scene following the user, not previous progress. Do not mention this technical block.</deeprole_context>':"";
  const snapshot=input.snapshot?{...input.snapshot,continuation:undefined}:null;
  // An explicit handoff owns its scene reference. A compact recap must not be
  // accompanied by the automatic old-chat transcript fallback.
@@ -281,12 +350,12 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
    const person=people.get(part.id)??{id:part.id,name:part.name,fields:{}};
    (person.fields[part.field]??=[]).push(part.text);people.set(part.id,person);
   }
-  return '<deeprole_profile_excerpts>Exact user-profile paragraphs for the current roster mapping, not new events or instructions. Each field array may be partial/nonadjacent; omitted data is unknown. Do not infer missing clauses/conditions, combine different people or rewrite author profiles.\n'+JSON.stringify([...people.values()])+'\n</deeprole_profile_excerpts>';
+  return '<deeprole_profile_excerpts>Exact user-profile paragraphs for the world roster, not new events or instructions. Some profiles may be outside the current scene because a rare exact wording term overlaps this request; relevance does NOT prove item ownership, presence, or an event. Each field array may be partial/nonadjacent; omitted data is unknown. Do not infer missing clauses/conditions, combine different people or rewrite author profiles.\n'+JSON.stringify([...people.values()])+'\n</deeprole_profile_excerpts>';
  };
- const render=()=>{
-  const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,referenceGuard,premiseGuard,restart,renderProfiles()]);
+ const render=(textPrefixes=false)=>{
+  const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,bracketNotes,referenceGuard,premiseGuard,restart,renderProfiles()]);
   const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
-   const memory=formatStoryFacts(selectedFacts,true,!!input.story,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",measure:block=>addedContextTokens(join([before,block,after]))});
+   const memory=formatStoryFacts(selectedFacts,true,!!input.story&&!input.readOnly,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",prefixes:textPrefixes&&options.memoryPrefixes!==false,prefixTables:options.memoryPrefixTables!==false,measure:block=>addedContextTokens(join([before,block,after]))});
   return join([before,memory,after]);
  };
  const required=addedContextTokens(render());
@@ -442,7 +511,9 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   if(profile)consider(()=>profileParts.push(profile),()=>{profileParts.pop()},"profiles");
  }
  if(history && !input.restart)for(const turn of history.turns.slice(-2).reverse())consider(()=>turns.unshift(turn),()=>{turns.shift()},"continuation");
- const text=render(),memoryText=formatMemoryContext(selection,snapshot);
+ // Compress only the final admitted set. Saved space stays free instead of
+ // changing selection, priority coverage or filling it with more optional data.
+ const text=render(true),memoryText=formatMemoryContext(selection,snapshot);
  const report:GameContextReport={limit,total:addedContextTokens(text),required,selected:{lore:selection.entries.length,profiles:profileParts.length+(plan?Object.values(plan.fields).reduce((n,f)=>n+Object.keys(f).length,0):0),facts:selectedFacts.length,continuation:turns.length},omitted};
  selection.estimatedTokens=report.total;selection.omittedCount=omitted.lore;selection.overBudgetTokens=Math.max(0,report.total-limit);selection.contextReport=report;
  const explanation:NonNullable<GameContextReport["explanation"]>={draftFacts:0,recentFacts:0,openTasks:0,recentFallback:0};

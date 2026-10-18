@@ -1,6 +1,6 @@
 import {expect,it} from "vitest";
 import {storyContentRelevance} from "../src/core/story-content-relevance";
-import {rankStoryFacts} from "../src/core/story-fact-context";
+import {isNonAdvancingDiscussion,rankStoryFacts} from "../src/core/story-fact-context";
 import {storyRetrievalQuery} from "../src/core/story-retrieval-query";
 import {createStoryRoleReader} from "../src/core/story-source-roles";
 import {storyWorld} from "./fixtures/story-worlds";
@@ -26,6 +26,47 @@ it("scores whole task titles and full bodies while preserving exact data",()=>{
 it("common words cannot drown the distinctive topic or multiply by repeated occurrences",()=>{
   const a=f("Gate oxygen "+"oxygen ".repeat(20)),b=f("Gate flower"),c=f("Gate table"),reader=storyContentRelevance([a,b,c],"gate oxygen",[]);
   expect(reader.score(a)).toBe(32);expect(reader.score(b)).toBe(0);expect(storyContentRelevance([a],"oxygen",[]).score(a)).toBe(0);
+});
+it.each([
+ ["Позже Лада снова обсуждала маховик и аккумулятор; новых действий или передач не было.","Лада вручную раскрутила резервный маховик при отказе; аккумулятор не включился.","Что произошло с аккумулятором?"],
+ ["Later Lada again discussed the rotor and battery; no new actions or handovers occurred.","Lada hand-cranked the backup rotor during the outage; the battery did not engage.","What happened to the battery?"],
+])("keeps a clearly non-advancing recap below played evidence for an event question",(recap,played,query)=>{
+ const facts=[f(recap),f(played)];expect(rankStoryFacts(facts,query)[0]!.fact.text).toBe(played);
+});
+it.each([
+ ["A rumor says the violet seal is in the north archive; the speaker does not know its owner.","Who owns the violet seal?"],
+ ["Слух утверждает, что фиолетовая печать в северном архиве; рассказчик не знает владельца.","Кто владеет фиолетовой печатью?"],
+])("matches an unknown-owner belief without treating it as fact",(belief,query)=>{
+ const source=f(belief,{kind:"belief"}),noise=f(belief.includes("A rumor")?"Later they discussed the violet seal near the north archive.":"Позже снова обсуждали фиолетовую печать возле северного архива.");
+ const match=storyContentRelevance([source,noise],query,[]);
+ expect(match.score(source)).toBeGreaterThan(match.score(noise));expect(match.admission?.covers([source])).toBe(true);
+});
+it.each([
+ ["An unverified note says the silver key was found near the clinic, but nobody identified its owner.","The clinic log also lists a silver key by the desk, but gives no further details.","Do we know whose silver key was found by the clinic?"],
+ ["Непроверенная записка сообщает, что серебряный ключ нашли у клиники, но владелец неизвестен.","В журнале клиники тоже указан серебряный ключ у стойки, но больше ничего не сказано.","Мы знаем, чей серебряный ключ нашли у клиники?"],
+])("keeps indirect whose-questions source-bound and excludes matching non-owner events",(belief,event,query)=>{
+ const source=f(belief,{kind:"belief"}),neighbor=f(event),match=storyContentRelevance([source,neighbor],query,[]);
+ expect(match.admission?.matches(source)).toBe(true);expect(match.admission?.matches(neighbor)).toBe(false);
+ expect(match.admission?.covers([source])).toBe(true);expect(match.admission?.covers([source,neighbor])).toBe(true);
+});
+it.each([
+ ["Позже Лада снова обсуждала маховик и аккумулятор; новых действий или передач не было.","Кто обсуждал аккумулятор?"],
+ ["Later Lada again discussed the rotor and battery; no new actions or handovers occurred.","Who discussed the battery?"],
+])("keeps the recap available when the user asks about discussion",(recap,query)=>{
+ const facts=[f(recap),f("Unrelated record")];expect(rankStoryFacts(facts,query)[0]!.fact.text).toBe(recap);
+});
+it.each([
+ ["Later the crew again discussed the red case; no new actions or handovers occurred.","What did the crew keep circling back to about the red case?"],
+ ["Позже команда снова обсуждала красный кейс; новых действий или передач не было.","Что команда снова и снова возвращалась обсуждать насчёт красного кейса?"],
+])("keeps narrative recaps available for conversational discussion paraphrases",(recap,query)=>{
+ const facts=[f(recap),f("The red case was stored in the clinic."),f("A separate unrelated event happened.")];
+ expect(rankStoryFacts(facts,query)[0]!.fact.text).toBe(recap);
+});
+it("never downranks a promise or a recap lacking the explicit no-new-action statement",()=>{
+ const recap=f("Later Lada again discussed the battery; the crew then replaced it.");
+ const promise=f("Later Lada again discussed the battery; no new actions or handovers occurred.",{kind:"promise",task:{key:"battery",title:"replace the battery",status:"open"}});
+ expect(isNonAdvancingDiscussion(recap)).toBe(false);expect(isNonAdvancingDiscussion(promise)).toBe(false);
+ expect(rankStoryFacts([recap,promise],"What happened before replacing the battery?").map(x=>x.fact)).toEqual([recap,promise]);
 });
 it.each(["Continue. What happened?","Дальше. Что произошло?"])("generic continuation does not gain a topic bonus: %s",query=>{
   const a=f("Nora said continue and described what happened."),b=f("Нора сказала продолжай и описала, что произошло."),facts=[a,b,f("The door is open.")];

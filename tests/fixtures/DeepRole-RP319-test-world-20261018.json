@@ -1,0 +1,65 @@
+{
+  "format": "deeprole-world",
+  "version": 1,
+  "records": [
+    {
+      "kind": "world",
+      "id": "rp319-workshop-world",
+      "data": {
+        "id": "rp319-workshop-world",
+        "name": "RP319 — Чистая мастерская (тест)",
+        "description": "Изолированный вымышленный мир для проверки памяти. Небольшая мастерская рядом с мостом и старыми воротами. Начальные сведения об обещаниях, письмах и разрешениях ещё не заданы.",
+        "color": "#65c9d0",
+        "contextBudget": 6000,
+        "relevanceThreshold": 6,
+        "createdAt": 1,
+        "updatedAt": 1,
+        "autoPrepareCharacters": false
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp319-nora",
+      "data": {
+        "id": "rp319-nora",
+        "worldId": "rp319-workshop-world",
+        "kind": "character",
+        "name": "Нора",
+        "description": "Взрослая мастерица, 35 лет. Участница синтетической проверки.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "rp319-mira",
+      "data": {
+        "id": "rp319-mira",
+        "worldId": "rp319-workshop-world",
+        "kind": "character",
+        "name": "Мира",
+        "description": "Взрослая жительница, 34 года. Участница синтетической проверки.",
+        "aliases": [],
+        "memberIds": [],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "template",
+      "id": "rp319-workshop-opening",
+      "data": {
+        "id": "rp319-workshop-opening",
+        "worldId": "rp319-workshop-world",
+        "name": "Начать проверку RP319",
+        "opening": "Нора и Мира встречаются в мастерской. Начни короткую спокойную сцену без новых обещаний, разрешений, передач вещей и раскрытия секретов.",
+        "initialState": "Синтетическая проверка. Неподтверждённые сведения остаются неизвестными. Не восстанавливай события из других миров и чатов.",
+        "focusIds": ["rp319-nora", "rp319-mira"],
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    }
+  ]
+}
