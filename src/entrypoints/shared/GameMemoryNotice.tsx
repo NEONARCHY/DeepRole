@@ -6,10 +6,10 @@ import {gameMemoryCoverageText} from "../../core/game-memory-coverage-i18n";
 export function GameMemoryNotice({locale,coverage,report,onDetails}:{locale:Locale;coverage?:GameMemoryCoverage;report?:GameContextReport;onDetails?:()=>void}){
  const issue=memoryCoverageIssue(coverage,report);
  if(!issue)return null;
- const t=gameMemoryCoverageText(locale),required=issue.kind==="required-overflow";
+ const t=gameMemoryCoverageText(locale),required=issue.kind==="required-overflow",incomplete=issue.kind==='incomplete';
  return <section className="dr-game-memory-notice" role="status" aria-live="polite">
-  <strong>{required?t.requiredTitle:t.budgetTitle}</strong>
-  <p>{required?t.requiredBody:t.budgetBody}</p><p>{t.action}</p>
+  <strong>{required?t.requiredTitle:incomplete?t.incompleteTitle:t.budgetTitle}</strong>
+  <p>{required?t.requiredBody:incomplete?t.incompleteBody:t.budgetBody}</p><p>{incomplete?t.incompleteAction:t.action}</p>
   {onDetails&&<button type="button" onClick={onDetails}>{t.details}</button>}
  </section>;
 }

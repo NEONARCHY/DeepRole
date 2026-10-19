@@ -1,0 +1,23 @@
+{
+  "milestone": "RP342",
+  "amendmentBeforeRetrieval": true,
+  "atUtc": "2026-10-19T13:37:30.955832+00:00",
+  "firstAttempt": "docs/benchmarks/rp342-first-vitest.json",
+  "firstExit": 1,
+  "firstCounts": {
+    "passed": 1,
+    "failed": 9,
+    "measurements": 0
+  },
+  "reason": "Authored boundary label is not supported by StoryFact storage schema. Wrapper maps boundary to recorded declaration event without changing source text, gold indices, task/quote or source roles.",
+  "datasetSha256": "2aa3a6b0027cb0ca432b26daa32c8215336bd76a6e8fe6e7232ba42033af64f5",
+  "originalPlanSha256": "182581d6957ca0c1f349570aae83ccca58098961e189d1ada5a3af87332bd035",
+  "runtimeUnchanged": true,
+  "helperUnchanged": true,
+  "harnessFilesSha256": {
+    "tests/story-rp342-free-holdout.audit.ts": "c00c84d30480206bf2723a2d4d73892a5091d6992e0383c81ea84a5eddfa79bd",
+    "tests/fixtures/story-rp342-world.ts": "dbc398addcceb0de40f4ff8d24fbfb91afe41b908707d5edc83395629962f574",
+    "vitest.rp342.config.ts": "ec86810b7ed07a1309efab31c1f98314fab2650d5d536df912de54e3be5a0e63"
+  },
+  "correctedReport": ".output/rp342-results.json"
+}

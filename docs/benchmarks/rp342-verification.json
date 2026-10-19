@@ -1,0 +1,291 @@
+{
+  "milestone": "RP342",
+  "scope": "Fresh synthetic compiler/persisted IndexedDB holdout on RP341 production, paired translations; not external corpus or personal live DeepSeek.",
+  "datasetSha256": "2aa3a6b0027cb0ca432b26daa32c8215336bd76a6e8fe6e7232ba42033af64f5",
+  "originalPlanSha256": "182581d6957ca0c1f349570aae83ccca58098961e189d1ada5a3af87332bd035",
+  "correctionSha256": "f5fe5c5e57595e105042455b59f97956a510fd461faee8c57d24a8399da0e3aa",
+  "runtimeUnchanged": true,
+  "evidenceHelperUnchanged": true,
+  "firstAttempt": {
+    "exitCode": 1,
+    "passed": 1,
+    "failed": 9,
+    "measurements": 0,
+    "reason": "Harness boundary storage kind unsupported; original report preserved. No retrieval was scored.",
+    "report": "docs/benchmarks/rp342-first-vitest.json"
+  },
+  "harnessAmendment": "Before retrieval, wrapper boundary -> event for recorded declarations; no source prose, gold, tasks, quotes or runtime changed. Original manifest preserved; amendment hashes separately frozen.",
+  "fullAttempt": {
+    "exitCode": 1,
+    "passed": 9,
+    "failed": 1,
+    "all480Measured": true,
+    "quality": "RED",
+    "report": "docs/benchmarks/rp342-vitest.json"
+  },
+  "summary": {
+    "measurements": 480,
+    "queryHistoryCases": 160,
+    "positiveCases": 72,
+    "positiveComplete": 32,
+    "controls": 88,
+    "controlsMemoryComplete": 64,
+    "falseComplete": 0,
+    "missingSources": 214,
+    "noticeMismatches": 48,
+    "casesWithMissing": 64,
+    "incompleteWithoutBudgetWarning": 64,
+    "incompleteWithoutPreparationWarning": 28,
+    "integrityIssues": 0,
+    "unstable": 0,
+    "byFamily": [
+      {
+        "id": "three-literal",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "four-narrative",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-equipment",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 8,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-paperwork",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 8,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "grounded-short",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 8,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "ungrounded-short",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 8,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "false-completion",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "partial-condition",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "negative-plan",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quoted-plan",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "cancelled-route",
+        "cases": 8,
+        "complete": 4,
+        "falseComplete": 0,
+        "noticeMismatches": 8,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "owner-question",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "speech-history",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "similar-object",
+        "cases": 8,
+        "complete": 4,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "reordered",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "causal-bridge",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "unknown-object",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 8,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quiet-greeting",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "long-interruption",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "belief-versus-record",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      }
+    ]
+  },
+  "allCriteriaPassed": 76,
+  "nonemptyWantedCases": 136,
+  "nonemptyWantedComplete": 72,
+  "emptyWantedControlsAndGreeting": 24,
+  "noticeContracts": {
+    "optional": 48,
+    "required": 104,
+    "forbidden": 8
+  },
+  "coverage": {
+    "incomplete": 96,
+    "unverified": 64
+  },
+  "maxTokens": 2228,
+  "byHistory": {
+    "20": {
+      "cases": 80,
+      "allCriteriaPassed": 38,
+      "missingCases": 30,
+      "missingSources": 89,
+      "noticeMismatches": 24
+    },
+    "820": {
+      "cases": 80,
+      "allCriteriaPassed": 38,
+      "missingCases": 34,
+      "missingSources": 125,
+      "noticeMismatches": 24
+    }
+  },
+  "inputMutations": 0,
+  "storageMutations": 0,
+  "typecheck": {
+    "firstAttemptExit": 124,
+    "reason": "20s no-output shell timeout; not a TypeScript error",
+    "retryExit": 0,
+    "command": "node node_modules/typescript/bin/tsc --noEmit"
+  },
+  "diffCheckExit": 0,
+  "postScoringDiagnosis": {
+    "testPassed": 1,
+    "report": "docs/benchmarks/rp342-admission-diagnostic.json",
+    "finding": "Both cancelled task8 and replacement plan9 have verified episode sources but frozen source roles unknown in all four locales. narrativeRecallFacts requires bound title seed, so topic C never enters primary group. Original V1 roles must not be reinterpreted.",
+    "notIndependentAdditionalQuality": true
+  },
+  "runtimeBrowserPackages": "Unchanged RP341 Chrome/Firefox binaries; audit-only iteration. Source package refreshed with reports. No installed copy updated.",
+  "oldSuites": "Not rerun: production runtime unchanged. Earlier RP341 full-suite limitations still apply.",
+  "open": [
+    "Repair RP342 omissions and warning contracts, preserve frozen gold and first red.",
+    "Then replay this set as SEEN plus RP340/RP336 and affected regressions.",
+    "Then a fresh independent set; structured-source personal live and RP-08 separate."
+  ],
+  "git": "No push/merge requested; preserve accumulated RP331-342 local work.",
+  "browserPackages": {
+    "chrome": {
+      "sha256": "d06c9b99c378419aed965b90a0dbb570523557954c5977caec54f367b6b59cdd",
+      "files": 23,
+      "unchangedRP341": true,
+      "matchesBuildDirectory": true
+    },
+    "firefox": {
+      "sha256": "347c24cb182b1d5f352addaefb5719bef8ccc5b77c032bedbdee29b92520f5fa",
+      "files": 23,
+      "unchangedRP341": true,
+      "matchesBuildDirectory": true
+    }
+  }
+}

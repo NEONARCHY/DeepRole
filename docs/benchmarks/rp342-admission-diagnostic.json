@@ -1,0 +1,305 @@
+{
+  "scope": "Post-scoring source-admission diagnosis, not an independent measurement",
+  "rows": [
+    {
+      "world": "island-medical-ferry-ru",
+      "tasks": [
+        {
+          "index": 0,
+          "title": "медицинский холодильник",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-1",
+              "name": "Дина"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 1,
+          "title": "медицинский холодильник",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-3",
+              "name": "Яна"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 4,
+          "title": "портовый аккумулятор",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-2",
+              "name": "Борис"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 8,
+          "title": "таможенная декларация",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 9,
+          "title": "таможенная декларация",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 12,
+          "title": "санитарный талон",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-3",
+              "name": "Яна"
+            }
+          },
+          "episode": true
+        }
+      ],
+      "primary": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        16,
+        18
+      ],
+      "reason": "query"
+    },
+    {
+      "world": "island-medical-ferry-en",
+      "tasks": [
+        {
+          "index": 0,
+          "title": "medical refrigerator",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-1",
+              "name": "Dina"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 1,
+          "title": "medical refrigerator",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-3",
+              "name": "Yana"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 4,
+          "title": "harbour battery",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-2",
+              "name": "Boris"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 8,
+          "title": "customs declaration",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 9,
+          "title": "customs declaration",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 12,
+          "title": "health voucher",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-3",
+              "name": "Yana"
+            }
+          },
+          "episode": true
+        }
+      ],
+      "primary": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        16,
+        18
+      ],
+      "reason": "query"
+    },
+    {
+      "world": "wildlife-tracking-camp-ru",
+      "tasks": [
+        {
+          "index": 0,
+          "title": "спутниковый ошейник",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-1",
+              "name": "Лада"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 4,
+          "title": "криогенный сосуд",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-2",
+              "name": "Марк"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 8,
+          "title": "полевой протокол",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 9,
+          "title": "полевой протокол",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 12,
+          "title": "лицензия на выпуск",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-3",
+              "name": "Сева"
+            }
+          },
+          "episode": true
+        }
+      ],
+      "primary": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        14,
+        15,
+        16,
+        18
+      ],
+      "reason": "query"
+    },
+    {
+      "world": "wildlife-tracking-camp-en",
+      "tasks": [
+        {
+          "index": 0,
+          "title": "satellite collar",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-1",
+              "name": "Lada"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 4,
+          "title": "cryogenic vessel",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-2",
+              "name": "Mark"
+            }
+          },
+          "episode": true
+        },
+        {
+          "index": 8,
+          "title": "field protocol",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 9,
+          "title": "field protocol",
+          "status": "unknown",
+          "roles": {},
+          "episode": true
+        },
+        {
+          "index": 12,
+          "title": "release licence",
+          "status": "bound",
+          "roles": {
+            "promisor": {
+              "id": "person-3",
+              "name": "Seva"
+            }
+          },
+          "episode": true
+        }
+      ],
+      "primary": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        14,
+        15,
+        16,
+        18
+      ],
+      "reason": "query"
+    }
+  ]
+}

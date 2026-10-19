@@ -1,0 +1,24 @@
+{
+  "milestone": "RP331",
+  "date": "2026-10-19",
+  "unit": { "files": 8, "passed": 130, "failed": 0 },
+  "typecheck": "passed",
+  "runtime": {
+    "environment": "isolated synthetic installed Edge MV3",
+    "passed": 34,
+    "failed": 0,
+    "newChat": 12,
+    "oldChatNotice": 2,
+    "bracketCompatibility": 20,
+    "singleSerialRun": true,
+    "localReport": ".output/rp331-runtime.json"
+  },
+  "baselineArchiveSha256": "0B68AF2D7E21A76205BA451629F65A7BFD3DDEC6480D13943B098B0D94D5C5C8",
+  "baselineRegression": "rejected-navigation/fetch/en fails on the second POST without memory",
+  "additionalRedProof": ["stale-parent/fetch/en", "clean/xhr/ru UI epoch invalidation", "2 unit regressions"],
+  "chromeArchive": "downloads/DeepRole-Brave-memory-recovery-20261019.zip",
+  "chromeSha256": "1CDC19FE21BBA04D2CC918E44804ACE8E8493E5EBC1F4E679AA41517E1FC261E",
+  "chromeAndFirefoxZipByteChecked": true,
+  "liveAfterUpdate": "failed; first gold question still sent without memory, see RP332 recheck",
+  "rp05Complete": false
+}

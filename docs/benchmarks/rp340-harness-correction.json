@@ -1,0 +1,22 @@
+{
+  "milestone": "RP340",
+  "atUtc": "2026-10-19T12:19:20.940508+00:00",
+  "reason": "Completed side-promise MUST use kind event under validStoryFact, not kind promise. The synthetic baseline rejected six long fixtures before retrieval; correct the wrapper only.",
+  "goldUnchanged": true,
+  "runtimeUnchanged": true,
+  "productionGuardsUnchanged": true,
+  "firstResultsPreserved": ".output/rp340-first-results.json",
+  "firstVitestPreserved": ".output/rp340-first-vitest.json",
+  "originalHarnessFilesSha256": {
+    "tests/story-rp340-long-holdout.audit.ts": "a051c32d46e71d47b02c77a7cfc4121e2a14e2039d95e00625e811d663097b9a",
+    "tests/fixtures/story-rp340-world.ts": "480a4bc384e9f0d8555bedc178354499ffd1ac17688d3b02277c2f8dec82359c",
+    "vitest.rp340.config.ts": "f02040d1034f535df3ed400bec24983bb931b37890dc1e6e53c3af3f16e33509"
+  },
+  "harnessFilesSha256": {
+    "tests/story-rp340-long-holdout.audit.ts": "1846e443f145bc8642e42ba09ee0a84acb31957f680bee94b6aae69db7e971b7",
+    "tests/fixtures/story-rp340-world.ts": "218e877452c1785bfd99eea160db3a45d1a375d2b6be49d8af8f3cf48d77333d",
+    "vitest.rp340.config.ts": "f02040d1034f535df3ed400bec24983bb931b37890dc1e6e53c3af3f16e33509"
+  },
+  "correctedReport": ".output/rp340-corrected-results.json",
+  "originalPlanSha256": "fcf0cfb2bbb88940dd7aa685d0feb3306a2e3cc8fe8a8482053dac9f51803ed5"
+}

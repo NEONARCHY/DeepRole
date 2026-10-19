@@ -1,0 +1,64 @@
+{
+  "milestone": "RP333",
+  "date": "2026-10-19",
+  "unit": {
+    "files": 10,
+    "passed": 152,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "runtime": {
+    "environment": "isolated synthetic installed Edge MV3",
+    "passed": 34,
+    "failed": 0,
+    "flaky": 0,
+    "singleSerialRun": true,
+    "durationMs": 371192.504,
+    "localReport": ".output/rp333-runtime.json",
+    "activationDetailVerifiedThroughRepositoryPort": true
+  },
+  "live": {
+    "installedRevision": "RP332",
+    "exactFailureStage": "activation",
+    "publicError": "story-binding-conflict",
+    "selectedTabAfterFreshInventory": "602384680",
+    "duplicateCachedTab": "602384706",
+    "selectedTabFailureMs": [
+      24,
+      4
+    ],
+    "manualSeedResent": false,
+    "remainingQuestionsBlocked": 7,
+    "remainingCauseFixed": false,
+    "rp333Detail": "observed activation-tab-inactive in RP334 background new-chat attempt; original RP332 causes not retroactively proven"
+  },
+  "packages": [
+    {
+      "browser": "chrome",
+      "files": 23,
+      "sha256": "265e79f1e8de18f4365d35d487c8aa5f0b349f6727188674133879ba34d1cac2",
+      "zipMatchesBuild": true,
+      "manifestAtRoot": true
+    },
+    {
+      "browser": "firefox",
+      "files": 23,
+      "sha256": "f0f127e28cf2e74cd3fc544acb679365a4d6a6d9fc48172f290a5279eeac25e7",
+      "zipMatchesBuild": true,
+      "manifestAtRoot": true
+    }
+  ],
+  "planSha256": "F717EF16DF9323BD251500252CAD9F3531BACB03F69719CB3964F46A1809D127",
+  "rp05Complete": false,
+  "rp08Complete": false,
+  "liveFollowup": {
+    "milestone": "RP334",
+    "report": "docs/benchmarks/rp334-verification.json",
+    "installedRevision": "RP333",
+    "goldPassed": 8,
+    "goldTotal": 8,
+    "cleanFirstSendPassed": true,
+    "cleanAfterReloadPassed": true,
+    "runtimeChanged": false
+  }
+}

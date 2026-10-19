@@ -1,0 +1,12 @@
+{
+  "milestone": "RP339",
+  "scope": "Personal live acceptance of RP338 prefix presentation repair; not a new retrieval-quality holdout",
+  "chatUrl": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+  "release": "RP338, user-confirmed update; no independent installed-binary hash",
+  "query": "[Отдельно от флюгера: где латунный ключ от восточной мастерской и была ли проверена пломба маячного фонаря?]",
+  "expectedReply": ["ключ остаётся у Норы", "пломба ещё не проверена", "передача ключа не состоялась"],
+  "expectedPresentation": ["Historical user bubbles show actual questions, not injected technical prefix", "New message shows actual question before reload", "New message stays clean after reload", "Final reply and selected world remain visible"],
+  "baseline": "Historical Nora/Mira and later access questions visually clean after user update, before this turn's first send; screenshot saved in ignored .output",
+  "procedure": ["Read existing historical user messages visually", "Send the fixed OOC query without seed or correct answers", "Read the completed reply and visible warnings", "Reload the same chat and inspect its loaded final user bubble and reply", "Leave the composer empty and update repository handoff"],
+  "limits": ["Existing sequential chat may use native history", "Visual presentation and response audit only; no raw DB or network audit", "Current world uses ordinary lore entries; not the synthetic 614-source structured index"]
+}

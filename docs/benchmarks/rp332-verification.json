@@ -1,0 +1,47 @@
+{
+  "milestone": "RP332",
+  "date": "2026-10-19",
+  "unit": {
+    "files": 9,
+    "passed": 143,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "runtime": {
+    "environment": "isolated synthetic installed Edge MV3",
+    "passed": 34,
+    "failed": 0,
+    "flaky": 0,
+    "singleSerialRun": true,
+    "durationMs": 329316.25,
+    "localReport": ".output/rp332-runtime.json"
+  },
+  "liveRP331Recheck": {
+    "goldQuestionsAttempted": 1,
+    "nativeSends": 4,
+    "passed": 0,
+    "remainingQuestionsBlocked": 7,
+    "manualSeedResent": false,
+    "sourceUpdatedFromFailedReplies": false,
+    "newTargetChatId": "49f2623a-1c8e-46f4-9d4a-4fefd0aae369",
+    "causeAfterReload": "not yet known"
+  },
+  "diagnosticsInstalledLive": "pending user update",
+  "packages": [
+    {
+      "browser": "chrome",
+      "files": 23,
+      "sha256": "d8334cedaedca3b42364b46404fa92b359139cf22d9ed55ab1786555241b9411",
+      "zipMatchesBuild": true
+    },
+    {
+      "browser": "firefox",
+      "files": 23,
+      "sha256": "46e5f1a8cd083035220bfc20d0acea6a6264097273b5ab68dab54a00d038bfa9",
+      "zipMatchesBuild": true
+    }
+  ],
+  "planSha256": "F717EF16DF9323BD251500252CAD9F3531BACB03F69719CB3964F46A1809D127",
+  "rp05Complete": false,
+  "rp08Complete": false
+}

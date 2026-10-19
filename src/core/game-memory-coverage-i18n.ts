@@ -1,5 +1,9 @@
 import type {Locale} from "./types";
 const ru={
+ incompleteTitle:"Полнота памяти для этого хода не подтверждена",
+ incompleteBody:"Не все действия и ссылки на предметы удалось проверить. Подобранная память может содержать другие дела и не включать нужные детали.",
+ incompleteAction:"Проверьте подключённую память или уточните ход. Сохранённая история не изменена.",
+ incomplete:"Подобрана доступная память; смысл хода и все ссылки не подтверждены",
  budgetTitle:"Не вся важная память поместилась",
  budgetBody:"Полный найденный набор превышает лимит памяти для следующего сообщения. Используется прежний подбор: часть важных сведений может не попасть в запрос.",
  requiredTitle:"Обязательная память превышает лимит",
@@ -15,6 +19,10 @@ const ru={
  preview:"Это подготовка к следующему сообщению, не подтверждение отправки или использования памяти DeepSeek. Проверяется найденный набор для поддержанной формулировки, а не вся история.",
 };
 const en:Record<keyof typeof ru,string>={
+ incompleteTitle:"Memory coverage for this turn is unverified",
+ incompleteBody:"Some actions and object references could not be checked. Selected memory may include other duties and miss required details.",
+ incompleteAction:"Check connected memory or clarify the turn. Your saved history is unchanged.",
+ incomplete:"Available memory was selected; the whole turn and all references are unverified",
  budgetTitle:"Some important memory did not fit",
  budgetBody:"The complete identified set exceeds the memory budget for your next message. The previous selection is used: some important details may be missing from the request.",
  requiredTitle:"Required memory exceeds the budget",

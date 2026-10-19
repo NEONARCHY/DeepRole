@@ -1,0 +1,42 @@
+{
+  "id": "rp330-live-long-20261019",
+  "world": "ТЕСТ DeepRole — Мастерская у моста",
+  "topic": "медный флюгер восточной башни",
+  "seed": [
+    "Нора обещала откалибровать медный флюгер восточной башни только после письменного разрешения смотрителя и подписи Миры. Разрешение ещё не получено, подписи Миры ещё нет.",
+    "Мира отдельно обещала проверить медный флюгер восточной башни только после звонка охраны. Разрешение смотрителя само по себе не является условием её обещания. Охрана ещё не звонила.",
+    "Питание медного флюгера восточной башни восстановлено. Калибровка и проверка ещё не начались.",
+    "Синий пакет с чертежами уже доставлен Мире. Это завершённое поручение, отдельное от калибровки и проверки медного флюгера восточной башни.",
+    "Артём предполагает, что медный флюгер восточной башни принадлежит смотрителю. Владение не подтверждено, это только предположение Артёма.",
+    "Прежний допуск к медному флюгеру восточной башни отозван. Для доступа нужен новый допуск, которого пока нет.",
+    "Позже Нора сообщила о дополнительном осмотре крепления медного флюгера восточной башни до калибровки. Осмотр ещё не проведён. Остальные условия обещаний не отменены."
+  ],
+  "repeatCount": 80,
+  "batches": 4,
+  "repeatTemplate": "Мира сказала: «Мы снова говорили о медном флюгере восточной башни у сектора {sector}; новых сведений не появилось; ничего не предприняли; ничего не обещали».",
+  "queries": [
+    {"id":"nora","text":"[Что именно обещала Нора по медному флюгеру восточной башни и какие исходные условия пока не выполнены?]","must":["калибровка","письменное разрешение смотрителя не получено","подписи Миры нет"],"mustNot":["обещание выполнено","звонок охраны как замена двух условий Норы"]},
+    {"id":"mira","text":"[Что отдельно обещала Мира по медному флюгеру восточной башни и чего она ждёт? Можно ли заменить это разрешением смотрителя?]","must":["проверка","звонок охраны ещё не состоялся","разрешение смотрителя не заменяет звонок"]},
+    {"id":"progress","text":"[По медному флюгеру восточной башни: что уже сделано с питанием, калибровкой, проверкой и синим пакетом?]","must":["питание восстановлено","калибровка не начата","проверка не начата","синий пакет доставлен Мире"]},
+    {"id":"access","text":"[Действителен ли старый допуск к медному флюгеру восточной башни и есть ли новый?]","must":["старый отозван","нового нет"]},
+    {"id":"owner","text":"[Кому принадлежит медный флюгер восточной башни: что известно достоверно и кто только предполагает владельца?]","must":["владелец не подтверждён","Артём предполагает смотрителя"]},
+    {"id":"extra","text":"[Какой дополнительный осмотр медного флюгера восточной башни упоминала Нора и проведён ли он? Отменил ли он исходные условия?]","must":["осмотр крепления","не проведён","исходные условия не отменены"]},
+    {"id":"crossplot","text":"[Отдельно от флюгера: где латунный ключ от восточной мастерской и была ли проверена пломба маячного фонаря?]","must":["ключ у Норы","пломба не проверена"]},
+    {"id":"hypothesis","text":"[Если предположить, что охрана уже позвонила и Мира проверила флюгер, это станет сыгранным событием? Какой статус проверки у нас сейчас?]","must":["гипотеза не событие","звонка не было","проверка не начата"]}
+  ],
+  "procedure": [
+    "Freeze this plan and SHA before first model request; do not edit gold after observing responses.",
+    "Send seven seed facts as a played narrated episode in the existing disposable test world.",
+    "Run memory review, inspect exact proposed records and preserve first extraction outcome before manual repair.",
+    "Send four played batches of twenty fully qualified empty repeated reports; inspect completed responses.",
+    "Run memory review again; inspect any proposals before accepting; reject false completion or ownership claims.",
+    "Open a separate empty DeepSeek chat manually, select the same world, and ask fixed OOC queries without continuation recap or re-supplying seed facts.",
+    "Read the visible selected-memory list as well as responses; distinguish indexed retrieval from native transcript recall."
+  ],
+  "limits": [
+    "Eighty reports are spread across four user messages, not eighty independently captured assistant turns.",
+    "Live extraction may deduplicate repeats; without stored role-seeded repeats this does not independently prove the RP325 story-repeat-selection path.",
+    "A model output or UI readback does not substitute for an independent database or actual POST audit.",
+    "Compound player actions are a separate next stage."
+  ]
+}

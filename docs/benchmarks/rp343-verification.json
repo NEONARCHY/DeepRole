@@ -1,0 +1,1332 @@
+{
+  "milestone": "RP343",
+  "scope": "Repair and SEEN replay of frozen RP342/RP340/RP336; not a new independent set or personal live DeepSeek.",
+  "productionSourceHashes": {
+    "src/core/story-narrative-recall.ts": "6d1c5847e51fa5d835a98612ee91a62e9a3257876ffb8970e90cd2aef91f1a37",
+    "src/core/story-unresolved-intent.ts": "c55f01f91477bf2953434d8773e244454a40c2ae47e956f98abb527c57774115",
+    "src/core/game-context.ts": "ba34dae48f5552a66b2f4e06afb480f2986ae1f1986edc93c05674d7fdb039db",
+    "src/core/game-memory-coverage-i18n.ts": "fa56319367be6e68f90fea04a9179ea184585be3e6f37f3b9bafffdb0c9d7ec4"
+  },
+  "frozenUnchanged": {
+    "342": {
+      "datasetSha256": "2aa3a6b0027cb0ca432b26daa32c8215336bd76a6e8fe6e7232ba42033af64f5",
+      "planSha256": "182581d6957ca0c1f349570aae83ccca58098961e189d1ada5a3af87332bd035"
+    },
+    "340": {
+      "datasetSha256": "4ddb207ff0ec71018125aa01eefcb39e4fb1f3e4e22e1c4492f5a8d3ef9cf556",
+      "planSha256": "fcf0cfb2bbb88940dd7aa685d0feb3306a2e3cc8fe8a8482053dac9f51803ed5"
+    },
+    "336": {
+      "datasetSha256": "906a8e042884359ecf7bcc8152781373eb28f4c4a3655959298b7b588aa87568",
+      "planSha256": "7ea8b55b2c59a12c16540947faccb979babc4d2593503e9711ece23545dd3e24"
+    }
+  },
+  "evidenceHelperSha256": "57ea2d746e11530af485897c80f712bfe91e16becb38b522af2ead5d6b6dbbbe",
+  "seenQuality": {
+    "342": {
+      "measurements": 480,
+      "queryHistoryCases": 160,
+      "positiveCases": 72,
+      "positiveComplete": 72,
+      "controls": 88,
+      "controlsMemoryComplete": 88,
+      "falseComplete": 0,
+      "missingSources": 0,
+      "noticeMismatches": 0,
+      "casesWithMissing": 0,
+      "incompleteWithoutBudgetWarning": 0,
+      "incompleteWithoutPreparationWarning": 0,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "three-literal",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four-narrative",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "free-equipment",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "free-paperwork",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "grounded-short",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ungrounded-short",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "partial-condition",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negative-plan",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "quoted-plan",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "cancelled-route",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "owner-question",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "speech-history",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "similar-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "reordered",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "causal-bridge",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "quiet-greeting",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "long-interruption",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "belief-versus-record",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "noticeMismatches": 0,
+          "withPreparationWarning": 8,
+          "withBudgetWarning": 0
+        }
+      ]
+    },
+    "340": {
+      "measurements": 576,
+      "queryHistoryCases": 192,
+      "positiveCases": 84,
+      "positiveComplete": 84,
+      "controls": 108,
+      "controlsMemoryComplete": 108,
+      "falseComplete": 0,
+      "missingSources": 0,
+      "incompleteWithoutBudgetWarning": 0,
+      "incompleteWithoutPreparationWarning": 0,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "two",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "three",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "aside",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "pause",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "conditional",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negative",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "actor",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "synonym",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "short-reference",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "permission",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "partial-condition",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "quotation",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "reordered",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        }
+      ]
+    },
+    "336": {
+      "measurements": 432,
+      "queryHistoryCases": 144,
+      "positiveCases": 96,
+      "positiveComplete": 96,
+      "controls": 48,
+      "controlsMemoryComplete": 48,
+      "falseComplete": 0,
+      "missingSources": 0,
+      "incompleteWithoutBudgetWarning": 0,
+      "incompleteWithoutPreparationWarning": 0,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "short-two",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "short-three",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambient-two",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambient-three",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "return-and-act",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "actions-across-sentences",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "narrative-four-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "pause-between-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "long-transition",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "conditional-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negated-first-action",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown-fourth-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambiguous-her-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion-premise",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "foreign-unknown-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        }
+      ]
+    }
+  },
+  "maxTokens": {
+    "342": 2855,
+    "340": 2861,
+    "336": 2020
+  },
+  "seenRuntimeUnchanged": true,
+  "fullSuite": {
+    "numTotalTests": 9773,
+    "numPassedTests": 9768,
+    "numFailedTests": 0,
+    "numTodoTests": 5,
+    "success": true
+  },
+  "fullRuntimeUnchanged": true,
+  "fullReportLocal": ".output/rp343-full4-final.json",
+  "earlyUnitRuns": {
+    "rp343-unresolved-first-red": {
+      "counts": {
+        "numTotalTests": 22,
+        "numPassedTests": 1,
+        "numFailedTests": 21,
+        "numTodoTests": 0,
+        "success": false
+      },
+      "failedTests": [
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:three-literal: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 8: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:four-narrative: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 8: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:free-equipment: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 2: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:free-paperwork: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 11: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pr"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:grounded-short: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 6: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:ungrounded-short: exact saved evidence and visible caution",
+          "message": "AssertionError: expected undefined to be 'incomplete' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:16:59\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:unknown-object: exact saved evidence and visible caution",
+          "message": "AssertionError: expected undefined to be 'incomplete' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:16:59\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:similar-object: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 15: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pr"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "ru:cancelled-route: exact saved evidence and visible caution",
+          "message": "AssertionError: expected undefined to be 'incomplete' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:16:59\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:three-literal: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 8: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:four-narrative: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 8: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:free-equipment: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 0: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:free-paperwork: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 10: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pr"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:grounded-short: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 6: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:ungrounded-short: exact saved evidence and visible caution",
+          "message": "AssertionError: expected undefined to be 'incomplete' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:16:59\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:unknown-object: exact saved evidence and visible caution",
+          "message": "AssertionError: expected undefined to be 'incomplete' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:16:59\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:similar-object: exact saved evidence and visible caution",
+          "message": "AssertionError: missing 15: expected false to be true // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:15:114\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pr"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "en:cancelled-route: exact saved evidence and visible caution",
+          "message": "AssertionError: expected undefined to be 'incomplete' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:16:59\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Pro"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "available exact sources with unknown roles remain unknown candidates",
+          "message": "AssertionError: expected undefined to deeply equal [ { kind: 'plan', …(3) }, …(1) ]\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:37:24\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Des"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "unresolved operative request uses bounded open-duty candidates, never lexical identity",
+          "message": "AssertionError: expected undefined to deeply equal [ { kind: 'plan', …(3) }, …(1) ]\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:40:107\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/De"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "source guards reject unavailable members and absent readers",
+          "message": "AssertionError: expected undefined to match object { primary: [], reason: 'source' }\n    at Proxy.<anonymous> (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:2050:10)\n    at Proxy.<anonymous> (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:1944:14)\n    at Proxy.methodWrapper (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/chai/index.js:1700:25)\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:44:162\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Deskt"
+        }
+      ]
+    },
+    "rp343-unresolved-attempt1": {
+      "counts": {
+        "numTotalTests": 72,
+        "numPassedTests": 70,
+        "numFailedTests": 2,
+        "numTodoTests": 0,
+        "success": false
+      },
+      "failedTests": [
+        {
+          "file": "story-narrative-topics.test.ts",
+          "name": "label capacity applies to related candidates; unrelated dialogue stays quiet",
+          "message": "AssertionError: expected { primary: [ { …(4) }, …(79) ], …(2) } to be undefined\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-narrative-topics.test.ts:77:81\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/"
+        },
+        {
+          "file": "story-unresolved-recall.test.ts",
+          "name": "source guards reject unavailable members and absent readers",
+          "message": "AssertionError: expected { primary: [], repeats: Set{}, …(1) } to match object { primary: [], reason: 'source' }\n(1 matching property omitted from actual)\n    at Proxy.<anonymous> (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:2050:10)\n    at Proxy.<anonymous> (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:1944:14)\n    at Proxy.methodWrapper (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/chai/index.js:1700:25)\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-unresolved-recall.test.ts:44:162\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/"
+        }
+      ]
+    },
+    "rp343-focused-attempt2": {
+      "counts": {
+        "numTotalTests": 72,
+        "numPassedTests": 72,
+        "numFailedTests": 0,
+        "numTodoTests": 0,
+        "success": true
+      },
+      "failedTests": []
+    },
+    "rp343-regression-attempt1": {
+      "counts": {
+        "numTotalTests": 645,
+        "numPassedTests": 645,
+        "numFailedTests": 0,
+        "numTodoTests": 0,
+        "success": true
+      },
+      "failedTests": []
+    },
+    "rp343-unresolved-final": {
+      "counts": {
+        "numTotalTests": 55,
+        "numPassedTests": 55,
+        "numFailedTests": 0,
+        "numTodoTests": 0,
+        "success": true
+      },
+      "failedTests": []
+    }
+  },
+  "earlySeenRp342": {
+    "measurements": 480,
+    "queryHistoryCases": 160,
+    "positiveCases": 72,
+    "positiveComplete": 68,
+    "controls": 88,
+    "controlsMemoryComplete": 84,
+    "falseComplete": 0,
+    "missingSources": 29,
+    "noticeMismatches": 4,
+    "casesWithMissing": 8,
+    "incompleteWithoutBudgetWarning": 8,
+    "incompleteWithoutPreparationWarning": 4,
+    "integrityIssues": 0,
+    "unstable": 0,
+    "byFamily": [
+      {
+        "id": "three-literal",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "four-narrative",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-equipment",
+        "cases": 8,
+        "complete": 7,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-paperwork",
+        "cases": 8,
+        "complete": 5,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "grounded-short",
+        "cases": 8,
+        "complete": 4,
+        "falseComplete": 0,
+        "noticeMismatches": 4,
+        "withPreparationWarning": 4,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "ungrounded-short",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "false-completion",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "partial-condition",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "negative-plan",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quoted-plan",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "cancelled-route",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "owner-question",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "speech-history",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "similar-object",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "reordered",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "causal-bridge",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "unknown-object",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quiet-greeting",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "long-interruption",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "belief-versus-record",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      }
+    ]
+  },
+  "initialFullAttempt": {
+    "status": "Interrupted without final counts to restart final immutable runtime with log heartbeat; exact owned initial PID34136 tree verified and stopped. First source run predated final name masking.",
+    "rawReportIfPresent": ".output/rp343-full-attempt1.json",
+    "leanCtxParserIssue": "Array assignment command mis-split; no part executed. Replaced with a script verifying exact process identity; no allowlist changes."
+  },
+  "runtimeBrowser": {
+    "stats": {
+      "startTime": "2026-10-19T14:37:55.296Z",
+      "duration": 264510.081,
+      "expected": 10,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "actualSyntheticPosts": 52,
+    "new820FactPosts": 32,
+    "old14And618FactPosts": 20,
+    "hiddenPresentationCases": 2,
+    "checks": [
+      "visible localized incomplete notice, no budget confusion",
+      "paid model reference guard present, localized UI strings absent from prompt",
+      "exact source quote/kind/task/claim/role/revision for every new outgoing hint",
+      "accepted closed delivery receipt",
+      "draft exact and canonical facts/seeds/episode sources unchanged after reload"
+    ],
+    "notPersonalLive": true
+  },
+  "ui": {
+    "firstParallelStats": {
+      "startTime": "2026-10-19T14:09:47.705Z",
+      "duration": 82666.344,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "firstFailure": "Two Firefox RU timeout/protocol context-close failures; preserved. No component assertion was relaxed.",
+    "serialStats": {
+      "startTime": "2026-10-19T14:11:36.477Z",
+      "duration": 68214.81599999999,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "sameTimeouts": true,
+    "layouts": "RU/EN Edge/Firefox,320/900; axe, keyboard, no overflow",
+    "screenshotsViewed": [
+      "docs/benchmarks/rp343-memory-incomplete-ru-320.png",
+      "docs/benchmarks/rp343-memory-incomplete-en-320.png"
+    ],
+    "cleanup": {
+      "uiSerialPassed": 8,
+      "screenshotsCopied": 2,
+      "stoppedVerifiedVitePids": [
+        31516
+      ]
+    }
+  },
+  "typecheckExit": 0,
+  "diffCheckExit": 0,
+  "builds": {
+    "chrome": {
+      "exit": 0,
+      "log": ".output/rp343-build-chrome-final.log"
+    },
+    "firefox": {
+      "exit": 0,
+      "log": ".output/rp343-build-firefox-final.log"
+    }
+  },
+  "constraints": [
+    "Bounded duty candidates do not resolve a semantic paraphrase or assign an owner. Unknown roles remain unknown.",
+    "Literal titles, exact sources and a second source witness required; at most32 labels and128 combined source rows, budget still applies.",
+    "Only last2 recent messages up to2000 chars each and only operative references; query up to4000.",
+    "Large/unavailable/budget-rejected bundle returns atomic prior plus honest notice. Ordinary legacy unverified remains details-only, greetings stay quiet.",
+    "No historical V1 role/episode/helper changes, source rewriting, extra model service requests or personal installed reload."
+  ],
+  "next": "Fresh independent holdout with expectations before scoring; separate personal structured-source live on RP343, RP-08 remains separate.",
+  "git": "No push/merge requested; preserve accumulated RP331-343 changes.",
+  "firstCompletedFull": {
+    "counts": {
+      "numTotalTests": 9772,
+      "numPassedTests": 9614,
+      "numFailedTests": 153,
+      "numTodoTests": 5,
+      "success": false
+    },
+    "failures": [
+      {
+        "file": "story-access-repair.test.ts",
+        "failed": 23,
+        "classes": {
+          "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality": 23
+        },
+        "examples": [
+          {
+            "name": "ru:0:same-label: full access/place/status with separate source owners",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-access-repair.test.ts:17:105",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:0:unknown-object: full access/place/status with separate source owners",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-access-repair.test.ts:17:105",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-automation.test.ts",
+        "failed": 1,
+        "classes": {
+          "Error: Test timed out in 30000ms.": 1
+        },
+        "examples": [
+          {
+            "name": "one hundred bounded portions have no pending routine questions, survive reload, and no duplicated profiles",
+            "first": [
+              "Error: Test timed out in 30000ms.",
+              "If this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".",
+              "    at task (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2681:43)"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-conditional-repair.test.ts",
+        "failed": 23,
+        "classes": {
+          "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality": 23
+        },
+        "examples": [
+          {
+            "name": "ru:0:same-label-reference: full access/place/status with separate source owners",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-conditional-repair.test.ts:13:105",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:0:free-reference: full access/place/status with separate source owners",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-conditional-repair.test.ts:13:105",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-cross-owner-repair.test.ts",
+        "failed": 36,
+        "classes": {
+          "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality": 36
+        },
+        "examples": [
+          {
+            "name": "ru:airship:same-label-reference: complete conditions and explicit uncertainty",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-cross-owner-repair.test.ts:13:107",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:airship:wrong-promisor: complete conditions and explicit uncertainty",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-cross-owner-repair.test.ts:13:107",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-embargo-repair.test.ts",
+        "failed": 2,
+        "classes": {
+          "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }": 2
+        },
+        "examples": [
+          {
+            "name": "ru 3: whole publication and consent candidates, guarded and unverified",
+            "first": [
+              "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-embargo-repair.test.ts:17:20",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "en 3: whole publication and consent candidates, guarded and unverified",
+            "first": [
+              "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-embargo-repair.test.ts:17:20",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-exception-repair.test.ts",
+        "failed": 5,
+        "classes": {
+          "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality": 5
+        },
+        "examples": [
+          {
+            "name": "ru:0:unknown-object: full access/place/status with separate source owners",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-exception-repair.test.ts:13:105",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:0:ambiguous-first-name: full access/place/status with separate source owners",
+            "first": [
+              "AssertionError: expected 'incomplete' to be 'unverified' // Object.is equality",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-exception-repair.test.ts:13:105",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-lasting-recall.test.ts",
+        "failed": 1,
+        "classes": {
+          "Error: Test timed out in 5000ms.": 1
+        },
+        "examples": [
+          {
+            "name": "ru restores a previous task selection exactly when the whole addition cannot fit",
+            "first": [
+              "Error: Test timed out in 5000ms.",
+              "If this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".",
+              "    at task (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2681:43)"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-mixed-obligation-repair.test.ts",
+        "failed": 9,
+        "classes": {
+          "AssertionError: expected [ { kind: 'incomplete', …(1) }, …(1) ] to deeply equal [ { kind: 'unverified', …(1) }, …(1) ]": 9
+        },
+        "examples": [
+          {
+            "name": "ru:bakery:proved-reference: transports complete conditions without replacing previous candidates",
+            "first": [
+              "AssertionError: expected [ { kind: 'incomplete', …(1) }, …(1) ] to deeply equal [ { kind: 'unverified', …(1) }, …(1) ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-mixed-obligation-repair.test.ts:23:17",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:glacier:paraphrase-delivery: transports complete conditions without replacing previous candidates",
+            "first": [
+              "AssertionError: expected [ { kind: 'incomplete', …(1) }, …(1) ] to deeply equal [ { kind: 'unverified', …(1) }, …(1) ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-mixed-obligation-repair.test.ts:23:17",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-obligation-premise.test.ts",
+        "failed": 9,
+        "classes": {
+          "AssertionError: expected [ { kind: 'incomplete', …(1) } ] to deeply equal [ { kind: 'unverified', …(1) } ]": 9
+        },
+        "examples": [
+          {
+            "name": "ru:bakery:invented-object: the question cannot establish a promisor or invent an object",
+            "first": [
+              "AssertionError: expected [ { kind: 'incomplete', …(1) } ] to deeply equal [ { kind: 'unverified', …(1) } ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-obligation-premise.test.ts:14:17",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:glacier:invented-object: the question cannot establish a promisor or invent an object",
+            "first": [
+              "AssertionError: expected [ { kind: 'incomplete', …(1) } ] to deeply equal [ { kind: 'unverified', …(1) } ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-obligation-premise.test.ts:14:17",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-obligation-recall.test.ts",
+        "failed": 5,
+        "classes": {
+          "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }": 5
+        },
+        "examples": [
+          {
+            "name": "ru:mountain:paraphrase: whole related sources, exact historical owners, no semantic-complete claim",
+            "first": [
+              "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-obligation-recall.test.ts:22:19",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:mountain:reference: whole related sources, exact historical owners, no semantic-complete claim",
+            "first": [
+              "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-obligation-recall.test.ts:22:19",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-obligation-reference-fallback.test.ts",
+        "failed": 31,
+        "classes": {
+          "AssertionError: expected [ { kind: 'incomplete', …(1) }, …(1) ] to deeply equal [ { kind: 'unverified', …(1) }, …(1) ]": 31
+        },
+        "examples": [
+          {
+            "name": "ru:theatre:swapped-owner: unresolved is explicit, including failed/raw-only/ambiguous bridges",
+            "first": [
+              "AssertionError: expected [ { kind: 'incomplete', …(1) }, …(1) ] to deeply equal [ { kind: 'unverified', …(1) }, …(1) ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-obligation-reference-fallback.test.ts:23:17",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "ru:theatre:invented-object: unresolved is explicit, including failed/raw-only/ambiguous bridges",
+            "first": [
+              "AssertionError: expected [ { kind: 'incomplete', …(1) }, …(1) ] to deeply equal [ { kind: 'unverified', …(1) }, …(1) ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-obligation-reference-fallback.test.ts:23:17",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-relay-repair.test.ts",
+        "failed": 4,
+        "classes": {
+          "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }": 3,
+          "AssertionError: expected { kind: 'incomplete', reason: 'query' } to match object { kind: 'unverified' }": 1
+        },
+        "examples": [
+          {
+            "name": "ru:0:3 restores whole source candidates without identity or completion inference",
+            "first": [
+              "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-relay-repair.test.ts:15:20",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          },
+          {
+            "name": "en:0:2 restores whole source candidates without identity or completion inference",
+            "first": [
+              "AssertionError: expected { kind: 'incomplete', reason: 'query' } to deeply equal { kind: 'unverified', reason: 'query' }",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-relay-repair.test.ts:15:20",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "story-search-diverse.test.ts",
+        "failed": 4,
+        "classes": {
+          "Error: story-search-prototype: incomplete lexical ranking": 1,
+          "AssertionError: expected [ Array(8) ] to deeply equal [ 'fact-0', 'fact-1', 'fact-9', …(5) ]": 1,
+          "AssertionError: expected [ Array(8) ] to deeply equal [ 'fact-9', 'fact-1', 'fact-11', …(5) ]": 1,
+          "AssertionError: expected [ …(103) ] to have a length of 104 but got 103": 1
+        },
+        "examples": [
+          {
+            "name": "candidate/source contract en:fresh:giver",
+            "first": [
+              "Error: story-search-prototype: incomplete lexical ranking",
+              "    at fail (C:/Users/User/Desktop/Projects/DeepRole/scripts/story-search-evaluation.mjs:4:33)",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/scripts/story-search-evaluation.mjs:17:67"
+            ]
+          },
+          {
+            "name": "candidate/source contract en:fresh:two-gifts",
+            "first": [
+              "AssertionError: expected [ Array(8) ] to deeply equal [ 'fact-0', 'fact-1', 'fact-9', …(5) ]",
+              "    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-search-diverse.test.ts:31:22",
+              "    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35"
+            ]
+          }
+        ]
+      }
+    ],
+    "rawLocal": ".output/rp343-full-final.json",
+    "repair": "Preserved specialized obligation, premise, role-question and ambiguous-name lanes; past-event questions cannot trigger pending-duty fallback. Original tests, prototype baseline/gold and V1 grammar unchanged."
+  },
+  "secondFullAttempt": {
+    "status": "Stopped early for final compatibility guard work, no completion claim",
+    "verifiedOwnRootPid": 25008,
+    "rawLocalIfPresent": ".output/rp343-full2-final.json"
+  },
+  "finalCompatibilityFiles": {
+    "numTotalTests": 164,
+    "numPassedTests": 164,
+    "numFailedTests": 0,
+    "numTodoTests": 0,
+    "success": true
+  },
+  "intermediateCompatibility": {
+    "numTotalTests": 860,
+    "numPassedTests": 859,
+    "numFailedTests": 1,
+    "numTodoTests": 0,
+    "success": false
+  },
+  "historySearchRegression": {
+    "numTotalTests": 154,
+    "numPassedTests": 154,
+    "numFailedTests": 0,
+    "numTodoTests": 0,
+    "success": true
+  },
+  "intermediateFullBeforeCompoundGuard": {
+    "counts": {
+      "numTotalTests": 9773,
+      "numPassedTests": 9766,
+      "numFailedTests": 2,
+      "numTodoTests": 5,
+      "success": false
+    },
+    "reason": "Two compound-action ambiguous-name contracts caught an overly broad ambiguity-lane skip. Keep the existing ambiguous-name prompt guard while allowing proven other-object topic candidates; removed only that blanket skip. No assertion/gold changed."
+  },
+  "browserPackages": {
+    "chrome": {
+      "sha256": "e04228178a8bc30dc691e00ff23758b68ab81b04a35e3995ab1e0dc680aef098",
+      "files": 23,
+      "matchesBuildDirectory": true
+    },
+    "firefox": {
+      "sha256": "4ee345d1a5e6927a974e61f835fe58c9f73b82363d1ff3d67fcf047ff9d3a86b",
+      "files": 23,
+      "matchesBuildDirectory": true
+    }
+  },
+  "archive": "downloads/DeepRole-RP343-memory-candidates-20261019.zip"
+}

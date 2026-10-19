@@ -1,0 +1,264 @@
+{
+  "milestone": "RP340",
+  "date": "2026-10-19",
+  "scope": "Independent new agent-authored synthetic compiler+persisted evidence holdout; not personal live, UI or network",
+  "goldFrozenBeforeFirstRun": true,
+  "datasetSha256": "4ddb207ff0ec71018125aa01eefcb39e4fb1f3e4e22e1c4492f5a8d3ef9cf556",
+  "originalPlanSha256": "fcf0cfb2bbb88940dd7aa685d0feb3306a2e3cc8fe8a8482053dac9f51803ed5",
+  "harnessCorrectionSha256": "847ddebbe1e3e2f97b16365c4d27eeefbb0eb94663c7cec73238680057aedd95",
+  "runtimeChangedSinceFreeze": false,
+  "helperUnchanged": true,
+  "firstAttempt": {
+    "exit": 1,
+    "tests": {
+      "numTotalTests": 14,
+      "numPassedTests": 7,
+      "numFailedTests": 7,
+      "success": false
+    },
+    "measurements": 288,
+    "longFixturesRejectedBeforeRetrieval": 6,
+    "reason": "Completed side promises were invalid kind promise; wrapper corrected to event, production guards not weakened.",
+    "report": "docs/benchmarks/rp340-first-results.json"
+  },
+  "correctedAttempt": {
+    "exit": 1,
+    "tests": {
+      "numTotalTests": 14,
+      "numPassedTests": 13,
+      "numFailedTests": 1,
+      "success": false
+    },
+    "summary": {
+      "measurements": 576,
+      "queryHistoryCases": 192,
+      "positiveCases": 84,
+      "positiveComplete": 9,
+      "controls": 108,
+      "controlsMemoryComplete": 35,
+      "falseComplete": 0,
+      "missingSources": 512,
+      "incompleteWithoutBudgetWarning": 145,
+      "incompleteWithoutPreparationWarning": 145,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "two",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "three",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "aside",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "pause",
+          "cases": 12,
+          "complete": 6,
+          "falseComplete": 0,
+          "withBudgetWarning": 2
+        },
+        {
+          "id": "conditional",
+          "cases": 12,
+          "complete": 1,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negative",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "actor",
+          "cases": 12,
+          "complete": 3,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "synonym",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "short-reference",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion",
+          "cases": 12,
+          "complete": 1,
+          "falseComplete": 0,
+          "withBudgetWarning": 1
+        },
+        {
+          "id": "permission",
+          "cases": 12,
+          "complete": 9,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "partial-condition",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "quotation",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "reordered",
+          "cases": 12,
+          "complete": 0,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        }
+      ]
+    },
+    "report": "docs/benchmarks/rp340-results.json",
+    "all12WorldHistoryMeasurementsCompleted": true,
+    "inputMutation": 0,
+    "persistedMutation": 0,
+    "maxTokens": 1667
+  },
+  "bySize": [
+    {
+      "facts": 18,
+      "cases": 96,
+      "complete": 28,
+      "missingSourceOccurrences": 222,
+      "missingWithoutPreparationWarning": 68,
+      "maxContextTokens": 1667
+    },
+    {
+      "facts": 618,
+      "cases": 96,
+      "complete": 16,
+      "missingSourceOccurrences": 290,
+      "missingWithoutPreparationWarning": 77,
+      "maxContextTokens": 1370
+    }
+  ],
+  "coverageKindsCold": {
+    "unverified": 186,
+    "incomplete": 3,
+    "budget": 3
+  },
+  "missingWithoutNoticeExamples": [
+    {
+      "facts": 18,
+      "draft": "Оправа остыла. Устанавливаю лунный фильтр и беру медный футляр, раз Борис уже принёс его.",
+      "missing": [
+        {
+          "index": 6,
+          "text": "Медный футляр: разрешение на вынос отозвано; проверка номера сама по себе не восстановит разрешение."
+        },
+        {
+          "index": 13,
+          "text": "Лунный фильтр: вскрытие пломбы без Лады запрещено; Лада пока не пришла."
+        }
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "preparationWarning": false
+    },
+    {
+      "facts": 618,
+      "draft": "Оправа остыла. Устанавливаю лунный фильтр и беру медный футляр, раз Борис уже принёс его.",
+      "missing": [
+        {
+          "index": 6,
+          "text": "Медный футляр: разрешение на вынос отозвано; проверка номера сама по себе не восстановит разрешение."
+        },
+        {
+          "index": 11,
+          "text": "Лунный фильтр запечатан в шкафу Лады. Его состояние под пломбой неизвестно."
+        },
+        {
+          "index": 13,
+          "text": "Лунный фильтр: вскрытие пломбы без Лады запрещено; Лада пока не пришла."
+        }
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "preparationWarning": false
+    }
+  ],
+  "typecheck": {
+    "command": "node node_modules/typescript/bin/tsc --noEmit",
+    "finalHarnessExit": 0,
+    "preCorrectionExit": 0
+  },
+  "runtimeCodeEdited": false,
+  "browserBuildsRequired": false,
+  "browserBuildsRun": false,
+  "reasonNoBrowserBuild": "Only audit fixtures/harness/config and docs changed; src runtime byte-identical to frozen RP338/RP339.",
+  "liveDeepSeekRun": false,
+  "goldChangedAfterScoring": false,
+  "rp05Complete": false,
+  "rp08Complete": false,
+  "pushOrMergeRequested": false,
+  "next": "Repair omissions and missing preparation notice using frozen RP340 as SEEN regression; recheck RP336 and former regression suites without altering gold. Then a fresh independent holdout.",
+  "gitDiffCheck": {
+    "exit": 0,
+    "existingLineEndingWarningsOnly": true
+  },
+  "browserPackages": {
+    "chrome": {
+      "sha256": "4bf1b8c53939765e524d9cc0d6c26626274bdfc748f4106ff2520f04ce6c6425",
+      "files": 23,
+      "unchangedFromRP338": true
+    },
+    "firefox": {
+      "sha256": "c163e5e20d59f397a7f8a0f1892d4fd465acd626394480147adc044b105d82e3",
+      "files": 23,
+      "unchangedFromRP338": true
+    }
+  }
+}

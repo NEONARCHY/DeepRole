@@ -7,6 +7,7 @@ import { readNativeStoryReply, validNativeStoryReplyQuery, type NativeStoryReply
 import { createStoryDispatchTracker, type StoryDispatchIdentity, type StoryDispatchPacket } from "../core/story-dispatch";
 import { createNativeStoryStreamObserver, type NativeStoryStreamPacket } from "../core/story-native-stream";
 import { readStoryGameSnapshot } from "../core/story-game";
+import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagnostic";
 
 export default defineUnlistedScript(() => {
   const originalFetch = window.fetch.bind(window);
@@ -77,16 +78,17 @@ export default defineUnlistedScript(() => {
     const url = location.href, current = () => location.pathname.match(/\/chat\/(?:s\/)?([^/?#]+)/i)?.[1];
     if (current() !== chatId) return;
     const controller = new AbortController(), timer = window.setTimeout(() => controller.abort(), 8000);
-    let snapshot = null;
+    let snapshot = null, failure = "native-exception";
     try {
       let token = localStorage.getItem("userToken") ?? "";
       if (token.startsWith("{")) { const parsed = JSON.parse(token); token = typeof parsed?.value === "string" ? parsed.value : ""; }
       const response = await originalFetch(`/api/v0/chat/history_messages?chat_session_id=${encodeURIComponent(chatId)}`, { method: "GET", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, credentials: "same-origin", cache: "no-store", signal: controller.signal });
       const payload = await readNativeHistoryPayload(response);
-      if (payload.status === "read") snapshot = readStoryGameSnapshot(payload.value, chatId);
+      if (payload.status === "read") { snapshot = readStoryGameSnapshot(payload.value, chatId); failure = "native-shape"; }
+      else failure = `native-${payload.code}`;
     } catch { /* Pause rather than guessing the selected reply. */ }
     finally { window.clearTimeout(timer); }
-    if (url === location.href && current() === chatId) window.postMessage({ source: SOURCE, type: "STORY_GAME_SNAPSHOT_RESULT", requestId, snapshot }, location.origin);
+    if (url === location.href && current() === chatId) window.postMessage({ source: SOURCE, type: "STORY_GAME_SNAPSHOT_RESULT", requestId, snapshot, ...(!snapshot ? { failure } : {}) }, location.origin);
   }
   async function readDispatchReply(query: NativeStoryReplyQuery): Promise<void> {
     query = structuredClone(query);
@@ -197,6 +199,7 @@ export default defineUnlistedScript(() => {
     if (draft === null) { if (document.documentElement.dataset.deeproleContext) status(false, id, url, undefined, "unsupported-request-shape"); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
     const value = JSON.parse(body), editedId = value?.message_id;
     const editNativeKey = editing && !readStoryTransportIdentity(body) && outgoingChatId(body) && validNativeStoryId(typeof editedId === "number" && Number.isSafeInteger(editedId) ? String(editedId) : editedId) && typeof value.prompt === "string" ? nativeStoryMessageKey(String(editedId)) : undefined;
+    const contextStartedAt = Date.now();
     const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
     const context = contextResponse.context;
     if (continuationPaused()) { captureRequests.delete(id); editPreparations.delete(id); return { ...captured, blocked: true }; }
@@ -205,6 +208,7 @@ export default defineUnlistedScript(() => {
     if (context === null || location.href !== url) {
       captureRequests.delete(id);
       const reason = location.href !== url ? "page-changed" : contextResponse.timedOut ? "context-timeout" : "context-unavailable";
+      if (contextResponse.timedOut) reportMemoryPreparationFailure("handshake", "context-timeout", contextStartedAt);
       status(false, id, url, undefined, reason); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict };
     }
     let result = { ...captured };

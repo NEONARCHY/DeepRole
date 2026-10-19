@@ -1,0 +1,381 @@
+{
+  "milestone": "RP337",
+  "date": "2026-10-19",
+  "goldChanged": false,
+  "helperChanged": false,
+  "scope": "SEEN regression after repair, production-valid synthetic compiler and installed MV3 POST/reload; no personal live DeepSeek",
+  "seen": {
+    "summary": {
+      "measurements": 432,
+      "queryHistoryCases": 144,
+      "positiveCases": 96,
+      "positiveComplete": 96,
+      "controls": 48,
+      "controlsMemoryComplete": 48,
+      "falseComplete": 0,
+      "missingSources": 0,
+      "incompleteWithoutBudgetWarning": 0,
+      "incompleteWithoutPreparationWarning": 0,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "short-two",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "short-three",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambient-two",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambient-three",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "return-and-act",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "actions-across-sentences",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "narrative-four-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "pause-between-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "long-transition",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "conditional-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negated-first-action",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown-fourth-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambiguous-her-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion-premise",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "foreign-unknown-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        }
+      ]
+    },
+    "warningKindsCold": {
+      "none": 40,
+      "incomplete": 104
+    },
+    "maxTokens": 1913,
+    "budget": 6000,
+    "report": "docs/benchmarks/rp337-seen-results.json",
+    "auditPassed": 9,
+    "notIndependent": true
+  },
+  "unit": {
+    "passed": 9646,
+    "failed": 34,
+    "total": 9685,
+    "files": 338,
+    "todo": 5,
+    "singleFullRunGreen": false,
+    "report": ".output/rp337-all-unit-first.json",
+    "serialRecheck": {
+      "passed": 818,
+      "failed": 0,
+      "files": 8,
+      "report": ".output/rp337-serial-recheck.json",
+      "timeoutsChanged": false,
+      "allFullRunFailuresRechecked": true
+    },
+    "failures": [
+      {
+        "name": "ru: shared index cannot retain another world, old branch or removed facts",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "one hundred bounded portions have no pending routine questions, survive reload, and no duplicated profiles",
+        "message": "Error: Test timed out in 30000ms."
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:tower:unknown-tail",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:tower:negative",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:tower:conditional",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:tower:personal",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:tower:third-person",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:station:unknown-tail",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:station:negative",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:station:conditional",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:station:personal",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:station:third-person",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:tower:unknown-tail",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:tower:negative",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:tower:conditional",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:tower:personal",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:tower:third-person",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:station:unknown-tail",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:station:negative",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:station:conditional",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:station:personal",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:station:third-person",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "compound ru exact rollback: ambiguous",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "compound en exact rollback: ambiguous",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "100 turns form bounded batches with no duplicate facts or repeat processing",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "tight budget preserves complete prior selection reef-laboratory/ru/400/2400/open-with-partial-progress",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "tight budget preserves complete prior selection puppet-theatre/ru/400/2400/open-with-partial-progress",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "tight budget preserves complete prior selection mountain-post/ru/400/2400/open-with-partial-progress",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "tight budget preserves complete prior selection reef-laboratory/en/400/2400/open-with-partial-progress",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "tight budget preserves complete prior selection puppet-theatre/en/400/2400/open-with-partial-progress",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "tight budget preserves complete prior selection mountain-post/en/400/2400/open-with-partial-progress",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "current lasting recall retains all 16 positive cases and 32 unchanged controls",
+        "message": "Error: Test timed out in 5000ms."
+      },
+      {
+        "name": "scope/source protection: deictic",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      },
+      {
+        "name": "scope/source protection: duplicate-object",
+        "message": "AssertionError: expected { …(5) } to deeply equal { …(5) }"
+      }
+    ]
+  },
+  "typecheck": "passed",
+  "diffCheck": "passed",
+  "runtime": {
+    "newNarrativeCases": 2,
+    "newNarrativePosts": 16,
+    "facts": 614,
+    "priorCases": 16,
+    "priorLargeIndexCases": 2,
+    "priorNewChatCases": 12,
+    "priorOldChatCases": 2,
+    "unexpected": 0,
+    "reload": true,
+    "canonUnchanged": true,
+    "reports": [
+      ".output/rp337-runtime-debug.json",
+      ".output/rp337-runtime-prior-final.json"
+    ]
+  },
+  "ui": {
+    "passed": 8,
+    "browsers": [
+      "Edge",
+      "Firefox"
+    ],
+    "locales": [
+      "ru",
+      "en"
+    ],
+    "widths": [
+      320,
+      900
+    ],
+    "statesPerScenario": 6,
+    "axeKeyboardOverflowPassed": true,
+    "report": ".output/rp337-ui-final.json"
+  },
+  "earlierAttempts": {
+    "runtimeImport": "stopped before tests; JSON wrapper import attribute fixed, gold unchanged",
+    "runtimeSecond": ".output/rp337-runtime-second.json: previous new-chat scenario context-changed at vault; 1 failed/17 not run",
+    "runtimeNewFirst": ".output/rp337-runtime-new-only.json: dispatch missing, 1 failed/1 not run",
+    "uiFirst": "npx absent; dedicated existing Vite started with bundled node on 4187",
+    "uiSecond": ".output/rp337-ui-second.json: 6 passed/1 Firefox navigation timeout/1 not run",
+    "runtimeGuardsOrTimeoutsWeakened": false
+  },
+  "packages": {
+    "chrome": {
+      "files": 23,
+      "sha256": "72fd472657db5a62cb8db307634eca46dbaa602df0cd8a750c264bfb6fcaa2f0",
+      "buildBytesMatched": true
+    },
+    "firefox": {
+      "files": 23,
+      "sha256": "05d4cf8270ce4da85bc1956a5f082a58ca12be961e23e682aea68948df3c1577",
+      "buildBytesMatched": true
+    }
+  },
+  "namedChrome": "downloads/DeepRole-RP337-narrative-memory-20261019.zip",
+  "rp05Complete": false,
+  "rp08Complete": false,
+  "next": "Fresh independent holdout with expectations fixed before first scoring; do not relabel seen data as independent",
+  "limits": [
+    "Literal source-backed finite labels and morphology, not unrestricted semantic understanding",
+    "4000 query characters,32 discovered labels,128 source rows and whole prompt budget retained",
+    "No new personal live account test; installed copy remains RP333",
+    "No push or merge requested"
+  ]
+}

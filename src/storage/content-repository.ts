@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { REPOSITORY_PORT, requestJsonPort } from "./repository-stream";
+import { safeMemoryPreparationDetail } from "../core/memory-preparation-diagnostic";
 import { isPhotoAddress, mapSheetPhotos } from "../core/photo-assets";
 import type { DataRecord, RecordKind, RecordValue } from "../core/types";
 import type { CharacterEdit, CharacterScope, CharacterSaveResult } from "./characters";
@@ -58,8 +59,8 @@ export type RepositoryRequest =
   | { type: "DR_REPOSITORY"; operation: "isLocked" };
 
 async function call<T>(message: RepositoryRequest): Promise<T> {
-  const result = await requestJsonPort<{ ok?: boolean; error?: string; data?: T }>(browser.runtime.connect({ name: REPOSITORY_PORT }), message);
-  if (!result?.ok) throw new Error(result?.error ?? "DeepRole storage unavailable");
+  const result = await requestJsonPort<{ ok?: boolean; error?: string; detail?: unknown; data?: T }>(browser.runtime.connect({ name: REPOSITORY_PORT }), message);
+  if (!result?.ok) throw new Error(result?.error ?? "DeepRole storage unavailable", { cause: safeMemoryPreparationDetail(result?.detail) });
   return result.data as T;
 }
 

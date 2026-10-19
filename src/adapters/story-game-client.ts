@@ -2,6 +2,7 @@ import { validStoryGameSnapshot, type StoryGameInput, type StoryGameSnapshot } f
 import { createId } from "../core/id";
 import { fieldHistoryAnchor } from "./field-history-client";
 import { nativeStoryMessageKey } from "../core/story-transport";
+import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagnostic";
 interface Scope { chatId: string | null; worldId: string | null; base: string; url: string; locked: boolean; generating: boolean; managed?: boolean; replySignature?: string }
 interface Store {
   storyGameStatus(chatId: string, worldId: string, chatUrl: string): Promise<boolean>;
@@ -42,15 +43,26 @@ export class StoryGameClient {
     try{return await task;}catch{return undefined;}finally{if(this.presentationTask===task)this.presentationTask=null;}
   }
   private async readSnapshot(initial: Scope, anchor: string | null, preparation: boolean): Promise<StoryGameSnapshot> {
+    const startedAt=Date.now();
+    const diagnose=(code:unknown)=>{if(preparation)reportMemoryPreparationFailure("native-snapshot",code,startedAt);};
     const epoch=this.presentationEpoch;
-    const same=()=>{const now=this.scope();return epoch===this.presentationEpoch && now.url===initial.url && now.chatId===initial.chatId && now.worldId===initial.worldId && now.base===initial.base && !now.locked && (preparation||!now.generating&&now.replySignature===initial.replySignature);};
+    // UI proof invalidation is unrelated to a parent's native identity. A late
+    // receipt may reset presentation while that next send is already preparing.
+    const same=()=>{const now=this.scope();return (preparation||epoch===this.presentationEpoch) && now.url===initial.url && now.chatId===initial.chatId && now.worldId===initial.worldId && now.base===initial.base && !now.locked && (preparation||!now.generating&&now.replySignature===initial.replySignature);};
     const snapshot=await new Promise<StoryGameSnapshot>((resolve,reject)=>{
       const requestId=createId('game');
       const finish=()=>{this.win.clearTimeout(timer);this.win.removeEventListener('message',receive);};
       const receive=(event:MessageEvent)=>{
         if(event.source!==this.win||event.origin!==this.win.location.origin||event.data?.source!=='deeprole-page-bridge'||event.data.type!=='STORY_GAME_SNAPSHOT_RESULT'||event.data.requestId!==requestId)return;
         finish();
-        if(!same()||!validStoryGameSnapshot(event.data.snapshot)||event.data.snapshot.chatId!==initial.chatId||!preparation&&fieldHistoryAnchor(this.win.document,true)!==anchor){reject(Error('story-native-line-unavailable'));return;}
+          if(!validStoryGameSnapshot(event.data.snapshot)){diagnose(event.data.failure??'native-shape');reject(Error('story-native-line-unavailable'));return;}
+          if(event.data.snapshot.chatId!==initial.chatId||!preparation&&fieldHistoryAnchor(this.win.document,true)!==anchor){diagnose('native-chat');reject(Error('story-native-line-unavailable'));return;}
+         if(!same()){
+           const now=this.scope();
+           const stale=preparation&&!now.locked&&now.url===initial.url&&now.chatId===initial.chatId&&now.worldId===initial.worldId&&now.base!==initial.base;
+            diagnose(stale?'story-review-stale':'native-scope');
+           reject(Error(stale?'story-review-stale':'story-native-line-unavailable'));return;
+         }
         const value:StoryGameSnapshot=structuredClone(event.data.snapshot);
         if(!preparation&&value.messages.length){
           if(!anchor||!value.messages.some(m=>m.identity.nativeMessageKey===nativeStoryMessageKey(anchor)&&m.identity.role==='assistant'&&m.completion==='complete')){reject(Error('story-native-line-unavailable'));return;}
@@ -59,7 +71,7 @@ export class StoryGameClient {
         if(!preparation&&anchor&&!value.messages.length){reject(Error('story-native-line-unavailable'));return;}
         resolve(value);
       };
-      const timer=this.win.setTimeout(()=>{finish();reject(Error('story-native-line-unavailable'));},9000);
+      const timer=this.win.setTimeout(()=>{finish();diagnose('native-timeout');reject(Error('story-native-line-unavailable'));},9000);
       this.win.addEventListener('message',receive);
       this.win.postMessage({source:'deeprole-extension',type:'STORY_GAME_SNAPSHOT_REQUEST',requestId,chatId:initial.chatId},this.win.location.origin);
     }).finally(() => {

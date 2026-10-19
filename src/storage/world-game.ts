@@ -61,7 +61,10 @@ export function planWorldGameActivation(initial: DataRecord[], input: WorldGameA
  let all = structuredClone(initial);
  const world = all.find(r => r.kind === "world" && r.id === input.worldId)?.data as WorldProfile | undefined;
  let binding = all.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === input.chatId)?.data as ChatBinding | undefined;
- if (!world || !binding || binding.worldId !== world.id || !isSameDeepSeekChat(binding.chatUrl, input.chatUrl, input.chatId)) throw Error("story-binding-conflict");
+  if (!world) throw Error("story-binding-conflict", { cause: "activation-world-missing" });
+  if (!binding) throw Error("story-binding-conflict", { cause: "activation-binding-missing" });
+  if (binding.worldId !== world.id) throw Error("story-binding-conflict", { cause: "activation-binding-world" });
+  if (!isSameDeepSeekChat(binding.chatUrl, input.chatUrl, input.chatId)) throw Error("story-binding-conflict", { cause: "activation-binding-url" });
  if ((world.sharedGame?.revision ?? null) !== input.expectedRevision) throw Error("story-game-stale");
  let game = world.sharedGame;
  if (!game) {

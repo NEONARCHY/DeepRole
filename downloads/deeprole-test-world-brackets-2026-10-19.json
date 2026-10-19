@@ -1,0 +1,109 @@
+{
+  "format": "deeprole-world",
+  "version": 1,
+  "records": [
+    {
+      "kind": "world",
+      "id": "live-brackets-test-world-20261019",
+      "data": {
+        "id": "live-brackets-test-world-20261019",
+        "name": "ТЕСТ DeepRole — Мастерская у моста",
+        "description": "Отдельный вымышленный мир для проверки внеигровых вопросов в квадратных скобках. Артём, 29 лет, — главный герой, помощник архивиста. Нора, 35 лет, — мастер городской мастерской. Мира, 32 года, — смотрительница маяка. Все персонажи совершеннолетние. Известно: латунный ключ от восточной мастерской остаётся у Норы. Нора обещала одолжить ключ Мире только после проверки пломбы на маячном фонаре. Пломба ещё не проверена; ключ Мире не передавали. Ремонт северного фонаря уже завершён. Эти сведения — исходный лор до начала игры.",
+        "color": "#65c9d0",
+        "contextBudget": 6000,
+        "relevanceThreshold": 6,
+        "characterActions": ["neutral", "happy", "worried"],
+        "autoPrepareCharacters": false,
+        "bracketedOoc": true,
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "live-brackets-artem",
+      "data": {
+        "id": "live-brackets-artem",
+        "worldId": "live-brackets-test-world-20261019",
+        "kind": "character",
+        "name": "Артём",
+        "description": "Главный герой, 29 лет. Помощник архивиста; совершеннолетний.",
+        "aliases": ["Артем", "Тёма"],
+        "memberIds": [],
+        "characterSheet": { "gender": "male", "protagonist": true, "appearance": "", "personality": "", "goals": "", "background": "", "sprites": {} },
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "live-brackets-nora",
+      "data": {
+        "id": "live-brackets-nora",
+        "worldId": "live-brackets-test-world-20261019",
+        "kind": "character",
+        "name": "Нора",
+        "description": "Мастер городской мастерской, 35 лет; совершеннолетняя.",
+        "aliases": [],
+        "memberIds": [],
+        "characterSheet": { "gender": "female", "protagonist": false, "appearance": "", "personality": "", "goals": "", "background": "", "sprites": {} },
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entity",
+      "id": "live-brackets-mira",
+      "data": {
+        "id": "live-brackets-mira",
+        "worldId": "live-brackets-test-world-20261019",
+        "kind": "character",
+        "name": "Мира",
+        "description": "Смотрительница маяка, 32 года; совершеннолетняя.",
+        "aliases": [],
+        "memberIds": [],
+        "characterSheet": { "gender": "female", "protagonist": false, "appearance": "", "personality": "", "goals": "", "background": "", "sprites": {} },
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entry",
+      "id": "live-brackets-promise",
+      "data": {
+        "id": "live-brackets-promise",
+        "worldId": "live-brackets-test-world-20261019",
+        "entityIds": ["live-brackets-nora", "live-brackets-mira"],
+        "bookId": null,
+        "title": "Незавершённое обещание Норы Мире",
+        "content": "Нора пообещала одолжить Мире латунный ключ от восточной мастерской только после того, как Мира проверит пломбу на маячном фонаре. Пломба ещё не проверена, ключ остаётся у Норы, обещание не выполнено.",
+        "keywords": ["Нора", "Мира", "ключ", "обещание", "пломба", "фонарь", "мастерская"],
+        "activation": "always",
+        "priority": "high",
+        "enabled": true,
+        "source": { "type": "manual" },
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    },
+    {
+      "kind": "entry",
+      "id": "live-brackets-completed-repair",
+      "data": {
+        "id": "live-brackets-completed-repair",
+        "worldId": "live-brackets-test-world-20261019",
+        "entityIds": ["live-brackets-mira"],
+        "bookId": null,
+        "title": "Завершённый ремонт северного фонаря",
+        "content": "Ремонт северного фонаря завершён до начала текущей игры. Это отдельное событие и оно не означает, что проверена пломба маячного фонаря у восточной мастерской.",
+        "keywords": ["Мира", "ремонт", "фонарь", "завершено"],
+        "activation": "always",
+        "priority": "normal",
+        "enabled": true,
+        "source": { "type": "manual" },
+        "createdAt": 1,
+        "updatedAt": 1
+      }
+    }
+  ]
+}

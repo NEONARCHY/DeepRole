@@ -26,9 +26,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
       await page.evaluate(async action => {
         const { presentHiddenHandoffs } = await import(String("/src/adapters/deepseek-handoff-dom.ts"));
         const { visibleStoryHistory } = await import(String("/src/adapters/story-history-dom.ts"));
+        const {continuationContext}=await import(String('/src/core/story-continuation.ts'));
         const row = document.createElement("div"); row.className = "ds-message"; row.dataset.messageId = "ordinary";
         row.innerHTML = '<div class="ds-collapsible-text"><div></div></div>';
-        row.querySelector(".ds-collapsible-text > div")!.textContent = '<deeprole_character_mode>PRIVATE PROFILES</deeprole_character_mode>\n<deeprole_profile_excerpts>[]</deeprole_profile_excerpts>\n<deeprole_choice_mode version="1">PRIVATE OPTIONS</deeprole_choice_mode>\n\n[User message]\n' + action;
+        const recap=continuationContext({version:1,source:'history',partial:true,omittedTurns:1,turns:[{role:'assistant',text:'PRIVATE RECAP\n[User message]\nQuoted marker stays inside JSON.'}]});
+        row.querySelector(".ds-collapsible-text > div")!.textContent = '<deeprole_character_mode>PRIVATE PROFILES</deeprole_character_mode>\n<deeprole_profile_excerpts>[]</deeprole_profile_excerpts>\n<deeprole_choice_mode version="1">PRIVATE OPTIONS</deeprole_choice_mode>\n\n'+recap+'\n\n[User message]\n' + action;
         document.body.prepend(row); presentHiddenHandoffs(); presentHiddenHandoffs();
         (window as any).cleanStory = visibleStoryHistory().turns.find((t: { role: string; text: string }) => t.role === "user")?.text;
       }, action);

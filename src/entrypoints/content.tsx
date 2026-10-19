@@ -1,4 +1,5 @@
 import { startCastWorker } from "../adapters/cast-worker";
+import { reportMemoryPreparationFailure, type MemoryPreparationStage } from "../core/memory-preparation-diagnostic";
 import { startIsolatedFieldWorker } from "../adapters/isolated-field-worker";
 import { bootstrapCastServiceScreen, bootstrapFieldServiceScreen } from "../adapters/field-service-screen";
 import { IsolatedFieldClient } from "../adapters/isolated-field-client";
@@ -731,6 +732,24 @@ class PageController {
     }
   }
 
+  private stayInOldChat(): Promise<void> {
+    const scope = this.pageScope(), notice = this.state.oldChatNotice, binding = this.currentBinding();
+    if (!notice || !binding) return Promise.resolve();
+    // The notice can disappear during reload before activation/start has
+    // finished. Sends must await the entire explicit scene change, not just
+    // observe that the notice is gone and compile an intermediate checkpoint.
+    const task = this.sceneQueue.catch(() => undefined).then(async () => {
+      this.assertScope(scope);
+      await repository.acknowledgeOldChatNotice({ chatId: binding.chatId, chatUrl: scope.url, worldId: binding.worldId ?? null, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "dismissed" });
+      this.assertScope(scope);
+      await this.reload();
+      if (!this.sharedGameActive()) await this.activateGame("resume");
+      this.assertScope(scope);
+    });
+    this.sceneQueue = task;
+    return task;
+  }
+
   private currentScene(): SceneState {
     const binding = this.currentBinding();
     const chatId = this.adapter.getChatId(), snapshot = this.appliedSnapshot;
@@ -993,12 +1012,7 @@ class PageController {
     this.state.contextPosition = this.resolveContextIndicatorPosition();
     this.root?.render(<PageWidget
       state={{ ...this.state, selection: this.selection, memoryDelivery: this.memoryDelivery() }}
-      onStayInOldChat={async () => {
-        const notice = this.state.oldChatNotice, binding = this.currentBinding();
-        if (!notice || !binding) return;
-        await repository.acknowledgeOldChatNotice({ chatId: binding.chatId, chatUrl: location.href, worldId: binding.worldId ?? null, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "dismissed" });
-        await this.reload(); if (!this.sharedGameActive()) await this.activateGame("resume");
-      }}
+      onStayInOldChat={() => this.stayInOldChat()}
       onContinueStory={() => void this.continueStory().then(result => { if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : result.error === "busy" ? "waiting" : result.error === "continuation-world-too-large" ? "tooLarge" : "failed")); })}
       onDismissCapacityWarning={() => void this.dismissCapacityWarning()}
       onDisableCapacityWarnings={() => void updateSettings({ contextWarningsEnabled: false }).then(() => this.reload())}
@@ -2116,10 +2130,21 @@ class PageController {
       const parentMessageId = typeof event.data.parentMessageId === "string" && /^[\w-]{1,120}$/u.test(event.data.parentMessageId) ? event.data.parentMessageId : undefined;
       let storyIdentity = validStoryTransportIdentity(event.data.storyIdentity) && event.data.storyIdentity.chatId === requestChatId ? structuredClone(event.data.storyIdentity) : undefined;
       void (async () => {
+        const preparationStartedAt = Date.now();
+        let preparationStage: MemoryPreparationStage = "navigation";
         try {
           if (this.adapter.getChatId() !== this.previousChatId) this.navigate();
-          await this.navigationTask;
+          const navigation = this.navigationTask;
+          try { await navigation; }
+          finally {
+            // Reject THIS send after a failed transition, but do not poison all
+            // later sends after the user has repaired/activated the current chat.
+            // A newer queued navigation keeps ownership of its own outcome.
+            if (this.navigationTask === navigation) this.navigationTask = navigation.catch(() => undefined);
+          }
+          preparationStage = "scene";
           await this.sceneQueue.catch(() => undefined);
+          preparationStage = "recovery";
           await this.replyRecovery.flush();
           await this.recoveryReceiptTask;
           await this.oldChatNoticeReceiptTask;
@@ -2128,6 +2153,7 @@ class PageController {
           // IndexedDB read for every outgoing message makes large worlds miss
           // the bounded injection handshake. If a refresh is already running,
           // follow its newest task before compiling this request's context.
+          preparationStage = "reload";
           let task = this.reloadTask;
           let loaded = await task;
           // A first request can race extension startup before its initial load
@@ -2141,11 +2167,13 @@ class PageController {
           if (this.pendingContinuationCommit) throw Error("handoff-commit-pending");
           const oldNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
           if (!this.pendingService && requestChatId === this.adapter.getChatId() && !this.sharedGameActive() && oldNotice && (oldNotice.sent || oldNotice.dismissed)) {
+            preparationStage = "activation";
             await this.activateGame("resume"); loaded = await this.reload();
             if (!loaded || location.href !== url) throw Error("context-changed");
           }
           const shared = this.worlds.find(w => w.id === this.currentScene().worldId)?.sharedGame;
           if (!this.pendingService && requestChatId === this.adapter.getChatId() && this.sharedGameActive() && shared?.managed && !this.trackedBindings.has(this.currentBinding()?.id ?? "")) {
+            preparationStage = "start";
             await this.storyGame.run("start"); loaded = await this.reload();
             if (!loaded || location.href !== url) throw Error("context-changed");
           }
@@ -2153,7 +2181,24 @@ class PageController {
           // has no managed story head to rewind. Its native parent ID alone
           // must not invoke the game client or reject otherwise valid memory.
           if ((storyIdentity || typeof event.data.editNativeKey === "string") && !this.pendingService && this.sharedGameActive() && this.trackedBindings.has(this.currentBinding()?.id ?? "")) {
-            const synced = await this.storyGame.run(storyIdentity ? "parent" : "edit", storyIdentity?.nativeParentKey ?? event.data.editNativeKey);
+            preparationStage = "parent";
+            const parentScope = this.contextScopeKey(), parentBindingId = this.currentBinding()!.id;
+            let synced: import("../core/story-game").StoryGameOutcome;
+            for (let attempt = 0; ; attempt++) {
+              try {
+                synced = await this.storyGame.run(storyIdentity ? "parent" : "edit", storyIdentity?.nativeParentKey ?? event.data.editNativeKey);
+                break;
+              } catch (error) {
+                // A prior checkpoint/profile write can finish before its library
+                // notification reaches this tab. The stale-base guard rejects
+                // before committing; refresh once, then validate the SAME parent.
+                // Never retry a native model send or bypass branch/manual guards.
+                if (attempt !== 0 || !(error instanceof Error) || error.message !== "story-review-stale") throw error;
+                loaded = await this.reload();
+                if (!loaded || location.href !== url || this.contextScopeKey() !== parentScope || this.currentBinding()?.id !== parentBindingId
+                  || !this.sharedGameActive() || !this.trackedBindings.has(parentBindingId)) throw Error("context-changed");
+              }
+            }
             if (synced.active && typeof event.data.editNativeKey === "string" && synced.preparedParentKey !== undefined && requestChatId) {
               storyIdentity = { chatId: requestChatId, nativeParentKey: synced.preparedParentKey };
               const prefixes = this.knownUserPrefixes.get(JSON.stringify([this.currentBinding()?.id, event.data.editNativeKey])) ?? [];
@@ -2162,6 +2207,7 @@ class PageController {
             }
             if (synced.changed) { this.characterScan = null; loaded = await this.reload(); if (!loaded || location.href !== url) throw Error("context-changed"); }
           }
+          preparationStage = "policy";
           const generation = this.reloadGeneration;
           const sceneKey = this.contextScopeKey();
           const scene = this.currentScene();
@@ -2195,10 +2241,12 @@ class PageController {
           const reminder = notice && !notice.sent && !notice.dismissed ? oldChatNoticePrompt(notice, this.state.locale) : "";
           // Count the whole validated recovered reply in required memory, not
           // an unmetered suffix. Keep the request-specific result across awaits.
+          preparationStage = "compile";
           const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext);
           const context = reminder || normalContext;
           if (reminder && notice) delivery.oldChatNotice = { chatId: currentChatId!, chatUrl: url, worldId: scene.worldId, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "sent" };
           if (reply && recoveryContext && !reminder) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
+          preparationStage = "vault";
           if (await repository.isLocked()) { this.publishContext(""); throw new Error("vault-locked"); }
           this.assertScope(delivery.scope);
           if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
@@ -2214,6 +2262,7 @@ class PageController {
           for (const [key, value] of this.deliveries) if (Date.now() - value.createdAt > 10 * 60 * 1000 || this.deliveries.size >= 64) this.deliveries.delete(key);
           this.deliveries.set(id, delivery);
           const binding = this.currentBinding();
+          preparationStage = "capture";
           const capture = storyIdentity && binding && scene.worldId && binding.worldId === scene.worldId && !this.pendingService
             && (event.data.captureTransport === "xhr" || event.data.captureTransport === "fetch")
             ? await this.dispatchCaptures.prepare({ id, worldId: scene.worldId, bindingId: binding.id, identity: storyIdentity, transport: event.data.captureTransport,
@@ -2223,6 +2272,7 @@ class PageController {
           window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: true, context, ...(capture ? { capture: true } : {}), ...(draft !== initialDraft ? { replacementDraft: draft } : {}), ...(typeof event.data.editNativeKey === "string" && storyIdentity ? { preparedIdentity: storyIdentity } : {}) }, "*");
           this.maybeWarnContext();
         } catch (error) {
+          reportMemoryPreparationFailure(preparationStage, error, preparationStartedAt);
           if (error instanceof Error && error.message.startsWith("story-")) { this.state.warning = storyReviewText(this.state.locale, storyReviewError(error)); this.render(); }
           window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false }, "*");
         }

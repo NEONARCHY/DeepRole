@@ -1,0 +1,1733 @@
+{
+  "version": 1,
+  "milestone": "RP336",
+  "purpose": "Independent holdout authored before first compiler run; human gold, no scorer-generated labels",
+  "historyRepeatCounts": [
+    0,
+    600
+  ],
+  "budget": 6000,
+  "phases": [
+    "cold",
+    "warm",
+    "reopened"
+  ],
+  "worlds": [
+    {
+      "id": "abyssal-station-ru",
+      "plot": "abyssal-station",
+      "locale": "ru",
+      "worldName": "Подводная станция",
+      "objects": [
+        "напорный люк",
+        "керамическая капсула",
+        "фиолетовый маяк",
+        "оранжевый журнал"
+      ],
+      "people": [
+        "Эва",
+        "Дан",
+        "Яна"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Эва обещала проверить предмет напорный люк только после снятия аварийной блокировки и согласования с Даном. Оба условия пока не выполнены.",
+          "quote": "Эва обещала проверить предмет напорный люк только после снятия аварийной блокировки и согласования с Даном. Оба условия пока не выполнены.",
+          "task": {
+            "key": "duty-0",
+            "title": "напорный люк",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Дан обещал починить предмет напорный люк только после звонка Яны. Снятие аварийной блокировки не заменяет звонок; Яна ещё не звонила.",
+          "quote": "Дан обещал починить предмет напорный люк только после звонка Яны. Снятие аварийной блокировки не заменяет звонок; Яна ещё не звонила.",
+          "task": {
+            "key": "duty-1",
+            "title": "напорный люк",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет напорный люк: питание индикатора восстановлено, но блокировка не снята и проверка не начата.",
+          "quote": "Предмет напорный люк: питание индикатора восстановлено, но блокировка не снята и проверка не начата."
+        },
+        {
+          "kind": "event",
+          "text": "Яна сказала: «Для предмета напорный люк нужна дополнительная проверка крепления; мы ещё её не проводили».",
+          "quote": "Яна сказала: «Для предмета напорный люк нужна дополнительная проверка крепления; мы ещё её не проводили»."
+        },
+        {
+          "kind": "belief",
+          "text": "Дан считает, что предмет напорный люк принадлежит смотрителю. Это предположение; владелец не установлен.",
+          "quote": "Дан считает, что предмет напорный люк принадлежит смотрителю. Это предположение; владелец не установлен."
+        },
+        {
+          "kind": "promise",
+          "text": "Эва обещала вернуть предмет керамическая капсула только после того, как Яна сверит номер. Яна ещё не сверяла номер.",
+          "quote": "Эва обещала вернуть предмет керамическая капсула только после того, как Яна сверит номер. Яна ещё не сверяла номер.",
+          "task": {
+            "key": "duty-5",
+            "title": "керамическая капсула",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет керамическая капсула: разрешение на вынос отозвано; нового разрешения нет.",
+          "quote": "Предмет керамическая капсула: разрешение на вынос отозвано; нового разрешения нет.",
+          "claim": {
+            "key": "removal.permission",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Дан уже доставил предмет керамическая капсула Яне. Эта доставка выполнена, но обещание Эвы вернуть предмет ещё не выполнено.",
+          "quote": "Дан уже доставил предмет керамическая капсула Яне. Эта доставка выполнена, но обещание Эвы вернуть предмет ещё не выполнено.",
+          "task": {
+            "key": "duty-7",
+            "title": "керамическая капсула",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Яна обещала осмотреть предмет фиолетовый маяк только после записи давления в протокол. Записи пока нет.",
+          "quote": "Яна обещала осмотреть предмет фиолетовый маяк только после записи давления в протокол. Записи пока нет.",
+          "task": {
+            "key": "duty-8",
+            "title": "фиолетовый маяк",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет фиолетовый маяк: зелёный индикатор горит, осмотр ещё не начат.",
+          "quote": "Предмет фиолетовый маяк: зелёный индикатор горит, осмотр ещё не начат."
+        },
+        {
+          "kind": "plan",
+          "text": "Эва планирует прочитать предмет оранжевый журнал только после получения письма попечителя; письмо ещё не пришло.",
+          "quote": "Эва планирует прочитать предмет оранжевый журнал только после получения письма попечителя; письмо ещё не пришло.",
+          "task": {
+            "key": "duty-10",
+            "title": "оранжевый журнал",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет оранжевый журнал запечатан и находится у Дана. Печать не вскрывали.",
+          "quote": "Предмет оранжевый журнал запечатан и находится у Дана. Печать не вскрывали."
+        },
+        {
+          "kind": "event",
+          "text": "Предмет потолочный люк уже починен. Это другой предмет; он не подтверждает выполнение обещания Дана.",
+          "quote": "Предмет потолочный люк уже починен. Это другой предмет; он не подтверждает выполнение обещания Дана."
+        },
+        {
+          "kind": "event",
+          "text": "Предмет стеклянная капсула передан Эве. Это другой предмет; его передача не разрешает вынос предмета керамическая капсула.",
+          "quote": "Предмет стеклянная капсула передан Эве. Это другой предмет; его передача не разрешает вынос предмета керамическая капсула."
+        }
+      ],
+      "queries": [
+        {
+          "id": "short-two",
+          "draft": "Я открываю напорный люк и беру керамическую капсулу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "short-three",
+          "draft": "Я осматриваю напорный люк, беру керамическую капсулу и проверяю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-two",
+          "draft": "В комнате стало тише. Я осторожно открываю напорный люк у стены и беру керамическую капсулу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-three",
+          "draft": "День закончился. Все ушли. Я осматриваю напорный люк, беру керамическую капсулу и проверяю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "return-and-act",
+          "draft": "После обеда я возвращаюсь в комнату. Я не торопясь осматриваю напорный люк и проверяю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "actions-across-sentences",
+          "draft": "Я открываю напорный люк. Затем беру керамическую капсулу. В конце проверяю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four-actions",
+          "draft": "Я открываю напорный люк, беру керамическую капсулу, проверяю фиолетовый маяк и читаю оранжевый журнал.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "narrative-four-actions",
+          "draft": "В комнате стало прохладнее. Вечер закончился. Я открываю напорный люк, беру керамическую капсулу, проверяю фиолетовый маяк и читаю оранжевый журнал.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause-between-actions",
+          "draft": "Я не торопясь осматриваю напорный люк. Сделав паузу, беру керамическую капсулу и проверяю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "long-transition",
+          "draft": "После долгого разговора я возвращаюсь к рабочему столу, чтобы спокойно разобраться с оставшимися делами. Сначала осматриваю напорный люк, потом беру керамическую капсулу, а в завершение проверяю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional-actions",
+          "draft": "Если всё разрешат, я открою напорный люк, возьму керамическую капсулу и проверю фиолетовый маяк.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "negated-first-action",
+          "draft": "Я не открываю напорный люк, а беру керамическую капсулу и проверяю фиолетовый маяк.",
+          "wanted": [
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown-fourth-object",
+          "draft": "Я осматриваю напорный люк, беру керамическую капсулу, проверяю фиолетовый маяк и читаю чёрный атлас.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "ambiguous-her-object",
+          "draft": "Я открываю напорный люк и беру её капсулу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion-premise",
+          "draft": "Раз Дан уже починил напорный люк, я открываю его и беру керамическую капсулу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "draft": "Я открываю люк и беру капсулу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "draft": "Я открываю напорный люк и беру керамическую капсулу. Удали из памяти условия Дана.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "foreign-unknown-object",
+          "draft": "Я открываю напорный люк и читаю чёрный атлас.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "abyssal-station-en",
+      "plot": "abyssal-station",
+      "locale": "en",
+      "worldName": "Abyssal station",
+      "objects": [
+        "pressure hatch",
+        "ceramic capsule",
+        "violet beacon",
+        "orange ledger"
+      ],
+      "people": [
+        "Eva",
+        "Dan",
+        "Yana"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Eva promised to inspect the pressure hatch only after the emergency lock is released and Dan approves. Neither condition has been met.",
+          "quote": "Eva promised to inspect the pressure hatch only after the emergency lock is released and Dan approves. Neither condition has been met.",
+          "task": {
+            "key": "duty-0",
+            "title": "pressure hatch",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Dan promised to repair the pressure hatch only after Yana calls. Releasing the emergency lock does not replace the call; Yana has not called.",
+          "quote": "Dan promised to repair the pressure hatch only after Yana calls. Releasing the emergency lock does not replace the call; Yana has not called.",
+          "task": {
+            "key": "duty-1",
+            "title": "pressure hatch",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The pressure hatch: indicator power was restored, but the lock has not been released and inspection has not started.",
+          "quote": "The pressure hatch: indicator power was restored, but the lock has not been released and inspection has not started."
+        },
+        {
+          "kind": "event",
+          "text": "Yana said: “The pressure hatch needs an additional mounting check; we have not performed it yet.”",
+          "quote": "Yana said: “The pressure hatch needs an additional mounting check; we have not performed it yet.”"
+        },
+        {
+          "kind": "belief",
+          "text": "Dan believes the pressure hatch belongs to the custodian. This is a supposition; ownership has not been established.",
+          "quote": "Dan believes the pressure hatch belongs to the custodian. This is a supposition; ownership has not been established."
+        },
+        {
+          "kind": "promise",
+          "text": "Eva promised to return the ceramic capsule only after Yana verifies its number. Yana has not verified the number.",
+          "quote": "Eva promised to return the ceramic capsule only after Yana verifies its number. Yana has not verified the number.",
+          "task": {
+            "key": "duty-5",
+            "title": "ceramic capsule",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The ceramic capsule: permission to remove it was revoked; there is no new permission.",
+          "quote": "The ceramic capsule: permission to remove it was revoked; there is no new permission.",
+          "claim": {
+            "key": "removal.permission",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Dan already delivered the ceramic capsule to Yana. That delivery is complete, but Eva has not fulfilled her promise to return it.",
+          "quote": "Dan already delivered the ceramic capsule to Yana. That delivery is complete, but Eva has not fulfilled her promise to return it.",
+          "task": {
+            "key": "duty-7",
+            "title": "ceramic capsule",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Yana promised to examine the violet beacon only after pressure is entered in the log. No pressure entry exists yet.",
+          "quote": "Yana promised to examine the violet beacon only after pressure is entered in the log. No pressure entry exists yet.",
+          "task": {
+            "key": "duty-8",
+            "title": "violet beacon",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The violet beacon: the green indicator is on; examination has not started.",
+          "quote": "The violet beacon: the green indicator is on; examination has not started."
+        },
+        {
+          "kind": "plan",
+          "text": "Eva plans to read the orange ledger only after the trustee letter arrives; the letter has not arrived.",
+          "quote": "Eva plans to read the orange ledger only after the trustee letter arrives; the letter has not arrived.",
+          "task": {
+            "key": "duty-10",
+            "title": "orange ledger",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The orange ledger is sealed and held by Dan. The seal has not been opened.",
+          "quote": "The orange ledger is sealed and held by Dan. The seal has not been opened."
+        },
+        {
+          "kind": "event",
+          "text": "The ceiling hatch has already been repaired. It is a different object and does not prove fulfillment of Dan's promise.",
+          "quote": "The ceiling hatch has already been repaired. It is a different object and does not prove fulfillment of Dan's promise."
+        },
+        {
+          "kind": "event",
+          "text": "The glass capsule was handed to Eva. It is a different object; that transfer does not authorize removal of the ceramic capsule.",
+          "quote": "The glass capsule was handed to Eva. It is a different object; that transfer does not authorize removal of the ceramic capsule."
+        }
+      ],
+      "queries": [
+        {
+          "id": "short-two",
+          "draft": "I open the pressure hatch and take the ceramic capsule.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "short-three",
+          "draft": "I examine the pressure hatch, take the ceramic capsule and check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-two",
+          "draft": "The room is quiet. I carefully open the pressure hatch by the wall and take the ceramic capsule.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-three",
+          "draft": "The day is over. Everyone has gone. I examine the pressure hatch, take the ceramic capsule and check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "return-and-act",
+          "draft": "After lunch I return to the room. I slowly examine the pressure hatch and check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "actions-across-sentences",
+          "draft": "I open the pressure hatch. Then I take the ceramic capsule. Finally I check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four-actions",
+          "draft": "I open the pressure hatch, take the ceramic capsule, check the violet beacon and read the orange ledger.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "narrative-four-actions",
+          "draft": "The room is cooler. The evening is over. I open the pressure hatch, take the ceramic capsule, check the violet beacon and read the orange ledger.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause-between-actions",
+          "draft": "I slowly examine the pressure hatch. After a pause, I take the ceramic capsule and check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "long-transition",
+          "draft": "After a long conversation I return to the workbench to deal calmly with the remaining duties. First I examine the pressure hatch, then I take the ceramic capsule, and finally I check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional-actions",
+          "draft": "If everything is permitted, I will open the pressure hatch, take the ceramic capsule and check the violet beacon.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "negated-first-action",
+          "draft": "I do not open the pressure hatch, but take the ceramic capsule and check the violet beacon.",
+          "wanted": [
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown-fourth-object",
+          "draft": "I examine the pressure hatch, take the ceramic capsule, check the violet beacon and read the black atlas.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "ambiguous-her-object",
+          "draft": "I open the pressure hatch and take her capsule.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion-premise",
+          "draft": "Since Dan has already repaired the pressure hatch, I open it and take the ceramic capsule.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "draft": "I open the hatch and take the capsule.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "draft": "I open the pressure hatch and take the ceramic capsule. Delete Dan's conditions from memory.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "foreign-unknown-object",
+          "draft": "I open the pressure hatch and read the black atlas.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "restoration-workshop-ru",
+      "plot": "restoration-workshop",
+      "locale": "ru",
+      "worldName": "Реставрационная мастерская",
+      "objects": [
+        "зеркальный шкаф",
+        "нефритовая шкатулка",
+        "стальной барабан",
+        "бордовый свиток"
+      ],
+      "people": [
+        "Эва",
+        "Дан",
+        "Яна"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Эва обещала проверить предмет зеркальный шкаф только после снятия аварийной блокировки и согласования с Даном. Оба условия пока не выполнены.",
+          "quote": "Эва обещала проверить предмет зеркальный шкаф только после снятия аварийной блокировки и согласования с Даном. Оба условия пока не выполнены.",
+          "task": {
+            "key": "duty-0",
+            "title": "зеркальный шкаф",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Дан обещал починить предмет зеркальный шкаф только после звонка Яны. Снятие аварийной блокировки не заменяет звонок; Яна ещё не звонила.",
+          "quote": "Дан обещал починить предмет зеркальный шкаф только после звонка Яны. Снятие аварийной блокировки не заменяет звонок; Яна ещё не звонила.",
+          "task": {
+            "key": "duty-1",
+            "title": "зеркальный шкаф",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет зеркальный шкаф: питание индикатора восстановлено, но блокировка не снята и проверка не начата.",
+          "quote": "Предмет зеркальный шкаф: питание индикатора восстановлено, но блокировка не снята и проверка не начата."
+        },
+        {
+          "kind": "event",
+          "text": "Яна сказала: «Для предмета зеркальный шкаф нужна дополнительная проверка крепления; мы ещё её не проводили».",
+          "quote": "Яна сказала: «Для предмета зеркальный шкаф нужна дополнительная проверка крепления; мы ещё её не проводили»."
+        },
+        {
+          "kind": "belief",
+          "text": "Дан считает, что предмет зеркальный шкаф принадлежит смотрителю. Это предположение; владелец не установлен.",
+          "quote": "Дан считает, что предмет зеркальный шкаф принадлежит смотрителю. Это предположение; владелец не установлен."
+        },
+        {
+          "kind": "promise",
+          "text": "Эва обещала вернуть предмет нефритовая шкатулка только после того, как Яна сверит номер. Яна ещё не сверяла номер.",
+          "quote": "Эва обещала вернуть предмет нефритовая шкатулка только после того, как Яна сверит номер. Яна ещё не сверяла номер.",
+          "task": {
+            "key": "duty-5",
+            "title": "нефритовая шкатулка",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет нефритовая шкатулка: разрешение на вынос отозвано; нового разрешения нет.",
+          "quote": "Предмет нефритовая шкатулка: разрешение на вынос отозвано; нового разрешения нет.",
+          "claim": {
+            "key": "removal.permission",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Дан уже доставил предмет нефритовая шкатулка Яне. Эта доставка выполнена, но обещание Эвы вернуть предмет ещё не выполнено.",
+          "quote": "Дан уже доставил предмет нефритовая шкатулка Яне. Эта доставка выполнена, но обещание Эвы вернуть предмет ещё не выполнено.",
+          "task": {
+            "key": "duty-7",
+            "title": "нефритовая шкатулка",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Яна обещала осмотреть предмет стальной барабан только после записи давления в протокол. Записи пока нет.",
+          "quote": "Яна обещала осмотреть предмет стальной барабан только после записи давления в протокол. Записи пока нет.",
+          "task": {
+            "key": "duty-8",
+            "title": "стальной барабан",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет стальной барабан: зелёный индикатор горит, осмотр ещё не начат.",
+          "quote": "Предмет стальной барабан: зелёный индикатор горит, осмотр ещё не начат."
+        },
+        {
+          "kind": "plan",
+          "text": "Эва планирует прочитать предмет бордовый свиток только после получения письма попечителя; письмо ещё не пришло.",
+          "quote": "Эва планирует прочитать предмет бордовый свиток только после получения письма попечителя; письмо ещё не пришло.",
+          "task": {
+            "key": "duty-10",
+            "title": "бордовый свиток",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Предмет бордовый свиток запечатан и находится у Дана. Печать не вскрывали.",
+          "quote": "Предмет бордовый свиток запечатан и находится у Дана. Печать не вскрывали."
+        },
+        {
+          "kind": "event",
+          "text": "Предмет раскладной шкаф уже починен. Это другой предмет; он не подтверждает выполнение обещания Дана.",
+          "quote": "Предмет раскладной шкаф уже починен. Это другой предмет; он не подтверждает выполнение обещания Дана."
+        },
+        {
+          "kind": "event",
+          "text": "Предмет малахитовая шкатулка передан Эве. Это другой предмет; его передача не разрешает вынос предмета нефритовая шкатулка.",
+          "quote": "Предмет малахитовая шкатулка передан Эве. Это другой предмет; его передача не разрешает вынос предмета нефритовая шкатулка."
+        }
+      ],
+      "queries": [
+        {
+          "id": "short-two",
+          "draft": "Я открываю зеркальный шкаф и беру нефритовую шкатулку.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "short-three",
+          "draft": "Я осматриваю зеркальный шкаф, беру нефритовую шкатулку и проверяю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-two",
+          "draft": "В комнате стало тише. Я осторожно открываю зеркальный шкаф у стены и беру нефритовую шкатулку.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-three",
+          "draft": "День закончился. Все ушли. Я осматриваю зеркальный шкаф, беру нефритовую шкатулку и проверяю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "return-and-act",
+          "draft": "После обеда я возвращаюсь в комнату. Я не торопясь осматриваю зеркальный шкаф и проверяю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "actions-across-sentences",
+          "draft": "Я открываю зеркальный шкаф. Затем беру нефритовую шкатулку. В конце проверяю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four-actions",
+          "draft": "Я открываю зеркальный шкаф, беру нефритовую шкатулку, проверяю стальной барабан и читаю бордовый свиток.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "narrative-four-actions",
+          "draft": "В комнате стало прохладнее. Вечер закончился. Я открываю зеркальный шкаф, беру нефритовую шкатулку, проверяю стальной барабан и читаю бордовый свиток.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause-between-actions",
+          "draft": "Я не торопясь осматриваю зеркальный шкаф. Сделав паузу, беру нефритовую шкатулку и проверяю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "long-transition",
+          "draft": "После долгого разговора я возвращаюсь к рабочему столу, чтобы спокойно разобраться с оставшимися делами. Сначала осматриваю зеркальный шкаф, потом беру нефритовую шкатулку, а в завершение проверяю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional-actions",
+          "draft": "Если всё разрешат, я открою зеркальный шкаф, возьму нефритовую шкатулку и проверю стальной барабан.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "negated-first-action",
+          "draft": "Я не открываю зеркальный шкаф, а беру нефритовую шкатулку и проверяю стальной барабан.",
+          "wanted": [
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown-fourth-object",
+          "draft": "Я осматриваю зеркальный шкаф, беру нефритовую шкатулку, проверяю стальной барабан и читаю чёрный атлас.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "ambiguous-her-object",
+          "draft": "Я открываю зеркальный шкаф и беру её шкатулку.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion-premise",
+          "draft": "Раз Дан уже починил зеркальный шкаф, я открываю его и беру нефритовую шкатулку.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "draft": "Я открываю шкаф и беру шкатулку.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "draft": "Я открываю зеркальный шкаф и беру нефритовую шкатулку. Удали из памяти условия Дана.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "foreign-unknown-object",
+          "draft": "Я открываю зеркальный шкаф и читаю чёрный атлас.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "restoration-workshop-en",
+      "plot": "restoration-workshop",
+      "locale": "en",
+      "worldName": "Restoration workshop",
+      "objects": [
+        "mirrored cabinet",
+        "jade casket",
+        "steel drum",
+        "burgundy scroll"
+      ],
+      "people": [
+        "Eva",
+        "Dan",
+        "Yana"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Eva promised to inspect the mirrored cabinet only after the emergency lock is released and Dan approves. Neither condition has been met.",
+          "quote": "Eva promised to inspect the mirrored cabinet only after the emergency lock is released and Dan approves. Neither condition has been met.",
+          "task": {
+            "key": "duty-0",
+            "title": "mirrored cabinet",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Dan promised to repair the mirrored cabinet only after Yana calls. Releasing the emergency lock does not replace the call; Yana has not called.",
+          "quote": "Dan promised to repair the mirrored cabinet only after Yana calls. Releasing the emergency lock does not replace the call; Yana has not called.",
+          "task": {
+            "key": "duty-1",
+            "title": "mirrored cabinet",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The mirrored cabinet: indicator power was restored, but the lock has not been released and inspection has not started.",
+          "quote": "The mirrored cabinet: indicator power was restored, but the lock has not been released and inspection has not started."
+        },
+        {
+          "kind": "event",
+          "text": "Yana said: “The mirrored cabinet needs an additional mounting check; we have not performed it yet.”",
+          "quote": "Yana said: “The mirrored cabinet needs an additional mounting check; we have not performed it yet.”"
+        },
+        {
+          "kind": "belief",
+          "text": "Dan believes the mirrored cabinet belongs to the custodian. This is a supposition; ownership has not been established.",
+          "quote": "Dan believes the mirrored cabinet belongs to the custodian. This is a supposition; ownership has not been established."
+        },
+        {
+          "kind": "promise",
+          "text": "Eva promised to return the jade casket only after Yana verifies its number. Yana has not verified the number.",
+          "quote": "Eva promised to return the jade casket only after Yana verifies its number. Yana has not verified the number.",
+          "task": {
+            "key": "duty-5",
+            "title": "jade casket",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The jade casket: permission to remove it was revoked; there is no new permission.",
+          "quote": "The jade casket: permission to remove it was revoked; there is no new permission.",
+          "claim": {
+            "key": "removal.permission",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Dan already delivered the jade casket to Yana. That delivery is complete, but Eva has not fulfilled her promise to return it.",
+          "quote": "Dan already delivered the jade casket to Yana. That delivery is complete, but Eva has not fulfilled her promise to return it.",
+          "task": {
+            "key": "duty-7",
+            "title": "jade casket",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Yana promised to examine the steel drum only after pressure is entered in the log. No pressure entry exists yet.",
+          "quote": "Yana promised to examine the steel drum only after pressure is entered in the log. No pressure entry exists yet.",
+          "task": {
+            "key": "duty-8",
+            "title": "steel drum",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The steel drum: the green indicator is on; examination has not started.",
+          "quote": "The steel drum: the green indicator is on; examination has not started."
+        },
+        {
+          "kind": "plan",
+          "text": "Eva plans to read the burgundy scroll only after the trustee letter arrives; the letter has not arrived.",
+          "quote": "Eva plans to read the burgundy scroll only after the trustee letter arrives; the letter has not arrived.",
+          "task": {
+            "key": "duty-10",
+            "title": "burgundy scroll",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The burgundy scroll is sealed and held by Dan. The seal has not been opened.",
+          "quote": "The burgundy scroll is sealed and held by Dan. The seal has not been opened."
+        },
+        {
+          "kind": "event",
+          "text": "The folding cabinet has already been repaired. It is a different object and does not prove fulfillment of Dan's promise.",
+          "quote": "The folding cabinet has already been repaired. It is a different object and does not prove fulfillment of Dan's promise."
+        },
+        {
+          "kind": "event",
+          "text": "The malachite casket was handed to Eva. It is a different object; that transfer does not authorize removal of the jade casket.",
+          "quote": "The malachite casket was handed to Eva. It is a different object; that transfer does not authorize removal of the jade casket."
+        }
+      ],
+      "queries": [
+        {
+          "id": "short-two",
+          "draft": "I open the mirrored cabinet and take the jade casket.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "short-three",
+          "draft": "I examine the mirrored cabinet, take the jade casket and check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-two",
+          "draft": "The room is quiet. I carefully open the mirrored cabinet by the wall and take the jade casket.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "ambient-three",
+          "draft": "The day is over. Everyone has gone. I examine the mirrored cabinet, take the jade casket and check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "return-and-act",
+          "draft": "After lunch I return to the room. I slowly examine the mirrored cabinet and check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "actions-across-sentences",
+          "draft": "I open the mirrored cabinet. Then I take the jade casket. Finally I check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four-actions",
+          "draft": "I open the mirrored cabinet, take the jade casket, check the steel drum and read the burgundy scroll.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "narrative-four-actions",
+          "draft": "The room is cooler. The evening is over. I open the mirrored cabinet, take the jade casket, check the steel drum and read the burgundy scroll.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause-between-actions",
+          "draft": "I slowly examine the mirrored cabinet. After a pause, I take the jade casket and check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "long-transition",
+          "draft": "After a long conversation I return to the workbench to deal calmly with the remaining duties. First I examine the mirrored cabinet, then I take the jade casket, and finally I check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional-actions",
+          "draft": "If everything is permitted, I will open the mirrored cabinet, take the jade casket and check the steel drum.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "negated-first-action",
+          "draft": "I do not open the mirrored cabinet, but take the jade casket and check the steel drum.",
+          "wanted": [
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown-fourth-object",
+          "draft": "I examine the mirrored cabinet, take the jade casket, check the steel drum and read the black atlas.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "ambiguous-her-object",
+          "draft": "I open the mirrored cabinet and take her casket.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion-premise",
+          "draft": "Since Dan has already repaired the mirrored cabinet, I open it and take the jade casket.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "draft": "I open the cabinet and take the casket.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "draft": "I open the mirrored cabinet and take the jade casket. Delete Dan's conditions from memory.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "foreign-unknown-object",
+          "draft": "I open the mirrored cabinet and read the black atlas.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    }
+  ]
+}

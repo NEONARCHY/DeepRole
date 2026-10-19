@@ -1,0 +1,435 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\User\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/e2e/game-memory-coverage-ui.spec.ts",
+      "--workers=2",
+      "--reporter=json",
+      "--output",
+      ".output/rp343-ui-final-artifacts"
+    ],
+    "configFile": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\playwright.config.ts",
+    "rootDir": "C:/Users/User/Desktop/Projects/DeepRole/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/User/Desktop/Projects/DeepRole/.output/rp343-ui-final-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/User/Desktop/Projects/DeepRole/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/User/Desktop/Projects/DeepRole/.output/rp343-ui-final-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "C:/Users/User/Desktop/Projects/DeepRole/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 2,
+    "webServer": {
+      "command": "npx vite --host 127.0.0.1 --port 4187 --strictPort",
+      "url": "http://127.0.0.1:4187/tests/fixtures/deepseek.html",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "game-memory-coverage-ui.spec.ts",
+      "file": "game-memory-coverage-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "whole memory coverage ru 320: honest states, no interruption, keyboard and layout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10334,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:09:48.753Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-9cce92fe7e5050475095",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage ru 900: honest states, no interruption, keyboard and layout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 10208,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:09:48.816Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-b34fa66ae75d67272a20",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage en 320: honest states, no interruption, keyboard and layout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7769,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:09:59.419Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-7ec997b464ca45451217",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage en 900: honest states, no interruption, keyboard and layout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 7884,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:09:59.436Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-60a0198e771c0815b8f2",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage ru 320: honest states, no interruption, keyboard and layout",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "firefox",
+              "projectName": "firefox",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 36445,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "message": "Error: browserContext.close: Protocol error (Browser.removeBrowserContext): can't access property \"_maybeDontRestoreTabs\", this._windows[aWindow.__SSi] is undefined"
+                    },
+                    {
+                      "location": {
+                        "file": "[pid=33024][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs",
+                        "column": 5,
+                        "line": 19
+                      },
+                      "message": "Error: page.evaluate: Test timeout of 30000ms exceeded.\nBrowser logs:\n\n<launching> C:\\Users\\User\\AppData\\Local\\ms-playwright\\firefox-1543\\firefox\\firefox.exe -no-remote -headless -profile C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\playwright_firefoxdev_profile-LujbUH -juggler-pipe -silent\n<launched> pid=33024\n[pid=33024][err] *** You are running in headless mode.\n[pid=33024][err] JavaScript warning: resource://services-settings/Utils.sys.mjs, line 125: unreachable code after return statement\n[pid=33024][out] \n[pid=33024][out] Juggler listening to the pipe\n[pid=33024][out] Crash Annotation GraphicsCriticalError: |[0][GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt (t=0.983444) [GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt\n[pid=33024][err] JavaScript error: chrome://juggler/content/Helper.js, line 82: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIWebProgress.removeProgressListener]\n[pid=33024][out] console.warn: services.settings: #fetchAttachment: Forcing fallbackToDump to false due to Utils.LOAD_DUMPS being false\n[pid=33024][out] console.error: (new NotFoundError(\"Could not find fa0fc42c-d91d-fca7-34eb-806ff46062dc in cache or dump\", \"resource://services-settings/Attachments.sys.mjs\", 48))\n[pid=33024][out] console.warn: \"Unable to find the attachment for\" \"fa0fc42c-d91d-fca7-34eb-806ff46062dc\"\n[pid=33024][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=33024][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=33024][err] JavaScript error: , line 0: SyntaxError: JSON.parse: unexpected end of data at line 1 column 1 of the JSON data\n[pid=33024][out] console.error: services.settings: \n[pid=33024][out]   Message: EmptyDatabaseError: \"main/nimbus-desktop-experiments\" has not been synced yet\n[pid=33024][out]   Stack:\n[pid=33024][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs:19:5\n[pid=33024][out] list@resource://services-settings/Database.sys.mjs:96:13\n[pid=33024][out] \n[pid=33024][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=33024][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=33024][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=33024][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=33024][out] console.error: [Exception... \"Component returned failure code: 0x80070057 (NS_ERROR_ILLEGAL_VALUE) [nsIWinTaskbar.getTaskbarProgress]\"  nsresult: \"0x80070057 (NS_ERROR_ILLEGAL_VALUE)\"  location: \"JS frame :: moz-src:///browser/components/downloads/DownloadsTaskbar.sys.mjs :: #windowsAttachIndicator :: line 181\"  data: no]\n[pid=33024][out] \n[pid=33024][out]         ERROR: can't access property \"_maybeDontRestoreTabs\", this._windows[aWindow.__SSi] is undefined maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:4933:5\n[pid=33024][out] maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:661:26\n[pid=33024][out] closeWindow@chrome://global/content/globalOverlay.js:36:48\n[pid=33024][out] _beginRemoveTab@chrome://browser/content/tabbrowser/tabbrowser.js:5975:42\n[pid=33024][out] removeTab@chrome://browser/content/tabbrowser/tabbrowser.js:5772:15\n[pid=33024][out] close@chrome://juggler/content/TargetRegistry.js:760:20\n[pid=33024][out] destroy@chrome://juggler/content/TargetRegistry.js:1012:14\n[pid=33024][out] Browser.removeBrowserContext@chrome://juggler/content/protocol/BrowserHandler.js:70:70\n[pid=33024][out] dispatch@chrome://juggler/content/protocol/Dispatcher.js:133:39\n[pid=33024][out] _dispatch@chrome://juggler/content/protocol/Dispatcher.js:70:36\n[pid=33024][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n[pid=33024][out] \n[pid=33024][out]       \n[pid=33024][out]         ERROR: Failed \"callFunction\": connector for namespace \"page\" in channel \"undefined\" is disposed. _rejectCallbacksFromConnector@chrome://juggler/content/SimpleChannel.js:108:25\n[pid=33024][out] dispose@chrome://juggler/content/SimpleChannel.js:119:27\n[pid=33024][out] dispose@chrome://juggler/content/protocol/PageHandler.js:152:23\n[pid=33024][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:117:21\n[pid=33024][out] destroySession@chrome://juggler/content/protocol/Dispatcher.js:35:13\n[pid=33024][out] _onTargetDestroyed@chrome://juggler/content/protocol/BrowserHandler.js:115:22\n[pid=33024][out] handlerWrapper@chrome://juggler/content/Helper.js:75:51\n[pid=33024][out] emit@resource://gre/modules/EventEmitter.sys.mjs:156:19\n[pid=33024][out] dispose@chrome://juggler/content/TargetRegistry.js:891:20\n[pid=33024][out] onTabCloseListener@chrome://juggler/content/TargetRegistry.js:180:18\n[pid=33024][out] onCloseWindow@chrome://juggler/content/TargetRegistry.js:231:27\n[pid=33024][out] \n[pid=33024] <gracefully close start>\n[pid=33024][err] JavaScript error: chrome://juggler/content/Helper.js, line 82: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIWebProgress.removeProgressListener]\n[pid=33024][out]       \n[pid=33024][out]         ERROR: ERROR: cannot find session with id \"fb4c158e-6c87-4230-9a13-9efbb04e2c80\" _dispatch@chrome://juggler/content/protocol/Dispatcher.js:54:15\n[pid=33024][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n[pid=33024][out] \n[pid=33024][err] JavaScript error: chrome://juggler/content/Helper.js, line 82: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIWebProgress.removeProgressListener]\n[pid=33024][out]       console.error: \"Could not download new icon\" (new ServerInfoError(\"Server response is invalid [Exception... \\\"<no message>\\\"  nsresult: \\\"0x8046001e (<unknown>)\\\"  location: \\\"JS frame :: resource://gre/modules/ServiceRequest.sys.mjs :: open :: line 126\\\"  data: no]\", \"resource://services-settings/Attachments.sys.mjs\", 40))\n[pid=33024][out] 1792419046807\taddons.xpi\tERROR\tSystem addon update list error [Exception... \"<no message>\"  nsresult: \"0x8046001e (<unknown>)\"  location: \"JS frame :: resource://gre/modules/ServiceRequest.sys.mjs :: open :: line 126\"  data: no]\n Please check out https://github.com/dequelabs/axe-core-npm/blob/develop/packages/playwright/error-handling.md\n    at [pid=33024][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs:19:5\n    at [pid=33024][out] list@resource://services-settings/Database.sys.mjs:96:13\n    at [pid=33024][out]         ERROR: can't access property \"_maybeDontRestoreTabs\", this._windows[aWindow.__SSi] is undefined maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:4933:5\n    at [pid=33024][out] maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:661:26\n    at [pid=33024][out] closeWindow@chrome://global/content/globalOverlay.js:36:48\n    at [pid=33024][out] _beginRemoveTab@chrome://browser/content/tabbrowser/tabbrowser.js:5975:42\n    at [pid=33024][out] removeTab@chrome://browser/content/tabbrowser/tabbrowser.js:5772:15\n    at [pid=33024][out] close@chrome://juggler/content/TargetRegistry.js:760:20\n    at [pid=33024][out] destroy@chrome://juggler/content/TargetRegistry.js:1012:14\n    at [pid=33024][out] Browser.removeBrowserContext@chrome://juggler/content/protocol/BrowserHandler.js:70:70\n    at [pid=33024][out] dispatch@chrome://juggler/content/protocol/Dispatcher.js:133:39\n    at [pid=33024][out] _dispatch@chrome://juggler/content/protocol/Dispatcher.js:70:36\n    at [pid=33024][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n    at [pid=33024][out]         ERROR: Failed \"callFunction\": connector for namespace \"page\" in channel \"undefined\" is disposed. _rejectCallbacksFromConnector@chrome://juggler/content/SimpleChannel.js:108:25\n    at [pid=33024][out] dispose@chrome://juggler/content/SimpleChannel.js:119:27\n    at [pid=33024][out] dispose@chrome://juggler/content/protocol/PageHandler.js:152:23\n    at [pid=33024][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:117:21\n    at [pid=33024][out] destroySession@chrome://juggler/content/protocol/Dispatcher.js:35:13\n    at [pid=33024][out] _onTargetDestroyed@chrome://juggler/content/protocol/BrowserHandler.js:115:22\n    at [pid=33024][out] handlerWrapper@chrome://juggler/content/Helper.js:75:51\n    at [pid=33024][out] emit@resource://gre/modules/EventEmitter.sys.mjs:156:19\n    at [pid=33024][out] dispose@chrome://juggler/content/TargetRegistry.js:891:20\n    at [pid=33024][out] onTabCloseListener@chrome://juggler/content/TargetRegistry.js:180:18\n    at [pid=33024][out] onCloseWindow@chrome://juggler/content/TargetRegistry.js:231:27\n    at [pid=33024][out]         ERROR: ERROR: cannot find session with id \"fb4c158e-6c87-4230-9a13-9efbb04e2c80\" _dispatch@chrome://juggler/content/protocol/Dispatcher.js:54:15\n    at [pid=33024][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n    at AxeBuilder.analyze (C:\\Users\\User\\Desktop\\Projects\\DeepRole\\node_modules\\@axe-core\\playwright\\dist\\index.mjs:218:13)\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\game-memory-coverage-ui.spec.ts:17:11"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:10:08.855Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp343-ui-final-artifacts\\game-memory-coverage-ui-wh-55d5e-ruption-keyboard-and-layout-firefox\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp343-ui-final-artifacts\\game-memory-coverage-ui-wh-55d5e-ruption-keyboard-and-layout-firefox\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-a9565a95bd5fff34c6de",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage ru 900: honest states, no interruption, keyboard and layout",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "firefox",
+              "projectName": "firefox",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 35733,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "message": "Error: browserContext.close: Protocol error (Browser.removeBrowserContext): can't access property \"_maybeDontRestoreTabs\", this._windows[aWindow.__SSi] is undefined"
+                    },
+                    {
+                      "location": {
+                        "file": "[pid=26472][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs",
+                        "column": 5,
+                        "line": 19
+                      },
+                      "message": "Error: page.evaluate: Test timeout of 30000ms exceeded.\nBrowser logs:\n\n<launching> C:\\Users\\User\\AppData\\Local\\ms-playwright\\firefox-1543\\firefox\\firefox.exe -no-remote -headless -profile C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\playwright_firefoxdev_profile-iZlaSy -juggler-pipe -silent\n<launched> pid=26472\n[pid=26472][err] *** You are running in headless mode.\n[pid=26472][err] JavaScript warning: resource://services-settings/Utils.sys.mjs, line 125: unreachable code after return statement\n[pid=26472][out] \n[pid=26472][out] Juggler listening to the pipe\n[pid=26472][out] Crash Annotation GraphicsCriticalError: |[0][GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt (t=1.72706) [GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt\n[pid=26472][err] JavaScript error: chrome://juggler/content/Helper.js, line 82: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIWebProgress.removeProgressListener]\n[pid=26472][out] console.warn: services.settings: #fetchAttachment: Forcing fallbackToDump to false due to Utils.LOAD_DUMPS being false\n[pid=26472][out] console.error: (new NotFoundError(\"Could not find fa0fc42c-d91d-fca7-34eb-806ff46062dc in cache or dump\", \"resource://services-settings/Attachments.sys.mjs\", 48))\n[pid=26472][out] console.warn: \"Unable to find the attachment for\" \"fa0fc42c-d91d-fca7-34eb-806ff46062dc\"\n[pid=26472][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=26472][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=26472][err] JavaScript error: , line 0: SyntaxError: JSON.parse: unexpected end of data at line 1 column 1 of the JSON data\n[pid=26472][out] console.error: services.settings: \n[pid=26472][out]   Message: EmptyDatabaseError: \"main/nimbus-desktop-experiments\" has not been synced yet\n[pid=26472][out]   Stack:\n[pid=26472][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs:19:5\n[pid=26472][out] list@resource://services-settings/Database.sys.mjs:96:13\n[pid=26472][out] \n[pid=26472][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=26472][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=26472][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=26472][err] [ERROR shell_windows::taskbar::shortcut] Error matching shortcut: Error { code: HRESULT(0x80004005), message: \"Неопознанная ошибка\" }\n[pid=26472][out] console.error: [Exception... \"Component returned failure code: 0x80070057 (NS_ERROR_ILLEGAL_VALUE) [nsIWinTaskbar.getTaskbarProgress]\"  nsresult: \"0x80070057 (NS_ERROR_ILLEGAL_VALUE)\"  location: \"JS frame :: moz-src:///browser/components/downloads/DownloadsTaskbar.sys.mjs :: #windowsAttachIndicator :: line 181\"  data: no]\n[pid=26472][out] \n[pid=26472][out]         ERROR: can't access property \"_maybeDontRestoreTabs\", this._windows[aWindow.__SSi] is undefined maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:4933:5\n[pid=26472][out] maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:661:26\n[pid=26472][out] closeWindow@chrome://global/content/globalOverlay.js:36:48\n[pid=26472][out] _beginRemoveTab@chrome://browser/content/tabbrowser/tabbrowser.js:5975:42\n[pid=26472][out] removeTab@chrome://browser/content/tabbrowser/tabbrowser.js:5772:15\n[pid=26472][out] close@chrome://juggler/content/TargetRegistry.js:760:20\n[pid=26472][out] destroy@chrome://juggler/content/TargetRegistry.js:1012:14\n[pid=26472][out] Browser.removeBrowserContext@chrome://juggler/content/protocol/BrowserHandler.js:70:70\n[pid=26472][out] dispatch@chrome://juggler/content/protocol/Dispatcher.js:133:39\n[pid=26472][out] _dispatch@chrome://juggler/content/protocol/Dispatcher.js:70:36\n[pid=26472][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n[pid=26472][out] \n[pid=26472][out]       \n[pid=26472][out]         ERROR: Failed \"callFunction\": connector for namespace \"page\" in channel \"undefined\" is disposed. _rejectCallbacksFromConnector@chrome://juggler/content/SimpleChannel.js:108:25\n[pid=26472][out] dispose@chrome://juggler/content/SimpleChannel.js:119:27\n[pid=26472][out] dispose@chrome://juggler/content/protocol/PageHandler.js:152:23\n[pid=26472][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:117:21\n[pid=26472][out] destroySession@chrome://juggler/content/protocol/Dispatcher.js:35:13\n[pid=26472][out] _onTargetDestroyed@chrome://juggler/content/protocol/BrowserHandler.js:115:22\n[pid=26472][out] handlerWrapper@chrome://juggler/content/Helper.js:75:51\n[pid=26472][out] emit@resource://gre/modules/EventEmitter.sys.mjs:156:19\n[pid=26472][out] dispose@chrome://juggler/content/TargetRegistry.js:891:20\n[pid=26472][out] onTabCloseListener@chrome://juggler/content/TargetRegistry.js:180:18\n[pid=26472][out] onCloseWindow@chrome://juggler/content/TargetRegistry.js:231:27\n[pid=26472][out] \n[pid=26472] <gracefully close start>\n[pid=26472][err] JavaScript error: chrome://juggler/content/Helper.js, line 82: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIWebProgress.removeProgressListener]\n[pid=26472][out]       \n[pid=26472][out]         ERROR: ERROR: cannot find session with id \"2832a495-a11a-41ec-a081-57d35272f730\" _dispatch@chrome://juggler/content/protocol/Dispatcher.js:54:15\n[pid=26472][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n[pid=26472][out] \n[pid=26472][err] JavaScript error: chrome://juggler/content/Helper.js, line 82: NS_ERROR_FAILURE: Component returned failure code: 0x80004005 (NS_ERROR_FAILURE) [nsIWebProgress.removeProgressListener]\n[pid=26472][out]       console.error: \"Could not download new icon\" (new ServerInfoError(\"Server response is invalid [Exception... \\\"<no message>\\\"  nsresult: \\\"0x8046001e (<unknown>)\\\"  location: \\\"JS frame :: resource://gre/modules/ServiceRequest.sys.mjs :: open :: line 126\\\"  data: no]\", \"resource://services-settings/Attachments.sys.mjs\", 40))\n[pid=26472][out] 1792419046799\taddons.xpi\tERROR\tSystem addon update list error [Exception... \"<no message>\"  nsresult: \"0x8046001e (<unknown>)\"  location: \"JS frame :: resource://gre/modules/ServiceRequest.sys.mjs :: open :: line 126\"  data: no]\n Please check out https://github.com/dequelabs/axe-core-npm/blob/develop/packages/playwright/error-handling.md\n    at [pid=26472][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs:19:5\n    at [pid=26472][out] list@resource://services-settings/Database.sys.mjs:96:13\n    at [pid=26472][out]         ERROR: can't access property \"_maybeDontRestoreTabs\", this._windows[aWindow.__SSi] is undefined maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:4933:5\n    at [pid=26472][out] maybeDontRestoreTabs@resource:///modules/sessionstore/SessionStore.sys.mjs:661:26\n    at [pid=26472][out] closeWindow@chrome://global/content/globalOverlay.js:36:48\n    at [pid=26472][out] _beginRemoveTab@chrome://browser/content/tabbrowser/tabbrowser.js:5975:42\n    at [pid=26472][out] removeTab@chrome://browser/content/tabbrowser/tabbrowser.js:5772:15\n    at [pid=26472][out] close@chrome://juggler/content/TargetRegistry.js:760:20\n    at [pid=26472][out] destroy@chrome://juggler/content/TargetRegistry.js:1012:14\n    at [pid=26472][out] Browser.removeBrowserContext@chrome://juggler/content/protocol/BrowserHandler.js:70:70\n    at [pid=26472][out] dispatch@chrome://juggler/content/protocol/Dispatcher.js:133:39\n    at [pid=26472][out] _dispatch@chrome://juggler/content/protocol/Dispatcher.js:70:36\n    at [pid=26472][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n    at [pid=26472][out]         ERROR: Failed \"callFunction\": connector for namespace \"page\" in channel \"undefined\" is disposed. _rejectCallbacksFromConnector@chrome://juggler/content/SimpleChannel.js:108:25\n    at [pid=26472][out] dispose@chrome://juggler/content/SimpleChannel.js:119:27\n    at [pid=26472][out] dispose@chrome://juggler/content/protocol/PageHandler.js:152:23\n    at [pid=26472][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:117:21\n    at [pid=26472][out] destroySession@chrome://juggler/content/protocol/Dispatcher.js:35:13\n    at [pid=26472][out] _onTargetDestroyed@chrome://juggler/content/protocol/BrowserHandler.js:115:22\n    at [pid=26472][out] handlerWrapper@chrome://juggler/content/Helper.js:75:51\n    at [pid=26472][out] emit@resource://gre/modules/EventEmitter.sys.mjs:156:19\n    at [pid=26472][out] dispose@chrome://juggler/content/TargetRegistry.js:891:20\n    at [pid=26472][out] onTabCloseListener@chrome://juggler/content/TargetRegistry.js:180:18\n    at [pid=26472][out] onCloseWindow@chrome://juggler/content/TargetRegistry.js:231:27\n    at [pid=26472][out]         ERROR: ERROR: cannot find session with id \"2832a495-a11a-41ec-a081-57d35272f730\" _dispatch@chrome://juggler/content/protocol/Dispatcher.js:54:15\n    at [pid=26472][out] receiveMessage@chrome://juggler/content/components/Juggler.js:122:20\n    at AxeBuilder.analyze (C:\\Users\\User\\Desktop\\Projects\\DeepRole\\node_modules\\@axe-core\\playwright\\dist\\index.mjs:218:13)\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\game-memory-coverage-ui.spec.ts:17:11"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:10:08.884Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp343-ui-final-artifacts\\game-memory-coverage-ui-wh-d5a01-ruption-keyboard-and-layout-firefox\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp343-ui-final-artifacts\\game-memory-coverage-ui-wh-d5a01-ruption-keyboard-and-layout-firefox\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-92820380b8dd29fbe547",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage en 320: honest states, no interruption, keyboard and layout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "firefox",
+              "projectName": "firefox",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 20425,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:10:47.921Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-fadc76024c230600c8ea",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        },
+        {
+          "title": "whole memory coverage en 900: honest states, no interruption, keyboard and layout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "firefox",
+              "projectName": "firefox",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20562,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-19T14:10:47.907Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee5470982c63b012ea75-3353a1201298e233303d",
+          "file": "game-memory-coverage-ui.spec.ts",
+          "line": 4,
+          "column": 71
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-19T14:09:47.705Z",
+    "duration": 82666.344,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

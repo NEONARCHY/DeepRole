@@ -1,0 +1,208 @@
+{
+  "milestone": "RP342",
+  "datasetSha256": "2aa3a6b0027cb0ca432b26daa32c8215336bd76a6e8fe6e7232ba42033af64f5",
+  "runtimeChanged": false,
+  "changedRuntime": [],
+  "seenRegression": false,
+  "harnessCorrection": false,
+  "scope": "Independent compiler holdout on production-validated synthetic persisted evidence; not live model or UI",
+  "summary": {
+    "measurements": 0,
+    "queryHistoryCases": 0,
+    "positiveCases": 0,
+    "positiveComplete": 0,
+    "controls": 0,
+    "controlsMemoryComplete": 0,
+    "falseComplete": 0,
+    "missingSources": 0,
+    "noticeMismatches": 0,
+    "casesWithMissing": 0,
+    "incompleteWithoutBudgetWarning": 0,
+    "incompleteWithoutPreparationWarning": 0,
+    "integrityIssues": 0,
+    "unstable": 0,
+    "byFamily": [
+      {
+        "id": "three-literal",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "four-narrative",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-equipment",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-paperwork",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "grounded-short",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "ungrounded-short",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "false-completion",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "partial-condition",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "negative-plan",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quoted-plan",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "cancelled-route",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "owner-question",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "speech-history",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "similar-object",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "reordered",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "causal-bridge",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "unknown-object",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quiet-greeting",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "long-interruption",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "belief-versus-record",
+        "cases": 0,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      }
+    ]
+  },
+  "rows": []
+}

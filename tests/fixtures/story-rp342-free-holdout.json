@@ -1,0 +1,2034 @@
+{
+  "milestone": "RP342",
+  "budget": 6000,
+  "historyExtraCounts": [
+    0,
+    800
+  ],
+  "phases": [
+    "cold",
+    "warm",
+    "reopened"
+  ],
+  "distractorContract": "800 later/interleaved records: 200 verified empty topic discussions, 400 substantive unrelated camp/depot records, 200 distinct completed side promises. First 16 core records early, core16/17 interleaved after 1/3 extras, core18/19 after 2/3. No gold enters retrieval. Explicit recent context only for two short-reference queries.",
+  "worlds": [
+    {
+      "id": "island-medical-ferry-ru",
+      "plot": "island-medical-ferry",
+      "locale": "ru",
+      "worldName": "island-medical-ferry / ru",
+      "people": [
+        "Дина",
+        "Борис",
+        "Яна"
+      ],
+      "objects": [
+        "медицинский холодильник",
+        "портовый аккумулятор",
+        "таможенная декларация",
+        "санитарный талон"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Дина обещала: медицинский холодильник попадёт к Борису только после подписи Яны и отдельного замера температуры.",
+          "quote": "Дина обещала: медицинский холодильник попадёт к Борису только после подписи Яны и отдельного замера температуры.",
+          "task": {
+            "key": "island-medical-ferry-0",
+            "title": "медицинский холодильник",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Яна обещала: медицинский холодильник останется на причале, пока штормовое предупреждение не снимут; подпись не отменяет этого условия.",
+          "quote": "Яна обещала: медицинский холодильник останется на причале, пока штормовое предупреждение не снимут; подпись не отменяет этого условия.",
+          "task": {
+            "key": "island-medical-ferry-1",
+            "title": "медицинский холодильник",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Дина записала: медицинский холодильник осмотрен снаружи, Яна уже подписала акт, но замера температуры ещё не было.",
+          "quote": "Дина записала: медицинский холодильник осмотрен снаружи, Яна уже подписала акт, но замера температуры ещё не было."
+        },
+        {
+          "kind": "event",
+          "text": "Борис уточнил: медицинский холодильник остаётся на причале, штормовое предупреждение действует; получения Борис не подтверждал.",
+          "quote": "Борис уточнил: медицинский холодильник остаётся на причале, штормовое предупреждение действует; получения Борис не подтверждал."
+        },
+        {
+          "kind": "promise",
+          "text": "Борис обещал: портовый аккумулятор вернётся к Яне после проверки зарядки, которую должна выполнить Дина.",
+          "quote": "Борис обещал: портовый аккумулятор вернётся к Яне после проверки зарядки, которую должна выполнить Дина.",
+          "task": {
+            "key": "island-medical-ferry-4",
+            "title": "портовый аккумулятор",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "boundary",
+          "text": "Яна установила правило: портовый аккумулятор нельзя ставить в лодку до проверки изоляции; проверка зарядки этого не заменяет.",
+          "quote": "Яна установила правило: портовый аккумулятор нельзя ставить в лодку до проверки изоляции; проверка зарядки этого не заменяет."
+        },
+        {
+          "kind": "event",
+          "text": "Дина сообщила: портовый аккумулятор прошёл проверку зарядки; изоляцию никто не проверял.",
+          "quote": "Дина сообщила: портовый аккумулятор прошёл проверку зарядки; изоляцию никто не проверял."
+        },
+        {
+          "kind": "event",
+          "text": "Борис сообщил: портовый аккумулятор передвинут к трапу, но по-прежнему у Бориса; Яна его не получала.",
+          "quote": "Борис сообщил: портовый аккумулятор передвинут к трапу, но по-прежнему у Бориса; Яна его не получала."
+        },
+        {
+          "kind": "event",
+          "text": "Дина отменила своё поручение: таможенная декларация больше не должна отправляться факсом, старый рейс отменён.",
+          "quote": "Дина отменила своё поручение: таможенная декларация больше не должна отправляться факсом, старый рейс отменён.",
+          "task": {
+            "key": "island-medical-ferry-8",
+            "title": "таможенная декларация",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Яна назначила новое дело: таможенная декларация должна быть передана лично Борису после сверки номера рейса.",
+          "quote": "Яна назначила новое дело: таможенная декларация должна быть передана лично Борису после сверки номера рейса.",
+          "task": {
+            "key": "island-medical-ferry-9",
+            "title": "таможенная декларация",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Яна сообщила: таможенная декларация лежит в канцелярии, номер нового рейса ещё не сверяли.",
+          "quote": "Яна сообщила: таможенная декларация лежит в канцелярии, номер нового рейса ещё не сверяли."
+        },
+        {
+          "kind": "boundary",
+          "text": "Дина предупредила: таможенная декларация содержит адрес пациента; показывать её посторонним без согласия пациента нельзя.",
+          "quote": "Дина предупредила: таможенная декларация содержит адрес пациента; показывать её посторонним без согласия пациента нельзя."
+        },
+        {
+          "kind": "promise",
+          "text": "Яна обещала: санитарный талон получит Дина после оплаты осмотра и звонка врача; нужны оба условия.",
+          "quote": "Яна обещала: санитарный талон получит Дина после оплаты осмотра и звонка врача; нужны оба условия.",
+          "task": {
+            "key": "island-medical-ferry-12",
+            "title": "санитарный талон",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Борис подтвердил: санитарный талон оплачен, но врач ещё не звонил, талон остаётся у Яны.",
+          "quote": "Борис подтвердил: санитарный талон оплачен, но врач ещё не звонил, талон остаётся у Яны."
+        },
+        {
+          "kind": "boundary",
+          "text": "Дина уточнила: санитарный талон нельзя считать разрешением на перевозку; решение о рейсе принимается отдельно.",
+          "quote": "Дина уточнила: санитарный талон нельзя считать разрешением на перевозку; решение о рейсе принимается отдельно."
+        },
+        {
+          "kind": "event",
+          "text": "Дина завершила другое дело: туристический холодильник доставлен Борису без ожидания подписи, к медицинскому грузу это не относится.",
+          "quote": "Дина завершила другое дело: туристический холодильник доставлен Борису без ожидания подписи, к медицинскому грузу это не относится."
+        },
+        {
+          "kind": "event",
+          "text": "Яна забрала складской аккумулятор, его изоляцию проверили; портовый аккумулятор при этом никто не трогал.",
+          "quote": "Яна забрала складской аккумулятор, его изоляцию проверили; портовый аккумулятор при этом никто не трогал."
+        },
+        {
+          "kind": "event",
+          "text": "Борис сказал: «Дина, я слышал про санитарный талон, но звонка врача не было».",
+          "quote": "Борис сказал: «Дина, я слышал про санитарный талон, но звонка врача не было»."
+        },
+        {
+          "kind": "event",
+          "text": "Яна сказала: «Медицинский холодильник уже поехал, наверное». Это предположение, а не сообщение об отправке.",
+          "quote": "Яна сказала: «Медицинский холодильник уже поехал, наверное». Это предположение, а не сообщение об отправке."
+        },
+        {
+          "kind": "event",
+          "text": "Дина выполнила старое отдельное обещание: судовой журнал доставлен Яне. Это дело закрыто.",
+          "quote": "Дина выполнила старое отдельное обещание: судовой журнал доставлен Яне. Это дело закрыто."
+        }
+      ],
+      "queries": [
+        {
+          "id": "three-literal",
+          "draft": "Беру медицинский холодильник, возвращаю портовый аккумулятор Яне и несу таможенную декларацию Борису.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Three distinct chains require owners, independent conditions and cancellation history."
+        },
+        {
+          "id": "four-narrative",
+          "draft": "Дожидаюсь тишины у воды. Медицинский холодильник заберу по пути, портовый аккумулятор верну Яне, таможенную декларацию отнесу Борису, а санитарный талон передам Дине.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four chains across sentences; atmospheric opening is not a task."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Как там наш холод для лекарств и штука, питающая лодочный мотор? Что надо доделать до погрузки и возврата?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Semantic paraphrases outside previous topic dictionary still need both unfinished chains."
+        },
+        {
+          "id": "free-paperwork",
+          "draft": "С той бумажкой для таможни старый факс ещё нужен? И можно ли забрать оплаченную справку для осмотра?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Paraphrased cancelled instruction and partly fulfilled medical condition."
+        },
+        {
+          "id": "grounded-short",
+          "draft": "Тогда её отдам ему, а его пока в лодку не понесу.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent context names both antecedents, actor and unfinished restrictions must remain.",
+          "recentMessages": [
+            "Обсуждаем таможенную декларацию для Бориса и портовый аккумулятор Яны."
+          ]
+        },
+        {
+          "id": "ungrounded-short",
+          "draft": "А ту её штуку ему уже можно вернуть, и с тем обещанием как?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "No grounded antecedent: do not invent the owner or certify complete.",
+          "recentMessages": [
+            "Мы молча смотрим на море."
+          ]
+        },
+        {
+          "id": "false-completion",
+          "draft": "Раз медицинский холодильник уже у Бориса, а портовый аккумулятор у Яны, закрывай оба обещания.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "User premise conflicts with recorded possession and speculative speech."
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Яна расписалась, значит медицинский холодильник можно грузить; портовый аккумулятор заряжается, значит тоже беру.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Signature and charging do not satisfy independent remaining conditions."
+        },
+        {
+          "id": "negative-plan",
+          "draft": "Не трогаю медицинский холодильник. Портовый аккумулятор тоже оставлю; только выясню, когда отдавать таможенную декларацию.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negated and proposed actions are not recorded completion."
+        },
+        {
+          "id": "quoted-plan",
+          "draft": "Вслух читаю: «Беру медицинский холодильник и отдаю портовый аккумулятор». Это цитата плана, пока ничего не делаю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Quoted plan cannot certify fulfillment."
+        },
+        {
+          "id": "cancelled-route",
+          "draft": "Сначала отправляю таможенную декларацию факсом по старой просьбе, потом отношу её Борису.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Cancellation and replacement task both matter; do not resurrect old fax."
+        },
+        {
+          "id": "owner-question",
+          "draft": "У кого сейчас портовый аккумулятор и медицинский холодильник? Какие условия остались у каждого?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Possession query needs actual moves and conditions, not just promise titles."
+        },
+        {
+          "id": "speech-history",
+          "draft": "Что Борис говорил Дине о санитарном талоне?",
+          "wanted": [
+            17
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Speech-history requires exact attributed source, not inferred current action."
+        },
+        {
+          "id": "similar-object",
+          "draft": "Складской аккумулятор уже проверили, поэтому возвращаю портовый аккумулятор Яне и беру медицинский холодильник как туристический.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            15,
+            16
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects have separate state and clearance."
+        },
+        {
+          "id": "reordered",
+          "draft": "Санитарный талон — Дине; таможенная декларация — Борису. Портовый аккумулятор — Яне, медицинский холодильник — на борт.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Elliptical multi-action phrasing reverses topic order."
+        },
+        {
+          "id": "causal-bridge",
+          "draft": "Раз санитарный талон оплачен, считаю это разрешением на рейс: грузим медицинский холодильник и портовый аккумулятор.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13,
+            14
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Cross-topic condition must not be transferred into another authorization."
+        },
+        {
+          "id": "unknown-object",
+          "draft": "Отдаю янтарный секстант тому человеку и закрываю неизвестное обязательство.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unknown object and person require uncertainty, not fabricated identity."
+        },
+        {
+          "id": "quiet-greeting",
+          "draft": "Привет! Посмотрим на облака и немного помолчим.",
+          "wanted": [],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "No memory-specific failure notice on an unrelated greeting."
+        },
+        {
+          "id": "long-interruption",
+          "draft": "Перед тем как уйти, расправляю воротник и долго смотрю на огни противоположного берега. Дежурный рассказывает о погоде, мы обсуждаем дорогу домой. Потом всё же возвращаюсь к делу: медицинский холодильник отвезу Борису, а портовый аккумулятор верну Яне.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Natural intervening prose must not hide two older obligations."
+        },
+        {
+          "id": "belief-versus-record",
+          "draft": "Яна вроде говорила, что медицинский холодильник уехал. Значит ли это, что Борис его получил и можно вернуть портовый аккумулятор без проверки?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Speculative utterance must remain separate from verified state."
+        }
+      ]
+    },
+    {
+      "id": "island-medical-ferry-en",
+      "plot": "island-medical-ferry",
+      "locale": "en",
+      "worldName": "island-medical-ferry / en",
+      "people": [
+        "Dina",
+        "Boris",
+        "Yana"
+      ],
+      "objects": [
+        "medical refrigerator",
+        "harbour battery",
+        "customs declaration",
+        "health voucher"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Dina promised: the medical refrigerator will reach Boris only after Yana signs and its temperature is separately measured.",
+          "quote": "Dina promised: the medical refrigerator will reach Boris only after Yana signs and its temperature is separately measured.",
+          "task": {
+            "key": "island-medical-ferry-0",
+            "title": "medical refrigerator",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Yana promised: the medical refrigerator stays on the pier until the storm warning is lifted; a signature does not waive this condition.",
+          "quote": "Yana promised: the medical refrigerator stays on the pier until the storm warning is lifted; a signature does not waive this condition.",
+          "task": {
+            "key": "island-medical-ferry-1",
+            "title": "medical refrigerator",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Dina recorded: the medical refrigerator was inspected outside and Yana signed the form, but its temperature has not been measured.",
+          "quote": "Dina recorded: the medical refrigerator was inspected outside and Yana signed the form, but its temperature has not been measured."
+        },
+        {
+          "kind": "event",
+          "text": "Boris clarified: the medical refrigerator remains on the pier and the storm warning is active; Boris has not confirmed receipt.",
+          "quote": "Boris clarified: the medical refrigerator remains on the pier and the storm warning is active; Boris has not confirmed receipt."
+        },
+        {
+          "kind": "promise",
+          "text": "Boris promised: the harbour battery returns to Yana after Dina tests its charging circuit.",
+          "quote": "Boris promised: the harbour battery returns to Yana after Dina tests its charging circuit.",
+          "task": {
+            "key": "island-medical-ferry-4",
+            "title": "harbour battery",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "boundary",
+          "text": "Yana set a rule: the harbour battery must not go into a boat before an insulation check; a charging test is not a substitute.",
+          "quote": "Yana set a rule: the harbour battery must not go into a boat before an insulation check; a charging test is not a substitute."
+        },
+        {
+          "kind": "event",
+          "text": "Dina reported: the harbour battery passed its charging test; nobody checked the insulation.",
+          "quote": "Dina reported: the harbour battery passed its charging test; nobody checked the insulation."
+        },
+        {
+          "kind": "event",
+          "text": "Boris reported: the harbour battery was moved to the gangway but remains with Boris; Yana has not received it.",
+          "quote": "Boris reported: the harbour battery was moved to the gangway but remains with Boris; Yana has not received it."
+        },
+        {
+          "kind": "event",
+          "text": "Dina cancelled her instruction: the customs declaration must no longer be faxed because the old sailing was cancelled.",
+          "quote": "Dina cancelled her instruction: the customs declaration must no longer be faxed because the old sailing was cancelled.",
+          "task": {
+            "key": "island-medical-ferry-8",
+            "title": "customs declaration",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Yana assigned a new task: the customs declaration must be handed to Boris in person after its sailing number is checked.",
+          "quote": "Yana assigned a new task: the customs declaration must be handed to Boris in person after its sailing number is checked.",
+          "task": {
+            "key": "island-medical-ferry-9",
+            "title": "customs declaration",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Yana reported: the customs declaration is in the office and the new sailing number has not been checked.",
+          "quote": "Yana reported: the customs declaration is in the office and the new sailing number has not been checked."
+        },
+        {
+          "kind": "boundary",
+          "text": "Dina warned: the customs declaration contains a patient address; outsiders must not see it without patient consent.",
+          "quote": "Dina warned: the customs declaration contains a patient address; outsiders must not see it without patient consent."
+        },
+        {
+          "kind": "promise",
+          "text": "Yana promised: Dina receives the health voucher after the examination is paid for and the doctor calls; both conditions are required.",
+          "quote": "Yana promised: Dina receives the health voucher after the examination is paid for and the doctor calls; both conditions are required.",
+          "task": {
+            "key": "island-medical-ferry-12",
+            "title": "health voucher",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Boris confirmed: the health voucher was paid for, but the doctor has not called and Yana still holds it.",
+          "quote": "Boris confirmed: the health voucher was paid for, but the doctor has not called and Yana still holds it."
+        },
+        {
+          "kind": "boundary",
+          "text": "Dina clarified: the health voucher is not transport clearance; permission to sail is decided separately.",
+          "quote": "Dina clarified: the health voucher is not transport clearance; permission to sail is decided separately."
+        },
+        {
+          "kind": "event",
+          "text": "Dina completed a different task: the picnic refrigerator was delivered to Boris without waiting for a signature; that does not concern medical cargo.",
+          "quote": "Dina completed a different task: the picnic refrigerator was delivered to Boris without waiting for a signature; that does not concern medical cargo."
+        },
+        {
+          "kind": "event",
+          "text": "Yana collected the warehouse battery after its insulation was checked; nobody touched the harbour battery.",
+          "quote": "Yana collected the warehouse battery after its insulation was checked; nobody touched the harbour battery."
+        },
+        {
+          "kind": "event",
+          "text": "Boris said: “Dina, I heard about the health voucher, but the doctor has not called.”",
+          "quote": "Boris said: “Dina, I heard about the health voucher, but the doctor has not called.”"
+        },
+        {
+          "kind": "event",
+          "text": "Yana said: “The medical refrigerator has probably left.” This is a guess, not a dispatch report.",
+          "quote": "Yana said: “The medical refrigerator has probably left.” This is a guess, not a dispatch report."
+        },
+        {
+          "kind": "event",
+          "text": "Dina fulfilled an older separate promise: the ship log was delivered to Yana. That task is closed.",
+          "quote": "Dina fulfilled an older separate promise: the ship log was delivered to Yana. That task is closed."
+        }
+      ],
+      "queries": [
+        {
+          "id": "three-literal",
+          "draft": "I take the medical refrigerator, return the harbour battery to Yana and bring the customs declaration to Boris.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Three distinct chains require owners, independent conditions and cancellation history."
+        },
+        {
+          "id": "four-narrative",
+          "draft": "I wait for quiet by the water. I will collect the medical refrigerator on the way, return the harbour battery to Yana, bring the customs declaration to Boris and hand the health voucher to Dina.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four chains across sentences; atmospheric opening is not a task."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "What about our medicine chiller and the thing powering the boat motor? What remains before loading and returning them?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Semantic paraphrases outside previous topic dictionary still need both unfinished chains."
+        },
+        {
+          "id": "free-paperwork",
+          "draft": "Does the border paperwork still need that old fax? And can we collect the paid examination slip?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Paraphrased cancelled instruction and partly fulfilled medical condition."
+        },
+        {
+          "id": "grounded-short",
+          "draft": "Then I will give it to him, and keep the other one out of the boat.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent context names both antecedents, actor and unfinished restrictions must remain.",
+          "recentMessages": [
+            "We are discussing the customs declaration for Boris and Yana’s harbour battery."
+          ]
+        },
+        {
+          "id": "ungrounded-short",
+          "draft": "Can her thing be returned to him now, and what about that promise?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "No grounded antecedent: do not invent the owner or certify complete.",
+          "recentMessages": [
+            "We silently watch the sea."
+          ]
+        },
+        {
+          "id": "false-completion",
+          "draft": "Since Boris already has the medical refrigerator and Yana has the harbour battery, close both promises.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "User premise conflicts with recorded possession and speculative speech."
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Yana signed, so I can load the medical refrigerator; the harbour battery charges, so I take that too.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Signature and charging do not satisfy independent remaining conditions."
+        },
+        {
+          "id": "negative-plan",
+          "draft": "I do not touch the medical refrigerator. I will leave the harbour battery too; I only ask when to hand over the customs declaration.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negated and proposed actions are not recorded completion."
+        },
+        {
+          "id": "quoted-plan",
+          "draft": "I read aloud: “I take the medical refrigerator and give back the harbour battery.” This is a quoted plan; I am not doing it yet.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Quoted plan cannot certify fulfillment."
+        },
+        {
+          "id": "cancelled-route",
+          "draft": "First I fax the customs declaration following the old request, then bring it to Boris.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Cancellation and replacement task both matter; do not resurrect old fax."
+        },
+        {
+          "id": "owner-question",
+          "draft": "Who currently has the harbour battery and medical refrigerator? Which conditions remain for each?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Possession query needs actual moves and conditions, not just promise titles."
+        },
+        {
+          "id": "speech-history",
+          "draft": "What did Boris say to Dina about the health voucher?",
+          "wanted": [
+            17
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Speech-history requires exact attributed source, not inferred current action."
+        },
+        {
+          "id": "similar-object",
+          "draft": "The warehouse battery was checked, so I return the harbour battery to Yana and take the medical refrigerator like the picnic one.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            15,
+            16
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects have separate state and clearance."
+        },
+        {
+          "id": "reordered",
+          "draft": "Health voucher to Dina; customs declaration to Boris. Harbour battery to Yana, medical refrigerator aboard.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Elliptical multi-action phrasing reverses topic order."
+        },
+        {
+          "id": "causal-bridge",
+          "draft": "Since the health voucher is paid for, I treat that as sailing clearance: load the medical refrigerator and harbour battery.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13,
+            14
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Cross-topic condition must not be transferred into another authorization."
+        },
+        {
+          "id": "unknown-object",
+          "draft": "I give the amber sextant to that person and close the unknown obligation.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unknown object and person require uncertainty, not fabricated identity."
+        },
+        {
+          "id": "quiet-greeting",
+          "draft": "Hello! Let us watch the clouds and stay quiet for a while.",
+          "wanted": [],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "No memory-specific failure notice on an unrelated greeting."
+        },
+        {
+          "id": "long-interruption",
+          "draft": "Before leaving, I straighten my collar and watch the lights across the water for a long time. The attendant talks about the weather and we discuss the journey home. Then I return to business: I will take the medical refrigerator to Boris and return the harbour battery to Yana.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Natural intervening prose must not hide two older obligations."
+        },
+        {
+          "id": "belief-versus-record",
+          "draft": "Yana seemed to say the medical refrigerator had left. Does that mean Boris received it and we can return the harbour battery without checking?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Speculative utterance must remain separate from verified state."
+        }
+      ]
+    },
+    {
+      "id": "wildlife-tracking-camp-ru",
+      "plot": "wildlife-tracking-camp",
+      "locale": "ru",
+      "worldName": "wildlife-tracking-camp / ru",
+      "people": [
+        "Лада",
+        "Марк",
+        "Сева"
+      ],
+      "objects": [
+        "спутниковый ошейник",
+        "криогенный сосуд",
+        "полевой протокол",
+        "лицензия на выпуск"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Лада обещала: спутниковый ошейник передадут Марку после записи массы животного и проверки застёжки Севой.",
+          "quote": "Лада обещала: спутниковый ошейник передадут Марку после записи массы животного и проверки застёжки Севой.",
+          "task": {
+            "key": "wildlife-tracking-camp-0",
+            "title": "спутниковый ошейник",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "boundary",
+          "text": "Сева установил правило: спутниковый ошейник нельзя надевать без разрешения ветеринара, даже если застёжка исправна.",
+          "quote": "Сева установил правило: спутниковый ошейник нельзя надевать без разрешения ветеринара, даже если застёжка исправна."
+        },
+        {
+          "kind": "event",
+          "text": "Марк сообщил: спутниковый ошейник прошёл проверку застёжки; массу животного не записали, ветеринар не отвечал.",
+          "quote": "Марк сообщил: спутниковый ошейник прошёл проверку застёжки; массу животного не записали, ветеринар не отвечал."
+        },
+        {
+          "kind": "event",
+          "text": "Лада уточнила: спутниковый ошейник по-прежнему у Лады, Марк его ещё не забирал.",
+          "quote": "Лада уточнила: спутниковый ошейник по-прежнему у Лады, Марк его ещё не забирал."
+        },
+        {
+          "kind": "promise",
+          "text": "Марк обещал: криогенный сосуд вернётся к Севе после анализа осадка и полного опустошения.",
+          "quote": "Марк обещал: криогенный сосуд вернётся к Севе после анализа осадка и полного опустошения.",
+          "task": {
+            "key": "wildlife-tracking-camp-4",
+            "title": "криогенный сосуд",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "boundary",
+          "text": "Сева запретил: криогенный сосуд нельзя выносить из лаборатории до проверки давления; анализ осадка не заменяет проверку.",
+          "quote": "Сева запретил: криогенный сосуд нельзя выносить из лаборатории до проверки давления; анализ осадка не заменяет проверку."
+        },
+        {
+          "kind": "event",
+          "text": "Лада сообщила: криогенный сосуд исследован, анализ осадка готов, но сосуд не опустошён, давление не проверено.",
+          "quote": "Лада сообщила: криогенный сосуд исследован, анализ осадка готов, но сосуд не опустошён, давление не проверено."
+        },
+        {
+          "kind": "event",
+          "text": "Марк отметил: криогенный сосуд переставлен к лабораторной двери, он всё ещё у Марка; Севе не передавали.",
+          "quote": "Марк отметил: криогенный сосуд переставлен к лабораторной двери, он всё ещё у Марка; Севе не передавали."
+        },
+        {
+          "kind": "event",
+          "text": "Лада отменила поручение: полевой протокол не надо публиковать на сайте, данные были предварительными.",
+          "quote": "Лада отменила поручение: полевой протокол не надо публиковать на сайте, данные были предварительными.",
+          "task": {
+            "key": "wildlife-tracking-camp-8",
+            "title": "полевой протокол",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Сева назначил новое дело: полевой протокол надо лично показать Марку после удаления координат гнезда.",
+          "quote": "Сева назначил новое дело: полевой протокол надо лично показать Марку после удаления координат гнезда.",
+          "task": {
+            "key": "wildlife-tracking-camp-9",
+            "title": "полевой протокол",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Сева подтвердил: полевой протокол ещё содержит координаты гнезда, редактура не начиналась.",
+          "quote": "Сева подтвердил: полевой протокол ещё содержит координаты гнезда, редактура не начиналась."
+        },
+        {
+          "kind": "boundary",
+          "text": "Лада предупредила: полевой протокол нельзя давать посторонним без согласования с инспектором даже после удаления координат.",
+          "quote": "Лада предупредила: полевой протокол нельзя давать посторонним без согласования с инспектором даже после удаления координат."
+        },
+        {
+          "kind": "promise",
+          "text": "Сева обещал: лицензия на выпуск будет у Лады после осмотра животного и подписи инспектора; оба шага обязательны.",
+          "quote": "Сева обещал: лицензия на выпуск будет у Лады после осмотра животного и подписи инспектора; оба шага обязательны.",
+          "task": {
+            "key": "wildlife-tracking-camp-12",
+            "title": "лицензия на выпуск",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Марк подтвердил: лицензия на выпуск подписана инспектором, но животное ещё не осмотрели; документ у Севы.",
+          "quote": "Марк подтвердил: лицензия на выпуск подписана инспектором, но животное ещё не осмотрели; документ у Севы."
+        },
+        {
+          "kind": "boundary",
+          "text": "Лада уточнила: лицензия на выпуск не заменяет разрешения ветеринара на спутниковый ошейник.",
+          "quote": "Лада уточнила: лицензия на выпуск не заменяет разрешения ветеринара на спутниковый ошейник."
+        },
+        {
+          "kind": "event",
+          "text": "Лада отдала Марку учебный ошейник после проверки; спутниковый ошейник не передавали.",
+          "quote": "Лада отдала Марку учебный ошейник после проверки; спутниковый ошейник не передавали."
+        },
+        {
+          "kind": "event",
+          "text": "Сева забрал стеклянный сосуд, он был пуст; криогенный сосуд остался в лаборатории.",
+          "quote": "Сева забрал стеклянный сосуд, он был пуст; криогенный сосуд остался в лаборатории."
+        },
+        {
+          "kind": "event",
+          "text": "Марк сказал: «Лада, лицензия на выпуск подписана, но осмотра животного ещё не было».",
+          "quote": "Марк сказал: «Лада, лицензия на выпуск подписана, но осмотра животного ещё не было»."
+        },
+        {
+          "kind": "event",
+          "text": "Сева сказал: «Спутниковый ошейник, должно быть, уже у Марка». Сева не видел передачи и лишь предположил это.",
+          "quote": "Сева сказал: «Спутниковый ошейник, должно быть, уже у Марка». Сева не видел передачи и лишь предположил это."
+        },
+        {
+          "kind": "event",
+          "text": "Лада закончила отдельное обещание: маршрутный лист доставлен Севе. Дело завершено.",
+          "quote": "Лада закончила отдельное обещание: маршрутный лист доставлен Севе. Дело завершено."
+        }
+      ],
+      "queries": [
+        {
+          "id": "three-literal",
+          "draft": "Забираю спутниковый ошейник, возвращаю криогенный сосуд Севе и несу полевой протокол Марку.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Three objects with independent owners, conditions and disclosure rules."
+        },
+        {
+          "id": "four-narrative",
+          "draft": "Сначала слушаю птиц у палатки. Спутниковый ошейник отнесу Марку; криогенный сосуд — Севе. Потом покажу полевой протокол и заберу лицензию на выпуск для Лады.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four planned actions in narrative prose."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Можно уже отдать Марку трекер на шею, а Севе — ёмкость для сверххолодных проб? Что ещё не готово?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "New semantic paraphrases outside the repaired dictionary."
+        },
+        {
+          "id": "free-paperwork",
+          "draft": "С отчётом экспедиции старую публикацию ещё делать? И готова ли бумага, разрешающая отпустить зверя?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Cancelled publication and partly approved release remain distinct."
+        },
+        {
+          "id": "grounded-short",
+          "draft": "Тогда его ему покажу, а эту штуку пока за дверь не выношу.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent explicit antecedents ground the short references without proving completion.",
+          "recentMessages": [
+            "Сейчас речь о полевом протоколе для Марка и криогенном сосуде Севы."
+          ]
+        },
+        {
+          "id": "ungrounded-short",
+          "draft": "Его прежнюю просьбу уже можно закрывать и ей это возвращать?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "No antecedents: do not pick a convenient actor.",
+          "recentMessages": [
+            "В лагере стемнело."
+          ]
+        },
+        {
+          "id": "false-completion",
+          "draft": "Раз спутниковый ошейник уже у Марка, а криогенный сосуд у Севы, закрой оба обещания.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Speculation and movement are not completed handovers."
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Застёжку проверили — беру спутниковый ошейник. Осадок исследован — возвращаю криогенный сосуд.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Independent missing weighing/vet/emptying/pressure requirements."
+        },
+        {
+          "id": "negative-plan",
+          "draft": "Спутниковый ошейник не надеваю, криогенный сосуд не выношу, только собираюсь показать полевой протокол.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negation and intention are not fulfillment."
+        },
+        {
+          "id": "quoted-plan",
+          "draft": "Записываю фразу: «Забираю спутниковый ошейник и возвращаю криогенный сосуд». Пока это только черновик действий.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Writing a proposed line must not perform it."
+        },
+        {
+          "id": "cancelled-route",
+          "draft": "По старому поручению публикую полевой протокол на сайте, после этого показываю Марку.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Cancelled publication, replacement delivery and consent all matter."
+        },
+        {
+          "id": "owner-question",
+          "draft": "Кто держит спутниковый ошейник и криогенный сосуд, что ещё нужно до передачи каждого?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Actual possession plus separate unfinished conditions."
+        },
+        {
+          "id": "speech-history",
+          "draft": "Что Марк сказал Ладе о лицензии на выпуск?",
+          "wanted": [
+            17
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Historical speech source must be recalled with original speaker."
+        },
+        {
+          "id": "similar-object",
+          "draft": "Учебный ошейник проверен, значит беру спутниковый ошейник. Стеклянный сосуд пуст, значит криогенный сосуд тоже можно вернуть.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            15,
+            16
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects cannot lend one another their clearance."
+        },
+        {
+          "id": "reordered",
+          "draft": "Лицензию на выпуск — Ладе, полевой протокол — Марку. Криогенный сосуд верну Севе, спутниковый ошейник заберу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Reverse-order actions with omitted repeated verbs."
+        },
+        {
+          "id": "causal-bridge",
+          "draft": "Инспектор подписал лицензию на выпуск, поэтому надеваю спутниковый ошейник и выношу криогенный сосуд.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13,
+            14
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Approval for a different chain cannot discharge the equipment rules."
+        },
+        {
+          "id": "unknown-object",
+          "draft": "Верну базальтовый дозиметр тому человеку и закрою неизвестное поручение.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unknown object and recipient cannot be certified."
+        },
+        {
+          "id": "quiet-greeting",
+          "draft": "Доброе утро! Посидим у костра и послушаем птиц.",
+          "wanted": [],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "Unrelated greeting must stay quiet."
+        },
+        {
+          "id": "long-interruption",
+          "draft": "Складываю плащ, прислушиваюсь к дождю на крыше и рассказываю о дороге через перевал. Мы долго обсуждаем чай и расписание дежурств. Лишь после паузы возвращаюсь к делу: спутниковый ошейник заберу, криогенный сосуд верну Севе.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Long narrative preamble must not displace older object conditions."
+        },
+        {
+          "id": "belief-versus-record",
+          "draft": "Сева думал, что спутниковый ошейник уже у Марка. Можно считать передачу состоявшейся и криогенный сосуд вернуть без остальных проверок?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Belief and unrelated permissions must not become played facts."
+        }
+      ]
+    },
+    {
+      "id": "wildlife-tracking-camp-en",
+      "plot": "wildlife-tracking-camp",
+      "locale": "en",
+      "worldName": "wildlife-tracking-camp / en",
+      "people": [
+        "Lada",
+        "Mark",
+        "Seva"
+      ],
+      "objects": [
+        "satellite collar",
+        "cryogenic vessel",
+        "field protocol",
+        "release licence"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Lada promised: the satellite collar goes to Mark after the animal is weighed and Seva checks the clasp.",
+          "quote": "Lada promised: the satellite collar goes to Mark after the animal is weighed and Seva checks the clasp.",
+          "task": {
+            "key": "wildlife-tracking-camp-0",
+            "title": "satellite collar",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "boundary",
+          "text": "Seva set a rule: the satellite collar must not be fitted without veterinary approval even if its clasp works.",
+          "quote": "Seva set a rule: the satellite collar must not be fitted without veterinary approval even if its clasp works."
+        },
+        {
+          "kind": "event",
+          "text": "Mark reported: the satellite collar passed its clasp check; the animal’s mass was not recorded and the vet has not replied.",
+          "quote": "Mark reported: the satellite collar passed its clasp check; the animal’s mass was not recorded and the vet has not replied."
+        },
+        {
+          "kind": "event",
+          "text": "Lada clarified: the satellite collar remains with Lada; Mark has not collected it.",
+          "quote": "Lada clarified: the satellite collar remains with Lada; Mark has not collected it."
+        },
+        {
+          "kind": "promise",
+          "text": "Mark promised: the cryogenic vessel returns to Seva after the sediment is analysed and it is completely emptied.",
+          "quote": "Mark promised: the cryogenic vessel returns to Seva after the sediment is analysed and it is completely emptied.",
+          "task": {
+            "key": "wildlife-tracking-camp-4",
+            "title": "cryogenic vessel",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "boundary",
+          "text": "Seva prohibited taking the cryogenic vessel out of the laboratory before its pressure is checked; sediment analysis is not a substitute.",
+          "quote": "Seva prohibited taking the cryogenic vessel out of the laboratory before its pressure is checked; sediment analysis is not a substitute."
+        },
+        {
+          "kind": "event",
+          "text": "Lada reported: the cryogenic vessel was examined and sediment analysis is ready, but it is not empty and its pressure is unchecked.",
+          "quote": "Lada reported: the cryogenic vessel was examined and sediment analysis is ready, but it is not empty and its pressure is unchecked."
+        },
+        {
+          "kind": "event",
+          "text": "Mark noted: the cryogenic vessel was moved to the laboratory door and is still with Mark; it was not handed to Seva.",
+          "quote": "Mark noted: the cryogenic vessel was moved to the laboratory door and is still with Mark; it was not handed to Seva."
+        },
+        {
+          "kind": "event",
+          "text": "Lada cancelled the task: the field protocol must not be published on the website because the data was preliminary.",
+          "quote": "Lada cancelled the task: the field protocol must not be published on the website because the data was preliminary.",
+          "task": {
+            "key": "wildlife-tracking-camp-8",
+            "title": "field protocol",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Seva assigned a new task: show the field protocol to Mark in person after removing the nest coordinates.",
+          "quote": "Seva assigned a new task: show the field protocol to Mark in person after removing the nest coordinates.",
+          "task": {
+            "key": "wildlife-tracking-camp-9",
+            "title": "field protocol",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Seva confirmed: the field protocol still contains the nest coordinates and editing has not started.",
+          "quote": "Seva confirmed: the field protocol still contains the nest coordinates and editing has not started."
+        },
+        {
+          "kind": "boundary",
+          "text": "Lada warned: the field protocol must not go to outsiders without the inspector’s consent even after coordinates are removed.",
+          "quote": "Lada warned: the field protocol must not go to outsiders without the inspector’s consent even after coordinates are removed."
+        },
+        {
+          "kind": "promise",
+          "text": "Seva promised: Lada gets the release licence after the animal is examined and the inspector signs; both steps are mandatory.",
+          "quote": "Seva promised: Lada gets the release licence after the animal is examined and the inspector signs; both steps are mandatory.",
+          "task": {
+            "key": "wildlife-tracking-camp-12",
+            "title": "release licence",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Mark confirmed: the release licence was signed by the inspector, but the animal was not examined; Seva holds the document.",
+          "quote": "Mark confirmed: the release licence was signed by the inspector, but the animal was not examined; Seva holds the document."
+        },
+        {
+          "kind": "boundary",
+          "text": "Lada clarified: the release licence does not replace veterinary approval for the satellite collar.",
+          "quote": "Lada clarified: the release licence does not replace veterinary approval for the satellite collar."
+        },
+        {
+          "kind": "event",
+          "text": "Lada gave Mark the training collar after checking it; the satellite collar was not handed over.",
+          "quote": "Lada gave Mark the training collar after checking it; the satellite collar was not handed over."
+        },
+        {
+          "kind": "event",
+          "text": "Seva collected the glass vessel, which was empty; the cryogenic vessel stayed in the laboratory.",
+          "quote": "Seva collected the glass vessel, which was empty; the cryogenic vessel stayed in the laboratory."
+        },
+        {
+          "kind": "event",
+          "text": "Mark said: “Lada, the release licence is signed, but the animal has not been examined.”",
+          "quote": "Mark said: “Lada, the release licence is signed, but the animal has not been examined.”"
+        },
+        {
+          "kind": "event",
+          "text": "Seva said: “The satellite collar must already be with Mark.” Seva did not witness a handover and only guessed.",
+          "quote": "Seva said: “The satellite collar must already be with Mark.” Seva did not witness a handover and only guessed."
+        },
+        {
+          "kind": "event",
+          "text": "Lada finished a separate promise: the itinerary sheet was delivered to Seva. That task is completed.",
+          "quote": "Lada finished a separate promise: the itinerary sheet was delivered to Seva. That task is completed."
+        }
+      ],
+      "queries": [
+        {
+          "id": "three-literal",
+          "draft": "I collect the satellite collar, return the cryogenic vessel to Seva and bring the field protocol to Mark.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Three objects with independent owners, conditions and disclosure rules."
+        },
+        {
+          "id": "four-narrative",
+          "draft": "First I listen to birds near the tent. I will take the satellite collar to Mark and the cryogenic vessel to Seva. Then I will show the field protocol and collect the release licence for Lada.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four planned actions in narrative prose."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Can we give Mark the neck tracker and Seva the container for ultracold samples now? What is still unfinished?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "New semantic paraphrases outside the repaired dictionary."
+        },
+        {
+          "id": "free-paperwork",
+          "draft": "Should we still make that old publication of the expedition report? And is the paperwork for letting the animal go ready?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Cancelled publication and partly approved release remain distinct."
+        },
+        {
+          "id": "grounded-short",
+          "draft": "Then I will show it to him, and keep that thing inside the room.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent explicit antecedents ground the short references without proving completion.",
+          "recentMessages": [
+            "We are talking about the field protocol for Mark and Seva’s cryogenic vessel."
+          ]
+        },
+        {
+          "id": "ungrounded-short",
+          "draft": "Can his earlier request be closed now and that returned to her?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "No antecedents: do not pick a convenient actor.",
+          "recentMessages": [
+            "It became dark at the camp."
+          ]
+        },
+        {
+          "id": "false-completion",
+          "draft": "Since Mark already has the satellite collar and Seva has the cryogenic vessel, close both promises.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Speculation and movement are not completed handovers."
+        },
+        {
+          "id": "partial-condition",
+          "draft": "The clasp was checked, so I take the satellite collar. The sediment was analysed, so I return the cryogenic vessel.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Independent missing weighing/vet/emptying/pressure requirements."
+        },
+        {
+          "id": "negative-plan",
+          "draft": "I do not fit the satellite collar or take out the cryogenic vessel; I am only planning to show the field protocol.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negation and intention are not fulfillment."
+        },
+        {
+          "id": "quoted-plan",
+          "draft": "I write the line: “I collect the satellite collar and return the cryogenic vessel.” For now it is only a draft of actions.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Writing a proposed line must not perform it."
+        },
+        {
+          "id": "cancelled-route",
+          "draft": "Following the old instruction, I publish the field protocol on the website, then show it to Mark.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Cancelled publication, replacement delivery and consent all matter."
+        },
+        {
+          "id": "owner-question",
+          "draft": "Who holds the satellite collar and the cryogenic vessel, and what remains before each handover?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Actual possession plus separate unfinished conditions."
+        },
+        {
+          "id": "speech-history",
+          "draft": "What did Mark say to Lada about the release licence?",
+          "wanted": [
+            17
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Historical speech source must be recalled with original speaker."
+        },
+        {
+          "id": "similar-object",
+          "draft": "The training collar was checked, so I take the satellite collar. The glass vessel is empty, so the cryogenic vessel can be returned too.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            15,
+            16
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects cannot lend one another their clearance."
+        },
+        {
+          "id": "reordered",
+          "draft": "Release licence to Lada, field protocol to Mark. I return the cryogenic vessel to Seva and collect the satellite collar.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Reverse-order actions with omitted repeated verbs."
+        },
+        {
+          "id": "causal-bridge",
+          "draft": "The inspector signed the release licence, so I fit the satellite collar and take out the cryogenic vessel.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            12,
+            13,
+            14
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Approval for a different chain cannot discharge the equipment rules."
+        },
+        {
+          "id": "unknown-object",
+          "draft": "I will return the basalt dosimeter to that person and close the unknown task.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unknown object and recipient cannot be certified."
+        },
+        {
+          "id": "quiet-greeting",
+          "draft": "Good morning! Let us sit by the fire and listen to birds.",
+          "wanted": [],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "Unrelated greeting must stay quiet."
+        },
+        {
+          "id": "long-interruption",
+          "draft": "I fold my coat, listen to rain on the roof and describe the journey over the pass. We talk for a long time about tea and the duty roster. Only after a pause do I return to business: I will collect the satellite collar and return the cryogenic vessel to Seva.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Long narrative preamble must not displace older object conditions."
+        },
+        {
+          "id": "belief-versus-record",
+          "draft": "Seva thought Mark already had the satellite collar. Can we count that as a handover and return the cryogenic vessel without the remaining checks?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            18
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Belief and unrelated permissions must not become played facts."
+        }
+      ]
+    }
+  ]
+}

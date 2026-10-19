@@ -8,10 +8,12 @@ import { roleSeed } from '../src/core/story-role-binding';
 import { digest } from '../scripts/story-search-evaluation.mjs';
 import frozen from './fixtures/story-budget-priority-baseline.json';
 import { sequenceScenarios } from './fixtures/story-sequence-priority';
+import {assertTopicRecall} from './fixtures/assert-topic-recall';
 const scenarios = budgetScenarios();
 for (const c of sequenceScenarios()) it(`RP272 current default regression, with deliberate cap expansion separated: ${c.id}`, () => {
   const prior = priorBudgetContext(c.input), current = compileGameContext(c.input);
-  if (c.family !== 'overflow') expect(current).toEqual(prior);
+  if (['unknown-tail','negative','conditional','personal','third-person','quoted'].includes(c.family)) assertTopicRecall(c.input,current,prior,c.records);
+  else if (c.family !== 'overflow') expect(current).toEqual(prior);
   else {
     const hints = budgetHints(current.text); expect(hints.length).toBeGreaterThan(8);
     for (const fact of [...c.records.slice(0, 6), ...c.facts.filter(f => !c.records.includes(f) && !c.discussions.includes(f))]) expect(hints.find(h => h.text === fact.text)?.sourceQuote ?? hints.find(h => h.text === fact.text)?.text).toBe(fact.quote);

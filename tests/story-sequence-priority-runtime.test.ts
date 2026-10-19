@@ -5,6 +5,7 @@ import { sequenceScenarios, sequenceWorld, sequenceHints, priorSequenceContext }
 import { compileGameContext, addedContextTokens } from '../src/core/game-context';
 import { digest } from '../scripts/story-search-evaluation.mjs';
 import frozen from './fixtures/story-sequence-priority-baseline.json';
+import {assertTopicRecall} from './fixtures/assert-topic-recall';
 const scenarios = sequenceScenarios();
 for (const c of scenarios) it(`RP272 whole compiler and frozen baseline: ${c.id}`, () => {
   // Historical cap8 comparison. RP273's intentionally expanded overflow cases
@@ -48,7 +49,8 @@ for (const mode of ['edited-quote', 'replacement', 'unknown-roles', 'restart', '
   if (mode === 'deictic') c.input.draft = 'open this door and take the copper key';
   if (mode === 'duplicate-object') c.input.draft = c.a + ' and close the iron door';
   if (mode === 'no-second-substantive') c.input.story!.facts = c.facts.filter(f => !c.records.slice(3, 6).includes(f));
-  expect(compileGameContext(c.input)).toEqual(priorSequenceContext(c.input));
+  if(mode==='deictic'||mode==='duplicate-object')assertTopicRecall(c.input,compileGameContext(c.input),priorSequenceContext(c.input),c.records);
+  else expect(compileGameContext(c.input)).toEqual(priorSequenceContext(c.input));
 });
 it('internal comparison gates do not activate a partial new sequence lane', () => {
   const c = sequenceWorld('en'); c.input.draft = c.dual;

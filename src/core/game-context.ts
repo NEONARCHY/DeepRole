@@ -7,6 +7,7 @@ import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
 import { storyContentRelevance } from "./story-content-relevance";
 import { taskProgressRecall } from './story-task-progress-recall';
 import { repeatSelectionFacts,repeatSelectionTopic } from './story-repeat-selection';
+import { narrativeRecallFacts, NARRATIVE_RECALL_GUIDE } from './story-narrative-recall';
 import { discussionPriorityFacts } from "./story-discussion-priority";
 import { flexiblePriorityFacts } from "./story-flexible-priority";
 import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
@@ -98,7 +99,11 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
    }
   }
  }
- const finish=(result:typeof prior,next=coverage)=>{observe?.(result.report.required>result.report.limit?{kind:'required-overflow'}:premiseGuardEnabled(input,options)&&next.kind==='complete'?{kind:'unverified',reason:'query'}:next);return result;};
+  const finish=(result:typeof prior,next=coverage)=>{
+   const supplemented=compileNarrativeRecall(input,options,proof,result,next);
+   observe?.(supplemented.context.report.required>supplemented.context.report.limit?{kind:'required-overflow'}:premiseGuardEnabled(input,options)&&supplemented.coverage.kind==='complete'?{kind:'unverified',reason:'query'}:supplemented.coverage);
+   return supplemented.context;
+  };
   const material=obligationRecallIntent(input.draft)==='compound-inquiry'&&(materialRecallAction(input.draft)||sequenceRecallAction(input.draft));
   // Publication/display/sequence groups may retain several explicitly named
   // sources. The original ambiguous-name guard stays in the rendered prompt;
@@ -117,8 +122,49 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
  const attempt:{reason:'complete'|'budget'|'unverified'}={reason:'unverified'};
  const candidate=compileGameContextPass(input,options,{ids,covers:chosen=>ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)),budgetRows:true,referenceGuard:guard,observe:r=>{attempt.reason=r}},p=>{selected=p.selected});
  const accepted=new Set(selected.map(storyFactIdentity));
-  if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit)return finish(candidate,literal&&obligationRecallIntent(input.draft)!=='reference'?{kind:'complete',sources:ids.length}:{kind:'unverified',reason:'query'});
+   if(ids.every(id=>accepted.has(id))&&candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit){proof={...proof,selected,referenceGuard:guard};return finish(candidate,literal&&obligationRecallIntent(input.draft)!=='reference'?{kind:'complete',sources:ids.length}:{kind:'unverified',reason:'query'});}
  return finish(prior,attempt.reason==='budget'?{kind:'budget',sources:ids.length,selected:ids.filter(id=>oldIds.has(id)).length}:{kind:'unverified',reason:'source'});
+}
+function compileNarrativeRecall(input:GameContextInput,options:GameContextOptions,proof:PriorityProof|undefined,prior:ReturnType<typeof compileGameContextPass>,coverage:GameMemoryCoverage){
+ const unchanged={context:prior,coverage};
+ if(!proof||!input.story||input.restart||input.character?.[9]||options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||options.actionBalance===false||options.compoundActionBalance===false||options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.budgetPriority===false)return unchanged;
+  // The existing obligation inquiry/reference grammar already supplies its own
+  // whole-source proof and uncertainty guard. Do not reinterpret that lane with
+  // broad unresolved-duty candidates or change its established coverage state.
+  if(obligationRecallIntent(input.draft)||premiseGuardEnabled(input,options)||proof.roles?.question||proof.referenceGuard===AMBIGUOUS_STORY_NAME&&/[?？]$/u.test(input.draft.trim()))return unchanged;
+  // Keep the established source-complete reservation, single-action and exact
+  // deictic-evidence lanes, including their order and explanation counters.
+  // Broad topic candidates must not replace a proven reference with both objects.
+  const directReference=storyObjectReference(input.draft,proof.names);
+  const quotedReference=/^[«“"]([\s\S]+)[»”"]\.?$/u.exec(input.draft.trim());
+  if(storyActionBalance(input.draft,proof.names)?.kind==='object'||directReference?.kind==='deictic'
+    ||quotedReference&&storyObjectReference(quotedReference[1]!,proof.names)?.kind==='deictic'
+    ||storyCompoundAction(input.draft,proof.names)?.some(part=>part.goal))return unchanged;
+  const group=narrativeRecallFacts(proof.facts,input.draft,proof.names,proof.roles,proof.episodes,input.recentMessages);
+ if(!group)return unchanged;
+  const incomplete=(reason: 'query'|'source'|'capacity'):GameMemoryCoverage=>({kind:'incomplete',reason});
+  const alreadySelected=coverage.kind==='complete'&&group.primary.length>0&&group.primary.every(f=>proof.selected.some(old=>storyFactIdentity(old)===storyFactIdentity(f)));
+  // Disabling repeat selection must not silently discard discussions through
+  // this supplementary lane either. Keep the prior complete rendering contract.
+  if(options.repeatSelection===false&&group.repeats.size)return unchanged;
+ if(!group.primary.length)return {context:prior,coverage:incomplete(group.reason)};
+ const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
+  const previous=proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)));
+  const ids=[...new Set((alreadySelected?previous:[...group.primary,...previous]).map(storyFactIdentity))];
+ if(ids.length>BUDGET_SOURCE_ROWS)return {context:prior,coverage:incomplete('capacity')};
+ let selected:StoryFact[]=[];
+ const attempt:{reason:'complete'|'budget'|'unverified'}={reason:'unverified'};
+ const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,covers:chosen=>ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)),referenceGuard:[proof.referenceGuard,NARRATIVE_RECALL_GUIDE].filter(Boolean).join('\n'),observe:r=>{attempt.reason=r}},p=>{selected=p.selected});
+  if(candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit&&ids.every(id=>selected.some(f=>storyFactIdentity(f)===id))){
+   // The same source set keeps its established protected-task counters/order.
+   // Re-render still pays for the uncertainty guide in both prompt and report;
+   // a UI warning alone must not leave the model without that reference guard.
+   if(alreadySelected&&candidate.report.explanation&&prior.report.explanation){
+    for(const key of ['openTasks','persistentFacts'] as const){const value=prior.report.explanation[key];if(value!==undefined)candidate.report.explanation[key]=value;}
+   }
+   return {context:candidate,coverage:incomplete('query')};
+  }
+ return {context:prior,coverage:attempt.reason==='budget'?{kind:'budget' as const,sources:ids.length,selected:ids.filter(id=>proof.selected.some(f=>storyFactIdentity(f)===id)).length}:incomplete('source')};
 }
 /** RP325: preserve all substantive sources, reserving their complete bundle
  * before explicitly empty repeated speech. Failed proof/budget is exact prior. */
@@ -127,8 +173,13 @@ function compileRepeatContext(input:GameContextInput,options:GameContextOptions,
  const prior=compileBudgetContext(input,options,observe,p=>{proof=p;capture(p)});
  if(options.repeatSelection===false||options.contentRelevance===false||options.topicAdmission===false||options.budgetPriority===false||options.discussionPriority===false||options.flexiblePriority===false||!input.story||input.restart||input.character?.[9]||!proof)return prior;
  const action=options.actionBalance!==false&&proof.action?.kind==='object'?proof.action:undefined;
- if(proof.referenceGuard&&!(proof.referenceGuard===AMBIGUOUS_STORY_OBJECT&&action))return prior;
- const filter=proof.admission??(action?{matches:action.matches,covers:(chosen:StoryFact[])=>chosen.some(action.matches)}:repeatSelectionTopic(input.draft,proof.names));
+  // Use the same whole-action parser as sequence retrieval. Every clause must
+  // retain substantive evidence; an unknown/pronominal clause cannot disappear
+  // merely because another object's empty discussions can be filtered out.
+  const sequence=options.actionBalance!==false&&options.compoundActionBalance!==false&&options.sequencePriority!==false?storyActionSequence(input.draft,proof.names):undefined;
+  const compound=sequence&&sequence.matches.length>1?sequence:undefined;
+  if(proof.referenceGuard&&!(proof.referenceGuard===AMBIGUOUS_STORY_OBJECT&&(action||compound)))return prior;
+  const filter=compound?{matches:(fact:StoryFact)=>compound.matches.some(matches=>matches(fact)),covers:(chosen:StoryFact[])=>compound.matches.every(matches=>chosen.some(matches))}:proof.admission??(action?{matches:action.matches,covers:(chosen:StoryFact[])=>chosen.some(action.matches)}:repeatSelectionTopic(input.draft,proof.names));
  const group=repeatSelectionFacts(proof.facts,input.draft,filter,proof.roles,proof.episodes);
  if(!group)return prior;
  const repeatIds=new Set([...group.repeats].map(storyFactIdentity));

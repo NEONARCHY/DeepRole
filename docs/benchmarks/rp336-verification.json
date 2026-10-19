@@ -1,0 +1,328 @@
+{
+  "milestone": "RP336",
+  "date": "2026-10-19",
+  "status": "red-capability-audit",
+  "datasetSha256": "906a8e042884359ecf7bcc8152781373eb28f4c4a3655959298b7b588aa87568",
+  "expectedFrozenBeforeScoring": true,
+  "runtimeChanged": false,
+  "historicalEvidenceHelperChanged": false,
+  "initialLaunch": "mergeConfig concatenated includes and collected 338 files; interrupted, not counted as complete; explicit replacement confirmed one audit file before isolated run",
+  "isolatedRun": {
+    "passedStructuralTests": 8,
+    "failedCapabilityCriterion": 1,
+    "durationSeconds": 69.4424912109375,
+    "report": ".output/rp336-isolated-first-vitest.json"
+  },
+  "summary": {
+    "measurements": 432,
+    "queryHistoryCases": 144,
+    "positiveCases": 96,
+    "positiveComplete": 42,
+    "controls": 48,
+    "controlsMemoryComplete": 18,
+    "falseComplete": 4,
+    "missingSources": 322,
+    "incompleteWithoutBudgetWarning": 84,
+    "integrityIssues": 0,
+    "unstable": 0,
+    "byFamily": [
+      {
+        "id": "short-two",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "short-three",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "ambient-two",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "ambient-three",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "return-and-act",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "actions-across-sentences",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "four-actions",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "narrative-four-actions",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "pause-between-actions",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "long-transition",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "conditional-actions",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "negated-first-action",
+        "cases": 8,
+        "complete": 2,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "unknown-fourth-object",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "ambiguous-her-object",
+        "cases": 8,
+        "complete": 4,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "false-completion-premise",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "shared-unqualified-objects",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 4,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "trailing-memory-instruction",
+        "cases": 8,
+        "complete": 2,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "foreign-unknown-object",
+        "cases": 8,
+        "complete": 4,
+        "falseComplete": 0,
+        "withBudgetWarning": 0
+      }
+    ]
+  },
+  "byHistorySize": [
+    {
+      "facts": 14,
+      "cases": 72,
+      "positiveCases": 48,
+      "positiveComplete": 22,
+      "controlCases": 24,
+      "controlsMemoryComplete": 14,
+      "coverageCriterionBreaches": 4,
+      "missingSources": 85,
+      "maxAddedTokens": 1450
+    },
+    {
+      "facts": 614,
+      "cases": 72,
+      "positiveCases": 48,
+      "positiveComplete": 20,
+      "controlCases": 24,
+      "controlsMemoryComplete": 4,
+      "coverageCriterionBreaches": 0,
+      "missingSources": 237,
+      "maxAddedTokens": 1608
+    }
+  ],
+  "examples": [
+    {
+      "family": "actions-across-sentences",
+      "draft": "Я открываю напорный люк. Затем беру керамическую капсулу. В конце проверяю фиолетовый маяк.",
+      "historyFacts": 614,
+      "missing": [
+        {
+          "index": 2,
+          "text": "Предмет напорный люк: питание индикатора восстановлено, но блокировка не снята и проверка не начата."
+        },
+        {
+          "index": 3,
+          "text": "Яна сказала: «Для предмета напорный люк нужна дополнительная проверка крепления; мы ещё её не проводили»."
+        },
+        {
+          "index": 4,
+          "text": "Дан считает, что предмет напорный люк принадлежит смотрителю. Это предположение; владелец не установлен."
+        },
+        {
+          "index": 6,
+          "text": "Предмет керамическая капсула: разрешение на вынос отозвано; нового разрешения нет."
+        },
+        {
+          "index": 7,
+          "text": "Дан уже доставил предмет керамическая капсула Яне. Эта доставка выполнена, но обещание Эвы вернуть предмет ещё не выполнено."
+        },
+        {
+          "index": 8,
+          "text": "Яна обещала осмотреть предмет фиолетовый маяк только после записи давления в протокол. Записи пока нет."
+        },
+        {
+          "index": 9,
+          "text": "Предмет фиолетовый маяк: зелёный индикатор горит, осмотр ещё не начат."
+        }
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "budgetWarning": false,
+      "referenceGuard": false
+    },
+    {
+      "family": "four-actions",
+      "draft": "Я открываю напорный люк, беру керамическую капсулу, проверяю фиолетовый маяк и читаю оранжевый журнал.",
+      "historyFacts": 614,
+      "missing": [
+        {
+          "index": 2,
+          "text": "Предмет напорный люк: питание индикатора восстановлено, но блокировка не снята и проверка не начата."
+        },
+        {
+          "index": 3,
+          "text": "Яна сказала: «Для предмета напорный люк нужна дополнительная проверка крепления; мы ещё её не проводили»."
+        },
+        {
+          "index": 4,
+          "text": "Дан считает, что предмет напорный люк принадлежит смотрителю. Это предположение; владелец не установлен."
+        },
+        {
+          "index": 6,
+          "text": "Предмет керамическая капсула: разрешение на вынос отозвано; нового разрешения нет."
+        },
+        {
+          "index": 7,
+          "text": "Дан уже доставил предмет керамическая капсула Яне. Эта доставка выполнена, но обещание Эвы вернуть предмет ещё не выполнено."
+        },
+        {
+          "index": 8,
+          "text": "Яна обещала осмотреть предмет фиолетовый маяк только после записи давления в протокол. Записи пока нет."
+        },
+        {
+          "index": 9,
+          "text": "Предмет фиолетовый маяк: зелёный индикатор горит, осмотр ещё не начат."
+        },
+        {
+          "index": 10,
+          "text": "Эва планирует прочитать предмет оранжевый журнал только после получения письма попечителя; письмо ещё не пришло."
+        },
+        {
+          "index": 11,
+          "text": "Предмет оранжевый журнал запечатан и находится у Дана. Печать не вскрывали."
+        }
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "budgetWarning": false,
+      "referenceGuard": false
+    },
+    {
+      "family": "false-completion-premise",
+      "draft": "Раз Дан уже починил напорный люк, я открываю его и беру керамическую капсулу.",
+      "historyFacts": 614,
+      "missing": [
+        {
+          "index": 2,
+          "text": "Предмет напорный люк: питание индикатора восстановлено, но блокировка не снята и проверка не начата."
+        },
+        {
+          "index": 3,
+          "text": "Яна сказала: «Для предмета напорный люк нужна дополнительная проверка крепления; мы ещё её не проводили»."
+        },
+        {
+          "index": 6,
+          "text": "Предмет керамическая капсула: разрешение на вынос отозвано; нового разрешения нет."
+        }
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "budgetWarning": false,
+      "referenceGuard": true
+    },
+    {
+      "family": "shared-unqualified-objects",
+      "draft": "Я открываю люк и беру капсулу.",
+      "historyFacts": 14,
+      "missing": [],
+      "coverage": {
+        "kind": "complete",
+        "sources": 10
+      },
+      "budgetWarning": false,
+      "referenceGuard": false
+    }
+  ],
+  "firstMeasurements": "docs/benchmarks/rp336-first-results.json",
+  "gold": "tests/fixtures/story-rp336-narrative-holdout.json",
+  "typecheck": "passed",
+  "browserRuntimePackagesUnchanged": {
+    "chrome": "262f4b2c685cc98034a2faae83642ef36040975aefe951f85ad944b43ed64660",
+    "firefox": "9393bce35b14e763a41a66fd3369e1f56542c714bff9e432ed2ebcf9db461282"
+  },
+  "scope": "Compiler + production-validated synthetic persisted history. No new browser/live-model or UI check. No runtime fixes in this independent evaluation.",
+  "limits": [
+    "72 distinct localized queries, 144 query/history combinations and 432 index-phase measurements; not 432 independent stories",
+    "falseComplete is a breach of the frozen internal coverage criterion, not proof of a wrong model answer or a visible UI success message",
+    "Missing budgetWarning is only memoryCoverageIssue: absence of all possible UI notices was not audited",
+    "Source order is synthetic validated lineage; does not evaluate real DeepSeek extraction",
+    "Initial mixed-suite launch interrupted; not a full unit-suite result"
+  ],
+  "next": "Fix multi-sentence/four-action/free narrative recall and incomplete-query warnings without losing conditional/negative/identity guards; recheck this now-seen corpus and prior suites, then a fresh holdout",
+  "rp05Complete": false,
+  "rp08Complete": false
+}

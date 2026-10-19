@@ -6,6 +6,7 @@ import {storedRoleReader} from '../src/core/story-role-binding';
 import {createEpisodeReader} from '../src/core/story-episodes';
 import {compileGameContext} from '../src/core/game-context';
 import {referenceWorld} from './fixtures/story-reference-quality';
+import {assertTopicRecall} from './fixtures/assert-topic-recall';
 const read=(f:ReturnType<typeof referenceWorld>,tasks=[f.blue,f.red])=>{
  const scope={worldId:f.base.world.id,entities:f.input.entities!},names=storyRetrievalQuery(f.input.draft,scope).relevanceNames,roles=createStoryRoleReader(scope,f.input.draft,storedRoleReader(f.input.story!.roleSeeds!,scope.entities,scope.worldId)),episodes=createEpisodeReader(f.input.story!.roleSeeds!,f.input.story!.episodeSources!);
  const reference=storyObjectReference(f.input.draft,names);return reference?storyReferenceCandidates(reference,tasks,[f.blueCode,f.redCode],f.anchor,f.input.recentMessages,names,roles,episodes):undefined;
@@ -26,7 +27,11 @@ for(const locale of ['ru','en'] as const){
   if(id==='split-object')f.input.recentMessages=[f.s('Синюю отметку видно. Дверь закрыта.','The blue sign is visible. The door is shut.')];
   if(id==='actor-only')f.input.draft=f.s('Мира открывает эту дверь.','Mira opens this door.');
   if(id==='recipient-only')f.input.draft=f.s('Беру её ключ.','I take her key.');
-  expect(read(f,tasks)).toBeUndefined();if(id!=='unknown-unbound-door')expect(compileGameContext(f.input)).toEqual(compileGameContext(f.input,{referenceRecall:'guard'}));
+   expect(read(f,tasks)).toBeUndefined();if(id!=='unknown-unbound-door'){
+    const next=compileGameContext(f.input),prior=compileGameContext(f.input,{referenceRecall:'guard'});
+    if(id==='actor-only'&&next.text!==prior.text)assertTopicRecall(f.input,next,prior,f.input.story!.facts);
+    else expect(next).toEqual(prior);
+   }
  });
  for(const id of ['rename','reorder','new-same-name','foreign','unavailable'] as const)it(`${locale} keeps historical source identities across ${id}`,()=>{
   const f=referenceWorld(locale),N=f.input.entities![0]!,original=N.id;

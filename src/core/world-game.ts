@@ -10,6 +10,7 @@ import { validStoryContinuation } from "./story-continuation";
 import { validReviewResolutions } from "./story-automation";
 import { validFactRoleSeeds, type FactRoleSeed } from "./story-role-binding";
 import { validEpisodeSources } from "./story-episodes";
+import { isSameDeepSeekChat } from "./chat-scope";
 export interface WorldGame {
   episodeSources?: string[];
   factRoleSeeds?: FactRoleSeed[];
@@ -26,6 +27,13 @@ export interface WorldGame {
  updatedAt: number;
 }
 export interface WorldGameActivation { chatId: string; chatUrl: string; worldId: string; expectedRevision: string | null; mode: "initialize" | "attach" | "resume" }
+/** Keep the original activation guard; a static cause distinguishes its failures
+ * without exposing either URL, tab/chat identity or stored world data. */
+export function assertWorldGameTab(input: WorldGameActivation, tab: { url?: string; active?: boolean }) {
+  if (tab.url !== input.chatUrl) throw Error("story-binding-conflict", { cause: "activation-tab-url" });
+  if (!isSameDeepSeekChat(input.chatUrl, tab.url, input.chatId)) throw Error("story-binding-conflict", { cause: "activation-tab-chat" });
+  if (input.mode !== "initialize" && !tab.active) throw Error("story-binding-conflict", { cause: "activation-tab-inactive" });
+}
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const id = (v: unknown): v is string => typeof v === "string" && !!v && v === v.trim() && v.length <= 160 && !["__proto__", "constructor", "prototype"].includes(v);
 const ids = (v: unknown): v is string[] => Array.isArray(v) && v.every(id);

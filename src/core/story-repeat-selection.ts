@@ -32,11 +32,22 @@ export function isVerifiedEmptyDiscussion(fact:StoryFact,roles?:StoryRoleReader,
   const attribution=roles.read(fact);
   if(!attribution?.speaker||attribution.speaker.unavailable||Object.keys(attribution).some(k=>k!=='speaker'))return false;
   const source=fact.quote.trim(),colon=source.indexOf(':');
-  if(colon<1||!/(?: said| сказал| сказала| сказали)$/u.test(normalizeText(source.slice(0,colon))))return false;
+  if(colon<1)return false;
+  const header=normalizeText(source.slice(0,colon));
+  const attributed=/(?: said| сказал| сказала| сказали)$/u.test(header);
+  const direct=header===normalizeText(attribution.speaker.sourceName??attribution.speaker.name);
+  if(!attributed&&!direct)return false;
   const quote=source.slice(colon+1).trim().replace(/([»”"])\.$/u,'$1');
   const close=quote.startsWith('«')?'»':quote.startsWith('“')?'”':quote.startsWith('"')?'"':undefined;
   if(!close||!quote.endsWith(close))return false;
   const body=quote.slice(1,-1).normalize('NFKC').toLocaleLowerCase().replaceAll('ё','е');
+  // Alternate finite whole-quote grammar. The room code is a location in an
+  // explicitly empty discussion, never an action/permission/owner assertion.
+  // Names/quotes/roles were already proven above; no historical rebinding.
+  const short=/^снова обсуждали (.+) в комнате [a-z]\d{4}; новых сведений нет, действий и обещаний не было\.?$/u.exec(body)
+    ?? /^we discussed (.+) in room [a-z]\d{4} again; no new information, actions or promises\.?$/u.exec(body);
+  if(short)return body.length<=900&&!/[\p{N}<>{}\[\]`«»“”"\r\n:;!?]/u.test(short[1]!)&&!mixed.test(short[1]!);
+  if(!attributed)return false;
   if(body.length>900||/[\p{N}<>{}\[\]`«»“”"\r\n]/u.test(body))return false;
   const parts=body.replace(/\.$/u,'').split(/[.;]\s*/u);
   if(parts.length!==4)return false;

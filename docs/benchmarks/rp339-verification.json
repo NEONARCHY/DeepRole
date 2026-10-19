@@ -1,0 +1,55 @@
+{
+  "milestone": "RP339",
+  "date": "2026-10-19",
+  "scope": "Personal Edge live acceptance of RP338 prefix repair; not independent retrieval holdout",
+  "installedVersion": "RP338 user-confirmed; binary not independently read",
+  "chatUrl": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+  "planBeforeFirstSend": true,
+  "planSha256": "2cc37ade83ca088c5170156da56aa9ea064ff0384403c5c315a5d0fe71e290cb",
+  "historicalMessagesVisuallyClean": true,
+  "historicalSamples": [
+    "original mira",
+    "repeated nora",
+    "access"
+  ],
+  "newQueryId": "RP330 crossplot unchanged",
+  "newQueriesSent": 1,
+  "replyChecks": {
+    "keyHeldByNora": true,
+    "sealNotChecked": true,
+    "handoverNotCompleted": true,
+    "northLampRepairNotConfusedWithSealCheck": true
+  },
+  "newUserMessageVisuallyCleanBeforeAndAfterReload": true,
+  "replySurvivedReload": true,
+  "worldAndCastPreservedInUI": true,
+  "relationshipsInUI": [
+    50,
+    50
+  ],
+  "newVisiblePreparationWarning": false,
+  "composerEmpty": true,
+  "rawDatabaseNetworkOrConsoleAudited": false,
+  "privateScreenshotsIgnored": [
+    ".output/rp339-old-messages-clean.png",
+    ".output/rp339-live-reload-passed.png"
+  ],
+  "codeChanged": false,
+  "newAutomatedTestsRun": false,
+  "browserPackagesRebuilt": false,
+  "browserPackageSha256Unchanged": {
+    "chrome": "4bf1b8c53939765e524d9cc0d6c26626274bdfc748f4106ff2520f04ce6c6425",
+    "firefox": "c163e5e20d59f397a7f8a0f1892d4fd465acd626394480147adc044b105d82e3"
+  },
+  "previousAutomatedChecksNotRerun": {
+    "milestone": "RP338",
+    "unit": 150,
+    "UI": 8,
+    "installedSyntheticRuntime": 20
+  },
+  "personalPrefixRepairRecheck": "passed",
+  "next": "Fresh independent RP05 holdout; expectations fixed before first scoring. Large structured-source personal live separate. Do not request another RP338 update just to repeat this acceptance.",
+  "rp05Complete": false,
+  "rp08Complete": false,
+  "pushOrMergeRequested": false
+}

@@ -1,0 +1,96 @@
+{
+  "id": "RP338",
+  "scope": "SEEN live regression on user-confirmed RP337 update; same existing Nora chat and fictional world; not new independent retrieval holdout",
+  "chatUrl": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+  "world": "ТЕСТ DeepRole — Мастерская у моста",
+  "queries": [
+    {
+      "id": "nora",
+      "text": "[Что именно обещала Нора по медному флюгеру восточной башни и какие исходные условия пока не выполнены?]",
+      "must": [
+        "калибровка",
+        "письменное разрешение смотрителя не получено",
+        "подписи Миры нет"
+      ],
+      "mustNot": [
+        "обещание выполнено",
+        "звонок охраны как замена двух условий Норы"
+      ]
+    },
+    {
+      "id": "mira",
+      "text": "[Что отдельно обещала Мира по медному флюгеру восточной башни и чего она ждёт? Можно ли заменить это разрешением смотрителя?]",
+      "must": [
+        "проверка",
+        "звонок охраны ещё не состоялся",
+        "разрешение смотрителя не заменяет звонок"
+      ]
+    },
+    {
+      "id": "progress",
+      "text": "[По медному флюгеру восточной башни: что уже сделано с питанием, калибровкой, проверкой и синим пакетом?]",
+      "must": [
+        "питание восстановлено",
+        "калибровка не начата",
+        "проверка не начата",
+        "синий пакет доставлен Мире"
+      ]
+    },
+    {
+      "id": "access",
+      "text": "[Действителен ли старый допуск к медному флюгеру восточной башни и есть ли новый?]",
+      "must": [
+        "старый отозван",
+        "нового нет"
+      ]
+    },
+    {
+      "id": "owner",
+      "text": "[Кому принадлежит медный флюгер восточной башни: что известно достоверно и кто только предполагает владельца?]",
+      "must": [
+        "владелец не подтверждён",
+        "Артём предполагает смотрителя"
+      ]
+    },
+    {
+      "id": "extra",
+      "text": "[Какой дополнительный осмотр медного флюгера восточной башни упоминала Нора и проведён ли он? Отменил ли он исходные условия?]",
+      "must": [
+        "осмотр крепления",
+        "не проведён",
+        "исходные условия не отменены"
+      ]
+    },
+    {
+      "id": "crossplot",
+      "text": "[Отдельно от флюгера: где латунный ключ от восточной мастерской и была ли проверена пломба маячного фонаря?]",
+      "must": [
+        "ключ у Норы",
+        "пломба не проверена"
+      ]
+    },
+    {
+      "id": "hypothesis",
+      "text": "[Если предположить, что охрана уже позвонила и Мира проверила флюгер, это станет сыгранным событием? Какой статус проверки у нас сейчас?]",
+      "must": [
+        "гипотеза не событие",
+        "звонка не было",
+        "проверка не начата"
+      ]
+    }
+  ],
+  "procedure": [
+    "Freeze before first new send. Do not re-send seed facts or answers.",
+    "Read connected-memory widget without opening iframe settings menu.",
+    "Send eight unchanged OOC questions, inspect complete final replies and visible warnings.",
+    "Reload, inspect technical-prefix visibility and final state, repeat crossplot once.",
+    "If possible inspect unsent multi-action draft preview; clear it without sending."
+  ],
+  "baselineIssue": "Before first send, both historical user messages visibly show deeprole_context prefix after user reload. Preserve first observation and distinguish old-prefix restoration from current sends.",
+  "limits": [
+    "Eight sequential questions in an existing chat can use native history; not independent retrieval quality.",
+    "No raw DB or independent network payload access through UI tool.",
+    "This world is not the synthetic 614-fact corpus; no claim of a large persisted-index live audit.",
+    "Installed version is user-confirmed; no independent binary hash yet."
+  ]
+}

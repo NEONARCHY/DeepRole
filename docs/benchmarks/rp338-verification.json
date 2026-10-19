@@ -1,0 +1,191 @@
+{
+  "milestone": "RP338",
+  "date": "2026-10-19",
+  "live": {
+    "installedRelease": "RP337 user-confirmed; no independent binary hash",
+    "chatUrl": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+    "world": "ТЕСТ DeepRole — Мастерская у моста",
+    "planSha256": "4e95c1ecdaed5dba0be1dd0df78ef1d86c07d54e2c45f930f758971d525cbf1f",
+    "planUnchanged": true,
+    "queries": [
+      {
+        "id": "nora",
+        "pass": true,
+        "expected": [
+          "калибровка",
+          "письменное разрешение смотрителя не получено",
+          "подписи Миры нет"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "mira",
+        "pass": true,
+        "expected": [
+          "проверка",
+          "звонок охраны ещё не состоялся",
+          "разрешение смотрителя не заменяет звонок"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "progress",
+        "pass": true,
+        "expected": [
+          "питание восстановлено",
+          "калибровка не начата",
+          "проверка не начата",
+          "синий пакет доставлен Мире"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "access",
+        "pass": true,
+        "expected": [
+          "старый отозван",
+          "нового нет"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "owner",
+        "pass": true,
+        "expected": [
+          "владелец не подтверждён",
+          "Артём предполагает смотрителя"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "extra",
+        "pass": true,
+        "expected": [
+          "осмотр крепления",
+          "не проведён",
+          "исходные условия не отменены"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "crossplot",
+        "pass": true,
+        "expected": [
+          "ключ у Норы",
+          "пломба не проверена"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      },
+      {
+        "id": "hypothesis",
+        "pass": true,
+        "expected": [
+          "гипотеза не событие",
+          "звонка не было",
+          "проверка не начата"
+        ],
+        "evidence": "Read complete visible final reply; summary in docs/RP05-LIVE-RP337-RECHECK-20261019.md"
+      }
+    ],
+    "passed": 8,
+    "afterReloadCrossplotPassed": true,
+    "newSeedOrAnswerHintsSent": false,
+    "memoryReviewOrSettingsChanged": false,
+    "newVisiblePreparationFailure": false,
+    "sceneUnchangedInUI": true,
+    "relationshipsInUI": [
+      50,
+      50
+    ],
+    "preview": {
+      "loreEntries": 6,
+      "profileExcerpts": 5,
+      "gameFactsOrTasks": 0,
+      "previousTurns": 2,
+      "tokens": 2528,
+      "budget": 6000,
+      "fourPartDraftSent": false,
+      "draftCleared": true
+    },
+    "prefixVisibilityAfterReload": "FAILED on RP337 for historical and newly sent messages; reason reproduced by regression tests",
+    "networkOrRawDatabaseAudited": false,
+    "screenshotPrivateIgnored": ".output/rp338-live-after-reload.png"
+  },
+  "repair": {
+    "file": "src/core/injected-user-text.ts",
+    "cause": "Continuation transcript between the final closed XML block and User message marker was not recognized",
+    "recognition": "Exact known continuation header and complete JSON array of user/assistant text turns; ordinary and malformed quotations remain untouched",
+    "rawSubmittedTextPreserved": true,
+    "personalDOMPatched": false,
+    "newRelease": "RP338",
+    "personalRecheckAfterNewUpdate": "pending"
+  },
+  "tests": {
+    "firstRed": {
+      "passed": 6,
+      "failed": 6,
+      "report": ".output/rp338-prefix-first.json"
+    },
+    "unit": {
+      "passed": 150,
+      "failed": 0,
+      "files": 8,
+      "report": ".output/rp338-prefix-final.json"
+    },
+    "ui": {
+      "passed": 8,
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "browsers": [
+        "Edge",
+        "Firefox"
+      ],
+      "widths": [
+        360,
+        1280
+      ],
+      "reloadAndRawSourcePreservation": true,
+      "report": ".output/rp338-prefix-ui.json"
+    },
+    "installedSynthetic": {
+      "passed": 20,
+      "failed": 0,
+      "newPrefixRestorationCases": 2,
+      "priorNewChatCases": 12,
+      "priorOldChatCases": 2,
+      "priorLargeIndexCases": 4,
+      "report": ".output/rp338-runtime-accepted.json"
+    },
+    "typecheck": "passed",
+    "diffCheck": "passed",
+    "fullUnitSuiteRunThisIteration": false,
+    "earlierHarnessFailures": [
+      "rp338-runtime.json: missing UTF-8 in fixture corrupted Russian and em dash before matching; 1 failed/19 not run",
+      "rp338-runtime-final.json: ordinary quote innerText correctly collapsed whitespace; assert raw text exact and visible quote instead; 1 failed/19 not run"
+    ],
+    "timeoutsOrProductionGuardsWeakened": false
+  },
+  "packages": {
+    "chrome": {
+      "files": 23,
+      "sha256": "4bf1b8c53939765e524d9cc0d6c26626274bdfc748f4106ff2520f04ce6c6425",
+      "buildBytesMatched": true
+    },
+    "firefox": {
+      "files": 23,
+      "sha256": "c163e5e20d59f397a7f8a0f1892d4fd465acd626394480147adc044b105d82e3",
+      "buildBytesMatched": true
+    }
+  },
+  "namedChrome": "downloads/DeepRole-RP338-hidden-context-20261019.zip",
+  "limits": [
+    "Sequential existing-chat ordinary-lore live questions, not independent 614-source retrieval audit",
+    "Live prefix repair on personal copy requires manual RP338 update; only synthetic installed repair verified so far",
+    "RP05 new independent holdout still pending; RP08 replay separate",
+    "No push or merge requested"
+  ],
+  "rp05Complete": false,
+  "rp08Complete": false
+}

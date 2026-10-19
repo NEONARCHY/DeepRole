@@ -1,0 +1,2418 @@
+{
+  "version": 1,
+  "milestone": "RP340",
+  "purpose": "New independently authored stories and human-selected source expectations before first production compiler scoring; not generated from compiler output. Paired translations share the same causal structure, not independent language samples.",
+  "historyExtraCounts": [
+    0,
+    600
+  ],
+  "budget": 6000,
+  "phases": [
+    "cold",
+    "warm",
+    "reopened"
+  ],
+  "worlds": [
+    {
+      "id": "observatory-ru",
+      "plot": "observatory",
+      "locale": "ru",
+      "worldName": "Обсерватория над перевалом",
+      "people": [
+        "Лада",
+        "Борис",
+        "Соня"
+      ],
+      "objects": [
+        "серебряный телескоп",
+        "медный футляр",
+        "звёздный атлас",
+        "лунный фильтр"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Лада обещала навести серебряный телескоп после подписания допуска Соней; допуск ещё не подписан.",
+          "quote": "Лада обещала навести серебряный телескоп после подписания допуска Соней; допуск ещё не подписан.",
+          "task": {
+            "key": "aim",
+            "title": "серебряный телескоп",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Борис обещал очистить серебряный телескоп после доставки сухого азота. Азот не доставлен; допуск Сони не заменяет доставку.",
+          "quote": "Борис обещал очистить серебряный телескоп после доставки сухого азота. Азот не доставлен; допуск Сони не заменяет доставку.",
+          "task": {
+            "key": "clean",
+            "title": "серебряный телескоп",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Серебряный телескоп: привод включён, но купол закрыт; наведение и очистка не проводились.",
+          "quote": "Серебряный телескоп: привод включён, но купол закрыт; наведение и очистка не проводились."
+        },
+        {
+          "kind": "belief",
+          "text": "Соня предполагает, что серебряный телескоп подарен колледжем. Документов о владельце никто не видел.",
+          "quote": "Соня предполагает, что серебряный телескоп подарен колледжем. Документов о владельце никто не видел."
+        },
+        {
+          "kind": "event",
+          "text": "Медный футляр принадлежит Соне и хранится у Бориса. Лада не получала его.",
+          "quote": "Медный футляр принадлежит Соне и хранится у Бориса. Лада не получала его."
+        },
+        {
+          "kind": "promise",
+          "text": "Лада обещала забрать медный футляр только после сверки серийного номера Соней. Номер ещё не сверяли.",
+          "quote": "Лада обещала забрать медный футляр только после сверки серийного номера Соней. Номер ещё не сверяли.",
+          "task": {
+            "key": "case",
+            "title": "медный футляр",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Медный футляр: разрешение на вынос отозвано; проверка номера сама по себе не восстановит разрешение.",
+          "quote": "Медный футляр: разрешение на вынос отозвано; проверка номера сама по себе не восстановит разрешение.",
+          "claim": {
+            "key": "case.permission",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Борис уже принёс медный футляр из кладовой в кабинет. Этот перенос завершён, но футляр остался у него.",
+          "quote": "Борис уже принёс медный футляр из кладовой в кабинет. Этот перенос завершён, но футляр остался у него.",
+          "task": {
+            "key": "case-move",
+            "title": "медный футляр",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "secret",
+          "text": "Звёздный атлас содержит тайную отметку; Соня просила не показывать её Ладе без отдельного согласия.",
+          "quote": "Звёздный атлас содержит тайную отметку; Соня просила не показывать её Ладе без отдельного согласия."
+        },
+        {
+          "kind": "promise",
+          "text": "Борис обещал дать прочитать звёздный атлас после возвращения Сони. Соня вернулась, но согласия на тайную отметку не дала.",
+          "quote": "Борис обещал дать прочитать звёздный атлас после возвращения Сони. Соня вернулась, но согласия на тайную отметку не дала.",
+          "task": {
+            "key": "atlas",
+            "title": "звёздный атлас",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Звёздный атлас: разрешено читать только открытую вкладку; доступ к тайной отметке не разрешён.",
+          "quote": "Звёздный атлас: разрешено читать только открытую вкладку; доступ к тайной отметке не разрешён."
+        },
+        {
+          "kind": "event",
+          "text": "Лунный фильтр запечатан в шкафу Лады. Его состояние под пломбой неизвестно.",
+          "quote": "Лунный фильтр запечатан в шкафу Лады. Его состояние под пломбой неизвестно."
+        },
+        {
+          "kind": "plan",
+          "text": "Соня планирует установить лунный фильтр после остывания оправы и замера влажности. Оправа остыла, влажность ещё не измеряли.",
+          "quote": "Соня планирует установить лунный фильтр после остывания оправы и замера влажности. Оправа остыла, влажность ещё не измеряли.",
+          "task": {
+            "key": "filter",
+            "title": "лунный фильтр",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Лунный фильтр: вскрытие пломбы без Лады запрещено; Лада пока не пришла.",
+          "quote": "Лунный фильтр: вскрытие пломбы без Лады запрещено; Лада пока не пришла."
+        },
+        {
+          "kind": "event",
+          "text": "Бронзовый телескоп уже очищен Борисом; это не серебряный телескоп.",
+          "quote": "Бронзовый телескоп уже очищен Борисом; это не серебряный телескоп.",
+          "task": {
+            "key": "bronze",
+            "title": "бронзовый телескоп",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Картонный футляр отдан Ладе. Медный футляр при этом не передавали.",
+          "quote": "Картонный футляр отдан Ладе. Медный футляр при этом не передавали."
+        },
+        {
+          "kind": "event",
+          "text": "Соня разрешила показать Ладе дорожный атлас; разрешение не касается звёздного атласа.",
+          "quote": "Соня разрешила показать Ладе дорожный атлас; разрешение не касается звёздного атласа."
+        },
+        {
+          "kind": "event",
+          "text": "Борис заменил солнечный фильтр. Лунный фильтр всё ещё запечатан.",
+          "quote": "Борис заменил солнечный фильтр. Лунный фильтр всё ещё запечатан."
+        }
+      ],
+      "queries": [
+        {
+          "id": "two",
+          "draft": "Я навожу серебряный телескоп, после чего забираю медный футляр.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "three",
+          "draft": "Подхожу к серебряному телескопу, беру медный футляр и листаю звёздный атлас.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four",
+          "draft": "Серебряный телескоп навожу на север. Медный футляр кладу в сумку. Звёздный атлас раскрываю. Лунный фильтр устанавливаю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "aside",
+          "draft": "По пути считаю ступени, вспоминаю вчерашний снег, а добравшись до купола, собираюсь навести серебряный телескоп и унести медный футляр.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause",
+          "draft": "Сперва я берусь за медный футляр; потом останавливаюсь выпить воды. И лишь после паузы открываю звёздный атлас.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional",
+          "draft": "Если решу навести серебряный телескоп и поставить лунный фильтр, что надо выяснить до начала?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "negative",
+          "draft": "Медный футляр я не трогаю, зато хочу посмотреть тайную отметку в звёздном атласе.",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "actor",
+          "draft": "Борис, напомни разницу между твоим обещанием очистить серебряный телескоп и обещанием Лады его навести.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "synonym",
+          "draft": "Хочу направить серебристую трубу на небо, а медную коробочку вернуть хозяйке.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "short-reference",
+          "draft": "А её футляр уже можно забрать? Потом выполним то обещание с трубой.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion",
+          "draft": "Раз бронзовый телескоп чистый, серебряный телескоп тоже уже очищен? А картонный футляр заменяет медный футляр?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "permission",
+          "draft": "Соня вернулась — значит, звёздный атлас теперь можно целиком показать Ладе, включая тайную отметку?",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Оправа остыла. Устанавливаю лунный фильтр и беру медный футляр, раз Борис уже принёс его.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "quotation",
+          "draft": "Лада сказала: «Наведи серебряный телескоп и забери медный футляр». Я пока только уточняю, выполнимо ли это.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "reordered",
+          "draft": "Сначала вернусь к лунному фильтру, затем к звёздному атласу, после — к медному футляру и серебряному телескопу. Что остаётся незавершённым?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown",
+          "draft": "Её вещь уже готова? Сделаю то самое, а потом всё остальное.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "observatory-en",
+      "plot": "observatory",
+      "locale": "en",
+      "worldName": "Observatory above the pass",
+      "people": [
+        "Lada",
+        "Boris",
+        "Sonya"
+      ],
+      "objects": [
+        "silver telescope",
+        "copper case",
+        "stellar atlas",
+        "lunar filter"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Lada promised to aim the silver telescope after Sonya signs the permit; it has not been signed.",
+          "quote": "Lada promised to aim the silver telescope after Sonya signs the permit; it has not been signed.",
+          "task": {
+            "key": "aim",
+            "title": "silver telescope",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Boris promised to clean the silver telescope once dry nitrogen arrives. It has not arrived; Sonya's permit does not replace delivery.",
+          "quote": "Boris promised to clean the silver telescope once dry nitrogen arrives. It has not arrived; Sonya's permit does not replace delivery.",
+          "task": {
+            "key": "clean",
+            "title": "silver telescope",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Silver telescope: the drive is on, but the dome is shut; neither aiming nor cleaning has taken place.",
+          "quote": "Silver telescope: the drive is on, but the dome is shut; neither aiming nor cleaning has taken place."
+        },
+        {
+          "kind": "belief",
+          "text": "Sonya believes the silver telescope was donated by the college. Nobody has seen ownership documents.",
+          "quote": "Sonya believes the silver telescope was donated by the college. Nobody has seen ownership documents."
+        },
+        {
+          "kind": "event",
+          "text": "The copper case belongs to Sonya and is held by Boris. Lada has not received it.",
+          "quote": "The copper case belongs to Sonya and is held by Boris. Lada has not received it."
+        },
+        {
+          "kind": "promise",
+          "text": "Lada promised to collect the copper case only after Sonya checks its serial number. It has not been checked.",
+          "quote": "Lada promised to collect the copper case only after Sonya checks its serial number. It has not been checked.",
+          "task": {
+            "key": "case",
+            "title": "copper case",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Copper case: removal permission was revoked; checking its number alone will not restore permission.",
+          "quote": "Copper case: removal permission was revoked; checking its number alone will not restore permission.",
+          "claim": {
+            "key": "case.permission",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Boris has brought the copper case from the store to the office. That move is complete, but he still holds it.",
+          "quote": "Boris has brought the copper case from the store to the office. That move is complete, but he still holds it.",
+          "task": {
+            "key": "case-move",
+            "title": "copper case",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "secret",
+          "text": "The stellar atlas contains a secret mark; Sonya asked that it not be shown to Lada without separate consent.",
+          "quote": "The stellar atlas contains a secret mark; Sonya asked that it not be shown to Lada without separate consent."
+        },
+        {
+          "kind": "promise",
+          "text": "Boris promised to lend the stellar atlas once Sonya returned. She has returned but has not consented to disclosure of the secret mark.",
+          "quote": "Boris promised to lend the stellar atlas once Sonya returned. She has returned but has not consented to disclosure of the secret mark.",
+          "task": {
+            "key": "atlas",
+            "title": "stellar atlas",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Stellar atlas: only the public insert may be read; access to the secret mark is not allowed.",
+          "quote": "Stellar atlas: only the public insert may be read; access to the secret mark is not allowed."
+        },
+        {
+          "kind": "event",
+          "text": "The lunar filter is sealed in Lada's cabinet. Its condition beneath the seal is unknown.",
+          "quote": "The lunar filter is sealed in Lada's cabinet. Its condition beneath the seal is unknown."
+        },
+        {
+          "kind": "plan",
+          "text": "Sonya plans to install the lunar filter once its mount cools and humidity is measured. The mount has cooled; humidity is still unmeasured.",
+          "quote": "Sonya plans to install the lunar filter once its mount cools and humidity is measured. The mount has cooled; humidity is still unmeasured.",
+          "task": {
+            "key": "filter",
+            "title": "lunar filter",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Lunar filter: breaking the seal without Lada is forbidden; she has not arrived.",
+          "quote": "Lunar filter: breaking the seal without Lada is forbidden; she has not arrived."
+        },
+        {
+          "kind": "event",
+          "text": "Boris has cleaned the bronze telescope; it is not the silver telescope.",
+          "quote": "Boris has cleaned the bronze telescope; it is not the silver telescope.",
+          "task": {
+            "key": "bronze",
+            "title": "bronze telescope",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The cardboard case was given to Lada. The copper case was not handed over.",
+          "quote": "The cardboard case was given to Lada. The copper case was not handed over."
+        },
+        {
+          "kind": "event",
+          "text": "Sonya allowed Lada to see the road atlas; that permission does not cover the stellar atlas.",
+          "quote": "Sonya allowed Lada to see the road atlas; that permission does not cover the stellar atlas."
+        },
+        {
+          "kind": "event",
+          "text": "Boris replaced the solar filter. The lunar filter remains sealed.",
+          "quote": "Boris replaced the solar filter. The lunar filter remains sealed."
+        }
+      ],
+      "queries": [
+        {
+          "id": "two",
+          "draft": "I aim the silver telescope, then collect the copper case.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "three",
+          "draft": "I approach the silver telescope, pick up the copper case and leaf through the stellar atlas.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four",
+          "draft": "I aim the silver telescope north. I put the copper case in my bag. I open the stellar atlas. I install the lunar filter.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "aside",
+          "draft": "On the way I count steps and remember yesterday's snow; at the dome I intend to aim the silver telescope and carry away the copper case.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause",
+          "draft": "First I reach for the copper case; then I stop for water. Only after that pause do I open the stellar atlas.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional",
+          "draft": "If I decide to aim the silver telescope and fit the lunar filter, what must be established before starting?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "negative",
+          "draft": "I am not touching the copper case, but I want to see the secret mark in the stellar atlas.",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "actor",
+          "draft": "Boris, remind me how your promise to clean the silver telescope differs from Lada's promise to aim it.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "synonym",
+          "draft": "I want to point the silvery observing tube skyward and return the copper container to its owner.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "short-reference",
+          "draft": "Can we collect her case now? Then we will fulfil that promise about the tube.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion",
+          "draft": "Since the bronze telescope is clean, has the silver telescope been cleaned too? Does the cardboard case replace the copper case?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "permission",
+          "draft": "Sonya has returned; can the entire stellar atlas now be shown to Lada, including the secret mark?",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "partial-condition",
+          "draft": "The mount has cooled. I install the lunar filter and take the copper case since Boris already brought it.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "quotation",
+          "draft": "Lada said: “Aim the silver telescope and collect the copper case.” For now I am only asking whether that is possible.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "reordered",
+          "draft": "First back to the lunar filter, then the stellar atlas, next the copper case and silver telescope. What remains unfinished?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown",
+          "draft": "Is her thing ready? I will do that thing, then everything else.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "theatre-ru",
+      "plot": "theatre",
+      "locale": "ru",
+      "worldName": "Театр перед премьерой",
+      "people": [
+        "Рита",
+        "Марк",
+        "Вера"
+      ],
+      "objects": [
+        "бархатный занавес",
+        "красный конверт",
+        "страховой договор",
+        "синий пропуск"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Рита обещала поднять бархатный занавес после сигнала Веры. Сигнала ещё не было.",
+          "quote": "Рита обещала поднять бархатный занавес после сигнала Веры. Сигнала ещё не было.",
+          "task": {
+            "key": "curtain-raise",
+            "title": "бархатный занавес",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Марк обещал починить бархатный занавес после отключения мотора. Мотор ещё работает; сигнал Веры не заменяет отключение.",
+          "quote": "Марк обещал починить бархатный занавес после отключения мотора. Мотор ещё работает; сигнал Веры не заменяет отключение.",
+          "task": {
+            "key": "curtain-fix",
+            "title": "бархатный занавес",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Бархатный занавес: лампа пульта заменена, однако подъём и ремонт полотна ещё не выполнены.",
+          "quote": "Бархатный занавес: лампа пульта заменена, однако подъём и ремонт полотна ещё не выполнены."
+        },
+        {
+          "kind": "belief",
+          "text": "Вера считает, что бархатный занавес принадлежит театру. Это неподтверждённое мнение.",
+          "quote": "Вера считает, что бархатный занавес принадлежит театру. Это неподтверждённое мнение."
+        },
+        {
+          "kind": "event",
+          "text": "Красный конверт принадлежит Рите; сейчас он у Веры. Марку его не передавали.",
+          "quote": "Красный конверт принадлежит Рите; сейчас он у Веры. Марку его не передавали."
+        },
+        {
+          "kind": "promise",
+          "text": "Марк обещал забрать красный конверт после сверки подписи Ритой. Подпись не сверена.",
+          "quote": "Марк обещал забрать красный конверт после сверки подписи Ритой. Подпись не сверена.",
+          "task": {
+            "key": "envelope",
+            "title": "красный конверт",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Красный конверт: Рита отозвала разрешение выносить его из театра. Подпись не отменяет этот запрет.",
+          "quote": "Красный конверт: Рита отозвала разрешение выносить его из театра. Подпись не отменяет этот запрет.",
+          "claim": {
+            "key": "envelope.removal",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Вера перенесла красный конверт из гримёрной в кассу. Перенос окончен, но конверт по-прежнему у неё.",
+          "quote": "Вера перенесла красный конверт из гримёрной в кассу. Перенос окончен, но конверт по-прежнему у неё.",
+          "task": {
+            "key": "envelope-move",
+            "title": "красный конверт",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "secret",
+          "text": "Страховой договор содержит закрытое приложение о долге Риты. Она запретила разглашать приложение Марку.",
+          "quote": "Страховой договор содержит закрытое приложение о долге Риты. Она запретила разглашать приложение Марку."
+        },
+        {
+          "kind": "promise",
+          "text": "Вера обещала дать страховой договор Марку после приезда Риты. Рита приехала, но запрет на приложение не сняла.",
+          "quote": "Вера обещала дать страховой договор Марку после приезда Риты. Рита приехала, но запрет на приложение не сняла.",
+          "task": {
+            "key": "contract",
+            "title": "страховой договор",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Страховой договор можно читать без закрытого приложения; разрешения на копирование приложения нет.",
+          "quote": "Страховой договор можно читать без закрытого приложения; разрешения на копирование приложения нет."
+        },
+        {
+          "kind": "event",
+          "text": "Синий пропуск запечатан в сейфе Марка. Проверку его подлинности ещё не проводили.",
+          "quote": "Синий пропуск запечатан в сейфе Марка. Проверку его подлинности ещё не проводили."
+        },
+        {
+          "kind": "plan",
+          "text": "Рита планирует выдать синий пропуск после звонка охраны и проверки фамилии. Охрана позвонила, фамилия ещё не проверена.",
+          "quote": "Рита планирует выдать синий пропуск после звонка охраны и проверки фамилии. Охрана позвонила, фамилия ещё не проверена.",
+          "task": {
+            "key": "pass",
+            "title": "синий пропуск",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Синий пропуск запрещено извлекать без Марка. Марка сейчас нет в театре.",
+          "quote": "Синий пропуск запрещено извлекать без Марка. Марка сейчас нет в театре."
+        },
+        {
+          "kind": "event",
+          "text": "Марк починил шёлковый занавес. Это не бархатный занавес.",
+          "quote": "Марк починил шёлковый занавес. Это не бархатный занавес.",
+          "task": {
+            "key": "silk",
+            "title": "шёлковый занавес",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Зелёный конверт отдан Марку, красный конверт остался у Веры.",
+          "quote": "Зелёный конверт отдан Марку, красный конверт остался у Веры."
+        },
+        {
+          "kind": "event",
+          "text": "Рита разрешила копировать трудовой договор. Страховой договор и его приложение в это разрешение не входят.",
+          "quote": "Рита разрешила копировать трудовой договор. Страховой договор и его приложение в это разрешение не входят."
+        },
+        {
+          "kind": "event",
+          "text": "Белый пропуск уже выдан; синий пропуск остался под пломбой.",
+          "quote": "Белый пропуск уже выдан; синий пропуск остался под пломбой."
+        }
+      ],
+      "queries": [
+        {
+          "id": "two",
+          "draft": "Приподнимаю бархатный занавес и несу красный конверт к выходу.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "three",
+          "draft": "Бархатный занавес тяну вверх, красный конверт прячу в карман, страховой договор разворачиваю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four",
+          "draft": "Мне надо за один заход поднять бархатный занавес, забрать красный конверт, прочитать страховой договор и выдать синий пропуск.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "aside",
+          "draft": "Зал пуст, пахнет краской; я обхожу ряды, вспоминаю репетицию и наконец берусь за бархатный занавес, а затем за красный конверт.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause",
+          "draft": "Беру красный конверт. Между делом проверяю телефон и долго жду звонка. После ожидания читаю страховой договор.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional",
+          "draft": "Допустим, завтра захочу поднять бархатный занавес и выдать синий пропуск — какие условия ещё не выполнены?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "negative",
+          "draft": "Красный конверт останется на месте; я только фотографирую закрытое приложение страхового договора.",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "actor",
+          "draft": "Кто и при каких условиях обещал работать с бархатным занавесом: Рита или Марк? Не смешивай их обещания.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "synonym",
+          "draft": "Подниму тяжёлую бархатную портьеру, потом отнесу алый пакет его хозяйке.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "short-reference",
+          "draft": "А её конверт можно унести? И пора ли выполнять то обещание с занавесом?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion",
+          "draft": "Ремонт шёлкового занавеса закрывает дело про бархатный занавес? Марк получил зелёный конверт — значит, получил и красный конверт?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "permission",
+          "draft": "Рита приехала, поэтому показываю Марку весь страховой договор вместе с закрытым приложением. Можно?",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Охрана позвонила — выдаю синий пропуск. Затем забираю красный конверт, ведь Вера уже перенесла его в кассу.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "quotation",
+          "draft": "В пьесе написано: «Подними бархатный занавес и вынеси красный конверт». Это цитата, я не начал действовать; какие ограничения настоящие?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "reordered",
+          "draft": "Проверим в обратном порядке: синий пропуск, страховой договор, красный конверт, бархатный занавес. Что мешает завершить каждое дело?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown",
+          "draft": "Можно уже отдать ей это и сделать как тогда?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "theatre-en",
+      "plot": "theatre",
+      "locale": "en",
+      "worldName": "Theatre before the premiere",
+      "people": [
+        "Rita",
+        "Mark",
+        "Vera"
+      ],
+      "objects": [
+        "velvet curtain",
+        "red envelope",
+        "insurance contract",
+        "blue pass"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Rita promised to raise the velvet curtain after Vera's signal. No signal has been given.",
+          "quote": "Rita promised to raise the velvet curtain after Vera's signal. No signal has been given.",
+          "task": {
+            "key": "curtain-raise",
+            "title": "velvet curtain",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Mark promised to repair the velvet curtain after the motor is disconnected. It is still running; Vera's signal cannot replace disconnection.",
+          "quote": "Mark promised to repair the velvet curtain after the motor is disconnected. It is still running; Vera's signal cannot replace disconnection.",
+          "task": {
+            "key": "curtain-fix",
+            "title": "velvet curtain",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Velvet curtain: the console lamp was replaced, but raising and fabric repair are still unfinished.",
+          "quote": "Velvet curtain: the console lamp was replaced, but raising and fabric repair are still unfinished."
+        },
+        {
+          "kind": "belief",
+          "text": "Vera believes the velvet curtain belongs to the theatre. This is an unconfirmed opinion.",
+          "quote": "Vera believes the velvet curtain belongs to the theatre. This is an unconfirmed opinion."
+        },
+        {
+          "kind": "event",
+          "text": "The red envelope belongs to Rita; Vera currently holds it. Mark has not received it.",
+          "quote": "The red envelope belongs to Rita; Vera currently holds it. Mark has not received it."
+        },
+        {
+          "kind": "promise",
+          "text": "Mark promised to collect the red envelope after Rita verifies the signature. It remains unverified.",
+          "quote": "Mark promised to collect the red envelope after Rita verifies the signature. It remains unverified.",
+          "task": {
+            "key": "envelope",
+            "title": "red envelope",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Red envelope: Rita revoked permission to take it out of the theatre. A verified signature would not lift the ban.",
+          "quote": "Red envelope: Rita revoked permission to take it out of the theatre. A verified signature would not lift the ban.",
+          "claim": {
+            "key": "envelope.removal",
+            "value": "revoked",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Vera moved the red envelope from the dressing room to the box office. The move is complete, but she still holds it.",
+          "quote": "Vera moved the red envelope from the dressing room to the box office. The move is complete, but she still holds it.",
+          "task": {
+            "key": "envelope-move",
+            "title": "red envelope",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "secret",
+          "text": "The insurance contract contains a confidential appendix about Rita's debt. She forbade disclosing it to Mark.",
+          "quote": "The insurance contract contains a confidential appendix about Rita's debt. She forbade disclosing it to Mark."
+        },
+        {
+          "kind": "promise",
+          "text": "Vera promised to lend the insurance contract to Mark after Rita arrives. Rita has arrived but has not lifted the ban on the appendix.",
+          "quote": "Vera promised to lend the insurance contract to Mark after Rita arrives. Rita has arrived but has not lifted the ban on the appendix.",
+          "task": {
+            "key": "contract",
+            "title": "insurance contract",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The insurance contract may be read without the confidential appendix; there is no permission to copy that appendix.",
+          "quote": "The insurance contract may be read without the confidential appendix; there is no permission to copy that appendix."
+        },
+        {
+          "kind": "event",
+          "text": "The blue pass is sealed in Mark's safe. Its authenticity has not been checked.",
+          "quote": "The blue pass is sealed in Mark's safe. Its authenticity has not been checked."
+        },
+        {
+          "kind": "plan",
+          "text": "Rita plans to issue the blue pass after security calls and the surname is checked. Security called; the surname is still unchecked.",
+          "quote": "Rita plans to issue the blue pass after security calls and the surname is checked. Security called; the surname is still unchecked.",
+          "task": {
+            "key": "pass",
+            "title": "blue pass",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The blue pass must not be removed without Mark. Mark is currently away from the theatre.",
+          "quote": "The blue pass must not be removed without Mark. Mark is currently away from the theatre."
+        },
+        {
+          "kind": "event",
+          "text": "Mark repaired the silk curtain. It is not the velvet curtain.",
+          "quote": "Mark repaired the silk curtain. It is not the velvet curtain.",
+          "task": {
+            "key": "silk",
+            "title": "silk curtain",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The green envelope was given to Mark; the red envelope stayed with Vera.",
+          "quote": "The green envelope was given to Mark; the red envelope stayed with Vera."
+        },
+        {
+          "kind": "event",
+          "text": "Rita allowed copying the employment contract. That permission excludes the insurance contract and its appendix.",
+          "quote": "Rita allowed copying the employment contract. That permission excludes the insurance contract and its appendix."
+        },
+        {
+          "kind": "event",
+          "text": "The white pass has been issued; the blue pass remains sealed.",
+          "quote": "The white pass has been issued; the blue pass remains sealed."
+        }
+      ],
+      "queries": [
+        {
+          "id": "two",
+          "draft": "I lift the velvet curtain and carry the red envelope towards the exit.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "three",
+          "draft": "I pull the velvet curtain up, pocket the red envelope and unfold the insurance contract.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four",
+          "draft": "In one visit I need to raise the velvet curtain, collect the red envelope, read the insurance contract and issue the blue pass.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "aside",
+          "draft": "The hall is empty and smells of paint; I walk past the seats, recall rehearsal and finally reach for the velvet curtain, then the red envelope.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause",
+          "draft": "I take the red envelope. I check my phone and wait a long time for a call. After the wait I read the insurance contract.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional",
+          "draft": "Suppose tomorrow I want to raise the velvet curtain and issue the blue pass: which conditions remain unmet?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "negative",
+          "draft": "The red envelope stays put; I am only photographing the confidential appendix of the insurance contract.",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "actor",
+          "draft": "Who promised to work on the velvet curtain, under what conditions: Rita or Mark? Keep their promises separate.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "synonym",
+          "draft": "I will raise the heavy velvet drape, then take the scarlet packet to its owner.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "short-reference",
+          "draft": "May I carry off her envelope? And is it time for that promise about the curtain?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion",
+          "draft": "Does repairing the silk curtain close the velvet curtain task? Mark received the green envelope; did he also receive the red envelope?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "permission",
+          "draft": "Rita has arrived, so I show Mark the entire insurance contract including the confidential appendix. Is that allowed?",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Security called, so I issue the blue pass. Then I collect the red envelope because Vera has already moved it to the box office.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "quotation",
+          "draft": "The script says: “Raise the velvet curtain and carry out the red envelope.” That is a quotation; I have not acted. What restrictions actually apply?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "reordered",
+          "draft": "Review in reverse: blue pass, insurance contract, red envelope, velvet curtain. What prevents each task from being finished?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown",
+          "draft": "Can I give her that now and do it like last time?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "refuge-ru",
+      "plot": "refuge",
+      "locale": "ru",
+      "worldName": "Приют после снегопада",
+      "people": [
+        "Инга",
+        "Павел",
+        "Ася"
+      ],
+      "objects": [
+        "родниковая помпа",
+        "берестяная корзина",
+        "семейное письмо",
+        "зимний запас"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Инга обещала запустить родниковую помпу после анализа воды Асей. Результатов анализа ещё нет.",
+          "quote": "Инга обещала запустить родниковую помпу после анализа воды Асей. Результатов анализа ещё нет.",
+          "task": {
+            "key": "pump-start",
+            "title": "родниковая помпа",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Павел обещал промыть родниковую помпу после доставки шланга. Шланг ещё в пути; анализ воды не заменяет доставку.",
+          "quote": "Павел обещал промыть родниковую помпу после доставки шланга. Шланг ещё в пути; анализ воды не заменяет доставку.",
+          "task": {
+            "key": "pump-flush",
+            "title": "родниковая помпа",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Родниковая помпа: питание подключили, но запуск и промывку ещё не делали.",
+          "quote": "Родниковая помпа: питание подключили, но запуск и промывку ещё не делали."
+        },
+        {
+          "kind": "belief",
+          "text": "Ася думает, что родниковая помпа принадлежит общине, однако владелец документально не установлен.",
+          "quote": "Ася думает, что родниковая помпа принадлежит общине, однако владелец документально не установлен."
+        },
+        {
+          "kind": "event",
+          "text": "Берестяная корзина принадлежит Инге и находится у Аси. Павел её не получал.",
+          "quote": "Берестяная корзина принадлежит Инге и находится у Аси. Павел её не получал."
+        },
+        {
+          "kind": "promise",
+          "text": "Павел обещал вернуть берестяную корзину после подсчёта содержимого Ингой. Подсчёта ещё не было.",
+          "quote": "Павел обещал вернуть берестяную корзину после подсчёта содержимого Ингой. Подсчёта ещё не было.",
+          "task": {
+            "key": "basket",
+            "title": "берестяная корзина",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Берестяная корзина: Инга запретила уносить её за ворота. Подсчёт не отменяет запрет.",
+          "quote": "Берестяная корзина: Инга запретила уносить её за ворота. Подсчёт не отменяет запрет.",
+          "claim": {
+            "key": "basket.removal",
+            "value": "forbidden",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Ася перенесла берестяную корзину из сарая в кухню. Перенос окончен, корзина по-прежнему у Аси.",
+          "quote": "Ася перенесла берестяную корзину из сарая в кухню. Перенос окончен, корзина по-прежнему у Аси.",
+          "task": {
+            "key": "basket-move",
+            "title": "берестяная корзина",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "secret",
+          "text": "Семейное письмо содержит секрет об отце Инги; Инга запретила читать этот абзац Павлу.",
+          "quote": "Семейное письмо содержит секрет об отце Инги; Инга запретила читать этот абзац Павлу."
+        },
+        {
+          "kind": "promise",
+          "text": "Ася обещала показать семейное письмо Павлу после возвращения Инги. Инга вернулась, но секретный абзац раскрывать не разрешила.",
+          "quote": "Ася обещала показать семейное письмо Павлу после возвращения Инги. Инга вернулась, но секретный абзац раскрывать не разрешила.",
+          "task": {
+            "key": "letter",
+            "title": "семейное письмо",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Семейное письмо разрешено читать только с закрытым секретным абзацем; фотографии этого абзаца запрещены.",
+          "quote": "Семейное письмо разрешено читать только с закрытым секретным абзацем; фотографии этого абзаца запрещены."
+        },
+        {
+          "kind": "event",
+          "text": "Зимний запас запечатан в погребе Павла. Число целых банок внутри пока неизвестно.",
+          "quote": "Зимний запас запечатан в погребе Павла. Число целых банок внутри пока неизвестно."
+        },
+        {
+          "kind": "plan",
+          "text": "Инга планирует открыть зимний запас после оттепели и согласования с Асей. Оттепель наступила, согласования ещё нет.",
+          "quote": "Инга планирует открыть зимний запас после оттепели и согласования с Асей. Оттепель наступила, согласования ещё нет.",
+          "task": {
+            "key": "reserve",
+            "title": "зимний запас",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Зимний запас нельзя распечатывать без Павла. Павел ещё не вернулся с перевала.",
+          "quote": "Зимний запас нельзя распечатывать без Павла. Павел ещё не вернулся с перевала."
+        },
+        {
+          "kind": "event",
+          "text": "Дождевая помпа уже промыта Павлом; это не родниковая помпа.",
+          "quote": "Дождевая помпа уже промыта Павлом; это не родниковая помпа.",
+          "task": {
+            "key": "rain",
+            "title": "дождевая помпа",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Ивовая корзина передана Павлу. Берестяная корзина осталась у Аси.",
+          "quote": "Ивовая корзина передана Павлу. Берестяная корзина осталась у Аси."
+        },
+        {
+          "kind": "event",
+          "text": "Инга разрешила Павлу читать открытку; это разрешение не распространяется на семейное письмо.",
+          "quote": "Инга разрешила Павлу читать открытку; это разрешение не распространяется на семейное письмо."
+        },
+        {
+          "kind": "event",
+          "text": "Летний запас открыт для всех. Зимний запас остался запечатан.",
+          "quote": "Летний запас открыт для всех. Зимний запас остался запечатан."
+        }
+      ],
+      "queries": [
+        {
+          "id": "two",
+          "draft": "Запускаю родниковую помпу и возвращаю берестяную корзину хозяйке.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "three",
+          "draft": "Пора запустить родниковую помпу, забрать берестяную корзину и прочесть семейное письмо.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four",
+          "draft": "Я запускаю родниковую помпу. Забираю берестяную корзину. Читаю семейное письмо. Распечатываю зимний запас.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "aside",
+          "draft": "Снег скрипит под ногами, по дороге гашу фонарь и долго ищу варежку; затем решаю запустить родниковую помпу и взять берестяную корзину.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause",
+          "draft": "Берестяную корзину беру с собой; на кухне задерживаюсь на чай и разговор о погоде. Потом возвращаюсь к семейному письму.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional",
+          "draft": "Если бы я завтра запустил родниковую помпу и открыл зимний запас, какие нерешённые условия пришлось бы учитывать?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "negative",
+          "draft": "Берестяную корзину я не беру; только хочу сфотографировать секретный абзац семейного письма.",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "actor",
+          "draft": "Инга обещала запуск, Павел — промывку родниковой помпы. Чьи условия выполнены и чьи ещё нет?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "synonym",
+          "draft": "Запущу насос у источника, затем отнесу ту корзинку из бересты её хозяйке.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "short-reference",
+          "draft": "Её корзинку уже вернули? А то обещание про насос теперь можно выполнить?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion",
+          "draft": "Раз дождевая помпа промыта, родниковая помпа тоже готова? И передача ивовой корзины значит, что берестяная корзина уже у Павла?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "permission",
+          "draft": "Инга вернулась; значит, семейное письмо можно прочесть Павлу целиком, не закрывая секретный абзац?",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "partial-condition",
+          "draft": "Оттепель пришла, открываю зимний запас. Берестяную корзину тоже забираю: Ася ведь уже принесла её на кухню.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "quotation",
+          "draft": "Ася прочла заметку «запустить родниковую помпу и вернуть берестяную корзину». Это ещё не наши действия. Какие обещания и запреты за этим стоят?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "reordered",
+          "draft": "Напомни незавершённое: зимний запас, семейное письмо, берестяная корзина, родниковая помпа — именно в таком порядке.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown",
+          "draft": "Теперь её можно трогать? Сначала сделаю прежнее, потом другое.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    },
+    {
+      "id": "refuge-en",
+      "plot": "refuge",
+      "locale": "en",
+      "worldName": "Refuge after snowfall",
+      "people": [
+        "Inga",
+        "Pavel",
+        "Asya"
+      ],
+      "objects": [
+        "spring pump",
+        "birch basket",
+        "family letter",
+        "winter reserve"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Inga promised to start the spring pump after Asya tests the water. No test results exist yet.",
+          "quote": "Inga promised to start the spring pump after Asya tests the water. No test results exist yet.",
+          "task": {
+            "key": "pump-start",
+            "title": "spring pump",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "promise",
+          "text": "Pavel promised to flush the spring pump after the hose arrives. It is still in transit; a water test does not replace delivery.",
+          "quote": "Pavel promised to flush the spring pump after the hose arrives. It is still in transit; a water test does not replace delivery.",
+          "task": {
+            "key": "pump-flush",
+            "title": "spring pump",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Spring pump: power is connected, but starting and flushing have not been done.",
+          "quote": "Spring pump: power is connected, but starting and flushing have not been done."
+        },
+        {
+          "kind": "belief",
+          "text": "Asya thinks the spring pump belongs to the community, but its owner has not been documented.",
+          "quote": "Asya thinks the spring pump belongs to the community, but its owner has not been documented."
+        },
+        {
+          "kind": "event",
+          "text": "The birch basket belongs to Inga and is held by Asya. Pavel has not received it.",
+          "quote": "The birch basket belongs to Inga and is held by Asya. Pavel has not received it."
+        },
+        {
+          "kind": "promise",
+          "text": "Pavel promised to return the birch basket after Inga counts its contents. No count has taken place.",
+          "quote": "Pavel promised to return the birch basket after Inga counts its contents. No count has taken place.",
+          "task": {
+            "key": "basket",
+            "title": "birch basket",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Birch basket: Inga forbade taking it beyond the gate. Counting its contents does not lift that ban.",
+          "quote": "Birch basket: Inga forbade taking it beyond the gate. Counting its contents does not lift that ban.",
+          "claim": {
+            "key": "basket.removal",
+            "value": "forbidden",
+            "scope": "state",
+            "lifetime": "persistent"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Asya moved the birch basket from the shed to the kitchen. That move is complete; Asya still holds the basket.",
+          "quote": "Asya moved the birch basket from the shed to the kitchen. That move is complete; Asya still holds the basket.",
+          "task": {
+            "key": "basket-move",
+            "title": "birch basket",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "secret",
+          "text": "The family letter contains a secret about Inga's father; Inga forbade Pavel from reading that paragraph.",
+          "quote": "The family letter contains a secret about Inga's father; Inga forbade Pavel from reading that paragraph."
+        },
+        {
+          "kind": "promise",
+          "text": "Asya promised to show the family letter to Pavel after Inga returns. Inga has returned but has not permitted disclosure of the secret paragraph.",
+          "quote": "Asya promised to show the family letter to Pavel after Inga returns. Inga has returned but has not permitted disclosure of the secret paragraph.",
+          "task": {
+            "key": "letter",
+            "title": "family letter",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The family letter may be read only with the secret paragraph covered; photographing that paragraph is forbidden.",
+          "quote": "The family letter may be read only with the secret paragraph covered; photographing that paragraph is forbidden."
+        },
+        {
+          "kind": "event",
+          "text": "The winter reserve is sealed in Pavel's cellar. The number of intact jars inside is unknown.",
+          "quote": "The winter reserve is sealed in Pavel's cellar. The number of intact jars inside is unknown."
+        },
+        {
+          "kind": "plan",
+          "text": "Inga plans to open the winter reserve after the thaw and Asya's agreement. The thaw has come; agreement has not.",
+          "quote": "Inga plans to open the winter reserve after the thaw and Asya's agreement. The thaw has come; agreement has not.",
+          "task": {
+            "key": "reserve",
+            "title": "winter reserve",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The winter reserve must not be unsealed without Pavel. He has not returned from the pass.",
+          "quote": "The winter reserve must not be unsealed without Pavel. He has not returned from the pass."
+        },
+        {
+          "kind": "event",
+          "text": "Pavel has flushed the rain pump; it is not the spring pump.",
+          "quote": "Pavel has flushed the rain pump; it is not the spring pump.",
+          "task": {
+            "key": "rain",
+            "title": "rain pump",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "The willow basket was handed to Pavel. The birch basket stayed with Asya.",
+          "quote": "The willow basket was handed to Pavel. The birch basket stayed with Asya."
+        },
+        {
+          "kind": "event",
+          "text": "Inga allowed Pavel to read the postcard; that permission does not extend to the family letter.",
+          "quote": "Inga allowed Pavel to read the postcard; that permission does not extend to the family letter."
+        },
+        {
+          "kind": "event",
+          "text": "The summer reserve is open to everyone. The winter reserve remains sealed.",
+          "quote": "The summer reserve is open to everyone. The winter reserve remains sealed."
+        }
+      ],
+      "queries": [
+        {
+          "id": "two",
+          "draft": "I start the spring pump and return the birch basket to its owner.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "three",
+          "draft": "Time to start the spring pump, collect the birch basket and read the family letter.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "four",
+          "draft": "I start the spring pump. I collect the birch basket. I read the family letter. I unseal the winter reserve.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "aside",
+          "draft": "Snow crunches underfoot; I put out my lantern and search for a mitten, then decide to start the spring pump and take the birch basket.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "pause",
+          "draft": "I take the birch basket along; in the kitchen I stop for tea and weather talk. Then I return to the family letter.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "conditional",
+          "draft": "If I were to start the spring pump and open the winter reserve tomorrow, which unresolved conditions would matter?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "negative",
+          "draft": "I am not taking the birch basket; I only want to photograph the secret paragraph of the family letter.",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "actor",
+          "draft": "Inga promised to start the spring pump; Pavel promised to flush it. Whose conditions have or have not been met?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "synonym",
+          "draft": "I will start the pump at the spring, then take that birchbark carrier to its owner.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "short-reference",
+          "draft": "Has her basket been returned yet? And can we now fulfil that promise about the pump?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "false-completion",
+          "draft": "Since the rain pump was flushed, is the spring pump ready too? Does handing over the willow basket mean Pavel has the birch basket?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "permission",
+          "draft": "Inga has returned; may the entire family letter now be read to Pavel without covering the secret paragraph?",
+          "wanted": [
+            8,
+            9,
+            10
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "partial-condition",
+          "draft": "The thaw has arrived, so I open the winter reserve. I also collect the birch basket: Asya already brought it to the kitchen.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7,
+            11,
+            12,
+            13
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "quotation",
+          "draft": "Asya read a note saying “start the spring pump and return the birch basket”. We have not acted yet. What promises and bans stand behind it?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true
+        },
+        {
+          "id": "reordered",
+          "draft": "Remind me of unfinished matters: winter reserve, family letter, birch basket, spring pump, in that order.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false
+        },
+        {
+          "id": "unknown",
+          "draft": "May I touch hers now? First I will do the old thing, then the other thing.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true
+        }
+      ]
+    }
+  ],
+  "distractorContract": {
+    "emptyTopicRepeats": 200,
+    "substantiveSideEvents": 200,
+    "completedSidePromises": 200,
+    "placement": "core facts first, all extras later",
+    "rules": "No distractor changes any target promise, ownership, consent or condition. All extra events retain exact source evidence."
+  }
+}

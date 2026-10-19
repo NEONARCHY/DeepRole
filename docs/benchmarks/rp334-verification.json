@@ -1,0 +1,83 @@
+{
+  "milestone": "RP334",
+  "date": "2026-10-19",
+  "environment": "personal Edge / live DeepSeek / synthetic test world only",
+  "installedBuild": "RP333",
+  "runtimeChanged": false,
+  "newAutomatedTestsRun": false,
+  "previousAutomatedChecks": {
+    "milestone": "RP333",
+    "unitPassed": 152,
+    "runtimePassed": 34,
+    "notRerunThisIteration": true
+  },
+  "live": {
+    "frozenQuestionsPassed": 8,
+    "frozenQuestionsTotal": 8,
+    "manualGoldOrSeedResent": false,
+    "preparationWarningsDuringEightQuestions": 0,
+    "nativeTurnsInPositiveChecks": 10,
+    "negativeBackgroundFirstSend": {
+      "url": "https://chat.deepseek.com/a/chat/s/3480fdd1-c1dd-43ba-9dbb-abf5c6313479",
+      "passed": false,
+      "explanation": "expected foreground guard",
+      "stage": "navigation",
+      "code": "story-binding-conflict",
+      "detail": "activation-tab-inactive",
+      "elapsedMs": 344
+    },
+    "reload": {
+      "passed": true,
+      "scores": "Mira and Nora 50/50",
+      "storedMemory": "All 3 original wind-vane records unchanged; guard has not called; inspection/calibration not started",
+      "technicalPayloadVisible": false,
+      "deliveryReceipt": "not exposed in context panel; no independent POST audit"
+    },
+    "cleanForeground": {
+      "tabId": "602384770",
+      "url": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+      "firstSendPassed": true,
+      "recapApplied": false,
+      "manualSeedResent": false,
+      "priorNativeTurns": 0,
+      "replyFile": ".output/rp334-clean-first-reply.txt",
+      "afterReload": {
+        "passed": true,
+        "questionId": "mira",
+        "criteria": "Guard call not stated in preceding Nora reply; recalled correctly after reload",
+        "replyFile": ".output/rp334-clean-after-reload-reply.txt",
+        "warnings": []
+      }
+    },
+    "oldChat": {
+      "url": "https://chat.deepseek.com/a/chat/s/49f2623a-1c8e-46f4-9d4a-4fefd0aae369",
+      "readOnlyCheck": true,
+      "noticePassed": true,
+      "targetUrl": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+      "resumeClicked": false
+    }
+  },
+  "planSha256": "F717EF16DF9323BD251500252CAD9F3531BACB03F69719CB3964F46A1809D127",
+  "runtimeHashesUnchanged": {
+    "chrome": "265e79f1e8de18f4365d35d487c8aa5f0b349f6727188674133879ba34d1cac2",
+    "firefox": "f0f127e28cf2e74cd3fc544acb679365a4d6a6d9fc48172f290a5279eeac25e7"
+  },
+  "evidence": {
+    "replies": "docs/benchmarks/rp334-live-replies.json",
+    "screenshots": [
+      "docs/benchmarks/rp334-live-eight-passed-20261019.png",
+      "docs/benchmarks/rp334-clean-first-passed-20261019.png",
+      "docs/benchmarks/rp334-clean-after-reload-passed-20261019.png"
+    ],
+    "localProgress": ".output/rp334-live-progress.json"
+  },
+  "limits": [
+    "Eight queries share a single native history; not eight independent blank contexts",
+    "No independent POST or database audit; memory panel shows preview, no delivery receipt",
+    "80 repeats from RP330 remain 4 turns, not 80 stored indexed facts",
+    "Original RP332 binding-conflict causes cannot all be retroactively attributed to inactive tabs"
+  ],
+  "rp05Complete": false,
+  "rp08Complete": false,
+  "next": "Large saved role-seeded index / compound coverage RP325; RP08 replay separately"
+}

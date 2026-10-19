@@ -6,6 +6,15 @@ import {gameMemoryCoverageText} from "../src/core/game-memory-coverage-i18n";
 import type {GameMemoryCoverage} from "../src/core/game-memory-coverage";
 afterEach(cleanup);
 for(const locale of ["ru","en"] as const){
+ it(`complex draft has a distinct nonblocking warning, never a budget error: ${locale}`,()=>{
+  const t=gameMemoryCoverageText(locale);
+  render(<MemoryStatus locale={locale} connected available={2} onAdd={()=>{}} selection={{entries:[],estimatedTokens:400,omittedCount:0,memoryCoverage:{kind:'incomplete',reason:'query'}}}/>);
+  expect(screen.getByRole('status')).toHaveTextContent(t.incompleteTitle);
+  expect(screen.getByRole('status')).toHaveTextContent(t.incompleteAction);
+  expect(screen.queryByText(t.budgetTitle)).toBeNull();
+  expect(screen.queryByText(locale==='ru'?'Память готова':'Memory is ready')).toBeNull();
+  expect(screen.queryByRole('dialog')).toBeNull();
+ });
  it(`visible budget warning is nonblocking, focus stays in the draft: ${locale}`,()=>{
   const action=vi.fn(),t=gameMemoryCoverageText(locale);
   const {rerender}=render(<><input aria-label="draft"/><GameMemoryNotice locale={locale}/></>);

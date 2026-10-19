@@ -46,7 +46,8 @@ import { captureContinuation, completeContinuation } from "../storage/story-cont
 import { acknowledgeOldChatNotice } from "../storage/old-chat-notice";
 import { validOldChatNoticeEdit } from "../core/old-chat-notice";
 import { activateWorldGame } from "../storage/world-game";
-import { validWorldGameActivation } from "../core/world-game";
+import { assertWorldGameTab, validWorldGameActivation } from "../core/world-game";
+import { safeMemoryPreparationDetail } from "../core/memory-preparation-diagnostic";
 import { acknowledgeRecoveredReply, saveRecoveredReply } from "../storage/recovered-replies";
 
 export default defineBackground(() => {
@@ -104,7 +105,7 @@ export default defineBackground(() => {
             if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || !validWorldGameActivation(message.input)) throw Error("story-game-invalid");
             const current = async () => {
               const tab = await browser.tabs.get(sender.tab!.id!);
-              if (tab.url !== message.input.chatUrl || !isSameDeepSeekChat(message.input.chatUrl, tab.url, message.input.chatId) || message.input.mode !== "initialize" && !tab.active) throw Error("story-binding-conflict");
+              assertWorldGameTab(message.input, tab);
               if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
             };
             await current(); const data = await activateWorldGame(message.input, repository, current); await current(); return { ok: true, data };
@@ -321,7 +322,8 @@ export default defineBackground(() => {
           // Keep actionable, fixed story codes; never send arbitrary storage text.
           const code = error instanceof Error ? error.message : "";
           const storyCodes = ["vault-locked", "story-game-paused", "story-manual-conflict", "story-profile-conflict", "story-manual-baseline-conflict", "story-effects-untracked", "story-native-line-unavailable", "story-source-incomplete", "story-review-stale", "story-binding-conflict", "story-start-stale"];
-          return { ok: false, error: code.startsWith("character-") || storyCodes.includes(code) ? code : "storage-unavailable" };
+          const detail = code === "story-binding-conflict" && error instanceof Error ? safeMemoryPreparationDetail(error.cause) : undefined;
+          return { ok: false, error: code.startsWith("character-") || storyCodes.includes(code) ? code : "storage-unavailable", ...(detail ? { detail } : {}) };
         }
       })();
     }

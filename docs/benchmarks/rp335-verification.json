@@ -1,0 +1,86 @@
+{
+  "milestone": "RP335",
+  "date": "2026-10-19",
+  "goldSha256": "71ad515e2bdeec8ac9dcb1beee85fe5aa178a1d54cd58fe7bc1087e3b9466035",
+  "goldChanged": false,
+  "productionChange": "Use complete validated compound-action topic union in repeat selection; same evidence, budget and fallback guards",
+  "newCorpus": {
+    "plots": 2,
+    "locales": [
+      "ru",
+      "en"
+    ],
+    "factsPerWorld": [
+      89,
+      409
+    ],
+    "historicalRevisionSources": [
+      178,
+      818
+    ],
+    "queries": 56,
+    "positiveQueries": 40,
+    "negativeQueries": 16,
+    "indexPhases": 3,
+    "measurements": 168,
+    "additionalFallbackControls": 18,
+    "startupGraphControl": 1,
+    "goldCoveragePassed": true,
+    "savedStateUnchanged": true,
+    "graphValidated": true
+  },
+  "unit": {
+    "fullRunPassed": 9661,
+    "fullRunTimeouts": 3,
+    "fullRunGreen": false,
+    "total": 9669,
+    "todo": 5,
+    "files": 337,
+    "report": ".output/rp335-full-final.json",
+    "serialRecheck": {
+      "passed": 280,
+      "failed": 0,
+      "files": 3,
+      "report": ".output/rp335-serial-recheck.json",
+      "timeoutsChanged": false,
+      "allThreeTimedOutTestsPassed": true
+    },
+    "passedAfterSerialRecheck": 9664,
+    "remainingObservedFailures": 0
+  },
+  "typecheck": "passed",
+  "runtime": {
+    "passed": 16,
+    "unexpected": 0,
+    "flaky": 0,
+    "durationMs": 243179.465,
+    "newLargeIndexScenarios": 2,
+    "newLargeIndexPosts": 12,
+    "newChatScenarios": 12,
+    "oldChatScenarios": 2,
+    "environment": "installed synthetic Edge MV3, routed DeepSeek, final harness without temporary debug hooks",
+    "report": ".output/rp335-runtime-final.json"
+  },
+  "packages": {
+    "chrome": {
+      "files": 23,
+      "sha256": "262f4b2c685cc98034a2faae83642ef36040975aefe951f85ad944b43ed64660",
+      "buildBytesMatched": true
+    },
+    "firefox": {
+      "files": 23,
+      "sha256": "9393bce35b14e763a41a66fd3369e1f56542c714bff9e432ed2ebcf9db461282",
+      "buildBytesMatched": true
+    }
+  },
+  "namedChrome": "downloads/DeepRole-RP335-long-memory-20261019.zip",
+  "limits": [
+    "Full four-worker unit run had three timeouts; all passed serially, full parallel run is not green",
+    "Synthetic saved historical fixture, not real model-generated 409-fact extraction",
+    "No new personal live DeepSeek run; installed copy remains RP333",
+    "Existing finite action grammar and resource budget retained",
+    "RP05 remains open for fresh independent holdout of long narrative compound actions; RP08 separate"
+  ],
+  "rp05Complete": false,
+  "rp08Complete": false
+}

@@ -1,0 +1,936 @@
+{
+  "milestone": "RP341",
+  "date": "2026-10-19",
+  "scope": "Repair on SEEN frozen synthetic RP340/RP336; compiler+persisted evidence, synthetic installed extension POST and UI. Not a fresh independent evaluation or personal live DeepSeek.",
+  "productionSourceHashes": {
+    "src/core/story-narrative-recall.ts": "fcb063f7b77fbc921d1d269eeb19703f07886113979c8a23d7c08755875f379b",
+    "src/core/story-topic-terms.ts": "aea47c88fc12143a7759805efe7c9ad121f2191178b26f5aa8ae372315617079",
+    "src/core/story-repeat-selection.ts": "95e6d6a350420fad6ce7d1b4bfd67ebbdd247be9d25c19821c8b83d331121198",
+    "src/core/game-context.ts": "43f3a6b495fce6cb160975af79373cdb6979c014e98cf0180ec71f8057ae44b8"
+  },
+  "frozenUnchanged": {
+    "rp336": {
+      "datasetSha256": "906a8e042884359ecf7bcc8152781373eb28f4c4a3655959298b7b588aa87568",
+      "planSha256": "7ea8b55b2c59a12c16540947faccb979babc4d2593503e9711ece23545dd3e24"
+    },
+    "rp340": {
+      "datasetSha256": "4ddb207ff0ec71018125aa01eefcb39e4fb1f3e4e22e1c4492f5a8d3ef9cf556",
+      "planSha256": "fcf0cfb2bbb88940dd7aa685d0feb3306a2e3cc8fe8a8482053dac9f51803ed5"
+    }
+  },
+  "evidenceHelperSha256": "57ea2d746e11530af485897c80f712bfe91e16becb38b522af2ead5d6b6dbbbe",
+  "seenQuality": {
+    "RP340": {
+      "measurements": 576,
+      "queryHistoryCases": 192,
+      "positiveCases": 84,
+      "positiveComplete": 84,
+      "controls": 108,
+      "controlsMemoryComplete": 108,
+      "falseComplete": 0,
+      "missingSources": 0,
+      "incompleteWithoutBudgetWarning": 0,
+      "incompleteWithoutPreparationWarning": 0,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "two",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "three",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "aside",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "pause",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "conditional",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negative",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "actor",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "synonym",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "short-reference",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "permission",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "partial-condition",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "quotation",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "reordered",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown",
+          "cases": 12,
+          "complete": 12,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        }
+      ]
+    },
+    "RP336": {
+      "measurements": 432,
+      "queryHistoryCases": 144,
+      "positiveCases": 96,
+      "positiveComplete": 96,
+      "controls": 48,
+      "controlsMemoryComplete": 48,
+      "falseComplete": 0,
+      "missingSources": 0,
+      "incompleteWithoutBudgetWarning": 0,
+      "incompleteWithoutPreparationWarning": 0,
+      "integrityIssues": 0,
+      "unstable": 0,
+      "byFamily": [
+        {
+          "id": "short-two",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "short-three",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambient-two",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambient-three",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "return-and-act",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "actions-across-sentences",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "four-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "narrative-four-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "pause-between-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "long-transition",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "conditional-actions",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "negated-first-action",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "unknown-fourth-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "ambiguous-her-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "false-completion-premise",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "shared-unqualified-objects",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "trailing-memory-instruction",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        },
+        {
+          "id": "foreign-unknown-object",
+          "cases": 8,
+          "complete": 8,
+          "falseComplete": 0,
+          "withBudgetWarning": 0
+        }
+      ]
+    }
+  },
+  "maxTokens": {
+    "RP340": 2132,
+    "RP336": 1943
+  },
+  "coverageCold": {
+    "RP340": {
+      "incomplete": 180,
+      "unverified": 12
+    },
+    "RP336": {
+      "complete": 8,
+      "unverified": 32,
+      "incomplete": 104
+    }
+  },
+  "focusedFinal": {
+    "numTotalTests": 179,
+    "numPassedTests": 179,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "fullRegression": {
+    "counts": {
+      "numTotalTests": 9733,
+      "numPassedTests": 9664,
+      "numFailedTests": 64,
+      "numPendingTests": 0,
+      "success": false,
+      "numTodoTests": 5
+    },
+    "failures": [
+      {
+        "file": "tests/story-budget-priority-runtime.test.ts",
+        "test": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:tower:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-budget-priority-runtime.test.ts:16:53\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-budget-priority-runtime.test.ts",
+        "test": "RP272 current default regression, with deliberate cap expansion separated: ru:rp272:station:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-budget-priority-runtime.test.ts:16:53\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-budget-priority-runtime.test.ts",
+        "test": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:tower:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-budget-priority-runtime.test.ts:16:53\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-budget-priority-runtime.test.ts",
+        "test": "RP272 current default regression, with deliberate cap expansion separated: en:rp272:station:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-budget-priority-runtime.test.ts:16:53\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "measures fixed compound targets and exact fallback independently",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:16:229\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action ru:goals",
+        "messages": [
+          "AssertionError: expected +0 to be 2 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:24:95\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action ru:directed-goals",
+        "messages": [
+          "AssertionError: expected +0 to be 2 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:24:95\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:ru:single",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:ru:unsupported",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:ru:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:ru:third-person",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action en:goals",
+        "messages": [
+          "AssertionError: expected +0 to be 2 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:24:95\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action en:directed-goals",
+        "messages": [
+          "AssertionError: expected +0 to be 2 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:24:95\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:en:single",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:en:unsupported",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:en:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action-quality.test.ts",
+        "test": "compound action control:en:third-person",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action-quality.test.ts:31:20\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-compound-action.test.ts",
+        "test": "persistent source-owned object knowledge can cover an action but not an unrecorded goal",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-compound-action.test.ts:39:121\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-memory-batch.test.ts",
+        "test": "100 turns form bounded batches with no duplicate facts or repeat processing",
+        "messages": [
+          "Error: Test timed out in 5000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n    at task (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2681:43)\n    at Object.<anonymous> (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2698:16)\n    at Object.<anonymous> (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2471:28)\n    at chain (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1859:14)\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-memory-batch.test.ts:25:1\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at VitestModuleEvaluator._runInlinedModule (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/module-evaluator.js:261:4)\n    at VitestModuleRunner.directRequest (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vite/dist/node/module-runner.js:1284:61)\n    at VitestModuleRunner.cachedRequest (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vite/dist/node/module-runner.js:1180:76)\n    at VitestModuleRunner.import (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vite/dist/node/module-runner.js:1117:12)"
+        ]
+      },
+      {
+        "file": "tests/story-persisted-long-audit.test.ts",
+        "test": "ru/unknown-clause: repeat filtering preserves the complete prior fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-persisted-long-audit.test.ts:102:48\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-persisted-long-audit.test.ts",
+        "test": "ru/pronoun-clause: repeat filtering preserves the complete prior fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-persisted-long-audit.test.ts:102:48\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-persisted-long-audit.test.ts",
+        "test": "en/unknown-clause: repeat filtering preserves the complete prior fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-persisted-long-audit.test.ts:102:48\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-persisted-long-audit.test.ts",
+        "test": "en/pronoun-clause: repeat filtering preserves the complete prior fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-persisted-long-audit.test.ts:102:48\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "measures fixed reference guards and whole qualified evidence separately",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:7:691\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references ru:this",
+        "messages": [
+          "AssertionError: expected 'Мира планирует проверить красную двер…' to be 'Мира сказала: «Я показала на синюю дв…' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:324\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references ru:that",
+        "messages": [
+          "AssertionError: expected 'Мира планирует проверить красную двер…' to be 'Мира сказала: «Я показала на синюю дв…' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:324\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references ru:omitted-subject",
+        "messages": [
+          "AssertionError: expected 'Мира планирует проверить красную двер…' to be 'Мира сказала: «Я показала на синюю дв…' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:324\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:ru:explicit",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:ru:rename",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:ru:ambiguous",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:ru:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references en:this",
+        "messages": [
+          "AssertionError: expected 'Nora promised Mira to inspect the blu…' to be 'Mira said: “I pointed at the blue doo…' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:324\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references en:that",
+        "messages": [
+          "AssertionError: expected 'Nora promised Mira to inspect the blu…' to be 'Mira said: “I pointed at the blue doo…' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:324\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references en:omitted-subject",
+        "messages": [
+          "AssertionError: expected 'Nora promised Mira to inspect the blu…' to be 'Mira said: “I pointed at the blue doo…' // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:324\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:en:explicit",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:en:rename",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:en:ambiguous",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-quality.test.ts",
+        "test": "object references control:en:quoted",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-quality.test.ts:10:366\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru returns whole candidate sources without binding or changing the reference",
+        "messages": [
+          "AssertionError: expected +0 to be 1 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:14:389\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from both-doors",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from unknown-door",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from bare-door",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from older-scene",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from source-only",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from split-object",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru never narrows to one object from actor-only",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru keeps historical source identities across rename",
+        "messages": [
+          "AssertionError: expected +0 to be 1 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:39:78\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "ru keeps historical source identities across reorder",
+        "messages": [
+          "AssertionError: expected +0 to be 1 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:39:78\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en returns whole candidate sources without binding or changing the reference",
+        "messages": [
+          "AssertionError: expected +0 to be 1 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:14:389\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from both-doors",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from unknown-door",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from bare-door",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from older-scene",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from source-only",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from split-object",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en never narrows to one object from actor-only",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:29:108\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en keeps historical source identities across rename",
+        "messages": [
+          "AssertionError: expected +0 to be 1 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:39:78\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-reference-recall.test.ts",
+        "test": "en keeps historical source identities across reorder",
+        "messages": [
+          "AssertionError: expected +0 to be 1 // Object.is equality\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-reference-recall.test.ts:39:78\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-repeat-selection.test.ts",
+        "test": "ru discussion: exact previous fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-repeat-selection.test.ts:58:67\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-repeat-selection.test.ts",
+        "test": "ru owner: exact previous fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-repeat-selection.test.ts:58:67\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-repeat-selection.test.ts",
+        "test": "ru conditional: exact previous fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-repeat-selection.test.ts:58:67\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-repeat-selection.test.ts",
+        "test": "en discussion: exact previous fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-repeat-selection.test.ts:58:67\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-repeat-selection.test.ts",
+        "test": "en owner: exact previous fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-repeat-selection.test.ts:58:67\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      },
+      {
+        "file": "tests/story-repeat-selection.test.ts",
+        "test": "en conditional: exact previous fallback",
+        "messages": [
+          "AssertionError: expected { …(5) } to deeply equal { …(5) }\n    at C:/Users/User/Desktop/Projects/DeepRole/tests/story-repeat-selection.test.ts:58:67\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:1628:35\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:26\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3321:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3316:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3301:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3259:10)\n    at file:///C:/Users/User/Desktop/Projects/DeepRole/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:3882:64"
+        ]
+      }
+    ],
+    "report": ".output/rp341-full-final.json",
+    "note": "Full run before final compatibility repair:63 assertion mismatches plus1 timeout. Final623/623 serial repeat covers all8 failed files and2 topic/narrative files. Full run is not green; keep its failures separate.",
+    "serialRepeat": {
+      "numTotalTests": 623,
+      "numPassedTests": 623,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    "completeFullSuiteAfterFinalFixes": false,
+    "serialRepeatReport": ".output/rp341-serial-guard-final.json"
+  },
+  "earlyFailures": {
+    "focusedAttempt1": {
+      "numTotalTests": 178,
+      "numPassedTests": 175,
+      "numFailedTests": 3,
+      "numPendingTests": 0,
+      "success": false
+    },
+    "focusedAttempt1Reason": "repeatSelection ablation was bypassed and already complete simple-action status changed; fixed production opt-out/single rendering preservation.",
+    "focusedSecond": {
+      "numTotalTests": 179,
+      "numPassedTests": 173,
+      "numFailedTests": 6,
+      "numPendingTests": 0,
+      "success": false
+    },
+    "focusedSecondReason": "Speech-history inquiry must retain original discussion lane (fixed production). Owner/conditional topic extension uses provenance+guard assertions, original gold unchanged.",
+    "capacityRed": {
+      "numTotalTests": 36,
+      "numPassedTests": 0,
+      "numFailedTests": 1,
+      "numPendingTests": 35,
+      "success": false
+    },
+    "capacityReason": "40 unrelated labels produced capacity warning on a greeting; admission now query-related, same 32 candidate cap.",
+    "compatibilitySerialFirst": {
+      "numTotalTests": 623,
+      "numPassedTests": 596,
+      "numFailedTests": 27,
+      "numPendingTests": 0,
+      "success": false
+    },
+    "confidenceRegression": {
+      "report": ".output/rp341-rp336-actual-final.json",
+      "falseComplete": 4,
+      "missingSources": 0,
+      "fix": "Re-render the existing ordered source IDs with a paid uncertainty guide, retain protected-task counters and mark incomplete. UI-only warning failed new14-source POST checks; both prompt and UI guard now required."
+    },
+    "firstFullAttempt": {
+      "exit": 124,
+      "completed": false,
+      "testCountsAvailable": false,
+      "reason": "ctx_shell timeout after360000ms without new output with JSON-only reporter; no full result. Restart used dot+JSON and1200000ms shell idle timeout; test timeouts unchanged."
+    },
+    "shortConfidenceRuntimeRed": {
+      "expected": 2,
+      "unexpected": 2,
+      "report": ".output/rp341-release-binary-runtime.json",
+      "reason": "UI showed incomplete but original full-selection branch omitted the model reference guard; fixed production re-render with guide budget and original counters."
+    },
+    "initialBrowserRuntime": {
+      "expected": 1,
+      "unexpected": 1,
+      "reason": "Concurrent UI run reused default test-results and deleted trace files during EN context.close; assertions reached post-checks. Final repeats use unique output dirs."
+    }
+  },
+  "syntheticInstalledRuntime": {
+    "initialCompleteFlow": {
+      "startTime": "2026-10-19T12:42:05.439Z",
+      "duration": 336532.21300000005,
+      "expected": 22,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "intermediateEight": {
+      "startTime": "2026-10-19T13:06:34.089Z",
+      "duration": 209358.085,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "finalBinaryFocus": {
+      "startTime": "2026-10-19T13:20:08.981Z",
+      "duration": 85759.867,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "finalBinaryCases": 4,
+    "initialFlowCases": 22,
+    "note": "22 initial flow tests,8 intermediate prefix/409/614/618-source tests; after final confidence-only correction,4 exact release-binary topic+ambiguous confidence tests at14/618 sources. Overlap, not34 independent cases."
+  },
+  "UI": {
+    "stats": {
+      "startTime": "2026-10-19T12:40:26.464Z",
+      "duration": 78394.006,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browsers": [
+      "Edge",
+      "Firefox"
+    ],
+    "locales": [
+      "ru",
+      "en"
+    ],
+    "widths": [
+      320,
+      900
+    ],
+    "axeKeyboardNoOverflow": true,
+    "twoNarrowScreenshotsViewed": true
+  },
+  "typecheckFinalExit": 0,
+  "diffCheckExit": 0,
+  "browserBuilds": {
+    "chrome": {
+      "exit": 0,
+      "log": ".output/rp341-build-chrome-final.log"
+    },
+    "firefox": {
+      "exit": 0,
+      "log": ".output/rp341-build-firefox-final.log"
+    }
+  },
+  "personalInstalledCopyUpdated": false,
+  "newPersonalLiveDeepSeekRun": false,
+  "goldEditedToPass": false,
+  "rp05Complete": false,
+  "rp08Complete": false,
+  "pushOrMergeRequested": false,
+  "next": "Fresh independent holdout with expectations frozen before scoring. Large personal structured-evidence live separate. Retain all first reds and SEEN labels.",
+  "browserPackages": {
+    "chrome": {
+      "sha256": "d06c9b99c378419aed965b90a0dbb570523557954c5977caec54f367b6b59cdd",
+      "files": 23,
+      "matchesBuildDirectory": true
+    },
+    "firefox": {
+      "sha256": "347c24cb182b1d5f352addaefb5719bef8ccc5b77c032bedbdee29b92520f5fa",
+      "files": 23,
+      "matchesBuildDirectory": true
+    }
+  },
+  "namedArchive": "downloads/DeepRole-RP341-topic-memory-20261019.zip",
+  "sourceArchiveCheck": {
+    "sourceFiles": 1043,
+    "sourceMatchesDisk": true,
+    "forbiddenEntries": 0,
+    "testsExcludedByWxtSourceConvention": true
+  },
+  "finalRuntimeReport": ".output/rp341-guard-final-binary-runtime.json",
+  "sourceArchiveSha256ReceiptLocation": ".output/rp341-package-verification.json; omitted here to avoid a self-referential archive digest"
+}

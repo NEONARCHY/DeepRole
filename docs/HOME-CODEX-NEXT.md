@@ -1,6 +1,360 @@
 # Codex на другом ПК: откуда продолжать после pull
 
-## Передача 19 октября — читать первой
+## RP343 — пропуски RP342 исправлены; далее новый независимый набор
+
+Сначала docs/RP05-UNRESOLVED-MEMORY-REPAIR-20261019.md и
+docs/benchmarks/rp343-verification.json. Verified source ≠ bound role: unknown
+остаётся unknown; V1/источники/helper не переписывались. Не добавляли словарь
+предметов RP342: неопознанный операционный запрос получает bounded open/cancelled
+duty candidates с условиями и честной incomplete/model guard. Recent2×2000 chars
+только для operative references; общий status question не сужается прошлой темой.
+Title prepositions/contrast sources/маскирование имён,32 labels/128 rows/4000 chars,
+source/budget/opt-outs/strict single/deictic/history paths сохранены. Это НЕ semantic identity.
+
+Финальные SEEN RP342480/RP340576/RP336432:0 missing/falseComplete/integrity/
+stability/input/storage mutation; RP3420 notice mismatch. Gold/manifest/first red
+не менять. Full unit 9768pass/0fail/5todo на неизменных src;164/164 final
+compatibility и154/154 history/search пересекаются с full. Final binary10/10,32 new820-source POST
++20 old14/618-source POST и2 prefix presentation. Всё synthetic, НЕ personal live.
+UI serial8/8 Edge/Firefox RU/EN320/900 +axe/keyboard/layout; первый parallel6/2
+Firefox timeout/protocol сохранён, таймауты не увеличивали. Screenshots просмотрены.
+tsc/diff/build/ZIP0; Vite4187 PID31516 проверен и остановлен. Ранний full9614/153/5
+исправлен без смены old expectations; два прерванных full не выдавать за пройденные.
+Старые premise/obligation/ambiguous-name пути и исторические вопросы сохранены.
+
+Архив downloads/DeepRole-RP343-memory-candidates-20261019.zip; generic Chrome,
+Firefox/source ZIP обновлены. Последнее личное подтверждение RP338, её не меняли. Следом:
+свежий независимый holdout с gold/notice ДО scoring; отдельно большой structured-
+source personal live после ручного обновления. RP-05/RP-08 открыты. Не возвращаться
+к старым pending установкам RP338. Push/merge не запрашивались; сохранить все
+накопленные uncommitted RP331–343 изменения при будущем pull.
+
+
+## RP342 — свежий независимый набор красный; далее ремонт пропусков/плашек
+
+Сначала docs/RP05-FREE-NARRATIVE-HOLDOUT-RESULTS-20261019.md и
+docs/benchmarks/rp342-verification.json. Новые2 сюжета RU/EN,80 запросов,
+20/820 фактов,480 cold/warm/reopened измерений; gold/плашки ДО scoring,
+SHA2aa3a6b0027cb0ca432b26daa32c8215336bd76a6e8fe6e7232ba42033af64f5.
+Первый run1pass/9fail: boundary-kind ошибка МОЕГО стенда,0 retrieval измерений.
+До scoring отдельный frozen amendment wrapper boundary→event; исходные gold,
+план, цитаты, task, helper/runtime прежние. Первый red НЕ перезаписывать.
+
+Полный run9pass/1fail,480 измерений:32/72 positives и64/88 controls без missing
+(включают8/16 empty wanted); непустой wanted72/136. Все критерии76/160.
+64 пары теряют214 source occurrences,48 нарушений required notice,28 неполных
+пар без preparation warning. FalseComplete/integrity/stability/input/storage0,
+max2228/6000. Есть и20-fact red, не только820-fact. Это НЕ personal live/UI/POST.
+
+Ремонт: свободный пересказ вне малого словаря, recent-context short refs,
+unknown notice и whole-topic группы отменённых/новых поручений. Post-scoring
+diagnostic1/1: у task8/plan9 verified episode, но frozen role unknown; bound-title
+gate исключает группу. НЕ расширять V1 historical grammar задним числом,
+НЕ угадывать owner, НЕ отменять source/budget guards. Runtime не правили.
+После ремонта RP342_SEEN=1 + RP342_HARNESS_CORRECTION=1, новый RP342_REPORT;
+исходный gold/plan/first red сохранять. Replay RP340/RP336/регрессии, потом
+свежий независимый holdout. RP-05/RP-08 открыты; большой personal live отдельно.
+
+tsc0 (первый20s shell124, повтор0), diff0. Старые suites не повторялись;
+предыдущий full-suite RP341 не объявлять зелёным. Browser ZIP RP341 неизменны,
+source ZIP с отчётами обновлён. Личная копия RP338 не обновлялась. Push/merge
+не запрашивались; сохранить все accumulated uncommitted RP331–342 изменения.
+
+
+## RP341 — пропуски RP340 исправлены; далее свежий независимый holdout
+
+Сначала docs/RP05-TOPIC-REPAIR-RESULTS-20261019.md и
+docs/benchmarks/rp341-verification.json. Source-backed whole-topic recall допускает
+вопросы/цитаты/другие глаголы и малый query-only словарь кандидатов. Источник,
+task/claim/role/ID не переписывается; вопрос/действие не становится фактом/согласием.
+Видимый incomplete используется для нового пути; ordinary legacy unverified
+остаётся details-only. Speech-history lane и полный single-action сохранены.
+32-label cap относится к связанным кандидатам; unrelated greeting quiet.
+No-op grammar конечная, с frozen speaker/source proof; содержательные записи
+сохранены, repeatSelection opt-out соблюдён. Query/source/budget guards прежние.
+
+RP340 SEEN576:84/84 positive+108/108 controls; RP336 SEEN432:96/96+48/48.
+Missing/falseComplete/integrity/stability/input/storage mutation0. Gold/first red/
+evidence helper НЕ менялись. Это не новый независимый результат. Итоговый serial10 файлов623/623,
+full2-worker 9664 passed / 64 failed / 5 todo; подробности/повторы/ранние ошибки в verification.
+UI8/8 RU/EN Edge/Firefox320/900; synthetic installed22/22 на первой сборке,
+8/8 source/prefix после сохранения старых путей; финальный confidence/model-guard
+release4/4 на14/618 фактах и20 POST; tsc/diff0, оба ZIP rebuild0.
+Первый JSON-only full прерван shell124; первый runtime trace сломан параллельной
+очисткой общей папки test-results. Не выдавать их за зелёные, не скрывать первые red.
+Playwright параллельно только с разными --output; итоговый Vite4187 остановлен.
+
+Личная копия всё ещё RP338; принятие prefix RP339 сохраняется, но новый retrieval
+ещё не personal-live. Архив downloads/DeepRole-RP341-topic-memory-20261019.zip,
+generic Chrome/Firefox/source обновлены. Сборка сама установленную копию не меняет.
+Далее свежий независимый holdout с gold ДО запуска, плюс structured-source personal
+live отдельно. RP-05/RP-08 открыты. Push/merge не запрашивались, всё локальное
+RP331–341 сохранять при будущем pull. Не перезапускать старые pending действия.
+
+
+## RP340 — новый независимый holdout красный; далее исправлять пропуски
+
+Сначала docs/RP05-LONG-COMPOUND-HOLDOUT-RESULTS-20261019.md и
+docs/benchmarks/rp340-verification.json. Новые три сюжета RU/EN, 96 запросов,
+18/618 фактов, 576 cold/warm/reopened измерений. Gold ДО scoring:
+SHA4ddb207ff0ec71018125aa01eefcb39e4fb1f3e4e22e1c4492f5a8d3ef9cf556;
+ожидания/первый frozen manifest НЕ менять. Runtime/evidence helper неизменны.
+
+Первый run7passed/7failed: 288 коротких измерений;6 long fixtures отказаны до
+retrieval из-за kind=promise у completed side-task. Исправлен только wrapper
+на kind=event; отдельный harness amendment, исходный план/first-results сохранены.
+Полный run13passed/1failed, все576 измерений завершены. Это не зелёное качество:
+9/84 основных +35/108 контролей без пропусков (12 unknown controls с пустым wanted).
+512 missing source occurrences,148/192 пары с пропусками,145 без preparation
+notice. False-complete0, integrity/stability/input/storage mutation0, max1667/6000.
+Это compiler+persisted synthetic graph, НЕ новый live DeepSeek/UI/POST.
+
+Далее исправлять источники/предупреждения: фиксированный verb-gate/question/quote
+bypass в narrative recall; базовые8 slots теряют группы условий/запретов;
+unverified/query details-only остаётся незаметным. Не снимать guards, не считать
+цитату/намерение сыгранным действием. После ремонта RP340_HARNESS_CORRECTION=1
+и RP340_SEEN=1, отдельный новый output; перепроверить RP336/прежние регрессии,
+потом новый независимый holdout. Точные команды/хеши/первый red в result/verification.
+
+RP-05/RP-08 открыты. Личный prefix-fix RP338 уже принят в RP339, повторная
+установка НЕ нужна. Runtime/browser ZIP здесь не менялись; source package
+обновляется отчётами. Сохранять накопленную uncommitted RP331–340 работу;
+push/merge не запрашивались. Большой structured-source personal live отдельно.
+
+
+## RP339 — RP338 принят в живом DeepSeek; повторная установка не нужна
+
+Сначала docs/RP05-LIVE-RP338-ACCEPTANCE-20261019.md и
+docs/benchmarks/rp339-verification.json. Пользователь установил RP338, перезапустил
+расширение и «Условия Норы»6cd8d028-3790-46f1-81d3-b269c50ff3e1. Ранние Nora/Mira
+и поздние access/crossplot сообщения теперь визуально без технического prefix.
+Один неизменный crossplot без seed прошёл: ключ у Норы, пломба не проверена,
+передачи не было; ремонт другого фонаря не смешан с пломбой. Ещё один reload:
+новое сообщение чистое, ответ сохранён, мир/3персонажа/50/50/сцена прежние.
+Видимых предупреждений подготовки нет, composer пустой. Меню iframe не открывали.
+
+Plan rp339-live-plan.json создан до первой отправки; проверка только visual/UI
+и ответ модели, не raw DB/POST/console. Скрытый raw wire может присутствовать
+в AX/DOM snapshot: не считать каждое совпадение <deeprole_context> визуальной
+утечкой, проверять screenshot и пузырёк. Исходный native текст не удаляется.
+Личные screenshots только .output, не коммитить sidebar. Вымышленный мир обычных
+lore entries, не614 structured-source facts; existing chat не независимый поиск.
+
+Код/browser ZIP не менялись, новые tests/tsc/build НЕ запускались. 150unit/8UI/
+20synthetic runtime относятся к RP338. Browser hashes сохранены; source ZIP
+обновлён документацией. Личный prefix-fix теперь live PASSED. Не просить ещё
+переустанавливать RP338 ради повтора; вкладка пользователя оставлена на ответе.
+
+Далее RP-05: новый независимый holdout других историй/формулировок с gold ДО
+первого scoring. Большой личный live с валидными source/task records отдельно;
+RP-08 replay отдельно. Оба этапа открыты. Не выполнять старые pending действия
+RP338 ниже: новый фикс уже принят. Push/merge не запрашивались, все накопленные
+uncommitted изменения RP331–339 сохранять при pull.
+
+
+## RP338 — живые8/8 на RP337; исправлен видимый префикс после reload
+
+Сначала docs/RP05-LIVE-RP337-RECHECK-20261019.md и
+docs/benchmarks/rp338-verification.json. Пользователь установил RP337 и выбрал
+«Условия Норы»: https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1.
+Тот же вымышленный мир,8 неизменных OOC вопросов RP330 +crossplot после reload
+прошли; seed/ответы вручную не добавляли, сверку/настройки не меняли. 50/50 и
+сцена сохранились. UI не показал отказов подготовки, network/DB аудит не заявлен.
+
+ВАЖНО: preview четырёхчастного НЕОТПРАВЛЕННОГО хода показал6 lore entries,
+5 profile excerpts,0 игровых фактов/задач,2 фрагмента переноса,2528/6000 tokens.
+Черновик очищен. Это обычная память в существующем чате, не живой 614-source
+индекс RP337 и не независимый holdout. Не приписывать8/8 новому алгоритму поиска.
+Новый plan SHA4e95c1ecdaed5dba0be1dd0df78ef1d86c07d54e2c45f930f758971d525cbf1f
+заморожен ДО отправки; gold не менялся. Личный sidebar screenshot только .output.
+
+В живом UI найдено: старые префиксы видны; новые скрыты до reload, потом тоже
+появляются. injectedUserText не распознавал continuationContext между закрытым
+XML block и [User message]. Добавлен строгий известный заголовок+полный JSON
+реплик user/assistant. Обычные цитаты/невалидные envelopes не скрываются;
+исходный submitted wire не меняется, текст игрока/вложенные маркеры сохраняются.
+Это общий parser представления/истории, не миграция базы. Личный DOM не патчили.
+
+Первый regression6passed/6failed, итог150/150 выбранных unit; UI8/8 RU/EN
+Edge/Firefox360/1280/reload. Installed synthetic runtime20/20 (2 новых prefix,
+12 new-chat,2 old-chat,4 large-index); пакеты/ранние ошибки в verification. Две ошибки нового harness отдельно: отсутствовал UTF-8;
+raw newline обычной цитаты сравнили с CSS-normalized innerText. Исправлены
+только fixture/assertions, guards/таймауты не ослаблялись. Tsc/diff clean.
+
+Актуальный архив downloads/DeepRole-RP338-hidden-context-20261019.zip.
+Chrome/Firefox/source ZIP пересобраны. Личная копия ПОКА RP337, новый фикс
+на ней ещё НЕ проверен. Следующее действие — после ручного обновления RP338
+перезагрузить этот же чат, убедиться, что старые сообщения без prefix; при
+необходимости один crossplot для следующей отправки. Не просить импортировать
+старый мир заново. Меню iframe не открывать: для проверок хватает page widgets.
+Получение tab handle не выбирает foreground; свежий inventory после действий юзера.
+
+После этого — новый независимый RP-05 holdout с gold ДО запуска; отдельно
+большой live мир с валидной историей источников/задач, если нужен personal live
+нового structured retrieval. RP-05/RP-08 открыты. Push/merge не запрашивались;
+не перезаписывать накопленную uncommitted работу RP331–338 при pull.
+
+
+## RP337 — пропуски RP336 исправлены; следующий шаг новый независимый holdout
+
+Сначала docs/RP05-NARRATIVE-REPAIR-RESULTS-20261019.md и
+docs/benchmarks/rp337-verification.json (точные финальные проверки/ограничения).
+Новый story-narrative-recall дополняет контекст целыми source-backed группами
+по явно названным предметам. Строгая грамматика не расширена; известные короткие
+последовательности сохраняют прежний путь. Bare/personal references дают кандидатов,
+не владельца/разрешение/закрытие дела; reference guard сохраняет неопределённость.
+Повторы исключаются только через isVerifiedEmptyDiscussion; полные прежние
+содержательные записи, evidence/roles/source/budget и opt-outs сохранены.
+
+Видимая плашка incomplete/query/source/capacity отделена от budget, не блокирует
+отправку и заменяет безусловную готовность. Обычные старые unverified состояния
+остались details-only. UI текст не добавляется в prompt/канон; подготовка не
+равна подтверждённой доставке. Мануалы/дизайн-система обновлены.
+
+RP336 SEEN: 96/96 основных и48/48 контрольных,432 измерения,0 missing/
+falseComplete/integrity/stability/state mutation. Gold и first red не изменены,
+helper SHA сохранён. Max1913/6000 токенов. Это знакомый после исправления набор,
+не новая независимая оценка. Audit runner различает реальный budgetWarning и
+preparationWarning/warningKind; промежуточные отчёты со старой метрикой сохранены.
+
+Старый compound quality тест обновлён только для intentional topical retrieval
+в conditional/negated/personal/unknown-object: source fidelity + reference guard
++ not-complete вместо byte-exact absence. Строгий parser/прочие fallback не ослаблены.
+JSON import attribute исправлен только в wrapper для Playwright; gold не тронут.
+Ранние red/full-runtime результаты и окончательные повторы различены в verification.
+
+Финальные проверки: полный2-worker unit9646 passed/34 failed/5todo:24
+изменённых контракта дополнительных кандидатов +10 timeout. Отдельный serial
+повтор ВСЕХ8 затронутых файлов818/818 passed, исходные таймауты сохранены.
+Не выдавать это за единый зелёный full run. Installed synthetic runtime18/18
+(новых2/16 POST на614 фактах, прежних16), UI8/8 Edge/Firefox RU/EN320/900,
+axe/keyboard/overflow passed; tsc/diff clean. Два narrow screenshots просмотрены.
+Ранние runtime/context-changed и UI timeout сохранены отдельно; повтор успешен
+без изменения production guards или таймаутов. Это не доказывает причину
+ранних нестабильных запусков. Исторические gold/digests не переписывались.
+
+Пакеты Chrome/Firefox и source ZIP обновлены; именованный
+downloads/DeepRole-RP337-narrative-memory-20261019.zip. Установленная личная копия
+остаётся RP333: сборка сама её не обновляет. Проверки этой итерации synthetic,
+без нового личного live DeepSeek. Push/merge пользователь не запрашивал.
+
+Далее: независимый holdout на других историях/формулировках; ожидания ДО первого
+запуска. Проверять ложные/неоднозначные ссылки, источники, границы и warnings.
+RP-05 ещё открыт: конечный словарь/названия,4000 символов,32 labels,128 sources,
+бюджет; произвольную речь не обещать. RP-08 replay отдельно. Не начинать заново
+RP331–337 по старым историческим «далее» ниже; всё локальное сохранить при pull.
+
+
+## RP336 — следующий шаг: исправить найденные пропуски повествовательных ходов
+
+Читать RP05-NARRATIVE-HOLDOUT-RESULTS-20261019.md + benchmarks/rp336-verification.json.
+Новый gold заморожен ДО scoring, SHA в плане/runner.432 измерения (72запроса,
+14/614фактов,3состоянияиндекса).42/96 основных полны,18/48 защитных полны,4
+internal coverage breaches; данные/роль/source не повреждены, reload стабилен.
+Короткие2/3 формы прошли; разные предложения,4действия,паузы,длинные переходы,
+условные будущие ходы — неполны. Даже14фактов не спасают; общий budget свободен.
+Не путать отсутствие budgetWarning с полным UI-аудитом;4 internal coverage
+нарушения не доказывают неверный ответ модели. Runtime не менялся, ZIP RP335.
+
+Теперь исправлять multi-sentence/>3-action/free narrative recall и отдельное
+incomplete-query состояние. Повтор: RP336_SEEN=1, новый RP336_REPORT path,
+vitest.rp336.config.ts; это SEEN, gold/helper/first-results не менять. Затем
+прежние наборы и actual POST/reload, после — новый независимый holdout.
+Audit8structural passed/1gold failed, tsc clean. Первый mixed-suite запуск
+остановлен: include concat; исправленный list показывает один audit-файл.
+Личный live и новый installed runtime в RP336 не проверялись. RP-05/RP-08 открыты.
+Всё локально; push/merge не просили.
+
+## RP335 — продолжить после проверки большого сохранённого индекса
+
+Читать RP05-PERSISTED-LONG-RESULTS-20261019.md, затем benchmarks/rp335-verification.json.
+Compound отбор теперь применяет RP325 к каждому доказанному предмету и защищает
+полные условия от пустых повторов. Новый gold закреплён до первого run: 56 запросов,
+89/409 фактов, RU/EN, cold/warm/reopened. Стенд усилен полноценной историей sources,
+receipts и checkpoint (assertStoryGraph), исходная проза/gold не подогнаны.
+Полный итог automated и hashes — в JSON. Архив DeepRole-RP335-long-memory-20261019.zip.
+Parallel unit:9661 passed/3timeout/5todo; три файла проверены повторно serial,
+таймауты не менялись. Не объявлять этот parallel run зелёным.
+Личная установленная копия пока RP333; новый actual POST runtime — synthetic Edge,
+не личный DeepSeek. RP334 live не приписывать новой сборке. Старые failures сохранять.
+Следующее: НОВЫЙ независимый holdout длинных повествовательных/составных действий,
+ожидания закрепить до запуска. RP-05 и RP-08 ещё открыты. Push/merge не просили.
+
+## RP334 — live8 и чистый чат прошли, не требовать нового update
+
+Сначала RP05-LIVE-MEMORY-RECOVERY-RESULTS-20261019.md и новый верх CODEX-HANDOFF.
+RP333 уже установлен:8/8 вопросов без seed/warnings, reload сохраняет50/50 и
+три записи. Background New chat дал доказанный activation-tab-inactive; это
+отдельный negative. После явного выбора и fresh inventory вtab770 первый запрос
+нового native-чата без сжимки прошёл, следующий mira после reload тоже.
+Актуальный чат «Условия Норы»6cd8d028-3790-46f1-81d3-b269c50ff3e1. Прежний49f
+только читали: правильная ссылка на новый, игру назад не переключали.
+Код/Chrome/Firefox ZIP прежние RP333; новые тесты не запускали. Отчёт/source ZIP
+обновлены. Не просить повторный update/import, не выдавать последовательные8 за
+независимые retrieval и не приписывать всем старым отказам доказанную inactive.
+Далее большой сохранённый role-seeded индекс/compound coverage RP325, затем RP-08.
+RP-05/RP-08 ещё не закрыты; push не просили.
+
+## RP333 — отказ на этапе activation, не timeout
+
+Сначала RP05-ACTIVATION-DIAGNOSTICS-20261019.md и верх CODEX-HANDOFF. RP332 live
+дал story-binding-conflict/activation за293ms. Даже после перехода на реально
+выбранный tab680 (найден duplicate706) и сохранения того же мира —24/4ms отказ.
+Добавлен safe static detail семи причин через repository port, guards прежние;
+152 unit/10files и tsc passed; synthetic Edge34/34 за6.2min, Chrome/Firefox/source
+ZIP сверены. После обновления RP333 ZIP получить точный detail,
+затем red regression/fix/live8. После ручного выбора всегда новый tab inventory,
+не cached ID одного URL. Seed не пересылать, публичные ошибочные ответы не сохранять.
+Реальная причина ещё не исправлена; RP-05/RP-08 открыты, push не просили.
+
+## RP332 — live RP331 не подтвердился
+
+Сначала RP05-LIVE-RECOVERY-RECHECK-20261019.md и верх CODEX-HANDOFF. Пользователь
+обновил копию; четыре попытки первого gold-вопроса (включая новый чат и явную
+активацию) не получили память. Семь вопросов блокированы, seed не пересылали.
+Новый тестовый target49f2623a-1c8e-46f4-9d4a-4fefd0aae369. Добавлен безопасный
+console журнал RP332: этап/статический код/время, без пользовательских данных.
+После обновления диагностического ZIP прочитать отказ через CUA tab.dev.logs,
+воспроизвести точную причину, исправить и затем повторить live8. Не выдавать
+143 unit и synthetic runtime34/34 (один serial прогон за5.5 min) за live успех.
+Chrome/Firefox/source ZIP готовы, named archive DeepRole-Brave-memory-diagnostics-20261019.zip.
+RP-05/RP-08 не закрыты; push не просили.
+
+## RP331 — новая точка после исправления подготовки памяти
+
+Сначала docs/RP05-CHAT-MEMORY-RECOVERY.md и верх CODEX-HANDOFF. Исправлены
+зависшая ошибка navigation, гонка «Продолжить здесь», UI epoch vs parent GET,
+одно обновление stale parent base. 130 targeted unit и TypeScript прошли;
+финальная runtime матрица34/34 прошла за 5.0 min. Chrome/Firefox/source пакеты готовы,
+downloads/DeepRole-Brave-memory-recovery-20261019.zip. Далее
+обновление пользователем и live8 gold-вопросов
+RP330. Не принимать старые посторонние ответы новой сверкой, не пересылать gold
+вручную. Личный live исправления пока не подтверждён; push/merge не запрашивались.
+
+## RP330 — актуальный следующий шаг
+
+Читать docs/RP05-LIVE-LONG-RESULTS-20261019.md и новый верх CODEX-HANDOFF.
+Сверка сохранила 7/7 фактов в трёх записях; 80 повторов не создали ложных фактов.
+Но новый пустой чат не получил память: первые два фиксированных вопроса провалены,
+шесть блокированы. Панель показывает правильный подбор, предупреждение подтверждает
+отправку без памяти. Контроль после ручного выбора вкладки пользователем тоже не прошёл.
+Следующее — red runtime тест первого/следующего POST нового bound-чата, причина
+отказа подготовки, минимальный fix, сборки, live8 после обновления. Не ослаблять
+защиту активной вкладки, не редактировать gold и не принимать посторонние ответы
+новой сверкой. Код/архивы прежние, результаты пока локальные, RP-05 не закрыт.
+
+## RP329 — читать первой после живых проверок 19 октября
+
+Сначала docs/LIVE-QA-2026-10-19.md и верх CODEX-HANDOFF. Личный Edge подтвердил
+скобки в коротком тестовом мире и memory review1/save1/recap/новый чат/OOC5фактов/reload.
+Новый актуальный чат dd3954a5-4fe4-49f0-b5e2-ce0010f48352 «Продолжение сцены»;
+старый37f776f1-8a3f-4c21-bd2b-044314f0b17b показывает ссылку, не возобновляли его.
+Пользователь вручную подтвердил работу UX328; автоматизация меню по-прежнему
+ограничена пустым extension iframe.
+Далее RP325 long repeats/полные составные действия RP-05 и replay RP-08;
+короткий live этого не доказывает. Код/runtime не менялись, отчёт пока локальный.
+
+## Предыдущая передача 19 октября
 
 Сначала `HANDOFF-2026-10-19.md`, затем актуальный верх CODEX-HANDOFF/ROADMAP.
 Там отдельно разобраны сегодняшний live RP323/RP324, новый отбор RP325,

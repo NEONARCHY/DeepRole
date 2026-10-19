@@ -39,6 +39,17 @@ it.each(['navigation','base','reset','partial','wrong-chat','missing','malformed
 it('ignores a wrong-origin packet, then accepts only its own response',async()=>{
   const f=fixture(),task=f.client.readForPresentation();f.reply({},'https://foreign.test');f.reply();expect(await task).toEqual(f.snapshot);
 });
+it.each(['native-http','native-format','native-too-large','native-unreadable','native-exception','native-shape','PRIVATE_LORE'])('reports safe parent failure %s without accepting a malformed snapshot',async failure=>{
+  const f=fixture();f.scope.managed=true;
+  const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+  const task=f.client.run('parent',key('3'));
+  await vi.waitFor(()=>expect(f.requests).toHaveLength(1));
+  window.dispatchEvent(new MessageEvent('message',{source:window,origin:location.origin,data:{source:'deeprole-page-bridge',type:'STORY_GAME_SNAPSHOT_RESULT',requestId:f.requests[0].requestId,snapshot:null,failure}}));
+  await expect(task).rejects.toThrow('story-native-line-unavailable');
+  expect(f.store.runStoryGame).not.toHaveBeenCalled();
+  expect(JSON.parse(warn.mock.calls[0]?.[1])).toMatchObject({revision:'RP333',stage:'native-snapshot',code:failure==='PRIVATE_LORE'?'unknown':failure});
+  expect(JSON.stringify(warn.mock.calls)).not.toContain('PRIVATE_LORE');
+});
 it('defers choices before and during native verification, not just after the GET starts',async()=>{
   const f=fixture();expect(f.client.presentationPending()).toBe(true);
   const task=f.client.readForPresentation();expect(f.client.presentationPending()).toBe(true);
@@ -71,4 +82,25 @@ it('rechecks the same visible reply after a late accepted receipt invalidates it
   expect(f.client.presentationPending()).toBe(true);
   const second=f.client.readForPresentation();expect(f.requests).toHaveLength(2);f.reply();await second;
   expect(f.client.presentationPending()).toBe(false);expect(f.store.runStoryGame).not.toHaveBeenCalled();
+});
+it('keeps parent preparation independent of a late receipt invalidating UI proof',async()=>{
+  const f=fixture();f.scope.managed=true;
+  const task=f.client.run('parent',key('3'));await vi.waitFor(()=>expect(f.requests).toHaveLength(1));
+  f.client.resetPresentation();f.reply();
+  await expect(task).resolves.toEqual({active:true,changed:false});
+  expect(f.store.runStoryGame).toHaveBeenCalledTimes(1);
+  expect(f.client.presentationSnapshot()).toBeUndefined();
+});
+it('reports a changed parent base as stale so preparation can refresh without weakening the check',async()=>{
+  const f=fixture();f.scope.managed=true;
+  const task=f.client.run('parent',key('3'));await vi.waitFor(()=>expect(f.requests).toHaveLength(1));
+  f.scope.base='new-checkpoint';f.reply();
+  await expect(task).rejects.toThrow('story-review-stale');expect(f.store.runStoryGame).not.toHaveBeenCalled();
+});
+it.each(['world','chat','url','locked'] as const)('still rejects parent preparation after %s changes',async mode=>{
+  const f=fixture();f.scope.managed=true;
+  const task=f.client.run('parent',key('3'));await vi.waitFor(()=>expect(f.requests).toHaveLength(1));
+  if(mode==='world')f.scope.worldId='other';if(mode==='chat')f.scope.chatId='other';
+  if(mode==='url')f.scope.url+='?other';if(mode==='locked')f.scope.locked=true;
+  f.reply();await expect(task).rejects.toThrow('story-native-line-unavailable');expect(f.store.runStoryGame).not.toHaveBeenCalled();
 });

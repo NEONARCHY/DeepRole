@@ -8,6 +8,7 @@ import { createStoryRoleReader } from '../src/core/story-source-roles';
 import { storedRoleReader,roleSeed } from '../src/core/story-role-binding';
 import { createEpisodeReader } from '../src/core/story-episodes';
 import type { GameMemoryCoverage } from '../src/core/game-memory-coverage';
+import { assertTopicRecall } from './fixtures/assert-topic-recall';
 const decode=(text:string)=>{const b=text.split('<deeprole_story_memory>')[1]?.split('</deeprole_story_memory>')[0];return b?decodeStoryMemory(JSON.parse(b.split('\n')[1]!)):[];};
 const prior=(input:ReturnType<typeof repeatSelectionWorld>['input'])=>compileGameContext(input,{memoryTransport:'columns',repeatSelection:false});
 const readers=(f:ReturnType<typeof repeatSelectionWorld>)=>[createStoryRoleReader({worldId:f.base.world.id,entities:f.input.entities!},f.input.draft,storedRoleReader(f.seeds,f.input.entities!,f.base.world.id)),createEpisodeReader(f.seeds,f.sources)] as const;
@@ -55,7 +56,11 @@ for(const locale of ['ru','en'] as const)for(const control of ['new-info','new-a
 for(const locale of ['ru','en'] as const)for(const draft of ['discussion','owner','continue','unknown','conditional'] as const)it(`${locale} ${draft}: exact previous fallback`,()=>{
   const f=repeatSelectionWorld(locale);
   f.input.draft= draft==='discussion'?f.s(`Что Лев сказал про предмет ${f.topic}?`,`What did Lev say about the ${f.topic}?`):draft==='owner'?f.s(`Кому принадлежит предмет ${f.topic}?`,`Who owns the ${f.topic}?`):draft==='continue'?f.s('Продолжай.','Continue.'):draft==='unknown'?f.s('Что известно о ракете?','What do we know about the rocket?'):f.s(`Если разрешат, я проверю предмет ${f.topic}.`,`If allowed, I check the ${f.topic}.`);
-  expect(compileGameContext(f.input,{memoryTransport:'columns'})).toEqual(prior(f.input));
+  const next=compileGameContext(f.input,{memoryTransport:'columns'}),old=prior(f.input);
+  // RP341 admits source-backed owner/conditional topics. Only that deliberate
+  // extension replaces rollback with candidate/provenance/uncertainty assertions.
+  if((draft==='owner'||draft==='conditional')&&next.text!==old.text)assertTopicRecall(f.input,next,old,f.facts);
+  else expect(next).toEqual(old);
 });
 for(const locale of ['ru','en'] as const)for(const budget of [0,1000,1500,2400])it(`${locale} budget ${budget}: exact rollback or complete group`,()=>{
   const f=repeatSelectionWorld(locale);f.input.settings.contextBudget=budget;
