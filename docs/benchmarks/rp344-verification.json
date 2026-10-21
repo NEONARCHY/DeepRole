@@ -1,0 +1,325 @@
+{
+  "milestone": "RP344",
+  "scope": "Independent authored synthetic persisted compiler holdout; no live model, installed extension or UI test",
+  "frozenBeforeFirstRun": true,
+  "frozenAtUtc": "2026-10-20T06:58:55.145881+00:00",
+  "firstRun": {
+    "startedAtUtc": "2026-10-20T06:59:21.053422+00:00",
+    "finishedAtUtc": "2026-10-20T07:00:46.257906+00:00",
+    "exitCode": 1,
+    "changedFrozenFiles": [],
+    "report": ".output/rp344-first-results.json",
+    "vitest": ".output/rp344-first-vitest.json",
+    "scope": "FIRST independent compiler audit; no runtime repair"
+  },
+  "datasetSha256": "a86dadc25d8fefb57119c90d1123db0629cc1f5d2c79a9aa436006976a947076",
+  "frozenPlanSha256": "28d1948fab7776c6766e4d4d7a8f12f102b4871ed733f3fcea79264e3e0e066b",
+  "summary": {
+    "measurements": 576,
+    "queryHistoryCases": 192,
+    "positiveCases": 80,
+    "positiveComplete": 42,
+    "controls": 112,
+    "controlsMemoryComplete": 96,
+    "falseComplete": 0,
+    "missingSources": 127,
+    "noticeMismatches": 10,
+    "casesWithMissing": 54,
+    "incompleteWithoutBudgetWarning": 54,
+    "incompleteWithoutPreparationWarning": 4,
+    "integrityIssues": 0,
+    "unstable": 0,
+    "byFamily": [
+      {
+        "id": "literal-two",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "narrative-four",
+        "cases": 8,
+        "complete": 6,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-equipment",
+        "cases": 8,
+        "complete": 6,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "free-sensitive",
+        "cases": 8,
+        "complete": 2,
+        "falseComplete": 0,
+        "noticeMismatches": 2,
+        "withPreparationWarning": 6,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "recent-two",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "recent-version",
+        "cases": 8,
+        "complete": 6,
+        "falseComplete": 0,
+        "noticeMismatches": 4,
+        "withPreparationWarning": 4,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "unanchored",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "partial-clearance",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "cancelled-channel",
+        "cases": 8,
+        "complete": 7,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "rumour-consent",
+        "cases": 8,
+        "complete": 7,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "cross-object",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "owner-inversion",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "quoted-intent",
+        "cases": 8,
+        "complete": 6,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "conditional-action",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "negated-chain",
+        "cases": 8,
+        "complete": 6,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "reordered-six",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "late-change",
+        "cases": 8,
+        "complete": 7,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "speech",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "completed-history",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "what-remains",
+        "cases": 8,
+        "complete": 0,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "unknown-only",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 4,
+        "withPreparationWarning": 4,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "mixed-known-unknown",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "greeting",
+        "cases": 8,
+        "complete": 8,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 0,
+        "withBudgetWarning": 0
+      },
+      {
+        "id": "long-delayed-reference",
+        "cases": 8,
+        "complete": 5,
+        "falseComplete": 0,
+        "noticeMismatches": 0,
+        "withPreparationWarning": 8,
+        "withBudgetWarning": 0
+      }
+    ]
+  },
+  "allCriteriaPass": 132,
+  "nonemptyWantedCases": 168,
+  "nonemptyWantedComplete": 114,
+  "maxTokens": 2834,
+  "tokenBudget": 6000,
+  "vitest": {
+    "numTotalTests": 10,
+    "numPassedTests": 9,
+    "numFailedTests": 1,
+    "numPendingTests": 0,
+    "numTodoTests": 0,
+    "success": false
+  },
+  "checks": {
+    "typecheck": {
+      "exitCode": 0,
+      "log": ".output/rp344-typecheck.log"
+    },
+    "diff": {
+      "exitCode": 0,
+      "log": ".output/rp344-diff.log"
+    }
+  },
+  "builds": {
+    "chrome": {
+      "exitCode": 0,
+      "log": ".output/rp344-build-chrome.log"
+    },
+    "firefox": {
+      "exitCode": 0,
+      "log": ".output/rp344-build-firefox.log"
+    }
+  },
+  "sourceRuntimeChanged": false,
+  "helperUnchanged": true,
+  "productionSourceCount": 468,
+  "oldFrozenGoldUnchanged": {
+    "336": {
+      "datasetSha256": "906a8e042884359ecf7bcc8152781373eb28f4c4a3655959298b7b588aa87568",
+      "manifestSha256": "7ea8b55b2c59a12c16540947faccb979babc4d2593503e9711ece23545dd3e24"
+    },
+    "340": {
+      "datasetSha256": "4ddb207ff0ec71018125aa01eefcb39e4fb1f3e4e22e1c4492f5a8d3ef9cf556",
+      "manifestSha256": "fcf0cfb2bbb88940dd7aa685d0feb3306a2e3cc8fe8a8482053dac9f51803ed5"
+    },
+    "342": {
+      "datasetSha256": "2aa3a6b0027cb0ca432b26daa32c8215336bd76a6e8fe6e7232ba42033af64f5",
+      "manifestSha256": "182581d6957ca0c1f349570aae83ccca58098961e189d1ada5a3af87332bd035"
+    }
+  },
+  "fullSuiteRerun": false,
+  "personalInstalledReloaded": false,
+  "liveDeepSeekChecked": false,
+  "uiRerun": false,
+  "scoringNotes": [
+    "127 counts missing source occurrences over cold query/history cases; repeated warm/reopened measurements are not counted again.",
+    "32 of 127 missing occurrences are the superseded open promise at core16 of the completed side chain. compactStoryFactSources keeps the latest slot by task.key. This is a strict historical-provenance requirement, not evidence that 32 active obligations were forgotten. Do not reactivate completed tasks to turn this gold green.",
+    "Gold allows additional verified candidates and does not score precision or model use of the candidates.",
+    "All eight persisted evidence/integrity/mutation/stability tests and freshness admission passed; the final quality assertion failed.",
+    "First shell observer timed out at 20s, but the already-started Python/Vitest child completed the same first run (receipt captured, 576 measurements). No audit rerun. First typecheck observer had no captured exit; a logged repeat completed exit0."
+  ],
+  "browserPackages": {
+    "chrome": {
+      "sha256": "e3d0139c1567dd7c261afa88e53afc333df74a4c3c85e80ac87c650b800e4595",
+      "files": 23,
+      "matchesBuildDirectory": true
+    },
+    "firefox": {
+      "sha256": "745a5785d509e7af84b1e4df26c196dd495aef0711360dff449785093588000e",
+      "files": 23,
+      "matchesBuildDirectory": true
+    }
+  },
+  "sourcePackage": "downloads/deeprole-0.1.0-sources.zip"
+}

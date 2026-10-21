@@ -8,6 +8,7 @@ import type { Locale } from "../core/types";
 import { castChatId, castChatReference } from "../core/cast-chat";
 import { enableCastThinking, restoreCastThinking } from "./cast-thinking";
 import { bootstrapCastServiceScreen, createCastServiceScreen, rememberCastServiceScreen, finishCastServiceScreenMarker } from "./field-service-screen";
+import { setServiceBackgroundWork } from "./service-background-render";
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const DELETE = /^(?:delete(?: chat| conversation)?|удалить(?: чат| диалог)?|删除(?:对话)?)$/iu;
@@ -67,6 +68,7 @@ export async function startCastWorker(): Promise<boolean> {
   const claim = await browser.runtime.sendMessage({ type: "DR_CAST_WORKER", action: "claim", id: wanted } satisfies CastMessage).catch(() => null);
   if (!claim?.ok) { earlyScreen?.update("failed"); return !!wanted || !!earlyScreen; } // No ordinary UI in a stale service page.
   const id: string = claim.id, adapter = new DeepSeekDomAdapter();
+  setServiceBackgroundWork(id, true);
   const locale: Locale = claim.locale === "en" || !claim.locale && earlyScreen?.host.lang === "en" ? "en" : "ru";
   const screen = earlyScreen ?? createCastServiceScreen(locale);
   if (typeof claim.reset === "boolean") screen.setCastMode(claim.reset, locale);
@@ -76,6 +78,43 @@ export async function startCastWorker(): Promise<boolean> {
   let capture: CastReplyCapture | undefined, activeRequestMarker = "";
   let nativeOwned: string | undefined = claim.chatId;
   let restoreThinking: (() => void) | undefined = claim.reasoningChanged ? () => restoreCastThinking(adapter.findComposer()) : undefined;
+  let remoteTerminal: { phase: string; cleanup: string } | undefined, statusPending = false;
+  let accountReplyTime = () => {};
+  let statusTimer: ReturnType<typeof setInterval> | undefined;
+  const stopStatus = () => {
+    clearInterval(statusTimer);
+    document.removeEventListener("visibilitychange", resumeStatus);
+    window.removeEventListener("focus", resumeStatus);
+    window.removeEventListener("pageshow", resumeStatus);
+  };
+  const syncStatus = async () => {
+    if (statusPending || cleaning) return;
+    statusPending = true;
+    try {
+      const result = await browser.runtime.sendMessage({ type: "DR_CAST_WORKER", action: "status", id } satisfies CastMessage);
+      if (cleaning) return;
+      if (!result?.ok) {
+        if (["unowned-tab", "job-missing", "chat-changed"].includes(result?.error)) {
+          remoteTerminal = { phase: "error", cleanup: "failed" };
+          stopped = true; failed = true; capture?.stop();
+          screen.update("cleanup-failed"); stopStatus(); setServiceBackgroundWork(id, false);
+        }
+        return;
+      }
+      if (result.id !== id) return;
+      screen.setCastProgress(result.prepared, result.total);
+      if (["opening", "reading", "analyzing"].includes(result.phase)) return;
+      remoteTerminal = { phase: result.phase, cleanup: result.cleanup };
+      stopped = true; failed = result.phase !== "ready"; capture?.stop();
+      if (["done", "none", "failed"].includes(result.cleanup)) {
+        screen.update(result.cleanup === "failed" ? "cleanup-failed" : failed ? "failed" : "done");
+        setServiceBackgroundWork(id, false); stopStatus();
+      }
+      // The existing main loop performs owned cleanup for pending terminal work.
+    } catch { /* A transient status read never resends or changes the saved job. */ }
+    finally { statusPending = false; }
+  };
+  const resumeStatus = () => { accountReplyTime(); if (!document.hidden) void syncStatus(); };
   document.addEventListener("click", e => { if (!screen.owns(e) && e.isTrusted && (e.target as Element)?.closest("a[href]")) touched = true; }, true);
   document.addEventListener("input", e => { if (!screen.owns(e) && e.isTrusted) touched = true; }, true);
   window.addEventListener("message", e => {
@@ -108,11 +147,13 @@ export async function startCastWorker(): Promise<boolean> {
           if (!adapter.isGenerating()) ok = await deleteOwnedChat(chatId, document, pause, authorize);
         }
       }
+    } catch { ok = false; }
+    try {
       // Never report the foreign current ID as a service binding.
       const confirmed = await call({ type: "DR_CAST_WORKER", action: "cleaned", id, chatId: nativeOwned, ok: ok && !touched }).then(() => ok && !touched, () => false);
       if (confirmed) finishCastServiceScreenMarker();
       screen.update(confirmed ? failed ? "failed" : "done" : "cleanup-failed");
-    } finally { cleaning = false; }
+    } finally { cleaning = false; stopStatus(); setServiceBackgroundWork(id, false); }
   };
   browser.runtime.onMessage.addListener(message => {
     if (message.type === "DR_CAST_RETRY_CLEANUP") { void cleanup(); return Promise.resolve({ ok: true }); }
@@ -123,14 +164,21 @@ export async function startCastWorker(): Promise<boolean> {
     stopped = true; failed = true; capture?.stop();
     void call({ type: "DR_CAST", action: "cancel", id }).catch(() => undefined).then(cleanup);
   });
+  statusTimer = setInterval(() => void syncStatus(), 20000);
+  document.addEventListener("visibilitychange", resumeStatus);
+  window.addEventListener("focus", resumeStatus);
+  window.addEventListener("pageshow", resumeStatus);
+  void syncStatus();
   void (async () => {
     try {
       if (claim.cleanupOnly) { await cleanup(); return; }
-      for (let ready = 0; !adapter.getStatus().compatible && ready < 60; ready++) await pause(500);
+      for (let ready = 0; !stopped && !adapter.getStatus().compatible && ready < 60; ready++) await pause(500);
+      if (stopped) throw new Error("user-interrupted");
       if (!adapter.getStatus().compatible) throw new Error("login-required");
       screen.update("preparing");
       for (;;) {
         const step = await call({ type: "DR_CAST_WORKER", action: "claim", id });
+        if (stopped) throw new Error("user-interrupted");
         if (!["opening", "reading", "analyzing"].includes(step.phase)) { failed = step.phase !== "ready"; break; }
         const reading = step.phase === "opening" || step.phase === "reading";
         screen.update(step.repair ? "repairing" : reading ? "reading" : "preparing");
@@ -178,9 +226,19 @@ export async function startCastWorker(): Promise<boolean> {
           await call({ type: "DR_CAST_WORKER", action: "bound", id, chatId }); nativeOwned = chatId;
           bound = true; checkpoint();
         }
-        const started = Date.now(); let last = "", stable = Date.now(), response = "", recovered = false;
-        while (Date.now() - started < 7 * 60 * 1000) {
+        let checkedAt = Date.now(), visibleElapsed = 0, hiddenElapsed = 0, wasHidden = document.hidden;
+        let last = "", stable = Date.now(), response = "", recovered = false;
+        accountReplyTime = () => {
+          const now = Date.now(), elapsed = Math.max(0, now - checkedAt);
+          if (wasHidden) hiddenElapsed += elapsed; else visibleElapsed += elapsed;
+          // Give the native page time to render after a background timer pause.
+          if (wasHidden && !document.hidden) { stable = now; visibleElapsed = Math.min(visibleElapsed, 7 * 60 * 1000 - 15000); }
+          wasHidden = document.hidden; checkedAt = now;
+        };
+        for (;;) {
           if (stopped || touched) throw new Error("user-interrupted");
+          accountReplyTime();
+          if (visibleElapsed >= 7 * 60 * 1000 || hiddenElapsed >= 30 * 60 * 1000) break;
           if (failedRequest) { const saved = capture.resolve(""); if (saved.raw) { response = saved.raw; recovered = true; break; } throw new Error("request-failed"); }
           if (nativeOwned && currentChat() !== nativeOwned) throw new Error("chat-changed");
           const raw = capture.scan();
@@ -188,7 +246,7 @@ export async function startCastWorker(): Promise<boolean> {
           const rows = nativeMessageRows(document), requestIndex = rows.findLastIndex(row => isUserMessage(row) && (row.textContent ?? "").includes(requestMarker));
           const replyRow = requestIndex >= 0 ? rows[requestIndex + 1] : undefined;
           const thinking = generating && !raw && !!replyRow && !isUserMessage(replyRow) && !!replyRow.querySelector(".ds-think-content,.ds-think-content-wrapper,[data-testid*=thinking],[data-testid*=reasoning]")?.textContent?.trim();
-          screen.update(thinking ? "thinking" : step.repair ? "repairing" : reading ? "reading" : raw ? "generating" : "waiting");
+          if (!stopped) screen.update(thinking ? "thinking" : step.repair ? "repairing" : reading ? "reading" : raw ? "generating" : "waiting");
           if (raw !== last) { last = raw; stable = Date.now(); }
           const resolved = capture.resolve(raw);
           if (resolved.raw && !generating && Date.now() - stable >= 1500) { response = resolved.raw; recovered = resolved.recovered; break; }
@@ -206,11 +264,17 @@ export async function startCastWorker(): Promise<boolean> {
         await call({ type: "DR_CAST_WORKER", action: "reply", id, step: step.step, repair: !!step.repair, chatId, raw: response }); nativeOwned = chatId;
       }
     } catch (e) {
-      failed = true;
-      await call({ type: "DR_CAST_WORKER", action: "error", id, error: e instanceof Error ? e.message : "preparation-failed", chatId: nativeOwned } as CastMessage).catch(() => undefined);
+      if (!remoteTerminal) {
+        failed = true;
+        await call({ type: "DR_CAST_WORKER", action: "error", id, error: e instanceof Error ? e.message : "preparation-failed", chatId: nativeOwned } as CastMessage).catch(() => undefined);
+      }
     }
     capture?.stop();
-    await cleanup();
+    if (!remoteTerminal || !["done", "none", "failed"].includes(remoteTerminal.cleanup)) await cleanup();
+    else {
+      screen.update(remoteTerminal.cleanup === "failed" ? "cleanup-failed" : remoteTerminal.phase === "ready" ? "done" : "failed");
+      stopStatus(); setServiceBackgroundWork(id, false);
+    }
   })();
   return true;
 }

@@ -1,0 +1,61 @@
+{
+  "milestone": "RP345",
+  "finishedAtUtc": "2026-10-20T07:24:22.602521+00:00",
+  "scope": "Live personal Edge/real DeepSeek on existing synthetic test-world lore, not a fresh independent large structured-source retrieval corpus",
+  "planSha256": "903ab2bac35b2f18f3e1eee71c112266b8992933cf139ba91840147f4da1e07a",
+  "cleanPlanSha256": "279f6edc06c7a185b2dc9abb4d8ace2827ad6b6f287fe3c89860b5136b27377b",
+  "attributionPlanSha256": "8a57889a6691f36d1389afa6cc450589ecceba21ffd96da94eb07c69bfc8df0e",
+  "oldChatQuestions": 12,
+  "oldChatExpectedPassed": 12,
+  "automaticCleanChatAttempts": 3,
+  "automaticCleanChatBlocked": 3,
+  "userSentCleanChatControls": 1,
+  "manualCleanExpectedTopicsPresent": 6,
+  "manualCleanExpectedTopicsTotal": 6,
+  "manualCleanUnsupportedExtraRecipient": true,
+  "targetedAttributionProbeCorrected": true,
+  "totalRealModelRequests": 17,
+  "diagnostics": [
+    {
+      "timestamp": "2026-10-20T07:15:42.051Z",
+      "revision": "RP333",
+      "stage": "navigation",
+      "code": "story-binding-conflict",
+      "detail": "activation-tab-inactive",
+      "elapsedMs": 182
+    },
+    {
+      "timestamp": "2026-10-20T07:16:26.726Z",
+      "revision": "RP333",
+      "stage": "activation",
+      "code": "story-binding-conflict",
+      "detail": "activation-tab-inactive",
+      "elapsedMs": 34
+    },
+    {
+      "timestamp": "2026-10-20T07:18:52.977Z",
+      "revision": "RP333",
+      "stage": "activation",
+      "code": "story-binding-conflict",
+      "detail": "activation-tab-inactive",
+      "elapsedMs": 56
+    }
+  ],
+  "oldChatReloadVerified": true,
+  "visibleTechnicalPrefixes": false,
+  "sceneUiUnchanged": true,
+  "visibleMiraNoraTrustAffinity": "50/50",
+  "rawDatabaseMutationAudited": false,
+  "rawPostAudited": false,
+  "installedBinaryHashVerified": false,
+  "diagnosticRevisionIsNotBuildFingerprint": true,
+  "worldSelection": "ТЕСТ DeepRole — Мастерская у моста",
+  "finalChatUrl": "https://chat.deepseek.com/a/chat/s/85a73980-6550-44a5-8e44-7996b5d8a247",
+  "newCleanChatContainsNoPreviousCorrectNativeAnswerBeforeManualControl": true,
+  "manuallyPastedGoldOrRecap": false,
+  "runtimeSourceUnchangedFromRP344Freeze": true,
+  "automatedUnitOrUiSuitesRerun": false,
+  "buildsRerun": false,
+  "privateFullScreenshotsOnlyIgnoredOutput": true,
+  "next": "Repair RP344 retrieval/notice gaps separately; strengthen source attribution for unknown promise recipient; do not weaken active-tab guard. Large structured-source live/RP08 still open."
+}

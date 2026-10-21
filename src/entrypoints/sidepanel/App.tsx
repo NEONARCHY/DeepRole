@@ -1,4 +1,5 @@
 import { readJsonFile } from "../../core/read-json-file";
+import { menuTab } from "../../adapters/menu-tab";
 import { navigationText, type SettingsSection } from "../../core/navigation-i18n";
 import { SettingsNavigation } from "../shared/SettingsNavigation";
 import { LearningGuide, WelcomeFlow, useLearning } from "../shared/LearningGuide";
@@ -9,6 +10,7 @@ import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
 import { StoryDiagnostics } from "../shared/StoryDiagnostics";
 import { StoryWorkspace } from "../shared/StoryWorkspace";
+import { worldRestartPreview } from "../../core/world-restart-preview";
 import { WorldResetSetup } from "../shared/WorldResetSetup";
 import { storyUxText } from "../../core/story-ux-i18n";
 import { StoryUpdateSettings } from "../shared/StoryUpdateSettings";
@@ -138,8 +140,8 @@ export function App() {
   const [guideHub, setGuideHub] = useState(false);
   const [guideRequested, setGuideRequested] = useState(false);
   useEffect(() => {
-    const stop = observePhotoImages(document, id => repository.readPhoto(id));
-    const clear = setPortraitPhotoStorage(image => repository.storePhoto(image));
+    const stop = observePhotoImages(document, id => repository.readPhoto(id), (id, size) => repository.readPhotoPreview(id, size));
+    const clear = setPortraitPhotoStorage(image => repository.storePhoto(image), id => repository.readPhoto(id));
     return () => { stop(); clear(); };
   }, []);
   const [settings, setSettingsState] = useState<DeepRoleSettings>(DEFAULT_SETTINGS);
@@ -271,7 +273,7 @@ export function App() {
   const refreshPage = useCallback(async () => {
     const generation = ++pageGeneration.current;
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tab = await menuTab();
       if (generation !== pageGeneration.current) return;
       if (!tab?.id) return setPage(EMPTY_PAGE);
       const response = (await browser.tabs.sendMessage(tab.id, { type: "DR_GET_PAGE_STATE" } satisfies DeepRoleMessage)) as
@@ -311,14 +313,19 @@ export function App() {
     };
     browser.storage.onChanged.addListener(storageListener);
     const tabListener = () => { void refreshPage(); };
+    const visible = () => { if (!document.hidden) void refreshPage(); };
     const navigationListener = (_id: number, change: { url?: string; status?: string }) => { if (change.url || change.status === "complete") void refreshPage(); };
     browser.tabs.onActivated?.addListener(tabListener);
     browser.tabs.onUpdated?.addListener(navigationListener);
+    document.addEventListener("visibilitychange", visible);
+    window.addEventListener("focus", visible);
     return () => {
       browser.runtime.onMessage.removeListener(listener);
       browser.storage.onChanged.removeListener(storageListener);
       browser.tabs.onActivated?.removeListener(tabListener);
       browser.tabs.onUpdated?.removeListener(navigationListener);
+      document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("focus", visible);
     };
   }, [refresh, refreshPage, settings.locale]);
 
@@ -340,7 +347,7 @@ export function App() {
   const relevantProposals = proposals.filter((batch) => batch.worldId === (activeTab === "worlds" ? libraryWorld : scene.worldId));
   const lastChange = changes.find((change) => change.worldId === scene.worldId && !change.undoneAt);
   async function overrideMemory(id: string, action: "include" | "exclude" | "reset") {
-    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    const tab = await menuTab();
     if (!tab?.id) throw new Error("offsite");
     const result = await browser.tabs.sendMessage(tab.id, { type: "DR_MEMORY_OVERRIDE", id, action } satisfies DeepRoleMessage);
     if (!result?.ok) throw new Error(result?.error ?? "failed");
@@ -352,7 +359,7 @@ export function App() {
   }, [scene.worldId, worlds, loading]);
   async function changeScene(next: SceneState) {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tab = await menuTab();
       if (!tab?.id) throw new Error();
       const result = await browser.tabs.sendMessage(tab.id, { type: "DR_SET_SCENE", scene: next } satisfies DeepRoleMessage);
       if (!result?.ok) throw new Error();
@@ -363,7 +370,7 @@ export function App() {
   }
   async function applyTemplate(templateId: string) {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tab = await menuTab();
       if (!tab?.id) throw new Error();
       const result = await browser.tabs.sendMessage(tab.id, { type: "DR_APPLY_TEMPLATE", templateId } satisfies DeepRoleMessage);
       setToast(st(result?.ok ? "templateReady" : "emptyChatRequired"));
@@ -383,7 +390,7 @@ export function App() {
 
   async function runService(type: ServiceRequest["type"]) {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tab = await menuTab();
       if (!tab?.id) throw new Error("No active tab");
       const request: ServiceRequest = {
         id: createId("service"),
@@ -415,7 +422,7 @@ export function App() {
 
   async function applySnapshot(snapshotId: string) {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const tab = await menuTab();
       if (!tab?.id) throw new Error("No active tab");
       const result = await browser.tabs.sendMessage(tab.id, { type: "DR_APPLY_SNAPSHOT", snapshotId } satisfies DeepRoleMessage);
       if (!result?.ok) { setToast(at("handoffUnavailable")); return; }
@@ -572,7 +579,7 @@ export function App() {
           </div>
         </details></div>}
 
-        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
+        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace restartPreview={worldRestartPreview(entities, worlds.find(w => w.id === scene.worldId), page.chatId)} key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
         {settingsVisited && <div hidden={activeTab !== "settings"}><fieldset className="dr-settings-save-scope" disabled={settingsSaving} aria-busy={settingsSaving}>
           <SettingsView
             onExport={() => setExportRequest({ worldId: scene.worldId ?? libraryWorld })}

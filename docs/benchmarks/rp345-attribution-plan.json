@@ -1,0 +1,8 @@
+{
+  "milestone": "RP345",
+  "frozenBeforeFollowupSend": true,
+  "reason": "Manual clean-chat control supplied all six expected chains but added an unsupported recipient: Nora promised calibration to Mira. The accepted entry names Nora as calibrator and Mira as a required signatory; it does not directly name the calibration promise recipient.",
+  "prompt": "[Вне игры: в записи об обещании Норы именно по калибровке флюгера получатель обещания назван прямо? Кому она его дала? Отдели дословные сведения от догадки.]",
+  "expected": ["recipient of calibration promise not directly stated", "do not infer recipient from required Mira signature or separate key promise"],
+  "scope": "Post-observation targeted attribution probe, not an independent holdout. Try documented native-tab pressKey instead of Playwright press once; preserve any preparation refusal."
+}

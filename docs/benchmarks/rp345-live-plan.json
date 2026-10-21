@@ -1,0 +1,36 @@
+{
+  "milestone": "RP345",
+  "date": "2026-10-20",
+  "frozenBeforeFirstSend": true,
+  "chatUrl": "https://chat.deepseek.com/a/chat/s/6cd8d028-3790-46f1-81d3-b269c50ff3e1",
+  "chatTitle": "Условия Норы",
+  "world": "ТЕСТ DeepRole — Мастерская у моста",
+  "scope": "Real DeepSeek on existing test lore, not a new independent 1024-fact retrieval benchmark. Installed binary hash unverified. Existing native conversation can help answers.",
+  "mode": "Every prompt is bracketed OUT OF CHARACTER; do not progress the scene. No answer facts manually added to outgoing questions.",
+  "expectedState": {
+    "people": ["Артём", "Мира", "Нора"],
+    "scores": "Mira/Nora trust50 affinity50",
+    "key": "Nora holds brass eastern-workshop key; seal unchecked; no handover",
+    "nora": "calibration awaits keeper written permission, Mira signature, extra mounting inspection; none done",
+    "mira": "her separate inspection awaits security call; call absent",
+    "power": "restored, not calibration or inspection",
+    "access": "previous pass revoked; new pass absent",
+    "ownership": "keeper ownership only Artyom hypothesis, not established",
+    "closed": "north-lamp repair and blue drawing parcel delivered to Mira are separate fulfilled tasks"
+  },
+  "cases": [
+    {"id":"compound-three","prompt":"[Вне игры: хочу одним ходом попросить Нору закончить калибровку, Миру — её проверку, а затем забрать у Норы ключ для Миры. Какие отдельные условия ещё мешают каждому шагу? Не разыгрывай действия.]","expected":["Nora permission+signature+mounting inspection absent","Mira security call absent","key seal condition absent, Nora still holder"],"mustNot":["fulfill any task","merge Nora and Mira conditions"]},
+    {"id":"false-readiness","prompt":"[Вне игры: питание восстановили и пакет доставили — значит с флюгером уже всё закончено и можно закрыть оба обещания?]","expected":["reject completion","power and delivered parcel separate from outstanding calibration and inspection"],"mustNot":["close either promise"]},
+    {"id":"free-description","prompt":"[Вне игры: с той медной штукой наверху — кто собирался её настраивать, кто осматривать и чего им ещё не хватает?]","expected":["Nora calibrates after permission,signature,mount check","Mira inspects after security call"],"mustNot":["invent new clearance"]},
+    {"id":"short-reference","prompt":"[Вне игры: а её обещание тогда уже можно считать выполненным? Если непонятно, о чьём именно я спрашиваю, так и скажи.]","expected":["ask which woman or distinguish both","neither promise fulfilled"],"mustNot":["confidently assign ambiguous her","complete task"]},
+    {"id":"revoked-access","prompt":"[Вне игры: можно пройти к флюгеру по прежнему допуску, раз питание уже есть, и заодно начать осмотр?]","expected":["old pass revoked","new pass missing","power not access permission"],"mustNot":["authorize old pass"]},
+    {"id":"owner-uncertainty","prompt":"[Вне игры: кому точно принадлежит флюгер? Мне нужен установленный факт, а не чьё-то предположение.]","expected":["owner unconfirmed","keeper only Artyom hypothesis"],"mustNot":["state keeper as proven owner"]},
+    {"id":"hypothetical","prompt":"[Вне игры: если представить, что смотритель подписал разрешение, Мира расписалась и охрана позвонила, что ещё останется проверить? Такое предположение само меняет текущую сцену?]","expected":["Nora extra mounting inspection remains","hypothesis does not alter actual pending conditions or scene"],"mustNot":["record hypothetical approvals or call"]},
+    {"id":"closed-versus-open","prompt":"[Вне игры: перечисли отдельно уже закрытые дела и ещё открытые обязательства. Не принимай старый ремонт фонаря за проверку его пломбы.]","expected":["north lamp repaired","blue drawing parcel delivered to Mira","Nora and Mira weather-vane obligations pending","key promise pending seal"],"mustNot":["reopen delivered parcel","consider lighthouse seal checked"]},
+    {"id":"unknown-object","prompt":"[Вне игры: плазменную катушку уже можно отправить владельцу? Что про неё достоверно известно в нашей истории?]","expected":["no established coil history,owner,clearance","request clarification or acknowledge unknown"],"mustNot":["invent coil owner or delivery"]},
+    {"id":"english-compound","prompt":"[Out of character: can Nora finish her calibration, Mira complete her inspection, and Mira collect the workshop key now? Separate the unmet conditions and do not advance the scene.]","expected":["Nora permission+signature+mount check","Mira security call","key seal unchecked, Nora holds it"],"mustNot":["fulfill any of the three actions"]},
+    {"id":"quoted-negative","prompt":"[Вне игры: я читаю план «Нора настроила, Мира проверила, ключ передан», но это только цитата, и я прямо говорю, что ничего этого не произошло. Какое состояние сейчас настоящее?]","expected":["quoted plan not event","calibration and inspection not begun","key with Nora, seal unchecked"],"mustNot":["save quoted completion"]},
+    {"id":"after-reload","afterReload":true,"prompt":"[Вне игры: после перезагрузки напомни фактическое состояние: у кого ключ, что с пломбой, начаты ли калибровка и проверка флюгера, и остались ли исходные условия?]","expected":["key Nora,seal unchecked","calibration and inspection not started","permission+signature+mount check+security call still outstanding"],"mustNot":["persist prior hypothetical or quoted fulfillment"]}
+  ],
+  "checks": ["completed visible answers, not reasoning drafts","no visible technical prefixes after reload","test world and three-character scene persist","UI scores remain50/50 where visible","no extra model repair calls initiated by the tester","final screenshot stays local because sidebar is personal"]
+}

@@ -8,6 +8,8 @@ import { storyContentRelevance } from "./story-content-relevance";
 import { taskProgressRecall } from './story-task-progress-recall';
 import { repeatSelectionFacts,repeatSelectionTopic } from './story-repeat-selection';
 import { narrativeRecallFacts, NARRATIVE_RECALL_GUIDE } from './story-narrative-recall';
+import { taskHistorySources } from './story-task-history';
+import type { TaskArchive } from './story-task-archive';
 import { discussionPriorityFacts } from "./story-discussion-priority";
 import { flexiblePriorityFacts } from "./story-flexible-priority";
 import { storyActionSequence, sequencePriorityFacts } from "./story-sequence-priority";
@@ -51,7 +53,7 @@ export interface GameContextInput extends RankMemoryInput {
  readOnly?:boolean;
  worlds:WorldProfile[];
  character?:Parameters<typeof characterInstruction>;
-  story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[]};
+  story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[];taskArchive?:TaskArchive};
  choices?:boolean;
  snapshot?:HandoffSnapshot|null;
  continuation?:StoryContinuation;
@@ -66,9 +68,9 @@ const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
  * calls, transcript deletion, fuzzy identity replacement or partial JSON cuts. */
-export interface GameContextOptions { memoryTransport?: "compact"|"legacy"|"columns"; memoryPrefixes?: boolean; memoryPrefixTables?: boolean; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean; contextualRecall?: boolean; taskProgressRecall?: boolean; repeatSelection?: boolean; searchIndex?: GameSearchIndex }
+export interface GameContextOptions { taskHistoryRecall?: boolean; memoryTransport?: "compact"|"legacy"|"columns"; memoryPrefixes?: boolean; memoryPrefixTables?: boolean; contentRelevance?: boolean; topicAdmission?: boolean; continuationBalance?: boolean; actionBalance?: boolean; taskGoalBalance?: boolean; compoundActionBalance?: boolean; naturalRecall?: boolean; lastingRecall?: boolean; referenceRecall?: boolean|"guard"; referenceBundle?: boolean; discussionPriority?: boolean; flexiblePriority?: boolean; sequencePriority?: boolean; budgetPriority?: boolean; contextualRecall?: boolean; taskProgressRecall?: boolean; repeatSelection?: boolean; searchIndex?: GameSearchIndex }
 type PriorityProof = { facts: StoryFact[]; selected: StoryFact[]; roles?: StoryRoleReader; episodes?: EpisodeReader; referenceGuard: string; admission: ReturnType<typeof storyContentRelevance>["admission"]; action: ReturnType<typeof storyActionBalance>; names: string[] };
-type PriorityReservation = { ids: string[]; covers: (selected:StoryFact[])=>boolean; budgetRows?: boolean; referenceGuard?:string; observe?: (reason:"complete"|"budget"|"unverified")=>void };
+type PriorityReservation = { ids: string[]; covers: (selected:StoryFact[])=>boolean; budgetRows?: boolean; referenceGuard?:string; historySources?:StoryFact[]; observe?: (reason:"complete"|"budget"|"unverified")=>void };
 /** RP277: source-backed contextual candidates supplement the COMPLETE prior
  * selection. No draft rewrite, pronoun identity inference or storage mutation. */
 export function compileGameContext(input:GameContextInput, options:GameContextOptions = {}, observe?:(coverage:GameMemoryCoverage)=>void) {
@@ -100,7 +102,8 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
   }
  }
   const finish=(result:typeof prior,next=coverage)=>{
-   const supplemented=compileNarrativeRecall(input,options,proof,result,next);
+    const narrative=compileNarrativeRecall(input,options,proof,result,next);
+    const supplemented=compileTaskHistoryRecall(input,options,proof?{...proof,selected:narrative.selected}:undefined,narrative.context,narrative.coverage);
    observe?.(supplemented.context.report.required>supplemented.context.report.limit?{kind:'required-overflow'}:premiseGuardEnabled(input,options)&&supplemented.coverage.kind==='complete'?{kind:'unverified',reason:'query'}:supplemented.coverage);
    return supplemented.context;
   };
@@ -126,7 +129,7 @@ export function compileGameContext(input:GameContextInput, options:GameContextOp
  return finish(prior,attempt.reason==='budget'?{kind:'budget',sources:ids.length,selected:ids.filter(id=>oldIds.has(id)).length}:{kind:'unverified',reason:'source'});
 }
 function compileNarrativeRecall(input:GameContextInput,options:GameContextOptions,proof:PriorityProof|undefined,prior:ReturnType<typeof compileGameContextPass>,coverage:GameMemoryCoverage){
- const unchanged={context:prior,coverage};
+ const unchanged={context:prior,coverage,selected:proof?.selected??[]};
  if(!proof||!input.story||input.restart||input.character?.[9]||options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||options.actionBalance===false||options.compoundActionBalance===false||options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.budgetPriority===false)return unchanged;
   // The existing obligation inquiry/reference grammar already supplies its own
   // whole-source proof and uncertainty guard. Do not reinterpret that lane with
@@ -147,11 +150,11 @@ function compileNarrativeRecall(input:GameContextInput,options:GameContextOption
   // Disabling repeat selection must not silently discard discussions through
   // this supplementary lane either. Keep the prior complete rendering contract.
   if(options.repeatSelection===false&&group.repeats.size)return unchanged;
- if(!group.primary.length)return {context:prior,coverage:incomplete(group.reason)};
+  if(!group.primary.length)return {...unchanged,coverage:incomplete(group.reason)};
  const repeatIds=new Set([...group.repeats].map(storyFactIdentity));
   const previous=proof.selected.filter(f=>!repeatIds.has(storyFactIdentity(f)));
-  const ids=[...new Set((alreadySelected?previous:[...group.primary,...previous]).map(storyFactIdentity))];
- if(ids.length>BUDGET_SOURCE_ROWS)return {context:prior,coverage:incomplete('capacity')};
+  const ids=[...new Set([...previous,...group.primary].map(storyFactIdentity))];
+  if(ids.length>BUDGET_SOURCE_ROWS)return {...unchanged,coverage:incomplete('capacity')};
  let selected:StoryFact[]=[];
  const attempt:{reason:'complete'|'budget'|'unverified'}={reason:'unverified'};
  const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,covers:chosen=>ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)),referenceGuard:[proof.referenceGuard,NARRATIVE_RECALL_GUIDE].filter(Boolean).join('\n'),observe:r=>{attempt.reason=r}},p=>{selected=p.selected});
@@ -162,9 +165,25 @@ function compileNarrativeRecall(input:GameContextInput,options:GameContextOption
    if(alreadySelected&&candidate.report.explanation&&prior.report.explanation){
     for(const key of ['openTasks','persistentFacts'] as const){const value=prior.report.explanation[key];if(value!==undefined)candidate.report.explanation[key]=value;}
    }
-   return {context:candidate,coverage:incomplete('query')};
+    return {context:candidate,coverage:incomplete('query'),selected};
   }
- return {context:prior,coverage:attempt.reason==='budget'?{kind:'budget' as const,sources:ids.length,selected:ids.filter(id=>proof.selected.some(f=>storyFactIdentity(f)===id)).length}:incomplete('source')};
+  return {...unchanged,coverage:attempt.reason==='budget'?{kind:'budget' as const,sources:ids.length,selected:ids.filter(id=>proof.selected.some(f=>storyFactIdentity(f)===id)).length}:incomplete('source')};
+}
+function compileTaskHistoryRecall(input:GameContextInput,options:GameContextOptions,proof:PriorityProof|undefined,prior:ReturnType<typeof compileGameContextPass>,coverage:GameMemoryCoverage){
+ const unchanged={context:prior,coverage};
+ if(options.taskHistoryRecall===false||!proof||!input.story||input.restart||input.character?.[9]||options.contextualRecall===false||options.referenceRecall===false||options.referenceRecall==='guard'||options.referenceBundle===false||options.contentRelevance===false||options.topicAdmission===false||options.actionBalance===false||options.compoundActionBalance===false||options.sequencePriority===false||options.flexiblePriority===false||options.discussionPriority===false||options.budgetPriority===false)return unchanged;
+  const archived=input.story.taskArchive?.facts??[];
+  // Canonical current values always follow historical sources. The archive
+  // supplements evidence, never becomes the ranking/index source of truth.
+  const all=[...archived,...input.story.facts];
+  const group=taskHistorySources(all,proof.selected,input.draft,proof.names,proof.roles,proof.episodes);
+ if(!group)return unchanged;
+ if('reason' in group)return {...unchanged,coverage:{kind:'incomplete' as const,reason:group.reason!}};
+ const ids=[...new Set([...group.primary,...proof.selected].map(storyFactIdentity))];
+ let selected:StoryFact[]=[];const attempt:{reason:'complete'|'budget'|'unverified'}={reason:'unverified'};
+ const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,historySources:group.primary,covers:chosen=>ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)),referenceGuard:[proof.referenceGuard,prior.text.includes(NARRATIVE_RECALL_GUIDE)?NARRATIVE_RECALL_GUIDE:'',group.guide].filter(Boolean).join('\n'),observe:r=>{attempt.reason=r}},p=>{selected=p.selected});
+ if(candidate.report.required<=candidate.report.limit&&candidate.report.total<=candidate.report.limit&&ids.every(id=>selected.some(f=>storyFactIdentity(f)===id)))return {context:candidate,coverage:{kind:'incomplete' as const,reason:'query' as const}};
+ return {...unchanged,coverage:attempt.reason==='budget'?{kind:'budget' as const,sources:ids.length,selected:proof.selected.length}:{kind:'incomplete' as const,reason:'source' as const}};
 }
 /** RP325: preserve all substantive sources, reserving their complete bundle
  * before explicitly empty repeated speech. Failed proof/budget is exact prior. */
@@ -316,12 +335,19 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
  const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
-  const roleSeeds=input.story?.roleSeeds??input.story?.world.sharedGame?.factRoleSeeds;
+  const currentSeeds=input.story?.roleSeeds??input.story?.world.sharedGame?.factRoleSeeds;
+  const roleSeeds=input.story?.taskArchive ? [...input.story.taskArchive.roleSeeds,...currentSeeds??[]] : currentSeeds;
   const episodeSources=input.story?.episodeSources??input.story?.world.sharedGame?.episodeSources;
    const episodes=episodeSources?createEpisodeReader(roleSeeds,episodeSources):undefined;
    const time=input.story&&(episodes||input.story.facts.some(f=>f.claim?.lifetime||isGameTimeFact(f)))?createStoryTimeReader(input.story.facts,episodes??createEpisodeReader()):undefined;
   const roles=retrievalScope?createStoryRoleReader(retrievalScope,input.draft,roleSeeds||input.story?.world.sharedGame?.managed?storedRoleReader(roleSeeds??[],input.entities??[],retrievalWorld!,input.story?.world.sharedGame?.mergeSeeds,!!input.story?.world.sharedGame?.managed):undefined):undefined;
  const facts=rankStoryFacts(input.story?.facts??[],input.draft,retrievalScope,roles,options.contentRelevance!==false);
+  // Only a proved atomic historical bundle can expose superseded task rows.
+  // Normal ranking/index/canon remain compacted to the latest task slot.
+  for(const fact of priority?.historySources??[]){
+   const index=[...input.story?.taskArchive?.facts??[],...input.story?.facts??[]].findIndex(f=>storyFactIdentity(f)===storyFactIdentity(fact)&&f.quote===fact.quote);
+   if(index>=0&&!facts.some(f=>storyFactIdentity(f.fact)===storyFactIdentity(fact)))facts.push({fact,index,score:0});
+  }
  const reference=options.referenceRecall!==false&&input.story&&!input.restart&&retrieval?storyObjectReference(input.draft,retrieval.relevanceNames)??(options.referenceBundle!==false?storyLiteralReference(input.draft,facts.map(f=>f.fact),retrieval.relevanceNames):undefined):undefined;
   // Detect supported short obligation references before ANY selection pass. A
   // failed bridge/budget/source check must retain the guard in its exact prior.

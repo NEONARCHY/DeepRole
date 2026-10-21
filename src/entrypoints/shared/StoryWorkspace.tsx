@@ -15,10 +15,11 @@ import { StoryEpisodePanel } from "./StoryEpisodePanel";
 import type { StoryAutomationMode, StoryAutomationPolicy } from "../../core/story-automation";
 import type { WorldGame } from "../../core/world-game";
 import type { MemoryBatchStatus } from "../../core/story-memory-batch";
+import type { WorldRestartPreview } from "../../core/world-restart-preview";
 const sections = ["overview", "memory", "tasks", "people", "episodes", "timeline"] as const;
 type Section = typeof sections[number];
 const sectionIcons = { overview: LayoutDashboard, memory: BrainCircuit, tasks: ListChecks, people: Users, episodes: FileText, timeline: History };
-export function StoryWorkspace({ locale, worldId, worldName, chatId, connected, active, generating, onPlay, onWorlds, sharedGame, archives, automation, onAutomation,onFullReset }: { locale: Locale; worldId: string | null; worldName?: string; chatId: string | null; connected: boolean; active: boolean; generating: boolean; onPlay: () => void; onWorlds: () => void; sharedGame?: WorldGame; archives?: number; automation?: StoryAutomationPolicy; onAutomation?: (mode: StoryAutomationMode) => Promise<void>;onFullReset?:()=>void }) {
+export function StoryWorkspace({ locale, worldId, worldName, chatId, connected, active, generating, onPlay, onWorlds, sharedGame, archives, automation, onAutomation,onFullReset,restartPreview }: { locale: Locale; worldId: string | null; worldName?: string; chatId: string | null; connected: boolean; active: boolean; generating: boolean; onPlay: () => void; onWorlds: () => void; sharedGame?: WorldGame; archives?: number; automation?: StoryAutomationPolicy; onAutomation?: (mode: StoryAutomationMode) => Promise<void>;onFullReset?:()=>void;restartPreview?:WorldRestartPreview }) {
  const [visited, setVisited] = useState(active); useEffect(() => { if (active) setVisited(true); }, [active]);
  const [section, setSection] = useState<Section>("overview");
  const [opened, setOpened] = useState<Partial<Record<Section, boolean>>>({ overview: true });
@@ -29,10 +30,10 @@ export function StoryWorkspace({ locale, worldId, worldName, chatId, connected, 
  useEffect(() => { if (initialSection.current) { initialSection.current = false; return; } heading.current?.focus(); }, [section]);
  const inactiveChat = !!sharedGame && sharedGame.activeChatId !== chatId;
   const t = (key: Parameters<typeof storyUxText>[1]) => storyUxText(locale, key);
-  const gameAction = async (reset = false, undo = false) => {
+  const gameAction = async (reset = false, undo = false, expectedBase?: string) => {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !chatId || !worldId) throw Error("story-binding-conflict");
-    const result = await browser.tabs.sendMessage(tab.id, reset ? { type: "DR_STORY_GAME", operation: undo ? "restore" : "reset", manual: "stop", scope: { chatId, worldId } } : { type: "DR_RESUME_WORLD_GAME", chatId, worldId });
+    const result = await browser.tabs.sendMessage(tab.id, reset ? { type: "DR_STORY_GAME", operation: undo ? "restore" : "reset", manual: "stop", scope: { chatId, worldId }, ...(expectedBase ? { expectedBase } : {}) } : { type: "DR_RESUME_WORLD_GAME", chatId, worldId });
     if (!result?.ok) throw Error(result?.error ?? "story-game-inactive");
   };
  const changeAutomation = async (mode: StoryAutomationMode) => {
@@ -59,11 +60,11 @@ export function StoryWorkspace({ locale, worldId, worldName, chatId, connected, 
      {automation && sharedGame && (sharedGame.managed || !!sharedGame.pendingReviewIds?.length) && !inactiveChat && <StoryAutomationInbox locale={locale} tabs={browser.tabs} scope={{ worldId, chatId }} revision={sharedGame.revision} blocked={generating}/>}
       <details className="settings-card dr-story-advanced"><summary>{t("extraCheck")}{(batchStatus?.reason === "failed" || batchStatus?.reason === "running") && <span className="dr-workspace-status" data-warning={batchStatus.reason === "failed"}>{locale === "ru" ? batchStatus.reason === "failed" ? "Нужно внимание" : "Идёт проверка" : batchStatus.reason === "failed" ? "Needs attention" : "Review running"}</span>}</summary><p className="setting-copy">{t("extraCheckHint")}</p><StoryMemoryBatchPanel locale={locale} scope={{worldId,chatId}} recording={!!sharedGame?.managed} revision={sharedGame?.revision} blocked={generating || inactiveChat} onStatusChange={setBatchStatus}/></details>
     </div>
-    {opened.episodes && <div hidden={section !== "episodes"}>{sharedGame ? <StoryEpisodePanel locale={locale} game={sharedGame}/> : <p>{t("initial")}</p>}</div>}
-    {opened.tasks && <div data-dr-guide="story-tasks-content" hidden={section !== "tasks"}>{sharedGame ? <StoryTaskPanel locale={locale} facts={sharedGame.facts}/> : <p>{t("initial")}</p>}</div>}
-    <div hidden={section === "episodes" || section === "tasks"}><ActiveStoryReviewCard locale={locale} tabs={browser.tabs} guided workspaceSection={section === "episodes" || section === "tasks" ? "overview" : section} operationBlocked={generating} readOnly={inactiveChat} scope={{ worldId, chatId }}/></div>
+    {opened.episodes && sharedGame?.managed && <div hidden={section !== "episodes"}><StoryEpisodePanel locale={locale} game={sharedGame}/></div>}
+    {opened.tasks && sharedGame?.managed && <div data-dr-guide="story-tasks-content" hidden={section !== "tasks"}><StoryTaskPanel locale={locale} facts={sharedGame.facts}/></div>}
+    <div hidden={(section === "episodes" || section === "tasks") && !!sharedGame?.managed}><ActiveStoryReviewCard locale={locale} tabs={browser.tabs} guided workspaceSection={section} operationBlocked={generating} readOnly={inactiveChat} scope={{ worldId, chatId }}/></div>
     <div hidden={section !== "overview"} className="dr-workspace-stack">
-     {sharedGame && <details className="settings-card dr-story-advanced" open={inactiveChat || undefined}><summary>{t("maintenance")}</summary><p className="setting-copy">{t("maintenanceHint")}</p><WorldGamePanel worldId={worldId} worldName={worldName} locale={locale} game={sharedGame} chatId={chatId} archives={archives} blocked={generating} onResume={() => gameAction()} onReset={() => gameAction(true)} onUndoReset={() => gameAction(true,true)} onFullReset={onFullReset}/></details>}
+     {sharedGame && <details className="settings-card dr-story-advanced" open={inactiveChat || undefined}><summary>{t("maintenance")}</summary><p className="setting-copy">{t("maintenanceHint")}</p><WorldGamePanel worldId={worldId} worldName={worldName} locale={locale} game={sharedGame} chatId={chatId} archives={archives} blocked={generating} onResume={() => gameAction()} restartPreview={restartPreview} onReset={base => gameAction(true,false,base)} onUndoReset={() => gameAction(true,true)} onFullReset={onFullReset}/></details>}
      <details className="settings-card dr-story-advanced"><summary>{t("advanced")}</summary><p className="setting-copy">{t("advancedHint")}</p><ActiveStoryCheckpoint locale={locale} tabs={browser.tabs}/></details>
     </div>
    </section>

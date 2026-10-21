@@ -82,17 +82,17 @@ export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=fa
   </>}
   {token&&<><h3>{t.final}</h3><p className="dr-cast-warning">{t.finalHint}</p><p><strong>{name}</strong></p><label className="field-label" htmlFor={id+"name"}>{t.name}</label><input className="input" id={id+"name"} value={typed} disabled={disabled} onChange={e=>setTyped(e.target.value)}/><label className="checkbox-row"><input type="checkbox" checked={second} disabled={disabled} onChange={e=>setSecond(e.target.checked)}/><span>{t.second}</span></label></>}
   {job?.phase==="applied"&&<><p role="status">{t.done}</p><button type="button" className="button secondary" disabled={busy} onClick={()=>void act({type:"DR_CAST",action:"open-reset-chat",id:job.id})}>{t.openFresh}</button></>}
-  {!!job?.diagnostics?.length&&<CastDiagnostics job={job} locale={locale}/>}{error&&<p className="error-text" role="alert">{error}</p>}
+   {job&&(!!job.diagnostics?.length||!!job.error)&&<CastDiagnostics job={job} locale={locale}/>}{error&&<p className="error-text" role="alert">{error}</p>}
  </div><footer>
   {(draft||token)&&<button type="button" className="button secondary" disabled={busy} onClick={()=>token?(setToken(""),setFirst(false)):setDraft(null)}>{token?t.back:t.toPreparation}</button>}
   {draft&&!token&&<button type="button" className="button" disabled={disabled||stale||!first||!clean} onClick={()=>void act({type:"DR_CAST",action:"confirm-reset",id:job!.id,draft,entries})}>{t.next}</button>}
   {token&&<button type="button" className="button danger" disabled={disabled||stale||!second||typed!==name} onClick={()=>void act({type:"DR_CAST",action:"apply-reset",id:job!.id,token,worldName:typed})}>{t.apply}</button>}
  </footer></div></div>;
  return <div ref={root}>
-  {!hideLauncher&&<button type="button" className="button secondary" disabled={blocked||!active} onClick={()=>{if(ready&&clean&&!stale)review();else setOpen(true);}}>{t.title}</button>}
+  {!hideLauncher&&<button type="button" className="button secondary" disabled={blocked||!active} onClick={()=>{if(ready&&clean&&!stale)review();else setOpen(true);}}>{t.launch}</button>}
   {!open&&job&&active&&(ready||preparing||job.phase==="error"||job.cleanup==="failed")&&<section className="dr-reset-status" data-state={stale||job.phase==="error"?"error":ready?"ready":"preparing"} aria-label={t.title}>
    <strong role="status">{stale?t.stoppedTitle:ready?t.readyTitle:preparing?t.preparing:t.stoppedTitle}</strong><p>{stale?t.stale:ready?t.readyHint:preparing?t.preparingHint:t.stoppedHint}</p>
-   {ready&&<p>{t.phase}: {job.draft?.characters.length??0}</p>}
+    <p>{t.phase}: {job.draft?.characters.length??0}{job.reset?" / "+job.reset.people.length:""}</p>
    <button type="button" className={ready&&clean&&!stale?"button":"button secondary"} disabled={disabled} onClick={()=>{if(ready&&clean&&!stale)review();else setOpen(true);}}>{ready&&clean&&!stale?t.review:t.showPreparation}</button>
   </section>}
   {body&&createPortal(body,(root.current?.getRootNode() instanceof ShadowRoot?root.current.getRootNode():document.body) as Element)}

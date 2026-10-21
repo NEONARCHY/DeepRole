@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, ChevronDown, X } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronLeft, X } from "lucide-react";
 import { assistantText } from "../../core/assistant-i18n";
 import type { ActivationMode, Locale, MemoryCandidate, MemoryProposalBatch, MemoryOverrides, ContextSelection } from "../../core/types";
 import { MemoryModeControl } from "./MemoryModeControl";
@@ -8,7 +8,7 @@ import { experienceText } from "../../core/experience-i18n";
 import { TooltipButton } from "./TooltipButton";
 import { relationshipText } from "../../core/relationship-i18n";
 
-export function QuickMemory(props: { locale: Locale; worldName?: string; onSave: (text: string, mode: ActivationMode, title: string) => Promise<void>; onDraft: (brief: string) => Promise<void>; onClose: () => void }) {
+export function QuickMemory(props: { locale: Locale; worldName?: string; backLabel?: string; onSave: (text: string, mode: ActivationMode, title: string) => Promise<void>; onDraft: (brief: string) => Promise<void>; onClose: () => void }) {
   const t = (key: Parameters<typeof assistantText>[1]) => assistantText(props.locale, key);
   const [text, setText] = useState(""); const [title, setTitle] = useState(""); const [mode, setMode] = useState<ActivationMode>("smart");
   const [brief, setBrief] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
@@ -19,7 +19,7 @@ export function QuickMemory(props: { locale: Locale; worldName?: string; onSave:
     finally { setBusy(false); }
   }
   return <section className="dr-assistant" aria-label={t("remember")} aria-busy={busy}>
-    <header><strong>{t("remember")}</strong><button type="button" disabled={busy} aria-label={t("close")} onClick={props.onClose}><X aria-hidden="true" size={18} /></button></header>
+    <header><strong>{t("remember")}</strong><button type="button" className={props.backLabel?"dr-assistant-back":undefined} disabled={busy} aria-label={props.backLabel??t("close")} onClick={props.onClose}>{props.backLabel?<><ChevronLeft aria-hidden="true" size={18}/><span>{props.backLabel}</span></>:<X aria-hidden="true" size={18}/>}</button></header>
     <p className="dr-inline-note">{experienceText(props.locale, props.worldName ? "quickScope" : "quickScopeGlobal", { name: props.worldName ?? "" })}</p>
     <label>{t("content")}<textarea disabled={busy} placeholder={experienceText(props.locale, "contentPlaceholder")} maxLength={30000} rows={4} value={text} onChange={(e) => setText(e.target.value)} /></label>
     <label>{t("title")}<input disabled={busy} maxLength={240} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
@@ -34,7 +34,7 @@ type ProfileChoice = { description: string; appearance: string; personality: str
 const profileFields = ["description", "appearance", "personality", "goals", "background"] as const;
 const profileLabels = { ru: { description: "Описание", appearance: "Внешность", personality: "Характер", goals: "Цели", background: "О персонаже" }, en: { description: "Description", appearance: "Appearance", personality: "Personality", goals: "Goals", background: "Background" } } as const;
 
-export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch; introduction?: string; saveLabel?: string; keepLabel?: string; onKeepMemory?: () => Promise<void>; onSave: (items: MemoryCandidate[], profileChoice?: ProfileChoice) => Promise<void>; onDiscard: () => Promise<void>; onClose: () => void }) {
+export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch; backLabel?: string; introduction?: string; saveLabel?: string; keepLabel?: string; onKeepMemory?: () => Promise<void>; onSave: (items: MemoryCandidate[], profileChoice?: ProfileChoice) => Promise<void>; onDiscard: () => Promise<void>; onClose: () => void }) {
   const t = (key: Parameters<typeof assistantText>[1]) => assistantText(props.locale, key);
   const [items, setItems] = useState(() => structuredClone(props.batch.items).map((item) => ({ ...item, selected: false })));
   const [profileSelected, setProfileSelected] = useState(false);
@@ -49,7 +49,7 @@ export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch
   const patch = (id: string, values: Partial<MemoryCandidate>) => setItems((all) => all.map((item) => item.id === id ? { ...item, ...values } : item));
   async function act(task: () => Promise<void>) { if (busy) return; setBusy(true); setError(""); try { await task(); props.onClose(); } catch { setError(t("conflict")); } finally { setBusy(false); } }
   return <section className="dr-assistant dr-memory-review" aria-label={t("review")} aria-busy={busy}>
-    <header><div className="dr-review-heading"><strong>{t("review")}</strong><small>{t("reviewCount").replace("{selected}", String(selectedCount)).replace("{total}", String(items.length + Number(!!props.batch.profileChange)))}</small></div><button type="button" disabled={busy} aria-label={t("close")} onClick={props.onClose}><X aria-hidden="true" size={18} /></button></header>
+    <header><div className="dr-review-heading"><strong>{t("review")}</strong><small>{t("reviewCount").replace("{selected}", String(selectedCount)).replace("{total}", String(items.length + Number(!!props.batch.profileChange)))}</small></div><button type="button" className={props.backLabel?"dr-assistant-back":undefined} disabled={busy} aria-label={props.backLabel??t("close")} onClick={props.onClose}>{props.backLabel?<><ChevronLeft aria-hidden="true" size={18}/><span>{props.backLabel}</span></>:<X aria-hidden="true" size={18}/>}</button></header>
     <p className="dr-review-intro">{props.batch.scanVersions ? props.locale === "ru" ? `DeepRole проверил все ${Object.keys(props.batch.scanVersions).length} записей этого мира. Сравните предложения DeepSeek: он может пропустить косвенное упоминание.` : `DeepRole checked all ${Object.keys(props.batch.scanVersions).length} records in this world. Review DeepSeek's suggestions: it may miss indirect mentions.` : experienceText(props.locale, "reviewHint")}</p>
     {props.introduction && <p className="dr-review-intro">{props.introduction}</p>}
     <div className="dr-review-selection"><button type="button" disabled={busy || !availableCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: !item.issue }))); setProfileSelected(!!props.batch.profileChange); }}>{experienceText(props.locale, "reviewAll")}</button><button type="button" disabled={busy || !selectedCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: false }))); setProfileSelected(false); }}>{experienceText(props.locale, "reviewNone")}</button></div>

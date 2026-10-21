@@ -7,6 +7,7 @@ import { castChatId } from "../core/cast-chat";
 import type { FieldMessage } from "./isolated-field-coordinator";
 import type { FieldWorkerStage } from "../core/field-runtime";
 import { bootstrapFieldServiceScreen, createFieldServiceScreen, rememberFieldServiceScreen, finishFieldServiceScreenMarker } from "./field-service-screen";
+import { setServiceBackgroundWork } from "./service-background-render";
 
 const pause = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 const chat = () => castChatId(location.pathname);
@@ -18,6 +19,7 @@ export async function startIsolatedFieldWorker(): Promise<boolean> {
  const screen = earlyScreen ?? createFieldServiceScreen(first.presentation?.locale === "en" ? "en" : "ru");
  rememberFieldServiceScreen(first.id, first.presentation?.locale === "en" || earlyScreen?.host.lang === "en" ? "en" : "ru");
  const id: string = first.id, adapter = new DeepSeekDomAdapter(), marker = `[Request ID: ${id}]`;
+  setServiceBackgroundWork(id, true);
  let touched = false, stopped = false, cleaning = false, failedRequest = false, error = first.phase === "error", ownedChat: string | undefined = first.chatId;
  const capture = new CastReplyCapture(id, marker, false);
  const touch = (e: Event) => { if (!screen.owns(e) && e.isTrusted && (e.type === "input" || (e.target as Element)?.closest("a[href],button,[role=button]"))) touched = true; };
@@ -56,6 +58,7 @@ export async function startIsolatedFieldWorker(): Promise<boolean> {
   document.removeEventListener("click", touch, true); document.removeEventListener("input", touch, true); document.removeEventListener("visibilitychange", visibility); window.removeEventListener("message", failure); browser.runtime.onMessage.removeListener(onMessage);
   if (ok) finishFieldServiceScreenMarker();
   screen.update(ok ? error ? "failed" : "done" : "cleanup-failed");
+  setServiceBackgroundWork(id, false);
  };
  const onMessage = (m: any) => { if (m.type === "DR_FIELD_CLEANUP") { void cleanup(); return Promise.resolve({ ok: true }); } };
  browser.runtime.onMessage.addListener(onMessage);

@@ -31,7 +31,16 @@ export class PhotoAssets {
     if (config.enabled) { if (!raw || !row.encrypted) throw new Error("vault-locked"); return decryptJsonWithKey<string>(row.encrypted, await importKey(raw)); }
     if (!row.data) throw new Error("photo-missing"); return row.data.text();
   }
-  compact<T>(kind: string, data: T) { return mapRecordPhotos(kind, data, image => this.store(image)); }
+  compact<T>(kind: string, data: T) {
+    // One original may be assigned to many actions. Hash/store it once per save,
+    // including address existence checks; never retain originals between saves.
+    const staged = new Map<string, Promise<string>>();
+    return mapRecordPhotos(kind, data, image => {
+      let value = staged.get(image);
+      if (!value) { value = this.store(image); staged.set(image, value); }
+      return value;
+    });
+  }
   expand<T>(kind: string, data: T) { return mapRecordPhotos(kind, data, image => this.read(image)); }
 
   /** Stage the alternate representation without discarding the committed one.

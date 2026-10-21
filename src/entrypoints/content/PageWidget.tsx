@@ -1,9 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { flushSync } from "react-dom";
 import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
 import {GameMemoryNotice} from "../shared/GameMemoryNotice";
-import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell } from "lucide-react";
+import {memoryCoverageIssue} from "../../core/game-memory-coverage";
+import {gameMemoryCoverageText} from "../../core/game-memory-coverage-i18n";
+import {PageMemoryDialog} from "./PageMemoryDialog";
+import { MemoryBudgetEditor } from "./MemoryBudgetEditor";
+import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell, AlertTriangle, ChevronRight } from "lucide-react";
 import { WidgetDeck, WidgetTile, type WidgetLayout } from "./WidgetDeck";
 import { translate } from "../../core/i18n";
 import type { ContextSelection, ConversationEstimate, HandoffSnapshot, MemoryEntry } from "../../core/types";
@@ -93,6 +97,7 @@ export function PageWidget(props: {
   state: WidgetState;
   onAddCharacterAction?: (worldId: string, name: string) => Promise<string[]>;
   onPanelWidthChange?: (width: number) => Promise<void>;
+  onSaveMemoryBudget?: (budget: number, expected: WorldProfile) => Promise<void>;
   onAskSelfie?: (entityId: string) => Promise<void>;
   onSaveCharacter?: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>;
   onGenerateCharacterText?: CharacterTextRequestGenerator;
@@ -125,6 +130,7 @@ export function PageWidget(props: {
   onUndo?: (id: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const memoryDialogId = useId();
   const [adding, setAdding] = useState(false);
   const [attachQuery, setAttachQuery] = useState("");
   const [quick, setQuick] = useState(false);
@@ -136,7 +142,6 @@ export function PageWidget(props: {
   const [mapLayout, setMapLayout] = useState<"closed" | "compact" | "full">("closed");
   const menuFrame = useRef<HTMLIFrameElement>(null);
   const contextAnchor = useRef<HTMLDivElement>(null);
-  const [panelBounds, setPanelBounds] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
   const [contextPosition, setContextPosition] = useState(props.state.contextPosition);
   const chatAdapter = useRef(new DeepSeekDomAdapter());
   const [chatAnchor, setChatAnchor] = useState(() => chatAdapter.current.getChatTitleAnchor());
@@ -205,6 +210,9 @@ export function PageWidget(props: {
     return () => { observer.disconnect(); window.removeEventListener("resize", keepVisible); };
   }, [props.state.contextPosition?.x, props.state.contextPosition?.y, props.state.pageReady, props.state.startupError, props.authenticationPage]);
   const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate(props.state.locale, key, vars);
+  const memoryIssue = memoryCoverageIssue(props.state.selection.memoryCoverage, props.state.selection.contextReport);
+  const memoryCopy = gameMemoryCoverageText(props.state.locale);
+  const memoryIssueTitle = memoryIssue?.kind === "required-overflow" ? memoryCopy.requiredTitle : memoryIssue?.kind === "incomplete" ? memoryCopy.incompleteTitle : memoryCopy.budgetTitle;
   const count = props.state.selection.entries.length;
   const selected = props.state.selection.contextReport?.selected;
   const referenceCount = count + (selected ? selected.facts + selected.profiles + selected.continuation : 0);
@@ -266,35 +274,6 @@ export function PageWidget(props: {
     if (!id || !props.state.proposals?.some((batch) => batch.id === id)) return;
     setOpen(true); setQuick(false); setReviewId(id);
   }, [props.state.reviewProposalId, props.state.proposals]);
-  useLayoutEffect(() => {
-    if (!open || props.authenticationPage || props.state.vaultLocked || !props.state.pageReady) return;
-    const anchor = contextAnchor.current;
-    if (!anchor) return;
-    const place = () => {
-      // Anchor to the controls, not the entire portrait/status stack. A tall
-      // stack must never push the review's approval buttons outside the window.
-      const trigger = anchor.querySelector('[data-widget="memory"]:not([hidden]) > .dr-pill') ?? anchor.querySelector(".dr-widget-dock") ?? anchor.querySelector(".dr-pill-row") ?? anchor;
-      const rect = trigger.getBoundingClientRect();
-      const pad = 8;
-      const width = Math.max(0, Math.min(assistantOpen ? 420 : rect.width, window.innerWidth - pad * 2));
-      const top = Math.max(pad, Math.min(rect.bottom + 2, window.innerHeight - pad - Math.min(180, window.innerHeight - pad * 2)));
-      const maxHeight = assistantOpen ? Math.min(720, window.innerHeight - top - pad) : window.innerHeight - top - pad;
-      const next = {
-        left: Math.max(pad, Math.min(rect.left, window.innerWidth - width - pad)),
-        top,
-        width, maxHeight,
-      };
-      setPanelBounds(old => old && Object.keys(next).every(key => old[key as keyof typeof next] === next[key as keyof typeof next]) ? old : next);
-    };
-    const observer = new ResizeObserver(place);
-    observer.observe(anchor);
-    const tile = anchor.querySelector('[data-widget="memory"]');
-    if (tile) observer.observe(tile);
-    window.addEventListener("resize", place);
-    window.addEventListener("deeprole-layout-change", place);
-    place();
-    return () => { observer.disconnect(); window.removeEventListener("resize", place); window.removeEventListener("deeprole-layout-change", place); };
-  }, [open, assistantOpen, contextPosition?.x, contextPosition?.y, chatAnchor?.x, chatAnchor?.y, props.state.widgetLayout, props.authenticationPage, props.state.vaultLocked, props.state.pageReady]);
   if (props.authenticationPage || !props.state.pageReady) {
     return <HelpLocale.Provider value={props.state.locale}><div className="dr-root" aria-hidden="true" /></HelpLocale.Provider>;
   }
@@ -329,7 +308,10 @@ export function PageWidget(props: {
           {chatEstimate.atLeast && <small className="dr-chat-meter-note">{x("chatMeterAtLeast")}</small>}
           {props.onContinueStory && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring || !!props.state.continuation && !["review", "ready"].includes(props.state.continuation.phase)} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation?.phase === "review" ? "reviewAction" : props.state.continuation?.phase === "ready" ? "startSummary" : props.state.transferring ? "creating" : "continue")}</button>}
         </div></WidgetTile>}
-        {props.state.showMemoryContextIndicator !== false && <WidgetTile id="memory" title={t("context")} icon={<BrainCircuit size={16} />}><button className="dr-pill" onClick={() => setOpen(!open)} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{referenceCount}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button></WidgetTile>}
+        {(props.state.showMemoryContextIndicator !== false || memoryIssue) && <WidgetTile id="memory" title={memoryIssue ? memoryIssueTitle : t("context")} icon={memoryIssue ? <AlertTriangle size={16} /> : <BrainCircuit size={16} />}><div className={`dr-memory-control${memoryIssue ? " has-issue" : ""}`}>
+          <button className="dr-pill" onClick={() => setOpen(!open)} aria-haspopup="dialog" aria-controls={memoryDialogId} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{referenceCount}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button>
+          {memoryIssue && <div className="dr-memory-issue-summary" role="status" aria-live="polite"><button type="button" data-no-widget-drag className="dr-memory-issue" aria-haspopup="dialog" aria-controls={memoryDialogId} onClick={() => setOpen(true)}><AlertTriangle size={16} aria-hidden="true"/><span><strong>{memoryIssueTitle}</strong><small>{memoryCopy.details}</small></span><ChevronRight size={16} aria-hidden="true"/></button></div>}
+        </div></WidgetTile>}
         {props.state.scene?.worldId && props.onSceneChoicesToggle && <WidgetTile id="choices" title={sceneChoiceText(props.state.locale, "toggleOn")} icon={<ListChecks size={16} />}><button className="dr-pill dr-scene-choice-toggle" type="button" title={sceneChoiceText(props.state.locale, "toggleHelp")} aria-pressed={Boolean(props.state.sceneChoicesEnabled)} onClick={props.onSceneChoicesToggle}>{sceneChoiceText(props.state.locale, props.state.sceneChoicesEnabled ? "toggleOn" : "toggleOff")}</button></WidgetTile>}
         {(proposals.length > 0 || props.state.analysisSuggested) && <WidgetTile id="notices" title={at("review")} icon={<Bell size={16} />}>
           {proposals.length > 0 && <button className="dr-pill dr-review-pill" onClick={() => { setOpen(true); setQuick(false); setReviewId(proposals[0]!.id); }} aria-label={at("review")}>{at("ready")} · {proposals.reduce((total, batch) => total + batch.items.length + Number(!!batch.profileChange), 0)}</button>}
@@ -339,14 +321,18 @@ export function PageWidget(props: {
         {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} /></WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
-      {!props.state.vaultLocked&&<GameMemoryNotice locale={props.state.locale} coverage={props.state.selection.memoryCoverage} report={props.state.selection.contextReport} onDetails={()=>setOpen(true)}/>}
-      {!props.state.vaultLocked && open && <div className={`dr-panel ${assistantOpen ? "" : "dr-connected-memory"}`} role="region" aria-label={t("selectedMemory")} tabIndex={0} style={panelBounds ? { ...panelBounds, height: assistantOpen ? undefined : panelBounds.maxHeight, position: "fixed", right: "auto", bottom: "auto", margin: 0, zIndex: 3 } : undefined}>{!assistantOpen && <><header><strong>{t("selectedMemory")}</strong><div className="dr-memory-help-actions"><MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} /><button onClick={() => setOpen(false)} aria-label={t("close")}>✕</button></div></header>
+    </div>
+    {!props.state.vaultLocked && <PageMemoryDialog open={open} title={t("selectedMemory")} closeLabel={t("close")} dialogId={memoryDialogId} onClose={() => setOpen(false)} assistantOpen={assistantOpen} help={<MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} />}>
+      {(open || assistantOpen) && <>
+      {!assistantOpen && <>
+        <GameMemoryNotice locale={props.state.locale} coverage={props.state.selection.memoryCoverage} report={props.state.selection.contextReport}/>
+        {props.onSaveMemoryBudget && props.state.worlds?.filter(world => world.id === props.state.scene?.worldId).map(world => <MemoryBudgetEditor key={world.id} world={world} required={props.state.selection.contextReport?.required ?? 0} locale={props.state.locale} onSave={props.onSaveMemoryBudget!}/>)}
         <SectionGuide locale={props.state.locale} text={x("previewHint")} />
         {props.state.pendingHandoff && <p className="dr-inline-note">{experienceText(props.state.locale, "pendingRecap", { name: props.state.pendingHandoff })}</p>}
         <div className="dr-play-tools">{props.onQuickSave && <button onClick={() => { setQuick(!quick); setReviewId(null); }}>{at("remember")}</button>}<button disabled={analysisBlocked} onClick={props.onAnalyze}>{at("analyze")}</button>{props.state.analysisSuggested && <button onClick={props.onDismissSuggestion}>{t("later")}</button>}</div>
         {analysisBlocked && <p className="dr-inline-note">{x(serviceBusy ? "waiting" : props.state.generating ? "generating" : "startChat")}</p>}
         </>}
-      {quick && props.onQuickSave && props.onDraftLore ? <QuickMemory worldName={props.state.worlds?.find((world) => world.id === props.state.scene?.worldId)?.name} locale={props.state.locale} onSave={props.onQuickSave} onDraft={props.onDraftLore} onClose={() => setQuick(false)} /> : review && props.onReview && props.onDiscard ? <MemoryReview key={review.id} locale={props.state.locale} batch={review} onKeepMemory={props.state.continuation?.proposalId === review.id ? props.onKeepContinuationMemory : undefined} keepLabel={continuationText(props.state.locale, "keepMemory")} introduction={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "reviewHint") : undefined} saveLabel={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "saveContinue") : undefined} onSave={(items, profileChoice) => props.onReview!(review, items, profileChoice)} onDiscard={() => props.onDiscard!(review.id)} onClose={() => { setReviewId(null); props.onReviewClose?.(); }} /> : <>
+      {quick && props.onQuickSave && props.onDraftLore ? <QuickMemory backLabel={memoryCopy.back} worldName={props.state.worlds?.find((world) => world.id === props.state.scene?.worldId)?.name} locale={props.state.locale} onSave={props.onQuickSave} onDraft={props.onDraftLore} onClose={() => setQuick(false)} /> : review && props.onReview && props.onDiscard ? <MemoryReview backLabel={memoryCopy.back} key={review.id} locale={props.state.locale} batch={review} onKeepMemory={props.state.continuation?.proposalId === review.id ? props.onKeepContinuationMemory : undefined} keepLabel={continuationText(props.state.locale, "keepMemory")} introduction={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "reviewHint") : undefined} saveLabel={props.state.continuation?.proposalId === review.id ? continuationText(props.state.locale, "saveContinue") : undefined} onSave={(items, profileChoice) => props.onReview!(review, items, profileChoice)} onDiscard={() => props.onDiscard!(review.id)} onClose={() => { setReviewId(null); props.onReviewClose?.(); }} /> : <>
         {props.state.selection.omittedCount > 0 && <p className="dr-budget-note">{at("omitted")} ({props.state.selection.omittedCount})</p>}
         <ContextBudgetSummary locale={props.state.locale} report={props.state.selection.contextReport} coverage={props.state.selection.memoryCoverage} entries={props.state.selection.entries}/>
         <MemoryDeliverySummary locale={props.state.locale} receipt={props.state.memoryDelivery}/>
@@ -354,8 +340,8 @@ export function PageWidget(props: {
         {proposals.map((batch) => <button className="dr-reset" key={batch.id} onClick={() => { setQuick(false); setReviewId(batch.id); }}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}
         {props.state.lastChange && props.onUndo && <div className="dr-play-tools"><button disabled={undoBusy} onClick={() => { setUndoBusy(true); setUndoError(false); void props.onUndo!(props.state.lastChange!.id).catch(() => setUndoError(true)).finally(() => setUndoBusy(false)); }}>{at("undo")}</button></div>}{undoError && <p role="alert">{at("conflict")}</p>}
         </>}
-      </div>}
-    </div>
+      </>}
+    </PageMemoryDialog>}
   </div></HelpLocale.Provider>;
 }
 

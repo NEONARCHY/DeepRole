@@ -69,10 +69,14 @@ export default defineBackground(() => {
   // Relay lock/unlock as a text-free library signal, never expose the vault key.
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === "local" && LIBRARY_CHANGE_KEY in changes) { void cast.auto().catch(() => undefined); void cast.reconcilePending().catch(() => undefined); void fields.reconcilePending().catch(() => undefined); }
-    if (area === "session" && storageKeys.sessionKey in changes) { void announceLibraryChange(); void cast.cancelLocked().then(() => cast.reconcilePending()).catch(() => undefined); void fields.cancelLocked().then(() => fields.reconcilePending()).catch(() => undefined); }
+    if (area === "session" && storageKeys.sessionKey in changes) { repository.clearPhotoPreviews(); void announceLibraryChange(); void cast.cancelLocked().then(() => cast.reconcilePending()).catch(() => undefined); void fields.cancelLocked().then(() => fields.reconcilePending()).catch(() => undefined); }
   });
 
   const handleMessage = (message: DeepRoleMessage, sender: import("wxt/browser").Browser.runtime.MessageSender) => {
+    if (message.type === "DR_MENU_TAB") {
+      if (sender.id !== browser.runtime.id || !sender.url?.startsWith(browser.runtime.getURL("/sidepanel.html")) || sender.tab?.id === undefined) return Promise.resolve({ ok: false });
+      return browser.tabs.get(sender.tab.id).then(tab => ({ ok: !!tab.url?.startsWith("https://chat.deepseek.com/"), tabId: tab.id }), () => ({ ok: false }));
+    }
     if (message.type === "DR_FIELD" || message.type === "DR_FIELD_WORKER") return fields.handle(message as FieldMessage, sender);
     if (message.type === "DR_CAST" || message.type === "DR_CAST_WORKER") return cast.handle(message as CastMessage, sender);
     if (message.type.startsWith("DR_IMAGE_")) return handleImageMessage(message as import("../core/image-messages").ImageMessage, sender);
@@ -101,6 +105,19 @@ export default defineBackground(() => {
         try {
           if (message.operation === "isLocked") return { ok: true, data: await repository.isLocked() };
           if (await repository.isLocked()) throw new Error("vault-locked");
+          if (message.operation === "saveMemoryBudget") {
+            const input = message.input;
+            if (sender.frameId !== 0 || !input || typeof input.worldId !== "string" || typeof input.chatId !== "string" || !Number.isSafeInteger(input.contextBudget) || input.contextBudget < 500 || input.contextBudget > 16000 || !Number.isSafeInteger(input.expectedBudget)) throw new Error("memory-budget-invalid");
+            const tab = await browser.tabs.get(sender.tab!.id!);
+            if (!tab.url || !isSameDeepSeekChat(input.chatUrl, tab.url, input.chatId)) throw new Error("memory-budget-scope");
+            const binding = (await repository.list<import("../core/types").ChatBinding>("binding")).find(item => item.chatId === input.chatId);
+            if (!binding || binding.worldId !== input.worldId) throw new Error("memory-budget-scope");
+            const world = await repository.get<import("../core/types").WorldProfile>("world", input.worldId);
+            if (!world || world.contextBudget !== input.expectedBudget) throw new Error("memory-budget-conflict");
+            const next = { ...world, contextBudget: input.contextBudget, updatedAt: Date.now() };
+            await repository.commitChecked([{ kind: "world", id: world.id, data: next }], [], [{ kind: "world", id: world.id, data: world }, { kind: "binding", id: binding.id, data: binding }]);
+            return { ok: true };
+          }
           if (message.operation === "activateWorldGame") {
             if (sender.frameId !== 0 || !Number.isSafeInteger(sender.tab!.id) || !validWorldGameActivation(message.input)) throw Error("story-game-invalid");
             const current = async () => {
@@ -240,6 +257,7 @@ export default defineBackground(() => {
             return { ok: true };
           }
           if (message.operation === "readPhoto") return { ok: true, data: await repository.readPhoto(message.id) };
+          if (message.operation === "readPhotoPreview") return { ok: true, data: await repository.readPhotoPreview(message.id, message.size) };
           if (message.operation === "storePhoto") return { ok: true, data: await repository.storePhoto(message.image) };
           if (message.operation === "saveRecoveredReply" || message.operation === "acknowledgeRecoveredReply") {
             const tab = await browser.tabs.get(sender.tab!.id!);

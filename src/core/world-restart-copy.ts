@@ -1,0 +1,26 @@
+import type { Locale } from "./types";
+export const worldRestartCopy = (locale: Locale) => locale === "ru" ? {
+  title: "Начать историю заново", hint: "Убрать события прохождения и восстановить начало по лору.",
+  plan: "Сначала покажем план. Без вашего подтверждения ничего не сбросится.", keep: "Изображения сохранятся. Текущая игра попадёт в архив.",
+  quick: "Быстрый сброс без DeepSeek", quickHint: "Сбросит память DeepRole и вернёт значения из анкет. Переписка DeepSeek останется.",
+  preview: "Посмотреть, что сбросится", unavailable: "Значения ещё не загружены. Обновите страницу.",
+  dialog: "Быстрый сброс", effects: "Память DeepRole очистится. У персонажей будут значения ниже.",
+  warning: "Тексты анкет, лора и переписка DeepSeek останутся. Для чистого начала используйте сброс по лору.",
+  values: "После сброса", source: "Берём значения из сохранённых анкет.",
+  search: "Найти персонажа", empty: "По этому имени никого нет.", noPeople: "Сохранённых персонажей нет.", noNumbers: "Числа не заданы.",
+  trust: "Доверие", affinity: "Симпатия", toHero: "К герою: ", state: "Другие стартовые значения", action: "Действие", condition: "Состояние", goal: "Цель", relationship: "Отношения", completed: "Уже произошло до начала",
+  confirm: "Сбросить память и значения всего лора. Текущую игру сохранить в архиве.", apply: "Сбросить память и значения", cancel: "Отмена", busy: "Сбрасываем…",
+  stale: "Игра или анкеты изменились. Посмотрите обновлённые значения перед сбросом.", refresh: "Обновить просмотр", failed: "Не удалось завершить действие. Обновите страницу и проверьте состояние игры.",
+} : {
+  title: "Start the story over", hint: "Remove played events and restore the story opening from lore.",
+  plan: "Review the plan first. Nothing resets without your confirmation.", keep: "Images are kept. The current game is archived.",
+  quick: "Quick reset without DeepSeek", quickHint: "Clear DeepRole memory and restore saved profile values. The DeepSeek conversation stays.",
+  preview: "See what will reset", unavailable: "Values have not loaded yet. Refresh the page.",
+  dialog: "Quick reset", effects: "DeepRole memory will clear. Characters will use the values below.",
+  warning: "Profile text, lore and the DeepSeek conversation stay. Use a reset from lore for a fresh start.",
+  values: "After reset", source: "Values saved in character profiles.",
+  search: "Find a character", empty: "No character with this name.", noPeople: "No saved characters.", noNumbers: "No numbers configured.",
+  trust: "Trust", affinity: "Affinity", toHero: "Towards protagonist: ", state: "Other starting values", action: "Action", condition: "Condition", goal: "Goal", relationship: "Relationships", completed: "Already happened before play",
+  confirm: "Reset memory and values for this entire lore and archive the current game.", apply: "Reset memory and values", cancel: "Cancel", busy: "Resetting…",
+  stale: "The game or profiles changed. Review the updated values before resetting.", refresh: "Refresh preview", failed: "Could not complete the action. Refresh the page and check the game state.",
+};

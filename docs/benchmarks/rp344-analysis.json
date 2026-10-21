@@ -1,0 +1,1065 @@
+{
+  "allCriteriaPass": 132,
+  "withNonemptyWanted": 168,
+  "nonemptyWantedComplete": 114,
+  "maxTokens": 2834,
+  "byWorld": [
+    {
+      "world": "stained-glass-workshop-ru",
+      "cases": 48,
+      "passAll": 34,
+      "missingCases": 12,
+      "missingSources": 32,
+      "noticeMismatches": 4,
+      "maxTokens": 2828
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "cases": 48,
+      "passAll": 27,
+      "missingCases": 19,
+      "missingSources": 51,
+      "noticeMismatches": 2,
+      "maxTokens": 2731
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "cases": 48,
+      "passAll": 33,
+      "missingCases": 15,
+      "missingSources": 34,
+      "noticeMismatches": 2,
+      "maxTokens": 2757
+    },
+    {
+      "world": "karst-water-expedition-en",
+      "cases": 48,
+      "passAll": 38,
+      "missingCases": 8,
+      "missingSources": 10,
+      "noticeMismatches": 2,
+      "maxTokens": 2834
+    }
+  ],
+  "missingCoreCounter": {
+    "0": 4,
+    "1": 4,
+    "3": 5,
+    "5": 5,
+    "7": 2,
+    "8": 15,
+    "10": 16,
+    "11": 13,
+    "16": 32,
+    "17": 8,
+    "18": 2,
+    "19": 2,
+    "4": 2,
+    "21": 3,
+    "23": 3,
+    "9": 3,
+    "6": 3,
+    "22": 4,
+    "20": 1
+  },
+  "examples": [
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "free-equipment",
+      "draft": "Ну что, цветное стекло уже можно увезти, а штуку для его разрезания отдать хозяйке?",
+      "missingCore": [
+        0,
+        1,
+        3,
+        5,
+        7
+      ],
+      "selectedCore": [
+        22,
+        20,
+        23,
+        21,
+        18,
+        6,
+        2,
+        9,
+        12,
+        4
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "free-sensitive",
+      "draft": "Бумаги о починке можно скинуть всем, а картинку клиента показать целиком?",
+      "missingCore": [
+        8,
+        10,
+        11
+      ],
+      "selectedCore": [
+        20,
+        22,
+        9,
+        12,
+        4,
+        0,
+        23,
+        21
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "noticeMismatch": true
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "recent-version",
+      "draft": "А оригинал этого тоже можно ей показать?",
+      "missingCore": [],
+      "selectedCore": [
+        20,
+        23,
+        22,
+        21,
+        12,
+        9,
+        4,
+        0
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "noticeMismatch": true
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "cross-object",
+      "draft": "«учебная рама» готов, значит и «витражная рама» передаю без проверки, заодно забираю «алмазный резак».",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        18,
+        5,
+        4,
+        19,
+        1,
+        0,
+        7,
+        6,
+        17,
+        3,
+        2
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "reordered-six",
+      "draft": "Сначала «эскиз заказчика», потом «пропуск в мастерскую», после — «акт реставрации», «алмазный резак», «учебная рама» и «витражная рама»: что сейчас готово для передачи?",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        12,
+        4,
+        0,
+        20,
+        5,
+        11,
+        19,
+        9,
+        18,
+        22,
+        23,
+        21,
+        7,
+        15,
+        13,
+        6,
+        17,
+        14,
+        3,
+        2,
+        1,
+        10,
+        8
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "completed-history",
+      "draft": "Напомни, что произошло с «учебная рама» и кто его получил.",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        19,
+        18,
+        17,
+        0,
+        3,
+        2,
+        1,
+        20
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "what-remains",
+      "draft": "Что у нас осталось доделать перед передачами, а что уже закрыто?",
+      "missingCore": [
+        16,
+        17,
+        18,
+        19
+      ],
+      "selectedCore": [
+        22,
+        23,
+        6,
+        21,
+        2,
+        20,
+        9,
+        12,
+        4,
+        0,
+        11,
+        7,
+        3,
+        15,
+        13,
+        5,
+        1,
+        14,
+        10,
+        8
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-ru",
+      "query": "long-delayed-reference",
+      "draft": "Долго слушаю, как дождь стекает по медной крыше. В коридоре пахнет кофе, на лестнице кто-то забывает мокрый зонт; я убираю его к батарее, смотрю на пустую улицу и лишь потом возвращаюсь к разговору. Обещанное для Роман и вещь Зоя — с ними уже можно заканчивать, или ещё рано?",
+      "missingCore": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ],
+      "selectedCore": [
+        22,
+        20,
+        23,
+        11,
+        21,
+        2,
+        13,
+        6,
+        7,
+        9,
+        19
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "narrative-four",
+      "draft": "I spend a while listening to rain on the copper roof. The corridor smells of coffee; somebody left a wet umbrella on the stairs. I put it by the radiator, watch the empty street and only then return to our conversation. Now I take the stained-glass frame, return the diamond cutter, deliver the restoration certificate and collect the workshop pass.",
+      "missingCore": [
+        8,
+        10,
+        11
+      ],
+      "selectedCore": [
+        4,
+        0,
+        7,
+        3,
+        17,
+        1,
+        2,
+        12,
+        13,
+        15,
+        6,
+        5,
+        14,
+        18,
+        19,
+        20,
+        22,
+        21,
+        23,
+        9
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "free-sensitive",
+      "draft": "Can I share the repair paperwork with everyone and show the whole customer drawing?",
+      "missingCore": [
+        8,
+        10,
+        11
+      ],
+      "selectedCore": [
+        22,
+        20,
+        4,
+        12,
+        0,
+        23,
+        21,
+        7,
+        3,
+        13,
+        18,
+        19,
+        15,
+        6,
+        5,
+        1,
+        2,
+        14,
+        9
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "cross-object",
+      "draft": "The practice frame is ready, so I will hand over the stained-glass frame without inspection and collect the diamond cutter as well.",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        0,
+        4,
+        5,
+        3,
+        18,
+        1,
+        7,
+        19,
+        2,
+        17,
+        6
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "quoted-intent",
+      "draft": "I read the plan aloud: “Take the stained-glass frame, hand over the diamond cutter and circulate the restoration certificate.” This is only rehearsal.",
+      "missingCore": [
+        10,
+        11
+      ],
+      "selectedCore": [
+        0,
+        3,
+        1,
+        2,
+        4,
+        7,
+        18,
+        6,
+        5,
+        19,
+        17,
+        20,
+        21,
+        23,
+        22,
+        9,
+        8
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "negated-chain",
+      "draft": "I am not handing over the stained-glass frame or collecting the workshop pass; I am only asking about the restoration certificate.",
+      "missingCore": [
+        8,
+        11
+      ],
+      "selectedCore": [
+        0,
+        3,
+        15,
+        1,
+        2,
+        12,
+        13,
+        18,
+        14,
+        19,
+        17,
+        9,
+        10
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "reordered-six",
+      "draft": "First the client sketch, then the workshop pass, then the restoration certificate, diamond cutter, practice frame and stained-glass frame: which are ready to be handed over?",
+      "missingCore": [
+        8,
+        10,
+        16
+      ],
+      "selectedCore": [
+        0,
+        5,
+        3,
+        20,
+        18,
+        19,
+        1,
+        2,
+        4,
+        12,
+        23,
+        21,
+        7,
+        13,
+        17,
+        15,
+        6,
+        14,
+        22,
+        9,
+        11
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "completed-history",
+      "draft": "Remind me what happened to the practice frame and who received it.",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        18,
+        19,
+        17,
+        0,
+        3,
+        1,
+        2,
+        20
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "what-remains",
+      "draft": "What do we still need to finish before the handovers, and what is already closed?",
+      "missingCore": [
+        8,
+        10,
+        11,
+        16,
+        17
+      ],
+      "selectedCore": [
+        2,
+        15,
+        1,
+        6,
+        20,
+        4,
+        12,
+        0,
+        23,
+        22,
+        21,
+        7,
+        3,
+        13,
+        18,
+        19,
+        5,
+        14,
+        9
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "stained-glass-workshop-en",
+      "query": "unknown-only",
+      "draft": "Can the plasma coil be sent yet?",
+      "missingCore": [],
+      "selectedCore": [
+        8,
+        20,
+        9,
+        0,
+        5,
+        7,
+        4,
+        12
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "noticeMismatch": true
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "free-equipment",
+      "draft": "Чем там расстояния меряют, уже можно в шахту? А ту штуку, что нас опускает, хозяйке вернём?",
+      "missingCore": [
+        0,
+        3,
+        5,
+        6,
+        7
+      ],
+      "selectedCore": [
+        22,
+        20,
+        23,
+        21,
+        1,
+        14,
+        2,
+        9,
+        12,
+        4
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "free-sensitive",
+      "draft": "Тетрадку с результатами воды можно разослать, а чертёж забора воды показать целиком?",
+      "missingCore": [
+        21,
+        22,
+        23
+      ],
+      "selectedCore": [
+        9,
+        11,
+        10,
+        8,
+        20,
+        12,
+        4,
+        0
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "recent-version",
+      "draft": "А оригинал этого тоже можно ей показать?",
+      "missingCore": [
+        22
+      ],
+      "selectedCore": [
+        23,
+        19,
+        21,
+        1,
+        20,
+        12,
+        9,
+        4
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "noticeMismatch": true
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "cross-object",
+      "draft": "«ручной дальномер» готов, значит и «лазерный дальномер» передаю без проверки, заодно забираю «спусковая лебёдка».",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        19,
+        5,
+        1,
+        18,
+        0,
+        17,
+        3,
+        2,
+        4,
+        7,
+        6
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "reordered-six",
+      "draft": "Сначала «карта водозабора», потом «разрешение на спуск», после — «журнал проб воды», «спусковая лебёдка», «ручной дальномер» и «лазерный дальномер»: что сейчас готово для передачи?",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        9,
+        12,
+        4,
+        0,
+        11,
+        10,
+        8,
+        19,
+        20,
+        3,
+        21,
+        18,
+        22,
+        23,
+        7,
+        15,
+        13,
+        5,
+        14,
+        6,
+        1,
+        2,
+        17
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "completed-history",
+      "draft": "Напомни, что произошло с «ручной дальномер» и кто его получил.",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        17,
+        19,
+        18,
+        0,
+        3,
+        1,
+        2
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "what-remains",
+      "draft": "Что у нас осталось доделать перед передачами, а что уже закрыто?",
+      "missingCore": [
+        16,
+        17
+      ],
+      "selectedCore": [
+        23,
+        22,
+        3,
+        2,
+        20,
+        9,
+        12,
+        4,
+        0,
+        21,
+        7,
+        11,
+        19,
+        18,
+        15,
+        13,
+        10,
+        5,
+        1,
+        14,
+        8,
+        6
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-ru",
+      "query": "long-delayed-reference",
+      "draft": "Сижу у входа в пещеру и считаю капли на верёвке. Далеко за лесом гудит машина, но в лагере тихо; я поправляю одеяло, допиваю чай и долго смотрю на облака. Когда ветер наконец стихает, возвращаюсь к нашим делам. Обещанное для Денис и вещь Эмма — с ними уже можно заканчивать, или ещё рано?",
+      "missingCore": [
+        0,
+        1,
+        3,
+        5,
+        6
+      ],
+      "selectedCore": [
+        2,
+        7,
+        22,
+        13,
+        9,
+        20,
+        12,
+        4
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-en",
+      "query": "cross-object",
+      "draft": "The manual rangefinder is ready, so I will hand over the laser rangefinder without inspection and collect the descent winch as well.",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        4,
+        0,
+        5,
+        19,
+        1,
+        18,
+        3,
+        7,
+        2,
+        17,
+        6,
+        12
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-en",
+      "query": "reordered-six",
+      "draft": "First the water-intake map, then the descent permit, then the water-sample log, descent winch, manual rangefinder and laser rangefinder: which are ready to be handed over?",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        20,
+        9,
+        8,
+        23,
+        22,
+        21,
+        11,
+        10,
+        1,
+        19,
+        18,
+        4,
+        3,
+        12,
+        0,
+        13,
+        7,
+        17,
+        5,
+        15,
+        6,
+        14,
+        2
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-en",
+      "query": "completed-history",
+      "draft": "Remind me what happened to the manual rangefinder and who received it.",
+      "missingCore": [
+        16
+      ],
+      "selectedCore": [
+        19,
+        17,
+        18,
+        0,
+        3,
+        2,
+        1,
+        7
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-en",
+      "query": "what-remains",
+      "draft": "What do we still need to finish before the handovers, and what is already closed?",
+      "missingCore": [
+        16,
+        17
+      ],
+      "selectedCore": [
+        18,
+        7,
+        2,
+        15,
+        3,
+        20,
+        9,
+        4,
+        0,
+        12,
+        23,
+        22,
+        21,
+        11,
+        13,
+        19,
+        10,
+        8,
+        5,
+        1,
+        6,
+        14
+      ],
+      "coverage": {
+        "kind": "incomplete",
+        "reason": "query"
+      },
+      "noticeMismatch": false
+    },
+    {
+      "world": "karst-water-expedition-en",
+      "query": "unknown-only",
+      "draft": "Can the plasma coil be sent yet?",
+      "missingCore": [],
+      "selectedCore": [
+        20,
+        1,
+        9,
+        8,
+        4,
+        0,
+        12,
+        23
+      ],
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      },
+      "noticeMismatch": true
+    }
+  ],
+  "noticeCases": [
+    {
+      "world": "stained-glass-workshop",
+      "locale": "ru",
+      "historyFacts": 24,
+      "query": "free-sensitive",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "stained-glass-workshop",
+      "locale": "ru",
+      "historyFacts": 24,
+      "query": "recent-version",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "stained-glass-workshop",
+      "locale": "ru",
+      "historyFacts": 1024,
+      "query": "free-sensitive",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "stained-glass-workshop",
+      "locale": "ru",
+      "historyFacts": 1024,
+      "query": "recent-version",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "stained-glass-workshop",
+      "locale": "en",
+      "historyFacts": 24,
+      "query": "unknown-only",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "stained-glass-workshop",
+      "locale": "en",
+      "historyFacts": 1024,
+      "query": "unknown-only",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "karst-water-expedition",
+      "locale": "ru",
+      "historyFacts": 24,
+      "query": "recent-version",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "karst-water-expedition",
+      "locale": "ru",
+      "historyFacts": 1024,
+      "query": "recent-version",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "karst-water-expedition",
+      "locale": "en",
+      "historyFacts": 24,
+      "query": "unknown-only",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    },
+    {
+      "world": "karst-water-expedition",
+      "locale": "en",
+      "historyFacts": 1024,
+      "query": "unknown-only",
+      "warningKind": null,
+      "coverage": {
+        "kind": "unverified",
+        "reason": "query"
+      }
+    }
+  ]
+}

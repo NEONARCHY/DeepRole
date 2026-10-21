@@ -2,7 +2,7 @@
 
 ## Где найти
 
-Откройте **Память игры → Обзор → Управление прогрессом → Полный сброс мира по лору** в актуальном чате. Обычное «Начать игру заново» использует уже сохранённые начальные значения. Полный сброс сначала предлагает пересмотреть их по исходному лору.
+Откройте **Память игры → Обзор → Управление прогрессом → Начать историю заново → Подготовить сброс по лору** в актуальном чате. В диалоге **«Вернуть мир к началу по лору»** DeepSeek предложит план восстановления. Дополнительный **«Быстрый сброс без DeepSeek»** использует значения из анкет и показывает их перед подтверждением; текстовые записи он не очищает.
 
 ## Когда временное окно закрылось
 
@@ -58,8 +58,12 @@ Ready plans have no 30–50-minute review expiry. Chat read receipts, portrait l
 
 The service window says **Preparing a world reset**, not character generation. It prepares a reviewable plan without changing the world. Existing character IDs are checked locally. A malformed entry-cleanup reply receives one correction using the entry-decision schema, not profile instructions; repeated failure stops preparation without a reset.
 
-**Story memory → Shared progress → Full world reset from lore** prepares a starting situation in an owned temporary DeepSeek chat, one character at a time followed by bounded review of the world description and nonempty library entries. Preparation is nondestructive. Review/edit the starting scores, narrative state, goals/background and selected entry cleanup; inspect exact evidence and the optional service JSON. Two separate human confirmations are required, including typing the world name. Unfinished cleanup, incomplete rosters and stale world state block application.
+**Story memory → Shared progress → Restore the story opening from lore** prepares a starting situation in an owned temporary DeepSeek chat, one character at a time followed by bounded review of the world description and nonempty library entries. Preparation is nondestructive. Review/edit the starting scores, narrative state, goals/background and selected entry cleanup; inspect exact evidence and the optional service JSON. Two separate human confirmations are required, including typing the world name. Unfinished cleanup, incomplete rosters and stale world state block application.
 
 Family, original past and established love are not zeroed globally. Existing identity, approved merges, appearances, personality, numeric scale definitions, relationship gates and all images/references remain. Current game events, tasks, time and overlays clear; numbers/locks/history use approved starting values. Only selected text cleanup is applied; partial or uncertain entries are retained. Original changed text and the previous game remain in full-backup archives, excluded from portable world export and new game context.
 
 Application is one local transaction followed by a fresh native chat with a hidden starting-point handoff. A failed chat open can be retried without resetting again; existing fresh targets are reused. The old native conversation is not deleted. The existing fresh-page, empty-draft and expiry safeguards apply to automatic first submission. Model interpretation can be wrong, so review is mandatory; no pristine original can be invented when it was overwritten. Live-account model quality is not proved by synthetic checks.
+
+## RP354 — ошибки партии и текстовых показателей
+
+Если в диагностике указано `characters: batch array <=1`, DeepSeek прислал больше анкет, чем запрошено. Это ошибка формата полученного ответа и сама по себе не доказывает сбой при сворачивании. Запрос теперь заканчивается точным списком только текущей партии, в том числе при исправлении. Числовые значения текстовых показателей в пакетном ответе допускаются только как безопасные целые числа и локально становятся строками, например `29` → `"29"`; остальные типы не подменяются. Числовые характеристики и отношения остаются числами. Проверка идентификаторов и дословных цитат сохраняется. После обновления повторите остановленную подготовку; сама неудачная попытка не применяет сброс. Свёрнутую установленную копию нужно проверить отдельно.

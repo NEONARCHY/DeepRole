@@ -30,6 +30,7 @@ export type CastMessage =
  | { type: "DR_CAST"; action: "apply"; id: string; draft: CastDraft; selected: string[]; hero: string }
  | { type: "DR_CAST"; action: "cancel" | "cleanup" | "hide" | "show" | "confirm-cleanup" | "open"; id: string }
  | { type: "DR_CAST_WORKER"; action: "claim"; id?: string }
+ | { type: "DR_CAST_WORKER"; action: "status"; id: string }
  | { type: "DR_CAST_WORKER"; action: "reasoning"; id: string; status: "enabled" | "unavailable" | "unverified"; changed:boolean }
  | { type: "DR_CAST_WORKER"; action: "sent"; id: string; step: number }
  | { type: "DR_CAST_WORKER"; action: "bound"; id: string; chatId: string }
@@ -165,7 +166,7 @@ export class CastCoordinator {
       const locked = await this.repo.isLocked();
       if (message.type === "DR_CAST_WORKER" && own && (locked || message.action === "authorize-cleanup")) {
         const tab = await this.api.tabs.get(own.tabId), currentId = castChatReference(tab.url)?.id;
-        if (message.action === "claim" && locked && own.audit) return { ok: true, id: own.id, chatId: own.chatId, phase: "error", prompt: "", cleanupOnly: true };
+        if (["claim", "status"].includes(message.action) && locked && own.audit) return { ok: true, id: own.id, chatId: own.chatId, phase: "error", cleanup: own.audit.cleanup, prompt: "", cleanupOnly: true };
         if (message.action !== "authorize-cleanup" && message.action !== "cleaned") throw new Error("vault-locked");
         if (message.chatId !== own.chatId || message.action === "authorize-cleanup" && (currentId !== own.chatId || !own.chatId && new URL(tab.url!).pathname !== "/")) throw new Error("chat-changed");
         if (message.action === "cleaned" && (typeof message.ok !== "boolean" || message.ok && (currentId || new URL(tab.url!).pathname !== "/"))) throw new Error("chat-changed");
@@ -196,6 +197,12 @@ export class CastCoordinator {
             return { ok: true };
           }
           throw new Error("job-missing");
+        }
+        // Read-only reconciliation for a resumed/minimized worker. Never returns
+        // another prompt and never authorizes another submission or cleanup.
+        if (message.action === "status") {
+          const terminal = active(job) && own.audit && ["result", "failed"].includes(own.audit.phase);
+          return { ok: true, id: job.id, phase: terminal ? "error" : job.phase, cleanup: terminal ? own.audit!.cleanup : job.cleanup, prepared: job.draft?.characters.length ?? 0, total: job.reset?.people.length };
         }
         // A terminal session marker blocks late results while delivery to the
         // protected job is pending. Unlock/reload is never permission to resume.

@@ -86,6 +86,12 @@ export class FieldServiceScreen {
   this.castMode = reset ? "reset" : "cast"; this.locale = locale; this.render();
  }
  get isReset() { return this.kind === "cast" && this.castMode === "reset"; }
+  setCastProgress(prepared: number, total?: number) {
+    if (this.kind !== "cast" || !Number.isSafeInteger(prepared) || prepared < 0) return;
+    let progress = this.root.querySelector<HTMLElement>(".cast-progress");
+    if (!progress) { progress = this.doc.createElement("p"); progress.className = "hint cast-progress"; this.status.closest("section")!.append(progress); }
+    progress.textContent = (this.locale === "ru" ? "Подготовлено анкет: " : "Profiles prepared: ") + prepared + (Number.isSafeInteger(total) && total! >= prepared ? " / " + total : "");
+  }
  owns(event: Event) { return event.composedPath().includes(this.host); }
  focus() { if (!this.disposed) (!this.button.hidden && !this.button.disabled ? this.button : !this.reveal.hidden ? this.reveal : this.status).focus({ preventScroll: true }); }
  update(stage: FieldServiceScreenStage) { if (this.disposed || this.stage === stage) return; this.stage = stage; this.render(); if (["cleanup", "done", "failed", "cleanup-failed"].includes(stage)) this.focus(); }

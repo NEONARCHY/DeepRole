@@ -3,7 +3,8 @@ export const MAX_IMAGE_RESPONSE_BYTES = 20_000_000;
 export function dataImageBlob(data: string): Blob {
   const match = /^(?:data:image\/(png|jpeg|webp);base64,)?([A-Za-z0-9+/]+={0,2})$/.exec(data);
   if (!match) throw new Error("image-invalid");
-  const raw = atob(match[2]!); const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+  const raw = atob(match[2]!); const bytes = new Uint8Array(raw.length);
+  for (let index = 0; index < raw.length; index++) bytes[index] = raw.charCodeAt(index);
   const type = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 ? "image/png" : bytes[0] === 0xff && bytes[1] === 0xd8 ? "image/jpeg" : raw.startsWith("RIFF") && raw.slice(8, 12) === "WEBP" ? "image/webp" : null;
   if (!type || match[1] && type !== "image/" + match[1]) throw new Error("image-invalid");
   return new Blob([bytes], { type });

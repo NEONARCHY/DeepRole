@@ -38,11 +38,14 @@ export function narrativeRecallFacts(facts: StoryFact[], query: string, names: s
   const fields = (f: StoryFact) => { let value = cache.get(f); if (!value) { value = [...textFields(f), ...lex.clauses(f.task?.title ?? '')]; cache.set(f, value); } return value; };
   const available = (f: StoryFact) => { if (!availability.has(f)) availability.set(f, !!episodes.read(f) && !Object.values(roles.read(f) ?? {}).some(person => person.unavailable)); return availability.get(f)!; };
   const labels = new Map<string, string[]>();
-  let expanded = false, blockedSource = false, directLabel = false;
+  let expanded = false, blockedSource = false, directLabel = false, contextualLabel = false;
   const admit = (fact: StoryFact, fallback = false) => {
     if (!fact.task) return;
     const bare = lex.mask(fact.task.title).split(' ');
-    const terms = storyTaskObject(fact.task.title, names)?.terms ?? (bare.length >= 2 && bare.length <= 6 && bare.every(word => /^\p{L}+$/u.test(word) && !isUnsafeStoryActionWord(word)) ? lex.clauses(fact.task.title)[0] : undefined);
+    const parsed = storyTaskObject(fact.task.title, names)?.terms;
+    const literal = bare.length >= 2 && bare.length <= 6 && bare.every(word => /^\p{L}+$/u.test(word) && !isUnsafeStoryActionWord(word)) ? lex.clauses(fact.task.title)[0] : undefined;
+    // A noun starting with an action stem is still a literal multiword title.
+    const terms = parsed && contentTerms(parsed).length >= 2 ? parsed : literal;
     if (!terms || terms.filter(term => term !== '__deeprole_gap__').length < 2 || terms.some(t => t.startsWith('__deeprole_') && t !== '__deeprole_gap__')) return;
     // Bound the related candidate set, not every task in a large library.
     // An unrelated greeting must not acquire a capacity warning. This also
@@ -60,7 +63,9 @@ export function narrativeRecallFacts(facts: StoryFact[], query: string, names: s
     if (!witnesses.length) return;
     if (!witnesses.some(available)) { blockedSource = true; return; }
     labels.set(key, terms);
-    directLabel ||= direct;
+    // A shortened shared noun does not resolve every clause of a paraphrase.
+    directLabel ||= topicWindow(requested, contentTerms(terms));
+    contextualLabel ||= topicWindow(recent, contentTerms(terms));
     expanded ||= fallback || !direct && contextual || roles.status?.(fact) === 'unknown';
   };
   for (const fact of facts) {
@@ -70,9 +75,9 @@ export function narrativeRecallFacts(facts: StoryFact[], query: string, names: s
   // A semantic paraphrase is not resolved by a growing object dictionary. If no
   // literal/recent topic matched, reserve bounded source-backed pending duties
   // as candidates. Completed side tasks never displace unfinished obligations.
-  const fallback = !directLabel && intent.broad && (!labels.size || intent.statusQuestion);
+  const fallback = !directLabel && intent.broad && (!contextualLabel || intent.statusQuestion);
   if (fallback) for (const fact of facts) {
-    if (fact.task?.status === 'open' || fact.task?.status === 'cancelled') admit(fact, true);
+    if (fact.task?.status === 'open' || fact.task?.status === 'cancelled' || intent.closedQuestion && fact.task?.status === 'completed') admit(fact, true);
     if (labels.size > 32) return incomplete('capacity');
   }
   let generic = false;

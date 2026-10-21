@@ -8,8 +8,10 @@ import { createStoryDispatchTracker, type StoryDispatchIdentity, type StoryDispa
 import { createNativeStoryStreamObserver, type NativeStoryStreamPacket } from "../core/story-native-stream";
 import { readStoryGameSnapshot } from "../core/story-game";
 import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagnostic";
+import { installServiceBackgroundRender } from "../adapters/service-background-render";
 
 export default defineUnlistedScript(() => {
+  installServiceBackgroundRender();
   const originalFetch = window.fetch.bind(window);
   const SOURCE = "deeprole-page-bridge";
   const pending = new Map<string, (value: { context: string | null; timedOut: boolean }) => void>();

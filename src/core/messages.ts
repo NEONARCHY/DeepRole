@@ -22,6 +22,7 @@ export interface TabSessionState {
 export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
+  | { type: "DR_MENU_TAB" }
   | { type: "DR_MEMORY_BATCH_IDLE"; worldId: string; chatId: string }
   | { type: "DR_MEMORY_BATCH"; action: "status" | "run" | "policy" | "cancel"; input: import("./story-memory-batch").MemoryBatchInput; mode?: import("./story-memory-batch").MemoryBatchPolicy["mode"] }
   | { type: "DR_RESUME_WORLD_GAME"; chatId: string; worldId: string }
@@ -35,7 +36,7 @@ export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_MIGRATE_LEGACY" }
   | { type: "DR_GET_PAGE_STATE" }
   | { type: "DR_STORY_DIAGNOSTICS" }
-  | { type: "DR_STORY_GAME"; operation: "start" | "restart" | "reset" | "restore" | "sync" | "undo" | "out-of-character"; manual: "stop" | "keep"; scope?: { chatId: string; worldId: string } }
+  | { type: "DR_STORY_GAME"; operation: "start" | "restart" | "reset" | "restore" | "sync" | "undo" | "out-of-character"; manual: "stop" | "keep"; scope?: { chatId: string; worldId: string }; expectedBase?: string }
   | { type: "DR_AUTOMATION_READ"; input: import("./story-automation-review").AutomationReviewRead }
   | { type: "DR_AUTOMATION_RESOLVE"; input: import("./story-automation-review").AutomationReviewDecision }
   | { type: "DR_STORY_FACT"; input: import("../storage/story-facts").StoryFactApproval }

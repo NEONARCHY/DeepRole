@@ -57,8 +57,22 @@ export function assertWorldGameWriter(all: DataRecord[], binding: ChatBinding, w
  if (world?.sharedGame && (world.sharedGame.activeBindingId !== binding.id || world.sharedGame.activeChatId !== binding.chatId)) throw Error("story-game-inactive");
 }
 export const worldGameText = (locale: Locale) => locale === "ru" ? {
- title: "Игра продолжается в другом чате", body: "У этого лора общий прогресс. Здесь можно читать историю. Чтобы продолжить игру здесь, переключите её в этот чат.", open: "Открыть актуальный чат", resume: "Продолжить здесь", failed: "Не удалось переключить игру. Прогресс сохранён; попробуйте ещё раз.", stale: "Игра уже изменилась в другом чате. Обновите панель и повторите действие.", active: "Прогресс общий для этого лора", restart: "Начать игру заново", reset: "Текущая игра будет сохранена в истории. Отношения и характеристики сбросятся к начальным значениям; лор и изображения сохранятся."
+ title: "Игра продолжается в другом чате", body: "У этого лора общий прогресс. Здесь можно читать историю. Чтобы продолжить игру здесь, переключите её в этот чат.", open: "Открыть актуальный чат", resume: "Продолжить здесь", failed: "Не удалось переключить игру. Прогресс сохранён; попробуйте ещё раз.", stale: "Игра уже изменилась в другом чате. Обновите панель и повторите действие.", active: "Прогресс общий для этого лора", restart: "Перезапустить с начальными значениями", reset: "Сброс затронет прогресс всего лора. Предыдущая игра будет сохранена в истории.",
+  loreWhen: "Выбирайте, если сыгранные события попали в анкеты или лор и нужно вернуться к исходной завязке.",
+  loreEffect: "DeepSeek подготовит начальные отношения и показатели, предложит очистить цели, биографии и выбранные записи памяти. Сначала — просмотр плана и два подтверждения. Проверьте, что семья, знакомства и чувства из исходного лора сохранены.",
+  savedWhen: "Выбирайте, если сохранённые начальные значения уже верны и нужно просто переиграть историю.",
+  savedEffect: "Без запроса DeepSeek: прогресс и память сыгранных сцен начнутся заново, отношения и характеристики вернутся к сохранённым начальным значениям.",
+  savedKeep: "Анкеты и записи библиотеки останутся как есть — сыгранные события из их текста не удалятся.",
+  preserved: "Оба варианта сбрасывают прогресс и память сыгранных сцен всего лора. Предыдущая игра архивируется; внешность, характер и изображения сохраняются.",
+  restartConfirm: "Перейти к подтверждению перезапуска", restartConsent: "Подтверждаю сброс игрового прогресса всего лора", restartApply: "Сбросить прогресс"
 } : {
- title: "The game continues in another chat", body: "This lore has shared progress. You can read the history here. To play here, move the game to this chat.", open: "Open current chat", resume: "Continue here", failed: "Could not move the game. Progress is saved; try again.", stale: "The game changed in another chat. Refresh the panel and try again.", active: "Progress is shared across this lore", restart: "Start the game over", reset: "The current game will be saved in history. Relationships and attributes return to their initial values; lore and images are kept."
+ title: "The game continues in another chat", body: "This lore has shared progress. You can read the history here. To play here, move the game to this chat.", open: "Open current chat", resume: "Continue here", failed: "Could not move the game. Progress is saved; try again.", stale: "The game changed in another chat. Refresh the panel and try again.", active: "Progress is shared across this lore", restart: "Restart with saved initial values", reset: "This resets progress for the entire lore. The previous game will be archived.",
+  loreWhen: "Choose this if played events have entered profiles or lore and you want to return to the original opening.",
+  loreEffect: "DeepSeek prepares starting relationships and scores and proposes cleanup of goals, backgrounds and selected memory entries. Review the plan and confirm twice. Check that family, acquaintances and feelings from the original lore remain.",
+  savedWhen: "Choose this if the saved initial values are already correct and you simply want to replay the story.",
+  savedEffect: "No DeepSeek request: game progress and recorded-scene memory start fresh; relationships and attributes return to saved initial values.",
+  savedKeep: "Profiles and library entries stay as they are — played events in their text are not removed.",
+  preserved: "Both options reset progress and recorded-scene memory for the entire lore. The previous game is archived; character appearance, personality and images are kept.",
+  restartConfirm: "Continue to restart confirmation", restartConsent: "I confirm resetting game progress for this entire lore", restartApply: "Reset progress"
 };
 export const worldGameLink = (world: WorldProfile) => world.sharedGame ? currentChatUrl(world.sharedGame.activeChatId) : undefined;

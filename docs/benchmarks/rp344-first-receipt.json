@@ -1,0 +1,9 @@
+{
+  "startedAtUtc": "2026-10-20T06:59:21.053422+00:00",
+  "finishedAtUtc": "2026-10-20T07:00:46.257906+00:00",
+  "exitCode": 1,
+  "changedFrozenFiles": [],
+  "report": ".output/rp344-first-results.json",
+  "vitest": ".output/rp344-first-vitest.json",
+  "scope": "FIRST independent compiler audit; no runtime repair"
+}

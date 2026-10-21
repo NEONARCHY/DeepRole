@@ -1,0 +1,32 @@
+{
+  "scope": "Local Chromium, fictional character, separate IndexedDB, production repository and saveCharacter; runtime port and personal extension excluded",
+  "metrics": {
+    "sourceCount": 40,
+    "sourceBytes": 32223607,
+    "originalReads": 111,
+    "previewRequests": 42,
+    "pendingPreviews": 0,
+    "saves": 3,
+    "pendingWhenSaveClicked": 0,
+    "payloadBytes": 9720,
+    "savedCount": 40,
+    "savedAddressOnly": true,
+    "referencesPreserved": true,
+    "saveMs": 48,
+    "reopenedCount": 40
+  },
+  "renderedLibraryImages": 9,
+  "warmReturn": {
+    "originalReadsBefore": 18,
+    "originalReadsAfter": 18,
+    "previewRequestsBefore": 20,
+    "previewRequestsAfter": 29
+  },
+  "compression": {
+    "beforeMiB": 30.73,
+    "afterMiB": 2.51,
+    "images": 40,
+    "cancelledBatchPublished": false,
+    "saveDisabledDuringCompression": true
+  }
+}

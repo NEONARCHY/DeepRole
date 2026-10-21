@@ -1,0 +1,17 @@
+{
+  "milestone": "RP345",
+  "frozenBeforeCleanChatCreationAndSend": true,
+  "scope": "Additional real DeepSeek native-empty-chat check, same existing synthetic test world selected through visible UI. Does not import RP344 corpus, alter lore, or certify 1024 structured facts.",
+  "world": "ТЕСТ DeepRole — Мастерская у моста",
+  "prompt": "[Вне игры: в этом новом чате напомни три разные цепочки — обещание Норы по флюгеру, обещание Миры по нему и обещанный Мире ключ. Кто что должен сделать, какие условия ещё не выполнены, что уже сделано отдельно, а что остаётся неизвестным? Не продолжай сцену.]",
+  "expected": [
+    "Nora calibration awaits written keeper permission, Mira signature and mounting inspection",
+    "Mira inspection separately awaits security call",
+    "key held by Nora until lighthouse lamp seal inspection; no handover",
+    "power restored, blue drawing parcel delivered, north lamp repaired are separate completed facts",
+    "old pass revoked and replacement absent",
+    "weather-vane owner not proven, keeper only Artyom hypothesis"
+  ],
+  "mustNot": ["paste seed facts manually into prompt", "transmit continuation recap manually", "present old-chat native history as a clean-chat result", "fulfill promises or change test scene"],
+  "acceptance": "All six expectations in a completed visible model answer; UI test-world selection and character scene preserved. If activation is rejected, record exact visible blocker; no security bypass."
+}

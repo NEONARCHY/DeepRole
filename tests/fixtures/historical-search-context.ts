@@ -16,6 +16,7 @@ import type {GroundingCase} from '../../scripts/story-search-grounding.mjs';
  * Frozen full workload/provenance digests below its callers certify exact replay.
  * Current runtime contracts are tested separately with current defaults. */
 export const RP268_CONTEXT_OPTIONS=Object.freeze({
+ taskHistoryRecall:false,
  memoryTransport:'compact',memoryPrefixes:false,memoryPrefixTables:false,contentRelevance:true,topicAdmission:true,
  continuationBalance:true,actionBalance:true,taskGoalBalance:true,
  compoundActionBalance:true,naturalRecall:true,lastingRecall:true,

@@ -1,0 +1,2520 @@
+{
+  "milestone": "RP344",
+  "budget": 6000,
+  "historyExtraCounts": [
+    0,
+    1000
+  ],
+  "phases": [
+    "cold",
+    "warm",
+    "reopened"
+  ],
+  "distractorContract": "1000 later/interleaved facts: 250 empty topic discussions, 500 substantive station records, 250 distinct completed side promises. Core0-15 early; core16-19 after 1/3 extras; core20-23 after 2/3. Explicit recent messages for grounded/ungrounded references only.",
+  "worlds": [
+    {
+      "id": "stained-glass-workshop-ru",
+      "plot": "stained-glass-workshop",
+      "locale": "ru",
+      "worldName": "stained-glass-workshop / ru",
+      "people": [
+        "Лада",
+        "Роман",
+        "Зоя"
+      ],
+      "objects": [
+        "витражная рама",
+        "алмазный резак",
+        "акт реставрации",
+        "пропуск в мастерскую",
+        "учебная рама",
+        "эскиз заказчика"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Лада обещала: витражная рама будет передана Роману после полного высыхания смолы и подписи Зои; нужны оба условия.",
+          "quote": "Лада обещала: витражная рама будет передана Роману после полного высыхания смолы и подписи Зои; нужны оба условия.",
+          "task": {
+            "key": "stained-glass-workshop-0",
+            "title": "витражная рама",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Зоя установила правило: витражная рама не должна покидать стенд до проверки креплений; подпись не заменяет осмотр.",
+          "quote": "Зоя установила правило: витражная рама не должна покидать стенд до проверки креплений; подпись не заменяет осмотр."
+        },
+        {
+          "kind": "event",
+          "text": "Лада записала: витражная рама ещё на стенде, смола липкая, но Зоя уже поставила подпись.",
+          "quote": "Лада записала: витражная рама ещё на стенде, смола липкая, но Зоя уже поставила подпись."
+        },
+        {
+          "kind": "event",
+          "text": "Роман уточнил: витражная рама ему не передавалась, крепления никто не проверял.",
+          "quote": "Роман уточнил: витражная рама ему не передавалась, крепления никто не проверял."
+        },
+        {
+          "kind": "promise",
+          "text": "Роман обещал: алмазный резак вернётся к Зое после заточки и проверки защитного кожуха.",
+          "quote": "Роман обещал: алмазный резак вернётся к Зое после заточки и проверки защитного кожуха.",
+          "task": {
+            "key": "stained-glass-workshop-1",
+            "title": "алмазный резак",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Зоя предупредила: алмазный резак нельзя включать без защитного кожуха, даже при готовом лезвии.",
+          "quote": "Зоя предупредила: алмазный резак нельзя включать без защитного кожуха, даже при готовом лезвии."
+        },
+        {
+          "kind": "event",
+          "text": "Лада сообщила: алмазный резак уже заточен; защитный кожух всё ещё снят.",
+          "quote": "Лада сообщила: алмазный резак уже заточен; защитный кожух всё ещё снят."
+        },
+        {
+          "kind": "event",
+          "text": "Роман сообщил: алмазный резак лежит в его шкафу; Зоя пока его не забирала.",
+          "quote": "Роман сообщил: алмазный резак лежит в его шкафу; Зоя пока его не забирала."
+        },
+        {
+          "kind": "event",
+          "text": "Лада отменила поручение: акт реставрации больше не надо отправлять в общий чат, договор изменён.",
+          "quote": "Лада отменила поручение: акт реставрации больше не надо отправлять в общий чат, договор изменён.",
+          "task": {
+            "key": "stained-glass-workshop-8",
+            "title": "акт реставрации",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Зоя назначила новое дело: акт реставрации нужно лично передать Роману после сверки заводского номера.",
+          "quote": "Зоя назначила новое дело: акт реставрации нужно лично передать Роману после сверки заводского номера.",
+          "task": {
+            "key": "stained-glass-workshop-9",
+            "title": "акт реставрации",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Лада отметила: акт реставрации запечатан в конверте; заводской номер ещё не сверяли.",
+          "quote": "Лада отметила: акт реставрации запечатан в конверте; заводской номер ещё не сверяли."
+        },
+        {
+          "kind": "event",
+          "text": "Роман запретил: акт реставрации с домашним адресом заказчика нельзя публиковать без отдельного согласия заказчика.",
+          "quote": "Роман запретил: акт реставрации с домашним адресом заказчика нельзя публиковать без отдельного согласия заказчика."
+        },
+        {
+          "kind": "promise",
+          "text": "Зоя обещала: пропуск в мастерскую получит Лада после оплаты залога и инструктажа; одной оплаты мало.",
+          "quote": "Зоя обещала: пропуск в мастерскую получит Лада после оплаты залога и инструктажа; одной оплаты мало.",
+          "task": {
+            "key": "stained-glass-workshop-3",
+            "title": "пропуск в мастерскую",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Роман подтвердил: пропуск в мастерскую оплачен, но инструктажа ещё не было; пропуск у Зои.",
+          "quote": "Роман подтвердил: пропуск в мастерскую оплачен, но инструктажа ещё не было; пропуск у Зои."
+        },
+        {
+          "kind": "event",
+          "text": "Лада уточнила: пропуск в мастерскую разрешает вход, но не даёт права включать оборудование.",
+          "quote": "Лада уточнила: пропуск в мастерскую разрешает вход, но не даёт права включать оборудование."
+        },
+        {
+          "kind": "event",
+          "text": "Зоя сказала: «Лада, пропуск в мастерскую пока у меня; я жду, когда проведут инструктаж».",
+          "quote": "Зоя сказала: «Лада, пропуск в мастерскую пока у меня; я жду, когда проведут инструктаж»."
+        },
+        {
+          "kind": "promise",
+          "text": "Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.",
+          "quote": "Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.",
+          "task": {
+            "key": "stained-glass-workshop-4",
+            "title": "учебная рама",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Лада завершила дело: учебная рама покрашена и доставлена Зое, обещание выполнено.",
+          "quote": "Лада завершила дело: учебная рама покрашена и доставлена Зое, обещание выполнено.",
+          "task": {
+            "key": "stained-glass-workshop-4",
+            "title": "учебная рама",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Роман подчеркнул: учебная рама лёгкая и без стекла; её готовность ничего не говорит про витражную раму.",
+          "quote": "Роман подчеркнул: учебная рама лёгкая и без стекла; её готовность ничего не говорит про витражную раму."
+        },
+        {
+          "kind": "event",
+          "text": "Зоя сообщила: учебная рама хранится у неё в классе, она не заменяет витражную раму Романа.",
+          "quote": "Зоя сообщила: учебная рама хранится у неё в классе, она не заменяет витражную раму Романа."
+        },
+        {
+          "kind": "promise",
+          "text": "Роман обещал: эскиз заказчика можно показать Зое только после письменного согласия автора.",
+          "quote": "Роман обещал: эскиз заказчика можно показать Зое только после письменного согласия автора.",
+          "task": {
+            "key": "stained-glass-workshop-5",
+            "title": "эскиз заказчика",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Лада уточнила: эскиз заказчика есть в двух версиях, публичный черновик и закрытый оригинал; разрешение касается только черновика.",
+          "quote": "Лада уточнила: эскиз заказчика есть в двух версиях, публичный черновик и закрытый оригинал; разрешение касается только черновика."
+        },
+        {
+          "kind": "event",
+          "text": "Зоя пересказала слух: «эскиз заказчика вроде уже можно всем показывать»; автора никто не спрашивал.",
+          "quote": "Зоя пересказала слух: «эскиз заказчика вроде уже можно всем показывать»; автора никто не спрашивал."
+        },
+        {
+          "kind": "event",
+          "text": "Роман дополнил условие: эскиз заказчика в оригинале остаётся закрытым; устного согласия на черновик недостаточно для оригинала.",
+          "quote": "Роман дополнил условие: эскиз заказчика в оригинале остаётся закрытым; устного согласия на черновик недостаточно для оригинала."
+        }
+      ],
+      "queries": [
+        {
+          "id": "literal-two",
+          "draft": "Передам предмет «витражная рама» Роман, затем верну «алмазный резак» Зоя.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Both independent conditions and actual holders are needed."
+        },
+        {
+          "id": "narrative-four",
+          "draft": "Долго слушаю, как дождь стекает по медной крыше. В коридоре пахнет кофе, на лестнице кто-то забывает мокрый зонт; я убираю его к батарее, смотрю на пустую улицу и лишь потом возвращаюсь к разговору. Теперь беру «витражная рама», возвращаю «алмазный резак», отношу «акт реставрации» и забираю «пропуск в мастерскую».",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four separate chains survive a long atmospheric preamble."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Ну что, цветное стекло уже можно увезти, а штуку для его разрезания отдать хозяйке?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "New semantic descriptions require candidates with independent restrictions."
+        },
+        {
+          "id": "free-sensitive",
+          "draft": "Бумаги о починке можно скинуть всем, а картинку клиента показать целиком?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Paraphrased disclosure needs cancelled channel plus version-specific consent."
+        },
+        {
+          "id": "recent-two",
+          "draft": "Тогда эту ему отдам, а ту пока не включаю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent topic names do not prove reference identity.",
+          "recentMessages": [
+            "Мы обсуждаем «витражная рама» и «алмазный резак»."
+          ]
+        },
+        {
+          "id": "recent-version",
+          "draft": "А оригинал этого тоже можно ей показать?",
+          "wanted": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "A recent object reference cannot transfer draft consent to its original.",
+          "recentMessages": [
+            "Обсуждаем «эскиз заказчика»: публичную версию и закрытый оригинал."
+          ]
+        },
+        {
+          "id": "unanchored",
+          "draft": "Его ей верну, а то другое отдам ему; мы же всё уладили?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unanchored pronouns cannot certify object or owner.",
+          "recentMessages": [
+            "За окном идёт дождь."
+          ]
+        },
+        {
+          "id": "partial-clearance",
+          "draft": "Первая проверка позади, поэтому «витражная рама» и «алмазный резак» уже можно использовать без остальных условий.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Partial success does not satisfy independent checks."
+        },
+        {
+          "id": "cancelled-channel",
+          "draft": "По старой просьбе публикую «акт реставрации» в общей группе, а затем передам лично.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Old delivery route was cancelled; privacy remains in force."
+        },
+        {
+          "id": "rumour-consent",
+          "draft": "Раз все уже разрешили, показываю «эскиз заказчика» целиком и выкладываю «акт реставрации».",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Rumour and limited permission are not full consent."
+        },
+        {
+          "id": "cross-object",
+          "draft": "«учебная рама» готов, значит и «витражная рама» передаю без проверки, заодно забираю «алмазный резак».",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects and holders cannot share completion evidence."
+        },
+        {
+          "id": "owner-inversion",
+          "draft": "Возвращаю «витражная рама» Зоя, а «алмазный резак» Роман; напомни, кому что принадлежит.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recipient reversal must not become ownership proof."
+        },
+        {
+          "id": "quoted-intent",
+          "draft": "Читаю план вслух: «Беру витражная рама, отдаю алмазный резак и рассылаю акт реставрации». Это только репетиция.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Quoted rehearsal is not fulfillment."
+        },
+        {
+          "id": "conditional-action",
+          "draft": "Если проверки разрешат, отнесу «витражная рама» и «алмазный резак»; иначе ничего не трогаю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Conditional future action is not a completed event."
+        },
+        {
+          "id": "negated-chain",
+          "draft": "Не передаю «витражная рама» и не забираю «пропуск в мастерскую»; только спрашиваю про «акт реставрации».",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negation and a question must preserve all three histories."
+        },
+        {
+          "id": "reordered-six",
+          "draft": "Сначала «эскиз заказчика», потом «пропуск в мастерскую», после — «акт реставрации», «алмазный резак», «учебная рама» и «витражная рама»: что сейчас готово для передачи?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Six named chains in reverse narrative order, including a fulfilled lookalike."
+        },
+        {
+          "id": "late-change",
+          "draft": "Какие ограничения сейчас у «эскиз заказчика»? Покажу его вместе с «акт реставрации».",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Late interleaved restriction must be found with early cancellation."
+        },
+        {
+          "id": "speech",
+          "draft": "Что Зоя сказала Лада о «пропуск в мастерскую»?",
+          "wanted": [
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Retrieve attributed historical speech, without changing it into an action."
+        },
+        {
+          "id": "completed-history",
+          "draft": "Напомни, что произошло с «учебная рама» и кто его получил.",
+          "wanted": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Completed promise remains available as history although not an open obligation."
+        },
+        {
+          "id": "what-remains",
+          "draft": "Что у нас осталось доделать перед передачами, а что уже закрыто?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "General status includes completed as well as pending chains."
+        },
+        {
+          "id": "unknown-only",
+          "draft": "А плазменную катушку уже можно отправлять?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Absent object must not acquire a history or complete coverage."
+        },
+        {
+          "id": "mixed-known-unknown",
+          "draft": "Отдам «алмазный резак», а потом отправлю плазменную катушку владельцу.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Known chain must survive alongside an unsupported second object."
+        },
+        {
+          "id": "greeting",
+          "draft": "Привет. Как красиво сегодня падает свет.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "Unrelated greeting must not trigger a task warning."
+        },
+        {
+          "id": "long-delayed-reference",
+          "draft": "Долго слушаю, как дождь стекает по медной крыше. В коридоре пахнет кофе, на лестнице кто-то забывает мокрый зонт; я убираю его к батарее, смотрю на пустую улицу и лишь потом возвращаюсь к разговору. Обещанное для Роман и вещь Зоя — с ними уже можно заканчивать, или ещё рано?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Long indirect references to two recipients need both condition chains."
+        }
+      ]
+    },
+    {
+      "id": "stained-glass-workshop-en",
+      "plot": "stained-glass-workshop",
+      "locale": "en",
+      "worldName": "stained-glass-workshop / en",
+      "people": [
+        "Lada",
+        "Roman",
+        "Zoya"
+      ],
+      "objects": [
+        "stained-glass frame",
+        "diamond cutter",
+        "restoration certificate",
+        "workshop pass",
+        "practice frame",
+        "client sketch"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Lada promised: the stained-glass frame will be handed to Roman after the resin fully cures and Zoya signs; both conditions are required.",
+          "quote": "Lada promised: the stained-glass frame will be handed to Roman after the resin fully cures and Zoya signs; both conditions are required.",
+          "task": {
+            "key": "stained-glass-workshop-0",
+            "title": "stained-glass frame",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Zoya established a rule: the stained-glass frame must not leave its stand before the fasteners are inspected; a signature does not replace inspection.",
+          "quote": "Zoya established a rule: the stained-glass frame must not leave its stand before the fasteners are inspected; a signature does not replace inspection."
+        },
+        {
+          "kind": "event",
+          "text": "Lada recorded: the stained-glass frame is still on the stand, the resin is sticky, but Zoya has already signed.",
+          "quote": "Lada recorded: the stained-glass frame is still on the stand, the resin is sticky, but Zoya has already signed."
+        },
+        {
+          "kind": "event",
+          "text": "Roman clarified: the stained-glass frame has not been handed to him and nobody has inspected its fasteners.",
+          "quote": "Roman clarified: the stained-glass frame has not been handed to him and nobody has inspected its fasteners."
+        },
+        {
+          "kind": "promise",
+          "text": "Roman promised: the diamond cutter will return to Zoya after sharpening and inspection of its safety guard.",
+          "quote": "Roman promised: the diamond cutter will return to Zoya after sharpening and inspection of its safety guard.",
+          "task": {
+            "key": "stained-glass-workshop-1",
+            "title": "diamond cutter",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Zoya warned: the diamond cutter must not be powered on without its safety guard, even if its blade is ready.",
+          "quote": "Zoya warned: the diamond cutter must not be powered on without its safety guard, even if its blade is ready."
+        },
+        {
+          "kind": "event",
+          "text": "Lada reported: the diamond cutter has been sharpened; its safety guard is still removed.",
+          "quote": "Lada reported: the diamond cutter has been sharpened; its safety guard is still removed."
+        },
+        {
+          "kind": "event",
+          "text": "Roman reported: the diamond cutter is in his cupboard; Zoya has not collected it yet.",
+          "quote": "Roman reported: the diamond cutter is in his cupboard; Zoya has not collected it yet."
+        },
+        {
+          "kind": "event",
+          "text": "Lada cancelled the instruction: the restoration certificate must no longer be sent to the group chat because the contract changed.",
+          "quote": "Lada cancelled the instruction: the restoration certificate must no longer be sent to the group chat because the contract changed.",
+          "task": {
+            "key": "stained-glass-workshop-8",
+            "title": "restoration certificate",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Zoya assigned a new task: the restoration certificate must be handed to Roman in person after checking its serial number.",
+          "quote": "Zoya assigned a new task: the restoration certificate must be handed to Roman in person after checking its serial number.",
+          "task": {
+            "key": "stained-glass-workshop-9",
+            "title": "restoration certificate",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Lada noted: the restoration certificate is sealed in an envelope; its serial number has not been checked.",
+          "quote": "Lada noted: the restoration certificate is sealed in an envelope; its serial number has not been checked."
+        },
+        {
+          "kind": "event",
+          "text": "Roman prohibited publishing the restoration certificate containing the client’s home address without the client’s separate consent.",
+          "quote": "Roman prohibited publishing the restoration certificate containing the client’s home address without the client’s separate consent."
+        },
+        {
+          "kind": "promise",
+          "text": "Zoya promised: Lada will receive the workshop pass after paying the deposit and attending the induction; payment alone is insufficient.",
+          "quote": "Zoya promised: Lada will receive the workshop pass after paying the deposit and attending the induction; payment alone is insufficient.",
+          "task": {
+            "key": "stained-glass-workshop-3",
+            "title": "workshop pass",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Roman confirmed: the workshop pass has been paid for, but the induction has not taken place; Zoya holds the pass.",
+          "quote": "Roman confirmed: the workshop pass has been paid for, but the induction has not taken place; Zoya holds the pass."
+        },
+        {
+          "kind": "event",
+          "text": "Lada clarified: the workshop pass permits entry but does not authorize operating equipment.",
+          "quote": "Lada clarified: the workshop pass permits entry but does not authorize operating equipment."
+        },
+        {
+          "kind": "event",
+          "text": "Zoya said: “Lada, I still have the workshop pass; I am waiting for the induction.”",
+          "quote": "Zoya said: “Lada, I still have the workshop pass; I am waiting for the induction.”"
+        },
+        {
+          "kind": "promise",
+          "text": "Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.",
+          "quote": "Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.",
+          "task": {
+            "key": "stained-glass-workshop-4",
+            "title": "practice frame",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Lada completed the task: the practice frame has been painted and delivered to Zoya; the promise is fulfilled.",
+          "quote": "Lada completed the task: the practice frame has been painted and delivered to Zoya; the promise is fulfilled.",
+          "task": {
+            "key": "stained-glass-workshop-4",
+            "title": "practice frame",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Roman stressed: the practice frame is light and has no glass; its readiness says nothing about the stained-glass frame.",
+          "quote": "Roman stressed: the practice frame is light and has no glass; its readiness says nothing about the stained-glass frame."
+        },
+        {
+          "kind": "event",
+          "text": "Zoya reported: the practice frame is stored in her classroom; it does not replace Roman’s stained-glass frame.",
+          "quote": "Zoya reported: the practice frame is stored in her classroom; it does not replace Roman’s stained-glass frame."
+        },
+        {
+          "kind": "promise",
+          "text": "Roman promised: the client sketch may be shown to Zoya only after the author gives written consent.",
+          "quote": "Roman promised: the client sketch may be shown to Zoya only after the author gives written consent.",
+          "task": {
+            "key": "stained-glass-workshop-5",
+            "title": "client sketch",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Lada clarified: the client sketch has two versions, a public draft and a private original; permission covers only the draft.",
+          "quote": "Lada clarified: the client sketch has two versions, a public draft and a private original; permission covers only the draft."
+        },
+        {
+          "kind": "event",
+          "text": "Zoya repeated a rumour: “apparently everyone may see the client sketch now”; nobody has asked the author.",
+          "quote": "Zoya repeated a rumour: “apparently everyone may see the client sketch now”; nobody has asked the author."
+        },
+        {
+          "kind": "event",
+          "text": "Roman added a condition: the original client sketch remains private; verbal consent for the draft is insufficient for the original.",
+          "quote": "Roman added a condition: the original client sketch remains private; verbal consent for the draft is insufficient for the original."
+        }
+      ],
+      "queries": [
+        {
+          "id": "literal-two",
+          "draft": "I will hand the stained-glass frame to Roman, then return the diamond cutter to Zoya.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Both independent conditions and actual holders are needed."
+        },
+        {
+          "id": "narrative-four",
+          "draft": "I spend a while listening to rain on the copper roof. The corridor smells of coffee; somebody left a wet umbrella on the stairs. I put it by the radiator, watch the empty street and only then return to our conversation. Now I take the stained-glass frame, return the diamond cutter, deliver the restoration certificate and collect the workshop pass.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four separate chains survive a long atmospheric preamble."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Well, can we take away the coloured glass now and return the thing used to cut it to its owner?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "New semantic descriptions require candidates with independent restrictions."
+        },
+        {
+          "id": "free-sensitive",
+          "draft": "Can I share the repair paperwork with everyone and show the whole customer drawing?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Paraphrased disclosure needs cancelled channel plus version-specific consent."
+        },
+        {
+          "id": "recent-two",
+          "draft": "Then I will hand this one to him, but will not switch the other one on yet.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent topic names do not prove reference identity.",
+          "recentMessages": [
+            "We are discussing the stained-glass frame and the diamond cutter."
+          ]
+        },
+        {
+          "id": "recent-version",
+          "draft": "And may I show her the original of that too?",
+          "wanted": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "A recent object reference cannot transfer draft consent to its original.",
+          "recentMessages": [
+            "We are discussing the client sketch: the public version and the private original."
+          ]
+        },
+        {
+          "id": "unanchored",
+          "draft": "I will return his one to her and hand the other thing to him; we sorted it all out, right?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unanchored pronouns cannot certify object or owner.",
+          "recentMessages": [
+            "It is raining outside."
+          ]
+        },
+        {
+          "id": "partial-clearance",
+          "draft": "The first check is done, so the stained-glass frame and the diamond cutter can be used without the remaining conditions.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Partial success does not satisfy independent checks."
+        },
+        {
+          "id": "cancelled-channel",
+          "draft": "Following the old request, I will post the restoration certificate to the group, then hand it over in person.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Old delivery route was cancelled; privacy remains in force."
+        },
+        {
+          "id": "rumour-consent",
+          "draft": "Since everyone already agreed, I will show the entire client sketch and publish the restoration certificate.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Rumour and limited permission are not full consent."
+        },
+        {
+          "id": "cross-object",
+          "draft": "The practice frame is ready, so I will hand over the stained-glass frame without inspection and collect the diamond cutter as well.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects and holders cannot share completion evidence."
+        },
+        {
+          "id": "owner-inversion",
+          "draft": "I will return the stained-glass frame to Zoya and the diamond cutter to Roman; remind me who owns what.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recipient reversal must not become ownership proof."
+        },
+        {
+          "id": "quoted-intent",
+          "draft": "I read the plan aloud: “Take the stained-glass frame, hand over the diamond cutter and circulate the restoration certificate.” This is only rehearsal.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Quoted rehearsal is not fulfillment."
+        },
+        {
+          "id": "conditional-action",
+          "draft": "If the checks allow it, I will deliver the stained-glass frame and the diamond cutter; otherwise I will touch neither.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Conditional future action is not a completed event."
+        },
+        {
+          "id": "negated-chain",
+          "draft": "I am not handing over the stained-glass frame or collecting the workshop pass; I am only asking about the restoration certificate.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negation and a question must preserve all three histories."
+        },
+        {
+          "id": "reordered-six",
+          "draft": "First the client sketch, then the workshop pass, then the restoration certificate, diamond cutter, practice frame and stained-glass frame: which are ready to be handed over?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Six named chains in reverse narrative order, including a fulfilled lookalike."
+        },
+        {
+          "id": "late-change",
+          "draft": "What restrictions currently apply to the client sketch? I will show it along with the restoration certificate.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Late interleaved restriction must be found with early cancellation."
+        },
+        {
+          "id": "speech",
+          "draft": "What did Zoya say to Lada about the workshop pass?",
+          "wanted": [
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Retrieve attributed historical speech, without changing it into an action."
+        },
+        {
+          "id": "completed-history",
+          "draft": "Remind me what happened to the practice frame and who received it.",
+          "wanted": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Completed promise remains available as history although not an open obligation."
+        },
+        {
+          "id": "what-remains",
+          "draft": "What do we still need to finish before the handovers, and what is already closed?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "General status includes completed as well as pending chains."
+        },
+        {
+          "id": "unknown-only",
+          "draft": "Can the plasma coil be sent yet?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Absent object must not acquire a history or complete coverage."
+        },
+        {
+          "id": "mixed-known-unknown",
+          "draft": "I will hand over the diamond cutter, then send the plasma coil to its owner.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Known chain must survive alongside an unsupported second object."
+        },
+        {
+          "id": "greeting",
+          "draft": "Hello. The light looks beautiful today.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "Unrelated greeting must not trigger a task warning."
+        },
+        {
+          "id": "long-delayed-reference",
+          "draft": "I spend a while listening to rain on the copper roof. The corridor smells of coffee; somebody left a wet umbrella on the stairs. I put it by the radiator, watch the empty street and only then return to our conversation. The thing promised to Roman and Zoya’s item — can we close those out now, or is it still too early?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Long indirect references to two recipients need both condition chains."
+        }
+      ]
+    },
+    {
+      "id": "karst-water-expedition-ru",
+      "plot": "karst-water-expedition",
+      "locale": "ru",
+      "worldName": "karst-water-expedition / ru",
+      "people": [
+        "Инга",
+        "Денис",
+        "Эмма"
+      ],
+      "objects": [
+        "лазерный дальномер",
+        "спусковая лебёдка",
+        "журнал проб воды",
+        "разрешение на спуск",
+        "ручной дальномер",
+        "карта водозабора"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Инга обещала: лазерный дальномер получит Денис после просушки корпуса и подписи Эммы; нужны оба условия.",
+          "quote": "Инга обещала: лазерный дальномер получит Денис после просушки корпуса и подписи Эммы; нужны оба условия.",
+          "task": {
+            "key": "karst-water-expedition-0",
+            "title": "лазерный дальномер",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Эмма установила правило: лазерный дальномер нельзя спускать в шахту без калибровки; подпись этого не заменяет.",
+          "quote": "Эмма установила правило: лазерный дальномер нельзя спускать в шахту без калибровки; подпись этого не заменяет."
+        },
+        {
+          "kind": "event",
+          "text": "Инга записала: лазерный дальномер ещё влажный, но подпись Эммы уже получена.",
+          "quote": "Инга записала: лазерный дальномер ещё влажный, но подпись Эммы уже получена."
+        },
+        {
+          "kind": "event",
+          "text": "Денис сообщил: лазерный дальномер остаётся в палатке Инги; калибровки и передачи не было.",
+          "quote": "Денис сообщил: лазерный дальномер остаётся в палатке Инги; калибровки и передачи не было."
+        },
+        {
+          "kind": "promise",
+          "text": "Денис обещал: спусковая лебёдка вернётся к Эмме после смазки и нагрузочного испытания.",
+          "quote": "Денис обещал: спусковая лебёдка вернётся к Эмме после смазки и нагрузочного испытания.",
+          "task": {
+            "key": "karst-water-expedition-1",
+            "title": "спусковая лебёдка",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Эмма предупредила: спусковая лебёдка не должна держать человека без нагрузочного испытания; смазки мало.",
+          "quote": "Эмма предупредила: спусковая лебёдка не должна держать человека без нагрузочного испытания; смазки мало."
+        },
+        {
+          "kind": "event",
+          "text": "Инга сообщила: спусковая лебёдка смазана, нагрузочное испытание отложено до завтра.",
+          "quote": "Инга сообщила: спусковая лебёдка смазана, нагрузочное испытание отложено до завтра."
+        },
+        {
+          "kind": "event",
+          "text": "Денис уточнил: спусковая лебёдка всё ещё у него на площадке; Эмма её не получала.",
+          "quote": "Денис уточнил: спусковая лебёдка всё ещё у него на площадке; Эмма её не получала."
+        },
+        {
+          "kind": "event",
+          "text": "Инга отменила поручение: журнал проб воды больше нельзя пересылать в открытую группу, маршрут изменён.",
+          "quote": "Инга отменила поручение: журнал проб воды больше нельзя пересылать в открытую группу, маршрут изменён.",
+          "task": {
+            "key": "karst-water-expedition-8",
+            "title": "журнал проб воды",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Эмма назначила новое дело: журнал проб воды нужно лично передать Денису после сверки маркировки бутылок.",
+          "quote": "Эмма назначила новое дело: журнал проб воды нужно лично передать Денису после сверки маркировки бутылок.",
+          "task": {
+            "key": "karst-water-expedition-9",
+            "title": "журнал проб воды",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Инга отметила: журнал проб воды остаётся в ящике, маркировку бутылок ещё не сверяли.",
+          "quote": "Инга отметила: журнал проб воды остаётся в ящике, маркировку бутылок ещё не сверяли."
+        },
+        {
+          "kind": "event",
+          "text": "Денис запретил: журнал проб воды с координатами частного колодца нельзя публиковать без согласия владельца.",
+          "quote": "Денис запретил: журнал проб воды с координатами частного колодца нельзя публиковать без согласия владельца."
+        },
+        {
+          "kind": "promise",
+          "text": "Эмма обещала: разрешение на спуск получит Инга после страховки и проверки каски; нужны оба условия.",
+          "quote": "Эмма обещала: разрешение на спуск получит Инга после страховки и проверки каски; нужны оба условия.",
+          "task": {
+            "key": "karst-water-expedition-3",
+            "title": "разрешение на спуск",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Денис подтвердил: разрешение на спуск оплачено вместе со страховкой, но каску ещё не осматривали; документ у Эммы.",
+          "quote": "Денис подтвердил: разрешение на спуск оплачено вместе со страховкой, но каску ещё не осматривали; документ у Эммы."
+        },
+        {
+          "kind": "event",
+          "text": "Инга уточнила: разрешение на спуск относится к сухой шахте, а не к затопленному тоннелю.",
+          "quote": "Инга уточнила: разрешение на спуск относится к сухой шахте, а не к затопленному тоннелю."
+        },
+        {
+          "kind": "event",
+          "text": "Эмма сказала: «Инга, разрешение на спуск пока у меня; я жду проверки каски».",
+          "quote": "Эмма сказала: «Инга, разрешение на спуск пока у меня; я жду проверки каски»."
+        },
+        {
+          "kind": "promise",
+          "text": "Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.",
+          "quote": "Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.",
+          "task": {
+            "key": "karst-water-expedition-4",
+            "title": "ручной дальномер",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Инга завершила дело: ручной дальномер получил новый ремешок и доставлен Эмме, обещание выполнено.",
+          "quote": "Инга завершила дело: ручной дальномер получил новый ремешок и доставлен Эмме, обещание выполнено.",
+          "task": {
+            "key": "karst-water-expedition-4",
+            "title": "ручной дальномер",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Денис подчеркнул: ручной дальномер не требует батареи; его готовность ничего не говорит про лазерный дальномер.",
+          "quote": "Денис подчеркнул: ручной дальномер не требует батареи; его готовность ничего не говорит про лазерный дальномер."
+        },
+        {
+          "kind": "event",
+          "text": "Эмма сообщила: ручной дальномер лежит у неё в сумке, лазерный дальномер Инга ей не давала.",
+          "quote": "Эмма сообщила: ручной дальномер лежит у неё в сумке, лазерный дальномер Инга ей не давала."
+        },
+        {
+          "kind": "promise",
+          "text": "Денис обещал: карта водозабора будет показана Эмме только после письменного разрешения владельца участка.",
+          "quote": "Денис обещал: карта водозабора будет показана Эмме только после письменного разрешения владельца участка.",
+          "task": {
+            "key": "karst-water-expedition-5",
+            "title": "карта водозабора",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Инга уточнила: карта водозабора существует в двух версиях, открытая схема и оригинал с точными координатами; разрешение относится лишь к схеме.",
+          "quote": "Инга уточнила: карта водозабора существует в двух версиях, открытая схема и оригинал с точными координатами; разрешение относится лишь к схеме."
+        },
+        {
+          "kind": "event",
+          "text": "Эмма пересказала слух: «карта водозабора вроде уже общедоступна»; владельца никто не спрашивал.",
+          "quote": "Эмма пересказала слух: «карта водозабора вроде уже общедоступна»; владельца никто не спрашивал."
+        },
+        {
+          "kind": "event",
+          "text": "Денис дополнил условие: карта водозабора в оригинале остаётся закрытой; устного согласия на схему недостаточно для оригинала.",
+          "quote": "Денис дополнил условие: карта водозабора в оригинале остаётся закрытой; устного согласия на схему недостаточно для оригинала."
+        }
+      ],
+      "queries": [
+        {
+          "id": "literal-two",
+          "draft": "Передам предмет «лазерный дальномер» Денис, затем верну «спусковая лебёдка» Эмма.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Both independent conditions and actual holders are needed."
+        },
+        {
+          "id": "narrative-four",
+          "draft": "Сижу у входа в пещеру и считаю капли на верёвке. Далеко за лесом гудит машина, но в лагере тихо; я поправляю одеяло, допиваю чай и долго смотрю на облака. Когда ветер наконец стихает, возвращаюсь к нашим делам. Теперь беру «лазерный дальномер», возвращаю «спусковая лебёдка», отношу «журнал проб воды» и забираю «разрешение на спуск».",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four separate chains survive a long atmospheric preamble."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Чем там расстояния меряют, уже можно в шахту? А ту штуку, что нас опускает, хозяйке вернём?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "New semantic descriptions require candidates with independent restrictions."
+        },
+        {
+          "id": "free-sensitive",
+          "draft": "Тетрадку с результатами воды можно разослать, а чертёж забора воды показать целиком?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Paraphrased disclosure needs cancelled channel plus version-specific consent."
+        },
+        {
+          "id": "recent-two",
+          "draft": "Тогда эту ему отдам, а ту пока не включаю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent topic names do not prove reference identity.",
+          "recentMessages": [
+            "Мы обсуждаем «лазерный дальномер» и «спусковая лебёдка»."
+          ]
+        },
+        {
+          "id": "recent-version",
+          "draft": "А оригинал этого тоже можно ей показать?",
+          "wanted": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "A recent object reference cannot transfer draft consent to its original.",
+          "recentMessages": [
+            "Обсуждаем «карта водозабора»: публичную версию и закрытый оригинал."
+          ]
+        },
+        {
+          "id": "unanchored",
+          "draft": "Его ей верну, а то другое отдам ему; мы же всё уладили?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unanchored pronouns cannot certify object or owner.",
+          "recentMessages": [
+            "За окном идёт дождь."
+          ]
+        },
+        {
+          "id": "partial-clearance",
+          "draft": "Первая проверка позади, поэтому «лазерный дальномер» и «спусковая лебёдка» уже можно использовать без остальных условий.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Partial success does not satisfy independent checks."
+        },
+        {
+          "id": "cancelled-channel",
+          "draft": "По старой просьбе публикую «журнал проб воды» в общей группе, а затем передам лично.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Old delivery route was cancelled; privacy remains in force."
+        },
+        {
+          "id": "rumour-consent",
+          "draft": "Раз все уже разрешили, показываю «карта водозабора» целиком и выкладываю «журнал проб воды».",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Rumour and limited permission are not full consent."
+        },
+        {
+          "id": "cross-object",
+          "draft": "«ручной дальномер» готов, значит и «лазерный дальномер» передаю без проверки, заодно забираю «спусковая лебёдка».",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects and holders cannot share completion evidence."
+        },
+        {
+          "id": "owner-inversion",
+          "draft": "Возвращаю «лазерный дальномер» Эмма, а «спусковая лебёдка» Денис; напомни, кому что принадлежит.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recipient reversal must not become ownership proof."
+        },
+        {
+          "id": "quoted-intent",
+          "draft": "Читаю план вслух: «Беру лазерный дальномер, отдаю спусковая лебёдка и рассылаю журнал проб воды». Это только репетиция.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Quoted rehearsal is not fulfillment."
+        },
+        {
+          "id": "conditional-action",
+          "draft": "Если проверки разрешат, отнесу «лазерный дальномер» и «спусковая лебёдка»; иначе ничего не трогаю.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Conditional future action is not a completed event."
+        },
+        {
+          "id": "negated-chain",
+          "draft": "Не передаю «лазерный дальномер» и не забираю «разрешение на спуск»; только спрашиваю про «журнал проб воды».",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negation and a question must preserve all three histories."
+        },
+        {
+          "id": "reordered-six",
+          "draft": "Сначала «карта водозабора», потом «разрешение на спуск», после — «журнал проб воды», «спусковая лебёдка», «ручной дальномер» и «лазерный дальномер»: что сейчас готово для передачи?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Six named chains in reverse narrative order, including a fulfilled lookalike."
+        },
+        {
+          "id": "late-change",
+          "draft": "Какие ограничения сейчас у «карта водозабора»? Покажу его вместе с «журнал проб воды».",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Late interleaved restriction must be found with early cancellation."
+        },
+        {
+          "id": "speech",
+          "draft": "Что Эмма сказала Инга о «разрешение на спуск»?",
+          "wanted": [
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Retrieve attributed historical speech, without changing it into an action."
+        },
+        {
+          "id": "completed-history",
+          "draft": "Напомни, что произошло с «ручной дальномер» и кто его получил.",
+          "wanted": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Completed promise remains available as history although not an open obligation."
+        },
+        {
+          "id": "what-remains",
+          "draft": "Что у нас осталось доделать перед передачами, а что уже закрыто?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "General status includes completed as well as pending chains."
+        },
+        {
+          "id": "unknown-only",
+          "draft": "А плазменную катушку уже можно отправлять?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Absent object must not acquire a history or complete coverage."
+        },
+        {
+          "id": "mixed-known-unknown",
+          "draft": "Отдам «спусковая лебёдка», а потом отправлю плазменную катушку владельцу.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Known chain must survive alongside an unsupported second object."
+        },
+        {
+          "id": "greeting",
+          "draft": "Привет. Как красиво сегодня падает свет.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "Unrelated greeting must not trigger a task warning."
+        },
+        {
+          "id": "long-delayed-reference",
+          "draft": "Сижу у входа в пещеру и считаю капли на верёвке. Далеко за лесом гудит машина, но в лагере тихо; я поправляю одеяло, допиваю чай и долго смотрю на облака. Когда ветер наконец стихает, возвращаюсь к нашим делам. Обещанное для Денис и вещь Эмма — с ними уже можно заканчивать, или ещё рано?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Long indirect references to two recipients need both condition chains."
+        }
+      ]
+    },
+    {
+      "id": "karst-water-expedition-en",
+      "plot": "karst-water-expedition",
+      "locale": "en",
+      "worldName": "karst-water-expedition / en",
+      "people": [
+        "Inga",
+        "Denis",
+        "Emma"
+      ],
+      "objects": [
+        "laser rangefinder",
+        "descent winch",
+        "water-sample log",
+        "descent permit",
+        "manual rangefinder",
+        "water-intake map"
+      ],
+      "facts": [
+        {
+          "kind": "promise",
+          "text": "Inga promised: Denis will receive the laser rangefinder after its casing dries and Emma signs; both conditions are required.",
+          "quote": "Inga promised: Denis will receive the laser rangefinder after its casing dries and Emma signs; both conditions are required.",
+          "task": {
+            "key": "karst-water-expedition-0",
+            "title": "laser rangefinder",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Emma established a rule: the laser rangefinder must not be lowered into the shaft without calibration; a signature is not a substitute.",
+          "quote": "Emma established a rule: the laser rangefinder must not be lowered into the shaft without calibration; a signature is not a substitute."
+        },
+        {
+          "kind": "event",
+          "text": "Inga recorded: the laser rangefinder is still damp, but Emma’s signature has been obtained.",
+          "quote": "Inga recorded: the laser rangefinder is still damp, but Emma’s signature has been obtained."
+        },
+        {
+          "kind": "event",
+          "text": "Denis reported: the laser rangefinder remains in Inga’s tent; neither calibration nor handover has occurred.",
+          "quote": "Denis reported: the laser rangefinder remains in Inga’s tent; neither calibration nor handover has occurred."
+        },
+        {
+          "kind": "promise",
+          "text": "Denis promised: the descent winch will return to Emma after lubrication and a load test.",
+          "quote": "Denis promised: the descent winch will return to Emma after lubrication and a load test.",
+          "task": {
+            "key": "karst-water-expedition-1",
+            "title": "descent winch",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Emma warned: the descent winch must not carry a person without a load test; lubrication is insufficient.",
+          "quote": "Emma warned: the descent winch must not carry a person without a load test; lubrication is insufficient."
+        },
+        {
+          "kind": "event",
+          "text": "Inga reported: the descent winch is lubricated; its load test has been postponed until tomorrow.",
+          "quote": "Inga reported: the descent winch is lubricated; its load test has been postponed until tomorrow."
+        },
+        {
+          "kind": "event",
+          "text": "Denis clarified: the descent winch is still at his staging area; Emma has not received it.",
+          "quote": "Denis clarified: the descent winch is still at his staging area; Emma has not received it."
+        },
+        {
+          "kind": "event",
+          "text": "Inga cancelled the instruction: the water-sample log must no longer be forwarded to the public group because the route changed.",
+          "quote": "Inga cancelled the instruction: the water-sample log must no longer be forwarded to the public group because the route changed.",
+          "task": {
+            "key": "karst-water-expedition-8",
+            "title": "water-sample log",
+            "status": "cancelled"
+          }
+        },
+        {
+          "kind": "plan",
+          "text": "Emma assigned a new task: the water-sample log must be handed to Denis in person after checking bottle labels.",
+          "quote": "Emma assigned a new task: the water-sample log must be handed to Denis in person after checking bottle labels.",
+          "task": {
+            "key": "karst-water-expedition-9",
+            "title": "water-sample log",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Inga noted: the water-sample log remains in the crate; the bottle labels have not been checked.",
+          "quote": "Inga noted: the water-sample log remains in the crate; the bottle labels have not been checked."
+        },
+        {
+          "kind": "event",
+          "text": "Denis prohibited publishing the water-sample log containing coordinates of a private well without the owner’s consent.",
+          "quote": "Denis prohibited publishing the water-sample log containing coordinates of a private well without the owner’s consent."
+        },
+        {
+          "kind": "promise",
+          "text": "Emma promised: Inga will receive the descent permit after insurance and a helmet inspection; both conditions are required.",
+          "quote": "Emma promised: Inga will receive the descent permit after insurance and a helmet inspection; both conditions are required.",
+          "task": {
+            "key": "karst-water-expedition-3",
+            "title": "descent permit",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Denis confirmed: the descent permit and insurance are paid, but the helmet has not been inspected; Emma holds the document.",
+          "quote": "Denis confirmed: the descent permit and insurance are paid, but the helmet has not been inspected; Emma holds the document."
+        },
+        {
+          "kind": "event",
+          "text": "Inga clarified: the descent permit covers the dry shaft, not the flooded tunnel.",
+          "quote": "Inga clarified: the descent permit covers the dry shaft, not the flooded tunnel."
+        },
+        {
+          "kind": "event",
+          "text": "Emma said: “Inga, I still have the descent permit; I am waiting for the helmet inspection.”",
+          "quote": "Emma said: “Inga, I still have the descent permit; I am waiting for the helmet inspection.”"
+        },
+        {
+          "kind": "promise",
+          "text": "Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.",
+          "quote": "Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.",
+          "task": {
+            "key": "karst-water-expedition-4",
+            "title": "manual rangefinder",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Inga completed the task: the manual rangefinder has a new strap and has been delivered to Emma; the promise is fulfilled.",
+          "quote": "Inga completed the task: the manual rangefinder has a new strap and has been delivered to Emma; the promise is fulfilled.",
+          "task": {
+            "key": "karst-water-expedition-4",
+            "title": "manual rangefinder",
+            "status": "completed"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Denis stressed: the manual rangefinder needs no battery; its readiness says nothing about the laser rangefinder.",
+          "quote": "Denis stressed: the manual rangefinder needs no battery; its readiness says nothing about the laser rangefinder."
+        },
+        {
+          "kind": "event",
+          "text": "Emma reported: the manual rangefinder is in her bag; Inga has not given her the laser rangefinder.",
+          "quote": "Emma reported: the manual rangefinder is in her bag; Inga has not given her the laser rangefinder."
+        },
+        {
+          "kind": "promise",
+          "text": "Denis promised: the water-intake map will be shown to Emma only after written permission from the landowner.",
+          "quote": "Denis promised: the water-intake map will be shown to Emma only after written permission from the landowner.",
+          "task": {
+            "key": "karst-water-expedition-5",
+            "title": "water-intake map",
+            "status": "open"
+          }
+        },
+        {
+          "kind": "event",
+          "text": "Inga clarified: the water-intake map has two versions, a public diagram and an original with exact coordinates; permission covers only the diagram.",
+          "quote": "Inga clarified: the water-intake map has two versions, a public diagram and an original with exact coordinates; permission covers only the diagram."
+        },
+        {
+          "kind": "event",
+          "text": "Emma repeated a rumour: “apparently the water-intake map is public now”; nobody has asked the owner.",
+          "quote": "Emma repeated a rumour: “apparently the water-intake map is public now”; nobody has asked the owner."
+        },
+        {
+          "kind": "event",
+          "text": "Denis added a condition: the original water-intake map remains private; verbal consent for the diagram is insufficient for the original.",
+          "quote": "Denis added a condition: the original water-intake map remains private; verbal consent for the diagram is insufficient for the original."
+        }
+      ],
+      "queries": [
+        {
+          "id": "literal-two",
+          "draft": "I will hand the laser rangefinder to Denis, then return the descent winch to Emma.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Both independent conditions and actual holders are needed."
+        },
+        {
+          "id": "narrative-four",
+          "draft": "I sit at the cave entrance counting drops on the rope. A vehicle hums beyond the forest, but camp is quiet. I straighten a blanket, finish my tea and watch the clouds for a while. When the wind finally eases, I return to our business. Now I take the laser rangefinder, return the descent winch, deliver the water-sample log and collect the descent permit.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Four separate chains survive a long atmospheric preamble."
+        },
+        {
+          "id": "free-equipment",
+          "draft": "Can the thing that measures distances go down the shaft now? And can we return the thing that lowers us to its owner?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "New semantic descriptions require candidates with independent restrictions."
+        },
+        {
+          "id": "free-sensitive",
+          "draft": "Can I circulate the notebook of water results and show the entire drawing of where the water is collected?",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Paraphrased disclosure needs cancelled channel plus version-specific consent."
+        },
+        {
+          "id": "recent-two",
+          "draft": "Then I will hand this one to him, but will not switch the other one on yet.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recent topic names do not prove reference identity.",
+          "recentMessages": [
+            "We are discussing the laser rangefinder and the descent winch."
+          ]
+        },
+        {
+          "id": "recent-version",
+          "draft": "And may I show her the original of that too?",
+          "wanted": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "A recent object reference cannot transfer draft consent to its original.",
+          "recentMessages": [
+            "We are discussing the water-intake map: the public version and the private original."
+          ]
+        },
+        {
+          "id": "unanchored",
+          "draft": "I will return his one to her and hand the other thing to him; we sorted it all out, right?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Unanchored pronouns cannot certify object or owner.",
+          "recentMessages": [
+            "It is raining outside."
+          ]
+        },
+        {
+          "id": "partial-clearance",
+          "draft": "The first check is done, so the laser rangefinder and the descent winch can be used without the remaining conditions.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Partial success does not satisfy independent checks."
+        },
+        {
+          "id": "cancelled-channel",
+          "draft": "Following the old request, I will post the water-sample log to the group, then hand it over in person.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Old delivery route was cancelled; privacy remains in force."
+        },
+        {
+          "id": "rumour-consent",
+          "draft": "Since everyone already agreed, I will show the entire water-intake map and publish the water-sample log.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Rumour and limited permission are not full consent."
+        },
+        {
+          "id": "cross-object",
+          "draft": "The manual rangefinder is ready, so I will hand over the laser rangefinder without inspection and collect the descent winch as well.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Similar objects and holders cannot share completion evidence."
+        },
+        {
+          "id": "owner-inversion",
+          "draft": "I will return the laser rangefinder to Emma and the descent winch to Denis; remind me who owns what.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Recipient reversal must not become ownership proof."
+        },
+        {
+          "id": "quoted-intent",
+          "draft": "I read the plan aloud: “Take the laser rangefinder, hand over the descent winch and circulate the water-sample log.” This is only rehearsal.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Quoted rehearsal is not fulfillment."
+        },
+        {
+          "id": "conditional-action",
+          "draft": "If the checks allow it, I will deliver the laser rangefinder and the descent winch; otherwise I will touch neither.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Conditional future action is not a completed event."
+        },
+        {
+          "id": "negated-chain",
+          "draft": "I am not handing over the laser rangefinder or collecting the descent permit; I am only asking about the water-sample log.",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Negation and a question must preserve all three histories."
+        },
+        {
+          "id": "reordered-six",
+          "draft": "First the water-intake map, then the descent permit, then the water-sample log, descent winch, manual rangefinder and laser rangefinder: which are ready to be handed over?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Six named chains in reverse narrative order, including a fulfilled lookalike."
+        },
+        {
+          "id": "late-change",
+          "draft": "What restrictions currently apply to the water-intake map? I will show it along with the water-sample log.",
+          "wanted": [
+            8,
+            9,
+            10,
+            11,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Late interleaved restriction must be found with early cancellation."
+        },
+        {
+          "id": "speech",
+          "draft": "What did Emma say to Inga about the descent permit?",
+          "wanted": [
+            15
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Retrieve attributed historical speech, without changing it into an action."
+        },
+        {
+          "id": "completed-history",
+          "draft": "Remind me what happened to the manual rangefinder and who received it.",
+          "wanted": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "optional",
+          "reason": "Completed promise remains available as history although not an open obligation."
+        },
+        {
+          "id": "what-remains",
+          "draft": "What do we still need to finish before the handovers, and what is already closed?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "General status includes completed as well as pending chains."
+        },
+        {
+          "id": "unknown-only",
+          "draft": "Can the plasma coil be sent yet?",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Absent object must not acquire a history or complete coverage."
+        },
+        {
+          "id": "mixed-known-unknown",
+          "draft": "I will hand over the descent winch, then send the plasma coil to its owner.",
+          "wanted": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": true,
+          "mustNotCertifyComplete": true,
+          "notice": "required",
+          "reason": "Known chain must survive alongside an unsupported second object."
+        },
+        {
+          "id": "greeting",
+          "draft": "Hello. The light looks beautiful today.",
+          "wanted": [],
+          "control": true,
+          "mustNotCertifyComplete": false,
+          "notice": "forbidden",
+          "reason": "Unrelated greeting must not trigger a task warning."
+        },
+        {
+          "id": "long-delayed-reference",
+          "draft": "I sit at the cave entrance counting drops on the rope. A vehicle hums beyond the forest, but camp is quiet. I straighten a blanket, finish my tea and watch the clouds for a while. When the wind finally eases, I return to our business. The thing promised to Denis and Emma’s item — can we close those out now, or is it still too early?",
+          "wanted": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "control": false,
+          "mustNotCertifyComplete": false,
+          "notice": "required",
+          "reason": "Long indirect references to two recipients need both condition chains."
+        }
+      ]
+    }
+  ]
+}

@@ -1,10 +1,10 @@
-import { isPhotoAddress } from "../core/photo-assets";
+import { isPhotoAddress, isPhotoData } from "../core/photo-assets";
 import { dataImageBlob } from "./image/image-codec";
 
 /** Lazy, bounded decoding. No original image collection is retained by the UI. */
-export function observePhotoImages(doc: Document, read: (id: string) => Promise<string>): () => void {
+export function observePhotoImages(doc: Document, read: (id: string) => Promise<string>, readPreview?: (id: string, size: number) => Promise<string>): () => void {
   const win = doc.defaultView!;
-  const states = new Map<HTMLImageElement, { address: string; url?: string; visible: boolean; loading: boolean; token: number }>();
+  const states = new Map<HTMLImageElement, { address: string; url?: string; visible: boolean; intersecting: boolean; loading: boolean; token: number }>();
   const roots = new Set<Document | ShadowRoot>();
   const observers = new Map<Document | ShadowRoot, MutationObserver>();
   const queue: HTMLImageElement[] = [];
@@ -19,16 +19,18 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
       if (!state?.visible || state.url || state.loading || !image.isConnected) continue;
       const token = ++state.token; state.loading = true; active++;
       void (async () => {
-        const data = await read(state.address);
-        if (stopped || states.get(image) !== state || token !== state.token || !state.visible || !image.isConnected) return;
-        let blob = dataImageBlob(data);
         const root = image.getRootNode();
         const full = root instanceof ShadowRoot && root.host.hasAttribute("data-deeprole-photo-viewer");
-        if (!full && typeof createImageBitmap === "function") {
+        const rect = image.getBoundingClientRect();
+        const limit = Math.max(256, Math.min(1024, Math.ceil(Math.max(rect.width, rect.height) * win.devicePixelRatio)));
+        let prepared = false;
+        const original = () => isPhotoData(state.address) ? Promise.resolve(state.address) : read(state.address);
+        const data = !full && readPreview && isPhotoAddress(state.address) ? await readPreview(state.address, limit).then(data => { prepared = true; return data; }).catch(original) : await original();
+        if (stopped || states.get(image) !== state || token !== state.token || !state.visible || !image.isConnected) return;
+        let blob = dataImageBlob(data);
+        if (!full && !prepared && typeof createImageBitmap === "function") {
           const bitmap = await createImageBitmap(blob);
           try {
-            const rect = image.getBoundingClientRect();
-            const limit = Math.max(256, Math.min(1024, Math.ceil(Math.max(rect.width, rect.height) * win.devicePixelRatio)));
             const scale = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
             if (scale < 1) {
               const canvas = doc.createElement("canvas"); canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
@@ -44,13 +46,31 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
         .finally(() => { active--; state.loading = false; if (states.get(image) === state && token !== state.token && state.visible && !state.url) queue.push(image); pump(); });
     }
   };
+  // Prepare a whole visible library page as soon as any image in it
+  // approaches the viewport. Other photo surfaces retain their lazy behaviour.
+  const syncVisibility = () => {
+    const batches = new Map<Element, Set<string>>();
+    for (const [image, state] of states) {
+      const batch = image.dataset.drPhotoBatch, grid = image.closest(".dr-portrait-library-grid");
+      if (state.intersecting && image.isConnected && grid && batch !== undefined) {
+        const active = batches.get(grid) ?? new Set<string>(); active.add(batch); batches.set(grid, active);
+      }
+    }
+    for (const [image, state] of states) {
+      const batch = image.dataset.drPhotoBatch, grid = image.closest(".dr-portrait-library-grid");
+      const visible = image.isConnected && (state.intersecting || !!(grid && batch !== undefined && batches.get(grid)?.has(batch)));
+      if (visible === state.visible) continue;
+      state.visible = visible;
+      if (visible) queue.push(image); else release(image);
+    }
+    pump();
+  };
   const intersection = new win.IntersectionObserver(entries => {
     for (const entry of entries) {
       const image = entry.target as HTMLImageElement, state = states.get(image); if (!state) continue;
-      state.visible = entry.isIntersecting;
-      if (state.visible) { queue.push(image); } else release(image);
+      state.intersecting = entry.isIntersecting;
     }
-    pump();
+    syncVisibility();
   }, { rootMargin: "100px" });
   const scan = (root: Document | ShadowRoot | Element) => {
     const elements = root instanceof Element ? [root, ...root.querySelectorAll("*")] : [...root.querySelectorAll("*")];
@@ -58,13 +78,14 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
       if (element.shadowRoot) observe(element.shadowRoot);
       if (!(element instanceof HTMLImageElement)) continue;
       const src = element.getAttribute("src"), previous = states.get(element);
-      if (!isPhotoAddress(src)) {
+      const inlineLibraryPhoto = isPhotoData(src) && !!element.closest(".dr-portrait-library-grid");
+      if (!isPhotoAddress(src) && !inlineLibraryPhoto) {
         if (previous && src && src !== previous.url) { release(element); states.delete(element); intersection.unobserve(element); delete element.dataset.drPhotoSource; element.setAttribute("src", src); }
         continue;
       }
       if (previous?.address === src && !previous.url) continue;
-      release(element); states.set(element, { address: src, visible: false, loading: false, token: 0 });
-      element.dataset.drPhotoSource = src;
+      release(element); states.set(element, { address: src, visible: false, intersecting: false, loading: false, token: 0 });
+      if (isPhotoAddress(src)) element.dataset.drPhotoSource = src;
       element.removeAttribute("src"); intersection.observe(element);
     }
   };
@@ -77,8 +98,9 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
       }
       for (const [image] of states) if (!image.isConnected) { release(image); intersection.unobserve(image); states.delete(image); }
       for (const [root, observer] of observers) if (root instanceof ShadowRoot && !root.host.isConnected) { observer.disconnect(); observers.delete(root); roots.delete(root); }
+      syncVisibility();
     });
-    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] }); observers.set(root, observer); scan(root);
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["src", "data-dr-photo-batch"] }); observers.set(root, observer); scan(root);
   };
   observe(doc);
   return () => { stopped = true; intersection.disconnect(); observers.forEach(observer => observer.disconnect()); observers.clear(); for (const [image] of states) release(image); states.clear(); roots.clear(); queue.length = 0; };

@@ -20,8 +20,9 @@ import { sameStoryValue } from "../../core/story-value";
 import { storyReviewText, storyReviewError, type StoryReviewTextKey } from "../../core/story-review-i18n";
 import type { Locale } from "../../core/types";
 import "./story-review.css";
+import { MemoryGuide } from "./MemoryGuide";
 
-type WorkspaceSection = "overview" | "memory" | "people" | "timeline";
+type WorkspaceSection = "overview" | "memory" | "people" | "timeline" | "tasks" | "episodes";
 export function ActiveStoryReviewCard({ locale, tabs, guided = false, operationBlocked = false, scope, workspaceSection, readOnly = false }: { locale: Locale; tabs: StoryReviewTabs; guided?: boolean; operationBlocked?: boolean; scope?: { worldId: string; chatId: string }; workspaceSection?: WorkspaceSection; readOnly?: boolean }) {
   const target = useRef<ActiveStoryReview | null>(null);
   return <StoryReview locale={locale} guided={guided} workspaceSection={workspaceSection} readOnly={readOnly} operationBlocked={operationBlocked} onRead={async previous => {
@@ -38,6 +39,7 @@ export function ActiveStoryReviewCard({ locale, tabs, guided = false, operationB
 export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepair, onDiscovery, onSupplement, onIdentities, onMerge, guided = false, operationBlocked = false, workspaceSection, readOnly = false }: { locale: Locale; guided?: boolean; operationBlocked?: boolean; workspaceSection?: WorkspaceSection; readOnly?: boolean; onMerge?: (action: MergeAction) => Promise<MergePage>; onIdentities?: (action: IdentityAction) => Promise<IdentityPage>; onRead: (previous: StoryReviewPage | null) => Promise<StoryReviewPage>; onPreview: (page: StoryReviewPage, head: string | null) => Promise<StoryReviewPreview>; onGame?: (operation: "start" | "restart" | "sync" | "undo" | "out-of-character", manual: "stop" | "keep") => Promise<void>; onFact?: (page: StoryReviewPage, eventId: string, text: string, accept: boolean) => Promise<void>; onRepair?: (page: StoryReviewPage) => Promise<void>; onDiscovery?: (action: CharacterDiscoveryAction) => Promise<CharacterDiscoveryPage | null>; onSupplement?: (action: SupplementAction) => Promise<SupplementPage | null> }) {
   const [page, setPage] = useState<StoryReviewPage | null>(null), [preview, setPreview] = useState<StoryReviewPreview | null>(null);
   const [busy, setBusy] = useState<"read" | "preview" | "repair" | null>(null), [notice, setNotice] = useState<StoryReviewTextKey | null>(null);
+  const [starting, setStarting] = useState(false);
   const [localSection, setSection] = useState<"memory" | "people" | "timeline">("memory"), [visited, setVisited] = useState({ memory: true, people: false, timeline: false }), [restartConfirmed, setRestartConfirmed] = useState(false);
   const section = workspaceSection ?? localSection;
   const showControls = !workspaceSection || workspaceSection === "overview";
@@ -56,6 +58,7 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
   }
   async function game(operation: "start" | "restart" | "sync" | "undo" | "out-of-character", manual: "stop" | "keep" = "stop") {
     if (running.current || !onGame || operationBlocked || readOnly) return;
+    setStarting(operation === "start");
     running.current = true; const token = ++generation.current; setBusy("read"); setNotice(null); setPreview(null);
     try {
       await onGame(operation, manual);
@@ -63,7 +66,7 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
       if (!validStoryReviewPage(value)) throw Error("story-review-invalid");
       if (mounted.current && token === generation.current) { setPage(value); setNotice(operation === "undo" ? "undoDone" : operation === "out-of-character" ? value.nextOutOfCharacter ? "nonStoryOn" : "nonStoryOff" : "synced"); }
     } catch (error) { if (mounted.current && token === generation.current) setNotice(storyReviewError(error)); }
-    finally { if (mounted.current && token === generation.current) setBusy(null); running.current = false; }
+    finally { if (mounted.current && token === generation.current) { setBusy(null); setStarting(false); } running.current = false; }
   }
   async function run(action: "read" | "next" | "preview", head: string | null = null) {
     if (running.current || action === "next" && !page?.next || action === "preview" && (!page?.guard || head !== null && !page.entries.some(e => e.id === head && e.role === "assistant" && e.completion === "complete"))) return;
@@ -84,7 +87,8 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
     } finally { if (mounted.current && generation.current === token) setBusy(null); running.current = false; }
   }
   const blocked = !!busy || operationBlocked || readOnly;
-  return <section className={"settings-card dr-story-review" + (guided ? " is-guided" : "")} aria-labelledby={showControls ? id + "-title" : undefined} aria-label={!showControls && workspaceSection ? ux(workspaceSection) : undefined}>{showControls && <header><h2 id={id + "-title"}>{guided ? ux("recordingTitle") : t("title")}</h2></header>}<div>
+  const needsRecording = guided && !!page && !page.managed && !showControls && !!onGame;
+  return <section className={"settings-card dr-story-review" + (guided ? " is-guided" : "")} aria-labelledby={showControls ? id + "-title" : undefined} aria-label={!showControls && workspaceSection ? ux(workspaceSection) : undefined}>{showControls && <header className="dr-story-feature-heading"><h2 id={id + "-title"}>{guided ? ux("recordingTitle") : t("title")}</h2>{guided && <MemoryGuide locale={locale} topic="recording"/>}</header>}<div>
     {!guided && <><p className="setting-copy">{t("hint")}</p><p className="setting-copy">{t("limit")}</p></>}
     {guided && showControls && <div className="dr-story-state" data-state={!page ? "loading" : page.paused ? "paused" : page.managed ? "active" : "inactive"}><strong>{ux(!page ? notice && !busy ? "unavailable" : "loading" : page.paused ? "paused" : page.managed ? "active" : "inactive")}</strong>{page && <p className="setting-copy">{ux(page.paused ? "pauseHint" : page.managed ? "activeHint" : "inactiveHint")}</p>}</div>}
     {operationBlocked && <p role="status" className="setting-copy">{ux("pending")}</p>}
@@ -102,8 +106,14 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
       </details>
     </div>}
     {(!guided || !page || !onGame) && <button type="button" className="button secondary" disabled={!!busy} onClick={() => void run("read")}>{busy === "read" ? t("reading") : guided ? ux("refresh") : t(page || notice ? "refresh" : "read")}</button>}
-    {workspaceSection && !showControls && page && onGame && <button type="button" className="button secondary small" disabled={!!busy} onClick={() => void run("read")}>{busy === "read" ? t("reading") : ux("refresh")}</button>}
-    <div role="status" aria-live="polite" aria-atomic="true">{busy === "repair" ? storyUpdateText(locale, "repairing") : busy === "preview" ? t("checking") : notice ? t(notice) : null}</div>
+    {workspaceSection && !showControls && page && onGame && !needsRecording && <button type="button" className="button secondary small" disabled={!!busy} onClick={() => void run("read")}>{busy === "read" ? t("reading") : ux("refresh")}</button>}
+    <div role="status" aria-live="polite" aria-atomic="true">{busy === "repair" ? storyUpdateText(locale, "repairing") : busy === "preview" ? t("checking") : notice === "synced" && needsRecording === false && guided && !showControls && page?.managed ? ux("active") : notice ? t(notice) : null}</div>
+    {needsRecording && <div className="dr-story-recording-start" aria-busy={!!busy}>
+      <div className="dr-story-feature-heading"><h3>{ux("inactive")}</h3><MemoryGuide locale={locale} topic="recording"/></div>
+      <p className="setting-copy">{ux("inactiveHint")}</p>
+      <button type="button" className="button" disabled={blocked} onClick={() => void game("start")}>{starting ? ux("starting") : ux("start")}</button>
+      <button type="button" className="button secondary small" disabled={!!busy} onClick={() => void run("read")}>{ux("refresh")}</button>
+    </div>}
     {page && <>{!guided && <p>{t("world").replace("{name}", page.worldName)}</p>}
       {guided && !workspaceSection && <nav className="dr-story-sections" aria-label={ux("sections")}>{(["memory", "people", "timeline"] as const).map(key => <button key={key} type="button" aria-pressed={section === key} onClick={() => { setSection(key); setVisited(v => ({ ...v, [key]: true })); }}>{ux(key)}</button>)}</nav>}
       {(!guided || visited.people) && <section hidden={guided && section !== "people"}>
@@ -112,13 +122,13 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
         {guided && <details className="dr-story-tool"><summary>{ux("worldCast")}</summary><p className="setting-copy">{ux("worldCastHint")}</p><CastSetup worldId={page.worldId} locale={locale} hideHeading/></details>}
         {page.managed && page.guard && onDiscovery && <CharacterDiscovery locale={locale} scope={{ chatId: page.chatId, worldId: page.worldId, guard: page.guard }} onAction={onDiscovery} onChanged={() => void memory(async () => {})} disabled={blocked} compact={guided} autoRead={guided}/>}
         {page.managed && page.guard && onSupplement && <details className="dr-story-tool"><summary>{ux("supplements")}</summary><p className="setting-copy">{ux("supplementsHint")}</p><ProfileSupplements locale={locale} scope={{ chatId: page.chatId, worldId: page.worldId }} onAction={onSupplement} onChanged={() => void memory(async () => {})} disabled={blocked}/></details>}
-        {guided && !page.managed && <p>{ux("initial")}</p>}
+        {guided && !page.managed && !needsRecording && <p>{ux("initial")}</p>}
       </section>}
       <section hidden={guided && section !== "memory"}>{page.managed && <StoryFacts locale={locale} page={page} busy={blocked} compact={guided} onSave={onFact ? (event, text, accept) => void memory(() => onFact(page, event, text, accept)) : undefined} onRepair={onRepair ? () => void memory(() => onRepair(page), true) : undefined}/>}
-        {guided && !page.managed && <p>{ux("initial")}</p>}
+        {guided && !page.managed && !needsRecording && <p>{ux("initial")}</p>}
       </section>
       {(!guided || visited.timeline) && <section hidden={guided && section !== "timeline"}>{guided && !workspaceSection && <p className="setting-copy">{ux("timelineHint")}</p>}
-      {!page.guard ? <p>{guided ? ux("initial") : t("missing")}</p> : <>
+      {!page.guard ? !needsRecording && <p>{guided ? ux("initial") : t("missing")}</p> : <>
         {!page.entries.length ? <p>{t("empty")}</p> : <><p className="setting-copy">{t("order").replace("{from}", n(page.offset + 1)).replace("{to}", n(page.offset + page.entries.length)).replace("{total}", n(page.guard.revisionCount))}</p>
           {page.entries.map((entry, index) => <article className="dr-story-review-entry" key={entry.id}>
             <h3>{n(page.offset + index + 1)}. {t(entry.role)}</h3><p className="dr-story-review-meta">{t(entry.completion)} · {t(entry.selected ? "selected" : "observed")}</p>

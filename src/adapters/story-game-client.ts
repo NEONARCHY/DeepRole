@@ -81,11 +81,14 @@ export class StoryGameClient {
     if(!preparation&&same())this.presentation={scope:initial,anchor,snapshot};
     return snapshot;
   }
-  async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop") {
+  async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop", reviewedBase?: string) {
     // A new visible variant must not be mistaken for an older in-flight sync.
     // Serialise reads, then take a fresh scope/anchor for THIS invocation.
     while (this.task || this.presentationTask) { try { await (this.task ?? this.presentationTask); } catch { /* A new explicit/read attempt gets its own scope. */ } }
     const initial = { ...this.scope() };
+    // A reviewed reset must use that same revision. The existing storage guard
+    // checks it again atomically after the native history read.
+    if (reviewedBase !== undefined && (operation !== "reset" || initial.base !== reviewedBase)) throw Error("story-review-stale");
     const anchor = fieldHistoryAnchor(this.win.document, true);
     const preparation = operation === "parent" || operation === "edit";
     if (!initial.chatId || !initial.worldId || initial.locked || initial.generating && !preparation) throw Error("story-checkpoint-busy");

@@ -2,6 +2,7 @@ import type { Locale } from "./types";
 const en = {
  nav: "Story memory", title: "Story memory", intro: "Play normally. Manage what the game remembers here.", unavailable: "Could not check this chat",
  overview: "Overview", episodes: "Recaps", tasks: "Tasks", workspaceNavigation: "Story memory sections",
+ starting: "Enabling recording…",
  overviewHint: "Choose how new details are saved and review anything that needs your decision.",
  memoryHint: "Check saved facts, correct a mistake or exclude a detail. Relevant facts are selected for each request; the whole list is not sent at once.",
  episodesHint: "Read short recaps of recorded scenes and their sources.",
@@ -49,7 +50,8 @@ const ru: Record<keyof typeof en, string> = {
  open: "История и персонажи", openHint: "Посмотреть записанные сцены и добавить людей, найденных в игре.",
  connectTitle: "Подключите мир к чату", connectHint: "Выберите мир в разделе «Игра», затем откройте историю. Другой чат с тем же миром подключится к этой же игре.", chooseWorld: "Выбрать мир", browseWorlds: "Мои миры",
  chatTitle: "Откройте чат DeepSeek", chatHint: "Здесь можно редактировать миры. Для работы с историей нужен чат DeepSeek, в котором вы играете.", backToPlay: "Перейти к игре",
- recordingTitle: "Запись сцен", active: "Запись включена", paused: "Запись приостановлена", inactive: "Запись выключена", loading: "Проверяем этот чат…",
+  recordingTitle: "Запись сцен", active: "Запись включена", paused: "Запись приостановлена", inactive: "Запись выключена", loading: "Проверяем этот чат…",
+ starting: "Включаем запись…",
  activeHint: "Завершённые сцены записываются автоматически. Какие факты требуют проверки — зависит от режима сохранения выше.", inactiveHint: "Началом станет ответ, выбранный сейчас в DeepSeek. Лор и анкеты сохранятся; прежняя переписка не анализируется.", pauseHint: "Выберите нужный ответ в DeepSeek, затем возобновите запись.",
  refresh: "Обновить просмотр", sync: "Учесть выбранный ответ", start: "Включить запись сцен", resume: "Возобновить запись", pending: "DeepSeek ещё отвечает. Дождитесь завершения перед изменением истории.",
  memory: "Память", people: "Персонажи", timeline: "Записанные сцены", sections: "Инструменты истории",

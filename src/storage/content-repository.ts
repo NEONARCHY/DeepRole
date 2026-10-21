@@ -1,7 +1,7 @@
 import { browser } from "wxt/browser";
 import { REPOSITORY_PORT, requestJsonPort } from "./repository-stream";
 import { safeMemoryPreparationDetail } from "../core/memory-preparation-diagnostic";
-import { isPhotoAddress, mapSheetPhotos } from "../core/photo-assets";
+import { prepareCharacterSave } from "./prepare-character-save";
 import type { DataRecord, RecordKind, RecordValue } from "../core/types";
 import type { CharacterEdit, CharacterScope, CharacterSaveResult } from "./characters";
 import type { CharacterTurn } from "../core/characters";
@@ -15,6 +15,7 @@ import type { StoryCheckpointChoice, StoryCheckpointReview, StoryCheckpointScope
 import type { StoryPreviewInput, StoryReviewInput, StoryReviewPage, StoryReviewPreview } from "../core/story-review";
 
 export type RepositoryRequest =
+  | { type: "DR_REPOSITORY"; operation: "saveMemoryBudget"; input: { worldId: string; chatId: string; chatUrl: string; contextBudget: number; expectedBudget: number } }
   | { type: "DR_REPOSITORY"; operation: "readAutomationReview"; input: import("../core/story-automation-review").AutomationReviewRead; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "resolveAutomationReview"; input: import("../core/story-automation-review").AutomationReviewDecision; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "activateWorldGame"; input: import("../core/world-game").WorldGameActivation }
@@ -42,6 +43,7 @@ export type RepositoryRequest =
   | { type: "DR_REPOSITORY"; operation: "confirmDispatchCapture"; source: unknown; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "advanceDispatchCapture"; packet: unknown; chatUrl: string }
   | { type: "DR_REPOSITORY"; operation: "readPhoto"; id: string }
+  | { type: "DR_REPOSITORY"; operation: "readPhotoPreview"; id: string; size: number }
   | { type: "DR_REPOSITORY"; operation: "storePhoto"; image: string }
   | { type: "DR_REPOSITORY"; operation: "acknowledgeRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "saveRecoveredReply"; edit: RecoveredReplyEdit }
@@ -67,6 +69,7 @@ async function call<T>(message: RepositoryRequest): Promise<T> {
 // IndexedDB in a content script belongs to the website, not the extension.
 // All content access is routed to the extension-owned background repository.
 export const contentRepository = {
+  saveMemoryBudget: (input: Extract<RepositoryRequest, { operation: "saveMemoryBudget" }>["input"]) => call<void>({ type: "DR_REPOSITORY", operation: "saveMemoryBudget", input }),
   readAutomationReview: (input: import("../core/story-automation-review").AutomationReviewRead, chatUrl: string) => call<import("../core/story-automation-review").AutomationReviewPage>({ type: "DR_REPOSITORY", operation: "readAutomationReview", input, chatUrl }),
   resolveAutomationReview: (input: import("../core/story-automation-review").AutomationReviewDecision, chatUrl: string) => call<{ changed: boolean }>({ type: "DR_REPOSITORY", operation: "resolveAutomationReview", input, chatUrl }),
   activateWorldGame: (input: import("../core/world-game").WorldGameActivation) => call<import("../core/world-game").WorldGame>({ type: "DR_REPOSITORY", operation: "activateWorldGame", input }),
@@ -95,6 +98,7 @@ export const contentRepository = {
   advanceDispatchCapture: (packet: unknown, chatUrl: string) => call<void>({ type: "DR_REPOSITORY", operation: "advanceDispatchCapture", packet, chatUrl }),
   storePhoto: (image: string) => call<string>({ type: "DR_REPOSITORY", operation: "storePhoto", image }),
   readPhoto: (id: string) => call<string>({ type: "DR_REPOSITORY", operation: "readPhoto", id }),
+  readPhotoPreview: (id: string, size: number) => call<string>({ type: "DR_REPOSITORY", operation: "readPhotoPreview", id, size }),
   acknowledgeRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "acknowledgeRecoveredReply", edit }),
   saveRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveRecoveredReply", edit }),
   completeContinuation: (snapshot: HandoffSnapshot, token: string | null, targetChatId: string) => call<boolean>({ type: "DR_REPOSITORY", operation: "completeContinuation", snapshot, token, targetChatId }),
@@ -102,21 +106,8 @@ export const contentRepository = {
   addCharacterAction: (scope: CharacterScope, name: string) => call<string[]>({ type: "DR_REPOSITORY", operation: "addCharacterAction", scope, name }),
   savePortraitLayout: (edit: PortraitLayoutEdit) => call<void>({ type: "DR_REPOSITORY", operation: "savePortraitLayout", edit }),
   saveCharacter: async (edit: CharacterEdit) => {
-    const store = (image: string) => isPhotoAddress(image) ? Promise.resolve(image) : call<string>({ type: "DR_REPOSITORY", operation: "storePhoto", image });
-    let sheet = await mapSheetPhotos(edit.sheet, store);
-    let original = edit.original ? { ...edit.original, sheet: await mapSheetPhotos(edit.original.sheet, store) } : undefined;
-    // Missing on both sides means "not edited" to the existing three-way merge.
-    // Do not ship even an immutable-address collection when it is unchanged.
-    if (original) {
-      const baseline = { ...original.sheet };
-      sheet = { ...sheet };
-      if (JSON.stringify(sheet.sprites) === JSON.stringify(baseline.sprites)) { sheet.sprites = {}; baseline.sprites = {}; }
-      for (const field of ["portraitLibrary", "selfieCategories"] as const) {
-        if (JSON.stringify(sheet[field]) === JSON.stringify(baseline[field])) { delete sheet[field]; delete baseline[field]; }
-      }
-      original = { ...original, sheet: baseline };
-    }
-    return call<CharacterSaveResult>({ type: "DR_REPOSITORY", operation: "saveCharacter", edit: { ...edit, sheet, ...(original ? { original } : {}) } });
+    const prepared = await prepareCharacterSave(edit, image => call<string>({ type: "DR_REPOSITORY", operation: "storePhoto", image }));
+    return call<CharacterSaveResult>({ type: "DR_REPOSITORY", operation: "saveCharacter", edit: prepared });
   },
   applyCharacterTurn: (scope: CharacterScope, turn: CharacterTurn) => call<void>({ type: "DR_REPOSITORY", operation: "applyCharacterTurn", scope, turn }),
   rawRecords: () => call<DataRecord[]>({ type: "DR_REPOSITORY", operation: "snapshot" }),

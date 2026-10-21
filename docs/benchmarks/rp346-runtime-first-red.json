@@ -1,0 +1,540 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\User\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.extension.config.ts",
+      "tests/e2e/story-task-history-runtime.spec.ts",
+      "tests/e2e/story-topic-confidence-runtime.spec.ts",
+      "tests/e2e/hidden-context-runtime.spec.ts",
+      "--workers",
+      "1",
+      "--reporter=json",
+      "--output",
+      ".output/rp346-runtime-artifacts"
+    ],
+    "configFile": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\playwright.extension.config.ts",
+    "rootDir": "C:/Users/User/Desktop/Projects/DeepRole/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/User/Desktop/Projects/DeepRole/.output/rp346-runtime-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/User/Desktop/Projects/DeepRole/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/story-ooc-runtime.spec.ts",
+          "**/story-bracket-runtime.spec.ts",
+          "**/world-bracket-runtime.spec.ts",
+          "**/learning-runtime.spec.ts",
+          "**/new-chat-memory-runtime.spec.ts",
+          "**/old-chat-notice-runtime.spec.ts",
+          "**/story-persisted-long-runtime.spec.ts",
+          "**/story-narrative-recall-runtime.spec.ts",
+          "**/story-topic-recall-runtime.spec.ts",
+          "**/story-topic-confidence-runtime.spec.ts",
+          "**/story-unresolved-recall-runtime.spec.ts",
+          "**/story-task-history-runtime.spec.ts",
+          "**/hidden-context-runtime.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "hidden-context-runtime.spec.ts",
+      "file": "hidden-context-runtime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "RP338 installed ru: continuation prefix hidden across reload; raw source and quotations intact",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9825,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:09:42.001Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cf108d56f2444f27facc-e3f9e243a4dc898d30f0",
+          "file": "hidden-context-runtime.spec.ts",
+          "line": 6,
+          "column": 42
+        },
+        {
+          "title": "RP338 installed en: continuation prefix hidden across reload; raw source and quotations intact",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9460,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:09:51.877Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cf108d56f2444f27facc-44c548f3294d0b1a66c6",
+          "file": "hidden-context-runtime.spec.ts",
+          "line": 6,
+          "column": 42
+        }
+      ]
+    },
+    {
+      "title": "story-task-history-runtime.spec.ts",
+      "file": "story-task-history-runtime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "RP346 historical stained-glass-workshop/ru: 1024 sources, actual POST, warning and reload preserve canon",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7998,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Зоя: «Снова обсуждали эскиз заказчика в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m      \"text\": \"Зоя: «Снова обсуждали эскиз заказчика в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"stained-glass-workshop-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"учебная рама\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Лада завершила дело: учебная рама покрашена и доставлена Зое, обещание выполнено.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"stained-glass-workshop-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Зоя: «Снова обсуждали эскиз заказчика в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m      \"text\": \"Зоя: «Снова обсуждали эскиз заказчика в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"stained-glass-workshop-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"учебная рама\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Лада завершила дело: учебная рама покрашена и доставлена Зое, обещание выполнено.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"stained-glass-workshop-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25",
+                    "location": {
+                      "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                      "column": 25,
+                      "line": 41
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 39 |\u001b[39m     expect(started\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(started))\u001b[33m.\u001b[39mtoMatchObject({ ok\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m saved \u001b[33m=\u001b[39m (\u001b[36mawait\u001b[39m rows(panel))\u001b[33m.\u001b[39mfind(r \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39mkind \u001b[33m===\u001b[39m \u001b[32m'world'\u001b[39m)\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39msharedGame\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 41 |\u001b[39m     expect(saved\u001b[33m.\u001b[39mfacts)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mfacts)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mfactRoleSeeds)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mseeds)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mepisodeSources)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mepisodeSources)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mconst\u001b[39m measurements\u001b[33m:\u001b[39m object[] \u001b[33m=\u001b[39m []\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m reload \u001b[36mof\u001b[39m [\u001b[36mfalse\u001b[39m\u001b[33m,\u001b[39m \u001b[36mtrue\u001b[39m]) {\n \u001b[90m 44 |\u001b[39m       \u001b[36mif\u001b[39m (reload) { \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mreload()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mbringToFront()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m expect(chat\u001b[33m.\u001b[39mlocator(\u001b[32m'.dr-character-row'\u001b[39m))\u001b[33m.\u001b[39mtoHaveCount(\u001b[35m3\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m12000\u001b[39m })\u001b[33m;\u001b[39m }\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                        "column": 25,
+                        "line": 41
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Зоя: «Снова обсуждали эскиз заказчика в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m      \"text\": \"Зоя: «Снова обсуждали эскиз заказчика в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"stained-glass-workshop-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"учебная рама\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Лада обещала: учебная рама будет доставлена Зое после покраски; это отдельный заказ.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Лада завершила дело: учебная рама покрашена и доставлена Зое, обещание выполнено.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"stained-glass-workshop-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n\n  39 |     expect(started, JSON.stringify(started)).toMatchObject({ ok: true });\n  40 |     const saved = (await rows(panel)).find(r => r.kind === 'world').data.sharedGame;\n> 41 |     expect(saved.facts).toEqual(f.facts); expect(saved.factRoleSeeds).toEqual(f.seeds); expect(saved.episodeSources).toEqual(f.episodeSources);\n     |                         ^\n  42 |     const measurements: object[] = [];\n  43 |     for (const reload of [false, true]) {\n  44 |       if (reload) { await chat.reload(); await chat.bringToFront(); await expect(chat.locator('.dr-character-row')).toHaveCount(3, { timeout: 12000 }); }\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:10:01.507Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-0eda6-g-and-reload-preserve-canon-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-0eda6-g-and-reload-preserve-canon-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                    "column": 25,
+                    "line": 41
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4dae99da9f61a6fc8413-fd7624a3bcff8573164d",
+          "file": "story-task-history-runtime.spec.ts",
+          "line": 11,
+          "column": 118
+        },
+        {
+          "title": "RP346 historical stained-glass-workshop/en: 1024 sources, actual POST, warning and reload preserve canon",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 9323,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Zoya: “We discussed the client sketch in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m      \"text\": \"Zoya: “We discussed the client sketch in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"stained-glass-workshop-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"practice frame\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Lada completed the task: the practice frame has been painted and delivered to Zoya; the promise is fulfilled.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"stained-glass-workshop-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Zoya: “We discussed the client sketch in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m      \"text\": \"Zoya: “We discussed the client sketch in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"stained-glass-workshop-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"practice frame\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Lada completed the task: the practice frame has been painted and delivered to Zoya; the promise is fulfilled.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"stained-glass-workshop-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25",
+                    "location": {
+                      "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                      "column": 25,
+                      "line": 41
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 39 |\u001b[39m     expect(started\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(started))\u001b[33m.\u001b[39mtoMatchObject({ ok\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m saved \u001b[33m=\u001b[39m (\u001b[36mawait\u001b[39m rows(panel))\u001b[33m.\u001b[39mfind(r \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39mkind \u001b[33m===\u001b[39m \u001b[32m'world'\u001b[39m)\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39msharedGame\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 41 |\u001b[39m     expect(saved\u001b[33m.\u001b[39mfacts)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mfacts)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mfactRoleSeeds)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mseeds)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mepisodeSources)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mepisodeSources)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mconst\u001b[39m measurements\u001b[33m:\u001b[39m object[] \u001b[33m=\u001b[39m []\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m reload \u001b[36mof\u001b[39m [\u001b[36mfalse\u001b[39m\u001b[33m,\u001b[39m \u001b[36mtrue\u001b[39m]) {\n \u001b[90m 44 |\u001b[39m       \u001b[36mif\u001b[39m (reload) { \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mreload()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mbringToFront()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m expect(chat\u001b[33m.\u001b[39mlocator(\u001b[32m'.dr-character-row'\u001b[39m))\u001b[33m.\u001b[39mtoHaveCount(\u001b[35m3\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m12000\u001b[39m })\u001b[33m;\u001b[39m }\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                        "column": 25,
+                        "line": 41
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Zoya: “We discussed the client sketch in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m      \"text\": \"Zoya: “We discussed the client sketch in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"stained-glass-workshop-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"practice frame\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Lada promised: the practice frame will be delivered to Zoya after painting; this is a separate order.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Lada completed the task: the practice frame has been painted and delivered to Zoya; the promise is fulfilled.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"stained-glass-workshop-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n\n  39 |     expect(started, JSON.stringify(started)).toMatchObject({ ok: true });\n  40 |     const saved = (await rows(panel)).find(r => r.kind === 'world').data.sharedGame;\n> 41 |     expect(saved.facts).toEqual(f.facts); expect(saved.factRoleSeeds).toEqual(f.seeds); expect(saved.episodeSources).toEqual(f.episodeSources);\n     |                         ^\n  42 |     const measurements: object[] = [];\n  43 |     for (const reload of [false, true]) {\n  44 |       if (reload) { await chat.reload(); await chat.bringToFront(); await expect(chat.locator('.dr-character-row')).toHaveCount(3, { timeout: 12000 }); }\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:10:10.402Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-189e1-g-and-reload-preserve-canon-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-189e1-g-and-reload-preserve-canon-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                    "column": 25,
+                    "line": 41
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4dae99da9f61a6fc8413-cb982da3d72aa9e5c819",
+          "file": "story-task-history-runtime.spec.ts",
+          "line": 11,
+          "column": 118
+        },
+        {
+          "title": "RP346 historical karst-water-expedition/ru: 1024 sources, actual POST, warning and reload preserve canon",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 10210,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Эмма: «Снова обсуждали карта водозабора в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m      \"text\": \"Эмма: «Снова обсуждали карта водозабора в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"karst-water-expedition-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"ручной дальномер\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Инга завершила дело: ручной дальномер получил новый ремешок и доставлен Эмме, обещание выполнено.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"karst-water-expedition-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Эмма: «Снова обсуждали карта водозабора в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m      \"text\": \"Эмма: «Снова обсуждали карта водозабора в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"karst-water-expedition-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"ручной дальномер\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Инга завершила дело: ручной дальномер получил новый ремешок и доставлен Эмме, обещание выполнено.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"karst-water-expedition-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25",
+                    "location": {
+                      "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                      "column": 25,
+                      "line": 41
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 39 |\u001b[39m     expect(started\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(started))\u001b[33m.\u001b[39mtoMatchObject({ ok\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m saved \u001b[33m=\u001b[39m (\u001b[36mawait\u001b[39m rows(panel))\u001b[33m.\u001b[39mfind(r \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39mkind \u001b[33m===\u001b[39m \u001b[32m'world'\u001b[39m)\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39msharedGame\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 41 |\u001b[39m     expect(saved\u001b[33m.\u001b[39mfacts)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mfacts)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mfactRoleSeeds)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mseeds)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mepisodeSources)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mepisodeSources)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mconst\u001b[39m measurements\u001b[33m:\u001b[39m object[] \u001b[33m=\u001b[39m []\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m reload \u001b[36mof\u001b[39m [\u001b[36mfalse\u001b[39m\u001b[33m,\u001b[39m \u001b[36mtrue\u001b[39m]) {\n \u001b[90m 44 |\u001b[39m       \u001b[36mif\u001b[39m (reload) { \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mreload()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mbringToFront()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m expect(chat\u001b[33m.\u001b[39mlocator(\u001b[32m'.dr-character-row'\u001b[39m))\u001b[33m.\u001b[39mtoHaveCount(\u001b[35m3\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m12000\u001b[39m })\u001b[33m;\u001b[39m }\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                        "column": 25,
+                        "line": 41
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Эмма: «Снова обсуждали карта водозабора в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m      \"text\": \"Эмма: «Снова обсуждали карта водозабора в комнате S0332; новых сведений нет, действий и обещаний не было».\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"karst-water-expedition-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"ручной дальномер\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Инга обещала: ручной дальномер будет доставлен Эмме после замены ремешка; это отдельный прибор.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Инга завершила дело: ручной дальномер получил новый ремешок и доставлен Эмме, обещание выполнено.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"karst-water-expedition-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n\n  39 |     expect(started, JSON.stringify(started)).toMatchObject({ ok: true });\n  40 |     const saved = (await rows(panel)).find(r => r.kind === 'world').data.sharedGame;\n> 41 |     expect(saved.facts).toEqual(f.facts); expect(saved.factRoleSeeds).toEqual(f.seeds); expect(saved.episodeSources).toEqual(f.episodeSources);\n     |                         ^\n  42 |     const measurements: object[] = [];\n  43 |     for (const reload of [false, true]) {\n  44 |       if (reload) { await chat.reload(); await chat.bringToFront(); await expect(chat.locator('.dr-character-row')).toHaveCount(3, { timeout: 12000 }); }\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:10:20.547Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-e674a-g-and-reload-preserve-canon-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-e674a-g-and-reload-preserve-canon-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                    "column": 25,
+                    "line": 41
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4dae99da9f61a6fc8413-5cc12baa65a2dbd6ffed",
+          "file": "story-task-history-runtime.spec.ts",
+          "line": 11,
+          "column": 118
+        },
+        {
+          "title": "RP346 historical karst-water-expedition/en: 1024 sources, actual POST, warning and reload preserve canon",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 9520,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Emma: “We discussed the water-intake map in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m      \"text\": \"Emma: “We discussed the water-intake map in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"karst-water-expedition-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"manual rangefinder\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Inga completed the task: the manual rangefinder has a new strap and has been delivered to Emma; the promise is fulfilled.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"karst-water-expedition-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Emma: “We discussed the water-intake map in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m      \"text\": \"Emma: “We discussed the water-intake map in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"karst-water-expedition-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"manual rangefinder\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Inga completed the task: the manual rangefinder has a new strap and has been delivered to Emma; the promise is fulfilled.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"karst-water-expedition-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25",
+                    "location": {
+                      "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                      "column": 25,
+                      "line": 41
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 39 |\u001b[39m     expect(started\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(started))\u001b[33m.\u001b[39mtoMatchObject({ ok\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m saved \u001b[33m=\u001b[39m (\u001b[36mawait\u001b[39m rows(panel))\u001b[33m.\u001b[39mfind(r \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39mkind \u001b[33m===\u001b[39m \u001b[32m'world'\u001b[39m)\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39msharedGame\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 41 |\u001b[39m     expect(saved\u001b[33m.\u001b[39mfacts)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mfacts)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mfactRoleSeeds)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mseeds)\u001b[33m;\u001b[39m expect(saved\u001b[33m.\u001b[39mepisodeSources)\u001b[33m.\u001b[39mtoEqual(f\u001b[33m.\u001b[39mepisodeSources)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mconst\u001b[39m measurements\u001b[33m:\u001b[39m object[] \u001b[33m=\u001b[39m []\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m reload \u001b[36mof\u001b[39m [\u001b[36mfalse\u001b[39m\u001b[33m,\u001b[39m \u001b[36mtrue\u001b[39m]) {\n \u001b[90m 44 |\u001b[39m       \u001b[36mif\u001b[39m (reload) { \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mreload()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m chat\u001b[33m.\u001b[39mbringToFront()\u001b[33m;\u001b[39m \u001b[36mawait\u001b[39m expect(chat\u001b[33m.\u001b[39mlocator(\u001b[32m'.dr-character-row'\u001b[39m))\u001b[33m.\u001b[39mtoHaveCount(\u001b[35m3\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m12000\u001b[39m })\u001b[33m;\u001b[39m }\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                        "column": 25,
+                        "line": 41
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 10\u001b[39m\n\u001b[31m+ Received  +  0\u001b[39m\n\n\u001b[33m@@ -2183,20 +2183,10 @@\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Emma: “We discussed the water-intake map in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m      \"text\": \"Emma: “We discussed the water-intake map in room S0332 again; no new information, actions or promises.”\",\u001b[22m\n\u001b[2m    },\u001b[22m\n\u001b[2m    Object {\u001b[22m\n\u001b[32m-     \"kind\": \"promise\",\u001b[39m\n\u001b[32m-     \"quote\": \"Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.\",\u001b[39m\n\u001b[32m-     \"task\": Object {\u001b[39m\n\u001b[32m-       \"key\": \"karst-water-expedition-4\",\u001b[39m\n\u001b[32m-       \"status\": \"open\",\u001b[39m\n\u001b[32m-       \"title\": \"manual rangefinder\",\u001b[39m\n\u001b[32m-     },\u001b[39m\n\u001b[32m-     \"text\": \"Inga promised: the manual rangefinder will be delivered to Emma after replacing its strap; it is a separate instrument.\",\u001b[39m\n\u001b[32m-   },\u001b[39m\n\u001b[32m-   Object {\u001b[39m\n\u001b[2m      \"kind\": \"event\",\u001b[22m\n\u001b[2m      \"quote\": \"Inga completed the task: the manual rangefinder has a new strap and has been delivered to Emma; the promise is fulfilled.\",\u001b[22m\n\u001b[2m      \"task\": Object {\u001b[22m\n\u001b[2m        \"key\": \"karst-water-expedition-4\",\u001b[22m\n\u001b[2m        \"status\": \"completed\",\u001b[22m\n\n  39 |     expect(started, JSON.stringify(started)).toMatchObject({ ok: true });\n  40 |     const saved = (await rows(panel)).find(r => r.kind === 'world').data.sharedGame;\n> 41 |     expect(saved.facts).toEqual(f.facts); expect(saved.factRoleSeeds).toEqual(f.seeds); expect(saved.episodeSources).toEqual(f.episodeSources);\n     |                         ^\n  42 |     const measurements: object[] = [];\n  43 |     for (const reload of [false, true]) {\n  44 |       if (reload) { await chat.reload(); await chat.bringToFront(); await expect(chat.locator('.dr-character-row')).toHaveCount(3, { timeout: 12000 }); }\n    at C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts:41:25"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:10:31.716Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-edc9c-g-and-reload-preserve-canon-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\.output\\rp346-runtime-artifacts\\story-task-history-runtime-edc9c-g-and-reload-preserve-canon-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\User\\Desktop\\Projects\\DeepRole\\tests\\e2e\\story-task-history-runtime.spec.ts",
+                    "column": 25,
+                    "line": 41
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4dae99da9f61a6fc8413-8a59f2d38f8bdba9b95e",
+          "file": "story-task-history-runtime.spec.ts",
+          "line": 11,
+          "column": 118
+        }
+      ]
+    },
+    {
+      "title": "story-topic-confidence-runtime.spec.ts",
+      "file": "story-topic-confidence-runtime.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "RP341 confidence ru: 14 sources, actual POST, warning and reload preserve canon",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4629,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:10:42.180Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "rp341-confidence-persisted-posts",
+                      "contentType": "application/json",
+                      "body": "eyJsb2NhbGUiOiJydSIsInNvdXJjZXMiOjE0LCJtZWFzdXJlbWVudHMiOlt7InF1ZXJ5Ijoic2hhcmVkLXVucXVhbGlmaWVkLW9iamVjdHMiLCJyZWxvYWQiOmZhbHNlLCJzZWxlY3RlZCI6MTEsInJlcXVpcmVkIjoxMH0seyJxdWVyeSI6InNoYXJlZC11bnF1YWxpZmllZC1vYmplY3RzIiwicmVsb2FkIjp0cnVlLCJzZWxlY3RlZCI6MTEsInJlcXVpcmVkIjoxMH1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "56afd47d239645b470b7-4307ec3c285c2d37b936",
+          "file": "story-topic-confidence-runtime.spec.ts",
+          "line": 11,
+          "column": 45
+        },
+        {
+          "title": "RP341 confidence en: 14 sources, actual POST, warning and reload preserve canon",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4428,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-20T08:10:46.848Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "rp341-confidence-persisted-posts",
+                      "contentType": "application/json",
+                      "body": "eyJsb2NhbGUiOiJlbiIsInNvdXJjZXMiOjE0LCJtZWFzdXJlbWVudHMiOlt7InF1ZXJ5Ijoic2hhcmVkLXVucXVhbGlmaWVkLW9iamVjdHMiLCJyZWxvYWQiOmZhbHNlLCJzZWxlY3RlZCI6MTIsInJlcXVpcmVkIjoxMH0seyJxdWVyeSI6InNoYXJlZC11bnF1YWxpZmllZC1vYmplY3RzIiwicmVsb2FkIjp0cnVlLCJzZWxlY3RlZCI6MTIsInJlcXVpcmVkIjoxMH1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "56afd47d239645b470b7-2a3599935589ed40f3eb",
+          "file": "story-topic-confidence-runtime.spec.ts",
+          "line": 11,
+          "column": 45
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-20T08:09:40.255Z",
+    "duration": 71097.348,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 4,
+    "flaky": 0
+  }
+}

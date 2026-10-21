@@ -25,7 +25,10 @@ export function prototypeCase(c: SearchScenario) {
     const original = new Map(c.facts.map((f, i) => [f.text, 'fact-' + i]));
     if (original.size !== c.facts.length) throw new Error('prototype fixture has duplicate fact texts');
     const current = ranked.filter(r => episodes.read(r.fact)), ids = new Map(current.map(r => [r.fact.text, original.get(r.fact.text)!]));
-    const block = compileGameContext(c.input).text.split('<deeprole_story_memory>')[1]?.split('</deeprole_story_memory>')[0];
+    // RP263 measures current canonical candidates only. RP346 explicitly marked
+    // historical rows are a separate lane, outside this frozen eight-row search
+    // experiment. Preserve its original inputs/gold/digests without relabelling.
+    const block = compileGameContext(c.input,{taskHistoryRecall:false}).text.split('<deeprole_story_memory>')[1]?.split('</deeprole_story_memory>')[0];
     const baseline = block ? decodeStoryMemory(JSON.parse(block.split('\n')[1]!)).map(h => ids.get(h.text)!) : [];
     const retrieval = storyRetrievalQuery(c.input.draft, scope);
     return { id: c.name, split: c.split, family: c.family, intent: c.intent, query: retrieval.query,

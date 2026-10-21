@@ -14,6 +14,7 @@ import { StoryGameClient } from "../adapters/story-game-client";
 import { worldGameBinding, worldGamePeople, type WorldGameActivation } from "../core/world-game";
 import type { StoryFact } from "../core/story-update";
 import { compileGameContext } from "../core/game-context";
+import { readTaskArchive, type TaskArchive } from "../core/story-task-archive";
 import { GameSearchIndex } from "../core/game-search-index";
 import { memoryDeliveryView } from "../core/memory-delivery-view";
 import { storyUpdateText } from "../core/story-update-i18n";
@@ -127,9 +128,9 @@ export default defineContentScript({
   async main(ctx) {
     bootstrapFieldServiceScreen();
     bootstrapCastServiceScreen();
-    const stopPhotos = observePhotoImages(document, id => repository.readPhoto(id));
+    const stopPhotos = observePhotoImages(document, id => repository.readPhoto(id), (id, size) => repository.readPhotoPreview(id, size));
     ctx.onInvalidated(stopPhotos);
-    ctx.onInvalidated(setPortraitPhotoStorage(image => repository.storePhoto(image)));
+    ctx.onInvalidated(setPortraitPhotoStorage(image => repository.storePhoto(image), id => repository.readPhoto(id)));
     await injectScript("/injected.js", { keepInDom: true });
     if (await startIsolatedFieldWorker() || await startCastWorker()) return;
     const controller = new PageController();
@@ -193,6 +194,7 @@ class PageController {
   private trackedBindings = new Set<string>();
   private trackedHistory = new Map<string, string[]>();
   private trackedBranches = new Map<string, string>();
+  private taskArchives = new Map<string, TaskArchive>();
   private trackedFacts = new Map<string, StoryFact[]>();
   private knownUserPrefixes = new Map<string, string[]>();
   private storyScanRetries = new Map<string, number>();
@@ -458,6 +460,14 @@ class PageController {
       if (!this.trackedBindings.has(projection.bindingId)) continue;
       this.trackedBranches.set(projection.bindingId, projection.branchId);
       this.trackedFacts.set(projection.bindingId, projection.appliedEventIds.flatMap(id => facts.get(id) ? [facts.get(id)!] : []));
+    }
+    this.taskArchives.clear();
+    const archiveRecords = records.filter(r => r.kind === "story").map(r => r.data as import("../core/story-records").StoryRecord);
+    for (const world of this.worlds) {
+      const branchId = this.trackedBranches.get(world.sharedGame?.activeBindingId ?? "");
+      if (!branchId) continue;
+      const archive = readTaskArchive(archiveRecords, world, branchId);
+      if (archive) this.taskArchives.set(branchId, archive);
     }
     this.knownUserPrefixes.clear();
     for (const row of records) if (row.kind === "dispatch") {
@@ -850,7 +860,7 @@ class PageController {
       excludedIds: overrides.excludedIds,
       settings: world ?? this.settings,
       character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
-      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : undefined,
+      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : undefined,
       snapshot,
       continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
       restart: !!recentGame?.restartPending && !this.pendingService,
@@ -1017,6 +1027,14 @@ class PageController {
       onDismissCapacityWarning={() => void this.dismissCapacityWarning()}
       onDisableCapacityWarnings={() => void updateSettings({ contextWarningsEnabled: false }).then(() => this.reload())}
       onPanelWidthChange={async width => { await updateSettings({ floatingPanelWidth: width }); await this.reload(); }}
+      onSaveMemoryBudget={async (contextBudget, expected) => {
+        const chatId = this.adapter.getChatId();
+        if (!chatId || this.currentScene().worldId !== expected.id) throw new Error("memory-budget-scope");
+        try { await repository.saveMemoryBudget({ worldId: expected.id, chatId, chatUrl: location.href, contextBudget, expectedBudget: expected.contextBudget }); }
+        catch (error) { await this.reload(); throw error; }
+        if (!await this.reload()) await this.reloadTask;
+        if (this.worlds.find(world => world.id === expected.id)?.contextBudget !== contextBudget) throw new Error("memory-budget-conflict");
+      }}
       onAddCharacterAction={async (worldId, name) => {
         const cast = this.state.characters;
         if (!cast || cast.worldId !== worldId) throw new Error("character-scope");
@@ -2442,7 +2460,8 @@ class PageController {
         await this.reload();
         const scope = this.currentScene();
         if (message.scope && (location.href !== storyUrl || message.scope.worldId !== scope.worldId || message.scope.chatId !== this.adapter.getChatId())) throw Error("story-binding-conflict");
-        const data = message.operation === "out-of-character" ? await repository.markNonStoryMessage(this.adapter.getChatId()!, scope.worldId!, location.href) : await this.storyGame.run(message.operation === "sync" ? "resume" : message.operation, null, message.manual);
+        if (message.expectedBase !== undefined && (message.operation !== "reset" || typeof message.expectedBase !== "string" || !message.expectedBase || message.expectedBase.length > 160)) throw Error("story-game-invalid");
+        const data = message.operation === "out-of-character" ? await repository.markNonStoryMessage(this.adapter.getChatId()!, scope.worldId!, location.href) : await this.storyGame.run(message.operation === "sync" ? "resume" : message.operation, null, message.manual, message.expectedBase);
         if (message.operation === "out-of-character") this.state.warning = "marked" in data && data.marked ? storyReviewText(this.state.locale, "nonStoryOn") : "";
         await this.reload(); this.characterScan = null; this.scheduleScan();
         if (message.operation !== "out-of-character") this.state.warning = message.operation === "undo" ? storyReviewText(this.state.locale, "paused") : "";

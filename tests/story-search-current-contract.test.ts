@@ -23,7 +23,17 @@ for(const [family,scenarios] of [['evidence',diverseScenarios()],['grounding',gr
   expect(selected).toHaveLength(cold.report.selected.facts);expect(selected.length).toBeLessThanOrEqual(128);
   expect(new Set(selected.map(h=>JSON.stringify([h.kind,h.text,h.sourceQuote??h.text]))).size).toBe(selected.length);
   for(const h of selected){
-   const f=current.find(f=>f.kind===h.kind&&f.text===h.text&&(f.quote??f.text)===(h.sourceQuote??h.text));
+   let f=current.find(f=>f.kind===h.kind&&f.text===h.text&&(f.quote??f.text)===(h.sourceQuote??h.text));
+   if(!f){
+    // RP346 adds exact prior task rows only with an explicit history guard and
+    // their latest accepted state in the same atomic payload. Canon stays compact.
+    expect(cold.text).toContain('<deeprole_task_history>');
+    f=c.input.story!.facts.find(f=>f.task&&f.kind===h.kind&&f.text===h.text&&f.quote===(h.sourceQuote??h.text));
+    const latest=current.find(now=>now.task?.key===f?.task?.key);
+    expect(latest).toBeDefined();expect(selected.some(row=>row.text===latest!.text)).toBe(true);
+    const states=JSON.parse(cold.text.split('Current task states: ')[1]!.split('</deeprole_task_history>')[0]!);
+    expect(states.some((state:any)=>state.key===latest!.task!.key&&state.status===latest!.task!.status)).toBe(true);
+   }
    expect(f).toBeDefined();expect(h.task).toEqual(f!.task);expect(h.claim).toEqual(f!.claim);
   }
   expect(cold.report.total).toBe(addedContextTokens(cold.text));

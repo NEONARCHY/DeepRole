@@ -13,6 +13,8 @@ import { DEFAULT_PORTRAIT_PREVIEW_SIZE, validPortraitPreviewSize } from "../../c
 import { portraitUploadError, portraitUploadText } from "../../core/portrait-upload-i18n";
 import { openPortraitViewer, photoCopy } from "../../adapters/portrait-viewer";
 import type { CSSProperties } from "react";
+import { LibraryCompression } from "./LibraryCompression";
+const LIBRARY_PAGE_SIZE = 6;
 
 const copy = {
   ru: { more: "Ещё действия для этих картинок", shared: "Отметьте дополнительные действия — выбранные картинки будут доступны для каждого из них. Новые названия можно добавить здесь, выше.", title: "Библиотека изображений", upload: "Загрузить в библиотеку", hint: "Загрузите пачку, выберите картинки и назначьте действие. Сохраняется вместе с карточкой.", empty: "Здесь будут все портреты персонажа. Можно загрузить несколько файлов сразу.", all: "Все", unassigned: "Без назначения", select: "Выбрать изображение", remove: "Удалить из библиотеки", clear: "Снять выбор", assign: "Назначить действия", action: "Назначить действие", noRoom: "Не удалось назначить изображения. Проверьте выбранное действие.", full: "Не удалось обновить библиотеку.", actionFull: "Не удалось создать набор изображений для действия.", badImage: "Не удалось загрузить пачку. Проверьте файлы: PNG, JPG или WebP. Прежние изображения сохранены.", selected: (n: number) => `Выбрано: ${n}`, progress: (n: number, total: number) => `Загружаем: ${n}/${total}`, assigned: (n: number, action: string) => `Назначено: ${n} · ${action}` },
@@ -25,11 +27,13 @@ const selectionCopy = (locale: Locale) => ({
   en: { search: "Find an emotion or action", clearSearch: "Clear emotion search", noMatches: "No matches", matches: "Matches", targets: "Assigning to", kept: "already selected", all: "Select visible", ready: "Images uploaded. Choose an action, then assign the images.", selection: "Selected images", assigned: "Assigned", formats: "PNG, JPG, WebP" },
 }[locale]);
 
-export function PortraitLibrary({ sheet, locale, actions, action, onAction, onChange, onBusy }: { sheet: CharacterSheet; locale: Locale; actions: string[]; action: string; onAction: (value: string) => void; onChange: (sheet: CharacterSheet) => void; onBusy: (busy: boolean) => void }) {
+export function PortraitLibrary({ sheet, locale, actions, action, saved, onAction, onChange, onBusy }: { sheet: CharacterSheet; locale: Locale; actions: string[]; action: string; saved?: boolean; onAction: (value: string) => void; onChange: (sheet: CharacterSheet) => void; onBusy: (busy: boolean) => void }) {
   const t = copy[locale]; const input = useRef<HTMLInputElement>(null); const mounted = useRef(true);
   const ui = selectionCopy(locale);
   const uploadChoice = usePortraitUploadChoice(locale);
   const [selected, setSelected] = useState<string[]>([]); const [filter, setFilter] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
+  const grid = useRef<HTMLDivElement>(null);
   const [previewSize, setPreviewSize] = useState(DEFAULT_PORTRAIT_PREVIEW_SIZE), previewSaved = useRef(DEFAULT_PORTRAIT_PREVIEW_SIZE), previewSaving = useRef(false), previewTouched = useRef(false), previewPending = useRef<number | undefined>(undefined);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [extraActions, setExtraActions] = useState<string[]>([]);
@@ -58,14 +62,17 @@ export function PortraitLibrary({ sheet, locale, actions, action, onAction, onCh
     finally { previewSaving.current = false; }
   };
   const images = useMemo(() => libraryImages(sheet), [sheet.sprites, sheet.portraitLibrary]);
+  const imageIndexes = useMemo(() => new Map(images.map((image, index) => [image, index])), [images]);
   const assignedNames = useMemo(() => {
     const names = new Map<string, string[]>();
     for (const [name, value] of Object.entries(sheet.sprites)) for (const image of portraitVariations(value)) names.set(image, [...(names.get(image) ?? []), actionLabel(locale, name)]);
     return names;
   }, [sheet.sprites, locale]);
   const assignments = (image: string) => assignedNames.get(image) ?? [];
-  const picked = selected.filter(image => images.includes(image));
+  const picked = selected.filter(image => imageIndexes.has(image)), pickedSet = new Set(picked);
   const shown = images.filter(image => !filter || assignments(image).length === 0);
+  const pageCount = Math.max(1, Math.ceil(shown.length / LIBRARY_PAGE_SIZE)), page = Math.min(pageIndex, pageCount - 1), visible = shown.slice(page * LIBRARY_PAGE_SIZE, (page + 1) * LIBRARY_PAGE_SIZE);
+  useEffect(() => { if (grid.current) grid.current.scrollTop = 0; }, [page, filter]);
   const upload = async (files: File[]) => {
     if (!files.length) return;
     setError(""); setStatus(""); onBusy(true);
@@ -75,7 +82,7 @@ export function PortraitLibrary({ sheet, locale, actions, action, onAction, onCh
       const added = await readPortraitFiles(files, done => { if (mounted.current) setProgress({ done, total: files.length }); }, mode);
       if (!mounted.current) return;
       onChange(withPortraitLibrary(sheet, [...images, ...added]));
-      setFilter(true); setSelected([...new Set(added)]); setStatus(ui.ready);
+      setFilter(true); setPageIndex(0); setSelected([...new Set(added)]); setStatus(ui.ready);
     } catch (error) { if (mounted.current) setError(portraitUploadError(locale, error, t.badImage)); }
     finally { if (mounted.current) { setProgress(null); onBusy(false); } }
   };
@@ -83,14 +90,16 @@ export function PortraitLibrary({ sheet, locale, actions, action, onAction, onCh
     {uploadChoice.dialog}
     <header><strong>{t.title} · {images.length}</strong><button type="button" onClick={() => input.current?.click()}><Upload size={16} />{t.upload}</button></header>
     <p className="dr-character-hint">{ui.formats}</p>
+    <LibraryCompression sheet={sheet} locale={locale} saved={saved} onChange={onChange} onBusy={onBusy}/>
     <label className="dr-library-size"><span>{portraitUploadText(locale, "preview")}</span><output>{previewSize} px</output><input data-portrait-preview aria-label={portraitUploadText(locale, "preview")} type="range" min={96} max={280} step={1} value={previewSize} onChange={event => { previewTouched.current = true; setPreviewSize(Number(event.target.value)); }} onPointerUp={() => void savePreviewSize()} onKeyUp={() => void savePreviewSize()} onBlur={() => void savePreviewSize()} /></label>
     <p className="dr-character-hint">{portraitUploadText(locale, "previewHint")}</p>
     <input ref={input} hidden type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ""; void upload(files); }} />
-    <div className="dr-character-actions" role="group" aria-label={t.title}><button type="button" aria-pressed={!filter} onClick={() => setFilter(false)}>{t.all} · {images.length}</button><button type="button" aria-pressed={filter} onClick={() => setFilter(true)}>{t.unassigned} · {sheet.portraitLibrary?.length ?? 0}</button><button type="button" disabled={!shown.length} onClick={() => { setSelected([...new Set([...picked, ...shown])]); setError(""); setStatus(""); }}>{ui.all}</button></div>
-    <div className="dr-portrait-library-grid" style={{ "--dr-library-tile": `${previewSize}px` } as CSSProperties}>{shown.map((image) => {
-      const index = images.indexOf(image); const names = assignments(image); const active = picked.includes(image);
-      return <article key={image}><button type="button" className="dr-library-image" aria-label={`${t.select} ${index + 1}`} aria-pressed={active} onClick={() => { setSelected(active ? picked.filter(value => value !== image) : [...picked, image]); setError(""); setStatus(""); }}><img src={image} alt="" loading="lazy" />{active && <span><Check size={16} /></span>}</button><button type="button" className="dr-library-view" aria-label={`${photoCopy(locale).open} ${index + 1}`} onClick={event => openPortraitViewer(event.currentTarget.ownerDocument, image, names.join(", ") || t.title, locale)}><Maximize2 size={14} />{portraitUploadText(locale, "view")}</button><small title={names.join(", ")}>{names.length ? names.join(", ") : t.unassigned}</small>{!names.length && <button type="button" aria-label={`${t.remove} ${index + 1}`} onClick={() => { onChange(withPortraitLibrary(sheet, images.filter(value => value !== image))); setSelected(picked.filter(value => value !== image)); }}><Trash2 size={14} /></button>}</article>;
+    <div className="dr-character-actions" role="group" aria-label={t.title}><button type="button" aria-pressed={!filter} onClick={() => { setFilter(false); setPageIndex(0); }}>{t.all} · {images.length}</button><button type="button" aria-pressed={filter} onClick={() => { setFilter(true); setPageIndex(0); }}>{t.unassigned} · {sheet.portraitLibrary?.length ?? 0}</button><button type="button" disabled={!visible.length} onClick={() => { setSelected([...new Set([...picked, ...visible])]); setError(""); setStatus(""); }}>{ui.all}</button></div>
+    <div ref={grid} className="dr-portrait-library-grid" style={{ "--dr-library-tile": `${previewSize}px` } as CSSProperties}>{visible.map((image, shownIndex) => {
+      const index = imageIndexes.get(image)!; const names = assignments(image); const active = pickedSet.has(image);
+      return <article key={image}><button type="button" className="dr-library-image" aria-label={`${t.select} ${index + 1}`} aria-pressed={active} onClick={() => { setSelected(active ? picked.filter(value => value !== image) : [...picked, image]); setError(""); setStatus(""); }}><img src={image} alt="" loading={shownIndex < LIBRARY_PAGE_SIZE ? "eager" : "lazy"} data-dr-photo-batch={Math.floor(shownIndex / LIBRARY_PAGE_SIZE)} />{active && <span><Check size={16} /></span>}</button><button type="button" className="dr-library-view" aria-label={`${photoCopy(locale).open} ${index + 1}`} onClick={event => openPortraitViewer(event.currentTarget.ownerDocument, image, names.join(", ") || t.title, locale)}><Maximize2 size={14} />{portraitUploadText(locale, "view")}</button><small title={names.join(", ")}>{names.length ? names.join(", ") : t.unassigned}</small>{!names.length && <button type="button" aria-label={`${t.remove} ${index + 1}`} onClick={() => { onChange(withPortraitLibrary(sheet, images.filter(value => value !== image))); setSelected(picked.filter(value => value !== image)); }}><Trash2 size={14} /></button>}</article>;
     })}{!shown.length && <p className="dr-character-hint">{filter && images.length ? t.unassigned + ": 0" : t.empty}</p>}</div>
+    {pageCount > 1 && <nav className="dr-library-pages" aria-label={locale === "ru" ? "Страницы изображений" : "Image pages"}><button type="button" disabled={page === 0} onClick={() => setPageIndex(page - 1)}>{locale === "ru" ? "Назад" : "Previous"}</button><span role="status">{page + 1} / {pageCount} · {shown.length}</span><button type="button" disabled={page + 1 === pageCount} onClick={() => setPageIndex(page + 1)}>{locale === "ru" ? `Следующие ${LIBRARY_PAGE_SIZE}` : `Next ${LIBRARY_PAGE_SIZE}`}</button></nav>}
     <div className="dr-library-action-search">
       <input ref={searchInput} type="search" data-portrait-preview aria-label={ui.search} placeholder={ui.search} value={actionQuery} maxLength={80} onChange={event => setActionQuery(event.target.value)} onKeyDown={event => {
         if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); }

@@ -3,6 +3,16 @@ import { castCheck, CastValidationError } from "./cast-validation";
 import { acceptLargeCastReply } from "./cast-large-lore";
 import {acceptResetEntryReply,beginResetEntries} from "./world-reset-entries";
 import {resetBatchMore} from "./world-reset";
+const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+/** Batch transport compatibility only. Stored drafts/records still require text.
+ * Preserve an explicit safe integer as text; never invent units or stringify
+ * objects, null, booleans, fractions or potentially rounded large integers. */
+function normalizeBatchTextStats(character: unknown): unknown {
+  if (!object(character) || !object(character.state) || !Array.isArray(character.state.stats)) return character;
+  return { ...character, state: { ...character.state, stats: character.state.stats.map(stat =>
+    object(stat) && typeof stat.value === "number" && Number.isSafeInteger(stat.value)
+      ? { ...stat, value: Object.is(stat.value, -0) ? "-0" : String(stat.value) } : stat) } };
+}
 function payload(raw: string): Record<string, unknown> {
   const body = /<deeprole_cast>\s*([\s\S]*?)\s*<\/deeprole_cast>/u.exec(raw)?.[1] ?? raw.trim();
   try { return JSON.parse(body.replace(/^```(?:json)?\s*|\s*```$/gu, "")) as Record<string, unknown>; }
@@ -23,7 +33,7 @@ export function parseCastBatch(raw: string, request: string, sources: CastSource
     for (const field of ["present", "partners", "warnings"]) castCheck(Array.isArray(value[field]) && value[field].length === 0, field, "empty array for empty final batch", value[field]);
     return { more: false, partial: false };
   }
-  return { draft: parseCastDraft(JSON.stringify(value), request, sources, previous?.characters), more: value.more === true, partial };
+  return { draft: parseCastDraft(JSON.stringify({ ...value, characters: value.characters.map(normalizeBatchTextStats) }), request, sources, previous?.characters), more: value.more === true, partial };
 }
 export function mergeCastBatches(previous: CastDraft | undefined, incoming: CastDraft | undefined, request: string, sources: CastSource[]): CastDraft {
   castCheck(incoming || previous, "characters", "at least one prepared profile across batches");

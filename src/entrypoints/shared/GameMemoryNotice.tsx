@@ -9,6 +9,7 @@ export function GameMemoryNotice({locale,coverage,report,onDetails}:{locale:Loca
  const t=gameMemoryCoverageText(locale),required=issue.kind==="required-overflow",incomplete=issue.kind==='incomplete';
  return <section className="dr-game-memory-notice" role="status" aria-live="polite">
   <strong>{required?t.requiredTitle:incomplete?t.incompleteTitle:t.budgetTitle}</strong>
+  {required&&report&&<p>{t.requiredSize.replace("{required}",new Intl.NumberFormat(locale).format(report.required)).replace("{limit}",new Intl.NumberFormat(locale).format(report.limit))}</p>}
   <p>{required?t.requiredBody:incomplete?t.incompleteBody:t.budgetBody}</p><p>{incomplete?t.incompleteAction:t.action}</p>
   {onDetails&&<button type="button" onClick={onDetails}>{t.details}</button>}
  </section>;

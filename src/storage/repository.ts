@@ -29,6 +29,8 @@ import { withLibraryLock } from "./library-lock";
 import { PhotoAssets } from "./photo-assets";
 import { photoAddresses } from "../core/photo-assets";
 import { sharedGameCommit } from "./world-game";
+import { isPhotoAddress } from "../core/photo-assets";
+import { PhotoPreviewCache } from "../adapters/photo-preview";
 
 export class MemoryConflictError extends Error {
   constructor() { super("memory-conflict"); this.name = "MemoryConflictError"; }
@@ -46,10 +48,24 @@ export class DeepRoleRepository {
     for (const photo of photos ?? []) await this.photos.store(photo.image,photo.id);
   }
   private readonly photos: PhotoAssets;
+  private readonly previews = new PhotoPreviewCache();
   constructor(private readonly db: DeepRoleDatabase = database, private readonly compactPhotos = false) { this.photos = new PhotoAssets(db); }
 
   async readPhoto(id: string): Promise<string> { return withLibraryLock("shared", async () => { await this.requireUnlocked(); return this.photos.read(id); }); }
   async storePhoto(image: string): Promise<string> { return withLibraryLock("exclusive", async () => { await this.requireUnlocked(); return this.photos.store(image); }); }
+  clearPhotoPreviews() { this.previews.clear(); }
+  async readPhotoPreview(id: string, size: number): Promise<string> {
+    if (!isPhotoAddress(id) || !Number.isFinite(size) || size < 1 || size > 1024) throw new Error("photo-invalid");
+    // Check access even on cache hits. Decoding does not hold the library lock,
+    // so saving a character need not wait for a queue of thumbnail work.
+    await withLibraryLock("shared", async () => {
+      await this.requireUnlocked();
+      if (!await this.db.photos.where("id").equals(id).count()) throw new Error("photo-missing");
+    });
+    const preview = await this.previews.get(id, size, () => this.readPhoto(id));
+    await this.requireUnlocked();
+    return preview;
+  }
   private async encodeRecords(records: DataRecord[], config: VaultConfig): Promise<StoredRecord[]> {
     const rows: StoredRecord[] = [];
     for (const record of records) rows.push(await this.encode(record.kind, record.id, record.data, config));
@@ -330,6 +346,7 @@ export class DeepRoleRepository {
 
   async lockVault(): Promise<void> {
     return withLibraryLock("exclusive", async () => {
+      this.clearPhotoPreviews();
       await clearSessionKey();
       await announceLibraryChange();
     });
@@ -369,7 +386,9 @@ export class DeepRoleRepository {
 
   private async locked(): Promise<boolean> {
     const config = await getVaultConfig();
-    return config.enabled && !(await getSessionKey());
+    const locked = config.enabled && !(await getSessionKey());
+    if (locked) this.clearPhotoPreviews();
+    return locked;
   }
 
   private async requireUnlocked() { if (await this.locked()) throw new VaultLockedError(); }

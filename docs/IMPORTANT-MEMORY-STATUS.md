@@ -2,7 +2,7 @@
 
 Перед следующим сообщением DeepRole проверяет найденный важный набор для поддержанных формулировок. Например, для двери и ключа есть12 отдельных условий. Если весь набор не помещается вместе с обязательным лором и правилами, сохраняется прежний подбор и появляется спокойное предупреждение **«Не вся важная память поместилась»**.
 
-Оно доступно на странице DeepSeek и в разделе «Игра». Кнопка **«Подробнее о памяти»** на странице открывает панель подключённой памяти; новый разбор или запрос модели не запускается. Предупреждение не перехватывает фокус, не блокирует отправку, не открывает диалог и не отправляет отдельный запрос модели. Можно проверить лимит памяти и объём закреплённых данных в настройках; сохранённая история не удалена.
+Оно доступно на странице DeepSeek и в разделе «Игра». UX347: на странице короткое предупреждение находится внутри перемещаемого блока «Контекст». Нажатие на него или на «Контекст» открывает центральное окно «Подключённая память» с лёгким затемнением фона; новый разбор или запрос модели не запускается. Само появление предупреждения не перехватывает фокус, не блокирует отправку, не открывает диалог автоматически и не отправляет отдельный запрос модели. В окне показаны размер обязательной части и заданный локальный бюджет. Это бюджет добавки DeepRole для выбранного мира, а не полное контекстное окно DeepSeek. Можно проверить лимит памяти и объём закреплённых данных в настройках; сохранённая история не удалена.
 
 ## Что означают состояния
 
@@ -31,6 +31,8 @@ RP341 распространяет этот отдельный подбор на
 
 ## Границы
 
+Новая независимая проверка RP344 обнаружила дальнейшие пропуски при свободном описании и истории закрытых дел; есть также неподдержанные вопросы без видимой плашки. [Результат и примеры](RP05-NOVEL-NARRATIVE-HOLDOUT-RESULTS-20261020.md). Отсутствие предупреждения не гарантирует полноту. В независимом этапе алгоритм не менялся. RP346 исправляет эти знакомые случаи: прежние записи закрытого дела читаются из доступной подтверждённой истории и передаются вместе с актуальным статусом; канон остаётся закрытым. Свободные запросы и названия получают осторожные подсказки, а не гарантию полноты. [Ремонт и границы](RP05-TASK-HISTORY-REPAIR-20261020.md).
+
 Независимая проверка RP342 выявила пропуски; [первый результат](RP05-FREE-NARRATIVE-HOLDOUT-RESULTS-20261019.md) сохранён. RP343 исправляет их на знакомом наборе: неопознанный операционный вопрос может получить ограниченный список незавершённых дел и их условий с плашкой неопределённости. Это запасные варианты, не подтверждение смыслового совпадения. Короткая ссылка может использовать названные темы двух последних реплик; роль автора при этом не угадывается. Доступный источник и неизвестная историческая роль — разные состояния. [Ремонт и проверки](RP05-UNRESOLVED-MEMORY-REPAIR-20261019.md).
 
 Список ограничен32 названиями,128 объединёнными исходными записями и бюджетом. Предыдущий подбор сохраняется атомарно при отказе; отсутствие плашки всё равно не доказывает произвольное понимание речи. Для неподдержанных ссылок может понадобиться уточнение.
@@ -42,15 +44,17 @@ RP284 добавляет [ограниченный разбор абзаца](NA
 
 Это предпросмотр/подготовка текущего запроса. Последняя подтверждённая отправка показана отдельно существующей квитанцией; новый статус не добавляется в её историческую запись и после reload пересчитывается для текущего ввода. Локальная оценка добавки не измеряет свободное контекстное окно на сервере DeepSeek. Новый чат сам по себе не увеличивает установленный локальный бюджет.
 
-Статус идёт отдельным каналом состояния страницы. Текст запроса, выбранные записи, отчёт и счётчики компилятора, исходные цитаты, точный fallback и канон не меняются. Текущий контрольный снимок RP273 сохранён в `docs/benchmarks/rp273-final-compiler.txt`; исходные регистрации, gold и отчёты не перезаписываются. Старый benchmark без флагов проверяет прежний baseline; повтор старого `--evaluate` на изменившемся файле правильно останавливается проверкой fingerprint, не даёт новой регистрации автоматически.
+Сама плашка идёт отдельным каналом состояния страницы. Её отображение не меняет текст запроса, выбранные записи, отчёт и счётчики компилятора, исходные цитаты, точный fallback и канон. Отдельные улучшения подбора RP337–RP346 описаны выше и могут менять состав передаваемой памяти. Текущий контрольный снимок RP273 сохранён в `docs/benchmarks/rp273-final-compiler.txt`; исходные регистрации, gold и отчёты не перезаписываются. Старый benchmark без флагов проверяет прежний baseline; повтор старого `--evaluate` на изменившемся файле правильно останавливается проверкой fingerprint, не даёт новой регистрации автоматически.
 
 ## English
+
+The fresh RP344 evaluation found further gaps in paraphrased requests and closed-task history, plus unsupported questions without the required visible caution. [Results and examples](RP05-NOVEL-NARRATIVE-HOLDOUT-RESULTS-20261020.md). No notice does not guarantee complete recall. Production code was unchanged during that audit. RP346 repairs these SEEN cases with exact accepted task-history evidence and an explicit latest-status guard, preserving compact current canon. Paraphrase candidates remain uncertain. [Repair and limits](RP05-TASK-HISTORY-REPAIR-20261020.md).
 
 The fresh RP342 red is preserved in [results](RP05-FREE-NARRATIVE-HOLDOUT-RESULTS-20261019.md). RP343 repairs those SEEN cases with bounded pending-duty candidates for unresolved operative requests and recent-topic supplementation for references. Candidates are not semantic identity; available sources may have unknown frozen roles. The existing incomplete notice remains honest. Bounds and atomic source/budget fallback apply. [Repair and limits](RP05-UNRESOLVED-MEMORY-REPAIR-20261019.md). A fresh independent check is still needed.
 
 “Complete” covers the compiler's computed candidate set. It does not guarantee that every semantically necessary condition was identified. The three RP283 incomplete-positive cases have been repaired on those seen inputs in RP285/286; the new reference lane explicitly stays unverified. A fresh independent evaluation is still needed. [Evidence and limits](OBLIGATION-RECALL.md).
 
-For supported wording, DeepRole checks the identified whole important set while preparing the next message. A proven local-budget deficit shows a nonblocking notice on the page and in Play; the exact previous selection remains. Required-data overflow is separate. Unknown sources, unsupported wording and ordinary optional omissions do not become budget warnings. Details describe preparation, not confirmed delivery or model use. The history and request payload remain unchanged; the existing delivery receipt remains separate. Reload recomputes coverage for the current draft, without persisting it as game memory or a historical delivery verdict.
+For supported wording, DeepRole checks the identified whole important set while preparing the next message. A proven local-budget deficit shows a nonblocking notice on the page and in Play; the exact previous selection remains. UX347 places a compact notice inside the movable Context widget; clicking it opens a centred selected-memory dialog with a light backdrop. The dialog shows required tokens and the configured local budget. This is not DeepSeek's full chat capacity. Required-data overflow is separate. Unknown sources, unsupported wording and ordinary optional omissions do not become budget warnings. Details describe preparation, not confirmed delivery or model use. Displaying the notice itself does not change history or the request payload; retrieval improvements are described separately above; the existing delivery receipt remains separate. Reload recomputes coverage for the current draft, without persisting it as game memory or a historical delivery verdict.
 
 RP337 adds a separate visible “Memory coverage for this turn is unverified” notice for complex-action topic supplementation. Retrieved candidates do not certify the entire action sequence, ownership, permission or completion. This notice is not a budget error, blocks nothing and is never included in the model payload or saved canon. Ordinary unverified states remain details-only.
 
@@ -62,4 +66,12 @@ still apply. Original sources, historical roles and canonical memory are unchang
 
 ## Проверка
 
+Последняя проверка реализации RP346: [отчёт и ограничения](RP05-TASK-HISTORY-REPAIR-20261020.md). Ниже — историческая проверка исходной плашки RP274.
+
 15 выбранных unit-файлов/953pass, TypeScript/diff-check0; все64 прежних RP273 результата совпадают целиком с замороженными outputDigest, baseline CLI без флагов подтверждает64 случая.32 UI проверки Edge/Firefox RU/EN320/900px и2 current isolated Edge runtime (2 штатных Firefox skip) прошли;28 исходящих POST проверяют целые12 источников, отдельный статус/sidepanel/reload и неизменность памяти. Используются вымышленные данные и синтетический DeepSeek; весь unit/browser suite и личный live аккаунт этим не проверены. Точные ранние провалы и границы — начало CODEX-HANDOFF.
+
+UX348: лимит выбранного мира можно изменить прямо в «Подключённой памяти» и
+нажать «Сохранить лимит». Быстрая подстановка ещё не сохраняет число. После
+сохранения пересчитывается подбор следующего сообщения; это не повторная
+отправка прошлого сообщения и не увеличение контекстного окна DeepSeek.
+Предупреждение размещено внутри общей карточки «Контекст» без внешнего зазора.
