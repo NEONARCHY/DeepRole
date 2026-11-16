@@ -53,7 +53,7 @@ export interface GameContextInput extends RankMemoryInput {
  readOnly?:boolean;
  worlds:WorldProfile[];
  character?:Parameters<typeof characterInstruction>;
-  story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[];taskArchive?:TaskArchive};
+  story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;referenceOnly?:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[];taskArchive?:TaskArchive};
  choices?:boolean;
  snapshot?:HandoffSnapshot|null;
  continuation?:StoryContinuation;
@@ -333,7 +333,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  const messageWorld=input.story?.world??input.worlds.find(w=>w.id===(input.scene?.worldId??input.character?.[0]));
  const bracketedOoc=messageWorld?.bracketedOoc===true;
  const retrievalWorld=input.story?.world.id??input.scene?.worldId;
- const retrievalScope=retrievalWorld&&!input.character?.[9]?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
+ const retrievalScope=retrievalWorld&&(!input.character?.[9]||input.story?.referenceOnly)?{worldId:retrievalWorld,entities:input.entities??[]}:undefined;
  const retrieval=retrievalScope?storyRetrievalQuery(input.draft,retrievalScope):undefined;
   const currentSeeds=input.story?.roleSeeds??input.story?.world.sharedGame?.factRoleSeeds;
   const roleSeeds=input.story?.taskArchive ? [...input.story.taskArchive.roleSeeds,...currentSeeds??[]] : currentSeeds;
@@ -408,7 +408,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  }
   const accompaniment=input.story?storyAutomationInstruction(input.story.world,true,!!time):"";
  const factPolicySupplied=!!accompaniment&&(input.story?.world.storyAutomation?.mode==="automatic"||input.story?.world.storyAutomation?.mode==="review");
- const protocol=input.readOnly?join([READ_ONLY_STORY_INSTRUCTION,time?formatStoryTime(time):""]):input.story?join([
+ const protocol=input.readOnly?join([READ_ONLY_STORY_INSTRUCTION,time?formatStoryTime(time):""]):input.story&&!input.story.referenceOnly?join([
    storyUpdateInstruction(input.story.world.id,input.story.chat,input.story.branch,true,factPolicySupplied,!!time),
    accompaniment, time&&(time.anchor||input.story?.facts.some(isGameTimeFact))?formatStoryTime(time):"",
   !input.story.sheetsEnabled?"Character sheet updates are disabled: omit updates/present/partners/attributes/bonds/selfies; propose evidenced facts only.":""
@@ -432,7 +432,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  const render=(textPrefixes=false)=>{
   const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,bracketNotes,referenceGuard,premiseGuard,restart,renderProfiles()]);
   const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
-   const memory=formatStoryFacts(selectedFacts,true,!!input.story&&!input.readOnly,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",prefixes:textPrefixes&&options.memoryPrefixes!==false,prefixTables:options.memoryPrefixTables!==false,measure:block=>addedContextTokens(join([before,block,after]))});
+   const memory=formatStoryFacts(selectedFacts,true,!!input.story&&!input.story.referenceOnly&&!input.readOnly,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",prefixes:textPrefixes&&options.memoryPrefixes!==false,prefixTables:options.memoryPrefixTables!==false,measure:block=>addedContextTokens(join([before,block,after]))});
   return join([before,memory,after]);
  };
  const required=addedContextTokens(render());

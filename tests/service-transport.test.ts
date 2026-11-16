@@ -51,6 +51,35 @@ describe("service transport lifecycle", () => {
     const pending = fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira", chat_session_id: "synthetic-chat" }) }), message = answerContext();
     expect(message.storyIdentity).toBeNull(); await pending;
   });
+
+  it.each([39999, 40000, 40001])("measures a %s-character assembled prompt at a simulated provider boundary", async length => {
+    const draft = "Я".repeat(length - 100) + " [КОНЕЦ РЕПЛИКИ]";
+    let wire = "";
+    fetchMock.mockImplementation(async (_url, options) => {
+      wire = JSON.parse(options.body).prompt;
+      return new Response(null, { status: wire.length > 40_000 ? 413 : 200 });
+    });
+    const pending = fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: draft, chat_session_id: "synthetic-chat" }) });
+    const message = posted.mock.calls.map((args: any[]) => args[0]).find((value: any) => value.type === "REQUEST_CONTEXT");
+    const separator = "\n\n[User message]\n";
+    const context = "A".repeat(length - draft.length - separator.length);
+    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context } }));
+    const result = await pending;
+    // A characterization, not a claim about the upstream counting algorithm.
+    expect(wire.length).toBe(length);
+    expect(wire.startsWith(context + separator)).toBe(true);
+    expect(wire.endsWith(draft)).toBe(true);
+    expect(result.status).toBe(length > 40_000 ? 413 : 200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([403, 413, 429])("reports HTTP %s once for a rejected service request", async code => {
+    fetchMock.mockResolvedValue(new Response(null, { status: code }));
+    const result = await fetch("/api/v0/chat/completion", { method: "POST", body: body("provider-refusal") });
+    expect(result.status).toBe(code);
+    expect(failures()).toMatchObject([{ id: "provider-refusal" }]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("forwards the same metadata through XHR while waiting only for fresh context", async () => {
     const xhr = new XMLHttpRequest() as unknown as MockXHR; xhr.open("POST", "/api/v0/chat/completion");
     xhr.send(JSON.stringify({ prompt: "Mira", chat_session_id: "synthetic-chat", parent_message_id: "native-parent" }));

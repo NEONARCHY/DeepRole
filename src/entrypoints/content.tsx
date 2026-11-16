@@ -1,4 +1,5 @@
 import { startCastWorker } from "../adapters/cast-worker";
+import type { SavedMemorySource } from "../core/saved-memory-continuation";
 import { reportMemoryPreparationFailure, type MemoryPreparationStage } from "../core/memory-preparation-diagnostic";
 import { startIsolatedFieldWorker } from "../adapters/isolated-field-worker";
 import { bootstrapCastServiceScreen, bootstrapFieldServiceScreen } from "../adapters/field-service-screen";
@@ -490,6 +491,12 @@ class PageController {
       ?? matchingContinuationReceipt(this.pendingContinuationCommit, this.appliedSnapshot?.id, this.snapshotToken, this.adapter.getChatId(), location.origin === "https://chat.deepseek.com" && location.pathname === "/");
     this.state.continuationCommitPending = !!this.pendingContinuationCommit;
     const continuationTarget = location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
+    if (this.appliedSnapshot?.savedMemory && !continuationTarget && !this.pendingContinuationCommit && !this.savedMemoryTarget()) {
+      const { id } = this.appliedSnapshot;
+      await this.saveTabState({ snapshotId: null, snapshotToken: null }, { snapshotId: id, snapshotToken: this.snapshotToken });
+      this.appliedSnapshot = null;
+      this.snapshotToken = null;
+    }
     const continuationValid = Boolean(!this.pendingContinuationCommit && pending?.continueOnFreshChat && pending.continueUntil && pending.continueUntil > Date.now() && continuationTarget && this.appliedSnapshot && this.snapshotToken);
     this.autoContinuePending = continuationValid && !this.autoContinueAttempted;
     this.autoContinueUntil = continuationValid ? pending?.continueUntil ?? 0 : 0;
@@ -828,7 +835,8 @@ class PageController {
     const tracked = this.sharedGameActive() && this.trackedBindings.has(this.currentBinding()?.id ?? "");
     const gameMode = tracked ? "active" : "";
     if (document.documentElement.dataset.deeproleStoryGame !== gameMode) document.documentElement.dataset.deeproleStoryGame = gameMode;
-    const strictMode = this.settings.strictMemorySending && !this.pendingService ? "active" : "";
+    const savedMemoryTarget = this.savedMemoryTarget();
+    const strictMode = (this.settings.strictMemorySending || savedMemoryTarget) && !this.pendingService ? "active" : "";
     const transferMode = this.pendingContinuationCommit ? "active" : "";
     if (document.documentElement.dataset.deeproleTransferPending !== transferMode) document.documentElement.dataset.deeproleTransferPending = transferMode;
     if (document.documentElement.dataset.deeproleStrictMemory !== strictMode) document.documentElement.dataset.deeproleStrictMemory = strictMode;
@@ -841,6 +849,7 @@ class PageController {
     const sheetsEnabled = profilesEnabled && !!chatId;
     const recentGame = world?.sharedGame;
     const gameBranch = this.trackedBranches.get(this.currentBinding()?.id ?? "");
+    const savedBranch = savedMemoryTarget && recentGame ? this.trackedBranches.get(recentGame.activeBindingId) : undefined;
     const characterScope = `${scene.worldId}:${chatId}`;
     if (this.characterScan && this.characterScan.scope !== characterScope) { this.characterScan = null; this.characterStatus = "idle"; }
     this.state.characters = sheetsEnabled ? { storyProfileIds: characterEntities.filter(e => e !== canonicalEntities.get(e.id)).map(e => e.id), relationshipsEnabled: this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false, relationshipDisplay: this.settings.relationshipDisplay, worldId: world!.id, chatId: chatId!, base: characterRevision(this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character" && characterInChat(e, chatId)), characterScene), entities: characterEntities, scene: characterScene, actions: actionsFor(world?.characterActions ?? this.settings.characterActions), status: this.characterStatus, openId: this.state.characters?.openId } : undefined;
@@ -859,8 +868,8 @@ class PageController {
       manualIds: overrides.includedIds,
       excludedIds: overrides.excludedIds,
       settings: world ?? this.settings,
-      character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
-      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : undefined,
+      character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService || savedMemoryTarget,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
+      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : world && recentGame && savedBranch && !this.pendingService ? {world,chat:recentGame.activeChatId,branch:savedBranch,facts:recentGame.facts,taskArchive:this.taskArchives.get(savedBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,referenceOnly:true} : undefined,
       snapshot,
       continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
       restart: !!recentGame?.restartPending && !this.pendingService,
@@ -1020,10 +1029,13 @@ class PageController {
       void browser.runtime.sendMessage({ type: "DR_CONTEXT_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
     }
     this.state.contextPosition = this.resolveContextIndicatorPosition();
+    const savedSource = this.savedMemorySource();
     this.root?.render(<PageWidget
       state={{ ...this.state, selection: this.selection, memoryDelivery: this.memoryDelivery() }}
       onStayInOldChat={() => this.stayInOldChat()}
       onContinueStory={() => void this.continueStory().then(result => { if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : result.error === "busy" ? "waiting" : result.error === "continuation-world-too-large" ? "tooLarge" : "failed")); })}
+      savedMemoryTransfer={savedSource ? { scope: JSON.stringify(savedSource), preview: async () => (await repository.savedMemoryContinuation(savedSource)).preview, open: version => this.openSavedMemory(savedSource, version) } : undefined}
+      savedMemoryQueued={this.savedMemoryTarget()}
       onDismissCapacityWarning={() => void this.dismissCapacityWarning()}
       onDisableCapacityWarnings={() => void updateSettings({ contextWarningsEnabled: false }).then(() => this.reload())}
       onPanelWidthChange={async width => { await updateSettings({ floatingPanelWidth: width }); await this.reload(); }}
@@ -1951,6 +1963,41 @@ class PageController {
     } catch { this.showToast(continuationText(this.state.locale, "failed")); }
   }
 
+  private savedMemorySource(): SavedMemorySource | undefined {
+    const chatId = this.adapter.getChatId(), binding = this.currentBinding();
+    if (!this.state.vaultLocked && chatId && binding?.worldId && binding.worldId === this.currentScene().worldId && this.sharedGameActive() && !this.appliedSnapshot) return { chatId, chatUrl: location.href, worldId: binding.worldId };
+  }
+
+  private savedMemoryTarget(): boolean {
+    if (!this.appliedSnapshot?.savedMemory || !this.snapshotToken) return false;
+    const chatId = this.adapter.getChatId();
+    return !chatId ? location.pathname === "/" : this.provisionalContinuationTarget?.targetChatId === chatId && this.provisionalContinuationTarget.snapshotId === this.appliedSnapshot.id;
+  }
+
+  private async openSavedMemory(source: SavedMemorySource, version: string) {
+    const scope = this.pageScope();
+    const guard = () => {
+      this.assertScope(scope);
+      if (JSON.stringify(this.savedMemorySource()) !== JSON.stringify(source)) throw Error("handoff-stale");
+      if (this.adapter.getDraft().trim()) throw Error("draft-not-empty");
+      if (this.state.continuation || this.pendingService || this.preparingService || this.adapter.isGenerating()) throw Error("busy");
+    };
+    if (this.transferring) throw Error("busy");
+    guard();
+    this.transferring = true; this.state.transferring = true; this.render();
+    try {
+      await this.sceneQueue; guard();
+      const { snapshot } = await repository.savedMemoryContinuation(source, version);
+      guard();
+      if (!snapshot) throw Error("handoff-invalid");
+      const token = createId("handoff");
+      if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, continueOnFreshChat: false, continueUntil: null }, { snapshotId: null, continuationKey: continuationKey(null) })) throw Error("handoff-conflict");
+      try { guard(); }
+      catch (error) { await this.saveTabState({ snapshotId: null, snapshotToken: null }, { snapshotId: snapshot.id, snapshotToken: token }); throw error; }
+      location.assign("https://chat.deepseek.com/");
+    } finally { this.transferring = false; this.state.transferring = false; this.render(); }
+  }
+
   private async continueStory(): Promise<{ ok: boolean; error?: string }> {
     const flow = this.state.continuation;
     if (flow && this.flowInScope(flow) && flow.phase === "review") {
@@ -2240,6 +2287,7 @@ class PageController {
             const savedWorld = await repository.get<WorldProfile>("world", scene.worldId);
             this.assertScope(policyScope);
             if (!savedWorld || generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
+            if (this.savedMemoryTarget() && savedWorld.sharedGame?.revision !== this.appliedSnapshot?.sharedGameRevision) throw Error("story-review-stale");
             this.worlds = this.worlds.map(world => world.id === scene.worldId ? { ...world, bracketedOoc: savedWorld.bracketedOoc === true } : world);
           }
           const currentChatId = this.adapter.getChatId();

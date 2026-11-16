@@ -49,6 +49,7 @@ export type RepositoryRequest =
   | { type: "DR_REPOSITORY"; operation: "saveRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "completeContinuation"; snapshot: HandoffSnapshot; token: string | null; targetChatId: string }
   | { type: "DR_REPOSITORY"; operation: "captureContinuation"; input: ContinuationCapture }
+  | { type: "DR_REPOSITORY"; operation: "savedMemoryContinuation"; input: import("../core/saved-memory-continuation").SavedMemorySource; expected?: string }
   | { type: "DR_REPOSITORY"; operation: "addCharacterAction"; scope: CharacterScope; name: string }
   | { type: "DR_REPOSITORY"; operation: "savePortraitLayout"; edit: PortraitLayoutEdit }
   | { type: "DR_REPOSITORY"; operation: "saveCharacter"; edit: CharacterEdit }
@@ -103,6 +104,7 @@ export const contentRepository = {
   saveRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveRecoveredReply", edit }),
   completeContinuation: (snapshot: HandoffSnapshot, token: string | null, targetChatId: string) => call<boolean>({ type: "DR_REPOSITORY", operation: "completeContinuation", snapshot, token, targetChatId }),
   captureContinuation: (input: ContinuationCapture) => call<HandoffSnapshot>({ type: "DR_REPOSITORY", operation: "captureContinuation", input }),
+  savedMemoryContinuation: (input: import("../core/saved-memory-continuation").SavedMemorySource, expected?: string) => call<{ preview: import("../core/saved-memory-continuation").SavedMemoryPreview; snapshot?: HandoffSnapshot }>({ type: "DR_REPOSITORY", operation: "savedMemoryContinuation", input, expected }),
   addCharacterAction: (scope: CharacterScope, name: string) => call<string[]>({ type: "DR_REPOSITORY", operation: "addCharacterAction", scope, name }),
   savePortraitLayout: (edit: PortraitLayoutEdit) => call<void>({ type: "DR_REPOSITORY", operation: "savePortraitLayout", edit }),
   saveCharacter: async (edit: CharacterEdit) => {

@@ -1,6 +1,9 @@
 import { createId } from "../core/id";
 import { memoryWorld } from "../core/scene";
 import { boundStory, validStoryContinuation } from "../core/story-continuation";
+import type { SavedMemoryPreview, SavedMemorySource } from "../core/saved-memory-continuation";
+import { storyReplyProse } from "../core/story-update";
+import type { StoryBaseline, StoryBranch, StoryRecord, StoryRevision } from "../core/story-records";
 import type { ChatBinding, HandoffSnapshot, MemoryBook, MemoryOverrides, SceneState, StoryContinuation, WorldProfile } from "../core/types";
 import { repository, type DeepRoleRepository } from "./repository";
 import { withHandoffCharacters } from "../core/relationship-handoff";
@@ -14,6 +17,41 @@ export interface ContinuationCapture {
   story: StoryContinuation;
   recap?: { title: string; summary: string };
   overrides: MemoryOverrides;
+}
+
+/** Preview and capture use only the active game's durable local records. */
+export async function savedMemoryContinuation(input: SavedMemorySource, expected?: string, repo: DeepRoleRepository = repository): Promise<{ preview: SavedMemoryPreview; snapshot?: HandoffSnapshot }> {
+  return repo.updateRecords<{ preview: SavedMemoryPreview; snapshot?: HandoffSnapshot }>(records => {
+    const binding = records.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === input.chatId)?.data as ChatBinding | undefined;
+    const world = records.find(r => r.kind === "world" && r.id === input.worldId)?.data as WorldProfile | undefined;
+    if (!binding || !world || binding.worldId !== world.id) throw Error("handoff-scope");
+    assertWorldGameWriter(records, binding, world.id);
+    const game = world.sharedGame;
+    const stories = new Map(records.filter(r => r.kind === "story").map(r => [r.id, r.data as StoryRecord]));
+    const baseline = [...stories.values()].find((r): r is StoryBaseline => r.type === "baseline" && r.worldId === world.id && r.origin.bindingId === binding.id && (!game || r.gameId === undefined || r.gameId === game.id));
+    const branch = baseline && stories.get(baseline.branchId) as StoryBranch | undefined;
+    const projection = branch?.type === "branch" && branch.gameManaged && branch.projectionId ? stories.get(branch.projectionId) : undefined;
+    const savedReply = !game?.restartPending && projection?.type === "projection" ? projection.revisionIds.map(id => stories.get(id)).findLast((r): r is StoryRevision => r?.type === "revision" && r.role === "assistant" && r.completion === "complete" && r.storyPurpose !== "out-of-character" && !!storyReplyProse(r.content).trim()) : undefined;
+    const inherited = !game?.restartPending ? game?.recentStory?.turns.findLast(turn => turn.role === "assistant")?.text : undefined;
+    const text = (savedReply ? storyReplyProse(savedReply.content) : inherited ?? "").trim();
+    const excerpt = text.length > 1600 ? "…" + text.slice(-1600).replace(/^[\uDC00-\uDFFF]/u, "").trimStart() : text;
+    const preview = { version: JSON.stringify([binding.id, binding.updatedAt, game?.revision, savedReply?.id, savedReply?.updatedAt]), scene: excerpt || null, savedAt: savedReply?.createdAt ?? null };
+    if (expected === undefined) return { records: [], removed: [], result: { preview } };
+    if (expected !== preview.version) throw Error("handoff-stale");
+    const books = records.filter(r => r.kind === "book").map(r => r.data as MemoryBook);
+    const scene = game?.scene ?? binding.characterScenes?.[world.id];
+    const snapshot: HandoffSnapshot = {
+      id: createId("snapshot"), savedMemory: true, title: world.name, worldId: world.id,
+      sourceChatId: input.chatId, sourceChatUrl: input.chatUrl, createdAt: Date.now(),
+      bookId: books.some(b => b.id === binding.bookId && b.active && b.worldId === world.id) ? binding.bookId : null,
+      focusIds: [...binding.focusIds ?? []], memoryOverrides: structuredClone(game?.memoryOverrides ?? binding.memoryOverrides ?? { includedIds: [], excludedIds: [] }),
+      summary: excerpt || "No saved scene is available. Use the saved world state and the user's new message. Do not invent missing events.",
+      ...(!excerpt ? { continuation: boundStory([], "history", true) } : {}),
+      ...(game ? { sharedGameRevision: game.revision } : {}),
+      ...(scene ? { characterScene: structuredClone(scene) } : {}),
+    };
+    return { records: [{ kind: "snapshot", id: snapshot.id, data: snapshot }], removed: [], result: { preview, snapshot } };
+  });
 }
 /** Latest structured progress is captured under the same lock as character edits.
  * Saving a checkpoint never mutates lore, images or the source branch.
@@ -62,6 +100,7 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
     const existing = records.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === targetChatId)?.data as ChatBinding | undefined;
     if (existing && (existing.worldId ?? null) !== worldId) throw new Error("handoff-scope");
     if (snapshot.appliedAt !== undefined && snapshot.targetChatId === targetChatId) return { records: [], removed: [], result: undefined };
+    if (snapshot.savedMemory && (!worldId || existing || targetChatId === snapshot.sourceChatId)) throw Error("handoff-conflict");
     const binding = targetChatId === snapshot.sourceChatId ? undefined : withHandoffCharacters(existing ?? {
       id: `binding:${targetChatId}`, chatId: targetChatId, chatUrl: `https://chat.deepseek.com/a/chat/s/${targetChatId}`,
       worldId, focusIds: snapshot.focusIds ?? [], bookId: snapshot.bookId, messageCountAtAnalysis: 0, createdAt: Date.now(), updatedAt: Date.now(),
@@ -73,6 +112,7 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
       const world = records.find(r => r.kind === "world" && r.id === worldId)!.data as WorldProfile;
       if(snapshot.resetGameId&&world.sharedGame?.id!==snapshot.resetGameId)throw Error("handoff-conflict");
       const source = records.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === snapshot.sourceChatId)?.data as ChatBinding | undefined;
+      if (snapshot.savedMemory && (source?.worldId !== worldId || world.sharedGame?.revision !== snapshot.sharedGameRevision)) throw Error("handoff-conflict");
       if (source) assertWorldGameWriter(records, source, worldId);
       if (snapshot.sharedGameRevision && world.sharedGame?.revision !== snapshot.sharedGameRevision) throw Error("handoff-conflict");
       let game = world.sharedGame ?? captureWorldGame(records, world, source ?? binding);

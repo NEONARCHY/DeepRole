@@ -39,6 +39,7 @@ export function validDataRecord(value: unknown): value is DataRecord {
   if (d.focusIds !== undefined && !strings(d.focusIds)) return false;
   if (d.continuationSnapshotId !== undefined && !id(d.continuationSnapshotId)) return false;
   if (value.kind === "snapshot" && d.continuation !== undefined && !validStoryContinuation(d.continuation)) return false;
+  if (value.kind === "snapshot" && d.savedMemory !== undefined && d.savedMemory !== true) return false;
   if (value.kind === "snapshot" && d.memoryOverrides !== undefined && (!object(d.memoryOverrides) || !strings(d.memoryOverrides.includedIds) || !strings(d.memoryOverrides.excludedIds))) return false;
   if (["world", "entity"].includes(String(value.kind)) && d.useDescriptionInContext !== undefined && typeof d.useDescriptionInContext !== "boolean") return false;
   switch (value.kind) {

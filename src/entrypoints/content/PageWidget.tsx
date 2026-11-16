@@ -22,6 +22,8 @@ import { TooltipButton } from "../shared/TooltipButton";
 import { ServiceProgress } from "../shared/MemoryStatus";
 import { experienceText } from "../../core/experience-i18n";
 import { sceneChoiceText } from "../../core/scene-choices";
+import { savedMemoryText, type SavedMemoryPreview } from "../../core/saved-memory-continuation";
+import { SavedMemoryTransfer } from "./SavedMemoryTransfer";
 import { selectionReason, type ServiceActivity } from "../../core/memory-experience";
 import { CharacterPanel } from "../shared/CharacterSheets";
 import { DeepSeekDomAdapter } from "../../adapters/deepseek-dom";
@@ -90,6 +92,8 @@ export function PageWidget(props: {
   onRetryContinuationCommit?: () => void;
   onStayInOldChat?: () => Promise<void>;
   onContinueStory?: () => void;
+  savedMemoryTransfer?: { scope: string; preview: () => Promise<SavedMemoryPreview>; open: (version: string) => Promise<void> };
+  savedMemoryQueued?: boolean;
   onCancelContinuation?: () => void;
   onKeepContinuationMemory?: () => Promise<void>;
   onDismissCapacityWarning?: () => void;
@@ -285,6 +289,7 @@ export function PageWidget(props: {
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={resetReviewId?props.menuUrl+(props.menuUrl.includes("?")?"&":"?")+"resetReview="+encodeURIComponent(resetReviewId):props.menuUrl} title="DeepRole" /></aside></div>}
     {!menuOpen&&!props.state.vaultLocked&&props.state.scene?.worldId&&chatAdapter.current.getChatId()&&<WorldResetNotice key={props.state.scene.worldId+":"+chatAdapter.current.getChatId()} worldId={props.state.scene.worldId} chatId={chatAdapter.current.getChatId()!} locale={props.state.locale} game={props.state.worlds?.find(world=>world.id===props.state.scene?.worldId)?.sharedGame} onReview={id=>{setResetReviewId(id);setMenuOpen(true);}}/>}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
+    {!props.state.vaultLocked && props.savedMemoryQueued && !props.state.continuationCommitPending && <div className="dr-continuation-progress dr-saved-memory-ready" role="status">{savedMemoryText(props.state.locale).queued}</div>}
     {!props.state.vaultLocked && props.state.continuationCommitPending && <Alert title={continuationText(props.state.locale, "commitTitle")} text={continuationText(props.state.locale, "commitPending")} primary={continuationText(props.state.locale, "commitRetry")} onPrimary={() => props.onRetryContinuationCommit?.()} />}
     {!props.state.vaultLocked && props.state.continuation && (!review || review.id !== props.state.continuation.proposalId) && <section className="dr-continuation-progress" aria-label={continuationText(props.state.locale, "title")}>
       <strong role="status">{continuationText(props.state.locale, props.state.continuation.phase === "analysis" ? "analysis" : props.state.continuation.phase === "review" ? "review" : props.state.continuation.phase === "ready" ? "readyToSummarize" : props.state.continuation.phase === "opening" ? "summaryDone" : "summary")}</strong>
@@ -318,7 +323,7 @@ export function PageWidget(props: {
           {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
         </WidgetTile>}
 {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAskSelfie={props.onAskSelfie} onAddAction={props.onAddCharacterAction} onGenerateText={props.onGenerateCharacterText} generationScope={props.state.scene?.bookId ?? ""} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
-        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} /></WidgetTile>}
+        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />{props.savedMemoryTransfer && <SavedMemoryTransfer key={props.savedMemoryTransfer.scope} locale={props.state.locale} disabled={serviceBusy || !!props.state.generating || !!props.state.transferring || !!props.state.continuation} onPreview={props.savedMemoryTransfer.preview} onOpen={props.savedMemoryTransfer.open}/>}</WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
     </div>

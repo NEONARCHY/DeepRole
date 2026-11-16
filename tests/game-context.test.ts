@@ -16,6 +16,14 @@ it("a prepared recap replaces automatic transcript fallback without changing str
  f.input.snapshot.continuation={...f.input.continuation,turns:[{role:"assistant",text:"EXPLICIT LEGACY HANDOFF"}]};
  const legacy=compileGameContext(f.input);expect(legacy.text).toContain("EXPLICIT LEGACY HANDOFF");expect(legacy.text).not.toContain("OBSOLETE TRANSCRIPT TAIL");
 });
+it("recalls saved facts for the first continued message without targeting the old branch for writes",()=>{
+ const f=fixture(6000); f.input.story!.referenceOnly=true; f.input.character![9]=true;
+ const r=compileGameContext(f.input);
+ expect(r.text).toContain("The clock key is in the blue box.");
+ expect(r.text).toContain("<deeprole_story_memory>");
+ expect(r.text).not.toContain("<deeprole_story_update_mode");
+ expect(r.text).not.toContain("branch-a");
+});
 it("counts a recovered reply as whole required context, without an unmetered suffix",()=>{
  const f=fixture(500);f.input.requiredContext="Recovered established scene, including its conditions. ".repeat(90);
  const before=structuredClone(f.input),r=compileGameContext(f.input);

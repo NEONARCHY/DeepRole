@@ -233,6 +233,8 @@ export interface RecoveredReply {
 }
 
 export interface HandoffSnapshot {
+  /** Prepared entirely from local saved memory, with no source-chat request. */
+  savedMemory?: true;
   resetGameId?: string;
   /** Optimistic guard: recap delivery may not restore an older shared game. */
   sharedGameRevision?: string;

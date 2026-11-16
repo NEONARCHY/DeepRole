@@ -190,6 +190,11 @@ button { font: inherit; }
 .dr-memory-dialog-close:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
 .dr-memory-dialog-body { min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding:16px 20px 20px; }
 .dr-memory-dialog-body > .dr-game-memory-notice { max-width:none; margin:0 0 16px; }
+.dr-saved-memory-review { display:grid; gap:10px; overflow-wrap:anywhere; }
+.dr-saved-memory-review time { color:var(--dr-muted); }
+.dr-saved-memory-ready { pointer-events:none; inset:56px 12px auto auto; }
+.dr-saved-memory-review p,.dr-saved-memory-review blockquote { margin:0; }
+.dr-saved-memory-review blockquote { white-space:pre-wrap; padding:12px; background:var(--dr-surface); border-radius:8px; }
 .dr-memory-dialog .dr-entry { grid-template-columns:38px minmax(0,1fr); gap:6px 12px; padding-block:14px; }
 .dr-memory-dialog .dr-entry strong { font-size:13px; line-height:1.5; }
 .dr-memory-dialog .dr-entry small { font-size:13px; line-height:1.6; white-space:pre-wrap; }

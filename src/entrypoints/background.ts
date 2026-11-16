@@ -42,7 +42,7 @@ import { savePortraitLayout } from "../storage/portrait-layout";
 import { bindCharacterTurn, characterTurnKey, actionsFor, parseCharacterTurn, relationshipTurnEnabled } from "../core/characters";
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { TabSessionStore } from "../storage/tab-session";
-import { captureContinuation, completeContinuation } from "../storage/story-continuation";
+import { captureContinuation, completeContinuation, savedMemoryContinuation } from "../storage/story-continuation";
 import { acknowledgeOldChatNotice } from "../storage/old-chat-notice";
 import { validOldChatNoticeEdit } from "../core/old-chat-notice";
 import { activateWorldGame } from "../storage/world-game";
@@ -287,6 +287,13 @@ export default defineBackground(() => {
             const tab = await browser.tabs.get(sender.tab!.id!);
             if (!tab.url || !isSameDeepSeekChat(message.input.chatUrl, tab.url, message.input.chatId)) throw new Error("handoff-scope");
             return { ok: true, data: await captureContinuation(message.input) };
+          }
+          if (message.operation === "savedMemoryContinuation") {
+            const { input, expected } = message;
+            if (sender.frameId !== 0 || !validNativeStoryId(input?.chatId) || !validNativeStoryId(input.worldId) || typeof input.chatUrl !== "string" || (expected !== undefined && (typeof expected !== "string" || expected.length > 1000))) throw Error("handoff-scope");
+            const tab = await browser.tabs.get(sender.tab!.id!);
+            if (!tab.url || !isSameDeepSeekChat(input.chatUrl, tab.url, input.chatId) || expected !== undefined && !tab.active) throw Error("handoff-scope");
+            return { ok: true, data: await savedMemoryContinuation(input, expected) };
           }
           if (message.operation === "saveCharacter" || message.operation === "applyCharacterTurn" || message.operation === "savePortraitLayout" || message.operation === "addCharacterAction") {
             const scope = message.operation === "applyCharacterTurn" || message.operation === "addCharacterAction" ? message.scope : message.edit;

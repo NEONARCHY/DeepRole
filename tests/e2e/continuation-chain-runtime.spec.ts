@@ -2,10 +2,13 @@ import { chromium, expect, test, type Page } from "@playwright/test";
 import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { continuationText } from "../../src/core/continuation-i18n";
+import { savedMemoryText } from "../../src/core/saved-memory-continuation";
+import { boundStory } from "../../src/core/story-continuation";
+import { captureWorldGame } from "../../src/storage/world-game";
 
 const html = '<!doctype html><html><head><style>body{background:#181818;color:#eee;font:14px system-ui}form{position:fixed;bottom:10px;left:10px}textarea{width:160px}</style></head><body><main><div id="conversation"></div><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main></body></html>';
 const rows = (panel: Page) => panel.evaluate(() => new Promise<any[]>((resolve, reject) => { const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error); open.onsuccess = () => { const db = open.result, read = db.transaction("records").objectStore("records").getAll(); read.onsuccess = () => { resolve(read.result); db.close(); }; }; }));
-for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "unchanged", "commit-failure", "receipt-failure", "opening-unavailable", "early-route", "early-route-commit-failure", "early-route-receipt-failure", "early-route-rejected"] as const) {
+for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "unchanged", "commit-failure", "receipt-failure", "opening-unavailable", "early-route", "early-route-commit-failure", "early-route-receipt-failure", "early-route-rejected", "old-chat-read-only", "early-route-quota", "saved-memory", "saved-memory-quota"] as const) {
  test(`full continuation chain ${locale} ${scenario}`, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Installed Edge MV3; shared UI has Firefox coverage"); test.setTimeout(90000);
   const extension = path.resolve(".output/chrome-mv3"), context = await chromium.launchPersistentContext("", { channel: "msedge", headless: true, args: ["--disable-extensions-except=" + extension, "--load-extension=" + extension] });
@@ -17,6 +20,9 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    const receiptFailure = scenario === "receipt-failure" || scenario === "early-route-receipt-failure";
    f.world.contextBudget = 8000; f.entry.activation = "always";
    const sourceScene = structuredClone(f.binding.characterScenes![f.world.id]!);
+   const savedMode = scenario === "saved-memory" || scenario === "saved-memory-quota";
+   const savedScene = "SAVED_SCENE: Mira waits by the blue clock. The key is still on the table.";
+   if (savedMode) f.world.sharedGame = { ...captureWorldGame(f.records, f.world, f.binding), recentChatId: f.binding.chatId, recentStory: boundStory([{ role: "assistant", text: savedScene }, { role: "user", text: "UNANSWERED: I leave the workshop." }], "history") };
    await panel.evaluate(async ({ records, locale }) => {
     await new Promise<void>((resolve, reject) => { const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error); open.onsuccess = () => { const db = open.result, tx = db.transaction("records", "readwrite"); for (const r of records) tx.objectStore("records").put({ pk: r.kind + ":" + r.id, ...r, updatedAt: Date.now() }); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); }; });
     await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true, automaticMetadataRepair: false }, deeprole_library_change: { token: "chain-seed" } });
@@ -32,7 +38,9 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
       expect(before.find(r => r.kind === "world").data.sharedGame.activeChatId).toBe(f.binding.chatId);
       expect(before.some(r => r.kind === "binding" && r.data.chatId === "chain-target")).toBe(false);
      }
-     return route.fulfill({ status: sent.at(-1)!.kind === "game" && scenario === "early-route-rejected" ? 503 : 200, json: { wirePrompt: prompt } });
+     const kind = sent.at(-1)!.kind;
+     const status = kind === "analysis" && (scenario === "old-chat-read-only" || savedMode) ? 403 : kind === "game" && (scenario === "early-route-quota" || scenario === "saved-memory-quota") ? 429 : kind === "game" && scenario === "early-route-rejected" ? 503 : 200;
+     return route.fulfill({ status, json: { wirePrompt: prompt } });
     }
     if (url.includes("/api/v0/chat/history_messages")) return route.fulfill({ json: { messages: [{ role: "user", content: "I deliver the parcel." }, { role: "assistant", fragments: [{ type: "THINK", content: "PRIVATE_REASONING_MUST_NOT_TRANSFER" }, { type: "RESPONSE", content: "The parcel has been delivered. Resident 2 waits for the answer." }] }] } });
     if (url.includes("/api/v0/")) return route.fulfill({ json: {} });
@@ -54,16 +62,74 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
       if (home && earlyRoute) { history.pushState({}, "", "/a/chat/s/chain-target"); await new Promise(resolve => setTimeout(resolve, 100)); }
       void fetch("/api/v0/chat/completion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, chat_session_id: home ? "chain-target" : source }) }).then(async response => {
        if (home) { user.textContent=(await response.json()).wirePrompt;answer.textContent = "Resident 2 nods, waiting for your answer."; history.pushState({}, "", "/chat/s/chain-target"); }
+       else if (!response.ok) answer.textContent = "Start a new chat to continue.";
        else answer.textContent = '<deeprole_data>' + JSON.stringify(summary ? { type: "handoff", title: "Last moment", summary: recap } : { type: "memory-suggestions", items: changes ? [{ title: "Parcel delivered", content: newFact, keywords: ["parcel"], activation: "smart", priority: "normal" }] : [] }) + '</deeprole_data>';
       });
      });
     }, { once: true });
-   }, { source: f.binding.chatId, recap, newFact, changes: scenario !== "unchanged", earlyRoute: scenario.startsWith("early-route") });
+   }, { source: f.binding.chatId, recap, newFact, changes: scenario !== "unchanged", earlyRoute: scenario.startsWith("early-route") || scenario === "saved-memory-quota" });
    const chat = await context.newPage(); await chat.setViewportSize({ width: locale === "ru" ? 360 : 1280, height: 900 }); await chat.goto(f.binding.chatUrl); await chat.bringToFront();
    await expect(chat.locator(".dr-character-row")).toHaveCount(2);
    // Narrow layouts intentionally start with compact widget buttons.
    if(locale==="ru")await chat.locator('[data-restore-widget="meter"]').click();
    await chat.getByRole("button", { name: t("continue"), exact: true }).click();
+   if (savedMode) {
+    const copy = savedMemoryText(locale);
+    await expect(chat.locator("#conversation")).toContainText("Start a new chat to continue.");
+    await expect(chat.getByRole("button", { name: t("continue"), exact: true })).toBeEnabled();
+    if (locale === "ru") await chat.setViewportSize({ width: 320, height: 900 });
+    const restore = chat.locator('[data-restore-widget="scene"]');
+    if (await restore.isVisible()) await restore.click();
+    await chat.getByRole("button", { name: copy.title, exact: true }).click();
+    const dialog = chat.getByRole("dialog", { name: copy.title });
+    await expect(dialog.locator("blockquote")).toHaveText(savedScene);
+    expect(await dialog.locator("blockquote").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await expect(dialog).not.toContainText("UNANSWERED");
+    expect(sent.map(r => r.kind)).toEqual(["analysis"]);
+    expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+    await dialog.getByRole("button", { name: copy.open, exact: true }).click();
+    await expect(chat).toHaveURL("https://chat.deepseek.com/");
+    await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();
+    await chat.reload(); await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();
+    expect(sent.map(r => r.kind)).toEqual(["analysis"]);
+    const before = await rows(panel), snapshot = before.find(r => r.kind === "snapshot").data;
+    expect(snapshot).toMatchObject({ summary: savedScene, savedMemory: true });
+    expect(snapshot.appliedAt).toBeUndefined();
+    expect(before.find(r => r.kind === "world").data.sharedGame.activeChatId).toBe(f.binding.chatId);
+    const draft = locale === "ru" ? "Я спрашиваю про синий ключ." : "I ask about the blue key.";
+    await chat.getByRole("textbox", { name: "Message" }).fill(draft);
+    await chat.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/chain-target");
+    expect(sent.map(r => r.kind)).toEqual(["analysis", "game"]);
+    expect(sent[1]!.prompt).toContain(savedScene);
+    expect(sent[1]!.prompt).toContain(f.entry.content);
+    expect(sent[1]!.prompt).not.toContain("UNANSWERED");
+    expect(sent[1]!.prompt.endsWith(draft)).toBe(true);
+    if (scenario === "saved-memory-quota") {
+      expect((await rows(panel)).find(r => r.kind === "snapshot").data.appliedAt).toBeUndefined();
+      expect((await rows(panel)).find(r => r.kind === "world").data.sharedGame.activeChatId).toBe(f.binding.chatId);
+    } else {
+      await expect.poll(async () => (await rows(panel)).find(r => r.kind === "snapshot").data.appliedAt).toBeTruthy();
+      const game = (await rows(panel)).find(r => r.kind === "world").data.sharedGame;
+      expect(game.activeChatId).toBe("chain-target");
+      expect(game.scene.states).toEqual(sourceScene.states);
+    }
+    return;
+   }
+   if (scenario === "old-chat-read-only") {
+    // Characterize the current gap: readable history and saved state exist,
+    // but a refusal to send in the source chat prevents the standard transfer.
+    await expect.poll(() => sent.map(r => r.kind)).toEqual(["analysis"]);
+    await expect(chat.getByRole("button", { name: t("continue"), exact: true })).toBeEnabled();
+    await expect(chat.locator(".dr-memory-review")).toHaveCount(0);
+    await expect(chat).toHaveURL(f.binding.chatUrl);
+    const stored = await rows(panel);
+    expect(homeAttempts).toBe(0);
+    expect(stored.filter(r => r.kind === "snapshot")).toHaveLength(0);
+    expect(stored.find(r => r.kind === "entry")?.data).toEqual(f.entry);
+    expect(stored.find(r => r.kind === "world")?.data.sharedGame.activeChatId).toBe(f.binding.chatId);
+    return;
+   }
    if (scenario === "unchanged") {
     const progress = chat.getByRole("region", { name: t("title"), exact: true }); await expect(progress).toContainText(t("readyToSummarize"));
     expect(sent.map(r => r.kind)).toEqual(["analysis"]); expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
@@ -99,7 +165,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
     return;
    }
    await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/chain-target");
-   if (scenario === "early-route-rejected") {
+   if (scenario === "early-route-rejected" || scenario === "early-route-quota") {
     await expect(chat.locator('[data-message-id="4"]')).toContainText("Resident 2 nods");
     const rejected = await rows(panel);
     expect(sent.filter(r => r.kind === "game")).toHaveLength(1);

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
-import { captureContinuation, completeContinuation } from "../src/storage/story-continuation";
+import { captureContinuation, completeContinuation, savedMemoryContinuation } from "../src/storage/story-continuation";
+import { captureWorldGame } from "../src/storage/world-game";
 import { withHandoffCharacters } from "../src/core/relationship-handoff";
 import { boundStory } from "../src/core/story-continuation";
 import { EMPTY_STATUS } from "../src/core/characters";
@@ -22,6 +23,41 @@ describe("atomic continuation capture", () => {
     await repo.put("world", world); await repo.put("binding", structuredClone(binding));
     return { db, repo };
   }
+  const savedSource = { chatId: binding.chatId, chatUrl: binding.chatUrl, worldId: world.id };
+  it("previews local progress without creating a snapshot or reading a native chat", async () => {
+    const { repo } = await setup();
+    const game = captureWorldGame(await repo.rawRecords(), world, binding);
+    game.recentStory = boundStory([{ role: "assistant", text: "Mira waits at the harbor." }, { role: "user", text: "Unanswered move" }], "history");
+    await repo.put("world", { ...world, sharedGame: game });
+    const before = await repo.rawRecords();
+    const { preview } = await savedMemoryContinuation(savedSource, undefined, repo);
+    expect(preview).toMatchObject({ scene: "Mira waits at the harbor.", savedAt: null });
+    expect(await repo.rawRecords()).toEqual(before);
+    const { snapshot } = await savedMemoryContinuation(savedSource, preview.version, repo);
+    expect(snapshot).toMatchObject({ savedMemory: true, summary: preview.scene, sharedGameRevision: game.revision });
+    expect((await repo.rawRecords()).filter(row => row.kind !== "snapshot")).toEqual(before);
+  });
+
+  it("shows that the scene is unavailable and does not create a fictional scene after transfer", async () => {
+    const { repo } = await setup();
+    const { preview } = await savedMemoryContinuation(savedSource, undefined, repo);
+    expect(preview).toMatchObject({ scene: null, savedAt: null });
+    const { snapshot } = await savedMemoryContinuation(savedSource, preview.version, repo);
+    expect(snapshot?.continuation?.turns).toEqual([]);
+    await completeContinuation(snapshot!, "b", repo);
+    expect((await repo.get<WorldProfile>("world", world.id))?.sharedGame?.recentStory?.turns ?? []).toEqual([]);
+  });
+
+  it("rejects stale previews and cannot move an inactive shared game", async () => {
+    const { repo } = await setup();
+    const { preview } = await savedMemoryContinuation(savedSource, undefined, repo);
+    const game = captureWorldGame(await repo.rawRecords(), world, binding);
+    await repo.put("world", { ...world, sharedGame: game });
+    await expect(savedMemoryContinuation(savedSource, preview.version, repo)).rejects.toThrow("handoff-stale");
+    await repo.put("world", { ...world, sharedGame: { ...game, activeChatId: "other", activeBindingId: "binding:other" } });
+    await expect(savedMemoryContinuation(savedSource, undefined, repo)).rejects.toThrow("story-game-inactive");
+    expect(await repo.list("snapshot")).toEqual([]);
+  });
   it("copies exact current progress, focus and overrides without writing the source or lore", async () => {
     const { repo } = await setup(); const before = await repo.rawRecords();
     const snapshot = await captureContinuation(input, repo);
