@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { browser } from "wxt/browser";
+import { menuTabs } from "../../adapters/menu-tab";
 import type { DeepRoleMessage } from "../../core/messages";
 import type { Locale } from "../../core/types";
 import type { MemoryBatchInput, MemoryBatchPolicy, MemoryBatchStatus } from "../../core/story-memory-batch";
 import { memoryBatchText } from "../../core/story-memory-batch-i18n";
 const activeSend = async (message: DeepRoleMessage) => {
- const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
- if (!tab?.id) throw Error("scene-changed"); return browser.tabs.sendMessage(tab.id, message);
+ const [tab] = await menuTabs.query({ active: true, currentWindow: true });
+ if (!tab?.id) throw Error("scene-changed"); return menuTabs.sendMessage(tab.id, message);
 };
-export function StoryMemoryBatchPanel({ locale, scope, recording, blocked, revision, send = activeSend, onStatusChange }: { locale: Locale; scope: { worldId: string; chatId: string }; recording: boolean; blocked: boolean; revision?: string; send?: typeof activeSend; onStatusChange?: (status: MemoryBatchStatus) => void }) {
+export function StoryMemoryBatchPanel({ locale, scope, recording, blocked, revision, send = activeSend, onStatusChange, hideHeading = false }: { locale: Locale; scope: { worldId: string; chatId: string }; recording: boolean; blocked: boolean; revision?: string; send?: typeof activeSend; onStatusChange?: (status: MemoryBatchStatus) => void; hideHeading?: boolean }) {
  const t = memoryBatchText(locale), [status, setStatus] = useState<MemoryBatchStatus>(), [busy, setBusy] = useState(false), [error, setError] = useState(false), [saved, setSaved] = useState(false);
  const [readState, setReadState] = useState<"loading" | "ready" | "failed">("loading");
  const input: MemoryBatchInput = { ...scope, force: false };
@@ -27,7 +27,7 @@ export function StoryMemoryBatchPanel({ locale, scope, recording, blocked, revis
   } catch { setError(true); } finally { setBusy(false); }
  };
  const mode = status?.mode ?? "off", running = status?.reason === "running";
- return <section className="settings-card dr-memory-batch" aria-label={t.title}><h2>{t.title}</h2><p className="setting-copy">{t.intro}</p><p className="setting-copy">{t.cost}</p>
+ return <section className="settings-card dr-memory-batch" aria-label={t.title}>{!hideHeading && <h2>{t.title}</h2>}<p className="setting-copy">{t.intro}</p><p className="setting-copy">{t.cost}</p>
  {recording && status && readState === "failed" && <p role="status">{t.unavailable}</p>}
  {!recording ? <p>{t.start}</p> : !status ? <><p role="status">{readState === "loading" ? t.loading : t.unavailable}</p><button className="button secondary" type="button" disabled={busy || blocked} onClick={() => void action()}>{t.refresh}</button></> : <><strong>{mode === "automatic" ? t.enabled : mode === "paused" ? t.paused : t.disabled}</strong>
  {status && <><p>{t.pending}: {new Intl.NumberFormat(locale).format(status.pendingTurns)} · {t.processed}: {new Intl.NumberFormat(locale).format(status.processedSources)}</p>{!["disabled","paused"].includes(status.reason) && <p role="status">{t[status.reason as "waiting" | "running" | "failed" | "ready" | "inactive" | "service-busy"]}</p>}</>}

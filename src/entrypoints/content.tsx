@@ -1154,6 +1154,10 @@ class PageController {
       onSceneChoicesToggle={() => void this.toggleSceneChoices()}
       onTogglePortraits={() => void this.togglePortraits()}
       menuUrl={`${browser.runtime.getURL("/sidepanel.html")}?embedded=1`}
+      onOpenMenuWindow={async resetReview => {
+        const reply = await browser.runtime.sendMessage({ type: "DR_OPEN_MENU_WINDOW", sourceUrl: location.href, ...(resetReview ? { resetReview } : {}) } satisfies DeepRoleMessage);
+        if (!reply?.ok) throw Error("menu-source-unavailable");
+      }}
     />);
   }
 

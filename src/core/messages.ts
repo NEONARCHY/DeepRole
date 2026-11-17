@@ -26,6 +26,7 @@ export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: str
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_MENU_TAB" }
+  | import("../adapters/menu-window").OpenMenuWindow
   | { type: "DR_OPEN_GAME_CHAT"; chatId: string }
   | { type: "DR_MEMORY_BATCH_IDLE"; worldId: string; chatId: string }
   | { type: "DR_MEMORY_BATCH"; action: "status" | "run" | "policy" | "cancel"; input: import("./story-memory-batch").MemoryBatchInput; mode?: import("./story-memory-batch").MemoryBatchPolicy["mode"] }

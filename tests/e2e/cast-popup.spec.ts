@@ -1,4 +1,21 @@
 import { expect, test } from "@playwright/test";
+for (const locale of ["ru", "en"]) test(`cast card actions align in a narrow panel ${locale}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto(`/tests/fixtures/cast.html?phase=ready&locale=${locale}`);
+  const review = page.locator(".dr-cast-setup > .dr-cast-trigger");
+  const progress = page.locator(".dr-cast-setup > .dr-cast-progress-toggle");
+  await expect(progress).toBeVisible();
+  const a = (await review.boundingBox())!, b = (await progress.boundingBox())!;
+  expect(b.x).toBeCloseTo(a.x, 1);
+  expect(b.width).toBeCloseTo(a.width, 1);
+  expect(b.y - a.y - a.height).toBeGreaterThanOrEqual(8);
+  expect(a.height).toBeGreaterThanOrEqual(44);
+  await progress.click();
+  await expect(page.locator(".dr-cast-status")).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath(`cast-card-${locale}.png`) });
+  await review.press("Enter");
+  await expect(page.getByRole("dialog")).toBeVisible();
+});
 for (const locale of ["ru","en"]) for (const width of [320,770,1280]) test(`cast progress docks, moves and stays readable: ${locale} ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
   await page.goto(`/tests/fixtures/cast.html?compact=1&phase=analyzing&locale=${locale}`);

@@ -50,9 +50,11 @@ import { activateWorldGame } from "../storage/world-game";
 import { assertWorldGameTab, validWorldGameActivation } from "../core/world-game";
 import { safeMemoryPreparationDetail } from "../core/memory-preparation-diagnostic";
 import { acknowledgeRecoveredReply, saveRecoveredReply } from "../storage/recovered-replies";
+import { createMenuWindowHandler } from "../adapters/menu-window";
 
 export default defineBackground(() => {
   const tabSessions = new TabSessionStore(browser.storage.session);
+  const openMenuWindow = createMenuWindowHandler();
   const cast = new CastCoordinator();
   const fields = new IsolatedFieldCoordinator();
   void fields.reconcilePending().catch(() => undefined);
@@ -74,6 +76,7 @@ export default defineBackground(() => {
   });
 
   const handleMessage = (message: DeepRoleMessage, sender: import("wxt/browser").Browser.runtime.MessageSender) => {
+    if (message.type === "DR_OPEN_MENU_WINDOW") return openMenuWindow(message, sender);
     if (message.type === "DR_OPEN_GAME_CHAT") {
       const url = sender.url ?? "";
       const fromPanel = url.split(/[?#]/u, 1)[0] === browser.runtime.getURL("/sidepanel.html");

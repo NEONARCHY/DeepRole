@@ -18,6 +18,10 @@
 .dr-cast-setup { padding:var(--dr-space-3,12px); border:1px solid var(--dr-line,#39434c); border-radius:12px; background:var(--dr-surface,#20272d); }
 .dr-cast-setup p { margin:8px 0; font-size:12px; line-height:1.5; }
 .dr-cast-setup .button { display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+.dr-cast-setup:not(.is-compact) { display:grid; gap:var(--dr-space-3,12px); min-width:0; }
+.dr-cast-setup:not(.is-compact) > p { margin:0; }
+.dr-cast-setup:not(.is-compact) > .button { width:100%; min-height:44px; margin:0; white-space:normal; overflow-wrap:anywhere; }
+.dr-cast-setup:not(.is-compact) > .button svg { flex:none; }
 .dr-cast-setup.is-compact { padding:0; border:0; background:none; position:relative; }
 .dr-cast-setup.is-compact > .dr-cast-trigger-error { position:absolute; z-index:110; top:100%; inset-inline-end:0; box-sizing:border-box; width:min(224px,calc(100vw - 16px)); padding:10px; border:1px solid var(--dr-border,var(--dr-line,#39434c)); border-radius:8px; background:var(--dr-panel,var(--dr-surface,#20272d)); overflow-wrap:anywhere; }
 .dr-cast-status { display:grid; gap:8px; margin-top:8px; font-size:12px; }

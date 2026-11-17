@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { BookOpen, ChevronRight, ListChecks, Users, History, LayoutDashboard, FileText, BrainCircuit } from "lucide-react";
-import { browser } from "wxt/browser";
+import { menuTabs } from "../../adapters/menu-tab";
 import type { Locale } from "../../core/types";
 import { storyUxText } from "../../core/story-ux-i18n";
 import { ActiveStoryReviewCard } from "./StoryReview";
@@ -41,17 +41,17 @@ export function StoryWorkspace({ locale, worldId, worldName, chatId, connected, 
  const queueLeads = section === "overview" && hasInbox;
   const t = (key: Parameters<typeof storyUxText>[1]) => storyUxText(locale, key);
   const gameAction = async (reset = false, undo = false, expectedBase?: string) => {
-    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await menuTabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !chatId || !worldId) throw Error("story-binding-conflict");
-    const result = await browser.tabs.sendMessage(tab.id, reset ? { type: "DR_STORY_GAME", operation: undo ? "restore" : "reset", manual: "stop", scope: { chatId, worldId }, ...(expectedBase ? { expectedBase } : {}) } : { type: "DR_RESUME_WORLD_GAME", chatId, worldId });
+    const result = await menuTabs.sendMessage(tab.id, reset ? { type: "DR_STORY_GAME", operation: undo ? "restore" : "reset", manual: "stop", scope: { chatId, worldId }, ...(expectedBase ? { expectedBase } : {}) } : { type: "DR_RESUME_WORLD_GAME", chatId, worldId });
     if (!result?.ok) throw Error(result?.error ?? "story-game-inactive");
   };
  const changeAutomation = async (mode: StoryAutomationMode) => {
    if (!onAutomation || !worldId || !chatId) throw Error("story-binding-conflict");
    if (mode !== "off" && !sharedGame?.managed) {
-     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+     const [tab] = await menuTabs.query({ active: true, currentWindow: true });
      if (!tab?.id) throw Error("story-binding-conflict");
-     const reply = await browser.tabs.sendMessage(tab.id, { type: "DR_STORY_GAME", operation: "start", manual: "stop", scope: { worldId, chatId } });
+     const reply = await menuTabs.sendMessage(tab.id, { type: "DR_STORY_GAME", operation: "start", manual: "stop", scope: { worldId, chatId } });
      if (!reply?.ok) throw Error(reply?.error ?? "story-binding-conflict");
    }
    await onAutomation(mode);
@@ -66,16 +66,16 @@ export function StoryWorkspace({ locale, worldId, worldName, chatId, connected, 
    <section id={id + "-content"} className="dr-workspace-content" aria-labelledby={queueLeads ? undefined : id + "-heading"} aria-label={queueLeads ? t("overview") : undefined}>
     {!queueLeads && <header className="dr-workspace-heading"><h2 ref={heading} id={id + "-heading"} tabIndex={-1}>{t(section)}</h2>{section !== "overview" && <p className="setting-copy">{t(`${section}Hint`)}</p>}</header>}
     <div hidden={section !== "overview"} className="dr-workspace-stack">
-     {hasInbox && <StoryAutomationInbox locale={locale} tabs={browser.tabs} scope={{ worldId, chatId }} revision={sharedGame.revision} blocked={generating} headingRef={queueLeads ? heading : undefined}/>}
+     {hasInbox && <StoryAutomationInbox locale={locale} tabs={menuTabs} scope={{ worldId, chatId }} revision={sharedGame.revision} blocked={generating} headingRef={queueLeads ? heading : undefined}/>}
      {onAutomation && <StoryAutomationPanel compact locale={locale} policy={automation} recording={!!sharedGame?.managed} blocked={generating || inactiveChat} onChange={changeAutomation}/>}
     </div>
     {opened.episodes && sharedGame?.managed && <div hidden={section !== "episodes"}><StoryEpisodePanel locale={locale} game={sharedGame}/></div>}
     {opened.tasks && sharedGame?.managed && <div data-dr-guide="story-tasks-content" hidden={section !== "tasks"}><StoryTaskPanel locale={locale} facts={sharedGame.facts}/></div>}
-    <div hidden={(section === "episodes" || section === "tasks") && !!sharedGame?.managed}><ActiveStoryReviewCard locale={locale} tabs={browser.tabs} guided workspaceSection={section} operationBlocked={generating} readOnly={inactiveChat} scope={{ worldId, chatId }}/></div>
+    <div hidden={(section === "episodes" || section === "tasks") && !!sharedGame?.managed}><ActiveStoryReviewCard locale={locale} tabs={menuTabs} guided workspaceSection={section} operationBlocked={generating} readOnly={inactiveChat} scope={{ worldId, chatId }}/></div>
     <div hidden={section !== "overview"} className="dr-workspace-stack">
-     <details className="settings-card dr-story-advanced"><summary>{t("extraCheck")}{(batchStatus?.reason === "failed" || batchStatus?.reason === "running") && <span className="dr-workspace-status" data-warning={batchStatus.reason === "failed"}>{locale === "ru" ? batchStatus.reason === "failed" ? "Нужно внимание" : "Идёт проверка" : batchStatus.reason === "failed" ? "Needs attention" : "Review running"}</span>}</summary><p className="setting-copy">{t("extraCheckHint")}</p><StoryMemoryBatchPanel locale={locale} scope={{worldId,chatId}} recording={!!sharedGame?.managed} revision={sharedGame?.revision} blocked={generating || inactiveChat} onStatusChange={setBatchStatus}/></details>
-     {sharedGame && <details className="settings-card dr-story-advanced" open={inactiveChat || undefined}><summary>{t("maintenance")}</summary><p className="setting-copy">{t("maintenanceHint")}</p><WorldGamePanel worldId={worldId} worldName={worldName} locale={locale} game={sharedGame} chatId={chatId} archives={archives} blocked={generating} onResume={() => gameAction()} restartPreview={restartPreview} onReset={base => gameAction(true,false,base)} onUndoReset={() => gameAction(true,true)} onFullReset={onFullReset}/></details>}
-     <details className="settings-card dr-story-advanced"><summary>{t("advanced")}</summary><p className="setting-copy">{t("advancedHint")}</p><ActiveStoryCheckpoint locale={locale} tabs={browser.tabs}/></details>
+     <details className="settings-card dr-story-advanced"><summary>{t("extraCheck")}{(batchStatus?.reason === "failed" || batchStatus?.reason === "running") && <span className="dr-workspace-status" data-warning={batchStatus.reason === "failed"}>{locale === "ru" ? batchStatus.reason === "failed" ? "Нужно внимание" : "Идёт проверка" : batchStatus.reason === "failed" ? "Needs attention" : "Review running"}</span>}</summary><StoryMemoryBatchPanel hideHeading locale={locale} scope={{worldId,chatId}} recording={!!sharedGame?.managed} revision={sharedGame?.revision} blocked={generating || inactiveChat} onStatusChange={setBatchStatus}/></details>
+     {sharedGame && <details className="settings-card dr-story-advanced" open={inactiveChat || undefined}><summary>{t("maintenance")}</summary><WorldGamePanel worldId={worldId} worldName={worldName} locale={locale} game={sharedGame} chatId={chatId} archives={archives} blocked={generating} onResume={() => gameAction()} restartPreview={restartPreview} onReset={base => gameAction(true,false,base)} onUndoReset={() => gameAction(true,true)} onFullReset={onFullReset}/></details>}
+     <details className="settings-card dr-story-advanced"><summary>{t("advanced")}</summary><p className="setting-copy">{t("advancedHint")}</p><ActiveStoryCheckpoint locale={locale} tabs={menuTabs}/></details>
     </div>
    </section>
   </>}

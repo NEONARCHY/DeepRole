@@ -1,5 +1,5 @@
 import { readJsonFile } from "../../core/read-json-file";
-import { menuTab } from "../../adapters/menu-tab";
+import { menuTab, menuTabs, openMenuWindow } from "../../adapters/menu-tab";
 import { navigationText, type SettingsSection } from "../../core/navigation-i18n";
 import { SettingsNavigation } from "../shared/SettingsNavigation";
 import { LearningGuide, WelcomeFlow, useLearning } from "../shared/LearningGuide";
@@ -214,6 +214,7 @@ export function App() {
     [settings.locale],
   );
   const embeddedMenu = new URLSearchParams(window.location.search).get("embedded") === "1";
+  const detachedMenu = new URLSearchParams(window.location.search).has("sourceTab");
 
   const clearPrivateState = useCallback(() => {
     closePortraitViewer();
@@ -285,12 +286,8 @@ export function App() {
 
   const openMenuTab = async () => {
     try {
-      const url = browser.runtime.getURL("/sidepanel.html");
-      const tabs = await startupDeadline(browser.tabs.query({ currentWindow: true }));
-      const existing = tabs.find(tab => tab.url === url);
-      if (existing?.id !== undefined) await browser.tabs.update(existing.id, { active: true });
-      else await browser.tabs.create({ url, active: true });
-    } catch { setToast(experienceText(settings.locale, "menuLoadError")); }
+      await openMenuWindow(new URLSearchParams(location.search).get("resetReview") ?? undefined);
+    } catch { setToast(experienceText(settings.locale, "menuWindowError")); }
   };
 
   const refreshPage = useCallback(async () => {
@@ -342,6 +339,7 @@ export function App() {
     const navigationListener = (_id: number, change: { url?: string; status?: string }) => { if (change.url || change.status === "complete") void refreshPage(); };
     browser.tabs.onActivated?.addListener(tabListener);
     browser.tabs.onUpdated?.addListener(navigationListener);
+    browser.tabs.onRemoved?.addListener(tabListener);
     document.addEventListener("visibilitychange", visible);
     window.addEventListener("focus", visible);
     return () => {
@@ -349,6 +347,7 @@ export function App() {
       browser.storage.onChanged.removeListener(storageListener);
       browser.tabs.onActivated?.removeListener(tabListener);
       browser.tabs.onUpdated?.removeListener(navigationListener);
+      browser.tabs.onRemoved?.removeListener(tabListener);
       document.removeEventListener("visibilitychange", visible);
       window.removeEventListener("focus", visible);
     };
@@ -551,7 +550,7 @@ export function App() {
   if (loadError) return <main className="center-screen" role="alert">
     <h1>DeepRole</h1>
     <p>{experienceText(settings.locale, "menuLoadError")}</p>
-    {embeddedMenu && <HelpButton className="button primary" onClick={() => void openMenuTab()}>{experienceText(settings.locale, "openMenuTab")}</HelpButton>}
+    {embeddedMenu && <HelpButton className="button primary" onClick={() => void openMenuTab()}>{experienceText(settings.locale, "openMenuWindow")}</HelpButton>}
     {toast && <p role="status">{toast}</p>}
     <HelpButton className="button" onClick={() => void refresh()}>{experienceText(settings.locale, "retryMenu")}</HelpButton>
     <a className="button" href={browser.runtime.getURL("/recovery.html")} target="_blank" rel="noreferrer">{experienceText(settings.locale, "checkExtension")}</a>
@@ -613,6 +612,7 @@ export function App() {
       </header>
 
       <main className="app-main" data-dr-guide={`page-${activeTab}`}>
+        {detachedMenu && <p className={`dr-workspace-notice dr-menu-source${page.tabId == null ? " is-warning" : ""}`} role="status">{experienceText(settings.locale, page.tabId == null ? "menuWindowLost" : "menuWindowBound")}</p>}
         {settingsSaveError && <p className="error-text dr-workspace-notice" role="alert">{settings.locale === "ru" ? "Настройки не сохранены. Проверьте доступ к хранилищу и повторите изменение." : "Settings were not saved. Check storage access and try the change again."}</p>}
         {settingsSaving && <p role="status">{settings.locale === "ru" ? "Сохраняем настройки…" : "Saving settings…"}</p>}
         {scene.worldId && page.chatId && worlds.find(w=>w.id===scene.worldId)?.sharedGame && <WorldResetSetup key={scene.worldId} worldId={scene.worldId} worldName={worlds.find(w=>w.id===scene.worldId)!.name} locale={settings.locale} game={worlds.find(w=>w.id===scene.worldId)!.sharedGame!} chatId={page.chatId} blocked={!!page.generating} open={resetDialogOpen} onOpenChange={setResetDialogOpen} hideLauncher requestedReviewId={requestedResetReview}/>}
@@ -1046,7 +1046,7 @@ function SettingsView(props: {
       </SettingsCard>
       </div>
       {restore && <BackupRestore t={props.t} fileName={restore.fileName} payload={restore.payload} onClose={() => setRestore(null)} onRestore={async (mode) => { await restoreBackup(restore.payload, mode); setRestore(null); props.onToast(props.t("importSuccess")); props.onRefresh(); }} />}
-      <div className="dr-settings-page" hidden={section !== "diagnostics"}><StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(browser.tabs)} /><ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} /></div>
+      <div className="dr-settings-page" hidden={section !== "diagnostics"}><StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(menuTabs)} /><ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} /></div>
       <div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<BrainCircuit />} title={u("reminders")} locale={props.settings.locale} help={u("remindersHint")}>
 

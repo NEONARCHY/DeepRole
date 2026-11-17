@@ -60,9 +60,9 @@ for (const browser of ["edge", "brave"] as const) for (const mode of ["stalled",
     await chat.locator(".dr-launcher").click();
     const menu = chat.frameLocator("iframe[title='DeepRole']");
     if (browser === "brave") {
-      const open = menu.getByRole("button", { name: /Open DeepRole in a tab|Открыть DeepRole во вкладке/ });
+      const open = menu.getByRole("button", { name: /Open in a separate window|Открыть отдельным окном/ });
       await expect(open).toBeVisible();
-      if (mode === "normal-ru") await expect(open).toHaveText("Открыть DeepRole во вкладке");
+      if (mode === "normal-ru") await expect(open).toHaveText("Открыть отдельным окном");
       await menu.getByRole("alert").screenshot({ path: info.outputPath(`menu-fallback-${mode}.png`), animations: "disabled" });
       const nextPage = context.waitForEvent("page");
       await open.click();

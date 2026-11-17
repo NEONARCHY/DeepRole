@@ -5,6 +5,29 @@ import { storyUpdateText as facts } from "../../src/core/story-update-i18n";
 import { characterDiscoveryText as people } from "../../src/core/character-discovery-i18n";
 import { storyAutomationText } from "../../src/core/story-automation-i18n";
 
+for (const locale of ["ru", "en"] as const) for (const width of [320, 400, 900]) {
+  test(`memory layout keeps controls aligned ${locale}/${width}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/tests/fixtures/sidepanel.html?play=active&review&locale=${locale}`);
+    await page.locator('[data-dr-guide="nav-story"]').click();
+    const nav = page.locator(".dr-workspace-nav");
+    const buttons = await nav.locator("button").all();
+    const heights = await Promise.all(buttons.map(button => button.evaluate(el => el.getBoundingClientRect().height)));
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+    await buttons[3]!.hover();
+    await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+    expect(await buttons[3]!.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+    for (const summary of await page.locator(".dr-story-advanced > summary").all()) await summary.click();
+    for (const card of await page.locator(".dr-story-advanced > .settings-card").all()) {
+      expect(await card.evaluate(el => ({ background: getComputedStyle(el).backgroundColor, shadow: getComputedStyle(el).boxShadow })))
+        .toEqual({ background: "rgba(0, 0, 0, 0)", shadow: "none" });
+    }
+    await expect(page.locator(".dr-memory-batch h2")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: info.outputPath(`memory-layout-${locale}-${width}.png`), fullPage: true });
+  });
+}
+
 for (const locale of ["ru", "en"] as const) for (const colorScheme of ["dark", "light"] as const) {
   test(`review queue leads the story overview ${locale}/${colorScheme}`, async ({ page }, info) => {
     const t = storyAutomationText(locale);

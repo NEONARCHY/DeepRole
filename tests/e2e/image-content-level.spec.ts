@@ -7,6 +7,27 @@ import { realPng } from "../image-fixtures";
 const copy = (key: keyof typeof IMAGE_STRINGS, locale: "ru" | "en") => IMAGE_STRINGS[key][locale === "ru" ? 0 : 1];
 const scenario = (locale: "ru" | "en", width: number) => `${locale} ${width}px`;
 
+for (const locale of ["ru", "en"] as const) test(`style suffix help and saving ${locale}`, async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto(`/tests/fixtures/image-generation.html?locale=${locale}`);
+  const suffix = page.locator(".dr-image-suffix");
+  const help = suffix.getByRole("button", { name: `${locale === "ru" ? "Подсказка" : "Help"}: ${copy("suffix", locale)}`, exact: true });
+  await help.click();
+  await expect(page.getByRole("tooltip")).toContainText(copy("suffixHelp", locale));
+  await expect(suffix.locator("details")).not.toHaveAttribute("open", "");
+  await page.keyboard.press("Escape");
+  await suffix.locator("summary").press("Enter");
+  await expect(suffix.getByText(copy("suffix", locale), { exact: true })).toHaveCount(1);
+  const field = suffix.getByRole("textbox", { name: copy("suffix", locale), exact: true });
+  await field.fill("Soft light, watercolor");
+  await field.press("Tab");
+  await expect.poll(() => page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_image_settings")).deeprole_image_settings.styleSuffix)).toBe("Soft light, watercolor");
+  await help.focus();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page.screenshot({ path: info.outputPath(`style-help-${locale}.png`) });
+});
+
 for (const locale of ["ru", "en"] as const) for (const width of [320, 360]) {
   test(`explicit preset needs the age confirmation, ${scenario(locale, width)}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });

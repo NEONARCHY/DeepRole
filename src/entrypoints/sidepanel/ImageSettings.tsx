@@ -6,7 +6,9 @@ import { getImageSettings, saveImageSettings } from "../../storage/image-setting
 import { providerKeyHint, removeProviderKey, saveProviderKey } from "../../storage/image-keys";
 import { Select } from "../shared/Select";
 import { ImageErrorDetails } from "../shared/ImageErrorDetails";
+import { Help, HelpLocale } from "../shared/Help";
 import "../shared/image-generation.css";
+import "../shared/help.css";
 
 export function ImageSettings({ locale, onModels, onPermission }: { locale: Locale; onModels?: (profile: ImageProviderConfig) => Promise<ImageModelInfo[]>; onPermission?: (profile: ImageProviderConfig) => Promise<boolean> }) {
   const t = (key: ImageCopyKey, vars?: Record<string, string>) => imageText(locale, key, vars);
@@ -48,8 +50,11 @@ export function ImageSettings({ locale, onModels, onPermission }: { locale: Loca
       <div className="toggle-row"><span>{t("reviewSetting")}</span><input type="checkbox" role="switch" aria-label={t("reviewSetting")} checked={settings.reviewBeforeGeneration === true} disabled={busy} onChange={event => void act(() => commit({ ...settings, reviewBeforeGeneration: event.target.checked }))} /></div>
       <p className="setting-copy">{t("reviewSettingHint")}</p>
       <div className="field-label"><span>{t("style")}</span><textarea aria-label={t("style")} rows={3} maxLength={1200} defaultValue={settings.stylePrefix} key={settings.stylePrefix} onBlur={event => { if (event.target.value !== settings.stylePrefix) void act(() => commit({ ...settings, stylePrefix: event.target.value })); }} /></div><p className="setting-copy">{t("styleHint")}</p>
-      <details><summary>{t("suffix")}</summary>{(["styleSuffix"] as const).map((name) => <div className="field-label" key={name}><span>{t("suffix")}</span><textarea aria-label={t("suffix")} maxLength={1200} defaultValue={settings[name]} key={settings[name]} onBlur={event => { if (event.target.value !== settings[name]) void act(() => commit({ ...settings, [name]: event.target.value })); }} /></div>)}
-      </details><h3>{t("profiles")}</h3>
+      <div className="dr-image-suffix"><details>
+        <summary><span id={id + "suffix"}>{t("suffix")}</span></summary>
+        <p className="setting-copy" id={id + "suffix-hint"}>{t("suffixHint")}</p>
+        <textarea aria-labelledby={id + "suffix"} aria-describedby={id + "suffix-hint"} rows={3} maxLength={1200} defaultValue={settings.styleSuffix} key={settings.styleSuffix} onBlur={event => { if (event.target.value !== settings.styleSuffix) void act(() => commit({ ...settings, styleSuffix: event.target.value })); }} />
+      </details><HelpLocale.Provider value={locale}><Help label={t("suffix")} text={t("suffixHelp")} /></HelpLocale.Provider></div><h3>{t("profiles")}</h3>
       {!settings.profiles.length && <p className="setting-copy">{t("empty")}</p>}
       <div className="dr-image-connections">{settings.profiles.map(profile => <button type="button" className="button secondary" key={profile.id} disabled={busy} aria-pressed={draft?.id === profile.id} onClick={() => edit(profile)}>{profile.label}</button>)}</div>
       <button type="button" className="button secondary" disabled={busy || settings.profiles.length >= 8} onClick={() => edit({ id: crypto.randomUUID(), label: "", kind: "openai-images", baseUrl: "", modelId: "", maxReferences: 1, enabled: false })}>{t("add")}</button>

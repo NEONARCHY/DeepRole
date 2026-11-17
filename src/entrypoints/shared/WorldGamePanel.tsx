@@ -20,7 +20,7 @@ export function WorldGamePanel({ locale, game, chatId, blocked = false, archives
   {active&&worldId&&<div className="dr-restart-main">
    <p>{copy.hint}</p>
     {onFullReset?<button type="button" className="button primary" disabled={blocked||busy} onClick={onFullReset}>{full.launch}</button>:<WorldResetSetup worldId={worldId} worldName={worldName??worldId} locale={locale} game={game} chatId={chatId} blocked={blocked||busy}/>}
-   <p className="setting-copy">{copy.plan}</p><p className="setting-copy">{copy.keep}</p>
+   <p className="setting-copy">{copy.plan} {copy.keep}</p>
   </div>}
   {!active && <><p className="setting-copy">{t.body}</p><div className="button-row"><a className="button secondary" href={currentChatUrl(game.activeChatId)} target="_blank" rel="noopener noreferrer">{t.open}</a><button type="button" className="button" disabled={blocked || busy} onClick={() => void run(onResume)}>{t.resume}</button></div></>}
   {active && <details className="dr-restart-quick"><summary>{copy.quick}</summary><p className="setting-copy">{copy.quickHint}</p><button className="button secondary" type="button" disabled={busy || blocked || !restartPreview} onClick={() => { if (restartPreview) { setError(""); setReview(structuredClone(restartPreview)); } }}>{copy.preview}</button>{!restartPreview && <p className="setting-copy">{copy.unavailable}</p>}</details>}

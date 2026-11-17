@@ -128,6 +128,7 @@ export function PageWidget(props: {
   onContextPositionChange: (position: { x: number; y: number }) => void;
   onWidgetLayoutChange?: (layout: WidgetLayout) => Promise<void>;
   menuUrl: string;
+  onOpenMenuWindow?: (resetReview?: string) => Promise<void>;
   onSceneChange?: (scene: SceneState) => void | Promise<boolean>;
   onSceneChoicesToggle?: () => void;
   onTogglePortraits?: () => void;
@@ -149,6 +150,8 @@ export function PageWidget(props: {
   const [undoError, setUndoError] = useState(false);
   const [undoBusy, setUndoBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuWindowBusy, setMenuWindowBusy] = useState(false);
+  const [menuWindowError, setMenuWindowError] = useState(false);
   const [resetReviewId,setResetReviewId] = useState<string|null>(null);
   const [mapLayout, setMapLayout] = useState<"closed" | "compact" | "full">("closed");
   const menuFrame = useRef<HTMLIFrameElement>(null);
@@ -293,7 +296,14 @@ export function PageWidget(props: {
     {props.state.startupError && <div className="dr-toast" role="alert">{x("startupError")}</div>}
     {!props.state.vaultLocked && props.state.oldChatNotice && !props.state.oldChatNotice.dismissed && props.onStayInOldChat && <OldChatNoticeCard key={props.state.oldChatNotice.snapshotId} locale={props.state.locale} notice={props.state.oldChatNotice} onStay={props.onStayInOldChat}/>}
     {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton nativeTooltip className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisHelp} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
-    {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={resetReviewId?props.menuUrl+(props.menuUrl.includes("?")?"&":"?")+"resetReview="+encodeURIComponent(resetReviewId):props.menuUrl} title="DeepRole" /></aside></div>}
+    {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={resetReviewId?props.menuUrl+(props.menuUrl.includes("?")?"&":"?")+"resetReview="+encodeURIComponent(resetReviewId):props.menuUrl} title="DeepRole" />
+      {props.onOpenMenuWindow && <div className="dr-menu-fallback"><small>{x("menuWindowHint")}</small><button type="button" className="dr-button secondary" disabled={menuWindowBusy} onClick={async () => {
+        setMenuWindowBusy(true); setMenuWindowError(false);
+        try { await props.onOpenMenuWindow!(resetReviewId ?? undefined); setMenuOpen(false); }
+        catch { setMenuWindowError(true); }
+        finally { setMenuWindowBusy(false); }
+      }}>{x("openMenuWindow")}</button>{menuWindowError && <p role="alert">{x("menuWindowError")}</p>}</div>}
+    </aside></div>}
     {!menuOpen&&!props.state.vaultLocked&&props.state.scene?.worldId&&chatAdapter.current.getChatId()&&<WorldResetNotice key={props.state.scene.worldId+":"+chatAdapter.current.getChatId()} worldId={props.state.scene.worldId} chatId={chatAdapter.current.getChatId()!} locale={props.state.locale} game={props.state.worlds?.find(world=>world.id===props.state.scene?.worldId)?.sharedGame} onReview={id=>{setResetReviewId(id);setMenuOpen(true);}}/>}
     {!props.state.vaultLocked && props.state.promptLength && <PromptLengthNotice key={props.state.promptLength.length} locale={props.state.locale} limit={props.state.promptLength} onDismiss={props.onDismissPromptLength} />}
     {!props.state.vaultLocked && !props.state.promptLength && props.state.continuationDraft && <DraftSendNotice

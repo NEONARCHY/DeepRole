@@ -10,7 +10,15 @@
 .dr-story-feature-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; width:100%; }
 .dr-story-feature-heading h2,.dr-story-feature-heading h3 { min-width:0; overflow-wrap:anywhere; margin:0; }
 .dr-story-advanced > summary { font-weight: 600; cursor: pointer; }
-.dr-story-advanced > .settings-card { margin-top: var(--dr-space-3); border: 0; padding-inline: 0; }
+.app-shell .dr-story-workspace .dr-story-advanced > .settings-card {
+ margin:0; padding:0; border:0; border-radius:0; background:none; box-shadow:none; backdrop-filter:none;
+}
+.dr-story-workspace .dr-story-advanced > .settings-card { display:grid; gap:var(--dr-space-3); min-width:0; }
+.dr-story-advanced > .settings-card > :is(h2, header, p) { margin:0; }
+.dr-story-advanced > .settings-card > :is(h2, header h2) { font-size:1rem; line-height:1.5; }
+.dr-story-advanced .setting-copy { line-height:1.6; }
+.dr-story-advanced .button-row { display:flex; flex-wrap:wrap; gap:var(--dr-space-2); }
+.dr-story-advanced .button { min-height:44px; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
 .dr-story-state { margin-bottom: var(--dr-space-3); padding: var(--dr-space-3); background: var(--dr-panel); border-radius: var(--dr-radius); }
 .dr-story-state strong { display: flex; align-items: center; gap: var(--dr-space-2); }
 .dr-story-state strong::before { content: ""; width: 8px; height: 8px; flex: none; background: var(--dr-muted); border-radius: 50%; }
@@ -39,7 +47,8 @@
 .dr-character-discovery label.checkbox-row { display: flex; align-items: center; gap: var(--dr-space-2); margin-block: var(--dr-space-2); min-height: 44px; }
 .dr-story-review .dr-draft-conflict { padding: var(--dr-space-3); border-left: 3px solid var(--dr-warning); margin-block: var(--dr-space-2); }
 .dr-cast-progress-toggle { margin-left: var(--dr-space-2); }
-.dr-world-game-panel .dr-restart-main > p { margin-block: var(--dr-space-2); }
+.dr-world-game-panel .dr-restart-main { display:grid; gap:var(--dr-space-3); min-width:0; }
+.dr-world-game-panel .dr-restart-main > p { margin:0; line-height:1.6; }
 .dr-world-game-panel .dr-restart-quick { margin-top: var(--dr-space-4); padding-top: var(--dr-space-3); border-top: 1px solid var(--dr-border-strong); }
 .dr-world-game-panel .dr-restart-quick > summary { cursor: pointer; padding-block: var(--dr-space-2); font-weight: 600; overflow-wrap: anywhere; }
 .dr-root.dr-world-restart-dialog { position: static; pointer-events: auto; }
@@ -66,7 +75,7 @@
 .dr-world-game-panel .checkbox-row { display: flex; align-items: flex-start; gap: var(--dr-space-2); margin-block: var(--dr-space-3); line-height: 1.5; }
 .dr-world-game-panel .checkbox-row input { flex: none; margin: 2px 0 0; }
 .dr-world-game-panel .checkbox-row span { min-width: 0; }
-.dr-world-game-panel button { margin-block: var(--dr-space-1); }
+.dr-world-game-panel button { margin:0; }
 .dr-story-inbox-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--dr-space-2, 8px); }
 .dr-story-inbox-heading h2 { display: flex; gap: 8px; align-items: center; }
 .dr-story-inbox-count { min-width: 20px; padding: 2px 6px; border-radius: 8px; font-size: 11px; background: var(--surface-raised, #364852); color: var(--text, #ecf2f5); text-align: center; }
@@ -80,10 +89,12 @@
 .dr-story-tasks h3,.dr-story-tasks p,.dr-story-conflict p { overflow-wrap: anywhere; }
 .dr-story-task-status { font-size: 12px; color: var(--text-muted); }
 .dr-story-tasks .field-label { display: block; margin-block: 12px 6px; }
-.dr-workspace-nav { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 8px; border: 1px solid var(--dr-border); border-radius: 14px; background: var(--dr-panel); }
-.dr-workspace-nav button { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; min-width: 0; min-height: 48px; padding: 10px 6px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--dr-muted); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer; }
+.dr-workspace-nav { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); grid-auto-rows:1fr; gap: 8px; padding: 8px; border: 1px solid var(--dr-border); border-radius: 14px; background: var(--dr-panel); }
+.dr-workspace-nav button { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-width: 0; min-height: 52px; padding: 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--dr-muted); font: inherit; font-size: .8125rem; font-weight: 600; line-height:1.4; text-align:start; cursor: pointer; }
+.dr-workspace-nav button svg { flex:none; }
 .dr-workspace-nav button span { overflow-wrap: anywhere; min-width: 0; }
-.dr-workspace-nav button:hover { color: var(--dr-text); background: var(--dr-surface); }
+.dr-workspace-nav button:hover { color: var(--dr-text); }
+.dr-workspace-nav button:not([aria-current]):hover span { text-decoration:underline; text-underline-offset:3px; }
 .dr-workspace-nav button[aria-current="page"] { color: var(--dr-text); background: var(--dr-selected); border-color: var(--dr-primary); }
 .dr-workspace-nav :focus-visible, .dr-workspace-heading h2:focus-visible, .dr-story-inbox-heading h2:focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 3px; }
 .dr-workspace-heading { margin: 20px 0 16px; }
@@ -97,9 +108,15 @@
 .dr-workspace-notice.error-text { border-color: var(--dr-danger); color: var(--dr-danger); }
 .dr-workspace-notice strong { color: var(--dr-text); }
 .dr-workspace-notice p { margin: 6px 0 0; }
-.dr-story-advanced { padding: 0 16px 12px; }
-.dr-story-advanced:not([open]) { padding-bottom: 0; }
-.dr-story-advanced > summary { padding-block: 16px; min-height: 48px; line-height: 1.5; overflow-wrap: anywhere; }
+.dr-story-workspace .dr-story-advanced { padding: 0 16px 16px; }
+.dr-story-workspace .dr-story-advanced:not([open]) { padding-bottom: 0; }
+.dr-story-advanced > summary { display:grid; grid-template-columns:12px minmax(0,1fr); gap:8px; align-items:center; padding-block:14px; min-height:48px; line-height:1.5; overflow-wrap:anywhere; list-style:none; }
+.dr-story-advanced > summary::-webkit-details-marker { display:none; }
+.dr-story-advanced > summary::before { content:"›"; font-size:18px; color:var(--dr-muted); }
+.dr-story-advanced[open] > summary::before { transform:rotate(90deg); }
+.dr-story-advanced[open] > summary { margin-bottom:var(--dr-space-3); border-bottom:1px solid var(--dr-border); }
+.dr-story-advanced > summary:focus-visible { outline:2px solid var(--dr-primary); outline-offset:-3px; border-radius:8px; }
+.dr-story-advanced > summary .dr-workspace-status { grid-column:2; margin:0; }
 .dr-story-advanced > p { margin-top: 0; }
 .dr-workspace-status { display: inline-block; margin-inline-start: 8px; color: var(--dr-primary); font-size: .75rem; }
 .dr-workspace-status[data-warning="true"] { color: var(--dr-warning); }
@@ -135,12 +152,21 @@
   .dr-story-automation-settings > summary svg { grid-column:2; grid-row:1 / span 2; }
 }
 @media (min-width: 700px) { .dr-workspace-nav { grid-template-columns: repeat(6,minmax(0,1fr)); } }
+@media (max-width:480px) {
+ .dr-workspace-nav { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; padding:4px; }
+ .dr-story-advanced .button-row > .button { width:100%; }
+}
 @media (max-width: 360px) {
   .dr-story-workspace { gap:10px; }
   .dr-story-workspace > .view-title h1 { margin:0; }
   .dr-story-workspace .dr-story-world-name { margin:4px 0 0; }
   .dr-story-workspace .dr-story-automation-inbox { padding-block-start:12px; }
   .dr-workspace-nav { gap:4px; padding:4px; }
-  .dr-workspace-nav button { min-height:44px; padding:6px 4px; }
-  .dr-workspace-nav button svg { display:none; }
+  .dr-workspace-nav button { min-height:52px; padding:8px; }
+}
+@media (max-width:480px) and (max-height:600px) {
+ .dr-workspace-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
+ .dr-workspace-nav button { position:relative; flex-direction:column; justify-content:center; gap:4px; padding:4px; text-align:center; }
+ .dr-workspace-nav button svg { display:none; }
+ .dr-workspace-nav .dr-story-inbox-count { position:absolute; top:4px; right:4px; }
 }
