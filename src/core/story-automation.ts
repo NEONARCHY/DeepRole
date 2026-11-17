@@ -1,4 +1,5 @@
 import type { WorldProfile } from "./types";
+import { createId } from "./id";
 import { validProfileVersions, PROFILE_TEXT_FIELDS, type ProfileFieldRevisions } from "./story-profile-view";
 import { storyReplyProse, type StoryFact } from "./story-update";
 import type { StoryBaseline, StoryEvent, StoryProjection, StoryRecord } from "./story-records";
@@ -16,6 +17,9 @@ export function automationReviews(records: StoryRecord[], baseline: StoryBaselin
 }
 export type StoryAutomationMode = "automatic" | "review" | "off";
 export interface StoryAutomationPolicy { mode: StoryAutomationMode; revision: string }
+export function defaultStoryAutomation(): StoryAutomationPolicy {
+  return { mode: "automatic", revision: createId("automation") };
+}
 export interface StoryAutomationCapture { mode: "automatic" | "review"; revision: string; profileVersions: Record<string, ProfileFieldRevisions>; profileLocks: Record<string, string[]> }
 export type AutomationReason = "new" | "manual" | "duplicate" | "uncertain" | "conflict" | "protected" | "unverified" | "limit" | "identity";
 export interface StoryAutomationDecision { mode: "automatic" | "review"; status: "saved" | "review" | "duplicate" | "dismissed"; reason: AutomationReason; at: number }

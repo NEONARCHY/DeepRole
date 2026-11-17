@@ -2,9 +2,19 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { oldChatNoticeText } from "../../src/core/old-chat-notice";
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test("previous chat notice " + locale + " " + width + ": optional, accessible and nonblocking", async ({ page }, info) => {
- const t = oldChatNoticeText(locale); await page.setViewportSize({ width, height: 900 }); await page.goto("/tests/fixtures/old-chat-notice.html?locale=" + locale);
+ const t = oldChatNoticeText(locale); await page.setViewportSize({ width, height: width === 320 ? 460 : 900 });
+ await page.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
+ await page.goto("/tests/fixtures/old-chat-notice.html?locale=" + locale);
+ if (width === 320) await page.addStyleTag({ content: "html { font-size: 125%; }" });
  const card = page.getByRole("region", { name: t.title }); await expect(card).toBeVisible();
- await expect(card.getByRole("link", { name: t.open })).toHaveAttribute("href", "https://chat.deepseek.com/a/chat/s/new-chat");
+ const open = card.getByRole("link", { name: t.open, exact: true });
+ await expect(open).toHaveAttribute("href", "https://chat.deepseek.com/a/chat/s/new-chat");
+ for (const control of [open, card.getByRole("button", { name: t.stay })]) {
+  const bounds = (await control.boundingBox())!;
+  expect(bounds.height).toBeGreaterThanOrEqual(44);
+  expect(bounds.width).toBeGreaterThanOrEqual(44);
+  await expect(control).toBeInViewport({ ratio: 1 });
+ }
  await page.getByRole("textbox").fill("Author draft"); await page.getByRole("button", { name: locale === "ru" ? "Отправить" : "Send", exact: true }).click();
  expect(await page.getAttribute("body", "data-sent")).toBe("true"); await expect(card).toBeVisible();
  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

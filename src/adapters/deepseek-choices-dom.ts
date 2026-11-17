@@ -9,11 +9,12 @@ import { bindPinnedChoices, composerBounds } from "./pinned-choices";
 import { bindInlineChoices, unbindInlineChoices, choiceScrollContainer } from "./inline-choices";
 import { bindPinnedChoiceSpace, unbindPinnedChoiceSpace } from "./pinned-choice-space";
 import { syncHiddenMessageLayout } from "./hidden-message-layout";
+import { hasManagedTransport, hasTransportView, readTransportSource, syncTransportVisibility, TRANSPORT_CONTAINER, TRANSPORT_FRAGMENT, TRANSPORT_SOURCE, TRANSPORT_VIEW } from "./deepseek-transport-visibility";
 
 const MARKER = "<deeprole_choices>";
-const STREAM_MARKERS = ["<deeprole_characters", "<deeprole_choices"] as const;
 const HOST = "[data-deeprole-choices-host]";
-const HIDDEN = "[data-deeprole-choices-payload]";
+const TRANSPORT = `${TRANSPORT_FRAGMENT}, ${TRANSPORT_SOURCE}`;
+const TRANSPORT_CANDIDATES = ".ds-markdown, [data-role='assistant'], [data-message-role='assistant'], article, [data-message-id]";
 const RECOVERY = "[data-deeprole-choices-recovery]";
 const LOADING = "[data-deeprole-choices-loading]";
 export type ChoicePin = "pinSceneChoices" | "pinPortraits";
@@ -152,10 +153,10 @@ function latestTurn(root: ParentNode): HTMLElement | undefined {
   const turns = [...root.querySelectorAll<HTMLElement>(".ds-message, [data-message-id], [data-testid*='message'], article, [data-message-role], [data-role='user'], [data-role='assistant']")]
     .filter((element) => !element.closest(`deeprole-page-widget, ${HOST}, ${RECOVERY}, ${REASONING}, ${MEMORY_SERVICE}`)
       && !element.querySelector(".ds-message, [data-message-id], article, [data-message-role], [data-role='user'], [data-role='assistant']")
-      && element.getClientRects().length > 0);
+      && (element.getClientRects().length > 0 || element.matches(TRANSPORT_FRAGMENT) || hasTransportView(element)));
   // Some site versions put the assistant Markdown after an empty message-id row.
   const markdown = [...root.querySelectorAll<HTMLElement>(".ds-markdown")]
-    .filter((element) => !element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, ${MEMORY_SERVICE}`) && element.getClientRects().length > 0);
+    .filter((element) => !element.closest(`deeprole-page-widget, ${USER}, ${REASONING}, ${MEMORY_SERVICE}`) && (element.getClientRects().length > 0 || element.matches(TRANSPORT_FRAGMENT) || hasTransportView(element)));
   const candidates = [...turns, ...markdown].sort((a, b) => a === b ? 0 : a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
   return candidates.reverse().find(element => !isAuxiliaryServiceTurn(element));
 }
@@ -244,7 +245,7 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
   const target = !waiting && !active && recovery ? scene : null;
   // Generating story text (or waiting for a manual request) is not yet generating
   // options. Concealment marks only the actual choices transport, never thinking.
-  const choicesStarted = (!!scene?.row.querySelector(HIDDEN) || !!current) && !(requestSource && scene?.signature === requestSource);
+  const choicesStarted = (!!scene?.row.matches(TRANSPORT) || !!scene?.row.querySelector(TRANSPORT) || !!current) && !(requestSource && scene?.signature === requestSource);
   const loadingRow = !active && waiting && choicesStarted && recovery?.loading !== false && (recovery || current) ? scene?.row ?? current?.row : null;
   root.querySelectorAll<HTMLElement>(LOADING).forEach(host => { if (host.previousElementSibling !== loadingRow || host.lang !== locale) host.remove(); });
   if (loadingRow && !loadingRow.nextElementSibling?.matches(LOADING)) loadingRow.after(createLoading(locale, loadingRow.ownerDocument));
@@ -275,10 +276,6 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
     fitAdaptiveChoices(recoveryCard);
   }
   if (!active) { if (!generating && !waiting) stopFollowing(root); return; }
-  const blockText = (active.element.textContent ?? "").slice(active.parsed.start, active.parsed.end);
-  const alreadyHidden = [...active.element.querySelectorAll<HTMLElement>(HIDDEN)]
-    .some((payload) => payload.textContent === blockText);
-  if (!alreadyHidden && !hideBlock(active.element, active.parsed.start, active.parsed.end)) return;
   const existing = choiceCards(root).find(host => sourceRows.get(host) === active.row) ?? null;
   if (existing?.dataset.deeproleChoicesSignature === signature && existing.dataset.deeproleChoicesLocale === locale
     && existing.shadowRoot?.querySelectorAll(".grid button").length === 4) { choiceHandlers.set(existing, onPick); applyChoicePresentation(existing, presentation); followTarget(root, existing); stopFollowing(root); return; }
@@ -293,29 +290,18 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
 
 /** Hide unfinished transport too; retain its text for parsers and site updates. */
 export function concealChoicePayloads(root: ParentNode): void {
-  for (const element of root.querySelectorAll<HTMLElement>(".ds-markdown, [data-role='assistant'], [data-message-role='assistant'], article, [data-message-id]")) {
-    if (element.closest(`${USER}, ${REASONING}, ${HOST}, ${RECOVERY}, ${LOADING}`) || isUserMessage(element)) continue;
-    if (element.querySelector(`.ds-markdown, ${REASONING}`)) continue;
-    if ((element.textContent ?? "").includes("<deeprole_choice_mode")) continue;
-    for (const marker of STREAM_MARKERS) {
-      if (!(element.textContent ?? "").includes(marker)) continue;
-      // DeepSeek may replace or append Markdown nodes while streaming. Keep a
-      // current wrapper unless the marker reappears outside that wrapper.
-      const visible = element.cloneNode(true) as HTMLElement;
-      visible.querySelectorAll(HIDDEN).forEach(node => node.remove());
-      const kind = marker === STREAM_MARKERS[0] ? "characters" : "choices";
-      if (visible.textContent?.includes(marker)) [...element.querySelectorAll<HTMLElement>(HIDDEN)]
-        .filter(node => node.dataset.deeproleChoicesPayload === kind).forEach(node => node.remove());
-      const text = element.textContent ?? "";
-      const start = text.indexOf(marker);
-      if (start < 0) continue;
-      const closingTag = `</deeprole_${kind}>`;
-      const closing = text.indexOf(closingTag, start);
-      const end = closing < 0 ? text.length : closing + closingTag.length;
-      hideBlock(element, start, end, kind);
-      [...element.querySelectorAll<HTMLElement>(HIDDEN)].filter(node => !node.textContent).forEach(node => node.remove());
-    }
+  const candidates = [...root.querySelectorAll<HTMLElement>(`${TRANSPORT_CANDIDATES}, ${TRANSPORT_CONTAINER}`)];
+  const eligible: HTMLElement[] = [];
+  for (const element of candidates) {
+    const text = element.textContent ?? "";
+    const owned = hasManagedTransport(element);
+    if (!owned && !text.includes("<deeprole_")) continue;
+    if (element.matches(TRANSPORT_CANDIDATES) && !isUserMessage(element) && !text.includes("<deeprole_choice_mode")
+      && !element.closest(`${USER}, ${REASONING}, ${HOST}, ${RECOVERY}, ${LOADING}, ${TRANSPORT_VIEW}`)
+      && !element.querySelector(".ds-markdown, article, [data-message-id]")) eligible.push(element);
+    else if (owned) syncTransportVisibility(element, false);
   }
+  for (const element of eligible) syncTransportVisibility(element);
   for (const row of root.querySelectorAll<HTMLElement>(".ds-message, article, [data-message-id], [data-deeprole-choices-request]")) {
     const text = row.textContent?.trim() ?? "";
     if (text.startsWith("[DeepRole Service]") && text.includes("[DeepRole Scene Choices]") && !row.querySelector(".ds-message, article, [data-message-id]")) {
@@ -370,7 +356,7 @@ function currentChoice(root: ParentNode) {
  * reply too, but ignore live thinking and our localized transport summary. */
 function choiceReplySignature(row: HTMLElement): string {
   const walker = row.ownerDocument.createTreeWalker(row, NodeFilter.SHOW_TEXT, {
-    acceptNode: node => node.parentElement?.closest(`${REASONING}, [data-deeprole-characters-summary]`) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    acceptNode: node => node.parentElement?.closest(`${REASONING}, [data-deeprole-characters-result]`) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
   });
   let text = "";
   for (let node = walker.nextNode(); node; node = walker.nextNode()) text += node.textContent ?? "";
@@ -417,15 +403,15 @@ function findChoiceElements(root: ParentNode) {
   const seen = new Set<HTMLElement>();
   const elements: { element: HTMLElement; parsed: NonNullable<ReturnType<typeof parseSceneChoices>> }[] = [];
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    if (!(node.textContent ?? "").includes("deeprole")) continue;
+    if (!(node.textContent ?? "").includes("deeprole") || node.parentElement?.closest(`${REASONING}, [data-deeprole-characters-result]`)) continue;
     for (let element = node.parentElement, depth = 0; element && depth < 12; element = element.parentElement, depth += 1) {
       if (element.matches("script, style, body, main") || element.closest(HOST)) break;
       // Multiple transport blocks split a reply into several text nodes. Once
       // this reply is parsed, don't climb past it and mistake the entire chat
       // wrapper for a second (and newer) reply.
       if (seen.has(element)) break;
-      if (!element.matches(selector) || element.closest(HIDDEN)) continue;
-      const text = element.textContent ?? "";
+      if (!element.matches(selector)) continue;
+      const { text } = readTransportSource(element);
       if (!text.includes(MARKER)) continue;
       const parsed = parseSceneChoices(text);
       if (!parsed) { if (nativeMessageRow(element) === element) break; continue; }
@@ -439,30 +425,6 @@ function findChoiceElements(root: ParentNode) {
     // The injected prompt includes a valid example, which must not become a card.
     return !(turn?.textContent ?? element.textContent ?? "").includes("<deeprole_choice_mode");
   });
-}
-
-function hideBlock(element: HTMLElement, start: number, end: number, kind = "choices"): boolean {
-  const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  const range = element.ownerDocument.createRange();
-  let offset = 0; let foundStart = false; let foundEnd = false; let visible = false;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const length = node.textContent?.length ?? 0;
-    if (offset < end && offset + length > start && !node.parentElement?.closest(HIDDEN)) visible = true;
-    if (!foundStart && start < offset + length) { range.setStart(node, start - offset); foundStart = true; }
-    if (foundStart && end <= offset + length) { range.setEnd(node, end - offset); foundEnd = true; break; }
-    offset += length;
-  }
-  if (!foundStart || !foundEnd) return false;
-  if (!visible) return true;
-  if (range.cloneContents().querySelector(REASONING)) return false;
-  const hidden = element.ownerDocument.createElement("span");
-  hidden.dataset.deeproleChoicesPayload = kind;
-  hidden.setAttribute("aria-hidden", "true");
-  hidden.style.setProperty("display", "none", "important");
-  hidden.append(range.extractContents());
-  hidden.querySelectorAll(HIDDEN).forEach(node => node.replaceWith(...node.childNodes));
-  range.insertNode(hidden);
-  return true;
 }
 
 function applyChoicePresentation(host: HTMLElement, presentation?: ChoicePresentation): void {

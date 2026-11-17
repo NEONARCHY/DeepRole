@@ -18,3 +18,28 @@ for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`auto
  if(info.project.name==="chromium")await page.screenshot({path:info.outputPath(`accompaniment-${locale}-${width}.png`)});
  expect(await page.evaluate(()=>(window as any).calls.every((m:any)=>m.type==="DR_AUTOMATION_READ"||m.type==="DR_AUTOMATION_RESOLVE"))).toBe(true);
 });
+
+for (const locale of ["ru", "en"] as const) test(`new game memory mode can be paused before recording ${locale}`, async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 480 });
+  await page.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
+  await page.goto("/tests/fixtures/story-automation.html?automatic&locale=" + locale);
+  await page.evaluate(() => { document.documentElement.style.fontSize = "125%"; });
+  const t = storyAutomationText(locale);
+  const card = page.getByRole("region", { name: t.title, exact: true });
+  const mode = card.getByRole("combobox", { name: t.mode, exact: true });
+  await expect(mode).toHaveValue("automatic");
+  await expect(card.getByText(t.startHint, { exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: t.start, exact: true })).toHaveCount(0);
+  expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await mode.focus();
+  await expect(mode).toBeFocused();
+  await mode.press("Enter");
+  const menu = page.getByRole("listbox", { name: t.mode, exact: true });
+  await expect(menu).toBeVisible();
+  expect(await menu.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect((await menu.getByRole("option", { name: t.off, exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await mode.press("End");
+  await mode.press("Enter");
+  await expect(mode).toHaveValue("off");
+  await expect(card.getByText(t.offHint, { exact: true })).toBeVisible();
+});

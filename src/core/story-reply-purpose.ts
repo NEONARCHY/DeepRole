@@ -8,6 +8,7 @@ import { validStoryGameSnapshot, type StoryGameSnapshot } from './story-game';
 export function storyReplyProofChanged(prior:unknown,next:unknown):boolean {
   if(!validStoryDispatchCapture(next)||next.origin!=='local'||next.delivery?.status!=='accepted')return false;
   if(!validStoryDispatchCapture(prior)||prior.id!==next.id||prior.delivery?.status!=='accepted')return true;
+  if (next.opening && next.wire.link && next.wire.phase !== "failed" && !prior.wire.link) return true;
   return next.wire.phase==='closed'&&next.wire.sawFinish
     &&!(prior.wire.phase==='closed'&&prior.wire.sawFinish);
 }

@@ -11,6 +11,22 @@ export interface NativeStoryStreamPacket extends StoryDispatchIdentity {
   issue: "format" | "too-large" | "aborted" | "network" | "superseded" | "native-hint" | null;
 }
 const issues = ["format", "too-large", "aborted", "network", "superseded", "native-hint"];
+export type ContinuationStreamProof = "finish-close" | "status-close" | NonNullable<NativeStoryStreamPacket["issue"]>;
+
+/** The web client can close after an explicit response status update, without
+ * sending the older standalone finish event. Only read the status field. */
+function responseFinished(raw: string): boolean | undefined {
+  if (!raw.includes('"response/status"') && !(raw.includes('"response"') && raw.includes('"status"'))) return;
+  try {
+    const patch = JSON.parse(raw);
+    if (patch?.p === "response/status") return (patch.o === undefined || patch.o === "SET") && patch.v === "FINISHED";
+    if (patch?.p === "response" && patch.o === "BATCH" && Array.isArray(patch.v)) {
+      const status = patch.v.findLast((entry: { p?: unknown } | null) => entry?.p === "status");
+      if (status) return (status.o === undefined || status.o === "SET") && status.v === "FINISHED";
+    }
+  } catch { /* Unrecognized content is not terminal evidence. */ }
+}
+
 export function validNativeStoryStreamPacket(value: unknown): value is NativeStoryStreamPacket {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>, keys = ["requestId", "identity", "transport", "phase", "link", "sawFinish", "issue"];
@@ -30,11 +46,12 @@ export function validNativeStoryStreamPacket(value: unknown): value is NativeSto
  * receipt, successful-completion decoder or event-acceptance policy. Unknown protocol
  * pauses; HTTP/EOF alone never synthesize finish/close. One bounded parser per XHR.
  */
-export function createNativeStoryStreamObserver(input: StoryDispatchIdentity | undefined, emit: (packet: NativeStoryStreamPacket) => void) {
+export function createNativeStoryStreamObserver(input: StoryDispatchIdentity | undefined, emit: (packet: NativeStoryStreamPacket) => void, requireFinishedClose = false) {
   if (!input || !validStoryDispatchPacket({ ...input, transport: "xhr", phase: "started" })) return null;
   const route = structuredClone(input);
   let line = "", event = "", data: string[] = [], frameBytes = 0, total = 0, skipLF = false;
   let link: NativeStoryRequestLink | null = null, finished = false, stopped = false;
+  let explicitResponseFinished: boolean | undefined;
   const publish = (phase: NativeStoryStreamPacket["phase"], issue: NativeStoryStreamPacket["issue"] = null) => {
     const packet: NativeStoryStreamPacket = { ...route, identity: { ...route.identity }, transport: "xhr", phase, link: link ? { ...link } : null, sawFinish: finished, issue };
     try { emit(packet); } catch { /* Observation must never affect the website. */ }
@@ -65,11 +82,15 @@ export function createNativeStoryStreamObserver(input: StoryDispatchIdentity | u
       try {
         const value: unknown = JSON.parse(raw);
         if (!value || typeof value !== "object" || Array.isArray(value)) throw Error();
-        const behavior = (value as Record<string, unknown>).click_behavior;
+        const { click_behavior: behavior, auto_resume: autoResume } = value as Record<string, unknown>;
         if (behavior !== undefined && behavior !== "none" && behavior !== "retry") throw Error();
+        if (requireFinishedClose && (!(explicitResponseFinished ?? finished) || behavior === "retry" || autoResume !== undefined && autoResume !== false)) { fail("format"); return; }
         stopped = true; publish("closed");
       } catch { fail("format"); }
     } else if (name === "hint" || name === "toast") fail("native-hint");
+    else if (requireFinishedClose && link && (name === "" || name === "delta")) {
+      explicitResponseFinished = responseFinished(raw) ?? explicitResponseFinished;
+    }
     else if (!["", "delta", "title", "update_session", "update_parent_message", "update_file"].includes(name)) fail("format");
   };
   const endLine = () => {
@@ -100,4 +121,12 @@ export function createNativeStoryStreamObserver(input: StoryDispatchIdentity | u
     fail,
     end() { if (!stopped) fail("format"); },
   };
+}
+
+/** A transfer accepts only a completed, non-retry response for its own request. */
+export function observeContinuationAcceptance(input: StoryDispatchIdentity | undefined, settle: (link: NativeStoryRequestLink | null, proof: ContinuationStreamProof) => void) {
+  return createNativeStoryStreamObserver(input, packet => {
+    if (packet.phase === "closed") settle(packet.link, packet.sawFinish ? "finish-close" : "status-close");
+    if (packet.phase === "failed") settle(null, packet.issue ?? "format");
+  }, true);
 }

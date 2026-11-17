@@ -53,7 +53,7 @@ export interface GameContextInput extends RankMemoryInput {
  readOnly?:boolean;
  worlds:WorldProfile[];
  character?:Parameters<typeof characterInstruction>;
-  story?:{world:WorldProfile;chat:string;branch:string;facts:StoryFact[];sheetsEnabled:boolean;referenceOnly?:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[];taskArchive?:TaskArchive};
+  story?:{world:WorldProfile;chat:string;branch?:string;facts:StoryFact[];sheetsEnabled:boolean;referenceOnly?:boolean;roleSeeds?:FactRoleSeed[];episodeSources?:string[];taskArchive?:TaskArchive};
  choices?:boolean;
  snapshot?:HandoffSnapshot|null;
  continuation?:StoryContinuation;

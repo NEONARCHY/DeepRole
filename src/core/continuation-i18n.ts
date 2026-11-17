@@ -2,8 +2,11 @@ import type { Locale } from "./types";
 
 const copy = {
   ru: {
+    unconfirmedTitle: "Перенос не подтверждён",
+    sendUnconfirmed: "DeepSeek не подтвердил первую реплику. Игра осталась привязана к прежнему чату.",
     commitTitle: "Нужно завершить сохранение переноса",
-    commitPending: "DeepSeek принял сообщение, но DeepRole не смог завершить локальное сохранение переноса. Завершите его кнопкой ниже — сообщение повторно не отправится.",
+    commitPending: "DeepSeek принял реплику. Осталось сохранить перенос на этом устройстве.",
+    commitSaving: "Сохраняем перенос на этом устройстве…",
     commitRetry: "Завершить сохранение переноса",
     commitFailed: "Сохранение пока не завершено. Проверьте доступность хранилища и попробуйте снова. Если игра изменилась в другом чате, вернитесь в актуальный чат.",
     title: "Продолжение истории", hint: "Сначала DeepSeek сверит историю с памятью. Подтвердите нужные изменения — затем подготовится скрытая сжимка последних сцен и откроется новый чат. Лор, портреты и прогресс остаются в том же мире.",
@@ -30,8 +33,11 @@ const copy = {
     retry: "Отправить продолжение", pending: "История подключена к следующему сообщению. Если отправка не удалась, она остаётся готова к повторной попытке.",
   },
   en: {
+    unconfirmedTitle: "Transfer not confirmed",
+    sendUnconfirmed: "DeepSeek did not confirm the first message. The game is still linked to the previous chat.",
     commitTitle: "Transfer still needs to be saved",
-    commitPending: "DeepSeek accepted the message, but DeepRole could not finish saving the transfer locally. Use the button below to finish — the message will not be sent again.",
+    commitPending: "DeepSeek accepted the message. Finish saving the transfer on this device.",
+    commitSaving: "Saving the transfer on this device…",
     commitRetry: "Finish saving transfer",
     commitFailed: "Saving has not finished. Check that storage is available and try again. If the game changed in another chat, return to the current chat.",
     title: "Continue your story", hint: "DeepSeek first compares the story with memory. Approve the changes you want, then a hidden summary of recent scenes is prepared and a new chat opens. Lore, portraits and progress stay in the same world.",

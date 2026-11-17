@@ -43,8 +43,11 @@ import type { ContinuationFlow } from "../../core/continuation-flow";
 
 import type { CharacterTextRequestGenerator } from "../../core/character-text";
 
+import { DEEPSEEK_PROMPT_CHAR_LIMIT } from "../../core/request-injection";
+
 export interface WidgetState {
   continuationCommitPending?: boolean;
+  continuationCommitRunning?: boolean;
   memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
   oldChatNotice?: OldChatNotice | null;
   continuation?: ContinuationFlow | null;
@@ -76,6 +79,8 @@ export interface WidgetState {
   locale: "ru" | "en";
   selection: ContextSelection;
   warning: string;
+  promptLength?: { length: number; url: string; draft?: string; restored?: boolean };
+  continuationDraft?: { url: string; draft: string };
   contextText: string;
   selectionText: string;
   selectionPosition: { x: number; y: number } | null;
@@ -89,10 +94,12 @@ export interface WidgetState {
 }
 
 export function PageWidget(props: {
+  onDismissPromptLength?: () => void;
+  onDismissContinuationDraft?: () => void;
   onRetryContinuationCommit?: () => void;
   onStayInOldChat?: () => Promise<void>;
   onContinueStory?: () => void;
-  savedMemoryTransfer?: { scope: string; preview: () => Promise<SavedMemoryPreview>; open: (version: string) => Promise<void> };
+  savedMemoryTransfer?: { scope: string; blocked: boolean; worlds?: Pick<WorldProfile, "id" | "name">[]; preview: (worldId?: string) => Promise<SavedMemoryPreview>; open: (version: string, worldId?: string) => Promise<void> };
   savedMemoryQueued?: boolean;
   onCancelContinuation?: () => void;
   onKeepContinuationMemory?: () => Promise<void>;
@@ -288,9 +295,18 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.canAnalyzeChat && props.composerActionPosition && <TooltipButton nativeTooltip className="dr-composer-action" style={{ left: props.composerActionPosition.x, top: props.composerActionPosition.y }} aria-label={at("chatAnalyze")} tooltip={analysisHelp} aria-disabled={analysisBlocked} onClick={() => { if (!analysisBlocked) props.onAnalyze(); }}><BrainCircuit aria-hidden="true" /></TooltipButton>}
     {menuOpen && <div className="dr-menu-layer"><aside className={`dr-menu-drawer map-${mapLayout}`} aria-label="DeepRole"><iframe ref={menuFrame} src={resetReviewId?props.menuUrl+(props.menuUrl.includes("?")?"&":"?")+"resetReview="+encodeURIComponent(resetReviewId):props.menuUrl} title="DeepRole" /></aside></div>}
     {!menuOpen&&!props.state.vaultLocked&&props.state.scene?.worldId&&chatAdapter.current.getChatId()&&<WorldResetNotice key={props.state.scene.worldId+":"+chatAdapter.current.getChatId()} worldId={props.state.scene.worldId} chatId={chatAdapter.current.getChatId()!} locale={props.state.locale} game={props.state.worlds?.find(world=>world.id===props.state.scene?.worldId)?.sharedGame} onReview={id=>{setResetReviewId(id);setMenuOpen(true);}}/>}
+    {!props.state.vaultLocked && props.state.promptLength && <PromptLengthNotice key={props.state.promptLength.length} locale={props.state.locale} limit={props.state.promptLength} onDismiss={props.onDismissPromptLength} />}
+    {!props.state.vaultLocked && !props.state.promptLength && props.state.continuationDraft && <DraftSendNotice
+      className="dr-continuation-draft" locale={props.state.locale} title={continuationText(props.state.locale, "unconfirmedTitle")}
+      detail={continuationText(props.state.locale, "sendUnconfirmed")} original={props.state.continuationDraft.draft}
+      onDismiss={props.onDismissContinuationDraft} />}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
     {!props.state.vaultLocked && props.savedMemoryQueued && !props.state.continuationCommitPending && <div className="dr-continuation-progress dr-saved-memory-ready" role="status">{savedMemoryText(props.state.locale).queued}</div>}
-    {!props.state.vaultLocked && props.state.continuationCommitPending && <Alert title={continuationText(props.state.locale, "commitTitle")} text={continuationText(props.state.locale, "commitPending")} primary={continuationText(props.state.locale, "commitRetry")} onPrimary={() => props.onRetryContinuationCommit?.()} />}
+    {!props.state.vaultLocked && props.state.continuationCommitPending && <section className="dr-alert dr-transfer-commit" aria-label={continuationText(props.state.locale, "commitTitle")}>
+      <strong>{continuationText(props.state.locale, "commitTitle")}</strong>
+      <p role="status">{continuationText(props.state.locale, props.state.continuationCommitRunning ? "commitSaving" : "commitPending")}</p>
+      <button type="button" disabled={props.state.continuationCommitRunning} onClick={props.onRetryContinuationCommit}>{continuationText(props.state.locale, "commitRetry")}</button>
+    </section>}
     {!props.state.vaultLocked && props.state.continuation && (!review || review.id !== props.state.continuation.proposalId) && <section className="dr-continuation-progress" aria-label={continuationText(props.state.locale, "title")}>
       <strong role="status">{continuationText(props.state.locale, props.state.continuation.phase === "analysis" ? "analysis" : props.state.continuation.phase === "review" ? "review" : props.state.continuation.phase === "ready" ? "readyToSummarize" : props.state.continuation.phase === "opening" ? "summaryDone" : "summary")}</strong>
       {["review", "ready"].includes(props.state.continuation.phase) && <button className="dr-meter-transfer" disabled={!!props.state.transferring || !!props.state.generating} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation.phase === "review" ? "reviewAction" : "startSummary")}</button>}
@@ -323,7 +339,7 @@ export function PageWidget(props: {
           {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
         </WidgetTile>}
 {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAskSelfie={props.onAskSelfie} onAddAction={props.onAddCharacterAction} onGenerateText={props.onGenerateCharacterText} generationScope={props.state.scene?.bookId ?? ""} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
-        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />{props.savedMemoryTransfer && <SavedMemoryTransfer key={props.savedMemoryTransfer.scope} locale={props.state.locale} disabled={serviceBusy || !!props.state.generating || !!props.state.transferring || !!props.state.continuation} onPreview={props.savedMemoryTransfer.preview} onOpen={props.savedMemoryTransfer.open}/>}</WidgetTile>}
+        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />{props.savedMemoryTransfer && <SavedMemoryTransfer key={props.savedMemoryTransfer.scope} locale={props.state.locale} disabled={props.savedMemoryTransfer.blocked} worlds={props.savedMemoryTransfer.worlds} onPreview={props.savedMemoryTransfer.preview} onOpen={props.savedMemoryTransfer.open}/>}</WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
     </div>
@@ -356,6 +372,31 @@ function clampPosition(position: { x: number; y: number }, width: number, height
     x: Math.round(Math.max(minimumLeft, Math.min(window.innerWidth - width - padding, position.x))),
     y: Math.round(Math.max(minimumTop, Math.min(window.innerHeight - height - padding, position.y))),
   };
+}
+
+function PromptLengthNotice({ locale, limit, onDismiss }: {
+  locale: WidgetState["locale"];
+  limit: NonNullable<WidgetState["promptLength"]>;
+  onDismiss?: () => void;
+}) {
+  const format = new Intl.NumberFormat(locale === "ru" ? "ru-RU" : "en-US");
+  const used = format.format(limit.length), max = format.format(DEEPSEEK_PROMPT_CHAR_LIMIT);
+  const title = locale === "ru" ? "Сообщение не отправлено" : "Message not sent";
+  const detail = locale === "ru"
+    ? `${used} из ${max} символов с учётом памяти. Сократите реплику или объём подключённого лора.`
+    : `${used} of ${max} characters including memory. Shorten the message or reduce the attached lore.`;
+  return <DraftSendNotice className="dr-prompt-limit" locale={locale} title={title} detail={detail} original={limit.draft} onDismiss={onDismiss} />;
+}
+
+function DraftSendNotice({ className, locale, title, detail, original, onDismiss }: {
+  className: string; locale: WidgetState["locale"]; title: string; detail: string; original?: string; onDismiss?: () => void;
+}) {
+  const draft = locale === "ru" ? "Исходная реплика" : "Original message";
+  return <section className={`dr-send-notice ${className}`} aria-label={title}>
+    <div role="alert"><strong>{title}</strong><p>{detail}</p></div>
+    {original && <details><summary>{draft}</summary><textarea rows={4} value={original} readOnly aria-label={draft} /></details>}
+    {onDismiss && <button type="button" onClick={onDismiss}>{locale === "ru" ? "Закрыть" : "Close"}</button>}
+  </section>;
 }
 
 function compactTokens(value: number, locale: "ru" | "en"): string {

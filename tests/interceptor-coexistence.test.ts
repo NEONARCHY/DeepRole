@@ -41,7 +41,7 @@ for (const order of ["before", "after"] as const) describe(`another fetch wrappe
     let neighbor: ReturnType<typeof wrap>;
     if (order === "before") { neighbor = wrap(); wrapXHR(); }
     const posted = vi.spyOn(window, "postMessage").mockImplementation((value: any) => {
-      if (value.type === "REQUEST_CONTEXT") queueMicrotask(() => window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: value.id, ok: true, context: "<deeprole_context>FACT_A</deeprole_context>" } })));
+      if (value.type === "REQUEST_CONTEXT") queueMicrotask(() => window.dispatchEvent(new MessageEvent("message", { source: window, origin: location.origin, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: value.id, ok: true, context: "<deeprole_context>FACT_A</deeprole_context>" } })));
     });
     const listeners = vi.spyOn(window, "addEventListener");
     await import("../src/entrypoints/injected"); install();

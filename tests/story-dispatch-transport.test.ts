@@ -37,7 +37,7 @@ describe("ordinary Fetch/XHR outgoing dispatch bridge (not reply completion)", (
   const packets = () => messages("NATIVE_STORY_DISPATCH");
   function answerContext(context = "", index = 0, capture = false) {
     const message = messages("REQUEST_CONTEXT")[index]; expect(message).toBeDefined();
-    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context, capture } }));
+    window.dispatchEvent(new MessageEvent("message", { source: window, origin: location.origin, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context, capture } }));
     return message;
   }
   function confirmSource(id: string, ok = true, origin = location.origin) {

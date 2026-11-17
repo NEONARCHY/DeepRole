@@ -53,6 +53,7 @@ describe("lossless BDS conversion", () => {
     const text = JSON.stringify(source);
     const items = parseBds(text);
     const records = buildBdsImport(items, "Imported", "manual");
+    expect((records.find(r => r.kind === "world")!.data as WorldProfile).storyAutomation).toMatchObject({ mode: "automatic" });
     const entries = records.filter((r) => r.kind === "entry").map((r) => r.data as MemoryEntry);
     expect(entries.map((e) => [e.title, e.content, e.source.originalImportance])).toEqual(Object.entries(source).map(([title, e]) => [title, e.value, e.importance]));
     expect(entries.map((e) => e.activation)).toEqual(["manual", "always"]);
@@ -90,6 +91,14 @@ describe("world repository operations", () => {
     expect(entry.content).toBe(memory().content);
     expect(entry.worldId).toBe(copy.id);
     expect(await repo.list("entry")).toHaveLength(2);
+  });
+  it("defaults a portable world to automatic while respecting explicit modes", () => {
+    const copy = (policy?: WorldProfile["storyAutomation"]) => (cloneWorldPackage({ format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: { ...world, storyAutomation: policy } }] })[0]!.data as WorldProfile).storyAutomation;
+    expect(copy()?.mode).toBe("automatic");
+    for (const mode of ["review", "off"] as const) {
+      const policy = { mode, revision: "explicit-policy" };
+      expect(copy(policy)).toEqual(policy);
+    }
   });
   it("deleting worlds preserves original memory and books", async () => {
     const { repo } = await setup();

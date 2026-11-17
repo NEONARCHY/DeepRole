@@ -6,7 +6,7 @@ import type { HandoffSnapshot } from "../../src/core/types";
 
 for (const locale of ["ru", "en"] as const) test(`installed compact continuation ${locale}: failed send, reload, acceptance and exact retry`, async ({}, info) => {
  test.skip(info.project.name !== "chromium", "Synthetic installed Edge MV3"); test.setTimeout(90000);
- const extension = path.resolve(".output/chrome-mv3"), context = await chromium.launchPersistentContext("", { channel: "msedge", headless: true, args: ["--disable-extensions-except=" + extension, "--load-extension=" + extension] });
+ const extension = path.resolve(process.env.DEEPROLE_TEST_EXTENSION ?? ".output/chrome-mv3"), context = await chromium.launchPersistentContext("", { channel: "msedge", headless: true, args: ["--disable-extensions-except=" + extension, "--load-extension=" + extension] });
  try {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker"), panel = await context.newPage();
   await panel.goto("chrome-extension://" + new URL(worker.url()).host + "/sidepanel.html"); await expect(panel.locator(".onboarding")).toBeVisible();
@@ -20,7 +20,10 @@ for (const locale of ["ru", "en"] as const) test(`installed compact continuation
   }, { records: f.records, snapshot, locale });
   let status = 503; const outgoing: string[] = [];
   await context.route("https://chat.deepseek.com/**", route => {
-   if (route.request().url().includes("/api/v0/chat/completion")) { outgoing.push(route.request().postDataJSON().prompt); return route.fulfill({ status, json: {} }); }
+   if (route.request().url().includes("/api/v0/chat/completion")) {
+    outgoing.push(route.request().postDataJSON().prompt);
+    return status === 200 ? route.fulfill({ contentType: "text/event-stream", body: 'event: ready\ndata: {"request_message_id":3,"response_message_id":4}\n\nevent: finish\ndata: {}\n\nevent: close\ndata: {}\n\n' }) : route.fulfill({ status, json: {} });
+   }
    if (route.request().url().includes("/api/v0/")) return route.fulfill({ json: {} });
    return route.fulfill({ contentType: "text/html", body: '<!doctype html><html><body><main><textarea aria-label="Message"></textarea></main></body></html>' });
   });
@@ -31,7 +34,7 @@ for (const locale of ["ru", "en"] as const) test(`installed compact continuation
   await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-context", new RegExp(old));
   const stored = () => panel.evaluate(() => new Promise<any[]>((resolve, reject) => { const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error); open.onsuccess = () => { const db = open.result, tx = db.transaction("records"), read = tx.objectStore("records").getAll(); read.onsuccess = () => resolve(read.result); tx.oncomplete = () => db.close(); }; }));
   const queued = () => panel.evaluate(async () => { const api = (globalThis as any).chrome, [tab] = await api.tabs.query({ url: "https://chat.deepseek.com/" }); return (await api.storage.session.get(`deeprole_tab_state_${tab.id}`))[`deeprole_tab_state_${tab.id}`]?.snapshotId; });
-  const send = () => chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_session_id: "compact-target", prompt: "Continue here." }) }).then(r => r.status));
+  const send = () => chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_session_id: "compact-target", parent_message_id: null, prompt: "Continue here." }) }).then(r => r.status));
   const before = await stored(); expect(await send()).toBe(503); expect(await queued()).toBe("compact"); expect(await stored()).toEqual(before);
   await chat.reload(); await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", new RegExp(recap)); expect(await queued()).toBe("compact");
   status = 200; expect(await send()).toBe(200); await expect.poll(queued).toBeNull();

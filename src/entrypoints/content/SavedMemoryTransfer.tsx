@@ -1,38 +1,88 @@
-import { useId, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { savedMemoryText, type SavedMemoryPreview } from "../../core/saved-memory-continuation";
-import type { Locale } from "../../core/types";
+import type { Locale, WorldProfile } from "../../core/types";
 import { PageMemoryDialog } from "./PageMemoryDialog";
 
-export function SavedMemoryTransfer({ locale, disabled, onPreview, onOpen }: {
+type WorldOption = Pick<WorldProfile, "id" | "name">;
+
+export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, actionClassName, onPreview, onOpen }: {
   locale: Locale;
   disabled: boolean;
-  onPreview: () => Promise<SavedMemoryPreview>;
-  onOpen: (version: string) => Promise<void>;
+  worlds?: WorldOption[];
+  quickResume?: boolean;
+  actionClassName?: string;
+  onPreview: (worldId?: string) => Promise<SavedMemoryPreview>;
+  onOpen: (version: string, worldId?: string) => Promise<void>;
 }) {
   const t = savedMemoryText(locale), id = useId();
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<SavedMemoryPreview>(), [error, setError] = useState("");
-  const running = useRef(false);
-  async function run(version?: string) {
+  const [world, setWorld] = useState<WorldOption>();
+  const chooseBetweenWorlds = (worlds?.length ?? 0) > 1;
+  const singleGame = quickResume && worlds?.length === 1 ? worlds[0] : undefined;
+  const secondary = actionClassName ? "button secondary" : "dr-meter-transfer";
+  const primary = actionClassName ? "button primary" : "dr-meter-transfer";
+  const running = useRef(false), worldHeading = useRef<HTMLElement>(null);
+  useLayoutEffect(() => { if (open) worldHeading.current?.focus({ preventScroll: true }); }, [world, open]);
+
+  async function run(action: () => Promise<void>) {
     if (running.current || disabled) return;
     running.current = true; setBusy(true); setError("");
-    try {
-      if (version === undefined) { setPreview(undefined); setOpen(true); setPreview(await onPreview()); }
-      else await onOpen(version);
-    } catch (e) {
+    try { await action(); }
+    catch (e) {
       const code = e instanceof Error ? e.message : "";
       if (code === "handoff-stale") setPreview(undefined);
-      setError(code === "handoff-stale" ? t.stale : code === "draft-not-empty" ? t.draft : t.failed);
+      setError(code === "handoff-stale" ? t.stale : code === "draft-not-empty" ? t.draft : code === "busy" ? t.busy : t.failed);
     } finally { running.current = false; setBusy(false); }
   }
+
+  function choose(selected?: WorldOption) {
+    setWorld(selected); setPreview(undefined); setError("");
+  }
+  function loadPreview(selected?: WorldOption) {
+    return run(async () => {
+      choose(selected); setOpen(true);
+      setPreview(await onPreview(selected?.id));
+    });
+  }
+  const choosing = !!worlds && !world;
+  const confirmation = !choosing && <button type="button" className={`${primary} dr-saved-memory-action`} disabled={disabled || busy || !preview} onClick={() => {
+    if (preview) void run(async () => { await onOpen(preview.version, world?.id); setOpen(false); });
+  }}>{worlds ? t.connect : t.open}</button>;
+
+  const previewButton = <button type="button" className={`${singleGame ? secondary : actionClassName ?? "dr-meter-transfer"} dr-saved-memory-action`} aria-haspopup="dialog" disabled={disabled || busy} onClick={() => {
+    if (chooseBetweenWorlds) { choose(); setOpen(true); }
+    else void loadPreview(worlds?.[0]);
+  }}>{singleGame ? t.viewScene : t.title}</button>;
+
   return <>
-    <button type="button" className="dr-meter-transfer" aria-haspopup="dialog" disabled={disabled || busy} onClick={() => void run()}>{t.title}</button>
-    <PageMemoryDialog open={open} title={t.title} closeLabel={t.close} dialogId={id} onClose={() => { if (!running.current) setOpen(false); }}>
+    {singleGame ? <>
+      <div className="dr-play-actions">
+        <button type="button" className={`${primary} dr-saved-memory-action`} disabled={disabled || busy} onClick={() => void run(async () => {
+          const current = await onPreview(singleGame.id);
+          await onOpen(current.version, singleGame.id);
+        })}>{t.resumeGame(singleGame.name)}</button>
+        {previewButton}
+      </div>
+      {!open && busy && <p role="status">{t.preparing}</p>}
+      {!open && error && <p className="error-text" role="alert">{error}</p>}
+    </> : previewButton}
+    <PageMemoryDialog open={open} title={t.title} closeLabel={t.close} dialogId={id} footer={confirmation} onClose={() => {
+      if (!running.current) { setOpen(false); setError(""); }
+    }}>
       <div className="dr-saved-memory-review" aria-busy={busy}>
-        {preview?.scene ? <><strong>{t.last}</strong>{preview.savedAt !== null && <time dateTime={new Date(preview.savedAt).toISOString()}>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(preview.savedAt)}</time>}<blockquote>{preview.scene}</blockquote></> : preview && <p>{t.empty}</p>}
-        <p>{t.hint}</p>
-        {error && <p role="alert">{error}</p>}
-        <button type="button" className="dr-meter-transfer" disabled={disabled || busy || !preview} onClick={() => { if (preview) void run(preview.version); }}>{t.open}</button>
+        {choosing ? <div className="dr-saved-memory-review">
+          <strong ref={worldHeading} tabIndex={-1}>{t.chooseWorld}</strong>
+          {worlds.map(item => <button type="button" key={item.id} className={`${secondary} dr-saved-memory-action`} disabled={disabled || busy} onClick={() => void loadPreview(item)}>{item.name}</button>)}
+        </div> : <>
+          {world && <strong ref={worldHeading} tabIndex={-1}>{world.name}</strong>}
+          <p>{worlds ? t.homeHint : t.hint}</p>
+          {error && <p role="alert">{error}</p>}
+          {busy && !preview && <p role="status">{t.loading}</p>}
+          {error && !preview && <button type="button" className={`${secondary} dr-saved-memory-action`} disabled={disabled || busy} onClick={() => void loadPreview(world)}>{t.retry}</button>}
+          {world && chooseBetweenWorlds && <button type="button" className={`${secondary} dr-saved-memory-action`} disabled={busy} onClick={() => choose()}>{t.changeWorld}</button>}
+          {preview?.scene ? <><strong>{t.last}</strong>{preview.savedAt !== null && <time dateTime={new Date(preview.savedAt).toISOString()}>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(preview.savedAt)}</time>}<blockquote>{preview.scene}</blockquote></> : preview && <p>{t.empty}</p>}
+        </>}
       </div>
     </PageMemoryDialog>
   </>;

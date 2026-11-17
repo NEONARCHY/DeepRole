@@ -97,6 +97,7 @@ import { experienceText } from "../../core/experience-i18n";
 import { startupDeadline } from "../../core/startup";
 import type { ServiceActivity } from "../../core/memory-experience";
 import { MemoryStatus, ServiceProgress } from "../shared/MemoryStatus";
+import { memoryCoverageIssue } from "../../core/game-memory-coverage";
 import { TooltipButton } from "../shared/TooltipButton";
 import { getSettings, getVaultConfig, saveSettings } from "../../storage/settings";
 import { saveEditorRecord } from "../../storage/editing";
@@ -106,6 +107,11 @@ import { removeBook } from "../../storage/worlds";
 import { HelpButton, HelpSection, HelpLocale } from "../shared/Help";
 import { SettingsHelp } from "../shared/SettingsHelp";
 import { DeferredWorldsView as WorldsView } from "./DeferredWorldsView";
+import type { WorldImportTarget, WorldStartRequest } from "./WorldsView";
+import { PlayStart } from "./PlayStart";
+import { SavedMemoryTransfer } from "../content/SavedMemoryTransfer";
+import type { SavedMemoryPreview, SavedMemoryTransferState } from "../../core/saved-memory-continuation";
+import "./play-start.css";
 import { SceneControls } from "../shared/SceneControls";
 import { EMPTY_SCENE, memoryWorld } from "../../core/scene";
 import { sceneText } from "../../core/scene-i18n";
@@ -119,6 +125,7 @@ import "./lore-map.css";
 type Tab = "overview" | "settings" | "worlds" | "story";
 
 interface PageState {
+  tabId?: number;
   memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
   pendingHandoff?: string;
   activity?: ServiceActivity | null;
@@ -131,6 +138,8 @@ interface PageState {
   messageCount: number;
   compatible: boolean;
   scene?: SceneState;
+  savedMemory?: SavedMemoryTransferState;
+  savedMemoryQueued?: boolean;
 }
 
 const EMPTY_PAGE: PageState = { chatId: null, chatUrl: "", messageCount: 0, compatible: false };
@@ -161,7 +170,20 @@ export function App() {
   const pageGeneration = useRef(0);
   const [page, setPage] = useState<PageState>(EMPTY_PAGE);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [worldStart, setWorldStart] = useState<WorldStartRequest>();
+  const playHeading = useRef<HTMLHeadingElement>(null);
+  const focusPlayOnOpen = useRef(false);
+  useEffect(() => {
+    if (activeTab !== "worlds") setWorldStart(undefined);
+  }, [activeTab]);
+  useEffect(() => {
+    if (activeTab === "overview" && settings.onboardingComplete && focusPlayOnOpen.current && playHeading.current) {
+      playHeading.current.focus();
+      focusPlayOnOpen.current = false;
+    }
+  }, [activeTab, settings.onboardingComplete]);
   const [storyVisited, setStoryVisited] = useState(false);
+  const [storyOverviewRequest, setStoryOverviewRequest] = useState(0);
   const [settingsVisited, setSettingsVisited] = useState(false);
   const [settingsSaveError, setSettingsSaveError] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -169,6 +191,7 @@ export function App() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const requestedResetReview = new URLSearchParams(window.location.search).get("resetReview");
   const openStory = () => { setStoryVisited(true); setActiveTab("story"); };
+  const openStoryOverview = () => { setStoryOverviewRequest(request => request + 1); openStory(); };
   const openSettings = () => { setSettingsVisited(true); setActiveTab("settings"); };
   const [openMapWorldId, setOpenMapWorldId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -284,6 +307,7 @@ export function App() {
       if (isLocked) return setPage(EMPTY_PAGE);
       if (response?.type === "DR_PAGE_STATE") {
         setPage({
+          tabId: tab.id,
           chatId: response.chatId,
           chatUrl: response.chatUrl,
           messageCount: response.messageCount,
@@ -291,6 +315,7 @@ export function App() {
           scene: response.scene,
           selection: response.selection, overrides: response.overrides, memoryDelivery: response.memoryDelivery,
           activity: response.activity, generating: response.generating, warning: response.warning, pendingHandoff: response.pendingHandoff,
+          savedMemory: response.savedMemory, savedMemoryQueued: response.savedMemoryQueued,
         });
       } else setPage(EMPTY_PAGE);
     } catch {
@@ -338,6 +363,8 @@ export function App() {
   const activeBinding = page.chatId ? bindings.find((binding) => binding.chatId === page.chatId) : undefined;
   const scene = page.scene ?? (activeBinding ? { worldId: activeBinding.worldId ?? null, focusIds: activeBinding.focusIds ?? [], bookId: activeBinding.bookId } : EMPTY_SCENE);
   const activeBookId = scene.bookId;
+  const activeWorld = worlds.find(world => world.id === scene.worldId);
+  const openGame = activeWorld?.sharedGame?.activeChatId === page.chatId ? activeWorld.sharedGame : undefined;
   const libraryBooks = books.filter((b) => (b.worldId ?? null) === libraryWorld);
   const libraryEntries = entries.filter((e) => memoryWorld(e, books) === libraryWorld);
   const st = (key: Parameters<typeof sceneText>[1]) => sceneText(settings.locale, key);
@@ -368,6 +395,37 @@ export function App() {
       return true;
     } catch { setToast(st("offsite")); return false; }
   }
+  const importTarget: WorldImportTarget | undefined = page.compatible && page.tabId !== undefined && !page.generating && !page.pendingHandoff
+    ? { tabId: page.tabId, chatId: page.chatId, chatUrl: page.chatUrl, worldId: scene.worldId, empty: page.messageCount === 0 }
+    : undefined;
+  function startWorld(kind: WorldStartRequest["kind"]) {
+    setWorldStart(kind === "import" ? { kind, target: importTarget } : { kind });
+    setActiveTab("worlds");
+  }
+  async function finishWorldImport(id: string, target?: WorldImportTarget): Promise<boolean> {
+    chooseLibraryWorld(id);
+    await notifyDataChanged();
+    await refresh(true);
+    if (!target) { await refreshPage(); return false; }
+    let connected = false;
+    try {
+      const { tabId, ...importScope } = target;
+      const tab = await menuTab();
+      if (tab?.id === tabId) {
+        const next = { worldId: id, focusIds: [], bookId: null };
+        const result = await browser.tabs.sendMessage(tabId, { type: "DR_SET_SCENE", scene: next, importTarget: importScope } satisfies DeepRoleMessage);
+        connected = result?.ok === true;
+        const current = connected ? await menuTab() : undefined;
+        if (current?.id === tabId && current.url === importScope.chatUrl) {
+          setToast(mt("importedAndAttached"));
+          focusPlayOnOpen.current = true;
+          setActiveTab("overview");
+        }
+      }
+    } catch { /* The world is already stored and can be connected from the library. */ }
+    await refreshPage();
+    return connected;
+  }
   async function applyTemplate(templateId: string) {
     try {
       const tab = await menuTab();
@@ -385,6 +443,14 @@ export function App() {
     try { await saveSettings(next); setSettingsState(next); }
     catch (error) { setSettingsSaveError(true); throw error; }
     finally { settingsWriting.current = false; setSettingsSaving(false); }
+  }
+
+  async function requestSavedMemory(message: Extract<DeepRoleMessage, { type: "DR_SAVED_MEMORY_PREVIEW" | "DR_SAVED_MEMORY_OPEN" }>) {
+    const tab = await menuTab();
+    if (tab?.id === undefined || tab.id !== page.tabId || tab.url !== page.chatUrl) throw Error("handoff-stale");
+    const result = await browser.tabs.sendMessage(tab.id, message);
+    if (!result?.ok) throw Error(result?.error ?? "handoff-failed");
+    return result as { ok: true; preview?: SavedMemoryPreview };
   }
 
 
@@ -505,16 +571,32 @@ export function App() {
   if (!settings.onboardingComplete) {
     return (
       <HelpLocale.Provider value={settings.locale}><WelcomeFlow
-        locale={settings.locale} animations={settings.animationsEnabled} step={learning.progress.welcomeStep}
-        onStep={step => learning.update({ welcomeStep: step })}
+        locale={settings.locale} animations={settings.animationsEnabled}
         onLocale={locale => persistSettings({ ...settings, locale })}
         onFinish={async guided => {
-          await persistSettings({ ...settings, onboardingComplete: true });
+          focusPlayOnOpen.current = !guided;
+          try { await persistSettings({ ...settings, onboardingComplete: true }); }
+          catch (error) { focusPlayOnOpen.current = false; throw error; }
           if (guided) { learning.update({ run: { chapter: 'first-play', step: 0 } }); setGuideRequested(true); }
         }}
       /></HelpLocale.Provider>
     );
   }
+
+  const saved = page.savedMemoryQueued ? undefined : page.savedMemory;
+  const recoveryFirst = !!saved && (!!saved.worlds || !page.compatible || !page.messageCount);
+  const savedTransfer = saved && <SavedMemoryTransfer key={JSON.stringify([page.tabId, saved.scope])}
+    locale={settings.locale} worlds={saved.worlds} disabled={saved.blocked} actionClassName={recoveryFirst ? "button primary" : "button secondary"}
+    quickResume={page.chatId === null && saved.worlds?.length === 1 && (!scene.worldId || scene.worldId === saved.worlds[0]!.id)}
+    onPreview={async worldId => {
+      const result = await requestSavedMemory({ type: "DR_SAVED_MEMORY_PREVIEW", scope: saved.scope, worldId });
+      if (!result.preview) throw Error("handoff-failed");
+      return result.preview;
+    }}
+    onOpen={async (version, worldId) => {
+      await requestSavedMemory({ type: "DR_SAVED_MEMORY_OPEN", scope: saved.scope, version, worldId });
+      await refreshPage();
+    }}/>;
 
   return (
     <HelpLocale.Provider value={settings.locale}><div className="app-shell" data-embedded-menu={embeddedMenu ? "true" : "false"} data-motion={settings.animationsEnabled ? "on" : "off"}>
@@ -537,24 +619,22 @@ export function App() {
         {relevantProposals.length > 0 && <section className="dr-assistant"><header><strong>{at("proposals")}</strong></header>{relevantProposals.map((batch) => <button key={batch.id} onClick={() => setReviewId(batch.id)}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}</section>}
         {activeReview && <MemoryReview key={activeReview.id} locale={settings.locale} batch={activeReview} onClose={() => setReviewId(null)} onDiscard={async () => { await discardMemoryProposals(activeReview.id); await refresh(); }} onSave={async (items, profileChoice) => { await applyMemoryProposals(activeReview.id, items, undefined, profileChoice); const count = items.filter((item) => item.selected && !item.issue).length + Number(!!profileChoice); setToast(at("memoryUpdated").replace("{count}", String(count))); await refresh(); await refreshPage(); }} />}
         {activeTab === "overview" && lastChange && <div className="button-row"><button className="button secondary small" onClick={() => void undoLoreChange(lastChange.id).then(() => refresh()).catch(() => setToast(at("conflict")))}>{at("undo")}</button></div>}
-        {activeTab === "worlds" && <WorldsView defaultActions={settings.characterActions} onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
+        {activeTab === "worlds" && <WorldsView defaultActions={settings.characterActions} onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} importTarget={importTarget} initialStart={worldStart} onImportFinished={finishWorldImport} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
         {activeTab === "overview" && (
           <Overview
-            t={t}
             locale={settings.locale}
-            worldName={worlds.find((w) => w.id === scene.worldId)?.name}
-            controls={<SceneControls locale={settings.locale} worlds={worlds} entities={entities} books={books} scene={scene} onChange={changeScene} />}
+            headingRef={playHeading}
+            world={activeWorld}
+            hasWorlds={worlds.length > 0}
+            controls={<SceneControls locale={settings.locale} worlds={worlds} entities={entities} books={books} scene={scene} onChange={changeScene} worldOnly={!scene.worldId}/>}
             books={books.filter((b) => (b.worldId ?? null) === scene.worldId)}
             entries={entries.filter((e) => memoryWorld(e, books) === scene.worldId)}
-            snapshots={snapshots.filter((s) => memoryWorld(s, books) === scene.worldId)}
             page={page}
-            activeBookId={activeBookId}
-            worldId={scene.worldId}
-            onSetActiveBook={(bookId) => void changeScene({ ...scene, bookId })}
+            savedTransfer={recoveryFirst ? savedTransfer : undefined}
             onNewMemory={() => { chooseLibraryWorld(scene.worldId); openEntry("new", scene.worldId); }}
             onAnalyze={() => void runService("memory-analysis")}
-            onHandoff={() => void runService("handoff")}
-            onOpenStory={openStory}
+            onWorldStart={startWorld}
+            onOpenStory={openStoryOverview}
             onOpenMemory={() => { chooseLibraryWorld(scene.worldId ?? (worlds.length === 1 ? worlds[0]!.id : libraryWorld)); setActiveTab("worlds"); }}
           />
         )}
@@ -564,6 +644,7 @@ export function App() {
           <HandoffView
             t={t}
             locale={settings.locale}
+            savedTransfer={recoveryFirst ? undefined : savedTransfer}
             snapshots={snapshots.filter((s) => memoryWorld(s, books) === scene.worldId)}
             disabled={!page.chatId || !page.messageCount || !page.compatible || page.generating || page.activity?.phase === "preparing" || page.activity?.phase === "waiting"}
             onCreate={() => void runService("handoff")}
@@ -579,7 +660,7 @@ export function App() {
           </div>
         </details></div>}
 
-        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace restartPreview={worldRestartPreview(entities, worlds.find(w => w.id === scene.worldId), page.chatId)} key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
+        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace overviewRequest={storyOverviewRequest} restartPreview={worldRestartPreview(entities, worlds.find(w => w.id === scene.worldId), page.chatId)} key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
         {settingsVisited && <div hidden={activeTab !== "settings"}><fieldset className="dr-settings-save-scope" disabled={settingsSaving} aria-busy={settingsSaving}>
           <SettingsView
             onExport={() => setExportRequest({ worldId: scene.worldId ?? libraryWorld })}
@@ -597,7 +678,7 @@ export function App() {
       <nav className="bottom-nav" aria-label={t("navigation")}>
         <NavButton guide="nav-overview" active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
         <NavButton guide="nav-worlds" active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
-        <NavButton guide="nav-story" active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={worlds.find(w => w.id === scene.worldId)?.sharedGame?.pendingReviewIds?.length} onClick={openStory} />
+        <NavButton guide="nav-story" active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={openGame?.pendingReviewIds?.length} onClick={openStory} />
         <NavButton guide="nav-settings" active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={openSettings} />
       </nav>
 
@@ -646,19 +727,17 @@ export function App() {
 
 function Overview(props: {
   locale: DeepRoleSettings["locale"];
-  worldName?: string;
+  headingRef: React.Ref<HTMLHeadingElement>;
+  world?: WorldProfile;
+  hasWorlds: boolean;
   controls: React.ReactNode;
-  t: ReturnType<typeof useTranslator>;
   books: MemoryBook[];
   entries: MemoryEntry[];
-  snapshots: HandoffSnapshot[];
   page: PageState;
-  activeBookId: string | null;
-  worldId: string | null;
-  onSetActiveBook: (id: string | null) => void;
+  savedTransfer?: React.ReactNode;
   onNewMemory: () => void;
   onAnalyze: () => void;
-  onHandoff: () => void;
+  onWorldStart: (kind: WorldStartRequest["kind"]) => void;
   onOpenMemory: () => void;
   onOpenStory: () => void;
 }) {
@@ -667,21 +746,23 @@ function Overview(props: {
   const busy = props.page.activity?.phase === "preparing" || props.page.activity?.phase === "waiting";
   const blocked = busy || props.page.generating || !props.page.chatId || !props.page.messageCount || !props.page.compatible;
   const enabledEntries = props.entries.filter((entry) => entry.enabled && (!entry.bookId || props.books.some((book) => book.id === entry.bookId && book.active))).length;
+  const { selection, warning, pendingHandoff, memoryDelivery } = props.page;
+  const report = selection?.contextReport;
+  const picked = report?.selected;
+  const showContext = props.page.compatible && Boolean(props.world || warning || pendingHandoff || selection?.entries.length || memoryDelivery);
+  const showPreview = Boolean(warning || pendingHandoff || selection?.entries.length || (picked && picked.facts + picked.profiles + picked.continuation) || memoryCoverageIssue(selection?.memoryCoverage, report));
+  const preview = <MemoryStatus key={props.page.chatUrl + props.world?.id} locale={props.locale} connected warning={warning} selection={selection} pendingHandoff={pendingHandoff} available={enabledEntries} onAdd={props.onNewMemory} neutralEmpty={!!props.world}/>;
   return <div className="view-stack play-view">
-    <div className="view-title"><div><h1>{mt("play")}</h1><p className="view-subtitle">{x("memoryCycle")}</p></div></div>
-    <section className="play-world-card" data-dr-guide="play-world">
-      <div className="eyebrow"><Globe2 size={13} />{props.worldName ? mt("attached") : mt("start")}</div>
-      {props.page.compatible && props.controls}
-      {!props.worldName && <p>{mt("startHint")}</p>}
-      <button className={`button ${props.worldName ? "secondary" : "primary"} small`} onClick={props.onOpenMemory}>{mt("browse")}<ChevronRight /></button>
-    </section>
+    <div className="view-title"><h1 ref={props.headingRef} tabIndex={-1}>{mt("play")}</h1></div>
+    <PlayStart locale={props.locale} world={props.world} hasWorlds={props.hasWorlds} compatible={props.page.compatible} chatId={props.page.chatId} messageCount={props.page.messageCount} pendingHandoff={!!props.page.pendingHandoff} savedMemoryQueued={props.page.savedMemoryQueued} savedTransfer={props.savedTransfer} controls={props.controls} onStart={props.onWorldStart} onLibrary={props.onOpenMemory} onMemory={props.onOpenStory}/>
     <ServiceProgress locale={props.locale} activity={props.page.activity} />
-    <MemoryStatus key={props.page.chatUrl + props.worldId} locale={props.locale} connected={props.page.compatible} warning={props.page.warning} selection={props.page.selection} pendingHandoff={props.page.pendingHandoff} available={enabledEntries} onAdd={props.onNewMemory} />
-    {!!props.page.selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {props.page.selection.omittedCount}</p>}
-    {(props.page.selection?.contextReport || props.page.memoryDelivery) && <details className="play-memory-details"><summary>{props.locale === "ru" ? "Что получает DeepSeek" : "What DeepSeek receives"}</summary><p className="setting-copy">{props.locale === "ru" ? "Подходящая часть лора и памяти добавляется к сообщению. Вся библиотека целиком не отправляется." : "Relevant lore and memory are added to your message. The entire library is not sent at once."}</p><ContextBudgetSummary locale={props.locale} report={props.page.selection?.contextReport} coverage={props.page.selection?.memoryCoverage} entries={props.page.selection?.entries}/><MemoryDeliverySummary locale={props.locale} receipt={props.page.memoryDelivery}/></details>}
-    <section className="quick-actions">
-      <button className="action-card" aria-label={storyUxText(props.locale, "open")} onClick={props.onOpenStory}><BookOpen /><span><strong>{storyUxText(props.locale, "open")}</strong><small>{storyUxText(props.locale, "openHint")}</small></span><ChevronRight /></button>
-    </section>
+    {showContext && showPreview && preview}
+    {!!selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {selection.omittedCount}</p>}
+    {showContext && (!showPreview || report || memoryDelivery) && <details className="play-memory-details"><summary>{props.locale === "ru" ? "Что получает DeepSeek" : "What DeepSeek receives"}</summary>
+      {!showPreview && preview}
+      <ContextBudgetSummary locale={props.locale} report={report} coverage={selection?.memoryCoverage} entries={selection?.entries}/>
+      <MemoryDeliverySummary locale={props.locale} receipt={memoryDelivery}/>
+    </details>}
     <details className="play-memory-details"><summary>{props.locale === "ru" ? "Добавить или проверить память вручную" : "Add or check memory manually"}</summary><div className="quick-actions"><button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button><button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{!props.page.compatible || !props.page.chatId ? (props.locale === "ru" ? "Сначала откройте игровой чат DeepSeek." : "Open a DeepSeek game chat first.") : x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button></div></details>
   </div>;
 }
@@ -787,6 +868,7 @@ function HandoffView(props: {
   t: ReturnType<typeof useTranslator>;
   locale: DeepRoleSettings["locale"];
   snapshots: HandoffSnapshot[];
+  savedTransfer?: React.ReactNode;
   disabled?: boolean;
   onCreate: () => void;
   onContinue: () => void;
@@ -802,6 +884,7 @@ function HandoffView(props: {
         <p>{continuationText(props.locale, "hint")}</p>
         <p>{continuationText(props.locale, "detail")}</p>
         <HelpButton className="button primary" disabled={props.disabled} onClick={props.onContinue}>{props.t("continueChat")}</HelpButton>
+        {props.savedTransfer && <div className="dr-handoff-saved"><p>{props.locale === "ru" ? "Если старый чат недоступен, можно продолжить из сохранённой памяти." : "If the old chat is unavailable, you can continue from saved memory."}</p>{props.savedTransfer}</div>}
         <details className="memory-detail"><summary>{continuationText(props.locale, "recap")}</summary><p>{uiText(props.locale, "handoffHint")}</p><HelpButton className="button secondary" disabled={props.disabled} onClick={props.onCreate}>{props.t("saveSnapshot")}</HelpButton></details>
       </HelpSection>
       {props.snapshots.length === 0 && <EmptyState icon={<ArchiveRestore />} text={props.t("noSnapshots")} />}
@@ -1044,7 +1127,12 @@ function VaultUnlock(props: { onUnlocked: () => void; onClose?: () => void; t: R
 
 function SettingsCard(props: { icon: React.ReactNode; title: string; children: React.ReactNode; locale?: import("../../core/types").Locale; help?: string }) { return <HelpSection className="settings-card"><header>{props.icon}{props.help ? <SettingsHelp locale={props.locale ?? "ru"} title={props.title} text={props.help} heading/> : <h2>{props.title}</h2>}</header><div>{props.children}</div></HelpSection>; }
 function EmptyState(props: { icon: React.ReactNode; text: string; action?: string; onAction?: () => void }) { return <div className="empty-state"><div>{props.icon}</div><p>{props.text}</p>{props.action && <HelpButton className="button secondary" onClick={props.onAction}>{props.action}</HelpButton>}</div>; }
-function NavButton(props: { guide?: string; active: boolean; label: string; icon: React.ReactNode; badge?: number; onClick: () => void }) { return <HelpButton data-dr-guide={props.guide} className={props.active ? "active" : ""} aria-current={props.active ? "page" : undefined} onClick={props.onClick} aria-label={props.label}>{props.icon}<span>{props.label}</span>{!!props.badge && <span className="dr-story-inbox-count" aria-hidden="true">{props.badge}</span>}</HelpButton>; }
+function NavButton(props: { guide?: string; active: boolean; label: string; icon: React.ReactNode; badge?: number; onClick: () => void }) {
+  return <HelpButton data-dr-guide={props.guide} className={props.active ? "active" : ""} aria-current={props.active ? "page" : undefined} onClick={props.onClick} aria-label={props.label}>
+    {props.badge ? <span className="dr-nav-icon-with-count" aria-hidden="true">{props.icon}<span className="dr-story-inbox-count">{props.badge}</span></span> : props.icon}
+    <span>{props.label}</span>
+  </HelpButton>;
+}
 function LoadingScreen() { return <div className="center-screen"><div className="brand-mark large pulse"><span /></div></div>; }
 function useTranslator() { return (key: MessageKey, vars?: Record<string, string | number>) => translate("en", key, vars); }
 

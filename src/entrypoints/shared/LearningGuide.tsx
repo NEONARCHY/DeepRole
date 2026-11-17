@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Check, ChevronLeft, ChevronRight, Minimize2, X } from 'lucide-react';
+import { BookOpen, Check, ChevronLeft, ChevronRight, Minimize2, X } from 'lucide-react';
 import type { Locale } from '../../core/types';
 import { initialLearning, learningChapters, learningText, normalizeLearning, type ChapterId, type LearningProgress, type LearningRun } from '../../core/learning';
 import { readLearning, saveLearning } from '../../storage/learning';
@@ -28,45 +28,36 @@ export function useLearning() {
   return { progress, ready, error, update };
 }
 
-export function WelcomeFlow({ locale, step, animations, onStep, onLocale, onFinish }: {
-  locale: Locale; step: number; animations: boolean; onStep: (step: number) => void;
+export function WelcomeFlow({ locale, animations, onLocale, onFinish }: {
+  locale: Locale; animations: boolean;
   onLocale: (locale: Locale) => Promise<void>; onFinish: (guided: boolean) => Promise<void>;
 }) {
   const t = (key: Parameters<typeof learningText>[1]) => learningText(locale, key);
   const [busy, setBusy] = useState(false), [error, setError] = useState(false);
-  const heading = useRef<HTMLHeadingElement>(null), first = useRef(true);
-  const [keyboard, setKeyboard] = useState(false);
-  useEffect(() => { if (first.current) { first.current = false; return; } heading.current?.focus(); }, [step]);
   async function perform(task: () => Promise<void>) {
     if (busy) return; setBusy(true); setError(false);
     try { await task(); } catch { setError(true); } finally { setBusy(false); }
   }
-  return <main lang={locale} className="onboarding dr-welcome" data-motion={animations ? 'on' : 'off'} data-keyboard={keyboard}
-    onKeyDown={() => setKeyboard(true)} onPointerDown={() => setKeyboard(false)}>
+  return <main lang={locale} className="onboarding dr-welcome" data-motion={animations ? 'on' : 'off'}>
     <header className="dr-welcome-brand"><div className="brand-mark" aria-hidden="true"><span/></div><strong>DeepRole</strong>
       <label className="dr-welcome-language"><span className="sr-only">{locale === 'ru' ? 'Язык' : 'Language'}</span>
         <select value={locale} disabled={busy} onChange={e => void perform(() => onLocale(e.target.value as Locale))}><option value="ru">Русский</option><option value="en">English</option></select>
       </label>
     </header>
-    <div className="dr-welcome-body" key={step}>
-      <p className="dr-learning-count">{t('progress').replace('{step}', String(step + 1)).replace('{total}', '3')}</p>
-      <h1 ref={heading} tabIndex={-1}>{t((['welcome1Title', 'welcome2Title', 'welcome3Title'] as const)[step]!)}</h1>
-      <p className="dr-welcome-lead">{t((['welcome1Text', 'welcome2Text', 'welcome3Text'] as const)[step]!)}</p>
-      <ol className="dr-welcome-path" aria-label={t('welcome2Title')}>
-        {(['world', 'chat', 'memory'] as const).map((key, i) => <li key={key}><span aria-hidden="true">{i + 1}</span>{t(key)}</li>)}
-      </ol>
-      <p className="dr-learning-note">{t(step === 2 ? 'privacy' : 'limits')}</p>
+    <div className="dr-welcome-body">
+      <h1>{t('welcomeTitle')}</h1>
+      <p className="dr-welcome-lead">{t('welcomeLead')}</p>
+      <div className="dr-welcome-memory"><BookOpen size={20} aria-hidden="true"/><p>{t('welcomeMemory')}</p></div>
     </div>
     <footer className="dr-welcome-footer">
       {error && <p className="error-text" role="alert">{t('welcomeError')}</p>}
       <div className="dr-welcome-actions">
-        {step > 0 && <button className="button secondary" disabled={busy} onClick={() => onStep(step - 1)}><ChevronLeft size={16}/>{t('back')}</button>}
-        <button className="button primary" disabled={busy} onClick={() => step < 2 ? onStep(step + 1) : void perform(() => onFinish(true))}>
-          {busy ? t('saving') : t(step < 2 ? 'welcomeNext' : 'guided')}<ChevronRight size={16}/>
+        <button className="button primary" type="button" disabled={busy} onClick={() => void perform(() => onFinish(false))}>
+          {busy ? t('saving') : t('self')}<ChevronRight size={16} aria-hidden="true"/>
         </button>
+        <button className="button secondary" type="button" disabled={busy} onClick={() => void perform(() => onFinish(true))}>{t('guided')}</button>
       </div>
-      <button className="button ghost" disabled={busy} onClick={() => void perform(() => onFinish(false))}>{t('self')}</button>
-      <p className="dr-learning-note">{t('later')}</p>
+      <p className="dr-learning-note">{t('privacy')}</p>
     </footer>
   </main>;
 }

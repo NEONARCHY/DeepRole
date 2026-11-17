@@ -1,7 +1,7 @@
 import { createId } from "../core/id";
 import { memoryWorld } from "../core/scene";
 import { boundStory, validStoryContinuation } from "../core/story-continuation";
-import type { SavedMemoryPreview, SavedMemorySource } from "../core/saved-memory-continuation";
+import { savedMemoryBinding, type SavedMemoryPreview, type SavedMemoryRequest } from "../core/saved-memory-continuation";
 import { storyReplyProse } from "../core/story-update";
 import type { StoryBaseline, StoryBranch, StoryRecord, StoryRevision } from "../core/story-records";
 import type { ChatBinding, HandoffSnapshot, MemoryBook, MemoryOverrides, SceneState, StoryContinuation, WorldProfile } from "../core/types";
@@ -20,11 +20,13 @@ export interface ContinuationCapture {
 }
 
 /** Preview and capture use only the active game's durable local records. */
-export async function savedMemoryContinuation(input: SavedMemorySource, expected?: string, repo: DeepRoleRepository = repository): Promise<{ preview: SavedMemoryPreview; snapshot?: HandoffSnapshot }> {
+export async function savedMemoryContinuation(input: SavedMemoryRequest, expected?: string, repo: DeepRoleRepository = repository): Promise<{ preview: SavedMemoryPreview; snapshot?: HandoffSnapshot }> {
   return repo.updateRecords<{ preview: SavedMemoryPreview; snapshot?: HandoffSnapshot }>(records => {
-    const binding = records.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === input.chatId)?.data as ChatBinding | undefined;
     const world = records.find(r => r.kind === "world" && r.id === input.worldId)?.data as WorldProfile | undefined;
-    if (!binding || !world || binding.worldId !== world.id) throw Error("handoff-scope");
+    if (!world) throw Error("handoff-scope");
+    const bindings = records.filter(r => r.kind === "binding").map(r => r.data as ChatBinding);
+    const binding = "fromHome" in input ? savedMemoryBinding(world, bindings) : bindings.find(item => item.chatId === input.chatId);
+    if (!binding || binding.worldId !== world.id) throw Error("handoff-scope");
     assertWorldGameWriter(records, binding, world.id);
     const game = world.sharedGame;
     const stories = new Map(records.filter(r => r.kind === "story").map(r => [r.id, r.data as StoryRecord]));
@@ -42,7 +44,7 @@ export async function savedMemoryContinuation(input: SavedMemorySource, expected
     const scene = game?.scene ?? binding.characterScenes?.[world.id];
     const snapshot: HandoffSnapshot = {
       id: createId("snapshot"), savedMemory: true, title: world.name, worldId: world.id,
-      sourceChatId: input.chatId, sourceChatUrl: input.chatUrl, createdAt: Date.now(),
+      sourceChatId: binding.chatId, sourceChatUrl: "fromHome" in input ? binding.chatUrl : input.chatUrl, createdAt: Date.now(),
       bookId: books.some(b => b.id === binding.bookId && b.active && b.worldId === world.id) ? binding.bookId : null,
       focusIds: [...binding.focusIds ?? []], memoryOverrides: structuredClone(game?.memoryOverrides ?? binding.memoryOverrides ?? { includedIds: [], excludedIds: [] }),
       summary: excerpt || "No saved scene is available. Use the saved world state and the user's new message. Do not invent missing events.",

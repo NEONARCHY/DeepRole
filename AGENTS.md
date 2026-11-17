@@ -7,6 +7,12 @@
 - When the user asks to continue after pulling or changing computers, follow that handoff and the newest ROADMAP sections. Older historical "next steps" are not current instructions. Do not overwrite uncommitted work when synchronizing Git.
 - Update the handoff when finishing a meaningful milestone, so another Codex can continue without this chat history.
 
+## DeepRole browser checks on Windows
+
+- For DeepRole and DeepSeek UI checks, follow [the separate Edge guide](docs/CODEX-DEEPROLE-EDGE.md) and use the [portable kit](downloads/DeepRole-Edge-Codex-Work-Kit.zip) when setting up another computer. Use a dedicated Edge profile with its own extension installation.
+- Activate the intended DeepSeek chat first. Open DeepRole's `sidepanel.html` as an ordinary extension tab in the same Edge window and verify both window IDs. Inspect that extension tab while keeping the chat active. Use this route if the native side panel displays a white screen.
+- Leave extension installation, browser security prompts and sign-in to the user. Operate only within the user's authorized test scope. Close the Edge process owned by the session when the check is finished.
+
 ## Project conventions
 
 - Explain changes to the user in short, plain Russian. Do not assume coding knowledge.

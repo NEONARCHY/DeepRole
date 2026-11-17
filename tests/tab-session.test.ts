@@ -14,13 +14,38 @@ function store() {
 }
 
 describe("per-tab session patches", () => {
+  it("keeps a refused attempt scoped to its tab and clears its target only after acceptance", async () => {
+    const { state, area } = store();
+    const target = { snapshotId: "s", snapshotToken: "token", targetChatId: "target" };
+    await state.patch(1, { snapshotId: target.snapshotId, snapshotToken: target.snapshotToken });
+    expect(await state.patch(1, { retryContinuationTarget: target }, { snapshotId: "s", snapshotToken: "token", continuationReceipt: null })).toEqual({ ok: true });
+    const reloaded = new TabSessionStore(area);
+    expect((await reloaded.get(1)).retryContinuationTarget).toEqual(target);
+    expect((await reloaded.get(2)).retryContinuationTarget).toBeUndefined();
+    let commits = 0;
+    const commit = async () => { commits++; };
+    await expect(reloaded.completeSnapshot(1, "s", "token", commit, "other")).rejects.toThrow("handoff-conflict");
+    expect(commits).toBe(0);
+    expect(await reloaded.completeSnapshot(1, "s", "token", commit, "target")).toBe(true);
+    expect(commits).toBe(1);
+    expect((await reloaded.get(1)).retryContinuationTarget).toBeNull();
+  });
   it("keeps the accepted destination through failed local writes and reload, without repeating delivery", async () => {
     const {state,area}=store(); await state.patch(1,{snapshotId:"s",snapshotToken:"token"});
     await expect(state.completeSnapshot(1,"s","token",async()=>{throw Error("write failed");},"target")).rejects.toThrow("write failed");
     const reloaded=new TabSessionStore(area); expect((await reloaded.get(1)).continuationReceipt).toEqual({snapshotId:"s",snapshotToken:"token",targetChatId:"target"});
-    let commits=0;expect(await reloaded.completeSnapshot(1,"s","token",async()=>{commits++;},"target")).toBe(true);
+    let commits=0;expect(await reloaded.completeSnapshot(1,"s","token",async()=>{commits++;},"target",true)).toBe(true);
     expect(commits).toBe(1);expect(await reloaded.get(1)).toMatchObject({snapshotId:null,snapshotToken:null,continuationReceipt:null});
     expect(await reloaded.completeSnapshot(1,"s","token",async()=>{commits++;},"target")).toBe(false);expect(commits).toBe(1);
+  });
+  it("does not retry from a queued transfer or a receipt for a different destination", async () => {
+    const { state } = store();
+    const commit = async () => { throw Error("unexpected commit"); };
+    await state.patch(1, { snapshotId: "s", snapshotToken: "t" });
+    expect(await state.completeSnapshot(1, "s", "t", commit, "target", true)).toBe(false);
+    await expect(state.completeSnapshot(1, "s", "t", commit, "target")).rejects.toThrow("unexpected commit");
+    expect(await state.completeSnapshot(1, "s", "t", commit, "other", true)).toBe(false);
+    expect((await state.get(1)).continuationReceipt).toEqual({ snapshotId: "s", snapshotToken: "t", targetChatId: "target" });
   });
   it("never redirects an accepted receipt or retries it over a newer snapshot/token",async()=>{
     const {state}=store();await state.patch(1,{snapshotId:"s",snapshotToken:"token"});

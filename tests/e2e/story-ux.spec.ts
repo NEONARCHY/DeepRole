@@ -3,6 +3,72 @@ import AxeBuilder from "@axe-core/playwright";
 import { storyUxText as ux } from "../../src/core/story-ux-i18n";
 import { storyUpdateText as facts } from "../../src/core/story-update-i18n";
 import { characterDiscoveryText as people } from "../../src/core/character-discovery-i18n";
+import { storyAutomationText } from "../../src/core/story-automation-i18n";
+
+for (const locale of ["ru", "en"] as const) for (const colorScheme of ["dark", "light"] as const) {
+  test(`review queue leads the story overview ${locale}/${colorScheme}`, async ({ page }, info) => {
+    const t = storyAutomationText(locale);
+    await page.setViewportSize({ width: 320, height: 460 });
+    await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+    await page.goto(`/tests/fixtures/sidepanel.html?play=active&review&locale=${locale}`);
+    await page.addStyleTag({ content: "html{font-size:125%}" });
+    await page.locator(".dr-play-memory").press("Enter");
+    const overview = page.locator('[data-dr-guide="story-overview"]');
+    await expect(overview).toHaveAttribute("aria-current", "page");
+    const inbox = page.getByRole("region", { name: t.inbox, exact: true });
+    const settings = page.locator(".dr-story-automation-settings");
+    const mode = settings.getByRole("combobox", { name: t.mode, exact: true });
+    const proposal = inbox.getByRole("article");
+    await expect(proposal).toBeVisible();
+    await expect(mode).toHaveCount(0);
+    expect(await inbox.evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector(".dr-story-automation-settings")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+    expect(await page.evaluate(() => (window as any).playReview.requests)).not.toContain("DR_AUTOMATION_RESOLVE");
+    await page.evaluate(() => scrollTo(0, 0));
+    const queueHeading = inbox.locator("h2");
+    await expect(queueHeading).toBeInViewport({ ratio: 1 });
+    const position = await queueHeading.evaluate(el => {
+      const box = el.getBoundingClientRect();
+      const covering = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return { visible: el.contains(covering), top: box.top, bottom: box.bottom, covering: covering?.outerHTML.slice(0, 180) };
+    });
+    await page.screenshot({ path: info.outputPath("review-overview.png") });
+    expect(position.visible, JSON.stringify(position)).toBe(true);
+    const quote = proposal.locator("summary").filter({ hasText: t.source });
+    await quote.press("Enter");
+    await expect(proposal.locator(".dr-story-review-source")).toBeVisible();
+    expect((await quote.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await proposal.getByRole("button", { name: t.accept, exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    await inbox.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath("review-queue.png") });
+
+    await page.getByRole("button", { name: ux(locale, "memory"), exact: true }).click();
+    await page.locator('[data-dr-guide="nav-overview"]').click();
+    await page.locator(".dr-play-memory").press("Enter");
+    await expect(overview).toHaveAttribute("aria-current", "page");
+    await expect(proposal.locator(".dr-story-review-source")).toBeVisible();
+    await settings.locator("summary").press("Enter");
+    await expect(mode).toHaveValue("automatic");
+    expect((await mode.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await mode.selectOption("off");
+    await expect(settings.locator("summary")).toContainText(t.off);
+    await proposal.getByRole("button", { name: t.decline, exact: true }).click();
+    await expect(inbox.getByText(t.empty, { exact: true })).toBeVisible();
+    await expect(page.locator(".dr-story-advanced > summary").filter({ hasText: ux(locale, "extraCheck") })).toBeVisible();
+    expect(await page.evaluate(() => (window as any).playReview.requests.filter((type: string) => type === "DR_AUTOMATION_RESOLVE" || type === "DR_RUN_SERVICE")))
+      .toEqual(["DR_AUTOMATION_RESOLVE"]);
+  });
+}
+
+test("the current queue is not presented as belonging to an older chat", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 460 });
+  await page.goto("/tests/fixtures/sidepanel.html?play=elsewhere&review");
+  await page.locator('[data-dr-guide="nav-story"]').click();
+  await expect(page.getByText(ux("ru", "oldChat"), { exact: true })).toBeVisible();
+  await expect(page.locator(".dr-story-automation-inbox")).toHaveCount(0);
+  await expect(page.locator('[data-dr-guide="story-overview"] .dr-story-inbox-count')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).playReview.requests)).not.toContain("DR_AUTOMATION_READ");
+});
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test(`story hub ${locale} ${width}: actual App navigation, drafts and keyboard`, async ({ page }, info) => {
   const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));

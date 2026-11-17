@@ -1,4 +1,5 @@
 import { CastSetup } from "../shared/CastSetup";
+import { defaultStoryAutomation } from "../../core/story-automation";
 import { CharacterUpdateNotice } from "../shared/CharacterUpdateNotice";
 import { ProfileProtection } from "../shared/ProfileProtection";
 import { BackupRestore } from "../shared/BackupRestore";
@@ -43,19 +44,21 @@ import { relationshipText } from "../../core/relationship-i18n";
 import { WorldBracketModeControl } from '../shared/WorldBracketModeControl';
 
 type T = (key: SceneKey, vars?: Record<string, string | number>) => string;
-export function WorldsView(props: { defaultActions?: string[]; onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
+export type WorldImportTarget = import("../../core/messages").ImportSceneTarget & { tabId: number };
+export type WorldStartRequest = { kind: "import"; target?: WorldImportTarget } | { kind: "create" };
+export function WorldsView(props: { defaultActions?: string[]; onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; importTarget?: WorldImportTarget; initialStart?: WorldStartRequest; onImportFinished: (id: string, target?: WorldImportTarget) => Promise<boolean>; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
   const mt = (key: Parameters<typeof menuText>[1]) => menuText(props.locale, key);
   const x = (key: Parameters<typeof experienceText>[1]) => experienceText(props.locale, key);
   const [editor, setEditor] = useState<{ kind: "world" | "entity" | "template"; id?: string } | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [importer, setImporter] = useState(false);
+  const [importer, setImporter] = useState<{ target?: WorldImportTarget } | null>(() => props.initialStart?.kind === "import" ? { target: props.initialStart.target } : null);
   const [backup, setBackup] = useState<{ fileName: string; payload: BackupPayload } | null>(null);
   const importButton = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState<"map" | "list" | "manage">("map");
-  const [mapOpen, setMapOpen] = useState(false);
-  const [createWorldInMap, setCreateWorldInMap] = useState(false);
+  const [mapOpen, setMapOpen] = useState(() => props.initialStart?.kind === "create");
+  const [createWorldInMap, setCreateWorldInMap] = useState(() => props.initialStart?.kind === "create");
   const [sceneBusy, setSceneBusy] = useState(false);
   const mounted = useRef(false);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -92,13 +95,13 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
     await repository.commitChecked([{ kind: "entity", id: value.id, data: value }, ...affected.map((e) => ({ kind: "entry" as const, id: e.id, data: { ...e, entityIds: [...(e.entityIds ?? []).filter((id) => id !== value.id), ...(linked.includes(e.id) ? [value.id] : [])], updatedAt: Date.now() } }))], [], [{ kind: "entity", id: value.id, data: expected }, ...baseEntries.map((entry) => ({ kind: "entry" as const, id: entry.id, data: entry }))]);
   });
   function startNewWorld() {
-    setView("map"); setImporter(false); setEditor(null); setMessage(""); setCreateWorldInMap(true); setMapOpen(true);
+    setView("map"); setImporter(null); setEditor(null); setMessage(""); setCreateWorldInMap(true); setMapOpen(true);
   }
   function closeMap() { setMapOpen(false); setCreateWorldInMap(false); }
   return <div className="view-stack worlds-view" aria-busy={busy}>
     <div className="view-title"><div><small>DeepRole</small><h1>{mt("lore")}</h1></div></div>
     <p className="dr-view-subtitle">{world ? x("mapHint") : x("startHint")}</p>
-    <div data-dr-guide="world-start" className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button ref={importButton} aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => { setMessage(""); setImporter(true); }}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
+    <div data-dr-guide="world-start" className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button ref={importButton} aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => { setMessage(""); setImporter({ target: props.importTarget }); }}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
     {message && <p className="rp-status" role="status">{message}</p>}
     <div data-dr-guide="world-picker"><WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("createNewWorld")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} /></div>
     {backup && <BackupRestore returnFocus={importButton.current} t={(key, vars) => translate(props.locale, key, vars)} fileName={backup.fileName} payload={backup.payload} onClose={() => setBackup(null)} onRestore={async mode => {
@@ -107,7 +110,10 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
       try { await props.onChanged(); setMessage(translate(props.locale, "importSuccess")); }
       catch { setMessage(t("importRefreshFailed")); }
     }} />}
-    {importer && <BdsImport locale={props.locale} worlds={props.worlds} canAttach={props.connected} onClose={() => setImporter(false)} onBackup={(payload, fileName) => { setBackup({ payload, fileName }); setImporter(false); }} onDone={async (id, attach) => { props.onWorld(id); await props.onChanged(); const connected = !attach || await props.onUseWorld(id); setImporter(false); setMessage(connected ? t("importSuccess") : mt("savedNotAttached")); }} />}
+    {importer && <BdsImport locale={props.locale} worlds={props.worlds} target={importer.target} onClose={() => { setImporter(null); importButton.current?.focus(); }} onBackup={(payload, fileName) => { setBackup({ payload, fileName }); setImporter(null); }} onDone={async (id, target) => {
+      const connected = await props.onImportFinished(id, target);
+      if (mounted.current) { setImporter(null); setMessage(target && !connected ? mt("savedNotAttached") : t("importSuccess")); }
+    }} />}
     {editor?.kind === "world" && <WorldEditor locale={props.locale} key={`world-editor:${editor.id ?? "new-world"}`} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
     {world && <section className={worldConnected ? "lore-connection is-attached" : "lore-connection"} aria-label={mt("useWorld")}>
       <strong>{worldConnected ? mt("attached") : mt("libraryOnly")}</strong>
@@ -127,7 +133,7 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
     {(world || createWorldInMap) && <>
       {mapOpen && <MapWorkspace key={createWorldInMap ? "create-new-world" : "selected-world"} locale={props.locale} worlds={props.worlds} initialWorldId={createWorldInMap ? null : world?.id ?? null} startInCreate={createWorldInMap} activeWorldId={props.connected ? props.activeWorldId : null} onSelect={props.onWorld} onClose={closeMap} onCreate={async (draft) => {
         const { relationshipCast, ...profileDraft } = draft;
-        const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...profileDraft, contextBudget: 2000, relevanceThreshold: 6, mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
+        const now = Date.now(); const created: WorldProfile = { id: createId("world"), ...profileDraft, contextBudget: 2000, relevanceThreshold: 6, storyAutomation: defaultStoryAutomation(), mapLayout: { positions: {}, expandedIds: [], customCategories: [] }, createdAt: now, updatedAt: now };
         const cast = relationshipCastRecords(created.id, relationshipCast, props.locale, now);
         await repository.commitChecked([{ kind: "world", id: created.id, data: created }, ...cast], [], [{ kind: "world", id: created.id, data: null }, ...cast.map(record => ({ kind: record.kind, id: record.id, data: null }))]); await props.onChanged(); return created;
       }} render={(world, pane) => <LoreMap embedded activePane={pane.active} onRegister={pane.onRegister} locale={props.locale} world={world} books={props.books.filter((b) => b.worldId === world.id)} entries={props.entries.filter((e) => e.bookId ? props.books.find((b) => b.id === e.bookId)?.worldId === world.id : e.worldId === world.id)} entities={props.entities.filter((e) => e.worldId === world.id)} templates={props.templates.filter((v) => v.worldId === world.id)} selection={props.activeWorldId === world.id ? props.selection : undefined} overrides={props.activeWorldId === world.id ? props.overrides : undefined} onMemoryUse={props.connected && props.activeWorldId === world.id ? props.onMemoryUse : undefined} onActivation={async (entry, activation: ActivationMode, history) => { await changeMapActivations(world.id, [entry], activation, repository, history); await props.onChanged(); }} onBranchActivation={async (entries, activation, history, branchId) => { await changeMapActivations(world.id, entries, activation, repository, history, branchId); await props.onChanged(); }} confirmDeletions={props.confirmDeletions} onClose={pane.onClose} onEdit={(node) => pane.onExit(() => editNode(node, world.id))}
@@ -242,7 +248,7 @@ function WorldEditor(props: { locale: Locale; world?: WorldProfile; t: T; busy: 
   const [relationshipsEnabled, setRelationshipsEnabled] = useState(props.world?.relationshipsEnabled !== false);
   const [bracketedOoc,setBracketedOoc]=useState(props.world?.bracketedOoc===true);
   const t = props.t;
-  return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, id: base?.id ?? createId("world"), name: name.trim(), description, useDescriptionInContext: useDescription, color, contextBudget: budget, relevanceThreshold: threshold, relationshipsEnabled, bracketedOoc, createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, base); }}>
+  return <form className="rp-editor" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; void props.onSave({ ...base, ...(!base ? { storyAutomation: defaultStoryAutomation() } : {}), id: base?.id ?? createId("world"), name: name.trim(), description, useDescriptionInContext: useDescription, color, contextBudget: budget, relevanceThreshold: threshold, relationshipsEnabled, bracketedOoc, createdAt: base?.createdAt ?? Date.now(), updatedAt: Date.now() }, base); }}>
     <Field name={t("name")} help={t("worldHint")}><input aria-label={t("name")} className="input" required value={name} onChange={(e) => setName(e.target.value)} autoFocus /></Field>
     <Field name={t("description")}><textarea aria-label={t("description")} className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
     <label className="rp-check"><input type="checkbox" aria-label={t("useDescription")} checked={useDescription} onChange={(e) => setUseDescription(e.target.checked)} />{t("useDescription")}</label>
@@ -301,9 +307,9 @@ function TemplateEditor(props: { worldId: string; template?: StoryTemplate; enti
   </form>;
 }
 
-function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: boolean; onClose: () => void; onBackup: (payload: BackupPayload, fileName: string) => void; onDone: (worldId: string, attach: boolean) => Promise<void> }) {
+function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; target?: WorldImportTarget; onClose: () => void; onBackup: (payload: BackupPayload, fileName: string) => void; onDone: (worldId: string, target?: WorldImportTarget) => Promise<void> }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
-  const [attach, setAttach] = useState(props.canAttach);
+  const [attach, setAttach] = useState(props.target?.empty === true && props.target.worldId === null);
   const [prepareCast, setPrepareCast] = useState(true);
   const [lore, setLore] = useState<LoreImport | null>(null);
   const items = lore?.items ?? [];
@@ -316,7 +322,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [fileName, setFileName] = useState("");
-  const [committedImport, setCommittedImport] = useState<{ worldId: string; attach: boolean } | null>(null);
+  const [committedImport, setCommittedImport] = useState<{ worldId: string; target?: WorldImportTarget } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const readGeneration = useRef(0);
@@ -367,7 +373,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     }
     finally { if (current()) setBusy(false); }
   }
-  async function importRecords(build: () => DataRecord[], attachToChat: boolean, photos?: import("../../core/portable-photos").PortablePhoto[]) {
+  async function importRecords(build: () => DataRecord[], target?: WorldImportTarget, photos?: import("../../core/portable-photos").PortablePhoto[]) {
     if (committing.current || busy || committedImport) return;
     committing.current = true; setSavingImport(true); setBusy(true); setError("");
     let saved = false;
@@ -376,12 +382,8 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       const worldRow = records.find(r => r.kind === "world" && r.id === id);
       if (worldRow) (worldRow.data as WorldProfile).autoPrepareCharacters = prepareCast;
       await repository.mergeRecords(records,photos); saved = true;
-      if (!worldRow) await repository.updateRecords(current => {
-        const existing = current.find(r => r.kind === "world" && r.id === id);
-        return { records: existing ? [{ ...existing, data: { ...existing.data as WorldProfile, autoPrepareCharacters: prepareCast } }] : [], removed: [], result: undefined };
-      });
-      if (mounted.current) setCommittedImport({ worldId: id, attach: attachToChat });
-      await props.onDone(id, attachToChat);
+      if (mounted.current) setCommittedImport({ worldId: id, target });
+      await props.onDone(id, target);
     }
     catch { if (mounted.current) setError(t(saved ? "importRefreshFailed" : "failed")); }
     finally { committing.current = false; if (mounted.current) { setSavingImport(false); setBusy(false); } }
@@ -389,7 +391,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
   async function finishImport() {
     if (!committedImport || committing.current || busy) return;
     committing.current = true; setSavingImport(true); setBusy(true); setError("");
-    try { await props.onDone(committedImport.worldId, committedImport.attach); }
+    try { await props.onDone(committedImport.worldId, committedImport.target); }
     catch { if (mounted.current) setError(t("importRefreshFailed")); }
     finally { committing.current = false; if (mounted.current) { setSavingImport(false); setBusy(false); } }
   }
@@ -418,8 +420,8 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
     </div>
     <p className="rp-hint">{props.locale === "ru" ? "Также поддерживается память из " : "You can also import memory from "}<a href="https://github.com/EdgeTypE/better-deepseek" target="_blank" rel="noopener noreferrer">Better Deepseek (BDS)</a>.</p>
     {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
-    {props.canAttach && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label><p className="rp-hint">{menuText(props.locale, "attachHint")}</p></>}
-    {(pack || items.length > 0) && <><label className="rp-check"><input type="checkbox" checked={prepareCast} onChange={e => setPrepareCast(e.target.checked)} />{castText(props.locale, "auto")}</label><p className="rp-hint">{castText(props.locale, "autoHint")}</p></>}
+    {props.target && (pack || items.length > 0) && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label>{attach && <p className="rp-hint">{menuText(props.locale, props.target.worldId ? "replaceImportHint" : "attachHint")}</p>}</>}
+    {(pack || items.length > 0 && !worldId) && <><label className="rp-check"><input type="checkbox" checked={prepareCast} onChange={e => setPrepareCast(e.target.checked)} />{castText(props.locale, "auto")}</label><p className="rp-hint">{castText(props.locale, "autoHint")}</p></>}
     {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field></>}
     {items.length > 0 && <>
       <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>
@@ -436,9 +438,9 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; canAttach: b
       </div>
       {!committedImport && (pack || items.length > 0) && <footer className="rp-import-footer">
         <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => {
-          if (pack) void importRecords(() => cloneWorldPackage(pack, name.trim()), attach && props.canAttach,pack.photos);
-          else if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach && props.canAttach);
-        }}>{t("confirmImport")}</HelpButton>
+          if (pack) void importRecords(() => cloneWorldPackage(pack, name.trim()), attach ? props.target : undefined, pack.photos);
+          else if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach ? props.target : undefined);
+        }}>{attach && props.target ? menuText(props.locale, "importAndAttach") : t("confirmImport")}</HelpButton>
       </footer>}
     </section>
   </div>;

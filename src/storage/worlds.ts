@@ -1,4 +1,5 @@
 import { createId } from "../core/id";
+import { defaultStoryAutomation } from "../core/story-automation";
 import { normalizeActionRecord } from "../core/action-compat";
 import { hasInternalPhotoAddresses } from "../core/photo-assets";
 import { validDataRecord } from "../core/record-validation";
@@ -79,7 +80,11 @@ export function cloneWorldPackage(value: WorldPackage, name?: string): DataRecor
   return value.records.map((r) => {
     const data = structuredClone(r.data);
     data.id = ids.get(r.id)!;
-    if (r.kind === "world") (data as WorldProfile).autoPrepareCharacters = false;
+    if (r.kind === "world") {
+      const world = data as WorldProfile;
+      world.autoPrepareCharacters = false;
+      world.storyAutomation ??= defaultStoryAutomation();
+    }
     if (r.kind === "world") { (data as WorldProfile).storyMemoryBatch && ((data as WorldProfile).storyMemoryBatch = { ...(data as WorldProfile).storyMemoryBatch!, mode: "paused", revision: createId("memory-imported") }); delete (data as WorldProfile).sharedGame; delete (data as WorldProfile).sharedGameArchives; delete (data as WorldProfile).resetArchives; }
     if (r.kind === "world" && (data as WorldProfile).mapLayout) {
       const layout = (data as WorldProfile).mapLayout!;

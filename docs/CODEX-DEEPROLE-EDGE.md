@@ -1,0 +1,98 @@
+# Как открыть DeepRole из рабочего Codex на Windows
+
+Этот гайд передаёт рабочий способ доступа к меню DeepRole. Понадобятся Windows с установленным Microsoft Edge, Node.js и Codex Desktop с локальным инструментом `node_repl`. Для первого запуска используй ZIP **DeepRole-Edge-Codex-Work-Kit.zip**. В нём готовая сборка DeepRole UX377, проверка файлов и скрипты запуска. Профиль создаётся на рабочем ПК, а вход в DeepSeek выполняет человек.
+
+## Почему меню открывается
+
+DeepRole умеет показывать один и тот же интерфейс в боковой панели браузера, во фрейме на странице DeepSeek и как обычную вкладку расширения. Скрипт открывает `chrome-extension://<ID>/sidepanel.html` как обычную вкладку. Codex читает её текст, видит кнопки и может сделать снимок. Это рабочий путь при белой панели. Точную причину белого экрана мы не подтвердили.
+
+Управляемый Edge запускается видимым, со своим `--user-data-dir`. Скрипт передаёт команды по закрытому каналу напрямую запущенному процессу. `mode: "background"` в статусе означает, что управление доступно Codex. За видимость окна отвечает `automationHeadless: false`.
+
+## Первый запуск
+
+1. Распакуй ZIP в рабочую папку. В PowerShell из распакованной папки выполни команду ниже. Она сверит 23 файла и создаст `%USERPROFILE%\.codex\deeprole-edge-work` с локальной копией расширения. Путь `extension` из вывода понадобится при установке. Эту команду достаточно выполнить один раз.
+
+   ```powershell
+   node .\setup-edge.mjs
+   ```
+
+2. В **постоянном `node_repl`** рабочего Codex выполни следующий код. На первой строке подставь путь к распакованной папке, в которой лежит `setup-edge.mjs`.
+
+   ```js
+   globalThis.drWorkKit = 'C:/Work/DeepRole-Edge-Codex-Work-Kit';
+   globalThis.drWorkPath = await import('node:path');
+   globalThis.drWorkURL = await import('node:url');
+   globalThis.drWorkHome = (await import('node:os')).homedir();
+   globalThis.drWorkEdge ??= new (await import(drWorkURL.pathToFileURL(
+     drWorkPath.join(drWorkKit, 'scripts', 'client.mjs')
+   ).href)).DeepRoleBrowser(drWorkPath.join(drWorkHome, '.codex', 'deeprole-edge-work', 'config.json'));
+   nodeRepl.write(await drWorkEdge.openManualLogin());
+   ```
+
+3. В открытом **отдельном Edge** человек открывает `edge://extensions`, включает «Режим разработчика» и выбирает «Загрузить распакованное». Указывает папку `extension` из вывода `setup-edge.mjs`, внутри которой лежит `manifest.json`. Затем входит в DeepSeek вручную, если сайт просит войти, и закрывает окно отдельного Edge. Управление браузером на этом этапе отключено. На рабочем ПК учитывай ограничения организации. Если режим разработчика заблокирован политикой, согласуй установку с администратором.
+
+4. Когда человек подтвердит, что окно закрыто, подключи управление к этому же профилю. Затем выведи доступные вкладки.
+
+   ```js
+   nodeRepl.write(await drWorkEdge.returnToBackground());
+   nodeRepl.write(await drWorkEdge.tabs());
+   ```
+
+## Открыть меню для нужного чата
+
+1. Возьми `tabId` нужного DeepSeek-чата из `tabs()`. Если вкладки ещё нет, открой адрес чата командой `drWorkEdge.open(url)` и возьми `tabId` из результата.
+2. Сначала активируй **чат DeepSeek**, потом вызови `openDeepRole()`. Скрипт откроет меню в отдельной вкладке того же окна и оставит чат активным. Для встроенного пути со считыванием активного чата это важно. Если `sourceWindowId` и `panelWindowId` совпали, вкладка открылась в нужном окне.
+
+   ```js
+   globalThis.drWorkChatId = 'TAB_ID_ЧАТА_ИЗ_НАБЛЮДЕНИЯ';
+   await drWorkEdge.navigate(drWorkChatId, 'activate');
+   globalThis.drWorkPanel = await drWorkEdge.openDeepRole();
+   nodeRepl.write({
+     windowContext: drWorkPanel.windowContext,
+     title: drWorkPanel.title,
+     text: drWorkPanel.text,
+     elements: drWorkPanel.elements,
+   });
+   ```
+
+3. Читай и используй вкладку меню через её `tabId`. Оставляй активным чат. Например, чтобы открыть «Память игры», возьми `elementId` нужной кнопки из свежего `inspect` и передай его в `act`.
+
+   ```js
+   globalThis.drWorkPanel = await drWorkEdge.inspect(drWorkPanel.tabId);
+   nodeRepl.write(drWorkPanel.elements);
+   ```
+
+   ```js
+   globalThis.drWorkAction = await drWorkEdge.act({
+     tabId: drWorkPanel.tabId,
+     snapshotId: drWorkPanel.snapshotId,
+     elementId: 'ID_КНОПКИ_ИЗ_ПОСЛЕДНЕГО_INSPECT',
+     action: 'click',
+     expectedText: 'Нужно проверить',
+   });
+   globalThis.drWorkPanel = drWorkAction.after;
+   nodeRepl.write({ verified: drWorkAction.verified, text: drWorkPanel.text });
+   ```
+
+4. При необходимости сделай снимок этой вкладки. Если действие вернуло таймаут или `verified: false`, сначала повтори `inspect`, чтобы выяснить, что уже произошло. Для кнопки ниже видимой области используй `navigate(tabId, 'scroll', 'down')` и новый снимок состояния.
+
+   ```js
+   globalThis.drWorkShot = await drWorkEdge.screenshot(drWorkPanel.tabId);
+   await nodeRepl.emitImage({
+     bytes: Buffer.from(drWorkShot.data, 'base64'),
+     mimeType: drWorkShot.mimeType,
+   });
+   ```
+
+## Если что-то пошло не так
+
+| Что видно | Что проверить |
+| --- | --- |
+| Белая боковая панель или сообщение про `iframe` | Вызови `openDeepRole()` из активного DeepSeek-чата и исследуй `chrome-extension://…/sidepanel.html`. Если заголовок и элементы ещё пусты, дай странице загрузиться и вызови `inspect` ещё раз. |
+| Меню показывает другой чат | Активируй нужный `tabId`, снова открой меню и сверь `windowContext`. Активность окна и вкладки важна для `currentWindow`. |
+| `DeepRole has not exposed a verified target` или `worker is not ready` | Открой отдельный Edge в ручном режиме. Проверь, что на `edge://extensions` включён именно распакованный DeepRole из выведенной папки. Если нужен штатный reload, нажми «Перезагрузить» у DeepRole и обнови DeepSeek. |
+| DeepSeek снова показывает вход | Вызови `openManualLogin()` и передай окно человеку. После его подтверждения вызови `returnToBackground()`. Для обоих режимов используется один отдельный профиль. |
+| `already has a live owner` или окно входа ещё открыто | Закрой именно выделенный Edge штатно и дождись завершения его процесса. `close()` управляемого сеанса защищает ручное окно входа и откажется его завершать. |
+| `Extension code changed` или не совпадает ID | Сверь комплект и содержимое выведенной папки `extension`. Контрольная сумма привязана к приложенной сборке. Для другой сборки подготовь отдельный проверенный комплект. |
+
+После работы выполни `await drWorkEdge.close()` до сброса `node_repl`. Это закрывает управляемый процесс, а отдельный профиль остаётся для следующего запуска. В следующий раз создай объект тем же кодом и вызови `tabs()` вместо `openManualLogin()`. Ручной вход нужен для первого запуска и для истёкшего сеанса.

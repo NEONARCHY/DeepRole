@@ -46,10 +46,10 @@ export function storyFeatureGuide(locale: Locale, topic: "recording" | "automati
         "With confirmation lets you choose which proposals to save. Paused stops new additions while keeping existing memory. Current scene state updates separately.",
       ] },
       { title: ru ? "Связь с записью сцен" : "How it relates to recording", lines: ru ? [
-        "«Включить автоматическую память» включает запись сцен и автоматическое сопровождение вместе. «Включить запись сцен» запускает журнал, сохраняя выбранный режим сопровождения.",
+        "В новых мирах режим «Автоматически» уже выбран. Подключите мир к чату, чтобы начать запись. Если у существующего мира сопровождение ещё не настроено, его можно включить здесь.",
         "Работа начинается с текущего момента. Старые сцены не перечитываются сами. Обычно сведения приходят с игровым ответом без дополнительных запросов; отдельная дополнительная проверка памяти может отправлять служебные запросы.",
       ] : [
-        "Enable automatic memory turns on scene recording and automatic accompaniment together. Turn on scene recording starts the journal while keeping the chosen accompaniment mode.",
+        "New worlds use Automatic by default. Connect the world to a chat to start recording. If accompaniment is still unconfigured for an existing world, you can enable it here.",
         "Starts from the current moment; earlier scenes are not reread automatically. Normal operation uses game replies without extra requests. Separate additional memory checks may send service requests.",
       ] },
     ],

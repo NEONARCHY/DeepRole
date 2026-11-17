@@ -1,9 +1,8 @@
 import type { Locale } from "./types";
 const en = {
- nav: "Story memory", title: "Story memory", intro: "Play normally. Manage what the game remembers here.", unavailable: "Could not check this chat",
+ nav: "Story memory", title: "Story memory", unavailable: "Could not check this chat",
  overview: "Overview", episodes: "Recaps", tasks: "Tasks", workspaceNavigation: "Story memory sections",
  starting: "Enabling recording…",
- overviewHint: "Choose how new details are saved and review anything that needs your decision.",
  memoryHint: "Check saved facts, correct a mistake or exclude a detail. Relevant facts are selected for each request; the whole list is not sent at once.",
  episodesHint: "Read short recaps of recorded scenes and their sources.",
  tasksHint: "Track promises and unfinished business. They do not expire just because more turns have passed.",
@@ -18,7 +17,7 @@ const en = {
  connectTitle: "Connect a world to the chat", connectHint: "Choose a world in Play, then open this section. Another chat with the same world uses the same game progress.", chooseWorld: "Choose a world", browseWorlds: "My worlds",
  chatTitle: "Open a DeepSeek chat", chatHint: "Worlds can be edited here. Story tools need the DeepSeek chat where you are playing.", backToPlay: "Go to Play",
  recordingTitle: "Scene recording", active: "Recording is on", paused: "Recording is paused", inactive: "Recording is off", loading: "Checking this chat…",
- activeHint: "Finished scenes are recorded automatically. The saving mode above decides which facts need your review.", inactiveHint: "Start from the reply currently selected in DeepSeek. Existing lore and profiles are kept; earlier chat messages are not analysed.", pauseHint: "Choose the reply you want in DeepSeek, then resume recording.",
+ activeHint: "Finished scenes are recorded automatically. Your saving mode controls which details need review.", inactiveHint: "Start from the reply currently selected in DeepSeek. Existing lore and profiles are kept; earlier chat messages are not analysed.", pauseHint: "Choose the reply you want in DeepSeek, then resume recording.",
  refresh: "Refresh this view", sync: "Use the selected reply", start: "Turn on scene recording", resume: "Resume recording", pending: "DeepSeek is still replying. Wait before changing the story.",
  memory: "Memory", people: "Characters", timeline: "Saved scenes", sections: "Story tools",
  options: "Other story actions", restartConfirm: "Use the current scene as a new starting point; the previous story will be archived.",
@@ -34,9 +33,8 @@ const en = {
  changedFact: "This fact changed while you were editing. Check both versions before saving.", currentFact: "Current saved text", useDraft: "Keep my edited text", diagnosticsDetails: "Update details",
 };
 const ru: Record<keyof typeof en, string> = {
- nav: "Память игры", title: "Память игры", intro: "Играйте как обычно. Здесь можно управлять тем, что запоминает игра.", unavailable: "Не удалось проверить этот чат",
+ nav: "Память игры", title: "Память игры", unavailable: "Не удалось проверить этот чат",
  overview: "Обзор", episodes: "Сводки", tasks: "Дела", workspaceNavigation: "Разделы памяти игры",
- overviewHint: "Выберите способ сохранения новых сведений и проверьте то, что требует вашего решения.",
  memoryHint: "Посмотрите сохранённые факты, исправьте ошибку или исключите сведения. Для каждого запроса подбирается подходящая часть, а не весь список целиком.",
  episodesHint: "Короткие пересказы записанных сцен и ссылки на их источники.",
  tasksHint: "Обещания и незавершённые дела. Они не исчезают только потому, что прошло больше ходов.",
@@ -52,7 +50,7 @@ const ru: Record<keyof typeof en, string> = {
  chatTitle: "Откройте чат DeepSeek", chatHint: "Здесь можно редактировать миры. Для работы с историей нужен чат DeepSeek, в котором вы играете.", backToPlay: "Перейти к игре",
   recordingTitle: "Запись сцен", active: "Запись включена", paused: "Запись приостановлена", inactive: "Запись выключена", loading: "Проверяем этот чат…",
  starting: "Включаем запись…",
- activeHint: "Завершённые сцены записываются автоматически. Какие факты требуют проверки — зависит от режима сохранения выше.", inactiveHint: "Началом станет ответ, выбранный сейчас в DeepSeek. Лор и анкеты сохранятся; прежняя переписка не анализируется.", pauseHint: "Выберите нужный ответ в DeepSeek, затем возобновите запись.",
+ activeHint: "Завершённые сцены записываются автоматически. Режим сохранения определяет, какие сведения попадут на проверку.", inactiveHint: "Началом станет ответ, выбранный сейчас в DeepSeek. Лор и анкеты сохранятся; прежняя переписка не анализируется.", pauseHint: "Выберите нужный ответ в DeepSeek, затем возобновите запись.",
  refresh: "Обновить просмотр", sync: "Учесть выбранный ответ", start: "Включить запись сцен", resume: "Возобновить запись", pending: "DeepSeek ещё отвечает. Дождитесь завершения перед изменением истории.",
  memory: "Память", people: "Персонажи", timeline: "Записанные сцены", sections: "Инструменты истории",
  options: "Другие действия с историей", restartConfirm: "Начать с текущей сцены; прежняя история останется в архиве.",

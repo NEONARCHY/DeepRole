@@ -36,7 +36,11 @@
   background: var(--dr-bg);
 }
 
-.rp-import-footer > .button { width: 100%; }
+.rp-import-footer > .button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.lore-import-modal :is(.button, .icon-button, .rp-check, input:not([type="file"], [type="checkbox"]), select) { min-height: 44px; }
+.lore-import-modal > header .icon-button { min-width: 44px; flex-shrink: 0; }
+.lore-import-modal .modal-body > * { min-width: 0; }
+.lore-import-modal .rp-status { overflow-wrap: anywhere; }
 
 .lore-import-modal .rp-check {
   font-size: 11px;

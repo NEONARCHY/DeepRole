@@ -5,7 +5,7 @@ import { sceneText } from "../../core/scene-i18n";
 import { SectionGuide } from "./Help";
 import { experienceText } from "../../core/experience-i18n";
 
-export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; books: MemoryBook[]; scene: SceneState; onChange: (scene: SceneState) => void | Promise<boolean>; compact?: boolean; worldLocked?: boolean; overlay?: boolean }) {
+export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; books: MemoryBook[]; scene: SceneState; onChange: (scene: SceneState) => void | Promise<boolean>; compact?: boolean; worldLocked?: boolean; overlay?: boolean; worldOnly?: boolean }) {
   const [scene, setScene] = useState(input.scene);
   const latest = useRef(input.scene); latest.current = input.scene;
   const saving = useRef(false);
@@ -39,10 +39,10 @@ export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; e
     <div className="scene-controls-line">
       {!props.worldLocked && <label className="scene-world"><span>{t("world")}</span><Select aria-label={t("world")} value={props.scene.worldId ?? ""} onChange={(e) => props.onChange({ worldId: e.target.value || null, focusIds: [], bookId: null })}><option value="">{t("unassigned")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</Select></label>}
       
-      <button ref={toggle} id={`${panelId}-toggle`} type="button" className="scene-focus-toggle" aria-expanded={expanded} aria-controls={expanded ? panelId : undefined} onClick={() => setExpanded(!expanded)}>{t("scene")} · {focus.length ? focus.map((e) => e.name).join(", ") : t("automatic")}</button>
+      {!props.worldOnly && <button ref={toggle} id={`${panelId}-toggle`} type="button" className="scene-focus-toggle" aria-expanded={expanded} aria-controls={expanded ? panelId : undefined} onClick={() => setExpanded(!expanded)}>{t("scene")} · {focus.length ? focus.map((e) => e.name).join(", ") : t("automatic")}</button>}
       
     </div>
-    {expanded && <div id={panelId} role="region" aria-labelledby={`${panelId}-toggle`} className="scene-focus-panel">
+    {expanded && !props.worldOnly && <div id={panelId} role="region" aria-labelledby={`${panelId}-toggle`} className="scene-focus-panel">
       {props.overlay && <strong className="scene-scope">{t("sceneScope")}</strong>}
       <SectionGuide locale={props.locale} text={t("sceneHint")} />
       <label>{t("books")} <Select aria-label={t("books")} value={props.scene.bookId ?? ""} onChange={(e) => props.onChange({ ...props.scene, bookId: e.target.value || null })}><option value="">{props.scene.worldId ? t("allBooks") : t("unassigned")}</option>{books.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label>

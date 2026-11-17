@@ -8,16 +8,15 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.use
 
 for (const locale of ['ru', 'en'] as const) {
   const t = (key: Parameters<typeof learningText>[1]) => learningText(locale, key);
-  it(`${locale}: welcome advances, goes back, skips and never calls finish on mount`, async () => {
+  it(`${locale}: welcome opens Play in one action and never calls finish on mount`, async () => {
     const finish = vi.fn().mockResolvedValue(undefined), language = vi.fn().mockResolvedValue(undefined);
-    function Example() { const [step, setStep] = useState(0); return <WelcomeFlow locale={locale} step={step} animations onStep={setStep} onLocale={language} onFinish={finish}/>; }
-    render(<Example/>); expect(finish).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: t('welcomeNext') })); expect(screen.getByRole('heading', { name: t('welcome2Title') })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: t('back') })); expect(screen.getByRole('heading', { name: t('welcome1Title') })).toHaveFocus();
+    render(<WelcomeFlow locale={locale} animations onLocale={language} onFinish={finish}/>); expect(finish).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: t('welcomeTitle') })).toBeVisible();
+    expect(screen.getByText(t('welcomeMemory'))).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: t('self') })); await waitFor(() => expect(finish).toHaveBeenCalledWith(false));
   });
   it(`${locale}: a failed save stays actionable`, async () => {
-    render(<WelcomeFlow locale={locale} step={2} animations={false} onStep={vi.fn()} onLocale={vi.fn()} onFinish={vi.fn().mockRejectedValue(Error('denied'))}/>);
+    render(<WelcomeFlow locale={locale} animations={false} onLocale={vi.fn()} onFinish={vi.fn().mockRejectedValue(Error('denied'))}/>);
     fireEvent.click(screen.getByRole('button', { name: t('guided') })); expect(await screen.findByRole('alert')).toHaveTextContent(t('welcomeError'));
     expect(screen.getByRole('button', { name: t('guided') })).toBeEnabled();
   });

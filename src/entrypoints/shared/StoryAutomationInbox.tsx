@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type Ref } from "react";
 import type { Locale } from "../../core/types";
 import type { AutomationReviewPage } from "../../core/story-automation-review";
 import { PROFILE_FIELDS, type ProfileField } from "../../core/character-profile";
@@ -8,7 +8,7 @@ import { storyReviewError, storyReviewText } from "../../core/story-review-i18n"
 import { readActiveAutomation, resolveActiveAutomation, type StoryReviewTabs } from "../../adapters/story-review-client";
 import { Select } from "./Select";
 import { storyTaskText } from "../../core/story-task-i18n";
-export function StoryAutomationInbox({ locale,tabs,scope,revision,blocked = false }: { locale: Locale; tabs: StoryReviewTabs; scope: { worldId: string; chatId: string }; revision?: string; blocked?: boolean }) {
+export function StoryAutomationInbox({ locale,tabs,scope,revision,blocked = false,headingRef }: { locale: Locale; tabs: StoryReviewTabs; scope: { worldId: string; chatId: string }; revision?: string; blocked?: boolean; headingRef?: Ref<HTMLHeadingElement> }) {
   const t = storyAutomationText(locale), taskText = storyTaskText(locale), id = useId(), generation = useRef(0);
   const [page,setPage] = useState<AutomationReviewPage>(), [busy,setBusy] = useState(false), [error,setError] = useState(""), [query,setQuery] = useState("");
   const [drafts,setDrafts] = useState<Record<string,{ fields: ProfileField[]; target: string; name: string }>>({});
@@ -20,7 +20,7 @@ export function StoryAutomationInbox({ locale,tabs,scope,revision,blocked = fals
     try { await resolveActiveAutomation(tabs,page,{ eventId: item.id,accept,fields: accept ? draft.fields : [],entityId: accept && draft.target ? draft.target : null,name: accept && item.type === "person" && !draft.target ? draft.name : "", ...(accept && item.conflicts?.length ? {replaceKeys:item.conflicts.map(c=>c.key)} : {}) }); await load(); }
     catch(e) { setError(storyReviewText(locale,storyReviewError(e))); } finally { setBusy(false); }
   };
-  return <section className="settings-card dr-story-automation-inbox" aria-label={t.inbox}><div className="dr-story-inbox-heading"><h2>{t.inbox}{page && page.total > 0 && <span className="dr-story-inbox-count">{page.total}</span>}</h2><button className="button secondary" type="button" disabled={busy || blocked} onClick={() => void load()}>{t.refresh}</button></div>
+  return <section className="settings-card dr-story-automation-inbox" aria-label={t.inbox}><div className="dr-story-inbox-heading"><h2 ref={headingRef} tabIndex={headingRef ? -1 : undefined}>{t.inbox}{page && page.total > 0 && <span className="dr-story-inbox-count">{page.total}</span>}</h2><button className="button secondary" type="button" disabled={busy || blocked} onClick={() => void load()}>{t.refresh}</button></div>
     {busy && !page && <p role="status">{t.loading}</p>}{error && <p role="alert">{error}</p>}{page && !page.total && <p className="setting-copy">{t.empty}</p>}
     {!!page?.total && <><p className="setting-copy">{t.inboxHint}</p>{!page.ready && <p role="status">{t.readyScene}</p>}
       {page.items.some(p => p.type === "person") && <div className="dr-story-inbox-search"><span className="field-label" id={id+"-search-label"}>{t.searchPeople}</span><input type="text" className="input" aria-labelledby={id+"-search-label"} id={id+"-search"} value={query} maxLength={80} disabled={busy || blocked} onChange={e => setQuery(e.target.value)} /><button type="button" className="button secondary" disabled={busy || blocked} onClick={() => void load()}>{t.search}</button></div>}

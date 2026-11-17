@@ -1,12 +1,16 @@
 import type { SceneState, StoryContinuation } from "./types";
 
-/** Page-local bridge from fresh home to a newly allocated, still unbound route.
- * This authorizes context preparation only, never persisted game activation. */
-export interface ProvisionalContinuationTarget { snapshotId: string; snapshotToken: string; targetChatId: string; expiresAt: number }
-export function matchesProvisionalContinuationTarget(target: ProvisionalContinuationTarget | null, snapshotId: string | undefined, token: string | null, sourceChatId: string | undefined, chatId: string | null, hasBinding: boolean, now = Date.now()): boolean {
+/** An unbound destination for context preparation. Game activation still needs a receipt. */
+export interface ContinuationTarget { snapshotId: string; snapshotToken: string; targetChatId: string; returnHomeAfterLengthBlock?: true }
+export interface ProvisionalContinuationTarget extends ContinuationTarget { expiresAt: number }
+export function matchesContinuationTarget(target: ContinuationTarget | null, snapshotId: string | undefined, token: string | null, sourceChatId: string | undefined, chatId: string | null, hasBinding: boolean): boolean {
  return !!target && !hasBinding && !!snapshotId && !!token && !!chatId && chatId !== sourceChatId
   && target.snapshotId === snapshotId && target.snapshotToken === token && target.targetChatId === chatId
-  && /^[\w-]{1,120}$/u.test(chatId) && Number.isFinite(target.expiresAt) && target.expiresAt > now;
+  && /^[\w-]{1,120}$/u.test(chatId);
+}
+export function matchesProvisionalContinuationTarget(target: ProvisionalContinuationTarget | null, snapshotId: string | undefined, token: string | null, sourceChatId: string | undefined, chatId: string | null, hasBinding: boolean, now = Date.now()): boolean {
+ return !!target && matchesContinuationTarget(target, snapshotId, token, sourceChatId, chatId, hasBinding)
+  && Number.isFinite(target.expiresAt) && target.expiresAt > now;
 }
 
 /** Accepted first request; retry only the local commit, never the model call. */

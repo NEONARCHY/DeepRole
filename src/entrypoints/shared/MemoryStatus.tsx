@@ -23,7 +23,7 @@ export function ServiceProgress({ locale, activity }: { locale: Locale; activity
   </section>;
 }
 
-export function MemoryStatus(props: { locale: Locale; connected: boolean; warning?: string; pendingHandoff?: string; selection?: ContextSelection; available: number; onAdd: () => void }) {
+export function MemoryStatus(props: { locale: Locale; connected: boolean; warning?: string; pendingHandoff?: string; selection?: ContextSelection; available: number; onAdd: () => void; neutralEmpty?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const t = (key: Parameters<typeof experienceText>[1]) => experienceText(props.locale, key);
   const entries = props.selection?.entries ?? [];
@@ -31,12 +31,13 @@ export function MemoryStatus(props: { locale: Locale; connected: boolean; warnin
   // Accepted game memory/profile excerpts are real context even without a
   // separate author-lore entry. Protocol alone does not count as memory.
   const state = memoryReadiness(props.connected, props.warning, entries.length + (props.pendingHandoff ? 1 : 0) + (selected ? selected.facts + selected.profiles + selected.continuation : 0), props.available);
+  const quietEmpty = state === "empty" && props.neutralEmpty;
    const issue=props.connected&&state!=="failed"&&memoryCoverageIssue(props.selection?.memoryCoverage,props.selection?.contextReport);
   return <section className={`dr-memory-status is-${state}`} aria-label={t("preview")}>
-    {issue?<GameMemoryNotice locale={props.locale} coverage={props.selection?.memoryCoverage} report={props.selection?.contextReport}/>:<><div className="dr-status-heading">{state === "failed" ? <CircleAlert aria-hidden="true" /> : state === "ready" ? <Send aria-hidden="true" /> : <Sparkles aria-hidden="true" />}<strong>{t(state)}</strong>{state === "ready" && entries.length > 0 && <span className="dr-record-count">{entries.length}</span>}</div>
-    <p>{t(`${state}Hint`)}</p></>}
+    {issue?<GameMemoryNotice locale={props.locale} coverage={props.selection?.memoryCoverage} report={props.selection?.contextReport}/>:<><div className="dr-status-heading">{state === "failed" ? <CircleAlert aria-hidden="true" /> : state === "ready" ? <Send aria-hidden="true" /> : <Sparkles aria-hidden="true" />}<strong>{t(quietEmpty ? "previewEmpty" : state)}</strong>{state === "ready" && entries.length > 0 && <span className="dr-record-count">{entries.length}</span>}</div>
+    {!quietEmpty && <p>{t(`${state}Hint`)}</p>}</>}
     {props.pendingHandoff && <p>{experienceText(props.locale, "pendingRecap", { name: props.pendingHandoff })}</p>}
-    {state === "empty" && <button className="button primary" onClick={props.onAdd}>{t("empty")}</button>}
+    {state === "empty" && !quietEmpty && <button className="button primary" onClick={props.onAdd}>{t("empty")}</button>}
     {entries.length > 0 && <>
       <button className="dr-preview-toggle" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? t("inspectLess") : t("inspect")} <span>{formatRecordCount(props.locale, entries.length)}</span>{expanded ? <ChevronUp /> : <ChevronDown />}</button>
       {expanded && <div className="dr-memory-preview-list">{entries.map((item) => <article key={item.entry.id}><strong>{item.entry.title}</strong><small>{t(selectionReason(item))}</small><p>{item.entry.content}</p></article>)}</div>}

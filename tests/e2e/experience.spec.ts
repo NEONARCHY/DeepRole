@@ -4,6 +4,7 @@ import { openSettingsSection, setEnglish  } from "./helpers/settings";
 
 test("sidebar keeps actual analysis progress and empty/error results visible", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html?world=1");
+  await page.getByText("Добавить или проверить память вручную", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeEnabled();
   for (const [phase, text] of [["preparing", "Готовим запрос"], ["waiting", "DeepSeek готовит предложения"], ["empty", "Новых фактов не найдено"], ["error", "Обновление не завершилось"]] as const) {
     await page.evaluate((phase) => (window as any).setPageState({ activity: { phase, type: "memory-analysis" } }), phase);

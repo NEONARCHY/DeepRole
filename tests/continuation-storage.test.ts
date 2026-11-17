@@ -48,6 +48,22 @@ describe("atomic continuation capture", () => {
     expect((await repo.get<WorldProfile>("world", world.id))?.sharedGame?.recentStory?.turns ?? []).toEqual([]);
   });
 
+  it("resolves the selected home world to the current saved chat and rejects a stale preview", async () => {
+    const { repo } = await setup();
+    const second = { ...binding, id: "binding:b", chatId: "b", chatUrl: "https://chat.deepseek.com/chat/s/b" };
+    await repo.put("binding", second);
+    const request = { fromHome: true, worldId: world.id } as const;
+    await expect(savedMemoryContinuation(request, undefined, repo)).rejects.toThrow("handoff-scope");
+    const game = captureWorldGame(await repo.rawRecords(), world, binding);
+    await repo.put("world", { ...world, sharedGame: game });
+    const { preview } = await savedMemoryContinuation(request, undefined, repo);
+    expect(await repo.list("snapshot")).toEqual([]);
+    await repo.put("world", { ...world, sharedGame: { ...game, activeBindingId: second.id, activeChatId: second.chatId } });
+    await expect(savedMemoryContinuation(request, preview.version, repo)).rejects.toThrow("handoff-stale");
+    const selected = await savedMemoryContinuation(request, undefined, repo);
+    const { snapshot } = await savedMemoryContinuation(request, selected.preview.version, repo);
+    expect(snapshot).toMatchObject({ worldId: world.id, sourceChatId: second.chatId, sourceChatUrl: second.chatUrl });
+  });
   it("rejects stale previews and cannot move an inactive shared game", async () => {
     const { repo } = await setup();
     const { preview } = await savedMemoryContinuation(savedSource, undefined, repo);

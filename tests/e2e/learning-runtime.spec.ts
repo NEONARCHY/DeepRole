@@ -6,7 +6,7 @@ import { sceneText } from '../../src/core/scene-i18n';
 
 for (const locale of ['ru', 'en'] as const) for (const width of [320, 900]) test(`guided start ${locale}/${width}: real clicks, resume, keyboard, no side effects`, async ({}, info) => {
   test.setTimeout(90000);
-  const extension = path.resolve('.output/chrome-mv3');
+  const extension = path.resolve(process.env.DEEPROLE_TEST_EXTENSION ?? '.output/chrome-mv3');
   const context = await chromium.launchPersistentContext('', { channel: 'msedge', headless: true, viewport: { width, height: 900 }, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`] });
   context.setDefaultTimeout(10000);
   try {
@@ -19,15 +19,12 @@ for (const locale of ['ru', 'en'] as const) for (const width of [320, 900]) test
     await page.goto(base); await expect(page.locator('.onboarding')).toBeVisible();
     await page.evaluate(async locale => { await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: false } }); }, locale);
     await page.reload();
-    await expect(page.getByRole('heading', { name: t('welcome1Title') })).toBeVisible();
+    await expect(page.getByRole('heading', { name: t('welcomeTitle') })).toBeVisible();
     const noOverflow = async (selector: string) => expect(await page.locator(selector).evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await noOverflow('.dr-welcome');
     expect((await new AxeBuilder({ page }).include('.dr-welcome').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
     await page.screenshot({ path: info.outputPath(`welcome-${locale}-${width}.png`), fullPage: true, animations: 'disabled' });
-    await page.getByRole('button', { name: t('welcomeNext'), exact: true }).click();
-    await expect(page.getByRole('heading', { name: t('welcome2Title') })).toBeVisible();
-    await page.reload(); await expect(page.getByRole('heading', { name: t('welcome2Title') })).toBeVisible();
-    await page.getByRole('button', { name: t('welcomeNext'), exact: true }).click();
+    await page.reload(); await expect(page.getByRole('heading', { name: t('welcomeTitle') })).toBeVisible();
     await page.getByRole('button', { name: t('guided'), exact: true }).click();
     const tour = page.locator('.dr-learning-popover');
     await expect(tour.getByRole('heading')).toHaveText(learningChapters[0].steps[0].title[locale]);

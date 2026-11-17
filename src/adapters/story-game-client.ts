@@ -81,7 +81,7 @@ export class StoryGameClient {
     if(!preparation&&same())this.presentation={scope:initial,anchor,snapshot};
     return snapshot;
   }
-  async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop", reviewedBase?: string) {
+  async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop", reviewedBase?: string, automaticStart?: { allowed: () => boolean; beforeSend: boolean }) {
     // A new visible variant must not be mistaken for an older in-flight sync.
     // Serialise reads, then take a fresh scope/anchor for THIS invocation.
     while (this.task || this.presentationTask) { try { await (this.task ?? this.presentationTask); } catch { /* A new explicit/read attempt gets its own scope. */ } }
@@ -90,18 +90,24 @@ export class StoryGameClient {
     // checks it again atomically after the native history read.
     if (reviewedBase !== undefined && (operation !== "reset" || initial.base !== reviewedBase)) throw Error("story-review-stale");
     const anchor = fieldHistoryAnchor(this.win.document, true);
-    const preparation = operation === "parent" || operation === "edit";
+    const beforeSend = operation === "start" && automaticStart?.beforeSend === true;
+    const preparation = operation === "parent" || operation === "edit" || beforeSend;
     if (!initial.chatId || !initial.worldId || initial.locked || initial.generating && !preparation) throw Error("story-checkpoint-busy");
     const same = () => { const now = this.scope(); return now.url === initial.url && now.chatId === initial.chatId && now.worldId === initial.worldId && now.base === initial.base && !now.locked; };
     const work = async () => {
+      if (automaticStart && !automaticStart.allowed()) return { active: false, changed: false };
       if (operation !== "start" && operation !== "restart" && operation !== "reset" && operation !== "restore" && initial.managed === false) return { active: false, changed: false };
       if (operation !== "start" && operation !== "restart" && operation !== "reset" && operation !== "restore" && !await this.store.storyGameStatus(initial.chatId!, initial.worldId!, initial.url)) return { active: false, changed: false };
       // Undo acts on the already saved head. It does not need a readable newest
       // site reply and must remain available after an interrupted answer.
       if (operation === "undo") return this.store.runStoryGame({ chatId: initial.chatId!, worldId: initial.worldId!, expectedBase: initial.base, operation, snapshot: { chatId: initial.chatId!, selectedNativeKey: null, messages: [] }, nativeParentKey: null, manual }, initial.url);
       const snapshot = await this.readSnapshot(initial, anchor, preparation);
-      if (!same()) throw Error("story-binding-conflict");
-      return this.store.runStoryGame({ chatId: initial.chatId!, worldId: initial.worldId!, expectedBase: initial.base, operation, snapshot, nativeParentKey, manual }, initial.url);
+      if (!same() || automaticStart && !automaticStart.allowed()) throw Error("story-binding-conflict");
+      if (beforeSend && (snapshot.selectedNativeKey !== nativeParentKey
+        || nativeParentKey === null && snapshot.messages.length > 0
+        || anchor !== null && nativeStoryMessageKey(anchor) !== nativeParentKey)) throw Error("story-native-line-unavailable");
+      return this.store.runStoryGame({ chatId: initial.chatId!, worldId: initial.worldId!, expectedBase: initial.base, operation, snapshot, nativeParentKey, manual,
+        ...(automaticStart && !beforeSend ? { recoverOpening: true } : {}) }, initial.url);
     };
     const task = work(); this.task = task;
     try { return await task; } finally { if (this.task === task) this.task = null; }

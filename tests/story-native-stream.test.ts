@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createNativeStoryStreamObserver, validNativeStoryStreamPacket, type NativeStoryStreamPacket } from "../src/core/story-native-stream";
+import { createNativeStoryStreamObserver, observeContinuationAcceptance, validNativeStoryStreamPacket, type NativeStoryStreamPacket } from "../src/core/story-native-stream";
 const route = { requestId: "local-request", identity: { chatId: "chat", nativeParentKey: '["message","42"]' } };
 const ready = 'event: ready\ndata: {"request_message_id":43,"response_message_id":44,"model_type":"PRIVATE_MODEL"}\n\n';
 const delta = 'data: {"p":"response/fragments/0/content","o":"APPEND","v":"PRIVATE_REPLY_PRIVATE_THOUGHTS"}\n\n';
 const finish = 'event: finish\ndata: {}\n\n', close = 'event: close\ndata: {"click_behavior":"none"}\n\n';
+const finishedStatus = 'data: {"p":"response/status","o":"SET","v":"FINISHED"}\n\n';
 function observer() {
   const packets: NativeStoryStreamPacket[] = [], reader = createNativeStoryStreamObserver(route, p => packets.push(p))!;
   return { reader, packets };
@@ -63,5 +64,34 @@ describe("bounded SSE metadata observer, never a completion/selection proof", ()
   ])("rejects leaking/inconsistent packets %#", mutate => { const { reader, packets } = observer(); reader.feed(ready); mutate(packets[0]); expect(validNativeStoryStreamPacket(packets[0])).toBe(false); });
   it("does not observe absent/invalid captured native requests", () => {
     expect(createNativeStoryStreamObserver(undefined, () => {})).toBeNull(); expect(createNativeStoryStreamObserver({ ...route, identity: { chatId: "bad id", nativeParentKey: null } }, () => {})).toBeNull();
+  });
+});
+
+describe("continuation confirmation", () => {
+  it.each([
+    finishedStatus,
+    finishedStatus.replace('"o":"SET",', ''),
+    'data: {"p":"response","o":"BATCH","v":[{"p":"status","v":"FINISHED"}]}\n\n',
+  ])("recognizes the native final status with a normal close %#", status => {
+    const result: unknown[] = [], reader = observeContinuationAcceptance(route, link => result.push(link))!;
+    reader.feed(ready + delta + status);
+    expect(result).toEqual([]);
+    reader.feed(close);
+    expect(result).toMatchObject([{ requestId: route.requestId, chatId: route.identity.chatId }]);
+  });
+  it.each([
+    delta.replace('PRIVATE_REPLY_PRIVATE_THOUGHTS', 'FINISHED'),
+    finishedStatus.replace('"FINISHED"', '"ERROR"') + finish,
+    finishedStatus.replace('"SET"', '"APPEND"'),
+    finishedStatus + finishedStatus.replace('"FINISHED"', '"WIP"'),
+  ])("requires exact status and rejects conflicting signals %#", status => {
+    const result: unknown[] = [], reader = observeContinuationAcceptance(route, link => result.push(link))!;
+    reader.feed(ready + delta + status + close);
+    expect(result).toEqual([null]);
+  });
+  it.each(['{"click_behavior":"retry"}', '{"click_behavior":"resume"}', '{"auto_resume":true}'])("does not commit a stream requiring another response %s", closeData => {
+    const result: unknown[] = [], reader = observeContinuationAcceptance(route, link => result.push(link))!;
+    reader.feed(ready + finishedStatus + finish + close.replace('{"click_behavior":"none"}', closeData));
+    expect(result).toEqual([null]);
   });
 });

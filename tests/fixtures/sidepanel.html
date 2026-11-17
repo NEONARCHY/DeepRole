@@ -45,11 +45,70 @@
 
       await repository.clear();
       const qs = new URLSearchParams(location.search);
-      if (qs.get("locale") === "en") await window.chrome.storage.local.set({ deeprole_settings: { ...(await window.chrome.storage.local.get("deeprole_settings")).deeprole_settings, locale: "en" } });
+      if (qs.has("locale") || qs.has("welcome")) {
+        const saved = (await window.chrome.storage.local.get("deeprole_settings")).deeprole_settings;
+        await window.chrome.storage.local.set({ deeprole_settings: { ...saved, locale: qs.get("locale") === "en" ? "en" : saved.locale, onboardingComplete: qs.has("welcome") ? false : saved.onboardingComplete } });
+      }
       const now = Date.now();
       await repository.put("book", { id: "book-1", name: "Лунный предел", description: "Основной сюжет", color: "#58a6ff", active: true, createdAt: now, updatedAt: now });
       await repository.put("entry", { id: "memory-1", bookId: "book-1", title: "Клятва Миры", content: "Мира поклялась не покидать город до рассвета.", keywords: ["Мира", "клятва", "город"], activation: "smart", priority: "high", enabled: true, source: { type: "manual" }, createdAt: now, updatedAt: now });
       await repository.put("entry", { id: "memory-2", bookId: null, title: "Стиль диалога", content: "Сохранять медленный темп и атмосферные описания.", keywords: ["стиль", "темп"], activation: "always", priority: "normal", enabled: true, source: { type: "manual" }, createdAt: now - 1, updatedAt: now - 1 });
+      const play = qs.get("play");
+      if (play) {
+        const first = play === "first", chatId = first || play === "waiting" ? null : "test";
+        const chatUrl = chatId ? "https://chat.deepseek.com/chat/s/" + chatId : "https://chat.deepseek.com/";
+        let scene = { worldId: first || play === "library" ? null : "play-world", bookId: null, focusIds: [] };
+        if (!first) {
+          const name = qs.get("locale") === "en" ? "The northern observatory and the long winter expedition" : "Северная обсерватория и долгая зимняя экспедиция";
+          await repository.put("world", { id: "play-world", name, description: "", color: "#58a6ff", contextBudget: 2000, relevanceThreshold: 6, createdAt: now, updatedAt: now, storyAutomation: { mode: play === "paused" ? "off" : "automatic", revision: "policy" }, ...(["active", "paused", "elsewhere"].includes(play) ? { sharedGame: { version: 1, id: "game", revision: "game-r", activationId: "activation", activeChatId: play === "elsewhere" ? "other" : "test", activeBindingId: "binding:test", managed: true, memoryOverrides: { includedIds: [], excludedIds: [] }, profileSeeds: [], identitySeeds: [], mergeSeeds: [], facts: [], updatedAt: now, pendingReviewIds: qs.has("review") ? ["review-1"] : ["review-1", "review-2"] } } : {}) });
+          if (play === "active") {
+            const entityName = qs.get("locale") === "en" ? "Anastasia, keeper of the southern observatory wing" : "Анастасия, хранительница южного крыла обсерватории";
+            await repository.put("entity", { id: "guide-person", worldId: "play-world", kind: "character", name: entityName, description: "", aliases: [], memberIds: [], createdAt: now, updatedAt: now });
+            scene.focusIds = ["guide-person"];
+          }
+        }
+        window.playSceneChanges = [];
+        let tabId = 1;
+        const saves = qs.get("saved");
+        const savedScope = JSON.stringify([chatUrl, chatId, scene.worldId]);
+        const options = [{ id: "saved-a", name: qs.get("locale") === "en" ? "The northern observatory and the long winter expedition" : "Северная обсерватория и долгая зимняя экспедиция" }, { id: "saved-b", name: "Another game by the lighthouse" }];
+        window.savedTransfer = { requests: [], error: "" };
+        window.switchTestTab = () => { tabId++; };
+        if (qs.has("review")) {
+          const { storyReviewPage } = await import("/tests/fixtures/story-review.ts");
+          const locale = qs.get("locale") === "en" ? "en" : "ru";
+          const world = await repository.get("world", scene.worldId);
+          const story = { ...storyReviewPage(locale), chatId, worldId: scene.worldId, worldName: world.name, managed: !!world.sharedGame?.managed };
+          const text = locale === "ru" ? "Лада собиралась оставить серебряный компас в нижнем ящике." : "Lada intended to leave the silver compass in the lower drawer.";
+          const quote = locale === "ru" ? "Лада взвесила компас на ладони и посмотрела на шкаф. Она сказала, что оставит его в нижнем ящике с зелёной меткой, если понадобится освободить стол." : "Lada weighed the compass in her palm and looked at the cabinet. She said she would leave it in the lower drawer with the green mark if she needed to clear the table.";
+          window.playReview = { requests: [], story, items: [{ id: "review-1", type: "fact", reason: "uncertain", name: "", text, quote, fields: {} }] };
+        }
+        let queued = false;
+        window.chrome.tabs.query = async () => [{ id: tabId, url: chatUrl, active: true }];
+        window.chrome.tabs.sendMessage = async (_, command) => {
+          if (command.type === "DR_SET_SCENE") { scene = command.scene; window.playSceneChanges.push(command); return { ok: true }; }
+          if (window.playReview) {
+            const { requests, story, items } = window.playReview;
+            requests.push(command.type);
+            if (command.type === "DR_STORY_REVIEW_READ") return { ok: true, data: story };
+            if (command.type === "DR_AUTOMATION_READ") return { ok: true, data: { chatId, worldId: scene.worldId, gameRevision: "game-r", guard: story.guard, ready: true, total: items.length, items, people: [] } };
+            if (command.type === "DR_AUTOMATION_RESOLVE") {
+              window.playReview.items = items.filter(item => item.id !== command.input.eventId);
+              return { ok: true };
+            }
+          }
+          if (saves && command.type.startsWith("DR_SAVED_MEMORY_")) {
+            window.savedTransfer.requests.push(command);
+            if (command.scope !== savedScope) return { ok: false, error: "handoff-stale" };
+            if (command.type === "DR_SAVED_MEMORY_PREVIEW") return { ok: true, preview: { version: "test-version:" + command.worldId, scene: command.worldId + " — " + "Long scene text. ".repeat(30), savedAt: now } };
+            if (window.savedTransfer.error) return { ok: false, error: window.savedTransfer.error };
+            queued = true;
+            return { ok: true };
+          }
+          return { type: "DR_PAGE_STATE", chatId, chatUrl, messageCount: chatId ? 2 : 0, status: { compatible: true }, scene, selection: { entries: [], estimatedTokens: 0, omittedCount: 0 },
+            ...(saves ? { savedMemoryQueued: queued, savedMemory: queued ? undefined : { scope: savedScope, blocked: false, worlds: saves === "source" ? undefined : options.slice(0, saves === "single" ? 1 : 2) } } : {}) };
+        };
+      }
       if (new URLSearchParams(location.search).has("world")) {
         for (const id of ["world-a", "world-b"]) await repository.put("world", { id, name: id === "world-a" ? "Observatory" : "Forest", description: "", color: "#58a6ff", contextBudget: 3000, relevanceThreshold: 6, createdAt: now, updatedAt: now });
         window.chrome.tabs.query = async () => [{ id: 1, url: "https://chat.deepseek.com/a/chat/test" }];

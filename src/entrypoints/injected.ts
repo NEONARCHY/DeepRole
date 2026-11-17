@@ -1,20 +1,24 @@
-import { contextHandshakeTimeoutMs, deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId, outgoingParentMessageId, replaceOutgoingUserText } from "../core/request-injection";
+import { DEEPSEEK_PROMPT_CHAR_LIMIT, contextHandshakeTimeoutMs, deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId, outgoingParentMessageId, replaceOutgoingUserText } from "../core/request-injection";
 import { estimateChatHistory, readStoryHistory } from "../core/chat-history";
 import { readFieldHistory, validFieldHistoryQuery, type FieldHistoryQuery } from "../core/field-history";
 import { readStoryTransportIdentity, validNativeStoryId, nativeStoryMessageKey, validStoryTransportIdentity, type StoryTransportIdentity } from "../core/story-transport";
 import { probeNativeStoryHistory, readNativeHistoryPayload, type NativeStoryHistoryProbeResult } from "../adapters/story-native-history-probe";
 import { readNativeStoryReply, validNativeStoryReplyQuery, type NativeStoryReplyQuery } from "../core/story-native-reply";
 import { createStoryDispatchTracker, type StoryDispatchIdentity, type StoryDispatchPacket } from "../core/story-dispatch";
-import { createNativeStoryStreamObserver, type NativeStoryStreamPacket } from "../core/story-native-stream";
+import { createNativeStoryStreamObserver, observeContinuationAcceptance, type ContinuationStreamProof, type NativeStoryStreamPacket } from "../core/story-native-stream";
+import type { NativeStoryRequestLink } from "../core/story-exchange";
 import { readStoryGameSnapshot } from "../core/story-game";
 import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagnostic";
 import { installServiceBackgroundRender } from "../adapters/service-background-render";
+import { isDeepSeekFirstChatRoute } from "../core/chat-scope";
+
+type FreshContext = { context: string | null; timedOut: boolean; continuation?: boolean; url?: string; oversizedLength?: number };
 
 export default defineUnlistedScript(() => {
   installServiceBackgroundRender();
   const originalFetch = window.fetch.bind(window);
   const SOURCE = "deeprole-page-bridge";
-  const pending = new Map<string, (value: { context: string | null; timedOut: boolean }) => void>();
+  const pending = new Map<string, (value: FreshContext) => void>();
   const captureRequests = new Set<string>();
   const editPreparations = new Map<string, { draft?: string; identity?: StoryTransportIdentity }>();
   const captureConfirmations = new Map<string, (ok: boolean) => void>();
@@ -67,14 +71,19 @@ export default defineUnlistedScript(() => {
       }
       return;
     }
-    if (event.data.type !== "CONTEXT_READY") return;
+    if (event.data.type !== "CONTEXT_READY" || event.origin !== location.origin) return;
     if (pending.has(event.data.id) && event.data.ok) {
       const draft = typeof event.data.replacementDraft === "string" && event.data.replacementDraft.length <= 100_000 ? event.data.replacementDraft : undefined;
       const identity = validStoryTransportIdentity(event.data.preparedIdentity) ? structuredClone(event.data.preparedIdentity) : undefined;
       if (draft !== undefined || identity) editPreparations.set(event.data.id, { draft, identity });
     }
     if (pending.has(event.data.id) && event.data.ok && event.data.capture === true) captureRequests.add(event.data.id);
-    pending.get(event.data.id)?.({ context: event.data.ok && typeof event.data.context === "string" ? event.data.context : null, timedOut: false });
+    pending.get(event.data.id)?.({
+      context: event.data.ok && typeof event.data.context === "string" ? event.data.context : null,
+      timedOut: false, continuation: event.data.ok === true && event.data.continuation === true,
+      url: typeof event.data.url === "string" ? event.data.url : undefined,
+      oversizedLength: Number.isSafeInteger(event.data.oversizedLength) && event.data.oversizedLength > DEEPSEEK_PROMPT_CHAR_LIMIT ? event.data.oversizedLength : undefined,
+    });
   });
   async function readGameSnapshot(requestId: string, chatId: string) {
     const url = location.href, current = () => location.pathname.match(/\/chat\/(?:s\/)?([^/?#]+)/i)?.[1];
@@ -154,7 +163,7 @@ export default defineUnlistedScript(() => {
       window.postMessage({ source: SOURCE, type: story ? "STORY_HISTORY_RESULT" : "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
     }
   }
-  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string): Promise<{ context: string | null; timedOut: boolean }> {
+  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string): Promise<FreshContext> {
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {
         pending.delete(id);
@@ -168,7 +177,46 @@ export default defineUnlistedScript(() => {
       window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId, storyIdentity: storyIdentity ?? null, ...(captureTransport ? { captureTransport } : {}), ...(editNativeKey ? { editNativeKey } : {}) }, "*");
     });
   }
-  function status(ok: boolean, id?: string, url = location.href, httpStatus?: number, reason?: string) { window.postMessage({ source: SOURCE, type: "INJECTION_STATUS", ok, id, url, ...(httpStatus !== undefined ? { httpStatus } : {}), ...(!ok && reason ? { reason } : {}) }, "*"); }
+  function status(ok: boolean, id?: string, url = location.href, httpStatus?: number, reason?: string, link?: NativeStoryRequestLink) {
+    window.postMessage({ source: SOURCE, type: "INJECTION_STATUS", ok, id, url, ...(httpStatus !== undefined ? { httpStatus } : {}), ...(!ok && reason ? { reason } : {}), ...(link ? { link } : {}) }, location.origin);
+  }
+  function continuationStatus(link: NativeStoryRequestLink | null, id: string | undefined, url: string | undefined, httpStatus: number, proof?: ContinuationStreamProof) {
+    console.debug("[DeepRole continuation]", proof ?? "missing-stream");
+    status(!!link, id, url, httpStatus, "continuation-unconfirmed", link ?? undefined);
+  }
+  const isEventStream = (value: string | null) => value?.split(";", 1)[0]?.trim().toLowerCase() === "text/event-stream";
+
+  async function watchContinuationResponse(response: Response, dispatch: StoryDispatchIdentity | undefined, signal: AbortSignal | null | undefined, settle: (link: NativeStoryRequestLink | null, proof?: ContinuationStreamProof) => void) {
+    if (!response.ok || response.redirected || !isEventStream(response.headers.get("content-type")) || !response.body || !dispatch || signal?.aborted) { settle(null); return; }
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+    let settled = false;
+    const observer = observeContinuationAcceptance(dispatch, (link, proof) => {
+      settled = true;
+      settle(link, proof);
+    });
+    if (!observer) { settle(null); return; }
+    const abort = () => {
+      observer.fail("aborted");
+      void reader?.cancel().catch(() => undefined);
+    };
+    const timeout = window.setTimeout(abort, 10 * 60 * 1000);
+    signal?.addEventListener("abort", abort, { once: true });
+    try {
+      reader = response.clone().body!.getReader();
+      const decoder = new TextDecoder();
+      while (!settled) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        observer.feed(decoder.decode(value, { stream: true }));
+      }
+      observer.end();
+    } catch { observer.fail("network"); }
+    finally {
+      window.clearTimeout(timeout);
+      signal?.removeEventListener("abort", abort);
+      void reader?.cancel().catch(() => undefined);
+    }
+  }
   function serviceFailed(id?: string) { if (id) window.postMessage({ source: SOURCE, type: "SERVICE_REQUEST_FAILED", id }, "*"); }
   const continuationPaused = () => document.documentElement.dataset.deeproleTransferPending === "active";
   function supportedUrl(url: string) { try { return new URL(url, location.href).origin === location.origin && looksLikeChatUrl(url); } catch { return false; } }
@@ -190,28 +238,58 @@ export default defineUnlistedScript(() => {
   function memoryBlocked(body: string, url = location.href) {
     window.postMessage({ source: SOURCE, type: "STRICT_MEMORY_BLOCKED", url, chatId: outgoingChatId(body), draft: outgoingUserText(body) }, location.origin);
   }
-  async function prepare(body: string, transport: "fetch" | "xhr", capture = false, editing = false): Promise<{ body: string; attached: boolean; blocked?: boolean; id?: string; url?: string; serviceId?: string; dispatch?: StoryDispatchIdentity }> {
+  function rejectLongPrompt(body: string, length: number, url = location.href, id?: string, restoredDraft?: string) {
+    const service = isDeepRoleServiceBody(body);
+    window.postMessage({
+      source: SOURCE, type: "PROMPT_LENGTH_BLOCKED", url, id, chatId: outgoingChatId(body), length,
+      draft: service ? null : restoredDraft ?? outgoingUserText(body),
+    }, location.origin);
+    if (service) serviceFailed(deepRoleServiceRequestId(body) ?? undefined);
+  }
+  async function prepare(body: string, transport: "fetch" | "xhr", capture = false, editing = false): Promise<{ body: string; attached: boolean; blocked?: boolean; id?: string; url?: string; serviceId?: string; dispatch?: StoryDispatchIdentity; continuation?: boolean }> {
     const unchanged = { body, attached: false };
+    const draft = outgoingUserText(body);
+    if (draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT && (!editing || draft.length > 100_000)) {
+      rejectLongPrompt(body, draft.length);
+      return { ...unchanged, blocked: true };
+    }
     if (isDeepRoleServiceBody(body)) return { ...unchanged, serviceId: deepRoleServiceRequestId(body) ?? undefined };
     if (continuationPaused()) return { ...unchanged, blocked: true };
     const strict = document.documentElement.dataset.deeproleStrictMemory === "active";
-    const id = crypto.randomUUID(); const url = location.href;
+    const id = crypto.randomUUID(); let url = location.href;
     const captured = { ...unchanged, id, url, dispatch: captureDispatch(body, id) };
-    const draft = outgoingUserText(body);
-    if (draft === null) { if (document.documentElement.dataset.deeproleContext) status(false, id, url, undefined, "unsupported-request-shape"); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
+    const failed = (reason: string) => {
+      if (strict) memoryBlocked(body);
+      else status(false, id, url, undefined, reason);
+      return { ...captured, blocked: strict };
+    };
+    if (draft === null) return document.documentElement.dataset.deeproleContext || strict ? failed("unsupported-request-shape") : captured;
     const value = JSON.parse(body), editedId = value?.message_id;
     const editNativeKey = editing && !readStoryTransportIdentity(body) && outgoingChatId(body) && validNativeStoryId(typeof editedId === "number" && Number.isSafeInteger(editedId) ? String(editedId) : editedId) && typeof value.prompt === "string" ? nativeStoryMessageKey(String(editedId)) : undefined;
     const contextStartedAt = Date.now();
     const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
     const context = contextResponse.context;
     if (continuationPaused()) { captureRequests.delete(id); editPreparations.delete(id); return { ...captured, blocked: true }; }
+    const identity = captured.dispatch?.identity;
+    if (contextResponse.continuation && identity?.nativeParentKey === null
+      && (contextResponse.url === url || contextResponse.url === location.href)
+      && isDeepSeekFirstChatRoute(url, location.href, identity.chatId)) captured.url = url = location.href;
     const edit = editPreparations.get(id); editPreparations.delete(id);
     if (editing && edit?.identity?.chatId === outgoingChatId(body)) captured.dispatch = { requestId: id, identity: edit.identity };
+    if (contextResponse.oversizedLength !== undefined) {
+      captureRequests.delete(id);
+      rejectLongPrompt(body, contextResponse.oversizedLength, url, id, edit?.draft);
+      return { ...captured, blocked: true };
+    }
     if (context === null || location.href !== url) {
       captureRequests.delete(id);
+      if (draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+        rejectLongPrompt(body, draft.length, url, id);
+        return { ...captured, blocked: true };
+      }
       const reason = location.href !== url ? "page-changed" : contextResponse.timedOut ? "context-timeout" : "context-unavailable";
       if (contextResponse.timedOut) reportMemoryPreparationFailure("handshake", "context-timeout", contextStartedAt);
-      status(false, id, url, undefined, reason); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict };
+      return failed(reason);
     }
     let result = { ...captured };
     try {
@@ -222,13 +300,18 @@ export default defineUnlistedScript(() => {
         result = { ...captured, body: injected.body, attached: injected.changed };
       }
     } catch { status(false, id, url, undefined, "invalid-request"); }
-    if (captureRequests.delete(id) && captured.dispatch) {
-      const text = outgoingUserText(result.body);
-      if (text !== null) await confirmCapture(captured.dispatch, transport, text);
+    const finalPrompt = outgoingUserText(result.body);
+    if (finalPrompt !== null && finalPrompt.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+      captureRequests.delete(id);
+      rejectLongPrompt(body, finalPrompt.length, url, id, edit?.draft);
+      return { ...result, blocked: true };
     }
-    if (location.href !== url) { status(false, id, url, undefined, "page-changed"); if (strict) memoryBlocked(body, url); return { ...captured, blocked: strict }; }
+    if (captureRequests.delete(id) && captured.dispatch && finalPrompt !== null) {
+      await confirmCapture(captured.dispatch, transport, finalPrompt);
+    }
+    if (location.href !== url) return failed("page-changed");
     if (strict && !result.attached) { memoryBlocked(body, url); return { ...result, blocked: true }; }
-    return result;
+    return { ...result, continuation: contextResponse.continuation };
   }
   window.fetch = async function deepRoleFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -236,7 +319,7 @@ export default defineUnlistedScript(() => {
     const captureMethod = init?.method ?? (input instanceof Request ? input.method : "GET");
     const capture = typeof captureMethod === "string" && captureMethod.toUpperCase() === "POST" && new URL(url, location.href).pathname === "/api/v0/chat/completion";
     const editing = typeof captureMethod === "string" && captureMethod.toUpperCase() === "POST" && new URL(url, location.href).pathname === "/api/v0/chat/edit_message";
-    let nextInput = input; let nextInit = init; let attached = false, blocked = false;
+    let nextInput = input; let nextInit = init; let attached = false, blocked = false, continuation = false;
     let requestId: string | undefined; let requestUrl: string | undefined; let originalBody: string | undefined;
     let serviceId: string | undefined;
     let dispatch: StoryDispatchIdentity | undefined;
@@ -248,6 +331,7 @@ export default defineUnlistedScript(() => {
         requestId = prepared.id; requestUrl = prepared.url;
         serviceId = prepared.serviceId;
         dispatch = prepared.dispatch;
+        continuation = prepared.continuation === true;
         nextInit = { ...init, body: prepared.body }; attached = prepared.attached;
       } else if (input instanceof Request && !init?.body && input.method !== "GET") {
         originalBody = await input.clone().text();
@@ -256,6 +340,7 @@ export default defineUnlistedScript(() => {
         requestId = prepared.id; requestUrl = prepared.url;
         serviceId = prepared.serviceId;
         dispatch = prepared.dispatch;
+        continuation = prepared.continuation === true;
         nextInput = new Request(input, { body: prepared.body }); attached = prepared.attached;
       }
     } catch { status(false, undefined, location.href, undefined, "preparation-failed"); blocked = continuationPaused() || document.documentElement.dataset.deeproleStrictMemory === "active"; if (blocked && originalBody !== undefined) memoryBlocked(originalBody); }
@@ -279,11 +364,19 @@ export default defineUnlistedScript(() => {
     if (tracker && signal) { signal.addEventListener("abort", abortDispatch, { once: true }); if (signal.aborted) abortDispatch(); }
     let response: Response;
     try { response = await originalFetch(nextInput, nextInit); }
-    catch (error) { tracker?.fail(signal?.aborted ? "aborted" : "network"); stopTracking(); failService(); throw error; }
+    catch (error) {
+      tracker?.fail(signal?.aborted ? "aborted" : "network");
+      stopTracking();
+      failService();
+      if (attached && continuation) continuationStatus(null, requestId, requestUrl, 0);
+      throw error;
+    }
     finally { signal?.removeEventListener("abort", abortDispatch); }
     tracker?.headers(response.status, response.redirected);
     if (!response.ok) { stopTracking(); failService(); }
-    if (attached && response.ok) status(true, requestId, requestUrl, response.status);
+    if (attached && continuation) {
+      void watchContinuationResponse(response, capture ? dispatch : undefined, signal, (link, proof) => continuationStatus(link, requestId, requestUrl, response.status, proof));
+    } else if (attached && response.ok) status(true, requestId, requestUrl, response.status);
     return response;
   };
   const OriginalXHR = window.XMLHttpRequest;
@@ -293,6 +386,7 @@ export default defineUnlistedScript(() => {
     private deepRoleMethod = "";
     private storyDispatch: ReturnType<typeof createStoryDispatchTracker> = null;
     private nativeStream: ReturnType<typeof createNativeStoryStreamObserver> = null;
+    private continuationStream: ReturnType<typeof observeContinuationAcceptance> = null;
     private generation = 0;
     private serviceId?: string;
     private stopTracking?: () => void;
@@ -300,12 +394,15 @@ export default defineUnlistedScript(() => {
       const id = this.serviceId;
       this.serviceId = undefined;
       this.stopTracking?.(); this.stopTracking = undefined;
+      if (failed) this.continuationStream?.fail("network");
+      this.continuationStream = null;
       if (failed) serviceFailed(id);
     }
-    override abort() { this.storyDispatch?.fail("aborted"); this.storyDispatch = null; this.nativeStream?.fail("aborted"); this.nativeStream = null; this.generation++; this.finishService(true); super.abort(); }
+    override abort() { this.continuationStream?.fail("aborted"); this.storyDispatch?.fail("aborted"); this.storyDispatch = null; this.nativeStream?.fail("aborted"); this.nativeStream = null; this.generation++; this.finishService(true); super.abort(); }
     override open(method: string, url: string | URL, async?: boolean, username?: string | null, password?: string | null) {
       this.storyDispatch?.fail("superseded"); this.storyDispatch = null;
       this.nativeStream?.fail("superseded"); this.nativeStream = null;
+      this.continuationStream?.fail("superseded");
       this.generation++; this.finishService(true); this.deepRoleUrl = String(url); this.deepRoleMethod = typeof method === "string" ? method.toUpperCase() : ""; this.asynchronous = async ?? true;
       super.open(method, url, this.asynchronous, username ?? null, password ?? null);
     }
@@ -313,6 +410,11 @@ export default defineUnlistedScript(() => {
       if (typeof body !== "string" || !supportedUrl(this.deepRoleUrl)) { super.send(body); return; }
       // Synchronous XHR cannot wait for storage. Never send stale memory instead.
       if (!this.asynchronous) {
+        const draft = outgoingUserText(body);
+        if (draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+          rejectLongPrompt(body, draft.length);
+          throw new DOMException("DeepRole paused sending: prompt too long", "AbortError");
+        }
         if (!isDeepRoleServiceBody(body) && continuationPaused()) throw new DOMException("DeepRole transfer still needs saving", "InvalidStateError");
         if (!isDeepRoleServiceBody(body) && document.documentElement.dataset.deeproleStrictMemory === "active") { memoryBlocked(body); throw new DOMException("DeepRole paused synchronous sending", "InvalidStateError"); }
         if (document.documentElement.dataset.deeproleContext) status(false, undefined, location.href, undefined, "synchronous-request");
@@ -326,31 +428,41 @@ export default defineUnlistedScript(() => {
       this.serviceId = deepRoleServiceRequestId(body) ?? undefined;
       void prepare(body, "xhr", this.deepRoleMethod === "POST" && new URL(this.deepRoleUrl, location.href).pathname === "/api/v0/chat/completion", this.deepRoleMethod === "POST" && new URL(this.deepRoleUrl, location.href).pathname === "/api/v0/chat/edit_message").then((prepared) => {
         if (generation !== this.generation) return;
-        if (prepared.blocked) { this.dispatchEvent(new ProgressEvent("error")); this.dispatchEvent(new ProgressEvent("loadend")); return; }
+        if (prepared.blocked) { this.finishService(false); this.dispatchEvent(new ProgressEvent("error")); this.dispatchEvent(new ProgressEvent("loadend")); return; }
         this.serviceId = deepRoleServiceRequestId(prepared.body) ?? undefined;
         const tracker = createStoryDispatchTracker(this.deepRoleMethod === "POST" ? prepared.dispatch : undefined, "xhr", reportDispatch);
         const stream = createNativeStoryStreamObserver(this.deepRoleMethod === "POST" ? prepared.dispatch : undefined, reportNativeStream);
+        const confirmContinuation = prepared.attached && prepared.continuation;
+        const continuationStream = confirmContinuation ? observeContinuationAcceptance(
+          this.deepRoleMethod === "POST" && new URL(this.deepRoleUrl, location.href).pathname === "/api/v0/chat/completion" ? prepared.dispatch : undefined,
+          (link, proof) => continuationStatus(link, prepared.id, prepared.url, this.status, proof),
+        ) : null;
+        const streams = [stream, continuationStream].filter(value => value !== null);
         let consumed = 0;
         const progress = () => {
-          if (generation !== this.generation || !stream || this.readyState < 3) return;
+          if (generation !== this.generation || !streams.length || this.readyState < 3) return;
           try {
-            if (this.status < 200 || this.status >= 300 || this.getResponseHeader("content-type")?.split(";", 1)[0]?.trim().toLowerCase() !== "text/event-stream"
-              || this.responseType !== "" && this.responseType !== "text") { stream.fail("format"); return; }
+            if (this.status < 200 || this.status >= 300 || !isEventStream(this.getResponseHeader("content-type"))
+              || this.responseType !== "" && this.responseType !== "text") { streams.forEach(reader => reader.fail("format")); return; }
             const text = this.responseText;
-            if (text.length < consumed) { stream.fail("format"); return; }
-            stream.feed(text.slice(consumed)); consumed = text.length;
-          } catch { stream.fail("format"); }
+            if (text.length < consumed) { streams.forEach(reader => reader.fail("format")); return; }
+            const chunk = text.slice(consumed);
+            streams.forEach(reader => reader.feed(chunk)); consumed = text.length;
+          } catch { streams.forEach(reader => reader.fail("format")); }
         };
         const accepted = () => {
           if (generation !== this.generation || this.readyState < 2) return;
           this.removeEventListener("readystatechange", accepted);
           tracker?.headers(this.status);
           if (this.storyDispatch === tracker) this.storyDispatch = null;
-          if (prepared.attached && this.status >= 200 && this.status < 300) status(true, prepared.id, prepared.url, this.status);
+          if (confirmContinuation) {
+            if (!continuationStream) continuationStatus(null, prepared.id, prepared.url, this.status);
+            else if (!isEventStream(this.getResponseHeader("content-type")) || new URL(this.deepRoleUrl, location.href).href !== this.responseURL) continuationStream.fail("format");
+          } else if (prepared.attached && this.status >= 200 && this.status < 300) status(true, prepared.id, prepared.url, this.status);
           if (this.status < 200 || this.status >= 300) this.finishService(true);
         };
         const failed = (event: Event) => { if (generation === this.generation) { tracker?.fail(event.type === "abort" ? "aborted" : "network"); stream?.fail(event.type === "abort" ? "aborted" : "network"); if (this.storyDispatch === tracker) this.storyDispatch = null; this.finishService(true); } };
-        const ended = () => { if (generation === this.generation) { progress(); stream?.end(); if (this.nativeStream === stream) this.nativeStream = null; tracker?.headers(this.status); if (this.storyDispatch === tracker) this.storyDispatch = null; this.finishService(false); } };
+        const ended = () => { if (generation === this.generation) { progress(); streams.forEach(reader => reader.end()); if (this.nativeStream === stream) this.nativeStream = null; tracker?.headers(this.status); if (this.storyDispatch === tracker) this.storyDispatch = null; this.finishService(false); } };
         this.stopTracking = () => {
           this.removeEventListener("readystatechange", accepted);
           this.removeEventListener("progress", progress);
@@ -361,7 +473,7 @@ export default defineUnlistedScript(() => {
         this.addEventListener("progress", progress);
         for (const event of ["error", "timeout", "abort"]) this.addEventListener(event, failed);
         this.addEventListener("loadend", ended);
-        this.storyDispatch = tracker; this.nativeStream = stream; tracker?.start();
+        this.storyDispatch = tracker; this.nativeStream = stream; this.continuationStream = continuationStream; tracker?.start();
         try { super.send(prepared.body); } catch { tracker?.fail("network"); stream?.fail("network"); if (this.storyDispatch === tracker) this.storyDispatch = null; if (this.nativeStream === stream) this.nativeStream = null; this.finishService(true); status(false, prepared.id, prepared.url, undefined, "preparation-failed"); }
       }).catch(() => {
         if (generation !== this.generation) return;

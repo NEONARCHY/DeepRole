@@ -15,13 +15,20 @@ it("ignores payloads in reasoning and service replies", () => {
 });
 it("does not execute model markup", () => { row(payload.replace('"condition":""', '"condition":"<img src=x onerror=alert(1)>"')); expect(latestCharacterResponse()?.turn?.updates[0]?.state.condition).toContain("onerror"); expect(document.querySelector("img")).toBeNull(); });
 it("folds just the JSON while keeping the story and parsed state stable", () => {
-  const r = row("Mira opens the gate.\n" + payload + "\nThe rain stops."); const first = latestCharacterResponse()!.turn;
+  const r = row("");
+  const markdown = document.createElement("div"); markdown.className = "ds-markdown";
+  markdown.textContent = "Mira opens the gate.\n" + payload + "\nThe rain stops.";
+  r.append(markdown);
+  const first = latestCharacterResponse()!.turn;
   foldCharacterPayload(r, "ru", "updated"); expect(r.textContent).toContain("Mira opens the gate."); expect(r.textContent).toContain("The rain stops.");
   expect(r.querySelector("summary")!.textContent).toBe("Обновлено после ответа"); expect(latestCharacterResponse()?.turn).toEqual(first);
   foldCharacterPayload(r, "en", "stale"); expect(r.querySelectorAll("details")).toHaveLength(1); expect(r.querySelector("summary")!.textContent).toContain("Update skipped");
 });
 it("folds only the final character payload, never an example in reasoning", () => {
-  const r = row("The final scene.\n" + payload + "\nThe door stays closed.");
+  const r = row("");
+  const markdown = document.createElement("div"); markdown.className = "ds-markdown";
+  markdown.textContent = "The final scene.\n" + payload + "\nThe door stays closed.";
+  r.append(markdown);
   const thinking = document.createElement("div"); thinking.className = "ds-think-content";
   thinking.textContent = "I am considering this example: " + payload; r.prepend(thinking);
   const before = thinking.innerHTML;

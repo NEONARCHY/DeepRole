@@ -35,9 +35,9 @@ describe("service transport lifecycle", () => {
     vi.restoreAllMocks(); vi.unstubAllGlobals();
   });
   const failures = () => posted.mock.calls.map((args: unknown[]) => args[0]).filter((value: any) => value?.type === "SERVICE_REQUEST_FAILED");
-  function answerContext() {
+  function answerContext(continuation = false) {
     const message = posted.mock.calls.map((args: any[]) => args[0]).find((value: any) => value.type === "REQUEST_CONTEXT");
-    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "FRESH_RECORD" } }));
+    window.dispatchEvent(new MessageEvent("message", { source: window, origin: location.origin, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "FRESH_RECORD", continuation } }));
     return message;
   }
   it.each([null, 0, 42])("forwards explicit parent %s and HTTP status without reading the response stream", async parent => {
@@ -47,12 +47,46 @@ describe("service transport lifecycle", () => {
     const response = await pending; expect(response.bodyUsed).toBe(false); expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(posted.mock.calls.map((args: unknown[]) => args[0])).toContainEqual(expect.objectContaining({ type: "INJECTION_STATUS", id: message.id, ok: true, httpStatus: 200 }));
   });
+  const nativeReady = 'event: ready\ndata: {"request_message_id":43,"response_message_id":44}\n\n';
+  const nativeFinish = 'event: finish\ndata: {}\n\nevent: close\ndata: {}\n\n';
+  const sendFirst = () => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Continue here.", chat_session_id: "target", parent_message_id: null }) });
+  const injectionStatus = () => posted.mock.calls.map(([message]: [{ type: string }]) => message).filter((message: { type: string }) => message.type === "INJECTION_STATUS");
+
+  it("waits for a native finish and close without consuming the site's response", async () => {
+    let stream!: ReadableStreamDefaultController<Uint8Array>;
+    const body = new ReadableStream<Uint8Array>({ start(controller) { stream = controller; } });
+    fetchMock.mockResolvedValue(new Response(body, { headers: { "Content-Type": "text/event-stream; charset=utf-8" } }));
+    const pending = sendFirst(), { id } = answerContext(true);
+    const response = await pending;
+    expect(response.bodyUsed).toBe(false);
+    const nativeBody = response.text();
+    const encoder = new TextEncoder();
+    stream.enqueue(encoder.encode(nativeReady));
+    await new Promise(resolve => setTimeout(resolve, 10));
+    expect(injectionStatus()).toEqual([]);
+    stream.enqueue(encoder.encode(nativeFinish)); stream.close();
+    expect(await nativeBody).toBe(nativeReady + nativeFinish);
+    await vi.waitFor(() => expect(injectionStatus()).toMatchObject([{ id, ok: true, link: { requestId: id, chatId: "target", nativeParentKey: null } }]));
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+  it.each([
+    ["JSON refusal", "application/json", '{"code":0,"data":{"biz_code":1}}'],
+    ["truncated stream", "text/event-stream", nativeReady],
+    ["service hint", "text/event-stream", nativeReady + 'event: hint\ndata: {"content":"quota"}\n\n' + nativeFinish],
+    ["retry close", "text/event-stream", nativeReady + nativeFinish.replace("event: close\ndata: {}", 'event: close\ndata: {"click_behavior":"retry"}')],
+  ])("does not confirm transfer on %s", async (_name, type, body) => {
+    fetchMock.mockResolvedValue(new Response(body, { headers: { "Content-Type": type } }));
+    const pending = sendFirst(), { id } = answerContext(true);
+    expect(await (await pending).text()).toBe(body);
+    await vi.waitFor(() => expect(injectionStatus()).toMatchObject([{ id, ok: false, reason: "continuation-unconfirmed" }]));
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
   it("does not present a missing native parent as an explicit root", async () => {
     const pending = fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira", chat_session_id: "synthetic-chat" }) }), message = answerContext();
     expect(message.storyIdentity).toBeNull(); await pending;
   });
 
-  it.each([39999, 40000, 40001])("measures a %s-character assembled prompt at a simulated provider boundary", async length => {
+  it.each([39999, 40000, 40001])("checks a %s-character assembled prompt before sending", async length => {
     const draft = "Я".repeat(length - 100) + " [КОНЕЦ РЕПЛИКИ]";
     let wire = "";
     fetchMock.mockImplementation(async (_url, options) => {
@@ -63,14 +97,50 @@ describe("service transport lifecycle", () => {
     const message = posted.mock.calls.map((args: any[]) => args[0]).find((value: any) => value.type === "REQUEST_CONTEXT");
     const separator = "\n\n[User message]\n";
     const context = "A".repeat(length - draft.length - separator.length);
-    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context } }));
+    window.dispatchEvent(new MessageEvent("message", { source: window, origin: location.origin, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context } }));
+    if (length > 40_000) {
+      await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(posted.mock.calls.map((args: any[]) => args[0])).toContainEqual(expect.objectContaining({ type: "PROMPT_LENGTH_BLOCKED", id: message.id, length, draft }));
+      return;
+    }
     const result = await pending;
-    // A characterization, not a claim about the upstream counting algorithm.
     expect(wire.length).toBe(length);
     expect(wire.startsWith(context + separator)).toBe(true);
     expect(wire.endsWith(draft)).toBe(true);
-    expect(result.status).toBe(length > 40_000 ? 413 : 200);
+    expect(result.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("checks decoded multipart text while preserving JSON escapes and excluding attachment bytes", async () => {
+    const draft = '"💡"\n' + "Я".repeat(100);
+    const request = new Request(location.origin + "/api/v0/chat/completion", {
+      method: "POST", body: JSON.stringify({ prompt: [{ type: "image_url", image_url: "X".repeat(50_000) }, { type: "text", text: draft }] }),
+    });
+    const pending = fetch(request);
+    await vi.waitFor(() => expect(posted.mock.calls.map((args: any[]) => args[0])).toContainEqual(expect.objectContaining({ type: "REQUEST_CONTEXT", draft })));
+    answerContext();
+    await expect(pending).resolves.toBeInstanceOf(Response);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const json = await fetchMock.mock.calls[0]![0].json();
+    expect(json.prompt[0].image_url).toHaveLength(50_000);
+    expect(json.prompt[1].text).toBe("FRESH_RECORD\n\n[User message]\n" + draft);
+  });
+
+  it("blocks an oversized service prompt without restoring technical text into the composer", async () => {
+    const prompt = JSON.parse(body("long-service")).prompt + "a".repeat(40_000);
+    await expect(fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt }) })).rejects.toMatchObject({ name: "AbortError" });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(failures()).toMatchObject([{ id: "long-service" }]);
+    expect(posted.mock.calls.map((args: any[]) => args[0])).toContainEqual(expect.objectContaining({ type: "PROMPT_LENGTH_BLOCKED", length: prompt.length, draft: null }));
+  });
+
+  it("blocks an oversized raw synchronous XHR before network or memory preparation", () => {
+    const draft = "я".repeat(40_001), xhr = new XMLHttpRequest() as unknown as MockXHR;
+    xhr.open("POST", "/api/v0/chat/completion", false);
+    expect(() => xhr.send(JSON.stringify({ prompt: draft }))).toThrow(/prompt too long/);
+    expect(xhr.sent).toHaveLength(0);
+    expect(posted.mock.calls.map((args: any[]) => args[0])).toEqual([expect.objectContaining({ type: "PROMPT_LENGTH_BLOCKED", length: draft.length, draft })]);
   });
 
   it.each([403, 413, 429])("reports HTTP %s once for a rejected service request", async code => {
@@ -94,7 +164,7 @@ describe("service transport lifecycle", () => {
     const message = posted.mock.calls.map((args: any[]) => args[0]).find((value: any) => value.type === "REQUEST_CONTEXT");
     await vi.advanceTimersByTimeAsync(1800);
     expect(fetchMock).not.toHaveBeenCalled();
-    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "FRESH_RECORD" } }));
+    window.dispatchEvent(new MessageEvent("message", { source: window, origin: location.origin, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "FRESH_RECORD" } }));
     await request;
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]![1].body).toContain("FRESH_RECORD");
@@ -106,7 +176,7 @@ describe("service transport lifecycle", () => {
     const request = fetch("/api/v0/chat/completion", { method: "POST", body: original });
     const message = posted.mock.calls.map((args: any[]) => args[0]).find((value: any) => value.type === "REQUEST_CONTEXT");
     await vi.advanceTimersByTimeAsync(5000); await request;
-    window.dispatchEvent(new MessageEvent("message", { source: window, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "LATE_RECORD" } }));
+    window.dispatchEvent(new MessageEvent("message", { source: window, origin: location.origin, data: { source: "deeprole-extension", type: "CONTEXT_READY", id: message.id, ok: true, context: "LATE_RECORD" } }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]![1].body).toBe(original);
     expect(posted.mock.calls.map((args: any[]) => args[0])).toContainEqual(expect.objectContaining({ type: "INJECTION_STATUS", ok: false, id: message.id, reason: "context-timeout" }));

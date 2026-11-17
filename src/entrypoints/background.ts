@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { shouldOpenWelcome } from "../core/first-run";
+import { openGameChat } from "../adapters/open-game-chat";
 import { REPOSITORY_PORT, serveJsonPort } from "../storage/repository-stream";
 import { getImageSettings } from "../storage/image-settings";
 import { approveSelfie } from "../storage/selfie-images";
@@ -40,11 +41,11 @@ import { storageKeys, getSettings, getVaultConfig, getSessionKey } from "../stor
 import { saveCharacter, applyCharacterTurn, addCharacterAction } from "../storage/characters";
 import { savePortraitLayout } from "../storage/portrait-layout";
 import { bindCharacterTurn, characterTurnKey, actionsFor, parseCharacterTurn, relationshipTurnEnabled } from "../core/characters";
-import { isSameDeepSeekChat } from "../core/chat-scope";
+import { isDeepSeekHome, isSameDeepSeekChat } from "../core/chat-scope";
 import { TabSessionStore } from "../storage/tab-session";
 import { captureContinuation, completeContinuation, savedMemoryContinuation } from "../storage/story-continuation";
 import { acknowledgeOldChatNotice } from "../storage/old-chat-notice";
-import { validOldChatNoticeEdit } from "../core/old-chat-notice";
+import { chatId as validChatId, validOldChatNoticeEdit } from "../core/old-chat-notice";
 import { activateWorldGame } from "../storage/world-game";
 import { assertWorldGameTab, validWorldGameActivation } from "../core/world-game";
 import { safeMemoryPreparationDetail } from "../core/memory-preparation-diagnostic";
@@ -73,6 +74,13 @@ export default defineBackground(() => {
   });
 
   const handleMessage = (message: DeepRoleMessage, sender: import("wxt/browser").Browser.runtime.MessageSender) => {
+    if (message.type === "DR_OPEN_GAME_CHAT") {
+      const url = sender.url ?? "";
+      const fromPanel = url.split(/[?#]/u, 1)[0] === browser.runtime.getURL("/sidepanel.html");
+      const fromChat = sender.frameId === 0 && sender.tab?.id !== undefined && url.startsWith("https://chat.deepseek.com/");
+      if (sender.id !== browser.runtime.id || (!fromPanel && !fromChat) || !validChatId(message.chatId)) return Promise.resolve({ ok: false });
+      return openGameChat(message.chatId, sender.tab).then(() => ({ ok: true }), () => ({ ok: false }));
+    }
     if (message.type === "DR_MENU_TAB") {
       if (sender.id !== browser.runtime.id || !sender.url?.startsWith(browser.runtime.getURL("/sidepanel.html")) || sender.tab?.id === undefined) return Promise.resolve({ ok: false });
       return browser.tabs.get(sender.tab.id).then(tab => ({ ok: !!tab.url?.startsWith("https://chat.deepseek.com/"), tabId: tab.id }), () => ({ ok: false }));
@@ -278,9 +286,18 @@ export default defineBackground(() => {
             await current(); await acknowledgeOldChatNotice(message.input, repository, current); return { ok: true };
           }
           if (message.operation === "completeContinuation") {
+            const { retry, snapshot, token, targetChatId } = message;
+            if (!validChatId(targetChatId) || retry && sender.frameId !== 0) throw Error("handoff-scope");
             const tabId = sender.tab!.id!, tab = await browser.tabs.get(tabId);
-            if (!tab.url || !(isSameDeepSeekChat(`https://chat.deepseek.com/a/chat/s/${message.targetChatId}`, tab.url, message.targetChatId) || new URL(tab.url).origin === "https://chat.deepseek.com" && new URL(tab.url).pathname === "/")) throw new Error("handoff-scope");
-            const ok = await tabSessions.completeSnapshot(tabId, message.snapshot.id, message.token, () => completeContinuation(message.snapshot, message.targetChatId), message.targetChatId);
+            const isDestination = (url: string, pendingUrl = url) => isSameDeepSeekChat(url, pendingUrl, targetChatId);
+            if (!tab.url || !(isDestination(tab.url, retry ? tab.pendingUrl : undefined) || !retry && isDeepSeekHome(tab.url))) throw Error("handoff-scope");
+            const ok = await tabSessions.completeSnapshot(tabId, snapshot.id, token, async () => {
+              if (retry) {
+                const current = await browser.tabs.get(tabId);
+                if (!isDestination(current.url ?? "", current.pendingUrl)) throw Error("handoff-scope");
+              }
+              await completeContinuation(snapshot, targetChatId);
+            }, targetChatId, retry);
             return { ok: true, data: ok };
           }
           if (message.operation === "captureContinuation") {
@@ -290,9 +307,12 @@ export default defineBackground(() => {
           }
           if (message.operation === "savedMemoryContinuation") {
             const { input, expected } = message;
-            if (sender.frameId !== 0 || !validNativeStoryId(input?.chatId) || !validNativeStoryId(input.worldId) || typeof input.chatUrl !== "string" || (expected !== undefined && (typeof expected !== "string" || expected.length > 1000))) throw Error("handoff-scope");
+            if (sender.frameId !== 0 || !input || !validNativeStoryId(input.worldId) || (expected !== undefined && (typeof expected !== "string" || expected.length > 1000))) throw Error("handoff-scope");
             const tab = await browser.tabs.get(sender.tab!.id!);
-            if (!tab.url || !isSameDeepSeekChat(input.chatUrl, tab.url, input.chatId) || expected !== undefined && !tab.active) throw Error("handoff-scope");
+            const inScope = tab.url && ("fromHome" in input
+              ? input.fromHome === true && Object.keys(input).length === 2 && isDeepSeekHome(tab.url)
+              : validNativeStoryId(input.chatId) && typeof input.chatUrl === "string" && isSameDeepSeekChat(input.chatUrl, tab.url, input.chatId));
+            if (!inScope || expected !== undefined && !tab.active) throw Error("handoff-scope");
             return { ok: true, data: await savedMemoryContinuation(input, expected) };
           }
           if (message.operation === "saveCharacter" || message.operation === "applyCharacterTurn" || message.operation === "savePortraitLayout" || message.operation === "addCharacterAction") {

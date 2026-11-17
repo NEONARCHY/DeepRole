@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { setEnglish } from "./helpers/settings";
+import { menuText } from "../../src/core/menu-i18n";
+import { sceneText } from "../../src/core/scene-i18n";
+import { experienceText } from "../../src/core/experience-i18n";
+import { navigationText } from "../../src/core/navigation-i18n";
 
 test("imports a DeepRole world larger than the old 10 MB limit", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
@@ -198,4 +202,47 @@ test("RPG map supports window/full-screen, pan, zoom, search and node editing", 
   await page.getByRole("button", { name: "Открыть карту мира", exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(map).toHaveCount(0);
+});
+
+for (const locale of ["ru", "en"] as const) test(`imports to the library if the chosen chat switched ${locale}`, async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 460 });
+  await page.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
+  await page.goto("/tests/fixtures/sidepanel.html?world&locale=" + locale);
+  const worldPicker = page.getByRole("combobox", { name: locale === "ru" ? "Мир" : "World", exact: true });
+  await expect(worldPicker).toHaveValue("world-a");
+  await page.evaluate(() => {
+    const tabs = (window as any).chrome.tabs;
+    (window as any).importSceneCalls = [];
+    const send = tabs.sendMessage;
+    tabs.sendMessage = async (tabId: number, message: { type: string }) => {
+      if (message.type === "DR_SET_SCENE") { (window as any).importSceneCalls.push({ tabId, message }); return { ok: true }; }
+      return send(tabId, message);
+    };
+  });
+  await page.getByRole("button", { name: navigationText(locale, "worlds"), exact: true }).click();
+  await page.getByRole("button", { name: experienceText(locale, "import"), exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: sceneText(locale, "importFile"), exact: true });
+  await page.evaluate(() => { document.documentElement.style.fontSize = "125%"; });
+  await dialog.getByLabel(sceneText(locale, "chooseFile"), { exact: true }).setInputFiles({
+    name: "alternate-lore.json", mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify({ name: "Harbor Archive", entries: [{ title: "Archive", content: "A workshop is beside the harbor.", activation: "always" }] })),
+  });
+  const attach = dialog.getByRole("checkbox", { name: menuText(locale, "attachImport"), exact: true });
+  await expect(attach).not.toBeChecked();
+  await attach.press("Space");
+  await expect(attach).toBeChecked();
+  await expect(dialog.getByText(menuText(locale, "replaceImportHint"), { exact: true })).toBeVisible();
+  const submit = dialog.getByRole("button", { name: menuText(locale, "importAndAttach"), exact: true });
+  expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(await dialog.locator(".modal-body").evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+  await page.evaluate(() => {
+    (window as any).chrome.tabs.query = async () => [{ id: 2, url: "https://chat.deepseek.com/a/chat/next" }];
+    (window as any).setPageState({ chatId: "next", chatUrl: "https://chat.deepseek.com/a/chat/next", scene: { worldId: "world-b", bookId: null, focusIds: [] } });
+  });
+  await submit.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Harbor Archive", exact: true })).toBeVisible();
+  await expect(page.getByText(menuText(locale, "savedNotAttached"), { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as any).importSceneCalls)).toEqual([]);
 });

@@ -1,4 +1,5 @@
 import { createId } from "./id";
+import { defaultStoryAutomation } from "./story-automation";
 import type { DataRecord, MemoryBook, MemoryEntry, WorldProfile } from "./types";
 
 export interface BdsItem { title: string; content: string; importance: "always" | "called" }
@@ -20,7 +21,7 @@ export function parseBds(text: string): BdsItem[] {
 
 export function buildBdsImport(items: BdsItem[], name: string, calledMode: "smart" | "manual", targetWorldId?: string): DataRecord[] {
   const now = Date.now();
-  const world: WorldProfile = { id: targetWorldId ?? createId("world"), name, description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: now, updatedAt: now };
+  const world: WorldProfile = { id: targetWorldId ?? createId("world"), name, description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, storyAutomation: defaultStoryAutomation(), createdAt: now, updatedAt: now };
   const book: MemoryBook = { id: createId("book"), worldId: world.id, name, description: "", color: world.color, active: true, createdAt: now, updatedAt: now };
   const entries: MemoryEntry[] = items.map((item) => ({
     id: createId("memory"), worldId: world.id, bookId: book.id, entityIds: [],

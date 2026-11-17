@@ -1,0 +1,91 @@
+.play-view > .view-title { min-height: auto; }
+.play-view > .view-title h1 { margin: 0; }
+.play-view > .view-title h1:focus { outline: none; }
+
+.app-shell .play-world-card.dr-play-start { gap: 0; padding: 0; min-inline-size: 0; }
+.dr-play-main { display: grid; gap: 14px; padding: 18px; min-inline-size: 0; }
+.dr-play-heading {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+.dr-play-symbol {
+  display: grid;
+  place-items: center;
+  inline-size: 42px;
+  block-size: 42px;
+  color: var(--dr-primary);
+  background: var(--dr-selected);
+  border-radius: 12px;
+}
+.play-world-card.dr-play-start h2 { font-size: 1.25rem; line-height: 1.25; overflow-wrap: anywhere; }
+.play-world-card.dr-play-start p { font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
+.dr-play-start .dr-play-connected { margin-block-start: 4px; color: var(--dr-success); }
+.dr-play-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.dr-play-start .button {
+  min-block-size: 44px;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  white-space: normal;
+  text-wrap: pretty;
+  text-align: center;
+  line-height: 1.35;
+}
+.dr-play-actions > .primary { flex: 1 1 auto; }
+.dr-play-actions > .dr-saved-memory-action { overflow-wrap: anywhere; }
+.dr-play-start .dr-game-chat-link { display: grid; gap: 6px; min-width: 0; }
+.dr-play-start .button svg { flex: none; }
+
+.dr-play-memory, .dr-play-scene > summary {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 16px;
+  gap: 11px;
+  align-items: center;
+  min-block-size: 44px;
+  min-inline-size: 0;
+  padding: 12px 18px;
+  color: var(--dr-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.dr-play-memory {
+  width: 100%;
+  border: 0;
+  border-block-start: 1px solid var(--dr-border);
+  background: transparent;
+}
+.dr-play-memory > span { display: grid; gap: 3px; overflow-wrap: anywhere; }
+.dr-play-memory > svg, .dr-play-scene > summary > svg { color: var(--dr-primary); }
+.dr-play-memory-state, .dr-play-review-count { color: var(--dr-muted); font-size: .8125rem; }
+.dr-play-memory-state[data-recording="true"] { color: var(--dr-success); }
+.dr-play-review-count { color: var(--dr-primary); }
+.dr-play-scene { border-block-start: 1px solid var(--dr-border); }
+.dr-play-scene > summary { list-style: none; font-weight: 600; }
+.dr-play-scene > summary::-webkit-details-marker { display: none; }
+.dr-play-scene[open] .dr-play-chevron { rotate: 90deg; }
+.dr-play-scene > div { display: grid; gap: 8px; padding: 0 18px 16px; }
+.dr-play-memory:hover, .dr-play-scene > summary:hover { background: var(--dr-panel); }
+.dr-play-memory:focus-visible, .dr-play-scene > summary:focus-visible { outline: 2px solid var(--dr-primary); outline-offset: -3px; }
+.dr-play-start .scene-focus-toggle, .dr-play-start .scene-controls select, .dr-play-start .scene-clear,
+.play-view .play-memory-details > summary { min-block-size: 44px; }
+.dr-play-start .scene-controls-line { display:grid; grid-template-columns:minmax(0,1fr); }
+.dr-play-start .scene-focus-toggle { text-wrap:pretty; white-space:normal; overflow-wrap:anywhere; text-align:start; }
+.dr-play-start .scene-chip { min-block-size: 44px; white-space: normal; }
+.play-view .play-memory-details > summary { align-content: center; }
+.dr-handoff-saved { display:grid; gap:8px; padding-block-start:12px; border-block-start:1px solid var(--dr-border); }
+.dr-handoff-saved .button { min-height:44px; min-width:0; white-space:normal; }
+.app-shell .dr-memory-dialog:has(.dr-saved-memory-review) { font-size:.9375rem; }
+.app-shell .dr-memory-dialog:has(.dr-saved-memory-review) > header h2 { font-size:1.125rem; }
+.app-shell .dr-memory-dialog .dr-saved-memory-action { min-block-size:44px; }
+.app-shell .app-header small { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.4; }
+.app-shell .app-header .dr-guide-launch, .app-shell .app-header .menu-close { min-inline-size:44px; min-block-size:44px; }
+
+@media (max-width: 380px) {
+  .app-shell { padding-block-end:calc(112px + env(safe-area-inset-bottom)); }
+  .dr-play-main { padding: 14px; }
+  .dr-play-memory, .dr-play-scene > summary { padding-inline: 14px; }
+  .dr-play-scene > div { padding-inline: 14px; }
+  .dr-play-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+}

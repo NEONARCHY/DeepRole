@@ -1,6 +1,7 @@
 import type { AdapterStatus, DeepSeekAdapter } from "../core/types";
 import { estimateTokens } from "../core/text";
 import { nativeSidebarLeft } from "./chat-layout";
+import { hasTransportView, projectedTransportText, TRANSPORT_FRAGMENT } from "./deepseek-transport-visibility";
 
 const COMPOSER_SELECTORS = [
   "textarea:not([disabled])",
@@ -39,7 +40,8 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
     for (const selector of MESSAGE_SELECTORS) {
       for (const element of document.querySelectorAll<HTMLElement>(selector)) {
         if (element.closest("deeprole-page-widget")) continue;
-        const text = (element.innerText || (element.querySelector("[data-deeprole-choices-payload]") ? "" : element.textContent) || "").trim();
+        const text = (projectedTransportText(element) ?? (element.matches(TRANSPORT_FRAGMENT)
+          ? "" : element.innerText || (element.querySelector(TRANSPORT_FRAGMENT) ? "" : element.textContent) || "")).trim();
         const serviceTurn = Boolean(element.closest("[data-deeprole-service-reply='true']"))
           || text.startsWith("[DeepRole Service]")
           || text.includes("<deeprole_data>");
@@ -50,7 +52,7 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
         // Identified turns can legitimately have identical text ("continue", "?").
         // Text deduplication is only a fallback for ambiguous CSS-only elements.
         if (!identified && seen.has(text)) continue;
-        if (!isVisible(element) && !(includeServiceTurns && (identified || serviceTurn))) continue;
+        if (!isVisible(element) && !hasTransportView(element) && !(includeServiceTurns && (identified || serviceTurn))) continue;
         if (identified) identifiedTurns.push(element);
         seen.add(text);
         values.push({ element, text });

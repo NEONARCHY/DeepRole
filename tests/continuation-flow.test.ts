@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchesProvisionalContinuationTarget, type ContinuationFlow } from "../src/core/continuation-flow";
+import { continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchesContinuationTarget, matchesProvisionalContinuationTarget, type ContinuationFlow } from "../src/core/continuation-flow";
 import { boundStory } from "../src/core/story-continuation";
 import { sceneHandoffPrompt } from "../src/core/service-protocol";
 import { formatMemoryContext, injectContextIntoPrompt } from "../src/core/context";
@@ -8,6 +8,13 @@ import { visibleStoryHistory } from "../src/adapters/story-history-dom";
 
 const flow: ContinuationFlow = { id: "f", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", scene: { worldId: "w", focusIds: ["a", "b"], bookId: null }, phase: "review", requestId: "r", proposalId: "p", createdAt: 1 };
 describe("reviewed scene transfer", () => {
+  it("keeps reload recovery off the home page, source and other or already bound destinations", () => {
+    const target = { snapshotId: "saved", snapshotToken: "current", targetChatId: "new" };
+    expect(matchesContinuationTarget(target, "saved", "current", "old", "new", false)).toBe(true);
+    for (const chat of [null, "old", "other"]) expect(matchesContinuationTarget(target, "saved", "current", "old", chat, false)).toBe(false);
+    expect(matchesContinuationTarget(target, "saved", "current", "old", "new", true)).toBe(false);
+    expect(matchesContinuationTarget(target, "saved", "replaced", "old", "new", false)).toBe(false);
+  });
   it("limits provisional context to the exact fresh unbound target and queued snapshot", () => {
     const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "new", expiresAt: 200 };
     expect(matchesProvisionalContinuationTarget(target, "s", "t", "source", "new", false, 100)).toBe(true);

@@ -3,10 +3,13 @@ import type { RepositoryRequest } from "../storage/content-repository";
 import type { ServiceActivity } from "./memory-experience";
 import type { CharacterRequestReceipt } from "./characters";
 
-import type { ContinuationFlow } from "./continuation-flow";
+import type { ContinuationFlow, ContinuationTarget } from "./continuation-flow";
+
+export interface ImportSceneTarget { chatId: string | null; chatUrl: string; worldId: string | null; empty: boolean }
 
 export interface TabSessionState {
   continuationReceipt?: import("./continuation-flow").ContinuationReceipt | null;
+  retryContinuationTarget?: ContinuationTarget | null;
   characterTextTurns?: { requestId: string; chatId: string; replyIdentity: string }[];
   continuation?: ContinuationFlow | null;
   characterRequest?: CharacterRequestReceipt | null;
@@ -23,6 +26,7 @@ export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: str
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_MENU_TAB" }
+  | { type: "DR_OPEN_GAME_CHAT"; chatId: string }
   | { type: "DR_MEMORY_BATCH_IDLE"; worldId: string; chatId: string }
   | { type: "DR_MEMORY_BATCH"; action: "status" | "run" | "policy" | "cancel"; input: import("./story-memory-batch").MemoryBatchInput; mode?: import("./story-memory-batch").MemoryBatchPolicy["mode"] }
   | { type: "DR_RESUME_WORLD_GAME"; chatId: string; worldId: string }
@@ -46,11 +50,11 @@ export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_STORY_REVIEW_READ"; cursor: import("./story-review").StoryReviewCursor | null }
   | { type: "DR_STORY_REVIEW_PREVIEW"; input: import("./story-review").StoryPreviewInput }
   | { type: "DR_STORY_CHECKPOINT_SAVE"; choice: import("./story-checkpoint").StoryCheckpointChoice }
-  | { type: "DR_PAGE_STATE"; chatId: string | null; chatUrl: string; messageCount: number; status: AdapterStatus; scene?: SceneState; selection?: ContextSelection; memoryDelivery?: import("./memory-delivery-view").MemoryDeliveryView; overrides?: MemoryOverrides; activity?: ServiceActivity | null; generating?: boolean; warning?: string; pendingHandoff?: string }
+  | { type: "DR_PAGE_STATE"; chatId: string | null; chatUrl: string; messageCount: number; status: AdapterStatus; scene?: SceneState; selection?: ContextSelection; memoryDelivery?: import("./memory-delivery-view").MemoryDeliveryView; overrides?: MemoryOverrides; activity?: ServiceActivity | null; generating?: boolean; warning?: string; pendingHandoff?: string; savedMemory?: import("./saved-memory-continuation").SavedMemoryTransferState; savedMemoryQueued?: boolean }
   | { type: "DR_MEMORY_OVERRIDE"; id: string; action: "include" | "exclude" | "reset" }
   | { type: "DR_REVIEW_MEMORY"; operation: "apply"; batchId: string; items: MemoryCandidate[]; profileChoice?: { description: string; appearance: string; personality: string; goals: string; background: string } }
   | { type: "DR_REVIEW_MEMORY"; operation: "discard" | "undo"; id: string }
-  | { type: "DR_SET_SCENE"; scene: SceneState }
+  | { type: "DR_SET_SCENE"; scene: SceneState; importTarget?: ImportSceneTarget }
   | { type: "DR_GET_DRAFT_SCENE" }
   | { type: "DR_SAVE_DRAFT_SCENE"; scene: SceneState }
   | { type: "DR_GET_TAB_STATE" }
@@ -59,6 +63,8 @@ export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_RUN_SERVICE"; request: ServiceRequest }
   | { type: "DR_APPLY_SNAPSHOT"; snapshotId: string }
   | { type: "DR_CONTINUE_STORY" }
+  | { type: "DR_SAVED_MEMORY_PREVIEW"; scope: string; worldId?: string }
+  | { type: "DR_SAVED_MEMORY_OPEN"; scope: string; worldId?: string; version: string }
   | { type: "DR_DATA_CHANGED" }
   | { type: "DR_CONTEXT_CHANGED"; selection?: ContextSelection }
   | { type: "DR_ADAPTER_WARNING"; context: string }

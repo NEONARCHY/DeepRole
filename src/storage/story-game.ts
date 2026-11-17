@@ -10,7 +10,7 @@ import { captureStoryBaselineEffects, planStoryEffects, storyEffectsAt } from ".
 import { legacyStorySnapshot, planLegacyStory } from "./story-history";
 import { planStorySelection } from "./story-selection";
 import { repository, type DeepRoleRepository } from "./repository";
-import { confirmedDispatchText, type StoryDispatchCapture } from "../core/story-dispatch-capture";
+import { confirmedDispatchText, validStoryDispatchCapture, type StoryDispatchCapture } from "../core/story-dispatch-capture";
 import { matchingStoryAssistantCapture, matchingStoryUserCaptures } from "../core/story-dispatch-match";
 import { parseStoryUpdate, type StoryUpdateDiagnostic } from "../core/story-update";
 import { currentStoryProfileEntities, type ProfileSeeds, PROFILE_TEXT_FIELDS } from "../core/story-profile-view";
@@ -24,6 +24,25 @@ import { planStoryAccompaniment } from "./story-automation";
 const rows = (all: DataRecord[]) => all.filter(r => r.kind === "story").map(r => r.data as StoryRecord);
 const people = (all: DataRecord[], world: string, chat: string) => all.filter(r => r.kind === "entity" && (r.data as SceneEntity).worldId === world && (r.data as SceneEntity).kind === "character" && characterInChat(r.data as SceneEntity, chat)).map(r => r.data as SceneEntity);
 const state = (scene?: CharacterScene) => ({ states: scene?.states ?? {}, presentIds: scene?.presentIds ?? [], partnerIds: scene?.partnerIds ?? (scene?.partnerId ? [scene.partnerId] : []) });
+/** A missing pre-send history read is recoverable only from the exact new
+ * root and its completed reply. Old turns and other variants stay outside. */
+function openingAnchor(all: DataRecord[], binding: ChatBinding, world: WorldProfile, input: StoryGameInput): "root" | "wait" | undefined {
+  if (!input.recoverOpening || !world.storyAutomation || world.storyAutomation.mode === "off" || input.snapshot.messages.length !== 2) return;
+  const reply = input.snapshot.messages.find(sample => sample.identity.nativeMessageKey === input.snapshot.selectedNativeKey);
+  const user = reply && input.snapshot.messages.find(sample => sample.identity.nativeMessageKey === reply.identity.nativeParentKey);
+  if (!user || !reply || user.identity.role !== "user" || user.identity.nativeParentKey !== null || user.completion !== "complete"
+    || reply.identity.role !== "assistant" || reply.completion !== "complete") return;
+  const scope = { bindingId: binding.id, worldId: world.id, chatId: binding.chatId };
+  const candidates = all.filter(row => row.kind === "dispatch").map(row => row.data).filter(validStoryDispatchCapture)
+    .filter(capture => capture.opening && capture.origin === "local" && capture.purpose === "user-turn" && capture.injection === "context"
+      && capture.bindingId === scope.bindingId && capture.worldId === scope.worldId && capture.identity.chatId === scope.chatId
+      && confirmedDispatchText(capture) === user.content);
+  const exact = matchingStoryUserCaptures(candidates, scope, user);
+  if (exact.length === 1 && matchingStoryAssistantCapture(exact, reply) && exact[0]!.wire.phase !== "failed") return "root";
+  if (candidates.some(capture => capture.delivery === null || capture.delivery.status === "accepted" && capture.transport === "xhr"
+    && !capture.wire.link && capture.wire.phase !== "failed")) return "wait";
+}
+
 export async function storyGameStatus(chatId: string, worldId: string, repo: DeepRoleRepository = repository) {
   return repo.updateRecords(all => {
     const bindings = all.filter(r => r.kind === "binding" && (r.data as ChatBinding).chatId === chatId && (r.data as ChatBinding).worldId === worldId);
@@ -80,10 +99,14 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     let inheritedMerges: MergeSeeds = {};
     const prior = baseline && rows(all).find(r => r.id === baseline!.branchId) as StoryBranch | undefined;
     if (prior?.gameManaged && input.operation !== "restart") return { records: [], removed: [], result: { active: true, changed: false } };
+    if (input.recoverOpening && (!world.storyAutomation || world.storyAutomation.mode === "off")) return { records: [], removed: [], result: { active: false, changed: false } };
+    const opening = openingAnchor(all, binding, world, input);
+    if (opening === "wait") return { records: [], removed: [], result: { active: false, changed: false } };
+    const anchor = opening === "root" ? null : input.snapshot.selectedNativeKey;
     if (baseline && (input.operation === "restart" || prior?.headRevisionId !== null || prior?.projectionId
       || !sameStoryValue(state(binding.characterScenes?.[input.worldId]), stateFromSnapshot(baseline.snapshot))
       || !sameStoryValue(captureStoryBaselineEffects(binding, input.worldId), baseline.legacyEffects)
-      || baseline.origin.nativeAnchor && baseline.origin.nativeAnchor.nativeMessageKey !== input.snapshot.selectedNativeKey)) {
+      || baseline.origin.nativeAnchor && baseline.origin.nativeAnchor.nativeMessageKey !== anchor)) {
       // Preserve old sources/checkpoints unchanged. Rotate only the live binding's
       // identity, atomically; another tab cannot keep writing the archived owner.
       inheritedMerges = currentMergeSeeds(rows(all), input.worldId, input.chatId, binding.id);
@@ -108,7 +131,6 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     if (branch.gameManaged) return { records: [], removed: [], result: { active: true, changed: false } };
     if (branch.headRevisionId !== null || branch.projectionId || !sameStoryValue(state(binding.characterScenes?.[input.worldId]), stateFromSnapshot(baseline.snapshot))
       || !sameStoryValue(captureStoryBaselineEffects(binding, input.worldId), baseline.legacyEffects)) throw Error("story-start-stale");
-    const anchor = input.snapshot.selectedNativeKey;
     if (anchor !== null && !input.snapshot.messages.some(m => m.identity.nativeMessageKey === anchor && m.identity.role === "assistant" && m.completion === "complete")) throw Error("story-source-incomplete");
     if (baseline.origin.nativeAnchor && baseline.origin.nativeAnchor.nativeMessageKey !== anchor) throw Error("story-start-stale");
     write([storyRow({ ...baseline, ...(world.sharedGame?{gameId:world.sharedGame.id, ...(world.sharedGame.episodeSources ? {episodeSourceSeeds:baseline.episodeSourceSeeds??[...world.sharedGame.episodeSources]} : {}), ...(world.sharedGame.factRoleSeeds?{factRoleSeeds:baseline.factRoleSeeds??structuredClone(world.sharedGame.factRoleSeeds)}:{})}:{}), ...(world.storyAutomation && world.sharedGame ? { gameId: world.sharedGame.id, factSeeds: baseline.factSeeds ?? structuredClone(world.sharedGame.facts), memoryBatchSeeds: baseline.memoryBatchSeeds ?? [...world.sharedGame.memoryBatchSources ?? []], pendingReviewSeeds: baseline.pendingReviewSeeds ?? [...world.sharedGame.pendingReviewIds ?? []], reviewResolutionSeeds: baseline.reviewResolutionSeeds ?? { ...world.sharedGame.reviewResolutions } } : {}), origin: { ...baseline.origin, nativeAnchor: { nativeMessageKey: anchor, role: anchor === null ? null : "assistant" } } }), storyRow({ ...branch, gameManaged: true })]);

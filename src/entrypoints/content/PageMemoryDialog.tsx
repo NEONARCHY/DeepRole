@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 
 /** Native top layer: viewport-centred even when the widget deck has moved.
  * Keep children mounted while closed so hiding a form preserves its draft. */
-export function PageMemoryDialog({open,title,closeLabel,onClose,help,children,assistantOpen=false,dialogId}:{open:boolean;title:string;closeLabel:string;onClose:()=>void;help?:ReactNode;children:ReactNode;assistantOpen?:boolean;dialogId:string}) {
+export function PageMemoryDialog({open,title,closeLabel,onClose,help,children,footer,assistantOpen=false,dialogId}:{open:boolean;title:string;closeLabel:string;onClose:()=>void;help?:ReactNode;children:ReactNode;footer?:ReactNode;assistantOpen?:boolean;dialogId:string}) {
   const dialog=useRef<HTMLDialogElement>(null), heading=useRef<HTMLHeadingElement>(null), outsideDown=useRef(false), id=useId();
   useLayoutEffect(()=>{
     const node=dialog.current;
@@ -26,5 +26,6 @@ export function PageMemoryDialog({open,title,closeLabel,onClose,help,children,as
     }}>
     <header><h2 id={id} ref={heading} tabIndex={-1}>{title}</h2><div className="dr-memory-help-actions">{help}<button type="button" className="dr-memory-dialog-close" aria-label={closeLabel} onClick={close}><X size={18} aria-hidden="true"/></button></div></header>
     <div className={`dr-memory-dialog-body ${assistantOpen?"":"dr-connected-memory"}`}>{children}</div>
+    {footer && <footer className="dr-memory-dialog-footer">{footer}</footer>}
   </dialog>;
 }

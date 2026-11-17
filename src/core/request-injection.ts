@@ -4,6 +4,15 @@ export interface InjectionResult {
   failure?: "invalid-json" | "unsupported-request-shape" | "memory-already-present";
 }
 
+// Local web-chat ceiling. Count decoded prompt text, including the separator,
+// in UTF-16 code units; JSON escaping and attachment bytes are separate.
+export const DEEPSEEK_PROMPT_CHAR_LIMIT = 40_000;
+const USER_MESSAGE_SEPARATOR = "\n\n[User message]\n";
+
+export function assembledPromptLength(draft: string, context: string): number {
+  return draft.length + (context ? context.length + USER_MESSAGE_SEPARATOR.length : 0);
+}
+
 /** Spend more time refreshing a request only when a memory preview already exists. */
 export function contextHandshakeTimeoutMs(hasPublishedContext: boolean, managedStory: boolean): number {
   return hasPublishedContext || managedStory ? 12_000 : 5_000;
@@ -42,7 +51,7 @@ function prependText(value: unknown, prefix: string): boolean {
         : typeof item.content === "string" && (!type || TEXT_PART_TYPES.has(type)) ? "content" : null;
       if (!key) continue;
       if (isMarked(item[key] as string)) return false;
-      item[key] = `${prefix}\n\n[User message]\n${item[key] as string}`;
+      item[key] = `${prefix}${USER_MESSAGE_SEPARATOR}${item[key] as string}`;
       return true;
     }
     return false;
@@ -54,7 +63,7 @@ function prependText(value: unknown, prefix: string): boolean {
     ? "text"
     : typeof item.content === "string" && (!type || TEXT_PART_TYPES.has(type)) ? "content" : null;
   if (!key || isMarked(item[key] as string)) return false;
-  item[key] = `${prefix}\n\n[User message]\n${item[key] as string}`;
+  item[key] = `${prefix}${USER_MESSAGE_SEPARATOR}${item[key] as string}`;
   return true;
 }
 
@@ -103,7 +112,7 @@ export function injectIntoJsonBody(body: string, memoryContext: string): Injecti
 
   if (typeof payload.prompt === "string") {
     if (isMarked(payload.prompt)) return { changed: false, body, failure: "memory-already-present" };
-    payload.prompt = `${memoryContext}\n\n[User message]\n${payload.prompt}`;
+    payload.prompt = `${memoryContext}${USER_MESSAGE_SEPARATOR}${payload.prompt}`;
     return { changed: true, body: JSON.stringify(payload) };
   }
   if (payload.prompt !== undefined) {
@@ -121,7 +130,7 @@ export function injectIntoJsonBody(body: string, memoryContext: string): Injecti
       const plainText = textContent(content);
       if (typeof content === "string") {
         if (isMarked(content)) return { changed: false, body, failure: "memory-already-present" };
-        message.content = `${memoryContext}\n\n[User message]\n${content}`;
+        message.content = `${memoryContext}${USER_MESSAGE_SEPARATOR}${content}`;
         return { changed: true, body: JSON.stringify(payload) };
       }
       if (plainText !== null && isMarked(plainText)) return { changed: false, body, failure: "memory-already-present" };

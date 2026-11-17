@@ -1,0 +1,24 @@
+.dr-memory-dialog { pointer-events:auto; position:fixed; inset:0; margin:auto; width:min(720px,calc(100vw - 24px)); max-width:calc(100vw - 24px); max-height:min(780px,calc(100dvh - 24px)); padding:0; overflow:hidden; overscroll-behavior:contain; border:1px solid var(--dr-border); border-radius:18px; background:var(--dr-panel); color:var(--dr-text); box-shadow:0 24px 80px #0007; font:13px/1.5 system-ui,sans-serif; }
+.dr-memory-dialog[open] { display:flex; flex-direction:column; animation:dr-memory-appear .18s ease-out; }
+.dr-memory-dialog::backdrop { background:rgba(8,12,18,.4); }
+.dr-memory-dialog > header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; padding:16px 20px; border-bottom:1px solid var(--dr-border); }
+.dr-memory-dialog > header h2 { min-width:0; margin:0; font-size:18px; line-height:1.4; font-weight:650; overflow-wrap:anywhere; outline:none; }
+.dr-memory-dialog .dr-memory-help-actions { display:flex; align-items:center; flex:none; gap:8px; }
+.dr-memory-dialog .dr-memory-dialog-close { display:grid; place-items:center; width:36px; height:36px; padding:8px; border:1px solid var(--dr-border); border-radius:10px; background:var(--dr-surface); color:var(--dr-text); cursor:pointer; }
+.dr-memory-dialog-close:hover { background:var(--dr-raised); }
+.dr-memory-dialog-close:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
+.dr-memory-dialog-body { min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding:16px 20px 20px; }
+.dr-memory-dialog-footer { flex:none; display:grid; min-width:0; padding:12px 20px; border-top:1px solid var(--dr-border); }
+.dr-memory-dialog-footer .dr-saved-memory-action { width:100%; margin:0; min-height:44px; }
+.dr-memory-dialog-body > .dr-game-memory-notice { max-width:none; margin:0 0 16px; }
+.dr-saved-memory-review { display:grid; gap:10px; overflow-wrap:anywhere; }
+.dr-saved-memory-review time { color:var(--dr-muted); }
+.dr-saved-memory-review strong:focus { outline:none; }
+.dr-saved-memory-action { min-height:44px; padding:8px 10px; white-space:normal; font-size:.875rem; line-height:1.35; }
+.dr-saved-memory-review .dr-saved-memory-action { margin:0; }
+.dr-memory-dialog:has(.dr-saved-memory-review) .dr-memory-dialog-close { width:44px; height:44px; }
+.dr-saved-memory-review p,.dr-saved-memory-review blockquote { margin:0; }
+.dr-saved-memory-review blockquote { white-space:pre-wrap; padding:12px; background:var(--dr-surface); border-radius:8px; }
+@keyframes dr-memory-appear { from { opacity:0; } to { opacity:1; } }
+@media(max-width:480px) { .dr-memory-dialog > header { padding:12px; gap:8px; } .dr-memory-dialog > header h2 { font-size:16px; } .dr-memory-dialog-body,.dr-memory-dialog-footer { padding:12px; } }
+@media(prefers-reduced-motion:reduce) { .dr-memory-dialog[open] { animation:none; } }

@@ -2,6 +2,7 @@
 @import "../shared/characters.css";
 @import "../shared/cast.css";
 @import "../shared/old-chat-notice.css";
+@import "./page-memory-dialog.css";
 .dr-reset-ready-notice { pointer-events:auto; position:fixed; z-index:6; inset-inline-end:16px; bottom:16px; box-sizing:border-box; width:min(340px,calc(100vw - 32px)); display:grid; gap:10px; padding:16px; border:1px solid var(--dr-border); border-inline-start:3px solid var(--dr-success); border-radius:14px; background:var(--dr-panel); color:var(--dr-text); box-shadow:var(--dr-depth-card); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
 .dr-reset-ready-notice p { margin:0; }
 .dr-reset-ready-notice button { min-height:36px; padding:8px 12px; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:var(--dr-text); font:inherit; white-space:normal; cursor:pointer; }
@@ -24,6 +25,16 @@
 .dr-continuation-progress .dr-meter-transfer { margin:0; background:var(--dr-action); border-color:var(--dr-action); color:var(--dr-on-action); }
 .dr-continuation-progress button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
 .dr-continuation-progress button:disabled { opacity:.5; cursor:default; }
+.dr-send-notice {
+  pointer-events:auto; width:min(350px, calc(100vw - 36px)); max-height:calc(100dvh - 116px);
+  margin-bottom:8px; padding:12px; overflow:auto; display:grid; gap:8px; overflow-wrap:anywhere;
+  border:1px solid var(--dr-border); border-inline-start:3px solid var(--dr-warning);
+  border-radius:12px; background:var(--dr-panel); color:var(--dr-text); font-size:.875rem; line-height:1.5;
+}
+.dr-send-notice p { margin:4px 0 0; }
+.dr-send-notice button,.dr-send-notice summary { min-height:44px; padding:10px; cursor:pointer; }
+.dr-send-notice button,.dr-send-notice textarea { width:100%; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:inherit; font:inherit; }
+.dr-send-notice textarea { display:block; padding:8px; resize:vertical; }
 :host { all: initial; }
 * { box-sizing: border-box; }
 .dr-root { position: fixed; z-index: 2147483000; right: 18px; bottom: 104px; font-family: system-ui, sans-serif; color: var(--dr-text); font-size: 12px; pointer-events: none; }
@@ -140,6 +151,27 @@ button { font: inherit; }
 .dr-scene-choice-toggle[aria-pressed=true] { border-color:var(--dr-border-strong);color:var(--dr-text);background:var(--dr-surface); }
 @media (prefers-reduced-motion:reduce) { .dr-chat-meter-track>i { transition:none; } }
 .dr-root :is(.dr-launcher,.dr-composer-action,.dr-pill,.dr-panel,.dr-alert) { backdrop-filter:none; }
+.dr-root .dr-transfer-commit {
+  box-sizing: border-box;
+  width: min(330px, calc(100vw - 36px));
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  overflow-wrap: anywhere;
+}
+.dr-root .dr-transfer-commit strong { color: var(--dr-text); font-size: .875rem; }
+.dr-root .dr-transfer-commit p { margin: 0; font-size: .8125rem; }
+.dr-root .dr-transfer-commit button {
+  min-height: 44px;
+  min-width: 0;
+  background: var(--dr-action);
+  color: var(--dr-on-action);
+  white-space: normal;
+  font-size: .8125rem;
+  overflow-wrap: anywhere;
+}
+.dr-root .dr-transfer-commit button:focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 2px; }
+.dr-root .dr-transfer-commit button:disabled { opacity: .65; cursor: default; }
 
 /* Preview content can wrap freely inside its independent viewport dialog. */
 .dr-root .dr-connected-memory { overflow-x:hidden; overscroll-behavior:contain; }
@@ -179,28 +211,11 @@ button { font: inherit; }
 .dr-memory-budget-editor input:focus-visible,.dr-memory-budget-editor button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
 .dr-memory-budget-editor .dr-memory-budget-suggest { justify-self:start; }
 .dr-memory-budget-editor p { margin:0; }
-.dr-memory-dialog { pointer-events:auto; position:fixed; inset:0; margin:auto; width:min(720px,calc(100vw - 24px)); max-width:calc(100vw - 24px); max-height:min(780px,calc(100dvh - 24px)); padding:0; overflow:hidden; overscroll-behavior:contain; border:1px solid var(--dr-border); border-radius:18px; background:var(--dr-panel); color:var(--dr-text); box-shadow:0 24px 80px #0007; font:13px/1.5 system-ui,sans-serif; }
-.dr-memory-dialog[open] { display:flex; flex-direction:column; animation:dr-memory-appear .18s ease-out; }
-.dr-memory-dialog::backdrop { background:rgba(8,12,18,.4); }
-.dr-memory-dialog > header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; padding:16px 20px; border-bottom:1px solid var(--dr-border); }
-.dr-memory-dialog > header h2 { min-width:0; margin:0; font-size:18px; line-height:1.4; font-weight:650; overflow-wrap:anywhere; outline:none; }
-.dr-memory-dialog .dr-memory-help-actions { display:flex; align-items:center; flex:none; gap:8px; }
-.dr-memory-dialog .dr-memory-dialog-close { display:grid; place-items:center; width:36px; height:36px; padding:8px; border:1px solid var(--dr-border); border-radius:10px; background:var(--dr-surface); color:var(--dr-text); cursor:pointer; }
-.dr-memory-dialog-close:hover { background:var(--dr-raised); }
-.dr-memory-dialog-close:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
-.dr-memory-dialog-body { min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding:16px 20px 20px; }
-.dr-memory-dialog-body > .dr-game-memory-notice { max-width:none; margin:0 0 16px; }
-.dr-saved-memory-review { display:grid; gap:10px; overflow-wrap:anywhere; }
-.dr-saved-memory-review time { color:var(--dr-muted); }
 .dr-saved-memory-ready { pointer-events:none; inset:56px 12px auto auto; }
-.dr-saved-memory-review p,.dr-saved-memory-review blockquote { margin:0; }
-.dr-saved-memory-review blockquote { white-space:pre-wrap; padding:12px; background:var(--dr-surface); border-radius:8px; }
 .dr-memory-dialog .dr-entry { grid-template-columns:38px minmax(0,1fr); gap:6px 12px; padding-block:14px; }
 .dr-memory-dialog .dr-entry strong { font-size:13px; line-height:1.5; }
 .dr-memory-dialog .dr-entry small { font-size:13px; line-height:1.6; white-space:pre-wrap; }
 .dr-memory-dialog .dr-entry em { font-size:11px; }
 .dr-memory-dialog .dr-empty { font-size:13px; }
 .dr-memory-dialog .dr-assistant-back { display:inline-flex; align-items:center; gap:4px; flex-shrink:0; font-size:12px; }
-@keyframes dr-memory-appear { from { opacity:0; } to { opacity:1; } }
-@media(max-width:480px) { .dr-memory-dialog > header { padding:12px; gap:8px; } .dr-memory-dialog > header h2 { font-size:16px; } .dr-memory-dialog-body { padding:12px; } }
 @media(prefers-reduced-motion:reduce) { .dr-memory-dialog[open] { animation:none; } }

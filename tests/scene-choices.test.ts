@@ -16,6 +16,7 @@ function sync(locale: "ru" | "en" = "ru", enabled = true, generating = false) {
 }
 const host = () => document.querySelector<HTMLElement>("[data-deeprole-choices-host]");
 const recovery = () => document.querySelector<HTMLElement>("[data-deeprole-choices-recovery]");
+const proseView = (source: HTMLElement) => source.previousElementSibling?.shadowRoot?.lastElementChild?.textContent?.trim();
 it('suppresses both recovery and supplied choices only for a proven excluded reply', () => {
   const row=answer('Hypothesis. '+payload);
   const presentation={pinSceneChoices:false,pinPortraits:false,onToggle:()=>{},allowReply:(node:HTMLElement)=>node!==row};
@@ -65,14 +66,15 @@ describe("history restoration and explicit recovery", () => {
     const row = answer("Мира отвечает.\n<deeprole_characters>{\"request\":\"", "live");
     sync("ru", true, true);
     expect(row.firstChild?.textContent).toContain("Мира отвечает.");
-    expect(row.querySelector<HTMLElement>("[data-deeprole-choices-payload='characters']")?.style.display).toBe("none");
+    expect(row).toHaveAttribute("data-deeprole-payload-source", "characters");
+    expect(proseView(row)).toBe("Мира отвечает.");
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
     expect(row.nextElementSibling?.matches("[data-deeprole-choices-loading]")).toBe(true);
     row.append(document.createTextNode("abc\"}</deeprole_characters>\n" + payload.slice(0, 70)));
     sync("ru", true, true);
-    expect(row.querySelectorAll("[data-deeprole-choices-payload]")).toHaveLength(2);
-    expect(row.querySelector<HTMLElement>("[data-deeprole-choices-payload='characters']")?.textContent).toContain("</deeprole_characters>");
-    expect(row.querySelector<HTMLElement>("[data-deeprole-choices-payload='choices']")?.textContent).toBe(payload.slice(0, 70));
+    expect(proseView(row)).toBe("Мира отвечает.");
+    expect(row.textContent).toContain("</deeprole_characters>");
+    expect(row.textContent).toContain(payload.slice(0, 70));
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
   });
   it("waits for transport JSON, not story or thinking", () => {
@@ -86,7 +88,8 @@ describe("history restoration and explicit recovery", () => {
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
     body.append(payload.slice(0, 55)); sync("ru", true, true); sync("ru", true, true);
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
-    expect(body.querySelector("[data-deeprole-choices-payload='choices']")?.textContent).toBe(payload.slice(0, 55));
+    expect(proseView(body)).toBe("Mira opens the gate. More story.");
+    expect(body.textContent).toContain(payload.slice(0, 55));
   });
   it("removes an earlier loader when a different story starts", () => {
     answer("Scene. " + payload.slice(0, 55)); sync("en", true, true);
@@ -131,14 +134,16 @@ describe("history restoration and explicit recovery", () => {
   it("hides streamed chunks, retains parseable data and preserves text after the block", () => {
     const row = answer("Scene. " + payload.slice(0, 60));
     sync("ru", true, true);
-    expect(row.querySelector("[data-deeprole-choices-payload]")?.textContent).toBe(payload.slice(0, 60));
+    expect(proseView(row)).toBe("Scene.");
+    expect(row.textContent).toBe("Scene. " + payload.slice(0, 60));
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(1);
     expect(recovery()).toBeNull();
     row.append(document.createTextNode(payload.slice(60) + " Story continues."));
     sync("ru", true, true); sync("ru", true, true);
     expect(parseSceneChoices(row.textContent!)?.choices.options).toHaveLength(4);
     expect(row.textContent).toContain("Story continues.");
-    expect(row.querySelectorAll("[data-deeprole-choices-payload] [data-deeprole-choices-payload]")).toHaveLength(0);
+    expect(proseView(row)).toBe("Scene.  Story continues.");
+    expect(document.querySelectorAll("[data-deeprole-payload-view]")).toHaveLength(1);
     sync(); expect(host()).not.toBeNull();
     expect(document.querySelectorAll("[data-deeprole-choices-loading]")).toHaveLength(0);
   });
@@ -162,7 +167,8 @@ describe("history restoration and explicit recovery", () => {
     expect(thought.querySelector("[data-deeprole-choices-payload]")).toBeNull();
     expect(user.textContent).toBe("User " + payload);
     expect(user.querySelector("[data-deeprole-choices-payload]")).toBeNull();
-    expect(final.querySelector("[data-deeprole-choices-payload]")).not.toBeNull();
+    expect(proseView(final)).toBe("Scene");
+    expect(final.textContent).toBe("Scene " + payload);
   });
   it("hides the manual request while preserving service reply correlation", () => {
     answer("Scene.");
@@ -186,7 +192,7 @@ describe("history restoration and explicit recovery", () => {
     answer("The gate opens.\n" + payload); sync();
     expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4);
     expect(recovery()).toBeNull(); expect(request).not.toHaveBeenCalled();
-    expect(document.querySelector("[data-deeprole-choices-payload]")?.textContent).toBe(payload);
+    expect(proseView(document.querySelector("article")!)).toBe("The gate opens.");
     expect(document.querySelector("article")?.textContent).toContain("The gate opens.");
     host()!.remove(); sync();
     expect(host()?.shadowRoot?.querySelectorAll(".grid button")).toHaveLength(4);

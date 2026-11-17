@@ -13,7 +13,8 @@ async function setup(records: Array<[string, any]>) {
   // Keep Windows LevelDB paths short. Playwright clears this output root on the next run.
   const profiles = path.join(test.info().project.outputDir, "profiles"); await mkdir(profiles, { recursive: true });
   const profile = await mkdtemp(path.join(profiles, "deeprole-sync-test-"));
-  const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${path.resolve(".output/chrome-mv3")}`, `--load-extension=${path.resolve(".output/chrome-mv3")}`] });
+  const extension = path.resolve(process.env.DEEPROLE_TEST_EXTENSION ?? ".output/chrome-mv3");
+  const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: ["--disable-extensions-except=" + extension, "--load-extension=" + extension] });
   try {
   context.setDefaultTimeout(10000);
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
@@ -520,12 +521,13 @@ test("typing while a template loads is never overwritten", async () => {
   } finally { await context.close(); }
 });
 
-test("a queued scene change never rebinds the next chat", async () => {
+for (const imported of [false, true]) test(imported ? "a queued import never rebinds the next chat in the same tab" : "a queued scene change never rebinds the next chat", async () => {
   const world = { id: "w", name: "World", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const { context, panel, chat, worker } = await setup([["world", world]]);
   try {
     await chat.bringToFront(); await holdNextVaultRead(worker);
-    await startCommand(panel, { type: "DR_SET_SCENE", scene: { worldId: "w", bookId: null, focusIds: [] } });
+    await startCommand(panel, { type: "DR_SET_SCENE", scene: { worldId: "w", bookId: null, focusIds: [] },
+      ...(imported ? { importTarget: { chatId: "a", chatUrl: chat.url(), worldId: null, empty: false } } : {}) });
     await expect.poll(() => worker.evaluate(() => (globalThis as any).readHeld)).toBe(true);
     await chat.evaluate(() => { history.pushState({}, "", "/chat/s/b"); document.querySelector("h1")!.textContent = "Next chat"; });
     await worker.evaluate(() => (globalThis as any).releaseRead());

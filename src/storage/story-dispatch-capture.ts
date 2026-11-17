@@ -32,12 +32,14 @@ export async function prepareDispatchCapture(input: StoryDispatchCaptureInput, o
     const navigation = notice && !notice.sent && !notice.dismissed && ["ru", "en"].some(locale => input.proposedContext === oldChatNoticePrompt(notice, locale as "ru" | "en"));
     const world = all.find(r => r.kind === "world" && r.id === input.worldId)?.data as import("../core/types").WorldProfile | undefined;
     const capture: StoryDispatchCapture = { ...input, format: "deeprole-story-dispatch", contractVersion: 1, ownerTabId, origin: "local", purpose: navigation || binding.nextStoryMessageMode === "out-of-character" || explicitOutOfCharacter(input.originalDraft,world?.bracketedOoc===true) ? "out-of-character" : "user-turn", injection: "unconfirmed", started: false, delivery: null, wire: { phase: "waiting", link: null, sawFinish: false, issue: null }, createdAt: now, updatedAt: now };
+    if (input.opening && (capture.purpose !== "user-turn" || world?.sharedGame?.activeBindingId !== binding.id
+      || world.sharedGame.managed || !world.storyAutomation || world.storyAutomation.mode === "off")) throw Error("dispatch-scope-conflict");
     if (!navigation && binding.nextStoryMessageMode === 'out-of-character') capture.consumeNonStoryMode = true;
     if (capture.purpose === "user-turn") {
      if (world?.storyAutomation && world.storyAutomation.mode !== "off" && input.proposedContext.includes(automationMarker(world))) capture.accompaniment = { mode: world.storyAutomation.mode, revision: world.storyAutomation.revision, profileLocks: Object.fromEntries(all.filter(r => r.kind === "entity" && (r.data as import("../core/types").SceneEntity).worldId === world.id && (r.data as import("../core/types").SceneEntity).kind === "character").map(r => [r.id, [...(r.data as import("../core/types").SceneEntity).characterSheet?.protectedProfileFields ?? []]])), profileVersions: Object.fromEntries(all.filter(r => r.kind === "entity" && (r.data as import("../core/types").SceneEntity).worldId === world.id && (r.data as import("../core/types").SceneEntity).kind === "character").map(r => [r.id, { ...(r.data as import("../core/types").SceneEntity).profileFieldRevisions }])) };
     }
      if (previous) {
-      const route = (v: StoryDispatchCapture) => ({ id: v.id, worldId: v.worldId, bindingId: v.bindingId, identity: v.identity, transport: v.transport, sceneRevision: v.sceneRevision, originalDraft: v.originalDraft, proposedContext: v.proposedContext, ownerTabId: v.ownerTabId, origin: v.origin });
+      const route = (v: StoryDispatchCapture) => ({ id: v.id, worldId: v.worldId, bindingId: v.bindingId, identity: v.identity, transport: v.transport, sceneRevision: v.sceneRevision, originalDraft: v.originalDraft, proposedContext: v.proposedContext, opening: v.opening, ownerTabId: v.ownerTabId, origin: v.origin });
       if (!validStoryDispatchCapture(previous) || !sameStoryValue(route(previous), route(capture))) throw Error("dispatch-input-conflict");
       return { records: [], removed: [], result: undefined };
     }

@@ -8,6 +8,8 @@ import type { ChatBinding, SceneEntity } from "../src/core/types";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
 import { runStoryGame, markNonStoryMessage } from "../src/storage/story-game";
+import { activateWorldGame } from "../src/storage/world-game";
+import { automationMarker } from "../src/core/story-automation";
 import { readStoryReview } from "../src/storage/story-review";
 import { planLegacyStory } from "../src/storage/story-history";
 import type { StoryDispatchCapture } from "../src/core/story-dispatch-capture";
@@ -23,9 +25,9 @@ async function setup() {
   const repo = new DeepRoleRepository(db); await repo.mergeRecords(f.records);
   const message = (id: string, parent: string | null, role: "user" | "assistant", content: string) => ({ identity: { role, nativeMessageKey: key(id), nativeParentKey: parent === null ? null : key(parent) }, completion: "complete" as const, content });
   const snapshot: StoryGameSnapshot = { chatId: f.binding.chatId, selectedNativeKey: key("2"), messages: [message("1", null, "user", "Start"), message("2", "1", "assistant", "The workshop opens.")] };
-  const play = async (operation: import("../src/core/story-game").StoryGameInput["operation"] = "sync", parent: string | null = null, manual: "stop" | "keep" = "stop") => {
+  const play = async (operation: import("../src/core/story-game").StoryGameInput["operation"] = "sync", parent: string | null = null, manual: "stop" | "keep" = "stop", recoverOpening = false) => {
     const current = (await repo.list<ChatBinding>("binding")).find(b => b.chatId === f.binding.chatId)!, persons = (await repo.list<SceneEntity>("entity")).filter(p => characterInChat(p, f.binding.chatId));
-    return runStoryGame({ chatId: f.binding.chatId, worldId: f.world.id, expectedBase: characterRevision(persons, current.characterScenes?.[f.world.id]), snapshot, operation, nativeParentKey: parent, manual }, DEFAULT_SETTINGS, repo);
+    return runStoryGame({ chatId: f.binding.chatId, worldId: f.world.id, expectedBase: characterRevision(persons, current.characterScenes?.[f.world.id]), snapshot, operation, nativeParentKey: parent, manual, ...(recoverOpening ? { recoverOpening: true } : {}) }, DEFAULT_SETTINGS, repo);
   };
   const answer = (id: string, user: string, condition: string, create = false, chatId = f.binding.chatId) => {
     const updates = [{ id: "person-1", state: { ...EMPTY_STATUS, condition } }, ...(create ? [{ id: "new:Visitor", name: "Visitor", state: { ...EMPTY_STATUS, condition: "At the door" } }] : [])];
@@ -34,6 +36,40 @@ async function setup() {
   const scene = async () => (await repo.list<ChatBinding>("binding")).find(b => b.chatId === f.binding.chatId)!.characterScenes![f.world.id]!;
   return { ...f, repo, db, snapshot, message, play, answer, scene };
 }
+it.each(["unsettled", "mismatched", "restored", "duplicate"] as const)("requires an exact local first-turn receipt: %s", async (variant) => {
+  const f = await setup();
+  const world = { ...f.world, storyAutomation: { mode: "automatic" as const, revision: "first-turn-policy" } };
+  await f.repo.put("world", world);
+  await activateWorldGame({ chatId: f.binding.chatId, chatUrl: f.binding.chatUrl, worldId: world.id, expectedRevision: null, mode: "initialize" }, f.repo);
+  const draft = "Start", context = automationMarker(world), outgoing = context + "\n\n[User message]\n" + draft;
+  const route = { requestId: crypto.randomUUID(), identity: { chatId: f.binding.chatId, nativeParentKey: null }, transport: "fetch" as const };
+  const record = async (request: typeof route, accepted: boolean) => {
+    await prepareDispatchCapture({ id: request.requestId, worldId: world.id, bindingId: f.binding.id, identity: request.identity, transport: request.transport,
+      sceneRevision: (await f.scene()).revision, originalDraft: draft, proposedContext: context, opening: true }, 7, f.repo);
+    await confirmDispatchCapture({ ...request, outgoingText: outgoing }, 7, f.repo);
+    await advanceDispatchCapture({ ...request, phase: "started" }, 7, f.repo);
+    if (accepted) await advanceDispatchCapture({ ...request, phase: "settled", delivery: { status: "accepted", httpStatus: 200 } }, 7, f.repo);
+  };
+  f.snapshot.messages[0]!.content = variant === "mismatched" ? outgoing + " different" : outgoing;
+  await record(route, variant !== "unsettled");
+  if (variant === "restored") {
+    const receipt = (await f.repo.get<StoryDispatchCapture>("dispatch", route.requestId))!;
+    await f.repo.put("dispatch", { ...receipt, origin: "restored" });
+  }
+  if (variant === "duplicate") await record({ ...route, requestId: crypto.randomUUID() }, true);
+  if (variant === "unsettled") {
+    const before = await f.repo.rawRecords();
+    expect(await f.play("start", null, "stop", true)).toMatchObject({ active: false, changed: false });
+    expect(await f.repo.rawRecords()).toEqual(before);
+    await advanceDispatchCapture({ ...route, phase: "settled", delivery: { status: "accepted", httpStatus: 200 } }, 7, f.repo);
+  }
+  expect(await f.play("start", null, "stop", true)).toMatchObject({ active: true });
+  await f.play();
+  const records = await f.repo.list<StoryRecord>("story");
+  expect(records.find(record => record.type === "baseline")?.origin.nativeAnchor?.nativeMessageKey).toBe(variant === "unsettled" ? null : key("2"));
+  expect(records.filter(record => record.type === "revision")).toHaveLength(variant === "unsettled" ? 2 : 0);
+});
+
 describe("working selected story", () => {
   it("starts explicitly, follows two consecutive turns, reloads and is idempotent", async () => {
     const f = await setup(); await f.play("start");

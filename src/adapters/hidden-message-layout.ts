@@ -1,4 +1,5 @@
 import { nativeMessageRows, REASONING, isUserMessage } from "./deepseek-message-dom";
+import { TRANSPORT_FRAGMENT } from "./deepseek-transport-visibility";
 
 const HIDDEN_TURN = "[data-deeprole-character-text-hidden],[data-deeprole-memory-request],[data-deeprole-choices-request]";
 const OWNED = "[data-deeprole-choices-host],[data-deeprole-choices-loading],[data-deeprole-choices-recovery],[data-deeprole-choices-anchor],[data-deeprole-choices-spacer],[data-deeprole-illustrations],[data-deeprole-scene-photos],[data-deeprole-memory-card],[data-deeprole-service-preloader],[data-deeprole-result],[data-deeprole-handoff-visible],[data-deeprole-cast-recovery]";
@@ -56,7 +57,7 @@ export function syncHiddenMessageLayout(root: ParentNode = document): void {
   }
   for (const row of rows) {
     const nativeHidden = row.matches(HIDDEN_TURN);
-    const transportOnly = !isUserMessage(row) && !!row.querySelector("[data-deeprole-choices-payload]") && !useful(row);
+    const transportOnly = !isUserMessage(row) && (row.matches(TRANSPORT_FRAGMENT) || !!row.querySelector(TRANSPORT_FRAGMENT)) && !useful(row);
     if (!nativeHidden && !transportOnly) continue;
     if (!nativeHidden) desired.set(row, "hidden");
     const shell = envelope(row);

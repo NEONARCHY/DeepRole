@@ -6,7 +6,8 @@ test("section guidance explains the workflow without per-button question marks",
   await page.goto("/tests/fixtures/sidepanel.html");
   await expect(page.locator(".bottom-nav button")).toHaveCount(4);
   await expect(page.locator(".app-main .dr-help, .bottom-nav .dr-help")).toHaveCount(0);
-  await expect(page.locator(".dr-memory-status")).toContainText("Откройте чат DeepSeek");
+  await expect(page.getByRole("heading", { name: "Откройте чат DeepSeek" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Открыть DeepSeek" })).toHaveAttribute("href", "https://chat.deepseek.com/");
   await page.getByText("Добавить или проверить память вручную", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
   await expect(page.getByText("Запрос подготовлен в DeepSeek", { exact: true })).toHaveCount(0);

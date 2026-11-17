@@ -5,6 +5,31 @@ const options = ["positive", "neutral", "negative", "surprise"].map((kind, index
 const payload = `<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
 const history = `<article data-message-id="scene" data-role="assistant"><div class="ds-markdown"><p>Mira holds a sealed envelope.</p><pre>${payload.replaceAll("<", "&lt;")}</pre></div></article>`;
 
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`mixed scene text stays visible and readable at 320px in ${colorScheme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 460 });
+    await page.emulateMedia({ colorScheme });
+    await page.goto("/tests/fixtures/scene-choices.html?locale=ru");
+    await page.addStyleTag({ content: "body { font-size:22px; background:Canvas; color:CanvasText; color-scheme:light dark }" });
+    const prefix = "Лада проверила нижний ящик. ".repeat(6);
+    const suffix = "Серебряный компас внутри.";
+    await page.evaluate(html => (window as any).choicesTest.setHistory(html),
+      `<article data-role="assistant" data-message-id="mixed"><div class="ds-markdown"><p>${prefix}${payload.replaceAll("<", "&lt;")} <em>${suffix}</em></p></div></article>`);
+    const view = page.locator("[data-deeprole-payload-view] p");
+    await expect(view).toBeVisible();
+    await expect(view.locator("em")).toHaveText(suffix);
+    await expect(view).not.toContainText("deeprole_choices");
+    await expect(page.locator(".ds-markdown > p")).toBeHidden();
+    const choices = page.locator("[data-deeprole-choices-host] .grid button");
+    await expect(choices).toHaveCount(4);
+    await choices.first().focus();
+    await page.keyboard.press("End");
+    await expect(choices.last()).toBeFocused();
+    expect(await page.evaluate(() => (window as any).recentSceneMessages())).toEqual([prefix + " " + suffix]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  });
+}
+
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test(`pinned options appear in view even after scrolling away ${locale} ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 620 });
   await page.goto(`/tests/fixtures/scene-choices.html?pins&locale=${locale}`);
@@ -132,7 +157,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await page.evaluate(() => (window as any).choicesTest.update({ generating: false }));
     await expect(request).toBeVisible();
     await expect(loader).toHaveCount(0);
-    await expect(page.locator(".ds-markdown")).not.toContainText("deeprole_choices", { useInnerText: true });
+    await expect(page.locator("[data-deeprole-payload-view] div")).toHaveText("Mira waits.");
+    await expect(page.locator(".ds-markdown")).toBeHidden();
     await page.screenshot({ path: info.outputPath("choices-retry.png") });
     // A manual request also stays silent until its actual response JSON starts.
     await request.click(); await expect(request).toHaveCount(0); await expect(loader).toHaveCount(0);
@@ -143,7 +169,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await expect(loader).toHaveCount(1);
     // A transport-only turn is hidden as a whole. innerText on a hidden ancestor
     // returns raw textContent; assert actual visibility and retained wire instead.
-    await expect(page.locator(".ds-markdown [data-deeprole-choices-payload]")).toHaveCount(1);
+    await expect(page.locator(".ds-markdown[data-deeprole-choices-payload]")).toHaveCount(1);
     await expect(page.locator(".ds-markdown")).toBeHidden();
     await page.evaluate(html => (window as any).choicesTest.setHistory(html), history);
     await page.evaluate(() => (window as any).choicesTest.update({ generating: false, busy: false }));

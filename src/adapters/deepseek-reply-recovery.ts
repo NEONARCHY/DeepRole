@@ -2,9 +2,10 @@ import { formatRecoveredReplyContext, isRefusalFragment, isReplacedReply, MAX_RE
 import type { Locale, RecoveredReply } from "../core/types";
 import type { RecoveredReplyEdit } from "../storage/recovered-replies";
 import { isUserMessage, nativeMessageIdentity, nativeMessageRow, nativeMessageRows, REASONING } from "./deepseek-message-dom";
+import { syncTransportVisibility, TRANSPORT_VIEW, transportResult } from "./deepseek-transport-visibility";
 
 const HOST = "[data-deeprole-recovered-reply]";
-const OMIT = `${REASONING}, ${HOST}, script, style, template, iframe, object, embed, img, svg, button, [role='button'], input, textarea, select, [data-deeprole-choices-host], [data-deeprole-choices-loading], [data-deeprole-memory-card]`;
+const OMIT = `${REASONING}, ${HOST}, ${TRANSPORT_VIEW}, script, style, template, iframe, object, embed, img, svg, button, [role='button'], input, textarea, select, [data-deeprole-choices-host], [data-deeprole-choices-loading], [data-deeprole-memory-card]`;
 const TAGS = new Set("DIV P SPAN PRE CODE STRONG B EM I U S DEL SUP SUB KBD UL OL LI BLOCKQUOTE H1 H2 H3 H4 H5 H6 BR HR TABLE THEAD TBODY TFOOT TR TH TD A DETAILS SUMMARY".split(" "));
 type Candidate = RecoveredReply & { rawText: string };
 type Presentation = { source: HTMLElement; host: HTMLElement; display: string; priority: string; aria: string | null; html: string; key: string };
@@ -60,7 +61,15 @@ function snapshot(source: Node, key: string): Candidate | null {
   const doc = source.ownerDocument ?? document;
   const box = doc.createElement("div");
   if (source.nodeType === Node.TEXT_NODE) box.textContent = source.textContent;
-  else box.append(safeNodes(source, doc));
+  else {
+    box.append(safeNodes(source, doc));
+    const details = source instanceof HTMLElement ? transportResult(source) : undefined;
+    if (details && !source.contains(details)) {
+      const container = doc.createElement("div");
+      container.append(details.cloneNode(true));
+      box.append(safeNodes(container, doc));
+    }
+  }
   const rawText = box.textContent?.trim() ?? "";
   if (!rawText || isReplacedReply(rawText) || isRefusalFragment(rawText) || box.innerHTML.length > MAX_RECOVERED_REPLY_HTML) return null;
   const now = Date.now();
@@ -228,6 +237,11 @@ export class DeepSeekReplyRecovery {
       this.presentations.set(source, presentation);
       source.style.setProperty("display", "none", "important"); source.setAttribute("aria-hidden", "true");
       source.after(host);
+      const parts = syncTransportVisibility(body);
+      if (parts.hidden.has(body)) {
+        const details = body.querySelector("[data-deeprole-characters-result]");
+        if (details) body.after(details);
+      }
     }
     const badge = presentation.host.querySelector<HTMLElement>("[data-deeprole-recovery-label]")!;
     const label = this.failed.get(reply.messageKey) === reply.html ? copy.unsaved : reply.contextSentAt !== undefined ? copy.sent : copy.restored;

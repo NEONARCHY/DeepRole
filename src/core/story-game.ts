@@ -6,6 +6,7 @@ export interface StoryGameOutcome { active: boolean; changed: boolean; preparedP
 export interface StoryGameInput {
   chatId: string; worldId: string; expectedBase: string; operation: "start" | "restart" | "reset" | "restore" | "sync" | "resume" | "undo" | "parent" | "edit";
   snapshot: StoryGameSnapshot; nativeParentKey: string | null; manual: "stop" | "keep";
+  recoverOpening?: true;
 }
 export function validStoryGameSnapshot(v: unknown): v is StoryGameSnapshot {
   if (!v || typeof v !== "object" || Array.isArray(v)) return false;
@@ -19,7 +20,9 @@ export function validStoryGameSnapshot(v: unknown): v is StoryGameSnapshot {
 export function validStoryGameInput(v: unknown): v is StoryGameInput {
   if (!v || typeof v !== "object" || Array.isArray(v)) return false;
   const s = v as StoryGameInput;
-  return Object.keys(s).length === 7 && ["chatId", "worldId", "expectedBase", "operation", "snapshot", "nativeParentKey", "manual"].every(k => Object.hasOwn(s, k))
+  const recovery = Object.hasOwn(s, "recoverOpening");
+  return Object.keys(s).length === (recovery ? 8 : 7) && ["chatId", "worldId", "expectedBase", "operation", "snapshot", "nativeParentKey", "manual"].every(k => Object.hasOwn(s, k))
+    && (!recovery || s.recoverOpening === true && s.operation === "start")
     && validNativeStoryId(s.chatId) && typeof s.worldId === "string" && !!s.worldId && s.worldId.length <= 160 && typeof s.expectedBase === "string" && !!s.expectedBase && s.expectedBase.length <= 160
     && ["start", "restart", "reset", "restore", "sync", "resume", "undo", "parent", "edit"].includes(s.operation) && ["stop", "keep"].includes(s.manual)
     && (s.nativeParentKey === null || validNativeStoryKey(s.nativeParentKey)) && validStoryGameSnapshot(s.snapshot) && s.snapshot.chatId === s.chatId;
