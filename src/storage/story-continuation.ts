@@ -9,6 +9,9 @@ import { repository, type DeepRoleRepository } from "./repository";
 import { withHandoffCharacters } from "../core/relationship-handoff";
 import { captureWorldGame, planWorldGameActivation } from "./world-game";
 import { assertWorldGameWriter } from "../core/world-game";
+import { acceptedContinuationHistory } from "../core/continuation-recovery";
+import { planRecoveredContinuationTurn } from "./continuation-opening";
+import { sameStoryValue } from "../core/story-value";
 
 export interface ContinuationCapture {
   chatId: string;
@@ -90,8 +93,12 @@ export async function captureContinuation(input: ContinuationCapture, repo: Deep
 }
 
 /** One library transaction: target progress and the checkpoint's receipt. */
-export async function completeContinuation(expected: HandoffSnapshot, targetChatId: string, repo: DeepRoleRepository = repository): Promise<void> {
+export async function completeContinuation(expected: HandoffSnapshot, targetChatId: string, repo: DeepRoleRepository = repository, opening?: { draft: import("../core/continuation-flow").ContinuationDraft; history: import("../core/story-game").StoryGameSnapshot; settings: import("../core/types").DeepRoleSettings }, stillCurrent?: () => Promise<void>, overrides?: import("../core/types").MemoryOverrides): Promise<void> {
   if (!/^[\w-]{1,120}$/u.test(targetChatId)) throw new Error("handoff-invalid");
+  if (opening) {
+    opening = structuredClone(opening);
+    if (!expected.savedMemory || opening.draft.snapshotId !== expected.id || opening.draft.targetChatId !== targetChatId || !await acceptedContinuationHistory(opening.history, opening.draft)) throw Error("handoff-opening-conflict");
+  }
   await repo.updateRecords(records => {
     const snapshot = records.find(r => r.kind === "snapshot" && r.id === expected.id)?.data as HandoffSnapshot | undefined;
     if (!snapshot || snapshot.targetChatId && snapshot.targetChatId !== targetChatId || JSON.stringify({ ...snapshot, appliedAt: undefined, targetChatId: undefined }) !== JSON.stringify({ ...expected, appliedAt: undefined, targetChatId: undefined })) throw new Error("handoff-conflict");
@@ -120,7 +127,7 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
       let game = world.sharedGame ?? captureWorldGame(records, world, source ?? binding);
        // Carry the prepared scene reference into the next segment. Original
        // selected revisions/episode IDs remain intact; the recap is not canon.
-       game = { ...game, recentStory: snapshot.continuation ?? boundStory([{ role: "assistant", text: snapshot.summary }], "history", true), recentChatId: snapshot.sourceChatId };
+       game = { ...game, ...(overrides ? { memoryOverrides: structuredClone(overrides) } : {}), recentStory: snapshot.continuation ?? boundStory([{ role: "assistant", text: snapshot.summary }], "history", true), recentChatId: snapshot.sourceChatId };
       const base = [...records.filter(r => !(r.kind === "binding" && r.id === binding.id) && !(r.kind === "world" && r.id === worldId)), { kind: "binding" as const, id: binding.id, data: binding }, { kind: "world" as const, id: world.id, data: { ...world, sharedGame: game } }];
       const activation = planWorldGameActivation(base, { chatId: targetChatId, chatUrl: binding.chatUrl, worldId, expectedRevision: game.revision, mode: "attach" });
       const keys = new Set([...activation.records, ...activation.removed].map(r => r.kind + ":" + r.id));
@@ -128,10 +135,11 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
       if (!keys.has("world:" + world.id)) changes.push({ kind: "world", id: world.id, data: { ...world, sharedGame: game } });
       removed.push(...activation.removed);
     }
-    return {
-      records: [...changes,
-        { kind: "snapshot" as const, id: snapshot.id, data: { ...snapshot, appliedAt: snapshot.appliedAt ?? Date.now(), ...(targetChatId !== snapshot.sourceChatId ? { targetChatId } : {}) } }],
-      removed, result: undefined,
-    };
-  });
+    changes.push({ kind: "snapshot", id: snapshot.id, data: { ...snapshot, appliedAt: snapshot.appliedAt ?? Date.now(), ...(targetChatId !== snapshot.sourceChatId ? { targetChatId } : {}) } });
+    if (!opening || !worldId) return { records: changes, removed, result: undefined };
+    const keys = new Set([...changes, ...removed].map(r => r.kind + ":" + r.id));
+    const final = planRecoveredContinuationTurn([...records.filter(r => !keys.has(r.kind + ":" + r.id)), ...changes], worldId, targetChatId, opening.draft, opening.history, opening.settings);
+    return { records: final.filter(r => !records.some(old => old.kind === r.kind && old.id === r.id && sameStoryValue(old.data, r.data))),
+      removed: records.filter(r => !final.some(next => next.kind === r.kind && next.id === r.id)).map(r => ({ kind: r.kind, id: r.id })), result: undefined };
+  }, stillCurrent);
 }

@@ -288,18 +288,34 @@ export default defineBackground(() => {
             };
             await current(); await acknowledgeOldChatNotice(message.input, repository, current); return { ok: true };
           }
+          if (message.operation === "recoverContinuation") {
+            if (sender.frameId !== 0 || !validChatId(message.targetChatId) || typeof message.token !== "string" || typeof message.draftKey !== "string") throw Error("handoff-scope");
+            const tabId = sender.tab!.id!;
+            const current = async () => {
+              const tab = await browser.tabs.get(tabId);
+              if (!tab.url || !isSameDeepSeekChat(tab.url, tab.pendingUrl ?? tab.url, message.targetChatId)) throw Error("handoff-scope");
+              if ((await getVaultConfig()).enabled && !await getSessionKey()) throw Error("vault-locked");
+            };
+            await current();
+            const settings = await getSettings();
+            const ok = await tabSessions.completeRecoveredSnapshot(tabId, message.snapshot.id, message.token, message.targetChatId, message.draftKey, async (draft, overrides) => {
+              await current();
+              await completeContinuation(message.snapshot, message.targetChatId, repository, { draft, history: message.history, settings }, current, overrides);
+            });
+            return { ok: true, data: ok };
+          }
           if (message.operation === "completeContinuation") {
             const { retry, snapshot, token, targetChatId } = message;
             if (!validChatId(targetChatId) || retry && sender.frameId !== 0) throw Error("handoff-scope");
             const tabId = sender.tab!.id!, tab = await browser.tabs.get(tabId);
             const isDestination = (url: string, pendingUrl = url) => isSameDeepSeekChat(url, pendingUrl, targetChatId);
             if (!tab.url || !(isDestination(tab.url, retry ? tab.pendingUrl : undefined) || !retry && isDeepSeekHome(tab.url))) throw Error("handoff-scope");
-            const ok = await tabSessions.completeSnapshot(tabId, snapshot.id, token, async () => {
+            const ok = await tabSessions.completeSnapshot(tabId, snapshot.id, token, async overrides => {
               if (retry) {
                 const current = await browser.tabs.get(tabId);
                 if (!isDestination(current.url ?? "", current.pendingUrl)) throw Error("handoff-scope");
               }
-              await completeContinuation(snapshot, targetChatId);
+              await completeContinuation(snapshot, targetChatId, repository, undefined, undefined, overrides);
             }, targetChatId, retry);
             return { ok: true, data: ok };
           }
@@ -381,9 +397,15 @@ export default defineBackground(() => {
       return browser.storage.session?.get(key).then((value) => value[key] ?? null);
     }
     if (sender.tab?.id && ["DR_GET_TAB_STATE", "DR_SAVE_TAB_STATE"].includes(message.type)) {
-      return message.type === "DR_SAVE_TAB_STATE"
-        ? tabSessions.patch(sender.tab.id, message.state, message.expected)
-        : tabSessions.get(sender.tab.id);
+      const tabId = sender.tab.id;
+      return (async () => {
+        if (message.type === "DR_SAVE_TAB_STATE") {
+          if (message.state.continuationDraft && await repository.isLocked()) return { ok: false };
+          return tabSessions.patch(tabId, message.state, message.expected);
+        }
+        const state = await tabSessions.get(tabId);
+        return await repository.isLocked() ? { ...state, continuationDraft: null } : state;
+      })();
     }
     if (message.type === "DR_DATA_CHANGED") {
       void cast.auto().catch(() => undefined);

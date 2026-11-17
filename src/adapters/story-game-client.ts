@@ -1,6 +1,6 @@
 import { validStoryGameSnapshot, type StoryGameInput, type StoryGameSnapshot } from "../core/story-game";
 import { createId } from "../core/id";
-import { fieldHistoryAnchor } from "./field-history-client";
+import { fieldHistoryAnchor, firstStoryTurnView } from "./field-history-client";
 import { nativeStoryMessageKey } from "../core/story-transport";
 import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagnostic";
 interface Scope { chatId: string | null; worldId: string | null; base: string; url: string; locked: boolean; generating: boolean; managed?: boolean; replySignature?: string }
@@ -81,7 +81,7 @@ export class StoryGameClient {
     if(!preparation&&same())this.presentation={scope:initial,anchor,snapshot};
     return snapshot;
   }
-  async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop", reviewedBase?: string, automaticStart?: { allowed: () => boolean; beforeSend: boolean }) {
+  async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop", reviewedBase?: string, automaticStart?: { allowed: () => boolean; beforeSend: boolean; draft?: string }) {
     // A new visible variant must not be mistaken for an older in-flight sync.
     // Serialise reads, then take a fresh scope/anchor for THIS invocation.
     while (this.task || this.presentationTask) { try { await (this.task ?? this.presentationTask); } catch { /* A new explicit/read attempt gets its own scope. */ } }
@@ -91,6 +91,7 @@ export class StoryGameClient {
     if (reviewedBase !== undefined && (operation !== "reset" || initial.base !== reviewedBase)) throw Error("story-review-stale");
     const anchor = fieldHistoryAnchor(this.win.document, true);
     const beforeSend = operation === "start" && automaticStart?.beforeSend === true;
+    const openingDraft = beforeSend && nativeParentKey === null ? automaticStart?.draft : undefined;
     const preparation = operation === "parent" || operation === "edit" || beforeSend;
     if (!initial.chatId || !initial.worldId || initial.locked || initial.generating && !preparation) throw Error("story-checkpoint-busy");
     const same = () => { const now = this.scope(); return now.url === initial.url && now.chatId === initial.chatId && now.worldId === initial.worldId && now.base === initial.base && !now.locked; };
@@ -105,7 +106,8 @@ export class StoryGameClient {
       if (!same() || automaticStart && !automaticStart.allowed()) throw Error("story-binding-conflict");
       if (beforeSend && (snapshot.selectedNativeKey !== nativeParentKey
         || nativeParentKey === null && snapshot.messages.length > 0
-        || anchor !== null && nativeStoryMessageKey(anchor) !== nativeParentKey)) throw Error("story-native-line-unavailable");
+        || (openingDraft !== undefined ? !firstStoryTurnView(openingDraft, this.win.document)
+          : anchor !== null && nativeStoryMessageKey(anchor) !== nativeParentKey))) throw Error("story-native-line-unavailable");
       return this.store.runStoryGame({ chatId: initial.chatId!, worldId: initial.worldId!, expectedBase: initial.base, operation, snapshot, nativeParentKey, manual,
         ...(automaticStart && !beforeSend ? { recoverOpening: true } : {}) }, initial.url);
     };

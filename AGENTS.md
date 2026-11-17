@@ -3,14 +3,16 @@
 ## Continuation between computers
 
 - At the start of work on this repository, read the current section of `CODEX-HANDOFF.md` before choosing the next implementation task. It contains the latest completed work, user decisions, verification limits, and the next task; do not hardcode a historical RP number.
+- For the 17 November 2026 home-computer handoff, also read `docs/HANDOFF-2026-11-17.md`. It summarizes UX378–UX379/RP380–RP390, final validation, current archives, live-check gaps, and the next task. Historical unpushed notes below the current handoff are not the current release status.
 - When continuing the 13 October 2026 work after a pull or computer change, also read `docs/HANDOFF-2026-10-13.md` and the newest UX/RP sections of `ROADMAP.md`. The day log maps RP223–RP238/UX238 to the actual implementation and tests. For UX work, read `docs/DESIGN-SYSTEM.md` before editing.
 - When the user asks to continue after pulling or changing computers, follow that handoff and the newest ROADMAP sections. Older historical "next steps" are not current instructions. Do not overwrite uncommitted work when synchronizing Git.
 - Update the handoff when finishing a meaningful milestone, so another Codex can continue without this chat history.
 
 ## DeepRole browser checks on Windows
 
-- For DeepRole and DeepSeek UI checks, follow [the separate Edge guide](docs/CODEX-DEEPROLE-EDGE.md) and use the [portable kit](downloads/DeepRole-Edge-Codex-Work-Kit.zip) when setting up another computer. Use a dedicated Edge profile with its own extension installation.
+- For DeepRole and DeepSeek UI checks, follow [the separate Edge guide](docs/CODEX-DEEPROLE-EDGE.md) and use the current ZIP named in `CODEX-HANDOFF.md`. The old portable Work Kit is historical and no longer shipped. Use a dedicated Edge profile with its own extension installation.
 - Activate the intended DeepSeek chat first. Open DeepRole's `sidepanel.html` as an ordinary extension tab in the same Edge window and verify both window IDs. Inspect that extension tab while keeping the chat active. Use this route if the native side panel displays a white screen.
+- The extension-tab route requires a tool that permits extension URLs. Respect any explicit `chrome-extension://` denial; do not bypass it with CDP, native screenshots, proxies, or the historical Work Kit. HTTPS chat widgets can be checked separately.
 - Leave extension installation, browser security prompts and sign-in to the user. Operate only within the user's authorized test scope. Close the Edge process owned by the session when the check is finished.
 
 ## Project conventions

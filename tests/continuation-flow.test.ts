@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchesContinuationTarget, matchesProvisionalContinuationTarget, type ContinuationFlow } from "../src/core/continuation-flow";
+import { continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchingContinuationDraft, continuationDraftKey, matchesContinuationTarget, matchesProvisionalContinuationTarget, waitingForContinuationHome, type ContinuationFlow } from "../src/core/continuation-flow";
 import { boundStory } from "../src/core/story-continuation";
 import { sceneHandoffPrompt } from "../src/core/service-protocol";
 import { formatMemoryContext, injectContextIntoPrompt } from "../src/core/context";
@@ -8,6 +8,33 @@ import { visibleStoryHistory } from "../src/adapters/story-history-dom";
 
 const flow: ContinuationFlow = { id: "f", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", scene: { worldId: "w", focusIds: ["a", "b"], bookId: null }, phase: "review", requestId: "r", proposalId: "p", createdAt: 1 };
 describe("reviewed scene transfer", () => {
+  it("keeps a locally blocked draft at home without treating it as a sent request", () => {
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "new" };
+    const draft = { ...target, draft: "  💡 Exact message\n", blockedLength: 40001 };
+    expect(matchingContinuationDraft(draft, "s", "t", target)).toEqual(draft);
+    expect(matchingContinuationDraft(draft, "s", "t", null)).toEqual(draft);
+    expect(matchingContinuationDraft(draft, "s", "t", { ...target, targetChatId: "other" })).toBeNull();
+    expect(matchingContinuationDraft(draft, "s", "new-token", null)).toBeNull();
+    for (const blockedLength of [0, 40000, NaN, Infinity, 40001.5, "40001", null]) expect(matchingContinuationDraft({ ...draft, blockedLength } as any, "s", "t", null)).toBeNull();
+    for (const proof of [{ requestId: "r" }, { promptDigest: "a".repeat(64) }, { requestId: "r", promptDigest: "a".repeat(64) }, { purpose: "user-turn" }]) {
+      expect(matchingContinuationDraft({ ...draft, ...proof } as any, "s", "t", target)).toBeNull();
+    }
+    expect(continuationDraftKey(draft)).not.toBe(continuationDraftKey({ ...draft, blockedLength: 40002 }));
+    expect(matchingContinuationDraft({ ...target, draft: draft.draft }, "s", "t", null)).toBeNull();
+  });
+  it("validates and guards the frozen purpose without rejecting older recovery drafts", () => {
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "new" }, draft = { ...target, draft: "[Ask about the token.]" };
+    expect(matchingContinuationDraft(draft, "s", "t", target)).toEqual(draft);
+    for (const purpose of ["user-turn", "out-of-character"] as const) expect(matchingContinuationDraft({ ...draft, purpose }, "s", "t", target)?.purpose).toBe(purpose);
+    for (const purpose of ["game", false, {}, null]) expect(matchingContinuationDraft({ ...draft, purpose } as any, "s", "t", target)).toBeNull();
+    expect(continuationDraftKey({ ...draft, purpose: "user-turn" })).not.toBe(continuationDraftKey({ ...draft, purpose: "out-of-character" }));
+  });
+  it("preserves only a live navigation window in its exact source chat", () => {
+    expect(waitingForContinuationHome("source", "source", 200, 100)).toBe(true);
+    for (const chat of [null, "new", "other"]) expect(waitingForContinuationHome("source", chat, 200, 100)).toBe(false);
+    for (const until of [null, undefined, 100, 99, NaN, Infinity]) expect(waitingForContinuationHome("source", "source", until, 100)).toBe(false);
+    expect(waitingForContinuationHome(undefined, null, 200, 100)).toBe(false);
+  });
   it("keeps reload recovery off the home page, source and other or already bound destinations", () => {
     const target = { snapshotId: "saved", snapshotToken: "current", targetChatId: "new" };
     expect(matchesContinuationTarget(target, "saved", "current", "old", "new", false)).toBe(true);

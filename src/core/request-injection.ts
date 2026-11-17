@@ -9,6 +9,10 @@ export interface InjectionResult {
 export const DEEPSEEK_PROMPT_CHAR_LIMIT = 40_000;
 const USER_MESSAGE_SEPARATOR = "\n\n[User message]\n";
 
+export function assembledPrompt(draft: string, context: string): string {
+  return context ? context + USER_MESSAGE_SEPARATOR + draft : draft;
+}
+
 export function assembledPromptLength(draft: string, context: string): number {
   return draft.length + (context ? context.length + USER_MESSAGE_SEPARATOR.length : 0);
 }

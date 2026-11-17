@@ -26,14 +26,17 @@
 .dr-continuation-progress button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
 .dr-continuation-progress button:disabled { opacity:.5; cursor:default; }
 .dr-send-notice {
+  position:fixed; z-index:6; right:18px; bottom:104px;
   pointer-events:auto; width:min(350px, calc(100vw - 36px)); max-height:calc(100dvh - 116px);
   margin-bottom:8px; padding:12px; overflow:auto; display:grid; gap:8px; overflow-wrap:anywhere;
   border:1px solid var(--dr-border); border-inline-start:3px solid var(--dr-warning);
   border-radius:12px; background:var(--dr-panel); color:var(--dr-text); font-size:.875rem; line-height:1.5;
 }
 .dr-send-notice p { margin:4px 0 0; }
+.dr-send-notice a.dr-button { display:flex; justify-content:center; align-items:center; min-height:44px; padding:10px; white-space:normal; text-align:center; text-decoration:none; }
 .dr-send-notice button,.dr-send-notice summary { min-height:44px; padding:10px; cursor:pointer; }
-.dr-send-notice button,.dr-send-notice textarea { width:100%; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:inherit; font:inherit; }
+.dr-send-notice button,.dr-send-notice textarea,.dr-send-notice a.dr-button { width:100%; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:inherit; font:inherit; }
+.dr-send-notice :is(button,a,summary,textarea):focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
 .dr-send-notice textarea { display:block; padding:8px; resize:vertical; }
 :host { all: initial; }
 * { box-sizing: border-box; }

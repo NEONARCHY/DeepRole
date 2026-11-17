@@ -21,6 +21,23 @@ it('reuses an existing managed read for presentation instead of fetching again',
   const f=fixture();f.scope.managed=true;const task=f.client.run();await vi.waitFor(()=>expect(f.requests).toHaveLength(1));f.reply();await task;
   expect(await f.client.readForPresentation()).toEqual(f.snapshot);expect(f.requests).toHaveLength(1);expect(f.store.runStoryGame).toHaveBeenCalledTimes(1);
 });
+it('starts before the first POST with pending native rows only after verifying empty server history',async()=>{
+  document.body.innerHTML='<article data-role="user" data-message-id="2">Request</article><article data-role="assistant" data-message-id="3"></article>';
+  const f=fixture(),task=f.client.run('start',null,'stop',undefined,{allowed:()=>true,beforeSend:true,draft:'Request'});
+  f.reply({chatId:'chat',selectedNativeKey:null,messages:[]});
+  await expect(task).resolves.toEqual({active:true,changed:false});
+  expect(f.store.runStoryGame).toHaveBeenCalledWith(expect.objectContaining({operation:'start',snapshot:{chatId:'chat',selectedNativeKey:null,messages:[]},nativeParentKey:null}),location.href);
+});
+it.each(['existing-history','selected-parent','old-reply','different-user','late-reply','malformed'] as const)('rejects first-turn preparation with %s despite pending UI',async mode=>{
+  document.body.innerHTML='<article data-role="user" data-message-id="2">Request</article><article data-role="assistant" data-message-id="3"></article>';
+  if(mode==='old-reply')document.querySelector('[data-role="assistant"]')!.textContent='Old scene';
+  if(mode==='different-user')document.querySelector('[data-role="user"]')!.textContent='Earlier request';
+  const f=fixture(),task=f.client.run('start',null,'stop',undefined,{allowed:()=>true,beforeSend:true,draft:'Request'});
+  if(mode==='late-reply')document.querySelector('[data-role="assistant"]')!.textContent='Arrived while checking history';
+  f.reply(mode==='malformed'?{}:mode==='existing-history'?{...f.snapshot,selectedNativeKey:null}:mode==='selected-parent'?f.snapshot:{chatId:'chat',selectedNativeKey:null,messages:[]});
+  await expect(task).rejects.toThrow('story-native-line-unavailable');
+  expect(f.store.runStoryGame).not.toHaveBeenCalled();
+});
 it.each(['world','chat','url','locked','generating','anchor','reset','reply'] as const)('does not expose cached proof after %s changes',async mode=>{
   const f=fixture(),task=f.client.readForPresentation();f.reply();await task;
   if(mode==='world')f.scope.worldId='other';if(mode==='chat')f.scope.chatId='other';if(mode==='url')f.scope.url+='?other';

@@ -1,3 +1,4 @@
+import { captureStoryAutomation } from "../core/story-automation";
 import { startCastWorker } from "../adapters/cast-worker";
 import { savedMemoryBinding, type SavedMemoryRequest, type SavedMemoryTransferState } from "../core/saved-memory-continuation";
 import { isDeepSeekFirstChatRoute, isDeepSeekHome } from "../core/chat-scope";
@@ -5,7 +6,9 @@ import { reportMemoryPreparationFailure, type MemoryPreparationStage } from "../
 import { startIsolatedFieldWorker } from "../adapters/isolated-field-worker";
 import { bootstrapCastServiceScreen, bootstrapFieldServiceScreen } from "../adapters/field-service-screen";
 import { IsolatedFieldClient } from "../adapters/isolated-field-client";
-import { requestFieldHistory, fieldHistoryAnchor } from "../adapters/field-history-client";
+import { requestFieldHistory, fieldHistoryAnchor, firstStoryTurnView } from "../adapters/field-history-client";
+import { checkContinuationHistory } from "../adapters/continuation-recovery-client";
+import { continuationPromptDigest } from "../core/continuation-recovery";
 import { profileRelatedNames, visibleFieldHistory } from "../core/field-history";
 import { fieldSceneReference, type CharacterTextOutcome, type IsolatedFieldInput } from "../core/isolated-character-text";
 import { StoryDiagnosticsClient } from "../adapters/story-diagnostics-client";
@@ -66,7 +69,7 @@ import { imageText, imageErrorKey } from "../core/image-i18n";
 import { closePortraitViewer } from "../adapters/portrait-viewer";
 import { oldChatNotice, oldChatNoticePrompt, type OldChatNoticeEdit } from "../core/old-chat-notice";
 import { presentHiddenHandoffs } from "../adapters/deepseek-handoff-dom";
-import { continuationKey, continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchesContinuationTarget, matchesProvisionalContinuationTarget, type ContinuationTarget, type ProvisionalContinuationTarget, type ContinuationFlow, type ContinuationReceipt } from "../core/continuation-flow";
+import { continuationKey, continuationDraftKey, continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchingContinuationDraft, matchesContinuationTarget, matchesProvisionalContinuationTarget, waitingForContinuationHome, type ContinuationDraft, type ContinuationTarget, type ProvisionalContinuationTarget, type ContinuationFlow, type ContinuationReceipt } from "../core/continuation-flow";
 import { boundStory } from "../core/story-continuation";
 import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
@@ -108,7 +111,7 @@ import type {
   MemoryOverrides, MemoryProposalBatch, LoreChange,
 } from "../core/types";
 import { PageWidget, type WidgetState } from "./content/PageWidget";
-import { DEEPSEEK_PROMPT_CHAR_LIMIT, assembledPromptLength } from "../core/request-injection";
+import { DEEPSEEK_PROMPT_CHAR_LIMIT, assembledPrompt, assembledPromptLength } from "../core/request-injection";
 import { pendingActivity, serviceActivity, SERVICE_TIMEOUT_MS, type ServiceActivity } from "../core/memory-experience";
 import "./content/page-widget.css";
 import "./shared/help.css";
@@ -173,6 +176,9 @@ interface ContextDelivery {
   snapshot: HandoffSnapshot | null;
   snapshotToken: string | null;
   originalDraft?: string;
+  continuationDraft?: ContinuationDraft;
+  promptLengthNotice?: WidgetState["promptLength"];
+  storageFailureNotice?: WidgetState["sendStorageFailure"];
   createdAt: number;
 }
 
@@ -259,6 +265,7 @@ class PageController {
   private retryContinuationTarget: ContinuationTarget | null = null;
   private pendingContinuationCommit: ContinuationReceipt | null = null;
   private attemptedContinuationCommit: string | null = null;
+  private readonly checkedContinuationHistory = new Set<string>();
   private readonly deliveries = new Map<string, ContextDelivery>();
   private readonly searchIndex = new GameSearchIndex();
   private readonly malformedServiceReplies = new Map<string, { text: string; stableSince: number }>();
@@ -505,12 +512,18 @@ class PageController {
     this.appliedSnapshot = pendingSnapshotId ? this.snapshots.find((item) => item.id === pendingSnapshotId) ?? null : null;
     this.snapshotToken = this.appliedSnapshot ? pending?.snapshotToken ?? null : null;
     this.retryContinuationTarget = this.appliedSnapshot?.savedMemory ? pending?.retryContinuationTarget ?? null : null;
+    if (this.appliedSnapshot?.savedMemory) this.draftOverrides = pending?.continuationOverrides ?? this.appliedSnapshot.memoryOverrides ?? EMPTY_OVERRIDES;
     const chatId = this.adapter.getChatId(), home = isDeepSeekHome(location.href);
     const receiptScope = [this.appliedSnapshot?.id, this.snapshotToken, chatId, home] as const;
     const savedReceipt = matchingContinuationReceipt(pending?.continuationReceipt, ...receiptScope);
     this.pendingContinuationCommit = savedReceipt ?? matchingContinuationReceipt(this.pendingContinuationCommit, ...receiptScope);
     this.state.continuationCommitPending = !!this.pendingContinuationCommit;
     const retry = this.retryContinuationTarget;
+    const draft = !this.pendingContinuationCommit && matchingContinuationDraft(pending?.continuationDraft, this.appliedSnapshot?.id, this.snapshotToken, retry);
+    const suspendedAtHome = !!draft && home && (!!draft.blockedLength || matchesContinuationTarget(retry, this.appliedSnapshot?.id, this.snapshotToken,
+      this.appliedSnapshot?.sourceChatId, retry?.targetChatId ?? null, this.bindings.some(binding => binding.chatId === retry?.targetChatId)));
+    this.state.continuationDraft = draft && (this.savedMemoryTarget() || suspendedAtHome) && (suspendedAtHome || !this.deliveries.has(draft.requestId ?? ""))
+      ? { ...draft, url: location.href, ...(suspendedAtHome && !draft.blockedLength ? { returnChatId: draft.targetChatId } : {}) } : undefined;
     if (!this.pendingContinuationCommit && retry?.returnHomeAfterLengthBlock && isDeepSeekHome(location.href) && !this.adapter.getChatId()
       && matchesContinuationTarget(retry, this.appliedSnapshot?.id, this.snapshotToken, this.appliedSnapshot?.sourceChatId,
         retry.targetChatId, this.bindings.some(binding => binding.chatId === retry.targetChatId))) {
@@ -523,9 +536,16 @@ class PageController {
       this.retryContinuationTarget = null;
     }
     const continuationTarget = location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
+    const waitingAtSource = waitingForContinuationHome(this.appliedSnapshot?.sourceChatId, chatId, pending?.continueUntil);
     if (this.appliedSnapshot?.savedMemory && !this.pendingContinuationCommit && !this.savedMemoryTarget()) {
       const { id } = this.appliedSnapshot;
-      await this.saveTabState({ snapshotId: null, snapshotToken: null, retryContinuationTarget: null }, { snapshotId: id, snapshotToken: this.snapshotToken });
+      // A library refresh may finish after queuing the transfer but before the
+      // outgoing document unloads. Retain the session handoff for home without
+      // applying its context to the source chat or treating it as auto-send.
+      if (!waitingAtSource && !suspendedAtHome) {
+        await this.saveTabState({ snapshotId: null, snapshotToken: null, retryContinuationTarget: null }, { snapshotId: id, snapshotToken: this.snapshotToken });
+        if (generation !== this.reloadGeneration) return false;
+      }
       this.appliedSnapshot = null;
       this.snapshotToken = null;
       this.retryContinuationTarget = null;
@@ -535,11 +555,10 @@ class PageController {
     this.autoContinueUntil = continuationValid ? pending?.continueUntil ?? 0 : 0;
     this.autoContinueSnapshotId = pending?.continueOnFreshChat ? pending.snapshotId ?? null : null;
     this.autoContinueSnapshotToken = pending?.continueOnFreshChat ? pending.snapshotToken ?? null : null;
-    const waitingAtSource = this.appliedSnapshot?.sourceChatId === this.adapter.getChatId() && !!pending?.continueUntil && pending.continueUntil > Date.now();
     if (pending?.continueOnFreshChat && !continuationValid && !waitingAtSource) await this.disarmAutoContinue(Boolean(this.adapter.getChatId()) || !continuationTarget);
     if (this.appliedSnapshot && (!this.adapter.getChatId() || this.pendingContinuationCommit)) {
       this.draftScene = { worldId: memoryWorld(this.appliedSnapshot, this.books), focusIds: this.appliedSnapshot.focusIds ?? [], bookId: this.appliedSnapshot.bookId };
-      this.draftOverrides = this.appliedSnapshot.memoryOverrides ?? this.draftOverrides;
+      if (!this.appliedSnapshot.savedMemory) this.draftOverrides = this.appliedSnapshot.memoryOverrides ?? this.draftOverrides;
     }
     await this.updateContext();
     this.updateSuggestions();
@@ -550,6 +569,7 @@ class PageController {
     if (this.pendingService) this.scheduleScan();
     this.scheduleScan();
     if (generation === this.reloadGeneration && savedReceipt && savedReceipt.targetChatId === chatId) void this.retryContinuationCommit(savedReceipt);
+    else if (generation === this.reloadGeneration) void this.recoverContinuationFromHistory(true);
     return true;
   }
 
@@ -706,11 +726,12 @@ class PageController {
     this.serviceFeedback = null;
     this.state.pendingHandoff = undefined;
     this.state.continuationDraft = undefined;
+    this.state.sendStorageFailure = undefined;
     this.state.handoffOffer = null; this.state.analysisSuggested = false; this.state.warning = ""; this.state.toast = "";
     this.state.selectionText = ""; this.state.selectionPosition = null;
   }
 
-  private overrides(): MemoryOverrides { return this.adapter.getChatId() ? this.sharedBinding()?.memoryOverrides ?? EMPTY_OVERRIDES : this.draftOverrides; }
+  private overrides(): MemoryOverrides { return this.savedMemoryTarget() || !this.adapter.getChatId() ? this.draftOverrides : this.sharedBinding()?.memoryOverrides ?? EMPTY_OVERRIDES; }
 
   private async overrideMemory(id: string, action: "include" | "exclude" | "reset") {
     const scope = this.pageScope();
@@ -721,7 +742,13 @@ class PageController {
       if (!this.documents.some((entry) => entry.id === id && memoryWorld(entry, this.books) === scene.worldId)) throw new Error("out-of-scope");
       const overrides = changeMemoryOverride(this.overrides(), id, action);
       const existing = this.currentBinding();
-      if (this.adapter.getChatId()) {
+      if (this.savedMemoryTarget()) {
+        // A native empty chat ID is not yet a destination binding. Keep the
+        // choice with the transfer until its accepted first turn commits.
+        if (!await this.saveTabState({ continuationOverrides: overrides }, { snapshotId: this.appliedSnapshot!.id, snapshotToken: this.snapshotToken, continuationReceipt: null })) throw Error("storage-unavailable");
+        this.assertScope(scope);
+        this.draftOverrides = overrides;
+      } else if (this.adapter.getChatId()) {
         const now = Date.now();
         const binding: ChatBinding = { ...existing, id: existing?.id ?? `binding:${this.adapter.getChatId()}`, chatId: this.adapter.getChatId()!, chatUrl: location.href, ...this.currentScene(), memoryOverrides: overrides, messageCountAtAnalysis: existing?.messageCountAtAnalysis ?? 0, createdAt: existing?.createdAt ?? now, updatedAt: now };
         await repository.putIfUnchanged("binding", binding, existing ?? null);
@@ -926,7 +953,7 @@ class PageController {
       excludedIds: overrides.excludedIds,
       settings: world ?? this.settings,
       character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService || savedMemoryTarget,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
-      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : opening && world && chatId ? {world,chat:chatId,facts:[],sheetsEnabled:!!this.settings.characterSheetsEnabled} : world && recentGame && savedBranch && !this.pendingService ? {world,chat:recentGame.activeChatId,branch:savedBranch,facts:recentGame.facts,taskArchive:this.taskArchives.get(savedBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,referenceOnly:true} : undefined,
+      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : (opening || savedMemoryTarget) && world && (chatId || requestChatId) ? {world,chat:(chatId ?? requestChatId)!,facts:world.sharedGame?.facts ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : world && recentGame && savedBranch && !this.pendingService ? {world,chat:recentGame.activeChatId,branch:savedBranch,facts:recentGame.facts,taskArchive:this.taskArchives.get(savedBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,referenceOnly:true} : undefined,
       snapshot,
       continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
       restart: !!recentGame?.restartPending && !this.pendingService,
@@ -1136,8 +1163,10 @@ class PageController {
       onDiscard={async (id) => { if (this.state.continuation?.proposalId === id) await this.cancelContinuation(); const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "discard", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); this.state.reviewProposalId = null; await this.reload(); }}
       onReviewClose={() => { this.state.reviewProposalId = null; }}
       onUndo={async (id) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "undo", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); await this.reload(); }}
-      onDismissPromptLength={() => { this.state.promptLength = undefined; this.render(); }}
-      onDismissContinuationDraft={() => { this.state.continuationDraft = undefined; this.render(); }}
+      onDismissPromptLength={() => { this.state.promptLength = undefined; if (this.state.continuationDraft?.blockedLength) void this.dismissContinuationDraft(); else this.render(); }}
+      onDismissContinuationDraft={() => { void this.dismissContinuationDraft(); }}
+      onDismissSendStorageFailure={() => { this.state.sendStorageFailure = undefined; this.render(); }}
+      onCheckContinuationDraft={() => { void this.recoverContinuationFromHistory(); }}
       onCopyContext={() => { void navigator.clipboard.writeText(this.state.contextText); this.showToast(this.t("contextCopied")); }}
       onAnalyze={() => void this.runService({ id: createId("service"), type: "memory-analysis", bookId: this.currentScene().bookId, createdAt: Date.now() }).then((result) => { if (!result.ok) this.showToast(assistantText(this.state.locale, result.error === "empty-chat" ? "emptyChat" : result.error === "draft-not-empty" ? "draftProtected" : result.error === "busy" ? "busy" : result.error === "scene-changed" ? "sceneChanged" : "serviceFailed")); })}
       onDismissSuggestion={() => { this.dismissedAt.set(this.adapter.getChatId() ?? "draft", this.adapter.getMessageCount()); this.state.analysisSuggested = false; this.render(); }}
@@ -1279,7 +1308,7 @@ class PageController {
     return saved;
   }
 
-  private async startAutomaticRecording(beforeSend?: { chatId: string; nativeParentKey: string | null }): Promise<boolean> {
+  private async startAutomaticRecording(beforeSend?: { chatId: string; nativeParentKey: string | null; draft: string }): Promise<boolean> {
     const scope = this.pageScope(), binding = this.currentBinding();
     const world = this.worlds.find(w => w.id === binding?.worldId), policy = world?.storyAutomation;
     if (!binding || !world || !policy || policy.mode === "off" || world.sharedGame?.activeBindingId !== binding.id
@@ -1297,7 +1326,7 @@ class PageController {
     this.lastRecordingAttempt = attempt;
     const task = (async () => {
       try {
-        const result = await this.storyGame.run("start", beforeSend?.nativeParentKey ?? null, "stop", undefined, { allowed, beforeSend: !!beforeSend });
+        const result = await this.storyGame.run("start", beforeSend?.nativeParentKey ?? null, "stop", undefined, { allowed, beforeSend: !!beforeSend, draft: beforeSend?.draft });
         return result.active && await this.reload() && result.changed;
       } catch { return false; }
     })();
@@ -2143,9 +2172,9 @@ class PageController {
       guard();
       if (!snapshot) throw Error("handoff-invalid");
       const token = createId("handoff");
-      if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, retryContinuationTarget: null, continueOnFreshChat: false, continueUntil: null }, { snapshotId: null, continuationKey: continuationKey(null) })) throw Error("handoff-conflict");
+      if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, retryContinuationTarget: null, continueOnFreshChat: false, continueUntil: fromHome ? null : Date.now() + 90_000 }, { snapshotId: null, continuationKey: continuationKey(null) })) throw Error("handoff-conflict");
       try { guard(); }
-      catch (error) { await this.saveTabState({ snapshotId: null, snapshotToken: null }, { snapshotId: snapshot.id, snapshotToken: token }); throw error; }
+      catch (error) { await this.saveTabState({ snapshotId: null, snapshotToken: null, continueUntil: null }, { snapshotId: snapshot.id, snapshotToken: token }); throw error; }
       if (fromHome) await this.reload();
       else location.assign("https://chat.deepseek.com/");
     } finally { this.transferring = false; this.state.transferring = false; this.render(); }
@@ -2302,6 +2331,7 @@ class PageController {
     this.state.warning = "";
     if (this.state.promptLength?.url !== location.href) this.state.promptLength = undefined;
     if (this.state.continuationDraft?.url !== location.href) this.state.continuationDraft = undefined;
+    if (this.state.sendStorageFailure?.url !== location.href) this.state.sendStorageFailure = undefined;
     this.lastUrl = location.href;
     this.navigationTask = this.navigationTask.catch(() => undefined).then(() => this.handleNavigation());
     void this.navigationTask.catch(() => { this.publishContext(""); });
@@ -2362,6 +2392,7 @@ class PageController {
     }
     if (event.data.type === "REQUEST_CONTEXT" && typeof event.data.id === "string" && typeof event.data.draft === "string" && event.data.draft.length <= 100000) {
       if (this.state.promptLength && (!this.state.promptLength.draft || this.state.promptLength.restored)) this.state.promptLength = undefined;
+      if (this.state.continuationDraft?.blockedLength) this.state.continuationDraft = undefined;
       this.pickedSceneChoice = null;
       this.scheduleHistoryRefresh(12_000);
       dismissSceneChoiceCards();
@@ -2426,7 +2457,7 @@ class PageController {
         // Start at the verified native parent before preparing this user turn.
         // A failed proof leaves the ordinary send and the manual controls available.
         const recordingStarted = storyIdentity && requestChatId === this.adapter.getChatId()
-          && await this.startAutomaticRecording(storyIdentity);
+          && await this.startAutomaticRecording({ ...storyIdentity, draft });
         if (location.href !== url) throw Error("context-changed");
         // An ordinary chat (including reply recovery without a bound world)
         // has no managed story head to rewind. Its native parent ID alone
@@ -2474,7 +2505,7 @@ class PageController {
           this.assertScope(policyScope);
           if (!savedWorld || generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
           if (this.savedMemoryTarget() && savedWorld.sharedGame?.revision !== this.appliedSnapshot?.sharedGameRevision) throw Error("story-review-stale");
-          this.worlds = this.worlds.map(world => world.id === scene.worldId ? { ...world, bracketedOoc: savedWorld.bracketedOoc === true } : world);
+          this.worlds = this.worlds.map(world => world.id === scene.worldId ? { ...world, bracketedOoc: savedWorld.bracketedOoc === true, storyAutomation: savedWorld.storyAutomation } : world);
         }
         const currentChatId = this.adapter.getChatId();
         // An API request to another existing chat must not receive this page's lore.
@@ -2490,6 +2521,8 @@ class PageController {
           scope: this.pageScope(), scopeKey: sceneKey,
           snapshot,
           originalDraft: snapshot ? initialDraft : undefined,
+          promptLengthNotice: snapshot ? this.state.promptLength : undefined,
+          storageFailureNotice: snapshot ? this.state.sendStorageFailure : undefined,
           snapshotToken: this.snapshotToken, createdAt: Date.now(),
         };
         const reply = this.settings.replyRecoveryEnabled !== false && !this.adapter.isAuthenticationPage() && currentChatId && requestChatId === currentChatId
@@ -2504,7 +2537,7 @@ class PageController {
         const opening = !snapshot && !this.pendingService && !reminder && !!openingBinding && !!openingWorld?.storyAutomation
           && openingWorld.storyAutomation.mode !== "off" && openingWorld.sharedGame?.activeBindingId === openingBinding.id
           && !openingWorld.sharedGame.managed && !this.trackedBindings.has(openingBinding.id)
-          && storyIdentity?.nativeParentKey === null && storyIdentity.chatId === openingBinding.chatId && !fieldHistoryAnchor(document, true)
+          && storyIdentity?.nativeParentKey === null && storyIdentity.chatId === openingBinding.chatId && firstStoryTurnView(draft)
           && openingBinding.nextStoryMessageMode !== "out-of-character" && !explicitOutOfCharacter(draft, openingWorld.bracketedOoc === true)
           && (event.data.captureTransport === "xhr" || event.data.captureTransport === "fetch");
         const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext, opening);
@@ -2518,6 +2551,14 @@ class PageController {
         const oversizedLength = assembledPromptLength(draft, context);
         if (oversizedLength > DEEPSEEK_PROMPT_CHAR_LIMIT) {
           await this.retainContinuationTarget(delivery, true);
+          if (snapshot?.savedMemory && delivery.originalDraft && delivery.snapshotToken && delivery.targetChatId) {
+            const recovery: ContinuationDraft = { snapshotId: snapshot.id, snapshotToken: delivery.snapshotToken, targetChatId: delivery.targetChatId, draft: delivery.originalDraft, blockedLength: oversizedLength };
+            try {
+              if (!await this.saveTabState({ continuationDraft: recovery }, { snapshotId: snapshot.id, snapshotToken: delivery.snapshotToken, retryContinuationTarget: this.retryContinuationTarget, continuationReceipt: null })) throw Error("storage-unavailable");
+            } catch (error) { this.showContinuationStorageFailure(delivery); throw error; }
+            this.assertScope(delivery.scope);
+            this.state.continuationDraft = { ...recovery, url };
+          }
           window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: true, oversizedLength, ...(delivery.snapshot ? { continuation: true, url } : {}), ...(draft !== initialDraft ? { replacementDraft: draft } : {}) }, location.origin);
           return;
         }
@@ -2547,6 +2588,9 @@ class PageController {
           && (event.data.captureTransport === "xhr" || event.data.captureTransport === "fetch")
           ? await this.dispatchCaptures.prepare({ id, worldId: scene.worldId, bindingId: binding.id, identity: storyIdentity, transport: event.data.captureTransport,
             sceneRevision: binding.characterScenes?.[scene.worldId]?.revision ?? null, originalDraft: draft, proposedContext: context, ...(opening ? { opening: true } : {}) }) : false;
+        this.assertScope(delivery.scope);
+        if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
+        await this.preserveContinuationSend(id, delivery, draft, context);
         this.assertScope(delivery.scope);
         if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
         window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: true, context, ...(delivery.snapshot ? { continuation: true, url } : {}), ...(capture ? { capture: true } : {}), ...(draft !== initialDraft ? { replacementDraft: draft } : {}), ...(typeof event.data.editNativeKey === "string" && storyIdentity ? { preparedIdentity: storyIdentity } : {}) }, "*");
@@ -2590,7 +2634,11 @@ class PageController {
         console.debug("[DeepRole continuation]", "link-mismatch");
         return;
       }
-      if (event.data.ok) this.state.continuationDraft = undefined;
+      if (event.data.ok) {
+        this.state.continuationDraft = undefined;
+        if (delivery.promptLengthNotice === this.state.promptLength) this.state.promptLength = undefined;
+        if (delivery.storageFailureNotice === this.state.sendStorageFailure) this.state.sendStorageFailure = undefined;
+      }
     }
     if (event.data.ok && delivery) {
       if (delivery.oldChatNotice) {
@@ -2624,6 +2672,55 @@ class PageController {
     this.render();
   }
 
+  private async preserveContinuationSend(requestId: string, delivery: ContextDelivery, draft: string, context: string) {
+    const { snapshot, snapshotToken, targetChatId, storyIdentity } = delivery;
+    if (!snapshot?.savedMemory) return;
+    if (!snapshotToken || !targetChatId || storyIdentity?.chatId !== targetChatId || storyIdentity.nativeParentKey !== null || !delivery.originalDraft) throw Error("context-changed");
+    const target: ContinuationTarget = { snapshotId: snapshot.id, snapshotToken, targetChatId };
+    const recovery: ContinuationDraft = { ...target, draft: delivery.originalDraft, requestId, promptDigest: await continuationPromptDigest(assembledPrompt(draft, context)) };
+    const world = this.worlds.find(w => w.id === snapshot.worldId);
+    recovery.purpose = this.currentBinding()?.nextStoryMessageMode === "out-of-character" || explicitOutOfCharacter(draft, world?.bracketedOoc === true) ? "out-of-character" : "user-turn";
+    if (world) recovery.automation = captureStoryAutomation(world, this.entities);
+    this.assertScope(delivery.scope);
+    try {
+      if (!await this.saveTabState({ retryContinuationTarget: target, continuationDraft: recovery }, {
+        snapshotId: snapshot.id, snapshotToken, retryContinuationTarget: this.retryContinuationTarget, continuationReceipt: null,
+      })) throw Error("storage-unavailable");
+    } catch (error) { this.showContinuationStorageFailure(delivery); throw error; }
+    this.retryContinuationTarget = target;
+    delivery.continuationDraft = recovery;
+  }
+
+  private showContinuationStorageFailure(delivery: ContextDelivery) {
+    if (this.state.vaultLocked || delivery.scope.url !== location.href || !delivery.originalDraft
+      || this.appliedSnapshot?.id !== delivery.snapshot?.id || this.snapshotToken !== delivery.snapshotToken) return;
+    // Page RAM only: do not promise reload recovery after session storage failed.
+    this.state.sendStorageFailure = { url: location.href, draft: delivery.originalDraft };
+    this.render();
+  }
+
+  private async recoverContinuationFromHistory(automatic = false) {
+    const notice = this.state.continuationDraft, snapshot = this.appliedSnapshot;
+    if (!notice?.requestId || !notice.promptDigest || notice.returnChatId || !snapshot || this.state.continuationChecking || this.pendingContinuationCommit) return;
+    const key = continuationDraftKey(notice)!;
+    const attemptKey = JSON.stringify([notice.snapshotId, notice.snapshotToken, notice.requestId, notice.promptDigest]);
+    const current = () => !this.state.vaultLocked && location.href === notice.url && this.adapter.getChatId() === notice.targetChatId
+      && this.appliedSnapshot?.id === notice.snapshotId && this.snapshotToken === notice.snapshotToken
+      && continuationDraftKey(this.state.continuationDraft) === key && !this.pendingContinuationCommit;
+    if (!current() || automatic && this.checkedContinuationHistory.has(attemptKey)) return;
+    this.checkedContinuationHistory.add(attemptKey);
+    this.state.continuationChecking = true; this.render();
+    try {
+      const history = await checkContinuationHistory(window, notice, current);
+      if (!history || !current() || await repository.isLocked()) return;
+      // The background revalidates this exact attempt while committing both
+      // transfer and first scene. A failed write retains the proof for GET retry.
+      if (!await repository.recoverContinuation(snapshot, notice.snapshotToken, notice.targetChatId, key, history)) return;
+      await this.reload();
+    } catch { /* Keep the exact draft; unknown history is not proof of acceptance. */ }
+    finally { this.state.continuationChecking = false; this.render(); }
+  }
+
   private async failedService(id: string) {
     const request = this.pendingService;
     // Once a complete valid result is being saved, a late abort must not report
@@ -2650,9 +2747,27 @@ class PageController {
     await this.retainContinuationTarget(delivery);
     if (scope.url !== location.href || this.state.vaultLocked || this.appliedSnapshot?.id !== snapshot.id || this.snapshotToken !== snapshotToken) return;
     if (delivery.originalDraft) {
-      this.state.continuationDraft = { url: scope.url, draft: delivery.originalDraft };
+      const draft: ContinuationDraft = delivery.continuationDraft ?? { snapshotId: snapshot.id, snapshotToken: snapshotToken!, targetChatId: delivery.targetChatId!, draft: delivery.originalDraft };
+      await this.saveTabState({ continuationDraft: draft }, { snapshotId: snapshot.id, snapshotToken, continuationReceipt: null }).catch(() => false);
+      if (scope.url !== location.href || this.state.vaultLocked || this.appliedSnapshot?.id !== snapshot.id || this.snapshotToken !== snapshotToken || this.pendingContinuationCommit) return;
+      this.state.continuationDraft = { ...draft, url: scope.url };
       this.render();
     } else this.showToast(continuationText(this.state.locale, "sendUnconfirmed"));
+  }
+
+  private async dismissContinuationDraft() {
+    const notice = this.state.continuationDraft;
+    if (!notice) return;
+    const { snapshotId, snapshotToken } = notice;
+    const expected = { snapshotId, snapshotToken, continuationDraftKey: continuationDraftKey(notice), continuationReceipt: null };
+    const patch: TabSessionState = notice.returnChatId
+      ? { continuationDraft: null, snapshotId: null, snapshotToken: null, retryContinuationTarget: null, continueOnFreshChat: false, continueUntil: null }
+      : { continuationDraft: null };
+    await this.saveTabState(patch, expected).catch(() => false);
+    if (this.state.continuationDraft !== notice) return;
+    this.state.continuationDraft = undefined;
+    if (notice.returnChatId) await this.reload();
+    else this.render();
   }
 
   private async acknowledgeDelivery(delivery: ContextDelivery) {
@@ -2660,6 +2775,13 @@ class PageController {
     if (!snapshot) return;
     const targetChatId = delivery.targetChatId ?? this.adapter.getChatId();
     if (!targetChatId) return; // Never discard exact progress before a target branch exists.
+    if (snapshot.savedMemory && delivery.continuationDraft?.automation) {
+      // An accepted stream confirms delivery, not that its first scene was
+      // recorded. Keep the pre-send proof and use the same atomic history
+      // commit as reload recovery, including when native routing finishes later.
+      await this.reload();
+      return;
+    }
     const cleared = await repository.completeContinuation(snapshot, delivery.snapshotToken, targetChatId);
     console.debug("[DeepRole continuation]", cleared ? "commit-done" : "commit-unmatched");
     if (cleared && this.appliedSnapshot?.id === snapshot.id && this.snapshotToken === delivery.snapshotToken) {

@@ -51,6 +51,12 @@ export async function storyGameStatus(chatId: string, worldId: string, repo: Dee
 }
 /** Runtime-only permission, never accepted from the page/backup/model. */
 export interface StoryImagePermission { ownerTabId: number; receipt: CharacterRequestReceipt; enabled: boolean }
+/** Only the atomic continuation transaction supplies this, after exact history
+ * verification. It is never part of the page/backup StoryGameInput contract. */
+export interface ContinuationOpeningPermission {
+  userKey: string; originalDraft: string; requestId: string; purpose: "user-turn" | "out-of-character";
+  automation?: import("../core/story-automation").StoryAutomationCapture;
+}
 export async function runStoryGame(input: StoryGameInput, settings: DeepRoleSettings, repo: DeepRoleRepository = repository, stillCurrent?: () => Promise<void>, imagePermission?: StoryImagePermission) {
   input = structuredClone(input);
   if (!validStoryGameInput(input)) throw Error("story-game-invalid");
@@ -66,7 +72,7 @@ export async function markNonStoryMessage(chatId: string, worldId: string, repo:
 }
 /** One writer for sources, events, profiles, portraits, photos and selected state.
  * The site owns its transcript; this never sends/deletes/changes a site message. */
-export function planStoryGame(initial: DataRecord[], input: StoryGameInput, settings: DeepRoleSettings, imagePermission?: StoryImagePermission): { records: DataRecord[]; removed: { kind: import("../core/types").RecordKind; id: string }[]; result: import("../core/story-game").StoryGameOutcome & { freshPhotos?: ScenePhoto[] } } {
+export function planStoryGame(initial: DataRecord[], input: StoryGameInput, settings: DeepRoleSettings, imagePermission?: StoryImagePermission, continuation?: ContinuationOpeningPermission): { records: DataRecord[]; removed: { kind: import("../core/types").RecordKind; id: string }[]; result: import("../core/story-game").StoryGameOutcome & { freshPhotos?: ScenePhoto[] } } {
   if (!validStoryGameInput(input)) throw Error("story-game-invalid");
   if (input.operation === "reset" || input.operation === "restore") {
     const current = initial.find(r => r.kind === "binding" && (r.data as ChatBinding).chatId === input.chatId)?.data as ChatBinding | undefined;
@@ -197,7 +203,10 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
       const captures = matchingStoryUserCaptures(dispatches, dispatchScope, sample);
       if (captures.some(c => c.purpose !== captures[0]!.purpose || c.originalDraft !== captures[0]!.originalDraft)) throw Error("story-native-line-unavailable");
       const capture = captures[0];
-      const content = capture?.originalDraft ?? sample.content;
+      const opening = sample.identity.nativeMessageKey === continuation?.userKey ? continuation : undefined;
+      const nativeOpening: StoryRevision | undefined = sample.identity.role === "user" && parent === null ? rows(all).find((r): r is StoryRevision => r.type === "revision" && r.role === "user" && r.branchId === branch.id
+        && r.nativeMessageKey === sample.identity.nativeMessageKey && r.parentRevisionId === null && r.continuationNativeContent === sample.content) : undefined;
+      const content: string = capture?.originalDraft ?? opening?.originalDraft ?? nativeOpening?.content ?? sample.content;
       // Late receipt confirmation must not turn an unchanged raw user body
       // into an edit, duplicate its assistant/events or discard accepted memory.
       const matchingRevisions = rows(all).filter((r): r is StoryRevision => r.type === "revision" && r.branchId === branch.id && r.nativeMessageKey === sample.identity.nativeMessageKey && r.parentRevisionId === parent
@@ -207,8 +216,9 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
         const now = Date.now(), common = { format: "deeprole-story" as const, contractVersion: 1 as const, worldId: branch.worldId, playthroughId: branch.playthroughId, branchId: branch.id, createdAt: now, updatedAt: now };
         const earlier = rows(all).find((r): r is StoryRevision => r.type === "revision" && r.branchId === branch.id && r.nativeMessageKey === sample.identity.nativeMessageKey);
         const parentSource = rows(all).find(r => r.id === parent) as StoryRevision | undefined;
-        const storyPurpose = sample.identity.role === "user" ? capture?.purpose === "out-of-character" ? "out-of-character" : "game" : parentSource?.storyPurpose ?? "game";
+        const storyPurpose = sample.identity.role === "user" ? (capture?.purpose ?? opening?.purpose) === "out-of-character" ? "out-of-character" : "game" : parentSource?.storyPurpose ?? "game";
         revision = { ...common, type: "revision", id: createId("revision"), messageId: earlier?.messageId ?? createId("message"), nativeMessageKey: sample.identity.nativeMessageKey, role: sample.identity.role, content, completion: "complete", parentRevisionId: parent, requestId: null, storyPurpose };
+        if (opening && sample.identity.role === "user") revision.continuationNativeContent = sample.content;
         write([storyRow(revision)]);
         if (sample.identity.role === "assistant" && storyPurpose === "game") {
           const prefix = projectStoryBranch(rows(all), branch.id, parent, [...approved]);
@@ -219,7 +229,8 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
           const base = characterRevision(people(virtual, input.worldId, input.chatId), prefixScene);
           const parentSample = samples.get(sample.identity.nativeParentKey!);
           const parentCapture = parentSample && matchingStoryAssistantCapture(matchingStoryUserCaptures(dispatches, dispatchScope, parentSample), sample, parentSample);
-          const parsed = parseStoryUpdate(sample.content, { world: input.worldId, chat: input.chatId, branch: branch.id, base, entities: people(virtual, input.worldId, input.chatId), scene: prefixScene, requestId: parentCapture?.id });
+          const recoveredOpening = sample.identity.nativeParentKey === continuation?.userKey ? continuation : undefined;
+          const parsed = parseStoryUpdate(sample.content, { world: input.worldId, chat: input.chatId, branch: branch.id, base, entities: people(virtual, input.worldId, input.chatId), scene: prefixScene, requestId: parentCapture?.id ?? recoveredOpening?.requestId });
           revision = { ...revision, updateDiagnostic: parsed.diagnostic }; write([storyRow(revision)]);
           const roleCapture = parentCapture?.origin === "local" && parentCapture.injection === "context" && parentCapture.purpose === "user-turn" && parentCapture.roleRoster !== undefined && parentCapture.wire.link?.assistantMessageKey === sample.identity.nativeMessageKey ? parentCapture : undefined;
           revision = { ...revision, roleRoster: sourceRoleRoster(roleCapture?.roleRoster??[],input.worldId,storyReplyProse(sample.content)), ...(roleCapture?{roleRosterRequestId:roleCapture.id}:{}) }; write([storyRow(revision)]);
@@ -257,7 +268,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
             effects: { before: captureStoryBaselineEffects(prefixBinding, input.worldId), after: captureStoryBaselineEffects(next, input.worldId), createdEntities: planned.records.filter(r => r.kind === "entity" && !virtual.some(v => v.kind === "entity" && v.id === r.id)).map(r => r.data as SceneEntity), createdPhotos: (next.scenePhotos ?? []).filter(p => !prefixBinding.scenePhotos.some(old => sameStoryValue(old, p))) } };
           write([storyRow(event)]); approved.add(event.id);
           }
-          write(planStoryAccompaniment(all, world, baseline, branch, revision, approved, parentCapture, parsed.facts, parsed.raw, input.chatId));
+          write(planStoryAccompaniment(all, world, baseline, branch, revision, approved, parentCapture, parsed.facts, parsed.raw, input.chatId, undefined, recoveredOpening?.automation));
         }
       }
       for (const event of rows(all)) if (event.type === "event" && event.revisionId === revision.id && event.effects) approved.add(event.id);

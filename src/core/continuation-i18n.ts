@@ -4,6 +4,11 @@ const copy = {
   ru: {
     unconfirmedTitle: "Перенос не подтверждён",
     sendUnconfirmed: "DeepSeek не подтвердил первую реплику. Игра осталась привязана к прежнему чату.",
+    returnUnconfirmed: "Первую реплику ещё не удалось подтвердить. Её текст сохранён до закрытия вкладки. Вернитесь в чат попытки и проверьте ответ перед повторной отправкой.",
+    returnMessage: "Вернуться к реплике",
+    checkReply: "Проверить ответ DeepSeek",
+    checkingReply: "Проверяем ответ…",
+    cancelRecovery: "Отменить перенос и убрать черновик",
     commitTitle: "Нужно завершить сохранение переноса",
     commitPending: "DeepSeek принял реплику. Осталось сохранить перенос на этом устройстве.",
     commitSaving: "Сохраняем перенос на этом устройстве…",
@@ -35,6 +40,11 @@ const copy = {
   en: {
     unconfirmedTitle: "Transfer not confirmed",
     sendUnconfirmed: "DeepSeek did not confirm the first message. The game is still linked to the previous chat.",
+    returnUnconfirmed: "The first message is still unconfirmed. Its text is kept until this tab closes. Return to the attempted chat and check for a response before sending again.",
+    returnMessage: "Return to message",
+    checkReply: "Check DeepSeek response",
+    checkingReply: "Checking response…",
+    cancelRecovery: "Cancel transfer and discard draft",
     commitTitle: "Transfer still needs to be saved",
     commitPending: "DeepSeek accepted the message. Finish saving the transfer on this device.",
     commitSaving: "Saving the transfer on this device…",

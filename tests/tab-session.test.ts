@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TabSessionStore } from "../src/storage/tab-session";
-import { continuationKey, type ContinuationFlow } from "../src/core/continuation-flow";
+import { continuationKey, continuationDraftKey, type ContinuationFlow } from "../src/core/continuation-flow";
 
 function store() {
   const values: Record<string, any> = {};
@@ -14,6 +14,123 @@ function store() {
 }
 
 describe("per-tab session patches", () => {
+  it.each(["accepted", "recovered"])("keeps pending memory choices across reload and failed %s commits, isolated from other transfers", async mode => {
+    const { state, area } = store(), overrides = { includedIds: [], excludedIds: ["large-record"] };
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "new" }, draft = { ...target, draft: "short" };
+    await state.patch(1, { ...target, retryContinuationTarget: target, continuationDraft: draft });
+    await state.patch(1, { continuationOverrides: overrides }, { snapshotId: "s", snapshotToken: "t" });
+    const reloaded = new TabSessionStore(area);
+    expect((await reloaded.get(1)).continuationOverrides).toEqual(overrides);
+    expect((await reloaded.get(2)).continuationOverrides).toBeUndefined();
+    const commit = (fail: boolean) => {
+      const apply = async (choice: import("../src/core/types").MemoryOverrides | undefined) => { expect(choice).toEqual(overrides); if (fail) throw Error("write-failed"); };
+      return mode === "recovered" ? reloaded.completeRecoveredSnapshot(1, "s", "t", "new", continuationDraftKey(draft)!, async (_, choice) => apply(choice))
+        : reloaded.completeSnapshot(1, "s", "t", apply, "new");
+    };
+    await expect(commit(true)).rejects.toThrow("write-failed");
+    expect((await reloaded.get(1)).continuationOverrides).toEqual(overrides);
+    expect(await commit(false)).toBe(true);
+    expect((await reloaded.get(1)).continuationOverrides).toBeNull();
+    await reloaded.patch(1, { snapshotId: "s", snapshotToken: "t" });
+    await reloaded.patch(1, { continuationOverrides: overrides });
+    await reloaded.patch(1, { snapshotToken: "new-attempt" });
+    expect((await reloaded.get(1)).continuationOverrides).toBeNull();
+    expect(await reloaded.patch(1, { continuationOverrides: overrides }, { snapshotToken: "t" })).toEqual({ ok: false });
+  });
+  it("compares retry destinations by fields after browser storage reorders their keys", async () => {
+    const { state, values } = store();
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "new", returnHomeAfterLengthBlock: true as const };
+    await state.patch(1, { snapshotId: "s", snapshotToken: "t", retryContinuationTarget: target });
+    values.deeprole_tab_state_1.retryContinuationTarget = Object.fromEntries(Object.entries(target).reverse());
+    for (const wrong of [{ ...target, targetChatId: "other" }, { ...target, snapshotToken: "other" }, { ...target, returnHomeAfterLengthBlock: undefined }, null]) {
+      expect(await state.patch(1, { retryContinuationTarget: null }, { retryContinuationTarget: wrong })).toEqual({ ok: false });
+    }
+    expect(await state.patch(1, { retryContinuationTarget: { ...target, returnHomeAfterLengthBlock: undefined } }, { retryContinuationTarget: target })).toEqual({ ok: true });
+  });
+  it("keeps a blocked original after releasing an unused chat ID, until dismissal or successful retry", async () => {
+    const { state, area } = store();
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "new", returnHomeAfterLengthBlock: true as const };
+    const draft = { ...target, draft: "  Exact blocked original\n", blockedLength: 40001 };
+    expect(await state.patch(1, { snapshotId: "s", snapshotToken: "t", retryContinuationTarget: target, continuationDraft: draft })).toEqual({ ok: true });
+    expect(await state.patch(1, { retryContinuationTarget: null }, { retryContinuationTarget: target })).toEqual({ ok: true });
+    const reloaded = new TabSessionStore(area);
+    expect((await reloaded.get(1)).continuationDraft).toEqual(draft);
+    expect((await reloaded.get(2)).continuationDraft).toBeUndefined();
+    const newTarget = { ...target, targetChatId: "different-empty-chat", returnHomeAfterLengthBlock: undefined };
+    const retry = { ...newTarget, draft: "shortened", requestId: "r", promptDigest: "a".repeat(64) };
+    expect(await reloaded.patch(1, { retryContinuationTarget: newTarget, continuationDraft: retry }, { retryContinuationTarget: null, continuationReceipt: null })).toEqual({ ok: true });
+    expect(await reloaded.patch(1, { continuationDraft: null }, { continuationDraftKey: continuationDraftKey(draft) })).toEqual({ ok: false });
+    expect((await reloaded.get(1)).continuationDraft).toEqual(retry);
+    await reloaded.patch(1, { snapshotToken: "replaced" });
+    expect((await reloaded.get(1)).continuationDraft).toBeNull();
+  });
+  it.each(["success", "failure", "cancelled", "new-token", "new-attempt", "foreign-tab"])("holds the recovered first-turn guard through %s", async kind => {
+    const { state } = store();
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "target" };
+    const draft = { ...target, draft: "original", requestId: "r", promptDigest: "a".repeat(64) };
+    await state.patch(1, { ...target, retryContinuationTarget: target, continuationDraft: draft });
+    if (kind === "cancelled") await state.patch(1, { continuationDraft: null });
+    if (kind === "new-token") await state.patch(1, { snapshotToken: "new" });
+    if (kind === "new-attempt") await state.patch(1, { continuationDraft: { ...draft, requestId: "new" } });
+    let calls = 0;
+    const result = state.completeRecoveredSnapshot(kind === "foreign-tab" ? 2 : 1, "s", "t", "target", continuationDraftKey(draft)!, async value => {
+      calls++; expect(value).toEqual(draft); if (kind === "failure") throw Error("write-failed");
+    });
+    if (kind === "failure") { await expect(result).rejects.toThrow("write-failed"); expect((await state.get(1)).continuationDraft).toEqual(draft); }
+    else { expect(await result).toBe(kind === "success"); if (kind === "success") expect((await state.get(1)).snapshotId).toBeNull(); }
+    expect(calls).toBe(["success", "failure"].includes(kind) ? 1 : 0);
+  });
+  it("serializes a newer transfer after recovered scene commit", async () => {
+    const { state } = store();
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "target" }, draft = { ...target, draft: "original" };
+    await state.patch(1, { ...target, retryContinuationTarget: target, continuationDraft: draft });
+    let release!: () => void, entered!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; }), ready = new Promise<void>(resolve => { entered = resolve; });
+    const commit = state.completeRecoveredSnapshot(1, "s", "t", "target", continuationDraftKey(draft)!, async () => { entered(); await gate; });
+    await ready;
+    const next = state.patch(1, { snapshotId: "next", snapshotToken: "next-token" });
+    release(); expect(await commit).toBe(true); await next;
+    expect(await state.get(1)).toMatchObject({ snapshotId: "next", snapshotToken: "next-token", continuationDraft: null });
+  });
+  it("rejects a draft with no queued transfer instead of reading missing target fields", async () => {
+    const { state } = store();
+    expect(await state.patch(1, { continuationDraft: { draft: "orphan", snapshotToken: null } as any })).toEqual({ ok: false });
+    expect(await state.get(1)).toEqual({});
+  });
+  it("keeps recovery text only for its queued attempt, clears it on dismissal and a newer token", async () => {
+    const { state, area } = store();
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "target" };
+    const draft = { ...target, draft: "  Exact original\nreply.  " };
+    await state.patch(1, { ...target, retryContinuationTarget: target });
+    expect(await state.patch(1, { continuationDraft: draft }, { snapshotId: "s", snapshotToken: "t", continuationReceipt: null })).toEqual({ ok: true });
+    const reloaded = new TabSessionStore(area);
+    expect((await reloaded.get(1)).continuationDraft).toEqual(draft);
+    expect((await reloaded.get(2)).continuationDraft).toBeUndefined();
+    expect(await reloaded.patch(1, { continuationDraft: { ...draft, draft: "x".repeat(40_001) } })).toEqual({ ok: false });
+    const newer = { ...draft, draft: "Newer manual retry" };
+    await reloaded.patch(1, { continuationDraft: newer });
+    expect(await reloaded.patch(1, { continuationDraft: null }, { continuationDraftKey: continuationDraftKey(draft) })).toEqual({ ok: false });
+    expect((await reloaded.get(1)).continuationDraft).toEqual(newer);
+    await reloaded.patch(1, { continuationDraft: Object.fromEntries(Object.entries(draft).reverse()) as typeof draft });
+    await reloaded.patch(1, { continuationDraft: null }, { continuationDraftKey: continuationDraftKey(draft) });
+    expect((await new TabSessionStore(area).get(1)).continuationDraft).toBeNull();
+    await state.patch(1, { continuationDraft: draft });
+    await state.patch(1, { snapshotToken: "new" });
+    expect((await state.get(1)).continuationDraft).toBeNull();
+    expect(await state.patch(1, { continuationDraft: draft })).toEqual({ ok: false });
+    expect(await state.patch(1, { continuationDraft: { ...draft, snapshotToken: "new" } })).toEqual({ ok: false });
+    await state.remove(1);
+    expect(await state.get(1)).toEqual({});
+  });
+  it("forgets the draft as soon as acceptance is recorded, even if the library write fails", async () => {
+    const { state, area } = store();
+    const target = { snapshotId: "s", snapshotToken: "t", targetChatId: "target" };
+    const draft = { ...target, draft: "No replay after acceptance" };
+    await state.patch(1, { ...target, retryContinuationTarget: target, continuationDraft: draft });
+    await expect(state.completeSnapshot(1, "s", "t", async () => { throw Error("write failed"); }, "target")).rejects.toThrow("write failed");
+    expect((await new TabSessionStore(area).get(1)).continuationDraft).toBeNull();
+    expect(await state.patch(1, { continuationDraft: draft })).toEqual({ ok: false });
+  });
   it("keeps a refused attempt scoped to its tab and clears its target only after acceptance", async () => {
     const { state, area } = store();
     const target = { snapshotId: "s", snapshotToken: "token", targetChatId: "target" };

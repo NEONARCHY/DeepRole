@@ -1,4 +1,4 @@
-import type { WorldProfile } from "./types";
+import type { WorldProfile, SceneEntity } from "./types";
 import { createId } from "./id";
 import { validProfileVersions, PROFILE_TEXT_FIELDS, type ProfileFieldRevisions } from "./story-profile-view";
 import { storyReplyProse, type StoryFact } from "./story-update";
@@ -21,6 +21,12 @@ export function defaultStoryAutomation(): StoryAutomationPolicy {
   return { mode: "automatic", revision: createId("automation") };
 }
 export interface StoryAutomationCapture { mode: "automatic" | "review"; revision: string; profileVersions: Record<string, ProfileFieldRevisions>; profileLocks: Record<string, string[]> }
+export function captureStoryAutomation(world: WorldProfile, entities: SceneEntity[]): StoryAutomationCapture | undefined {
+  const policy = world.storyAutomation;
+  if (!policy || policy.mode === "off") return;
+  const people = entities.filter(e => e.worldId === world.id && e.kind === "character");
+  return { mode: policy.mode, revision: policy.revision, profileLocks: Object.fromEntries(people.map(e => [e.id, [...e.characterSheet?.protectedProfileFields ?? []]])), profileVersions: Object.fromEntries(people.map(e => [e.id, { ...e.profileFieldRevisions }])) };
+}
 export type AutomationReason = "new" | "manual" | "duplicate" | "uncertain" | "conflict" | "protected" | "unverified" | "limit" | "identity";
 export interface StoryAutomationDecision { mode: "automatic" | "review"; status: "saved" | "review" | "duplicate" | "dismissed"; reason: AutomationReason; at: number }
 export type AutomationRisk = "ordinary" | "uncertain" | "conflict";
@@ -45,13 +51,29 @@ export function similarFact(a: string, b: string, ratio = 0.8) {
   const lead = (s: string) => normalizedFact(s).split(" ").slice(0,2).join(" ");
   return lead(a) === lead(b) && Math.min(x.size, y.size) >= 3 && shared / Math.max(x.size, y.size) >= ratio;
 }
+/** A narrow single-action form, not a general subject/alias resolver. Only
+ * explicitly different objects can suppress a color-only lexical warning. */
+function distinctPlacedObjects(a: string, b: string): boolean {
+  const placement = (text: string) => {
+    if (/(?:^|[^\p{L}])(?:and|or|и|или)(?:$|[^\p{L}])/iu.test(text) || /[.!?;\n]/u.test(text.trim().replace(/[.!?]$/u, ""))) return;
+    const match = normalizedFact(text).match(/^(\p{L}+(?: \p{L}+){0,2}) (?:put|placed|stored|left|hid|положил[аи]?|убрал[аи]?|оставил[аи]?|спрятал[аи]?|поместил[аи]?) (?:the |a |an )?(\p{L}+(?: \p{L}+){0,3}) (?:inside|into|in|under|on|в|на|под) (?:the |a |an )?\p{L}+(?: \p{L}+){0,3}$/u);
+    if (!match) return;
+    const object = match[2]!.split(" "), head = object.at(-1)!;
+    if (object.some(w => /^(?:and|or|in|into|inside|on|under|и|или|в|на|под)$/u.test(w))
+      || /^(?:one|ones|it|this|that|something|anything|everything|nothing|white|black|red|blue|green|blond|brown|gray|его|ее|их|это|то|что|все|нечто|друг\p{L}*|бел\p{L}*|черн\p{L}*|рыж\p{L}*|красн\p{L}*|син\p{L}*|зелен\p{L}*|голуб\p{L}*|кар\p{L}*|сер\p{L}*)$/u.test(head)) return;
+    return { actor: match[1], head };
+  };
+  const x = placement(a), y = placement(b);
+  return !!x && !!y && x.actor === y.actor && x.head !== y.head;
+}
 /** Conservative lexical conflicts supplement model risk; this is not a semantic proof. */
 export function conflictingStoryText(a: string, b: string) {
   const x = words(a), y = words(b), shared = [...x].filter(w => y.has(w)).length;
   if (shared < 1 || shared / Math.min(x.size || 1, y.size || 1) < 0.4) return false;
   const numbers = (s: string) => s.match(/\d+(?:[.,]\d+)?/gu)?.join("|") ?? "";
   const colors = (s: string) => normalizedFact(s).match(/\b(?:white|black|red|blue|green|blond|brown|gray)\b|(?:бел|черн|рыж|красн|син|зелен|голуб|кар|сер)\p{L}*/gu)?.join("|") ?? "";
-  return negative(a) !== negative(b) || !!numbers(a) && !!numbers(b) && numbers(a) !== numbers(b) || !!colors(a) && !!colors(b) && colors(a) !== colors(b);
+  return negative(a) !== negative(b) || !!numbers(a) && !!numbers(b) && numbers(a) !== numbers(b)
+    || !!colors(a) && !!colors(b) && colors(a) !== colors(b) && !distinctPlacedObjects(a, b);
 }
 /** Comparable memory only, never editable author lore. Labels are model-supplied,
  * not evidence that two unrelated events or tasks are the same. Human choice wins. */

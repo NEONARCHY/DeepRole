@@ -80,7 +80,9 @@ export interface WidgetState {
   selection: ContextSelection;
   warning: string;
   promptLength?: { length: number; url: string; draft?: string; restored?: boolean };
-  continuationDraft?: { url: string; draft: string };
+  sendStorageFailure?: { url: string; draft: string };
+  continuationDraft?: import("../../core/continuation-flow").ContinuationDraft & { url: string; returnChatId?: string };
+  continuationChecking?: boolean;
   contextText: string;
   selectionText: string;
   selectionPosition: { x: number; y: number } | null;
@@ -96,6 +98,8 @@ export interface WidgetState {
 export function PageWidget(props: {
   onDismissPromptLength?: () => void;
   onDismissContinuationDraft?: () => void;
+  onDismissSendStorageFailure?: () => void;
+  onCheckContinuationDraft?: () => void;
   onRetryContinuationCommit?: () => void;
   onStayInOldChat?: () => Promise<void>;
   onContinueStory?: () => void;
@@ -305,10 +309,18 @@ export function PageWidget(props: {
       }}>{x("openMenuWindow")}</button>{menuWindowError && <p role="alert">{x("menuWindowError")}</p>}</div>}
     </aside></div>}
     {!menuOpen&&!props.state.vaultLocked&&props.state.scene?.worldId&&chatAdapter.current.getChatId()&&<WorldResetNotice key={props.state.scene.worldId+":"+chatAdapter.current.getChatId()} worldId={props.state.scene.worldId} chatId={chatAdapter.current.getChatId()!} locale={props.state.locale} game={props.state.worlds?.find(world=>world.id===props.state.scene?.worldId)?.sharedGame} onReview={id=>{setResetReviewId(id);setMenuOpen(true);}}/>}
-    {!props.state.vaultLocked && props.state.promptLength && <PromptLengthNotice key={props.state.promptLength.length} locale={props.state.locale} limit={props.state.promptLength} onDismiss={props.onDismissPromptLength} />}
-    {!props.state.vaultLocked && !props.state.promptLength && props.state.continuationDraft && <DraftSendNotice
+    {!props.state.vaultLocked && props.state.sendStorageFailure && <DraftSendNotice className="dr-send-storage" locale={props.state.locale}
+      title={props.state.locale === "ru" ? "Не удалось сохранить реплику" : "Could not save your message"}
+      detail={props.state.locale === "ru" ? "Сообщение не отправлено. Скопируйте исходную реплику ниже перед перезагрузкой или уходом: сейчас она сохранена только на этой странице. Затем попробуйте отправить снова." : "Message not sent. Copy the original message below before reloading or leaving: it is only kept on this page. Then try sending again."}
+      original={props.state.sendStorageFailure.draft} onDismiss={props.onDismissSendStorageFailure} />}
+    {!props.state.vaultLocked && !props.state.sendStorageFailure && props.state.promptLength && <PromptLengthNotice key={props.state.promptLength.length} locale={props.state.locale} limit={props.state.promptLength} onDismiss={props.onDismissPromptLength} />}
+    {!props.state.vaultLocked && !props.state.sendStorageFailure && !props.state.promptLength && props.state.continuationDraft?.blockedLength && <PromptLengthNotice locale={props.state.locale} limit={{ length: props.state.continuationDraft.blockedLength, draft: props.state.continuationDraft.draft, url: props.state.continuationDraft.url }} onDismiss={props.onDismissContinuationDraft} />}
+    {!props.state.vaultLocked && !props.state.sendStorageFailure && !props.state.promptLength && props.state.continuationDraft && !props.state.continuationDraft.blockedLength && <DraftSendNotice
       className="dr-continuation-draft" locale={props.state.locale} title={continuationText(props.state.locale, "unconfirmedTitle")}
-      detail={continuationText(props.state.locale, "sendUnconfirmed")} original={props.state.continuationDraft.draft}
+      detail={continuationText(props.state.locale, props.state.continuationDraft.returnChatId ? "returnUnconfirmed" : "sendUnconfirmed")} original={props.state.continuationDraft.draft}
+      returnChatId={props.state.continuationDraft.returnChatId}
+      onCheck={!props.state.continuationDraft.returnChatId && props.state.continuationDraft.promptDigest ? props.onCheckContinuationDraft : undefined}
+      checking={props.state.continuationChecking}
       onDismiss={props.onDismissContinuationDraft} />}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
     {!props.state.vaultLocked && props.savedMemoryQueued && !props.state.continuationCommitPending && <div className="dr-continuation-progress dr-saved-memory-ready" role="status">{savedMemoryText(props.state.locale).queued}</div>}
@@ -398,14 +410,16 @@ function PromptLengthNotice({ locale, limit, onDismiss }: {
   return <DraftSendNotice className="dr-prompt-limit" locale={locale} title={title} detail={detail} original={limit.draft} onDismiss={onDismiss} />;
 }
 
-function DraftSendNotice({ className, locale, title, detail, original, onDismiss }: {
-  className: string; locale: WidgetState["locale"]; title: string; detail: string; original?: string; onDismiss?: () => void;
+function DraftSendNotice({ className, locale, title, detail, original, onDismiss, returnChatId, onCheck, checking }: {
+  className: string; locale: WidgetState["locale"]; title: string; detail: string; original?: string; onDismiss?: () => void; returnChatId?: string; onCheck?: () => void; checking?: boolean;
 }) {
   const draft = locale === "ru" ? "Исходная реплика" : "Original message";
   return <section className={`dr-send-notice ${className}`} aria-label={title}>
     <div role="alert"><strong>{title}</strong><p>{detail}</p></div>
     {original && <details><summary>{draft}</summary><textarea rows={4} value={original} readOnly aria-label={draft} /></details>}
-    {onDismiss && <button type="button" onClick={onDismiss}>{locale === "ru" ? "Закрыть" : "Close"}</button>}
+    {returnChatId && <a className="dr-button" href={`https://chat.deepseek.com/a/chat/s/${encodeURIComponent(returnChatId)}`}>{continuationText(locale, "returnMessage")}</a>}
+    {onCheck && <button type="button" onClick={onCheck} disabled={checking}>{continuationText(locale, checking ? "checkingReply" : "checkReply")}</button>}
+    {onDismiss && <button type="button" onClick={onDismiss}>{returnChatId ? continuationText(locale, "cancelRecovery") : locale === "ru" ? "Закрыть" : "Close"}</button>}
   </section>;
 }
 

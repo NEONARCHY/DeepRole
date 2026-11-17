@@ -16,7 +16,7 @@ import { bindStoryRoles } from "../core/story-role-binding";
 
 /** One completed reply is one bounded portion. Stored events are the durable work
  * receipt, and the existing selected-line replay owns every resulting effect. */
-export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, baseline: StoryBaseline, branch: StoryBranch, source: StoryRevision, approved: Set<string>, capture: StoryDispatchCapture | undefined, facts: StoryFact[], raw: Record<string, unknown> | null, chatId: string, batch?: { source: StoryRevision; capture: import("../core/story-automation").StoryAutomationCapture }) {
+export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, baseline: StoryBaseline, branch: StoryBranch, source: StoryRevision, approved: Set<string>, capture: StoryDispatchCapture | undefined, facts: StoryFact[], raw: Record<string, unknown> | null, chatId: string, batch?: { source: StoryRevision; capture: import("../core/story-automation").StoryAutomationCapture }, continuation?: import("../core/story-automation").StoryAutomationCapture) {
   const stored = all.filter(r => r.kind === "story").map(r => r.data as StoryRecord), result: DataRecord[] = [];
   const selected = projectStoryBranch(stored, branch.id, source.id, [...approved]);
   const applicable = stored.filter((e): e is StoryEvent => e.type === "event" && selected.appliedEventIds.includes(e.id)).sort((a,b) => selected.revisionIds.indexOf(a.revisionId)-selected.revisionIds.indexOf(b.revisionId) || a.ordinal-b.ordinal);
@@ -24,8 +24,8 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
   for (const row of all) if (row.kind === "entity" && (row.data as SceneEntity).worldId === world.id && characterInChat(row.data as SceneEntity, chatId)) rawPeople.set(row.id, row.data as SceneEntity);
   let people = storyProfileEntities([...rawPeople.values()], stored, selected.appliedEventIds, world.id, chatId, baseline.profileSeeds, baseline.identitySeeds, baseline.mergeSeeds);
   const actualPolicy = world.storyAutomation;
-  const permission = batch?.capture ?? capture?.accompaniment;
-  const auto = actualPolicy?.mode === "automatic" && permission?.mode === "automatic" && permission.revision === actualPolicy.revision && (!!batch || capture?.origin === "local" && capture.purpose === "user-turn" && capture.delivery?.status === "accepted" && capture.injection === "context");
+  const permission = batch?.capture ?? capture?.accompaniment ?? continuation;
+  const auto = actualPolicy?.mode === "automatic" && permission?.mode === "automatic" && permission.revision === actualPolicy.revision && (!!batch || !!continuation || capture?.origin === "local" && capture.purpose === "user-turn" && capture.delivery?.status === "accepted" && capture.injection === "context");
   const mode = auto ? "automatic" as const : "review" as const, now = Date.now();
   const decision = (reason: AutomationReason): StoryAutomationDecision => ({ mode, status: reason === "duplicate" ? "duplicate" : auto && reason === "new" ? "saved" : "review", reason: reason === "new" && !auto ? permission ? "manual" : "unverified" : reason, at: now });
   const common = { ...(batch ? { memoryBatchSourceRevisionId: batch.source.id } : {}), format: "deeprole-story" as const, contractVersion: 1 as const, type: "event" as const, worldId: source.worldId, playthroughId: source.playthroughId, branchId: branch.id, revisionId: source.id, createdAt: now, updatedAt: now, disposition: "candidate" as const };

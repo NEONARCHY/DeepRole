@@ -88,6 +88,9 @@ export interface StoryRevision extends StoryScope {
   role: "user" | "assistant";
   completion: "complete" | "partial" | "interrupted";
   content: string;
+  /** Exact verified first send, retained only to recognize the same native user
+   * on later history reads. Not a dispatch receipt or automation permission. */
+  continuationNativeContent?: string;
   /** Explicitly checked local receipt; an echoed requestId alone is legacy/unproven. */
   requestProof?: { nativeParentKey: string | null };
   storyPurpose?: "game" | "out-of-character";
@@ -208,9 +211,11 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
     case "branch": return keys(value, [...common, "baselineId", "parentBranchId", "forkRevisionId", "headRevisionId", "selectionVersion", "projectionId", "gameManaged", "pausedAtRevisionId"])
       && value.branchId === value.id && id(value.baselineId) && optionalId(value.parentBranchId) && optionalId(value.forkRevisionId) && optionalId(value.headRevisionId) && integer(value.selectionVersion)
       && (value.parentBranchId === null) === (value.forkRevisionId === null) && (value.projectionId === undefined || id(value.projectionId)) && (value.gameManaged === undefined || typeof value.gameManaged === "boolean") && (value.pausedAtRevisionId === undefined || value.gameManaged === true && optionalId(value.pausedAtRevisionId) && value.pausedAtRevisionId === value.headRevisionId);
-    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch", "roleRoster", "roleRosterRequestId"])
+    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "continuationNativeContent", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch", "roleRoster", "roleRosterRequestId"])
       && id(value.messageId) && id(value.nativeMessageKey) && optionalId(value.requestId) && optionalId(value.parentRevisionId) && ["user", "assistant"].includes(String(value.role)) && ["complete", "partial", "interrupted"].includes(String(value.completion)) && text(value.content, 250_000) && (value.storyPurpose === undefined || ["game", "out-of-character"].includes(String(value.storyPurpose)))
       && (value.requestProof === undefined || id(value.requestId) && validNativeStoryKey(value.nativeMessageKey) && object(value.requestProof) && keys(value.requestProof, ["nativeParentKey"]) && (value.requestProof.nativeParentKey === null || validNativeStoryKey(value.requestProof.nativeParentKey)))
+      && (value.continuationNativeContent === undefined || value.role === "user" && value.completion === "complete" && value.parentRevisionId === null && validNativeStoryKey(value.nativeMessageKey)
+        && text(value.continuationNativeContent, 250_000) && value.continuationNativeContent.endsWith("\n\n[User message]\n" + value.content))
       && (value.updateDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.updateDiagnostic))
       && (value.roleRoster === undefined || value.role === "assistant" && validRoleRoster(value.roleRoster))
       && (value.roleRosterRequestId === undefined || value.roleRoster !== undefined && id(value.roleRosterRequestId))

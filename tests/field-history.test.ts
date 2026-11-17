@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { readFieldHistory, selectFieldHistory, validFieldHistoryReference, type FieldHistoryQuery } from "../src/core/field-history";
-import { fieldHistoryAnchor, requestFieldHistory } from "../src/adapters/field-history-client";
+import { fieldHistoryAnchor, firstStoryTurnView, requestFieldHistory } from "../src/adapters/field-history-client";
 import { fieldFactsPrompt, fieldFactsResult } from "../src/core/field-facts";
 import { characterTextRequest, validCharacterTextRequest } from "../src/core/character-text";
 import { EMPTY_CHARACTER, EMPTY_STATUS } from "../src/core/characters";
@@ -16,6 +16,24 @@ it("uses a unique exact virtual key only for diagnostics, never for fact retriev
  document.body.innerHTML = '<div data-virtual-list-item-key="145"><div class="ds-message">Visible</div></div><div data-virtual-list-item-key="146" hidden><div class="ds-message">Hidden</div></div>'; expect(fieldHistoryAnchor(document, true)).toBe("145");
 });
 const query: FieldHistoryQuery = { name: "Mira", aliases: ["Мира"], field: "appearance" };
+it("recognizes only the outgoing first message and its empty placeholder, not previous scene content", () => {
+ document.body.innerHTML = '';
+ expect(firstStoryTurnView("First move")).toBe(true);
+ document.body.innerHTML = '<article data-role="user" data-message-id="1">First move</article><article data-role="assistant" data-message-id="2"><div class="ds-markdown"></div></article>';
+ expect(firstStoryTurnView("First move")).toBe(true);
+ expect(fieldHistoryAnchor(document, true)).toBe("2");
+ expect(firstStoryTurnView("Another move")).toBe(false);
+ document.querySelector('.ds-markdown')!.textContent = 'An earlier scene without a reliable ID';
+ document.querySelector('[data-role="assistant"]')!.removeAttribute('data-message-id');
+ expect(firstStoryTurnView("First move")).toBe(false);
+ document.querySelector('.ds-markdown')!.textContent = '';
+ document.body.innerHTML += '<article data-role="user">First move</article>';
+ expect(firstStoryTurnView("First move")).toBe(false);
+ document.body.innerHTML = '<div hidden><article data-role="assistant">Hidden old variant</article></div><article data-role="user">First move</article>';
+ expect(firstStoryTurnView("First move")).toBe(true);
+ document.body.innerHTML += '<article data-role="assistant"></article><article data-role="assistant"></article>';
+ expect(firstStoryTurnView("First move")).toBe(false);
+});
 const message = (id: string, parent: string | null, role: "user" | "assistant", content = "Mira wears a blue coat.") => ({ message_id: id, parent_message_id: parent, role, content });
 const envelope = (messages: unknown[], more = false) => ({ data: { biz_data: { chat_session_id: "game", messages, has_more: more } } });
 const draft = () => characterTextRequest({ key: "appearance", label: "Appearance", scope: "profile", maxLength: 1200, mode: "history" }, "", "Mira", null, EMPTY_CHARACTER, EMPTY_STATUS);

@@ -8,8 +8,11 @@ import type { ContinuationFlow, ContinuationTarget } from "./continuation-flow";
 export interface ImportSceneTarget { chatId: string | null; chatUrl: string; worldId: string | null; empty: boolean }
 
 export interface TabSessionState {
+  /** Selection changed on a queued transfer, before destination activation. */
+  continuationOverrides?: MemoryOverrides | null;
   continuationReceipt?: import("./continuation-flow").ContinuationReceipt | null;
   retryContinuationTarget?: ContinuationTarget | null;
+  continuationDraft?: import("./continuation-flow").ContinuationDraft | null;
   characterTextTurns?: { requestId: string; chatId: string; replyIdentity: string }[];
   continuation?: ContinuationFlow | null;
   characterRequest?: CharacterRequestReceipt | null;
@@ -22,7 +25,7 @@ export interface TabSessionState {
   contextWarnings?: { chatId: string; capacity: number; level: number }[];
   overrides?: MemoryOverrides;
 }
-export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
+export type TabSessionGuard = Partial<TabSessionState> & { continuationKey?: string | null; continuationDraftKey?: string | null; serviceId?: string | null; characterRequestId?: string | null };
 
 export type DeepRoleMessage = import("../adapters/cast-coordinator").CastMessage
   | { type: "DR_MENU_TAB" }

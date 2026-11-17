@@ -1,12 +1,23 @@
 import { validNativeStoryId } from "../core/story-transport";
 import { validFieldHistoryReference, type FieldHistoryQuery, type FieldHistoryReference } from "../core/field-history";
-import { nativeMessageRows, REASONING } from "./deepseek-message-dom";
+import { isUserMessage, nativeMessageRows, REASONING } from "./deepseek-message-dom";
+
+const shown = (row: HTMLElement) => {
+  for (let cursor: HTMLElement | null = row; cursor; cursor = cursor.parentElement) if (cursor.hidden || cursor.getAttribute("aria-hidden") === "true" || getComputedStyle(cursor).display === "none" || getComputedStyle(cursor).visibility === "hidden") return false;
+  return true;
+};
+
+/** UI guard only, not proof of an empty server history. A first send can already
+ * show its exact user text and one empty assistant placeholder before POST. */
+export function firstStoryTurnView(draft: string, root: ParentNode = document): boolean {
+  const rows = nativeMessageRows(root).filter(row => !row.closest(REASONING) && shown(row));
+  let users = 0, placeholders = 0;
+  return rows.every(row => isUserMessage(row)
+    ? ++users <= 1 && row.textContent?.trim() === draft.trim()
+    : ++placeholders <= 1 && !row.textContent?.trim());
+}
 
 export function fieldHistoryAnchor(root: ParentNode = document, diagnosticVirtualKey = false): string | null {
-  const shown = (row: HTMLElement) => {
-    for (let cursor: HTMLElement | null = row; cursor; cursor = cursor.parentElement) if (cursor.hidden || cursor.getAttribute("aria-hidden") === "true" || getComputedStyle(cursor).display === "none" || getComputedStyle(cursor).visibility === "hidden") return false;
-    return true;
-  };
   const rows = nativeMessageRows(root).filter(r => !r.closest(REASONING) && !r.matches("[data-deeprole-service-reply], [data-deeprole-memory-request], [data-deeprole-character-text-hidden]") && shown(r) && !r.textContent?.trimStart().startsWith("[DeepRole Service]"));
   const key = (row: HTMLElement) => {
     const id = row.getAttribute("data-message-id"), virtual = diagnosticVirtualKey ? row.closest("[data-virtual-list-item-key]")?.getAttribute("data-virtual-list-item-key") : null;

@@ -48,6 +48,7 @@ export type RepositoryRequest =
   | { type: "DR_REPOSITORY"; operation: "acknowledgeRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "saveRecoveredReply"; edit: RecoveredReplyEdit }
   | { type: "DR_REPOSITORY"; operation: "completeContinuation"; snapshot: HandoffSnapshot; token: string | null; targetChatId: string; retry?: true }
+  | { type: "DR_REPOSITORY"; operation: "recoverContinuation"; snapshot: HandoffSnapshot; token: string; targetChatId: string; draftKey: string; history: import("../core/story-game").StoryGameSnapshot }
   | { type: "DR_REPOSITORY"; operation: "captureContinuation"; input: ContinuationCapture }
   | { type: "DR_REPOSITORY"; operation: "savedMemoryContinuation"; input: import("../core/saved-memory-continuation").SavedMemoryRequest; expected?: string }
   | { type: "DR_REPOSITORY"; operation: "addCharacterAction"; scope: CharacterScope; name: string }
@@ -103,6 +104,7 @@ export const contentRepository = {
   acknowledgeRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "acknowledgeRecoveredReply", edit }),
   saveRecoveredReply: (edit: RecoveredReplyEdit) => call<void>({ type: "DR_REPOSITORY", operation: "saveRecoveredReply", edit }),
   completeContinuation: (snapshot: HandoffSnapshot, token: string | null, targetChatId: string, retry?: true) => call<boolean>({ type: "DR_REPOSITORY", operation: "completeContinuation", snapshot, token, targetChatId, retry }),
+  recoverContinuation: (snapshot: HandoffSnapshot, token: string, targetChatId: string, draftKey: string, history: import("../core/story-game").StoryGameSnapshot) => call<boolean>({ type: "DR_REPOSITORY", operation: "recoverContinuation", snapshot, token, targetChatId, draftKey, history }),
   captureContinuation: (input: ContinuationCapture) => call<HandoffSnapshot>({ type: "DR_REPOSITORY", operation: "captureContinuation", input }),
   savedMemoryContinuation: (input: import("../core/saved-memory-continuation").SavedMemoryRequest, expected?: string) => call<{ preview: import("../core/saved-memory-continuation").SavedMemoryPreview; snapshot?: HandoffSnapshot }>({ type: "DR_REPOSITORY", operation: "savedMemoryContinuation", input, expected }),
   addCharacterAction: (scope: CharacterScope, name: string) => call<string[]>({ type: "DR_REPOSITORY", operation: "addCharacterAction", scope, name }),

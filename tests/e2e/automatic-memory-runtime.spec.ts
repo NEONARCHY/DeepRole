@@ -26,7 +26,13 @@ const rows = (panel: Page): Promise<DataRecord[]> => panel.evaluate(() => new Pr
   };
 }));
 
-for (const [locale, deferred] of [["ru", null], ["en", null], ["ru", "fetch"], ["ru", "xhr"]] as const) test(`automatic memory from first game turn ${locale}${deferred ? " after history unavailable and reload " + deferred : ""}`, async ({}, info) => {
+for (const [locale, transport, historyUnavailable, pendingRows] of [
+  ["ru", "fetch", false, false], ["en", "fetch", false, false],
+  ["ru", "fetch", true, false], ["ru", "xhr", true, false],
+  ["ru", "fetch", false, true], ["ru", "xhr", false, true],
+  ["ru", "fetch", true, true], ["ru", "xhr", true, true],
+] as const) test(`automatic memory from first game turn ${locale}${historyUnavailable ? " after history unavailable and reload " + transport : ""}${pendingRows ? " with pending native rows " + transport : ""}`, async ({}, info) => {
+  const deferred = historyUnavailable ? transport : null;
   test.skip(info.project.name !== "chromium", "Installed Edge MV3 on a synthetic chat");
   test.setTimeout(60_000);
   const extension = path.resolve(process.env.DEEPROLE_TEST_EXTENSION ?? ".output/chrome-mv3");
@@ -86,7 +92,7 @@ for (const [locale, deferred] of [["ru", null], ["en", null], ["ru", "fetch"], [
     const chat = await context.newPage();
     await chat.setViewportSize({ width: 320, height: 520 });
     await chat.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
-    await chat.addInitScript(({ fromHome, previous, chatId, deferred }) => {
+    await chat.addInitScript(({ fromHome, previous, chatId, transport, pendingRows }) => {
       window.addEventListener("DOMContentLoaded", () => {
         if (!fromHome && location.pathname.endsWith(chatId)) {
           document.querySelector("#story")!.innerHTML = '<article data-role="assistant" data-message-id="2"><div class="ds-markdown"></div></article>';
@@ -96,15 +102,23 @@ for (const [locale, deferred] of [["ru", null], ["en", null], ["ru", "fetch"], [
           event.preventDefault();
           const prompt = document.querySelector("textarea")!.value;
           if (location.pathname === "/") window.history.pushState({}, "", "/a/chat/s/" + chatId);
+          // Native UI may display the outgoing user and an empty assistant row
+          // before the first HTTP request. Neither is a previous played scene.
+          // Expected before the first run: one send includes the memory protocol,
+          // starts at the verified empty server history, then records both turns.
+          if (pendingRows) {
+            document.querySelector("#story")!.innerHTML = '<article data-role="user" data-message-id="3"></article><article data-role="assistant" data-message-id="4"><div class="ds-markdown"></div></article>';
+            document.querySelector('[data-role="user"]')!.textContent = prompt;
+          }
           const body = JSON.stringify({ chat_session_id: chatId, parent_message_id: fromHome ? null : 2, prompt });
-          if (deferred === "xhr") {
+          if (transport === "xhr") {
             const request = new XMLHttpRequest();
             request.open("POST", "/api/v0/chat/completion");
             request.send(body);
           } else await fetch("/api/v0/chat/completion", { method: "POST", body });
         });
       }, { once: true });
-    }, { fromHome, previous, chatId, deferred });
+    }, { fromHome, previous, chatId, transport, pendingRows });
     const attach = async (worldId: string) => panel.evaluate(async worldId => {
       const api = (globalThis as any).chrome, [active] = await api.tabs.query({ active: true, lastFocusedWindow: true });
       return api.tabs.sendMessage(active.id, { type: "DR_SET_SCENE", scene: { worldId, bookId: null, focusIds: [] } });
@@ -192,7 +206,8 @@ for (const [locale, deferred] of [["ru", null], ["en", null], ["ru", "fetch"], [
     await expect(panel.getByRole("button", { name: config.start, exact: true })).toHaveCount(0);
     await panel.evaluate(() => { document.documentElement.style.fontSize = "125%"; });
     expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
-    expect((await mode.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    // Chromium can report 43.999938 for a 44px control after text scaling.
+    expect((await mode.boundingBox())!.height).toBeGreaterThanOrEqual(44 - 0.001);
     const workNavigation = panel.locator(".dr-workspace-nav");
     expect(await workNavigation.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     expect((await review.getByRole("button", { name: config.accept, exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
