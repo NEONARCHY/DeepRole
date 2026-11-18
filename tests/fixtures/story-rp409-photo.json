@@ -1,0 +1,544 @@
+[
+  {
+    "plot": {
+      "id": "lanternhall",
+      "title": [
+        "Выставка фонарей",
+        "Lantern exhibition"
+      ],
+      "cast": [
+        [
+          "Инга",
+          "Inga"
+        ],
+        [
+          "Дан",
+          "Dan"
+        ],
+        [
+          "Лора",
+          "Lora"
+        ]
+      ],
+      "shifts": [
+        [
+          "Закончилась упаковка воска",
+          "Wax packing finished"
+        ],
+        [
+          "В зал принесли стеклянные подставки",
+          "Glass stands arrived in the hall"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "silk",
+          "act": 0,
+          "kind": "event",
+          "prose": [
+            "Хозяйка разрешила фотографировать шёлковый фонарь целиком для личного альбома.",
+            "The owner allowed photographing the silk lantern in full for a personal album."
+          ]
+        },
+        {
+          "id": "linen",
+          "act": 1,
+          "kind": "event",
+          "prose": [
+            "Льняной фонарь разрешено снимать только с лицевой стороны. Вышивка сзади должна оставаться за кадром.",
+            "The linen lantern may be photographed only from the front. Keep the embroidery on the back out of frame."
+          ]
+        },
+        {
+          "id": "glass",
+          "act": 2,
+          "kind": "event",
+          "prose": [
+            "Смотритель запретил фотографировать стеклянный фонарь, даже для себя.",
+            "The curator forbade photographing the glass lantern, even for personal use."
+          ]
+        },
+        {
+          "id": "copper",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "Медный фонарь можно осмотреть со всех сторон при смотрителе.",
+            "Visitors may inspect the copper lantern from all sides with the curator."
+          ]
+        },
+        {
+          "id": "gossip",
+          "act": 4,
+          "kind": "belief",
+          "prose": [
+            "Дан считает, что медный фонарь можно сфотографировать целиком.",
+            "Dan believes the copper lantern may be photographed in full."
+          ]
+        },
+        {
+          "id": "labels",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "Разрешено фотографировать бумажные этикетки целиком возле входа.",
+            "Taking pictures of the paper labels in full is permitted by the entrance."
+          ]
+        },
+        {
+          "id": "social",
+          "act": 6,
+          "kind": "event",
+          "prose": [
+            "Хозяйка запретила публиковать шёлковый фонарь в каталоге.",
+            "The owner forbade publishing the silk lantern in the catalogue."
+          ]
+        },
+        {
+          "id": "farewell",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "После закрытия Дан унёс пустую коробку.",
+            "After closing Dan took away an empty box."
+          ]
+        }
+      ]
+    },
+    "probes": [
+      {
+        "id": "album",
+        "recent": [
+          [
+            "Инга подняла шёлковый фонарь к свету.",
+            "Inga held the silk lantern up to the light."
+          ]
+        ],
+        "draft": [
+          "Можно сфотографировать это целиком для своего альбома?",
+          "May I photograph the whole thing for my personal album?"
+        ],
+        "scope": "full",
+        "wanted": [
+          "silk"
+        ],
+        "exclude": [
+          "linen",
+          "glass",
+          "copper",
+          "gossip",
+          "labels",
+          "social",
+          "farewell"
+        ],
+        "warning": false
+      },
+      {
+        "id": "front",
+        "recent": [
+          [
+            "Лора повернула льняной фонарь к гостям.",
+            "Lora turned the linen lantern toward the visitors."
+          ]
+        ],
+        "draft": [
+          "А целиком можно его снять на телефон?",
+          "Can I take a picture of the whole thing on my phone?"
+        ],
+        "scope": "partial",
+        "wanted": [
+          "linen"
+        ],
+        "exclude": [
+          "silk",
+          "glass",
+          "copper",
+          "gossip",
+          "labels",
+          "social",
+          "farewell"
+        ],
+        "warning": false
+      },
+      {
+        "id": "never",
+        "recent": [
+          [
+            "На ладони лежит стеклянный фонарь.",
+            "The glass lantern rests on her palm."
+          ]
+        ],
+        "draft": [
+          "Можно сфотографировать это целиком?",
+          "Can I photograph this in full?"
+        ],
+        "scope": "prohibited",
+        "wanted": [
+          "glass"
+        ],
+        "exclude": [
+          "silk",
+          "linen",
+          "copper",
+          "gossip",
+          "labels",
+          "social",
+          "farewell"
+        ],
+        "warning": false
+      },
+      {
+        "id": "inspect",
+        "recent": [
+          [
+            "Лора протянула медный фонарь.",
+            "Lora held out the copper lantern."
+          ]
+        ],
+        "draft": [
+          "Можно сфотографировать это целиком?",
+          "Can I photograph the entire thing?"
+        ],
+        "scope": "unknown",
+        "wanted": [
+          "copper"
+        ],
+        "exclude": [
+          "silk",
+          "linen",
+          "glass",
+          "gossip",
+          "labels",
+          "social",
+          "farewell"
+        ],
+        "warning": true
+      },
+      {
+        "id": "both",
+        "recent": [
+          [
+            "Дан принёс шёлковый фонарь и стеклянный фонарь.",
+            "Dan brought the silk lantern and the glass lantern."
+          ]
+        ],
+        "draft": [
+          "А его целиком можно сфотографировать?",
+          "May I photograph it in full?"
+        ],
+        "scope": "unknown",
+        "wanted": [],
+        "exclude": [
+          "silk",
+          "linen",
+          "glass",
+          "copper",
+          "gossip",
+          "labels",
+          "social",
+          "farewell"
+        ],
+        "warning": true
+      },
+      {
+        "id": "missing",
+        "recent": [
+          [
+            "Инга показала фарфоровый фонарь.",
+            "Inga showed the porcelain lantern."
+          ]
+        ],
+        "draft": [
+          "Можно сфотографировать это целиком?",
+          "Can I photograph the whole thing?"
+        ],
+        "scope": "unknown",
+        "wanted": [],
+        "exclude": [
+          "silk",
+          "linen",
+          "glass",
+          "copper",
+          "gossip",
+          "labels",
+          "social",
+          "farewell"
+        ],
+        "warning": true
+      }
+    ]
+  },
+  {
+    "plot": {
+      "id": "weavingroom",
+      "title": [
+        "Ткацкая мастерская",
+        "The weaving room"
+      ],
+      "cast": [
+        [
+          "Нина",
+          "Nina"
+        ],
+        [
+          "Эва",
+          "Eva"
+        ],
+        [
+          "Марк",
+          "Mark"
+        ]
+      ],
+      "shifts": [
+        [
+          "Ученики пересчитали катушки",
+          "Apprentices counted the spools"
+        ],
+        [
+          "Мастерская получила ящик мела",
+          "The workshop received a box of chalk"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "blue",
+          "act": 0,
+          "kind": "event",
+          "prose": [
+            "Мастер разрешил снять синий гобелен целиком на телефон.",
+            "The master permitted taking a photo of the entire blue tapestry on a phone."
+          ]
+        },
+        {
+          "id": "register",
+          "act": 1,
+          "kind": "event",
+          "prose": [
+            "Для тканого реестра разрешена только фотография обложки. Имена внутри должны оставаться закрытыми.",
+            "For the woven register only a photograph of the cover is permitted. The names inside must stay covered."
+          ]
+        },
+        {
+          "id": "red",
+          "act": 2,
+          "kind": "event",
+          "prose": [
+            "Красный гобелен фотографировать нельзя.",
+            "The red tapestry must not be photographed."
+          ]
+        },
+        {
+          "id": "pattern",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "Льняной узор разрешают срисовать карандашом для урока.",
+            "Students may sketch the linen pattern in pencil for class."
+          ]
+        },
+        {
+          "id": "rumor",
+          "act": 4,
+          "kind": "belief",
+          "prose": [
+            "Марк уверен, что красный гобелен можно снять для школы.",
+            "Mark is sure the red tapestry can be photographed for school."
+          ]
+        },
+        {
+          "id": "leaflet",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "На листовке синий гобелен выглядит почти белым.",
+            "On the leaflet the blue tapestry looks almost white."
+          ]
+        },
+        {
+          "id": "draw",
+          "act": 6,
+          "kind": "event",
+          "prose": [
+            "Тканый реестр можно листать в перчатках.",
+            "The woven register can be leafed through with gloves on."
+          ]
+        },
+        {
+          "id": "chair",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "Эва поставила два стула рядом с окном.",
+            "Eva set two chairs beside the window."
+          ]
+        }
+      ]
+    },
+    "probes": [
+      {
+        "id": "phone",
+        "recent": [
+          [
+            "Эва развернула синий гобелен.",
+            "Eva unrolled the blue tapestry."
+          ]
+        ],
+        "draft": [
+          "И это целиком можно снять на телефон?",
+          "Could I take a photo of the whole thing on my phone?"
+        ],
+        "scope": "full",
+        "wanted": [
+          "blue"
+        ],
+        "exclude": [
+          "register",
+          "red",
+          "pattern",
+          "rumor",
+          "leaflet",
+          "draw",
+          "chair"
+        ],
+        "warning": false
+      },
+      {
+        "id": "cover",
+        "recent": [
+          [
+            "Марк положил тканый реестр перед нами.",
+            "Mark set the woven register in front of us."
+          ]
+        ],
+        "draft": [
+          "Можно всё это сфотографировать?",
+          "May I photograph all of it?"
+        ],
+        "scope": "partial",
+        "wanted": [
+          "register"
+        ],
+        "exclude": [
+          "blue",
+          "red",
+          "pattern",
+          "rumor",
+          "leaflet",
+          "draw",
+          "chair"
+        ],
+        "warning": false
+      },
+      {
+        "id": "school",
+        "recent": [
+          [
+            "Нина принесла красный гобелен.",
+            "Nina brought in the red tapestry."
+          ]
+        ],
+        "draft": [
+          "Можно сделать снимок целиком для школы?",
+          "Can I take a photo of the entire thing for school?"
+        ],
+        "scope": "prohibited",
+        "wanted": [
+          "red"
+        ],
+        "exclude": [
+          "blue",
+          "register",
+          "pattern",
+          "rumor",
+          "leaflet",
+          "draw",
+          "chair"
+        ],
+        "warning": false
+      },
+      {
+        "id": "sketch",
+        "recent": [
+          [
+            "Эва протянула льняной узор.",
+            "Eva held out the linen pattern."
+          ]
+        ],
+        "draft": [
+          "А его целиком можно сфотографировать?",
+          "May I photograph the whole thing?"
+        ],
+        "scope": "unknown",
+        "wanted": [
+          "pattern"
+        ],
+        "exclude": [
+          "blue",
+          "register",
+          "red",
+          "rumor",
+          "leaflet",
+          "draw",
+          "chair"
+        ],
+        "warning": true
+      },
+      {
+        "id": "no-focus",
+        "recent": [
+          [
+            "Эва показала синий гобелен.",
+            "Eva showed the blue tapestry."
+          ],
+          [
+            "Марк молча закрыл дверь.",
+            "Mark silently closed the door."
+          ]
+        ],
+        "draft": [
+          "Можно сфотографировать это целиком?",
+          "May I photograph this in full?"
+        ],
+        "scope": "unknown",
+        "wanted": [],
+        "exclude": [
+          "blue",
+          "register",
+          "red",
+          "pattern",
+          "rumor",
+          "leaflet",
+          "draw",
+          "chair"
+        ],
+        "warning": true
+      },
+      {
+        "id": "two",
+        "recent": [
+          [
+            "На столе тканый реестр и синий гобелен.",
+            "On the table are the woven register and the blue tapestry."
+          ]
+        ],
+        "draft": [
+          "Можно сфотографировать это целиком?",
+          "May I photograph this in full?"
+        ],
+        "scope": "unknown",
+        "wanted": [],
+        "exclude": [
+          "blue",
+          "register",
+          "red",
+          "pattern",
+          "rumor",
+          "leaflet",
+          "draw",
+          "chair"
+        ],
+        "warning": true
+      }
+    ]
+  }
+]

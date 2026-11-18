@@ -24,8 +24,9 @@ const dbs: DeepRoleDatabase[] = [];
 afterEach(async () => { await Promise.all(dbs.splice(0).map(d => d.delete())); });
 const fact = (text: string, risk = "ordinary", kind = "event", claim?: unknown) => ({ text,quote:text,kind,risk,...(claim ? { claim } : {}) });
 const person = (name: string, text: string, id = "new:"+name, field = "background", risk = "ordinary") => ({ id,name,quote:name+" "+text,risk,fields:[{ key:field,text,quote:name+" "+text,risk }] });
-async function fixture(mode: "automatic" | "review" | "off" = "automatic") {
+async function fixture(mode: "automatic" | "review" | "off" = "automatic", names?:string[]) {
   const f = storyWorld(), db = new DeepRoleDatabase("automation-"+crypto.randomUUID()); dbs.push(db); const repo = new DeepRoleRepository(db);
+  names?.forEach((name,i)=>{f.entities[i]!.name=name;});
   f.world.storyAutomation = { mode,revision:"policy-a" }; await repo.mergeRecords(f.records);
   const world = async () => (await repo.get<WorldProfile>("world",f.world.id))!;
   let chat = f.binding.chatId;
@@ -41,11 +42,12 @@ async function fixture(mode: "automatic" | "review" | "off" = "automatic") {
     const parent = snapshot.selectedNativeKey!, user = String(++sequence), reply = String(++sequence), draft = "Continue "+user, policy = await world(), context = automationMarker(policy), requestId=crypto.randomUUID();
     const outgoing = context+"\n\n[User message]\n"+draft;
     if (options.capture !== false) {
-      const route = { requestId, identity:{ chatId:chat,nativeParentKey:parent },transport:"fetch" as const };
-      await prepareDispatchCapture({ id:requestId,worldId:f.world.id,bindingId:(await binding()).id,identity:route.identity,transport:"fetch",sceneRevision:(await binding()).characterScenes![f.world.id]!.revision,originalDraft:draft,proposedContext:context },7,repo);
+      const route = { requestId, identity:{ chatId:chat,nativeParentKey:parent },transport:names ? "xhr" as const : "fetch" as const };
+      await prepareDispatchCapture({ id:requestId,worldId:f.world.id,bindingId:(await binding()).id,identity:route.identity,transport:route.transport,sceneRevision:(await binding()).characterScenes![f.world.id]!.revision,originalDraft:draft,proposedContext:context },7,repo);
       await confirmDispatchCapture({ ...route,outgoingText:outgoing },7,repo);
       await advanceDispatchCapture({ ...route,phase:"started" },7,repo);
       await advanceDispatchCapture({ ...route,phase:"settled",delivery:{status:"accepted",httpStatus:200} },7,repo);
+      if (names) await advanceDispatchCapture({ ...route,transport:"xhr",phase:"ready",link:{requestId,chatId:chat,nativeParentKey:parent,userMessageKey:key(user),assistantMessageKey:key(reply)},sawFinish:false,issue:null },7,repo);
     }
     await options.beforeReply?.();
     const prose = [...facts.map(v => (v as any).quote),...people.map(v => (v as any).quote)].join("\n") || "A normal scene.";
@@ -68,6 +70,26 @@ it("never counts a repeated fact again and keeps mutable claim progression",asyn
   const f=await fixture();const a=fact("The door code is 123.","ordinary","event",{key:"door.code",value:"123",scope:"state"}),b=fact("The door code is 456.","ordinary","event",{key:"door.code",value:"456",scope:"state",transition:"progress"});
   await f.send([a]);await f.send([a]);await f.send([b]);expect((await f.world()).sharedGame!.facts).toHaveLength(1);expect((await f.world()).sharedGame!.facts[0]!.text).toBe(b.text);
   expect((await f.repo.list<StoryEvent>("story")).filter(e=>e.automation?.status==="duplicate")).toHaveLength(1);
+});
+it("updates the one old wish on a played visit across chats, preserving the source and other people's wishes",async()=>{
+  const f = await fixture("automatic",["Тимур","Мира","Лена"]);
+  const mira = fact("Мира хочет попасть на концерт группы «N».","ordinary","plan");
+  const lena = fact("Лена хочет попасть на концерт группы «N».","ordinary","plan");
+  const other = fact("Мира хочет попасть на концерт группы «Z».","ordinary","plan");
+  await f.send([mira,lena,other]);
+  await f.send([fact("Тимур купил билеты на концерт группы «N».")]);
+  await f.attach();
+  expect((await f.world()).sharedGame!.facts.map(x=>x.text)).toContain(mira.text);
+  const visit = fact("Тимур сводил Миру на концерт группы «N».");
+  await f.send([visit]);
+  await f.send([visit]);
+  f.db.close(); await f.db.open(); await f.play();
+  const current = (await f.world()).sharedGame!.facts;
+  expect(current.map(x=>x.text)).toEqual([lena.text,other.text,"Тимур купил билеты на концерт группы «N».",visit.text]);
+  expect(current.at(-1)?.task?.status).toBe("completed");
+  expect((await f.review()).total).toBe(0);
+  expect((await f.repo.list<StoryEvent>("story")).some(e=>e.memory?.text===mira.text)).toBe(true);
+  assertStoryGraph(await f.repo.rawRecords());
 });
 it("ordinary new mentioned person and existing profile additions preserve author canon",async()=>{
   const f=await fixture(), original=f.entities[1]!.characterSheet!.background;

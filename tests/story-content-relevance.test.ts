@@ -10,6 +10,36 @@ import {decodeStoryMemory} from "../src/core/story-memory-transport";
 import {validStoryFact,type StoryFact} from "../src/core/story-update";
 
 const f=(text:string,extra:Partial<StoryFact>={}):StoryFact=>({kind:"event",text,quote:text,...extra});
+it.each(["ru","en"] as const)("distinguishes who gets which materials in similarly worded long histories: %s",locale=>{
+  const input = relevanceQualityCorpus(locale)[0]!.input;
+  const ru = locale === "ru";
+  const right = f(ru ? "Полотно для мастерской и тушь для школы отложены." : "Canvas for the studio and ink for the school were set aside.");
+  const swapped = ru ? "Тушь для мастерской и полотно для школы отложены." : "Ink for the studio and canvas for the school were set aside.";
+  input.story = {...input.story!,facts:[right,...Array.from({length:220},(_,i)=>f(swapped+" №"+i))]};
+  input.recentMessages = [];
+  input.settings.contextBudget = 2000;
+  input.draft = ru ? "Забираю полотно для мастерской." : "I collect the canvas for the studio.";
+  const out = compileGameContext(input);
+  const rows = decodeStoryMemory(JSON.parse(out.text.split("<deeprole_story_memory>")[1]!.split("\n")[1]!));
+  expect(rows?.map(row=>row.text)).toContain(right.text);
+  expect(out.report.total).toBeLessThanOrEqual(out.report.limit);
+});
+it.each(["ru","en"] as const)("recalls the older named concert among 240 similar memories in the outgoing context: %s",locale=>{
+  const input = relevanceQualityCorpus(locale)[0]!.input;
+  const ru = locale === "ru";
+  const wish = f(ru ? "Мира хочет попасть на концерт группы «N»." : "Mira wants to attend the concert of band N.",{kind:"plan"});
+  const distractors = Array.from({length:240},(_,i)=>f(ru
+    ? `Мира обсуждала концерт группы «Z». Запись ${i}.` : `Mira discussed the concert of band Z. Entry ${i}.`));
+  input.story = {...input.story!,facts:[wish,...distractors]};
+  input.recentMessages = [];
+  input.settings.contextBudget = 2000;
+  input.draft = ru ? "У кассы беру билеты на концерт группы «N»." : "At the counter I buy tickets for the concert of band N.";
+  const out = compileGameContext(input);
+  const rows = decodeStoryMemory(JSON.parse(out.text.split("<deeprole_story_memory>")[1]!.split("\n")[1]!));
+  expect(rows?.map(row=>row.text)).toContain(wish.text);
+  expect(rows!.length).toBeLessThan(20);
+  expect(out.report.total).toBeLessThanOrEqual(out.report.limit);
+});
 it.each(["Nora","Нора","What do we know about Nora?","Напомни о Норе","Where is she?","Что она обещала?","UNKNOWN TOPIC","unmentioned"]) ("does not turn names/framing/pronouns/unsupported text into a topic: %s",query=>{
   const facts=[f("Nora asked what we know."),f("Нора попросила напомнить подробности.")];
   expect(facts.map(x=>storyContentRelevance(facts,query,["Nora","Нора","Норе"]).score(x))).toEqual([0,0]);

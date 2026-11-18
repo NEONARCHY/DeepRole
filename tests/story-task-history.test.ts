@@ -42,6 +42,19 @@ it('metadata-only task labels do not manufacture a historical object match',()=>
  const after={...latest,text:'Ira completed an unrelated task.',quote:'Ira completed an unrelated task.'};
  expect(taskHistorySources([before,after],[after],query,['Ira'],roles,episodes)).toBeUndefined();
 });
+it('restores only an unambiguous promise by its recorded owner and subject',()=>{
+ const promise = {...old,text:'Ada promised samples to the coastal museum.',quote:'Ada promised samples to the coastal museum.'};
+ const outcome = {...latest,text:'Ira signed the receipt.',quote:'Ira signed the receipt.'};
+ const question = 'What did Ada promise the coastal museum, and who signed for it?';
+ const bound = {...roles,question:{role:'promisor' as const,personId:'ada'},status:()=> 'bound' as const,read:(f:StoryFact)=>f.kind==='promise'?{promisor:{id:'ada',name:'Ada'}}:undefined};
+ const ep = {...episodes,position:(f:StoryFact)=>f===outcome?2:1};
+ const run=(facts:StoryFact[],q=question)=>taskHistorySources([...facts,outcome],[outcome],q,['Ada','Ira'],bound,ep);
+ expect(run([promise])?.primary).toEqual([promise]);
+ expect(run([promise],'What did Ada promise the forest council?')).toBeUndefined();
+ expect(run([promise,{...promise,task:{...old.task!,key:'other'}}])).toBeUndefined();
+ expect(run([{...promise,quote:'Ada promised something else.'}])).toBeUndefined();
+ expect(taskHistorySources([promise,outcome],[outcome],question,['Ada','Ira'],{...bound,question:{role:'promisor',personId:'ira'}},ep)).toBeUndefined();
+});
 for(const flag of ['contextualRecall','referenceRecall','referenceBundle','contentRelevance','topicAdmission','actionBalance','compoundActionBalance','sequencePriority','flexiblePriority','discussionPriority','budgetPriority'] as const)it(`history respects ${flag} opt-out`,()=>{
  const gold=longHoldout.worlds[0]!,f=longHoldoutWorld(gold,0),q=gold.queries.find(q=>q.id==='completed-history')!;
  const input:GameContextInput={draft:q.draft,recentMessages:[],entries:[],books:[],entities:f.base.entities,worlds:[f.base.world],activeBookId:null,scene:{worldId:f.base.world.id,bookId:null,focusIds:[]},settings:{contextBudget:6000,relevanceThreshold:6},story:{world:f.base.world,chat:f.base.binding.chatId,branch:'rp346',facts:f.facts,sheetsEnabled:false}};

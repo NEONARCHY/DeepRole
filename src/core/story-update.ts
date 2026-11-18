@@ -5,6 +5,7 @@ import { validSelfieEvents } from "./selfies";
 import type { CharacterScene, CharacterStatus, SceneEntity } from "./types";
 import { validStoryTask, storyFactSlot, storyFactIdentity, type StoryTask } from "./story-memory-lifecycle";
 import { validGameTimeFact, gameTimeEvidence } from "./story-time";
+import { attendanceTask } from "./story-attendance-goal";
 
 export interface StoryFact { text: string; kind: "event" | "promise" | "plan" | "belief" | "secret" | "task"; quote: string; claim?: { key: string; value: string; scope: "event" | "state"; transition?: "progress" | "correction"; lifetime?: "scene" | "persistent"; status?: "active" | "ended" }; task?: StoryTask; replaces?: string[] }
 export interface StoryUpdateIssue { path: string; rule: "scope" | "json" | "schema" | "field" | "reference" | "duplicate" | "quote" | "limit" | "policy"; actual: string }
@@ -36,6 +37,11 @@ export function compactStoryFactSources(facts: StoryFact[]): StoryFact[] {
   const kept = new Map<string, StoryFact>();
   for (const f of facts) {
     if (f.replaces) for (const [key,old] of kept) if (f.replaces.includes(storyFactIdentity(old))) kept.delete(key);
+    if (f.task?.status === "completed" && f.task.key === "visit:plan:" + f.task.title) {
+      const slot = storyFactIdentity({kind:"plan",text:f.task.title,quote:""});
+      const old = kept.get(slot);
+      if (old && attendanceTask(old)?.key === f.task.key) kept.delete(slot);
+    }
     const key = storyFactSlot(f); kept.delete(key); kept.set(key, f);
   }
   return [...kept.values()];

@@ -1,0 +1,63 @@
+{
+  "milestone": "RP404",
+  "frozenAtUtc": "2026-11-18T08:26:50.351Z",
+  "protocol": "Initial independent local audit on the frozen UX403 runtime. The first result is retained even on failure.",
+  "plots": [
+    {
+      "id": "radio",
+      "authoredBeats": 16,
+      "questionsPerLanguage": 13
+    },
+    {
+      "id": "orchard",
+      "authoredBeats": 16,
+      "questionsPerLanguage": 13
+    }
+  ],
+  "locales": [
+    "ru",
+    "en"
+  ],
+  "budget": 6000,
+  "shiftsPerAct": [
+    0,
+    126
+  ],
+  "historySizes": [
+    16,
+    1024
+  ],
+  "phases": [
+    "cold",
+    "warm",
+    "reopened"
+  ],
+  "uniqueLocalizedPrompts": 52,
+  "expectedRows": 312,
+  "provenance": "Two original narratives, 16 chronological authored sources each. Eight acts; long variant interleaves 126 synthetic shift entries per act. Both languages are translations, both sizes use identical probes.",
+  "scoring": {
+    "wanted": "All listed source IDs must appear in decoded story memory; a different source about the same object is insufficient.",
+    "exclude": "Any explicitly excluded source is competing context. This is a precision measure, not evidence of a generated false answer. Other extras are allowed.",
+    "owner": "For each selected required promise with an oracle owner, verify both the recorded promisor ID and display name. Missing attribution counts separately from missing facts.",
+    "notice": "Required for ambiguous or unsupported references. For answerable when-missing cases expect a preparation warning iff a required source is absent. Quiet controls expect none. Count omissions and excess warnings separately.",
+    "falseComplete": "A complete coverage claim on missing required facts or a required uncertainty warning is an error.",
+    "provenance": "Check exact quotation, task, kind, stored roles and revision ID, token accounting and budget. Require cold/warm/reopened byte-equivalent compiler results and coverage, unchanged persisted records."
+  },
+  "firstRun": "node node_modules/vitest/vitest.mjs run --config vitest.rp404.config.ts --maxWorkers=1",
+  "seals": {
+    "files": {
+      "tests/fixtures/story-rp404-corpus.ts": "255dcf0b2130215ea3f9bcaa6541be45c2fc392c1248ec772430da1749c85422",
+      "tests/fixtures/story-rp404-expectations.ts": "eee3f53c87b95b14ea1279bcba5d3479b183dcd0539a157ec1725eab5120204a",
+      "tests/fixtures/story-rp404-history.ts": "e8c7ef3095b42f490986eda07add0425a7a435c1e55e2b3396204e40af56aaf9",
+      "tests/fixtures/story-rp404-seal.ts": "1bd91b9e7646c846a9c6e41381223fae97eecde8ace2ec2660757380b95a7728",
+      "tests/fixtures/story-worlds.ts": "e35b5b7ca25116cb3490c5b1f4c3049bc33ab6729397dc0bcbf3f0da853173f7",
+      "tests/fixtures/story-persisted-evidence.ts": "57ea2d746e11530af485897c80f712bfe91e16becb38b522af2ead5d6b6dbbbe",
+      "tests/story-rp404.audit.ts": "ea4e726e22c1c6962d7f8d3ffe0eb4a307e8c34eab71dc531b801ea9750adcb0",
+      "tests/setup.ts": "a6f20db23d92459ac399dacdb9f195d53955154995a9a8d385ba22a2d6328382",
+      "vitest.config.ts": "cce14937c23bad220f746b1113140102528544fd033dc79a9c73a96cff6099fe",
+      "vitest.rp404.config.ts": "909b96d260a95dbdf839e02254e4fa67627d4986e272c452483d6074133d6cda",
+      "package-lock.json": "14687ffb25652d881eebe6f9ca48ac0c83ecf261c73d27bcd4adbb7ccac1a139"
+    },
+    "runtimeSha256": "1bfe515a95999e6f61793ebd9c064ce98283cebbc49b75bc27e7386aec9a6134"
+  }
+}

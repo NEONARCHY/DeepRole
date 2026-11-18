@@ -5,6 +5,7 @@ import {gameMemoryCoverageText} from '../../src/core/game-memory-coverage-i18n';
 import { decodeStoryMemory } from '../../src/core/story-memory-transport';
 import { compactStoryFacts } from '../../src/core/story-update';
 import { selectedRoleSeeds } from '../../src/core/story-role-binding';
+import { seedStoryLibrary } from './helpers/seed-story-library';
 
 const rows = (page: Page) => page.evaluate(() => new Promise<any[]>((resolve, reject) => {
   const open = indexedDB.open('deeprole'); open.onerror = () => reject(open.error);
@@ -17,13 +18,7 @@ for (const plot of ['stained-glass-workshop', 'karst-water-expedition']) for (co
     const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker'), panel = await context.newPage();
     await panel.goto('chrome-extension://' + new URL(worker.url()).host + '/sidepanel.html'); await expect(panel.locator('.onboarding')).toBeVisible();
     const f = longHoldoutWorld(longHoldout.worlds.find(w=>w.locale===locale&&w.plot===plot)!,1000), base = f.base; base.world.contextBudget = 6000; base.world.bracketedOoc = true;
-    await panel.evaluate(async ({ records, locale }) => {
-      await new Promise<void>((resolve, reject) => {
-        const open = indexedDB.open('deeprole'); open.onerror = () => reject(open.error);
-        open.onsuccess = () => { const db = open.result, tx = db.transaction('records', 'readwrite'); for (const r of records) tx.objectStore('records').put({ pk: r.kind + ':' + r.id, ...r, updatedAt: Date.now() }); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
-      });
-      await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true, showChatContextMeter: false, automaticMetadataRepair: false }, deeprole_library_change: { token: 'rp346-seed' } });
-    }, { records: base.records, locale });
+    await seedStoryLibrary(panel,base.records,locale);
     const message = (id: number, parent: number | null, role: string, content: string) => ({ message_id: id, parent_id: parent, role, status: 'FINISHED', has_pending_fragment: false, fragments: [{ type: role === 'USER' ? 'REQUEST' : 'RESPONSE', content }] });
     const messages = [message(40, null, 'USER', 'Begin'), message(41, 40, 'ASSISTANT', 'Workshop')]; let posts = 0, outgoing = '';
     await context.route('https://chat.deepseek.com/**', route => {
@@ -47,8 +42,10 @@ for (const plot of ['stained-glass-workshop', 'karst-water-expedition']) for (co
       if (reload) { await chat.reload(); await chat.bringToFront(); await expect(chat.locator('.dr-character-row')).toHaveCount(3, { timeout: 12000 }); }
       for (const q of f.questions.filter(q => ['free-sensitive', 'free-equipment', 'completed-history', 'reordered-six', 'unknown-only'].includes(q.id))) {
         await chat.locator('textarea').fill(q.draft);
-        await expect(chat.locator('.dr-game-memory-notice')).toContainText(gameMemoryCoverageText(locale).incompleteTitle);
-        await expect(chat.locator('.dr-game-memory-notice')).not.toContainText(gameMemoryCoverageText(locale).budgetTitle);
+        const warning = chat.locator('.dr-memory-issue:visible, [data-restore-widget="memory"]:visible').first();
+        await expect(warning).toContainText(gameMemoryCoverageText(locale).incompleteTitle);
+        await expect(warning).not.toContainText(gameMemoryCoverageText(locale).budgetTitle);
+        if (!reload && q.id === 'free-sensitive') await info.attach('rp346-visible-caution', { body: await warning.screenshot(), contentType: 'image/png' });
         await chat.evaluate(draft => new Promise<void>(resolve => { const x = new XMLHttpRequest(); x.open('POST', '/api/v0/chat/completion'); x.onload = () => resolve(); x.send(JSON.stringify({ chat_session_id: 'synthetic-a', parent_message_id: 41, prompt: draft })); }), q.draft);
         const assistantKey = JSON.stringify(['message', String(41 + posts * 2)]);
         try{await expect.poll(async () => { const d = (await rows(panel)).find(r => r.kind === 'dispatch' && r.data.wire?.link?.assistantMessageKey === assistantKey)?.data; return [d?.delivery?.status, d?.wire?.phase, d?.wire?.sawFinish]; }, { timeout: 12000 }).toEqual(['accepted', 'closed', true]);}
@@ -76,7 +73,6 @@ for (const plot of ['stained-glass-workshop', 'karst-water-expedition']) for (co
           expect(h.task).toEqual(f.facts[i]!.task); expect(h.claim).toEqual(f.facts[i]!.claim);
           expect(h.sourceRoles ?? {}).toEqual(f.seeds[i]!.binding.roles); expect(h.episodeSource?.revisionId).toBe(f.sources[i]);
         }
-        if (!reload && q.id === 'free-sensitive') await info.attach('rp346-visible-caution', { body: await chat.locator('.dr-game-memory-notice').screenshot(), contentType: 'image/png' });
         measurements.push({ query: q.id, reload, selected: hints.length, required: q.wanted.length });
       }
     }

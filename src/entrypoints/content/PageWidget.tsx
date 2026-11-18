@@ -249,6 +249,7 @@ export function PageWidget(props: {
   const proposals = props.state.proposals ?? [];
   const review = proposals.find((batch) => batch.id === reviewId);
   const assistantOpen = Boolean((quick && props.onQuickSave && props.onDraftLore) || (review && props.onReview && props.onDiscard));
+  const memoryDialogOpen = open && !props.state.vaultLocked;
   const contextStyle = contextPosition
     ? { left: `${contextPosition.x + contextShift}px`, top: `${contextPosition.y}px`, "--dr-status-x": `${contextPosition.x + contextShift}px` } as CSSProperties
     : undefined;
@@ -323,7 +324,7 @@ export function PageWidget(props: {
       onCheck={!props.state.continuationDraft.returnChatId && props.state.continuationDraft.promptDigest ? props.onCheckContinuationDraft : undefined}
       checking={props.state.continuationChecking}
       onDismiss={props.onDismissContinuationDraft} />}
-    {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
+    {props.state.toast && !memoryDialogOpen && <div className="dr-toast" role="status">{props.state.toast}</div>}
     {!props.state.vaultLocked && props.savedMemoryQueued && (!props.state.continuationDraft || props.state.continuationDraft.blockedLength) && !props.state.continuationCommitPending && <div className="dr-continuation-progress dr-saved-memory-ready" role="status">{savedMemoryText(props.state.locale)[props.savedMemoryAttempt ?? "queued"]}</div>}
     {!props.state.vaultLocked && props.state.continuationCommitPending && <section className="dr-alert dr-transfer-commit" aria-label={continuationText(props.state.locale, "commitTitle")}>
       <strong>{continuationText(props.state.locale, "commitTitle")}</strong>
@@ -353,7 +354,16 @@ export function PageWidget(props: {
           {props.onContinueStory && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring || !!props.state.continuation && !["review", "ready"].includes(props.state.continuation.phase)} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation?.phase === "review" ? "reviewAction" : props.state.continuation?.phase === "ready" ? "startSummary" : props.state.transferring ? "creating" : "continue")}</button>}
         </div></WidgetTile>}
         {(props.state.showMemoryContextIndicator !== false || memoryIssue) && <WidgetTile id="memory" shortcut={memoryIssue ? memoryIssueTitle : undefined} title={memoryIssue ? memoryIssueTitle : t("context")} icon={memoryIssue ? <AlertTriangle size={16} /> : <BrainCircuit size={16} />}><div className={`dr-memory-control${memoryIssue ? " has-issue" : ""}`}>
-          <button className="dr-pill" onClick={() => setOpen(!open)} aria-haspopup="dialog" aria-controls={memoryDialogId} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{referenceCount}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button>
+          <button className="dr-pill" onClick={() => setOpen(!open)} aria-haspopup="dialog" aria-controls={memoryDialogId} aria-expanded={open}>
+            <span className="dr-orb" aria-hidden="true"/>
+            <span className="dr-memory-label">
+              <strong>{t("context")}</strong>
+              <small>{referenceCount || props.state.selection.estimatedTokens
+                ? `${t("contextSourceCount", { count: referenceCount })} · ${t("shortTokens", { count: props.state.selection.estimatedTokens.toLocaleString(props.state.locale) })}`
+                : t("contextNothingSelected")}</small>
+            </span>
+            <ChevronRight size={16} aria-hidden="true"/>
+          </button>
           {memoryIssue && <div className="dr-memory-issue-summary" role="status" aria-live="polite"><button type="button" data-no-widget-drag className="dr-memory-issue" aria-haspopup="dialog" aria-controls={memoryDialogId} onClick={() => setOpen(true)}><AlertTriangle size={16} aria-hidden="true"/><span><strong>{memoryIssueTitle}</strong><small>{memoryCopy.details}</small></span><ChevronRight size={16} aria-hidden="true"/></button></div>}
         </div></WidgetTile>}
         {props.state.scene?.worldId && props.onSceneChoicesToggle && <WidgetTile id="choices" title={sceneChoiceText(props.state.locale, "toggleOn")} icon={<ListChecks size={16} />}><button className="dr-pill dr-scene-choice-toggle" type="button" title={sceneChoiceText(props.state.locale, "toggleHelp")} aria-pressed={Boolean(props.state.sceneChoicesEnabled)} onClick={props.onSceneChoicesToggle}>{sceneChoiceText(props.state.locale, props.state.sceneChoicesEnabled ? "toggleOn" : "toggleOff")}</button></WidgetTile>}
@@ -362,11 +372,19 @@ export function PageWidget(props: {
           {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
         </WidgetTile>}
 {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onAskSelfie={props.onAskSelfie} onAddAction={props.onAddCharacterAction} onGenerateText={props.onGenerateCharacterText} generationScope={props.state.scene?.bookId ?? ""} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
-        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange && <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}><SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />{props.savedMemoryTransfer && <SavedMemoryTransfer key={props.savedMemoryTransfer.scope} locale={props.state.locale} disabled={props.savedMemoryTransfer.blocked} worlds={props.savedMemoryTransfer.worlds} onPreview={props.savedMemoryTransfer.preview} onOpen={props.savedMemoryTransfer.open}/>}</WidgetTile>}
+        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange &&
+          <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}>
+            <div className="dr-world-scene">
+              <SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />
+              {props.savedMemoryTransfer && <SavedMemoryTransfer key={props.savedMemoryTransfer.scope} locale={props.state.locale} disabled={props.savedMemoryTransfer.blocked} worlds={props.savedMemoryTransfer.worlds} onPreview={props.savedMemoryTransfer.preview} onOpen={props.savedMemoryTransfer.open}/>}
+            </div>
+          </WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
     </div>
-    {!props.state.vaultLocked && <PageMemoryDialog open={open} title={t("selectedMemory")} closeLabel={t("close")} dialogId={memoryDialogId} onClose={() => setOpen(false)} assistantOpen={assistantOpen} help={<MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} />}>
+    {!props.state.vaultLocked && <PageMemoryDialog open={open} title={t("selectedMemory")} closeLabel={t("close")} dialogId={memoryDialogId} onClose={() => setOpen(false)} assistantOpen={assistantOpen}
+      footer={memoryDialogOpen && props.state.toast && <span role="status">{props.state.toast}</span>}
+      help={<MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} />}>
       {(open || assistantOpen) && <>
       {!assistantOpen && <>
         <GameMemoryNotice locale={props.state.locale} coverage={props.state.selection.memoryCoverage} report={props.state.selection.contextReport}/>

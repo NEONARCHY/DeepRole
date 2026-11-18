@@ -1,4 +1,93 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
+
+for (const locale of ["ru", "en"] as const) for (const width of [320, 1280]) {
+  test(`world, scene and saved game share one column ${locale} ${width}`, async ({ page }, info) => {
+    const theme = (locale === "ru") === (width === 320) ? "dark" : "light";
+    await page.emulateMedia({ colorScheme:theme });
+    await page.setViewportSize({ width, height:760 });
+    await page.addInitScript(() => localStorage.setItem("fixture-panel-width", "200"));
+    await page.goto(`/tests/fixtures/page-widget.html?panels&saved-game&locale=${locale}`);
+    if (width === 320) await page.addStyleTag({content:"html{font-size:125%}"});
+    await page.evaluate(() => (window as any).setWidgetState({
+      characters:undefined, conversationEstimate:undefined, scene:{worldId:null,bookId:null,focusIds:[]},
+    }));
+    const dock = page.locator(".dr-widget-deck-tools");
+    const card = page.locator(".dr-world-scene");
+    const memory = page.locator(".dr-memory-control");
+    const picker = card.getByRole("combobox");
+    const scene = card.locator(".scene-focus-toggle");
+    const transfer = card.locator(":scope > .dr-saved-memory-action");
+    await expect(picker).toBeVisible();
+    const box = async (el: Locator) => (await el.boundingBox())!;
+    const [bar, settings, grip, context, world, select, toggle, resume] = await Promise.all([
+      box(dock), box(dock.locator(".dr-panel-tools-open")), box(dock.locator(".dr-widget-move")),
+      box(memory), box(card), box(picker), box(scene), box(transfer),
+    ]);
+    expect(settings.y).toBe(grip.y);
+    expect(grip.width).toBe(44);
+    for (const bounds of [context, world]) {
+      expect(bounds.x).toBe(bar.x);
+      expect(bounds.width).toBe(bar.width);
+    }
+    expect(select.width).toBeGreaterThanOrEqual(world.width - 28);
+    expect(toggle.y).toBeGreaterThanOrEqual(select.y + select.height);
+    expect(resume.y).toBeGreaterThanOrEqual(toggle.y + toggle.height);
+    for (const button of [scene, transfer]) {
+      expect(await button.evaluate(el => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)).toBe(true);
+    }
+    expect(await card.evaluate(el => getComputedStyle(el).backgroundColor)).toBe(await dock.evaluate(el => getComputedStyle(el).backgroundColor));
+    await page.screenshot({path: info.outputPath("chat-tools.png")});
+    await picker.focus(); await picker.press("Enter"); await expect(page.getByRole("listbox")).toBeVisible();
+    await picker.press("Escape");
+    await scene.click(); await expect(scene).toHaveAttribute("aria-expanded","true"); await scene.click();
+    await transfer.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("Mira put the key in the drawer.");
+    await page.keyboard.press("Escape"); await expect(transfer).toBeFocused();
+    expect(await page.evaluate(() => (window as any).savedGameOpened)).toBeUndefined();
+    await expect(memory).toContainText(locale === "ru" ? "Источников: 1" : "Sources: 1");
+    await page.evaluate(() => (window as any).setWidgetState({selection:{entries:[],estimatedTokens:0,omittedCount:0}}));
+    await expect(memory).toContainText(locale === "ru" ? "Память не выбрана" : "No memory selected");
+  });
+}
+
+test("a short viewport scrolls the default column and keeps manual placement after resizing", async ({ page }) => {
+  await page.setViewportSize({width:1280,height:640});
+  await page.goto("/tests/fixtures/page-widget.html?panels&saved-game");
+  const scene = page.locator('[data-widget="scene"]');
+  const dock = page.locator(".dr-widget-dock");
+  const offset = async () => (await scene.boundingBox())!.x - (await dock.boundingBox())!.x;
+  const deck = page.locator(".dr-widget-deck");
+  await page.evaluate(() => {
+    const sidebar = document.createElement("aside");
+    sidebar.id = "chat-list";
+    sidebar.style.cssText = "position:fixed;inset:0 auto 0 0;width:260px";
+    const composer = document.createElement("textarea");
+    composer.id = "chat-draft";
+    composer.style.cssText = "position:fixed;bottom:24px;left:550px;width:500px;height:70px";
+    document.body.append(sidebar, composer);
+  });
+  await expect.poll(async () => (await dock.boundingBox())!.x).toBe(268);
+  await expect(deck).toHaveAttribute("data-overflow", "true");
+  await expect.poll(offset).toBe(0);
+  const pageScroll = await page.evaluate(() => window.scrollY);
+  await scene.scrollIntoViewIfNeeded();
+  await expect(scene.getByRole("combobox")).toBeInViewport();
+  expect(await deck.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
+  await page.locator("#chat-draft").click({ position: { x: 4, y: 4 } });
+  await expect(page.locator("#chat-draft")).toBeFocused();
+  await page.locator("#chat-list").evaluate(el => el.remove());
+  await expect.poll(async () => (await dock.boundingBox())!.x).toBe(8);
+  await expect.poll(offset).toBe(0);
+  await page.setViewportSize({width:1280,height:1000});
+  await expect(deck).not.toHaveAttribute("data-overflow", "true");
+  await expect.poll(offset).toBe(0);
+  expect(await page.evaluate(() => localStorage.getItem("deeprole.widgetLayout.v1"))).toBeNull();
+  await scene.focus(); await scene.press("ArrowRight");
+  await page.reload();
+  await expect.poll(offset).toBeCloseTo(8,0);
+});
 
 for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`portrait visibility lives beside panel controls ${locale} ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 850 });
@@ -112,6 +201,7 @@ test("late initialization fits the panel stack back inside the viewport", async 
   await page.evaluate(() => (window as any).setWidgetState({ pageReady: false, contextPosition: { x: 16, y: 400 } }));
   await expect(page.locator(".dr-widget-deck")).toHaveCount(0);
   await page.evaluate(() => (window as any).setWidgetState({ pageReady: true }));
+  await page.locator('[data-widget="scene"]').scrollIntoViewIfNeeded();
   await expect.poll(async () => { const rect = (await page.locator('[data-widget="scene"]').boundingBox())!; return rect.y + rect.height; }).toBeLessThanOrEqual(650);
 });
 

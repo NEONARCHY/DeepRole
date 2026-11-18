@@ -1,0 +1,507 @@
+{
+  "started": "2026-11-18T11:31:55.368Z",
+  "runtime": "3c525b7ff2c3c589b6e63a698806ac3f0eba8fcc1876ee07c04acbe7a99cda2c",
+  "summary": {
+    "cases": 12,
+    "passed": 1,
+    "measurements": 24
+  },
+  "results": [
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "blue-belief",
+        "blue-report",
+        "red-belief",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946",
+        "shift-925"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated red-belief"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "blue-belief",
+        "blue-report",
+        "red-belief",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946",
+        "shift-925"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated red-belief"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "red-belief",
+        "red-report",
+        "blue-belief",
+        "blue-report",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated blue-belief",
+        "unrelated blue-report"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "red-belief",
+        "red-report",
+        "blue-belief",
+        "blue-report",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated blue-belief",
+        "unrelated blue-report"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "warning": null,
+      "failures": [
+        "warning",
+        "model caution"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "warning": null,
+      "failures": [
+        "warning",
+        "model caution"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "blue-belief",
+        "blue-report",
+        "blue-prep",
+        "red-belief",
+        "red-report",
+        "shift-1009",
+        "shift-988",
+        "shift-967"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated red-belief",
+        "unrelated red-report"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "blue-belief",
+        "blue-report",
+        "blue-prep",
+        "red-belief",
+        "red-report",
+        "shift-1009",
+        "shift-988",
+        "shift-967"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated red-belief",
+        "unrelated red-report"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "red-belief",
+        "red-report",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946",
+        "shift-925",
+        "shift-904"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "red-belief",
+        "red-report",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946",
+        "shift-925",
+        "shift-904"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "warning": "incomplete",
+      "failures": [
+        "model caution"
+      ]
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "warning": "incomplete",
+      "failures": [
+        "model caution"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "silk-belief",
+        "silk-report",
+        "linen-report",
+        "silk-prep",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "silk-belief",
+        "silk-report",
+        "linen-report",
+        "silk-prep",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "linen-report",
+        "linen-belief",
+        "silk-report",
+        "silk-prep",
+        "silk-belief",
+        "shift-1016",
+        "shift-1015",
+        "shift-1014"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated silk-belief",
+        "unrelated silk-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "linen-report",
+        "linen-belief",
+        "silk-report",
+        "silk-prep",
+        "silk-belief",
+        "shift-1016",
+        "shift-1015",
+        "shift-1014"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated silk-belief",
+        "unrelated silk-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep",
+        "silk-report",
+        "linen-report",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report",
+        "unrelated silk-report",
+        "warning",
+        "model caution"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep",
+        "silk-report",
+        "linen-report",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report",
+        "unrelated silk-report",
+        "warning",
+        "model caution"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "silk-belief",
+        "silk-report",
+        "linen-report",
+        "silk-prep",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "silk-belief",
+        "silk-report",
+        "linen-report",
+        "silk-prep",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "linen-report",
+        "linen-belief",
+        "silk-report",
+        "silk-prep",
+        "silk-belief",
+        "shift-1016",
+        "shift-1015",
+        "shift-1014"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated silk-belief",
+        "unrelated silk-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "linen-report",
+        "linen-belief",
+        "silk-report",
+        "silk-prep",
+        "silk-belief",
+        "shift-1016",
+        "shift-1015",
+        "shift-1014"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated silk-belief",
+        "unrelated silk-report"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep",
+        "linen-report",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report",
+        "warning",
+        "model caution"
+      ]
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep",
+        "linen-report",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918"
+      ],
+      "warning": null,
+      "failures": [
+        "unrelated linen-report",
+        "warning",
+        "model caution"
+      ]
+    }
+  ]
+}

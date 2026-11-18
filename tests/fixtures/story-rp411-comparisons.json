@@ -1,0 +1,402 @@
+[
+  {
+    "plot": {
+      "id": "planetarium",
+      "title": [
+        "Смена в планетарии",
+        "Planetarium shift"
+      ],
+      "cast": [
+        [
+          "Дина",
+          "Dina"
+        ],
+        [
+          "Роман",
+          "Roman"
+        ],
+        [
+          "Алла",
+          "Alla"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "glass",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Дина обещала Алле стеклянный негатив затмения для выставки после описи.",
+            "Dina promised Alla the glass eclipse negative for the exhibition after the inventory."
+          ]
+        },
+        {
+          "id": "print",
+          "act": 1,
+          "kind": "promise",
+          "prose": [
+            "Роман обещал кружку бумажный отпечаток затмения после ретуши.",
+            "Roman promised the club a paper eclipse print after retouching."
+          ]
+        },
+        {
+          "id": "lamp",
+          "act": 2,
+          "kind": "promise",
+          "prose": [
+            "Алла обещала Дине настольную лампу для кабинета.",
+            "Alla promised Dina a reading lamp for the office."
+          ]
+        },
+        {
+          "id": "boxes",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "При упаковке стеклянный негатив затмения уложили в бархатный пенал, а бумажный отпечаток затмения вложили в плоский тубус.",
+            "During packing the glass eclipse negative went into a velvet case, while the paper eclipse print went into a flat tube."
+          ]
+        },
+        {
+          "id": "rumor",
+          "act": 4,
+          "kind": "belief",
+          "prose": [
+            "Алла считает, что стеклянный негатив и бумажный отпечаток поменяли местами в тубусе.",
+            "Alla believes the glass negative and the paper print swapped places in the tube."
+          ]
+        },
+        {
+          "id": "gossip",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "У киоска кто-то предположил, что стеклянный негатив и бумажный отпечаток лежат вместе в корзине.",
+            "At the kiosk someone guessed that the glass negative and the paper print were together in a basket."
+          ]
+        },
+        {
+          "id": "lampcase",
+          "act": 6,
+          "kind": "event",
+          "prose": [
+            "Для настольной лампы завхоз нашёл плоский тубус из картона.",
+            "The caretaker found a flat cardboard tube for the reading lamp."
+          ]
+        },
+        {
+          "id": "lights",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "Дежурный выключил свет в фойе.",
+            "The attendant turned out the lights in the foyer."
+          ]
+        }
+      ],
+      "shifts": [
+        [
+          "в фойе сменили расписание сеансов",
+          "revised the show schedule in the foyer"
+        ],
+        [
+          "у проектора проверили вентиляцию",
+          "checked the projector fan"
+        ]
+      ]
+    },
+    "probes": [
+      {
+        "id": "two-names",
+        "recent": [],
+        "draft": [
+          "Сопоставь обещания Дины и Романа о затмении. Кто что получит и как отличить вещи?",
+          "Compare Dina’s and Roman’s promises about the eclipse. Who gets which item and how can I tell the two apart?"
+        ],
+        "wanted": [
+          "glass",
+          "print",
+          "boxes"
+        ],
+        "exclude": [
+          "lamp",
+          "rumor",
+          "gossip",
+          "lampcase",
+          "lights"
+        ],
+        "warning": false
+      },
+      {
+        "id": "reversed",
+        "recent": [],
+        "draft": [
+          "Чем отличаются обещания Романа и Дины? Напомни, для кого каждый вариант затмения.",
+          "How does Roman’s promise differ from Dina’s? Remind me who gets each version of the eclipse."
+        ],
+        "wanted": [
+          "glass",
+          "print",
+          "boxes"
+        ],
+        "exclude": [
+          "lamp",
+          "rumor",
+          "gossip",
+          "lampcase",
+          "lights"
+        ],
+        "warning": false
+      },
+      {
+        "id": "common-topic",
+        "recent": [],
+        "draft": [
+          "Сверим оба заказа на затмение. Как различить обещанные вещи?",
+          "Let’s compare both eclipse orders. How can I tell the promised items apart?"
+        ],
+        "wanted": [
+          "glass",
+          "print",
+          "boxes"
+        ],
+        "exclude": [
+          "lamp",
+          "rumor",
+          "gossip",
+          "lampcase",
+          "lights"
+        ],
+        "warning": false
+      },
+      {
+        "id": "wrong-owner",
+        "recent": [],
+        "draft": [
+          "Сравни обещания Дины и Аллы о затмении. Как отличить предметы?",
+          "Compare Dina’s and Alla’s promises about the eclipse. How do the items differ?"
+        ],
+        "wanted": [
+          "glass"
+        ],
+        "exclude": [
+          "print",
+          "lamp",
+          "boxes",
+          "rumor",
+          "gossip",
+          "lampcase",
+          "lights"
+        ],
+        "warning": true
+      }
+    ]
+  },
+  {
+    "plot": {
+      "id": "dockyard",
+      "title": [
+        "Почта на пристани",
+        "Harbour post"
+      ],
+      "cast": [
+        [
+          "Марта",
+          "Marta"
+        ],
+        [
+          "Глеб",
+          "Gleb"
+        ],
+        [
+          "Тина",
+          "Tina"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "pier",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Марта обещала Тине пропуск на причал после проверки печати.",
+            "Marta promised Tina a pass to the pier after inspection of the seal."
+          ],
+          "task": [
+            [
+              "Допуск к причалу",
+              "Access to the pier"
+            ],
+            "open"
+          ]
+        },
+        {
+          "id": "shed",
+          "act": 1,
+          "kind": "promise",
+          "prose": [
+            "Глеб обещал Тине пропуск на склад после оплаты сбора.",
+            "Gleb promised Tina a pass to the warehouse after payment of the fee."
+          ]
+        },
+        {
+          "id": "lantern",
+          "act": 2,
+          "kind": "promise",
+          "prose": [
+            "Тина обещала вернуть смотрителю фонарь после уборки.",
+            "Tina promised the keeper a lantern after the cleanup."
+          ]
+        },
+        {
+          "id": "inspected",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "Проверка печати для пропуска на причал закончена. Инспектор поставил отметку в журнале.",
+            "Inspection of the seal for the pier pass finished. The inspector made a journal entry."
+          ]
+        },
+        {
+          "id": "unpaid",
+          "act": 4,
+          "kind": "event",
+          "prose": [
+            "Сбор за пропуск на склад пока не оплачен. Кассир оставил строку открытой.",
+            "The fee for the warehouse pass is still unpaid. The cashier left the entry open."
+          ]
+        },
+        {
+          "id": "paid-other",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "Тина оплатила сбор за фонарь смотрителя. В квитанции указан только фонарь.",
+            "Tina paid the fee for the keeper’s lantern. The receipt names only the lantern."
+          ]
+        },
+        {
+          "id": "received",
+          "act": 6,
+          "kind": "event",
+          "prose": [
+            "Тина получила у Марты пропуск на причал и расписалась за него.",
+            "Tina collected the pier pass from Marta and signed for it."
+          ],
+          "task": [
+            [
+              "Допуск к причалу",
+              "Access to the pier"
+            ],
+            "completed"
+          ]
+        },
+        {
+          "id": "hearsay",
+          "act": 7,
+          "kind": "belief",
+          "prose": [
+            "Тина думает, что пропуск на склад уже передан.",
+            "Tina thinks the warehouse pass has already been handed over."
+          ]
+        }
+      ],
+      "shifts": [
+        [
+          "переписали часы прилива в журнал",
+          "copied the tide times into the log"
+        ],
+        [
+          "почтальон пересчитал пустые мешки",
+          "the post carrier counted the empty bags"
+        ]
+      ]
+    },
+    "probes": [
+      {
+        "id": "terms",
+        "recent": [],
+        "draft": [
+          "Сравни оба заказа на пропуск. Кто ждал проверки печати, кто оплаты сбора и что Тина уже получила?",
+          "Compare both pass orders. Who waited for inspection of the seal, who waited for payment of the fee, and which pass has Tina already received?"
+        ],
+        "wanted": [
+          "pier",
+          "shed",
+          "inspected",
+          "unpaid",
+          "received"
+        ],
+        "exclude": [
+          "lantern",
+          "paid-other",
+          "hearsay"
+        ],
+        "warning": false
+      },
+      {
+        "id": "named-terms",
+        "recent": [],
+        "draft": [
+          "Чем отличаются условия обещаний Глеба и Марты насчёт пропусков? Выполнены ли условия?",
+          "How do the conditions of Gleb’s and Marta’s promises about the passes differ? Have the conditions been met?"
+        ],
+        "wanted": [
+          "pier",
+          "shed",
+          "inspected",
+          "unpaid",
+          "received"
+        ],
+        "exclude": [
+          "lantern",
+          "paid-other",
+          "hearsay"
+        ],
+        "warning": false
+      },
+      {
+        "id": "no-markings",
+        "recent": [],
+        "draft": [
+          "Сравни обещания Марты и Глеба. Как по цвету различить два пропуска?",
+          "Compare Marta’s and Gleb’s promises. How can I distinguish the two passes by colour?"
+        ],
+        "wanted": [
+          "pier",
+          "shed",
+          "received"
+        ],
+        "exclude": [
+          "lantern",
+          "inspected",
+          "unpaid",
+          "paid-other",
+          "hearsay"
+        ],
+        "warning": true
+      },
+      {
+        "id": "missing-party",
+        "recent": [],
+        "draft": [
+          "Сравни обещания Марты и Тины о пропусках. Что уже передали?",
+          "Compare Marta’s and Tina’s promises about passes. Which one was handed over?"
+        ],
+        "wanted": [
+          "pier",
+          "received"
+        ],
+        "exclude": [
+          "shed",
+          "lantern",
+          "inspected",
+          "unpaid",
+          "paid-other",
+          "hearsay"
+        ],
+        "warning": true
+      }
+    ]
+  }
+]

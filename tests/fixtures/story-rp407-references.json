@@ -1,0 +1,478 @@
+[
+  {
+    "plot": {
+      "id": "sealhouse",
+      "title": [
+        "Дом печатей",
+        "House of seals"
+      ],
+      "cast": [
+        [
+          "Вера",
+          "Vera"
+        ],
+        [
+          "Рут",
+          "Ruth"
+        ],
+        [
+          "Лев",
+          "Lev"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "amber",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Лев обещал Рут янтарную печать после сверки герба.",
+            "Lev promised Ruth the amber seal after the crest inspection."
+          ],
+          "task": [
+            [
+              "Янтарная печать",
+              "Amber seal"
+            ],
+            "open"
+          ]
+        },
+        {
+          "id": "copper",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Вера обещала Льву медную печать после оплаты пошлины.",
+            "Vera promised Lev the copper seal after the duty payment."
+          ],
+          "task": [
+            [
+              "Медная печать",
+              "Copper seal"
+            ],
+            "open"
+          ]
+        },
+        {
+          "id": "amber-old",
+          "act": 1,
+          "kind": "event",
+          "prose": [
+            "Янтарную печать держали в плетёной корзине.",
+            "The amber seal was kept in a wicker basket."
+          ]
+        },
+        {
+          "id": "rumor",
+          "act": 2,
+          "kind": "belief",
+          "prose": [
+            "Вера считает, что медная печать и янтарная печать спрятаны вместе.",
+            "Vera believes the copper seal and the amber seal are hidden together."
+          ]
+        },
+        {
+          "id": "copper-check",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "Пошлина за медную печать осталась неоплаченной.",
+            "The duty for the copper seal remains unpaid."
+          ]
+        },
+        {
+          "id": "crest",
+          "act": 4,
+          "kind": "event",
+          "prose": [
+            "Герольд завершил сверку герба на янтарной печати.",
+            "The herald completed the crest inspection on the amber seal."
+          ]
+        },
+        {
+          "id": "amber-place",
+          "act": 6,
+          "kind": "event",
+          "prose": [
+            "После наводнения янтарную печать перенесли в ящик под верстаком.",
+            "After the flood they moved the amber seal into a drawer beneath the workbench."
+          ]
+        },
+        {
+          "id": "copper-place",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "Медная печать теперь лежит в сундуке у лестницы.",
+            "The copper seal now rests in the chest by the stairs."
+          ]
+        }
+      ],
+      "shifts": [
+        [
+          "Смотрители пересчитали корзины в пустом сарае",
+          "The wardens counted baskets in the empty shed"
+        ],
+        [
+          "В книге расходов новая строка о покупке воска",
+          "A fresh entry in the expense book records a wax purchase"
+        ],
+        [
+          "В мастерской вывесили расписание приёма",
+          "The shop posted its opening hours"
+        ]
+      ]
+    },
+    "probes": [
+      {
+        "id": "sought",
+        "recent": [
+          [
+            "Рут пришла за янтарной печатью. Медную она брать не собирается.",
+            "Ruth came for the amber seal. She has no plans to take the copper one."
+          ]
+        ],
+        "draft": [
+          "Где теперь та, за которой она пришла, и чего ждал Лев?",
+          "Where is the one she came for now, and what was Lev waiting for?"
+        ],
+        "wanted": [
+          "amber",
+          "crest",
+          "amber-place"
+        ],
+        "exclude": [
+          "copper",
+          "copper-place",
+          "copper-check",
+          "rumor"
+        ],
+        "warning": false
+      },
+      {
+        "id": "other",
+        "recent": [
+          [
+            "Сегодня Лев попросил медную печать.",
+            "Today Lev asked for the copper seal."
+          ]
+        ],
+        "draft": [
+          "Куда убрали ту, что он просил?",
+          "Where did they put the one he asked for?"
+        ],
+        "wanted": [
+          "copper",
+          "copper-place",
+          "copper-check"
+        ],
+        "exclude": [
+          "amber",
+          "amber-place",
+          "crest",
+          "rumor"
+        ],
+        "warning": false
+      },
+      {
+        "id": "either",
+        "recent": [
+          [
+            "На стойке обсуждали янтарную печать и медную печать. Рут ещё не выбрала.",
+            "They discussed the amber seal and the copper seal at the counter. Ruth has not chosen yet."
+          ]
+        ],
+        "draft": [
+          "А где та, за которой она пришла?",
+          "Where is the one she came for?"
+        ],
+        "wanted": [
+          "amber",
+          "copper"
+        ],
+        "exclude": [],
+        "warning": true
+      },
+      {
+        "id": "invented",
+        "recent": [
+          [
+            "Рут попросила фарфоровую печать.",
+            "Ruth asked for the porcelain seal."
+          ]
+        ],
+        "draft": [
+          "Так где та, которую она просила?",
+          "So where is the one she asked for?"
+        ],
+        "wanted": [],
+        "exclude": [
+          "amber",
+          "copper",
+          "amber-place",
+          "copper-place"
+        ],
+        "warning": true
+      },
+      {
+        "id": "stale",
+        "recent": [
+          [
+            "Рут попросила янтарную печать.",
+            "Ruth asked for the amber seal."
+          ],
+          [
+            "Теперь собеседники обсуждают прогноз на завтра.",
+            "The conversation has turned to the weather forecast."
+          ]
+        ],
+        "draft": [
+          "И где та, за которой она пришла?",
+          "And where is the one she came for?"
+        ],
+        "wanted": [],
+        "exclude": [
+          "amber",
+          "copper"
+        ],
+        "warning": true
+      }
+    ]
+  },
+  {
+    "plot": {
+      "id": "skyroom",
+      "title": [
+        "Читальня у купола",
+        "Reading room at the dome"
+      ],
+      "cast": [
+        [
+          "Ада",
+          "Ada"
+        ],
+        [
+          "Нелли",
+          "Nellie"
+        ],
+        [
+          "Тео",
+          "Theo"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "lunar",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Тео обещал Нелли лунный атлас после починки корешка.",
+            "Theo promised Nellie the lunar atlas once its spine was repaired."
+          ],
+          "task": [
+            [
+              "Лунный атлас",
+              "Lunar atlas"
+            ],
+            "open"
+          ]
+        },
+        {
+          "id": "stellar",
+          "act": 1,
+          "kind": "promise",
+          "prose": [
+            "Ада обещала Тео звёздный атлас, когда вернут залог.",
+            "Ada promised Theo the stellar atlas when the deposit was returned."
+          ],
+          "task": [
+            [
+              "Звёздный атлас",
+              "Stellar atlas"
+            ],
+            "open"
+          ]
+        },
+        {
+          "id": "lunar-old",
+          "act": 2,
+          "kind": "event",
+          "prose": [
+            "Лунный атлас раньше лежал на кафедре.",
+            "The lunar atlas used to lie on the lectern."
+          ]
+        },
+        {
+          "id": "stellar-place",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "Звёздный атлас заперли в шкафчике у телескопа.",
+            "The stellar atlas was locked in the cabinet beside the telescope."
+          ]
+        },
+        {
+          "id": "spine",
+          "act": 4,
+          "kind": "event",
+          "prose": [
+            "Переплётчик починил корешок лунного атласа.",
+            "The bookbinder repaired the spine of the lunar atlas."
+          ]
+        },
+        {
+          "id": "deposit",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "Залог за звёздный атлас до сих пор у казначея.",
+            "The treasurer still holds the deposit for the stellar atlas."
+          ]
+        },
+        {
+          "id": "gossip",
+          "act": 6,
+          "kind": "belief",
+          "prose": [
+            "Ада думает, что лунный атлас и звёздный атлас уже забрали гости.",
+            "Ada thinks visitors already collected the lunar atlas and the stellar atlas."
+          ]
+        },
+        {
+          "id": "lunar-place",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "Лунный атлас переложили с кафедры в нишу за глобусом.",
+            "They moved the lunar atlas from the lectern to the niche behind the globe."
+          ]
+        }
+      ],
+      "shifts": [
+        [
+          "Облака закрыли наблюдательное окно",
+          "Clouds obscured the observation window"
+        ],
+        [
+          "В журнал внесли высоту полуденного солнца",
+          "They logged the altitude of the midday sun"
+        ],
+        [
+          "Сторож пересчитал чехлы в угловом шкафу",
+          "The attendant counted covers in the corner cabinet"
+        ]
+      ]
+    },
+    "probes": [
+      {
+        "id": "collect",
+        "recent": [
+          [
+            "Нелли хочет забрать лунный атлас.",
+            "Nellie wants to collect the lunar atlas."
+          ]
+        ],
+        "draft": [
+          "Напомни, где тот, за которым она пришла?",
+          "Remind me, where is the one she came to collect?"
+        ],
+        "wanted": [
+          "lunar",
+          "spine",
+          "lunar-place"
+        ],
+        "exclude": [
+          "stellar",
+          "stellar-place",
+          "deposit",
+          "gossip"
+        ],
+        "warning": false
+      },
+      {
+        "id": "contrast",
+        "recent": [
+          [
+            "Тео пришёл только за звёздным атласом. Лунный он оставил в покое.",
+            "Theo came only for the stellar atlas. He left the lunar one alone."
+          ]
+        ],
+        "draft": [
+          "Где искать тот самый, что он хотел забрать?",
+          "Where should I look for the one he wanted to collect?"
+        ],
+        "wanted": [
+          "stellar",
+          "stellar-place",
+          "deposit"
+        ],
+        "exclude": [
+          "lunar",
+          "lunar-place",
+          "spine",
+          "gossip"
+        ],
+        "warning": false
+      },
+      {
+        "id": "two-visitors",
+        "recent": [
+          [
+            "Нелли попросила лунный атлас, а Ада попросила звёздный атлас.",
+            "Nellie asked for the lunar atlas, and Ada asked for the stellar atlas."
+          ]
+        ],
+        "draft": [
+          "Где тот самый, который она просила?",
+          "Where is the one she asked for?"
+        ],
+        "wanted": [
+          "lunar",
+          "stellar"
+        ],
+        "exclude": [],
+        "warning": true
+      },
+      {
+        "id": "denial",
+        "recent": [
+          [
+            "Нелли не просила лунный атлас.",
+            "Nellie did not ask for the lunar atlas."
+          ]
+        ],
+        "draft": [
+          "Где тот, который она просила?",
+          "Where is the one she asked for?"
+        ],
+        "wanted": [],
+        "exclude": [
+          "lunar",
+          "stellar",
+          "lunar-place"
+        ],
+        "warning": true
+      },
+      {
+        "id": "rumour",
+        "recent": [
+          [
+            "Может быть, Нелли пришла за лунным атласом? Этого никто не знает.",
+            "Maybe Nellie came for the lunar atlas? Nobody knows."
+          ]
+        ],
+        "draft": [
+          "Куда положили тот, за которым она пришла?",
+          "Where did they leave the one she came for?"
+        ],
+        "wanted": [],
+        "exclude": [
+          "lunar",
+          "stellar",
+          "lunar-place"
+        ],
+        "warning": true
+      }
+    ]
+  }
+]

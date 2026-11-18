@@ -85,13 +85,22 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect(chat.locator(".dr-inline-note")).toContainText("DeepSeek is still replying");
     expect(sent).toHaveLength(beforeBusy);
     await chat.evaluate(() => document.querySelector("#mock-stop")!.remove());
-    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("Unsent message");
+    const composer = chat.getByRole("textbox", { name: "Message", exact: true });
+    const editChatDraft = async (draft: string) => {
+      await chat.keyboard.press("Escape");
+      await expect(chat.locator(".dr-memory-dialog[open]")).toHaveCount(0);
+      await composer.fill(draft);
+      await expect(composer).toHaveValue(draft);
+      await chat.getByRole("button", { name: /^Context/ }).click();
+    };
+    await editChatDraft("Unsent message");
     await chat.getByRole("button", { name: "Update lore", exact: true }).click();
-    await expect(chat.locator(".dr-toast")).toContainText("Your message is still in the chat box");
-    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("Unsent message");
+    const draftNotice = chat.getByRole("dialog").getByRole("status").filter({ hasText: "Your message is still in the chat box" });
+    await expect(draftNotice).toBeInViewport();
+    await expect(chat.locator('textarea[aria-label="Message"]')).toHaveValue("Unsent message");
     expect(sent).toHaveLength(beforeBusy);
     expect(sent.at(-1)).not.toContain("[DeepRole Service]");
-    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("");
+    await editChatDraft("");
     // Hold the background's preparation write: typing and another click must
     // remain safe even after the command has passed its initial checks.
     await worker.evaluate(() => {
@@ -110,16 +119,16 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect.poll(() => worker.evaluate(() => (globalThis as any).preparationHeld === true)).toBe(true);
     await expect(chat.getByRole("button", { name: "Update lore", exact: true })).toBeDisabled();
     await expect(chat.locator(".dr-service-state")).toContainText("Preparing the request");
-    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("Typed during preparation");
+    await editChatDraft("Typed during preparation");
     await worker.evaluate(() => (globalThis as any).releasePreparation());
     // The identical toast from the previous attempt may still be visible.
     // Wait for this cancellation before clearing the draft for the next attempt.
     await expect(chat.locator(".dr-service-state")).toHaveClass(/is-error/);
     await expect(chat.getByRole("button", { name: "Update lore", exact: true })).toBeEnabled();
-    await expect(chat.locator(".dr-toast")).toContainText("Your message is still in the chat box");
-    await expect(chat.getByRole("textbox", { name: "Message", exact: true })).toHaveValue("Typed during preparation");
+    await expect(draftNotice).toBeInViewport();
+    await expect(chat.locator('textarea[aria-label="Message"]')).toHaveValue("Typed during preparation");
     expect(sent).toHaveLength(beforeBusy);
-    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("");
+    await editChatDraft("");
     await chat.getByRole("button", { name: "Update lore", exact: true }).click();
     await expect.poll(() => sent.at(-1)).toContain("[Existing approved entries]");
     const afterAnalysis = sent.length;
@@ -164,9 +173,10 @@ test("canonical memory stays synchronized through editing, sending, proposals an
 
     await panel.getByRole("button", { name: "Enable local vault", exact: true }).click();
     await expect(panel.getByRole("button", { name: "Disable vault", exact: true })).toBeVisible();
+    await chat.bringToFront();
+    await editChatDraft("Keep this ordinary DeepSeek draft");
     await chat.getByRole("button", { name: "Remember", exact: true }).click();
     await chat.getByRole("textbox", { name: "What should stay in memory?", exact: true }).fill("PRIVATE_UNSAVED_RUNTIME_DRAFT");
-    await chat.getByRole("textbox", { name: "Message", exact: true }).fill("Keep this ordinary DeepSeek draft");
     await panel.getByRole("button", { name: "Lock vault", exact: true }).click();
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", "");
     await expect(chat.locator(".dr-assistant textarea")).toHaveCount(0);
@@ -257,17 +267,40 @@ test("new-chat lore drafting stays a proposal and preserves manual choices throu
       await api.storage.local.set({ deeprole_library_change: { token: "queue-handoff" } });
     });
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /HANDOFF_UNTIL_ACCEPTED/);
-    let status = 503;
-    await context.route("https://chat.deepseek.com/api/v0/chat/completion", (route) => { sent.push(route.request().postDataJSON().prompt); return route.fulfill({ status, contentType: "application/json", body: "{}" }); });
-    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Continue after transfer" }) }));
+    const replies = [
+      { status: 503, contentType: "application/json", body: "{}" },
+      { status: 200, contentType: "application/json", body: "{}" },
+      { status: 200, contentType: "text/event-stream", body: 'event: ready\ndata: {"request_message_id":3,"response_message_id":4}\n\nevent: finish\ndata: {}\n\nevent: close\ndata: {}\n\n' },
+    ];
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
+      sent.push(route.request().postDataJSON().prompt);
+      return route.fulfill(replies.shift()!);
+    });
+    const sendTurn = (prompt: string) => chat.evaluate(async prompt => {
+      const status = new Promise<boolean>(resolve => {
+        const onStatus = (event: MessageEvent) => {
+          if (event.source !== window || event.data?.source !== "deeprole-page-bridge" || event.data.type !== "INJECTION_STATUS" || !event.data.id) return;
+          window.removeEventListener("message", onStatus);
+          resolve(event.data.ok);
+        };
+        window.addEventListener("message", onStatus);
+      });
+      const response = await fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ chat_session_id: "new-roleplay", parent_message_id: null, prompt }) });
+      await response.text();
+      return status;
+    }, prompt);
+    expect(await sendTurn("Continue after transfer")).toBe(false);
     expect(sent.at(-1)).toContain("HANDOFF_UNTIL_ACCEPTED");
     const snapshotQueued = () => panel.evaluate(async () => {
       const api = (globalThis as any).chrome; const [tab] = await api.tabs.query({ url: "https://chat.deepseek.com/*" });
       return (await api.storage.session.get(`deeprole_tab_state_${tab.id}`))[`deeprole_tab_state_${tab.id}`]?.snapshotId;
     });
     expect(await snapshotQueued()).toBe("handoff-test");
-    status = 200;
-    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Retry transfer" }) }));
+    expect(await sendTurn("Retry transfer without a confirmed answer")).toBe(false);
+    expect(sent.at(-1)).toContain("HANDOFF_UNTIL_ACCEPTED");
+    expect(await snapshotQueued()).toBe("handoff-test");
+    expect(await sendTurn("Continue after a confirmed answer")).toBe(true);
+    expect(sent.at(-1)).toContain("HANDOFF_UNTIL_ACCEPTED");
     await expect.poll(snapshotQueued).toBeNull();
   } finally { await context.close(); }
 });

@@ -1,5 +1,5 @@
 import type { StoryFact } from "./story-update";
-import { normalizeText,uniqueTokens } from "./text";
+import { normalizeText,uniqueTokens,qualifiedLabels,stemToken } from "./text";
 import { storyConceptSearch } from "./story-retrieval-concepts";
 import { storyFactSearchEntry } from "./story-fact-search-index";
 import type { MemoryEntry } from "./types";
@@ -12,7 +12,7 @@ const framing=uniqueTokens("what where when why how which who do did does has ha
 const topicRequest=/^(?:please |пожалуйста )?(?:what|where|when|why|how|which|who|remind|tell|show|list|что|где|когда|почему|зачем|как|кто|кому|какой|какая|какие|напомни|расскажи|покажи|перечисли)(?= |$)/u;
 const ownershipWord=(word:string)=>/^(?:own(?:s|ed|ing)?|owner(?:s|ship)?|belong(?:s|ed|ing)?|whose|владе(?:ю|ешь|ет|ем|ете|ют|ть|ние|ния|нию|нием)|владел(?:ец|ьц|иц)\p{L}*|собственник\p{L}*|принадлеж\p{L}*|чей|чья|чье|чьи|чь\p{L}*)$/u.test(word);
 const topicToken=(word:string)=>ownershipWord(word)?"__ownership__":word;
-const noMatch={score:(_:StoryFact)=>0,admission:undefined};
+const noMatch={score:(_:StoryFact)=>0,related:(_:StoryFact)=>0,admission:undefined};
 const prepared=new WeakMap<MemoryEntry,{text:string;title:string;names:string;tokens:Set<string>}>();
 
 /** Whole text and task title, not the 90-character title/8-keyword projection.
@@ -28,11 +28,22 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
   // Recognize action forms BEFORE stemming (починить must not become an
   // unrecognized noun-like token). The existing action bonus owns that signal.
   const requested=[...new Set(normalizedQuery.split(" ").filter(t=>ownershipQuestion||!storyConceptSearch(t).concepts.length).flatMap(t=>ownershipQuestion&&ownershipWord(t)?["__ownership__"]:[...uniqueTokens(t)].map(topicToken)))].filter(t=>!framing.has(t));
+  requested.push(...new Set(qualifiedLabels(query)));
   if(!requested.length)return noMatch;
+  // Same words can describe opposite assignments ("canvas for the studio"
+  // and "ink for the studio"). Use the stated relation only to break ranking
+  // ties. It cannot prove an owner, grant permission or complete a task.
+  const relations=(text:string)=>text.split(/[.!?;:,\r\n]/u).flatMap(clause=>
+    [...mask(clause).matchAll(/(?:^| )(\p{L}{3,}) (для|из|после|for|from|after) (?:the |a |an )?(\p{L}{3,})(?= |$)/gu)]
+      .map(m=>[stemToken(m[1]!),m[2],stemToken(m[3]!)].join(" ")));
+  const requestedRelations=new Set(relations(query));
+  const related=(f:StoryFact)=>requestedRelations.size
+    ? [...new Set([...relations(f.text),...relations(f.task?.title ?? "")])].filter(pair=>requestedRelations.has(pair)).length : 0;
   const tokens=(fact:StoryFact)=>{
     const text=fact.text,title=fact.task?.title??"",key=storyFactSearchEntry(fact),old=prepared.get(key);
     if(old&&old.text===text&&old.title===title&&old.names===signature)return old.tokens;
     const combined=mask(`${text} ${title}`),value=new Set([...uniqueTokens(combined)].map(topicToken));
+    for (const label of [...qualifiedLabels(text),...qualifiedLabels(title)]) value.add(label);
     if(normalizeText(combined).split(" ").some(ownershipWord))value.add("__ownership__");
     prepared.set(key,{text,title,names:signature,tokens:value});return value;
   };
@@ -54,7 +65,7 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
       ?selected.some(fact=>tokens(fact).has("__ownership__")&&requested.some(term=>term!=="__ownership__"&&frequency.get(term)!==0&&tokens(fact).has(term)))
       :requested.every(term=>selected.some(fact=>tokens(fact).has(term))),
   }:undefined;
-  return {admission,score(fact:StoryFact){
+  return {admission,related,score(fact:StoryFact){
     if(!total)return 0;
     const terms=tokens(fact),matched=weights.reduce((n,[term,weight])=>n+(terms.has(term)?weight:0),0);
     // A bounded content bonus: all matching distinctive query terms =32.

@@ -9,6 +9,8 @@ import { digest } from '../scripts/story-search-evaluation.mjs';
 import frozen from './fixtures/story-budget-priority-baseline.json';
 import { sequenceScenarios } from './fixtures/story-sequence-priority';
 import {assertTopicRecall} from './fixtures/assert-topic-recall';
+import { UNCERTAIN_PROMISE_PAIR } from '../src/core/story-promise-pair';
+import type { GameMemoryCoverage } from '../src/core/game-memory-coverage';
 const scenarios = budgetScenarios();
 for (const c of sequenceScenarios()) it(`RP272 current default regression, with deliberate cap expansion separated: ${c.id}`, () => {
   const prior = priorBudgetContext(c.input), current = compileGameContext(c.input);
@@ -65,9 +67,20 @@ for (const mode of ['restart', 'no-roles', 'no-episodes', 'edited-repeat', 'pers
   if (mode === 'four-actions') c.input.draft = c.triple + ' and read the diary';
   if (mode === 'quoted') c.input.draft = '"' + c.dual + '"';
   if (mode === 'negative') c.input.draft = 'open the bronze door and do not take the azure key';
-  if (mode === 'owner') c.input.draft = 'Remind me what Taisia promised Roman about the bronze door';
+  if (mode === 'owner') c.input.draft = 'Remind me what Taisia promised about the bronze door';
   if (mode === 'reference-only') c.input.character = [c.base.world.id, c.base.binding.chatId, c.base.entities, undefined, [], [], '', '', false, true];
   expect(compileGameContext(c.input)).toEqual(priorBudgetContext(c.input));
+});
+it('does not fill a specific giver-recipient inquiry with unrelated discussions under a larger budget', () => {
+  const {input}=budgetWorld('en');
+  // In this fixture the register promise belongs to the azure key sections.
+  input.draft='Remind me what Taisia promised Roman about the bronze door';
+  let coverage:GameMemoryCoverage|undefined;
+  const current=compileGameContext(input,{},value=>{coverage=value});
+  expect(coverage).toEqual({kind:'incomplete',reason:'query'});
+  expect(current.text).toContain(UNCERTAIN_PROMISE_PAIR);
+  expect(current.report.selected.facts).toBe(0);
+  expect(current.text).not.toContain('<deeprole_story_memory>');
 });
 it('internal feature gates preserve exact prior paths, not a partial adaptive bundle', () => {
   const c = budgetWorld('en'); c.input.draft = c.dual;

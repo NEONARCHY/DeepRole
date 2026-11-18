@@ -60,6 +60,13 @@ export function uniqueTokens(value: string): Set<string> {
   return new Set(tokenize(value));
 }
 
+/** Local object wording for evidence lookups. The general index keeps its original stems. */
+export function storyObjectTokens(masked:string) {
+  const folded=masked.replace(/([а-я]{3,}?)(?:ую|юю|ая|яя|ое|ее|ый|ий|ой|ого|его|ому|ему|ым|им|ою)(?= |$)/gu,'$1')
+    .replace(/([а-я]{3,})тью(?= |$)/gu,'$1ть');
+  return tokenize(folded).filter(t=>/^\p{L}{3,}$/u.test(t));
+}
+
 export function estimateTokens(value: string): number {
   const compact = value.trim();
   if (!compact) return 0;
@@ -79,4 +86,16 @@ export function deriveKeywords(title: string, content: string, limit = 8): strin
     .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
     .map(([token]) => token);
   return [...new Set([...titleTokens, ...body])].slice(0, limit);
+}
+
+// One-letter titles/codes vanish in the general tokenizer. Keep their
+// adjacent qualifier so a band N and a gate N are independent signals.
+export function qualifiedLabels(text:string) {
+  const labels:string[] = [];
+  for (const m of text.matchAll(/(?<![\p{L}\p{N}_])(\p{L}{3,})[ \t]+(?:[«“"]([\p{Lu}\d])[»”"]|([\p{Lu}\d]))(?![\p{L}\p{N}_])/gu)) {
+    const [word] = uniqueTokens(m[1]!);
+    if (!word || !m[2] && !/^(?:band|group|gate|room|box|sector|unit|групп|сектор|ячейк|корпус|блок)$/u.test(word)) continue;
+    labels.push("label/" + word + "/" + (m[2] ?? m[3]!).toLowerCase());
+  }
+  return labels;
 }

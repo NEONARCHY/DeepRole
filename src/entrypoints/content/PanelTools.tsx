@@ -6,19 +6,19 @@ import { PanelWidthControl } from "../shared/PanelWidthControl";
 
 export const panelToolsText = {
   ru: {
-    title: "Вид панелей", compactTitle: "Панели чата", choose: "Открыть панель", drag: "Тянуть", close: "Закрыть", mode: "Перемещать панели вместе",
+    title: "Вид панелей", compactTitle: "Панели чата", choose: "Открыть панель", close: "Закрыть", mode: "Перемещать панели вместе",
     modeHint: "Потяните одну панель, и остальные сдвинутся вместе с ней.",
     portraits: "Показывать портреты", portraitsHint: "Портреты участников сцены появляются рядом с вариантами ответа.",
     reset: "Сбросить расположение панелей", resetHint: "Вернёт панели под название чата, отменит ручное сворачивание и выключит совместное перемещение.",
-    moveHint: "Чтобы сдвинуть все панели, потяните за ручку «Тянуть». С клавиатуры используйте стрелки. Shift увеличивает шаг.",
+    moveHint: "Потяните за ручку с точками, чтобы сдвинуть все панели. С клавиатуры используйте стрелки. Shift увеличивает шаг.",
     meter: "Объём чата", memory: "Память", characters: "Персонажи", scene: "Мир и сцена", choices: "Варианты", notices: "Проверка",
   },
   en: {
-    title: "Panel settings", compactTitle: "Chat panels", choose: "Open a panel", drag: "Drag", close: "Close", mode: "Move panels together",
+    title: "Panel settings", compactTitle: "Chat panels", choose: "Open a panel", close: "Close", mode: "Move panels together",
     modeHint: "Drag one panel to move the others with it.",
     portraits: "Show portraits", portraitsHint: "Scene participants appear beside the reply options.",
     reset: "Reset panel layout", resetHint: "Returns the panels below the chat title, restores panels you minimized and turns off group movement.",
-    moveHint: "Pull the Drag handle to move all panels. On a keyboard, use the arrow keys. Hold Shift for larger steps.",
+    moveHint: "Drag the dotted handle to move all panels. On a keyboard, use the arrow keys. Hold Shift for larger steps.",
     meter: "Chat size", memory: "Memory", characters: "Characters", scene: "World and scene", choices: "Options", notices: "Review",
   },
 };

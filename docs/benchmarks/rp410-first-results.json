@@ -1,0 +1,2235 @@
+{
+  "started": "2026-11-18T12:04:59.430Z",
+  "runtime": "75f6e81df562c954a65ed911ea97e392d56a06f936bff9cee1cc63e360c78e01",
+  "plan": "cfbfaf5ea5c9ce8822f682fae51cfc2c24483497eaee53e9499aded3947cf3e8",
+  "summary": {
+    "cases": 24,
+    "passed": 0,
+    "measurements": 72
+  },
+  "results": [
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "first",
+      "phase": "cold",
+      "selected": [
+        "crane",
+        "heron",
+        "firing",
+        "reverse",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "reverse",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "shared-giver",
+      "phase": "cold",
+      "selected": [
+        "heron",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946"
+      ],
+      "missing": [
+        "glaze"
+      ],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "crane",
+        "heron",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "no-pair",
+      "phase": "cold",
+      "selected": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "wrong-paper",
+      "phase": "cold",
+      "selected": [
+        "rumor",
+        "crane",
+        "foreign",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "foreign",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "first",
+      "phase": "warm",
+      "selected": [
+        "crane",
+        "heron",
+        "firing",
+        "reverse",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "reverse",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "shared-giver",
+      "phase": "warm",
+      "selected": [
+        "heron",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946"
+      ],
+      "missing": [
+        "glaze"
+      ],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "crane",
+        "heron",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "no-pair",
+      "phase": "warm",
+      "selected": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "wrong-paper",
+      "phase": "warm",
+      "selected": [
+        "rumor",
+        "crane",
+        "foreign",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "foreign",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "first",
+      "phase": "reopened",
+      "selected": [
+        "crane",
+        "heron",
+        "firing",
+        "reverse",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "reverse",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "shared-giver",
+      "phase": "reopened",
+      "selected": [
+        "heron",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946"
+      ],
+      "missing": [
+        "glaze"
+      ],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "crane",
+        "heron",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "no-pair",
+      "phase": "reopened",
+      "selected": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "wrong-paper",
+      "phase": "reopened",
+      "selected": [
+        "rumor",
+        "crane",
+        "foreign",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "foreign",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "first",
+      "phase": "cold",
+      "selected": [
+        "firing",
+        "crane",
+        "heron",
+        "glaze",
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "glaze",
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "shared-giver",
+      "phase": "cold",
+      "selected": [
+        "heron",
+        "glaze",
+        "crane",
+        "firing",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "crane",
+        "firing",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [
+        "reverse",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [],
+      "forbidden": [
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "crane",
+        "heron",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "no-pair",
+      "phase": "cold",
+      "selected": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "wrong-paper",
+      "phase": "cold",
+      "selected": [
+        "foreign",
+        "reverse",
+        "crane",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "foreign",
+        "reverse",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "first",
+      "phase": "warm",
+      "selected": [
+        "firing",
+        "crane",
+        "heron",
+        "glaze",
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "glaze",
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "shared-giver",
+      "phase": "warm",
+      "selected": [
+        "heron",
+        "glaze",
+        "crane",
+        "firing",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "crane",
+        "firing",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [
+        "reverse",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [],
+      "forbidden": [
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "crane",
+        "heron",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "no-pair",
+      "phase": "warm",
+      "selected": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "wrong-paper",
+      "phase": "warm",
+      "selected": [
+        "foreign",
+        "reverse",
+        "crane",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "foreign",
+        "reverse",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "first",
+      "phase": "reopened",
+      "selected": [
+        "firing",
+        "crane",
+        "heron",
+        "glaze",
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "glaze",
+        "reverse",
+        "measure",
+        "shift-1016",
+        "shift-1009"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "shared-giver",
+      "phase": "reopened",
+      "selected": [
+        "heron",
+        "glaze",
+        "crane",
+        "firing",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "crane",
+        "firing",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [
+        "reverse",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [],
+      "forbidden": [
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "crane",
+        "heron",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "heron",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "no-pair",
+      "phase": "reopened",
+      "selected": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960",
+        "shift-946",
+        "shift-939"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "wrong-paper",
+      "phase": "reopened",
+      "selected": [
+        "foreign",
+        "reverse",
+        "crane",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "foreign",
+        "reverse",
+        "measure",
+        "firing",
+        "shift-1016",
+        "shift-1009",
+        "shift-995"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "west",
+      "phase": "cold",
+      "selected": [
+        "west",
+        "other",
+        "west-seam",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "other",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "east",
+      "phase": "cold",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [
+        "east-bracket"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "other",
+      "phase": "cold",
+      "selected": [
+        "other",
+        "east",
+        "west",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [
+        "payment"
+      ],
+      "forbidden": [
+        "east",
+        "west",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "east",
+        "east-bracket",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "east-bracket",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [
+        "payment",
+        "east-bracket",
+        "west-seam",
+        "other",
+        "east",
+        "rumor",
+        "west",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "payment",
+        "east-bracket",
+        "west-seam",
+        "other",
+        "east",
+        "rumor",
+        "west",
+        "shift-1016"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "false-paper",
+      "phase": "cold",
+      "selected": [
+        "noise",
+        "west",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "noise",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "west",
+      "phase": "warm",
+      "selected": [
+        "west",
+        "other",
+        "west-seam",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "other",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "east",
+      "phase": "warm",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [
+        "east-bracket"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "other",
+      "phase": "warm",
+      "selected": [
+        "other",
+        "east",
+        "west",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [
+        "payment"
+      ],
+      "forbidden": [
+        "east",
+        "west",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "east",
+        "east-bracket",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "east-bracket",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [
+        "payment",
+        "east-bracket",
+        "west-seam",
+        "other",
+        "east",
+        "rumor",
+        "west",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "payment",
+        "east-bracket",
+        "west-seam",
+        "other",
+        "east",
+        "rumor",
+        "west",
+        "shift-1016"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "false-paper",
+      "phase": "warm",
+      "selected": [
+        "noise",
+        "west",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "noise",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "west",
+      "phase": "reopened",
+      "selected": [
+        "west",
+        "other",
+        "west-seam",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "other",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "east",
+      "phase": "reopened",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [
+        "east-bracket"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "other",
+      "phase": "reopened",
+      "selected": [
+        "other",
+        "east",
+        "west",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "missing": [
+        "payment"
+      ],
+      "forbidden": [
+        "east",
+        "west",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "east",
+        "east-bracket",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "east-bracket",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [
+        "payment",
+        "east-bracket",
+        "west-seam",
+        "other",
+        "east",
+        "rumor",
+        "west",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "payment",
+        "east-bracket",
+        "west-seam",
+        "other",
+        "east",
+        "rumor",
+        "west",
+        "shift-1016"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "false-paper",
+      "phase": "reopened",
+      "selected": [
+        "noise",
+        "west",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "noise",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "west",
+      "phase": "cold",
+      "selected": [
+        "west",
+        "other",
+        "west-seam",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "other",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "east",
+      "phase": "cold",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [
+        "east-bracket"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "other",
+      "phase": "cold",
+      "selected": [
+        "other",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967",
+        "shift-953"
+      ],
+      "missing": [
+        "payment"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [
+        "east-bracket",
+        "payment",
+        "east",
+        "west-seam",
+        "rumor",
+        "other",
+        "west",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "east-bracket",
+        "payment",
+        "east",
+        "west-seam",
+        "rumor",
+        "other",
+        "west",
+        "shift-1016"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "false-paper",
+      "phase": "cold",
+      "selected": [
+        "noise",
+        "west",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "noise",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "west",
+      "phase": "warm",
+      "selected": [
+        "west",
+        "other",
+        "west-seam",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "other",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "east",
+      "phase": "warm",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [
+        "east-bracket"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "other",
+      "phase": "warm",
+      "selected": [
+        "other",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967",
+        "shift-953"
+      ],
+      "missing": [
+        "payment"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [
+        "east-bracket",
+        "payment",
+        "east",
+        "west-seam",
+        "rumor",
+        "other",
+        "west",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "east-bracket",
+        "payment",
+        "east",
+        "west-seam",
+        "rumor",
+        "other",
+        "west",
+        "shift-1016"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "false-paper",
+      "phase": "warm",
+      "selected": [
+        "noise",
+        "west",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "noise",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "west",
+      "phase": "reopened",
+      "selected": [
+        "west",
+        "other",
+        "west-seam",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "other",
+        "east-bracket",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "east",
+      "phase": "reopened",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [
+        "east-bracket"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "other",
+      "phase": "reopened",
+      "selected": [
+        "other",
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967",
+        "shift-953"
+      ],
+      "missing": [
+        "payment"
+      ],
+      "forbidden": [
+        "shift-1016",
+        "shift-1009",
+        "shift-995",
+        "shift-988",
+        "shift-974",
+        "shift-967",
+        "shift-953"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "east",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981",
+        "shift-974",
+        "shift-960",
+        "shift-953"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [
+        "east-bracket",
+        "payment",
+        "east",
+        "west-seam",
+        "rumor",
+        "other",
+        "west",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "east-bracket",
+        "payment",
+        "east",
+        "west-seam",
+        "rumor",
+        "other",
+        "west",
+        "shift-1016"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "false-paper",
+      "phase": "reopened",
+      "selected": [
+        "noise",
+        "west",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "noise",
+        "shift-1009",
+        "shift-1002",
+        "shift-988",
+        "shift-981",
+        "shift-967",
+        "shift-960"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "missing-model-caution"
+      ]
+    }
+  ]
+}

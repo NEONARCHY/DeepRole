@@ -1,0 +1,1554 @@
+{
+  "started": "2026-11-18T11:04:06.349Z",
+  "runtime": "12e1f9b067024a1ec1f20c1329cc3ba4ead8886eb164fda762047e6230f946fa",
+  "plan": "977753f337e53b0edf2c7b6fd1776586588e8cce848aa0afc66029f955fc6f7a",
+  "summary": {
+    "cases": 20,
+    "passed": 0,
+    "measurements": 60
+  },
+  "results": [
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "sought",
+      "phase": "cold",
+      "selected": [
+        "copper-place",
+        "amber",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [
+        "crest",
+        "amber-place"
+      ],
+      "forbidden": [
+        "copper-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "other",
+      "phase": "cold",
+      "selected": [
+        "copper",
+        "amber",
+        "copper-place",
+        "copper-check",
+        "rumor",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "either",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "rumor",
+        "copper",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "copper-check",
+        "amber-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "invented",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "stale",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "rumor",
+        "amber-old",
+        "copper",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "sought",
+      "phase": "warm",
+      "selected": [
+        "copper-place",
+        "amber",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [
+        "crest",
+        "amber-place"
+      ],
+      "forbidden": [
+        "copper-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "other",
+      "phase": "warm",
+      "selected": [
+        "copper",
+        "amber",
+        "copper-place",
+        "copper-check",
+        "rumor",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "either",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "rumor",
+        "copper",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "copper-check",
+        "amber-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "invented",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "stale",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "rumor",
+        "amber-old",
+        "copper",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "sought",
+      "phase": "reopened",
+      "selected": [
+        "copper-place",
+        "amber",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [
+        "crest",
+        "amber-place"
+      ],
+      "forbidden": [
+        "copper-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "other",
+      "phase": "reopened",
+      "selected": [
+        "copper",
+        "amber",
+        "copper-place",
+        "copper-check",
+        "rumor",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "either",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "rumor",
+        "copper",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "copper-check",
+        "amber-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "invented",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "ru",
+      "query": "stale",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "rumor",
+        "amber-old",
+        "copper",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "sought",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [
+        "crest",
+        "amber-place"
+      ],
+      "forbidden": [
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "other",
+      "phase": "cold",
+      "selected": [
+        "copper",
+        "amber",
+        "copper-place",
+        "copper-check",
+        "rumor",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "either",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "rumor",
+        "copper",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "copper-check",
+        "amber-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "invented",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "stale",
+      "phase": "cold",
+      "selected": [
+        "amber",
+        "amber-place",
+        "crest",
+        "rumor",
+        "amber-old",
+        "copper",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "sought",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [
+        "crest",
+        "amber-place"
+      ],
+      "forbidden": [
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "other",
+      "phase": "warm",
+      "selected": [
+        "copper",
+        "amber",
+        "copper-place",
+        "copper-check",
+        "rumor",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "either",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "rumor",
+        "copper",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "copper-check",
+        "amber-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "invented",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "stale",
+      "phase": "warm",
+      "selected": [
+        "amber",
+        "amber-place",
+        "crest",
+        "rumor",
+        "amber-old",
+        "copper",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "sought",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [
+        "crest",
+        "amber-place"
+      ],
+      "forbidden": [
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "other",
+      "phase": "reopened",
+      "selected": [
+        "copper",
+        "amber",
+        "copper-place",
+        "copper-check",
+        "rumor",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "either",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "rumor",
+        "copper",
+        "copper-place",
+        "amber-place",
+        "crest",
+        "copper-check",
+        "amber-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "invented",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "copper",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "sealhouse",
+      "locale": "en",
+      "query": "stale",
+      "phase": "reopened",
+      "selected": [
+        "amber",
+        "amber-place",
+        "crest",
+        "rumor",
+        "amber-old",
+        "copper",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "amber",
+        "copper"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "collect",
+      "phase": "cold",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "stellar",
+        "gossip"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "contrast",
+      "phase": "cold",
+      "selected": [
+        "stellar",
+        "lunar",
+        "gossip",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "lunar-place",
+        "spine",
+        "gossip"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "two-visitors",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "denial",
+      "phase": "cold",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "rumour",
+      "phase": "cold",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "collect",
+      "phase": "warm",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "stellar",
+        "gossip"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "contrast",
+      "phase": "warm",
+      "selected": [
+        "stellar",
+        "lunar",
+        "gossip",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "lunar-place",
+        "spine",
+        "gossip"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "two-visitors",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "denial",
+      "phase": "warm",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "rumour",
+      "phase": "warm",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "collect",
+      "phase": "reopened",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "stellar",
+        "gossip"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "contrast",
+      "phase": "reopened",
+      "selected": [
+        "stellar",
+        "lunar",
+        "gossip",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "lunar-place",
+        "spine",
+        "gossip"
+      ],
+      "warning": null,
+      "problems": [
+        "facts"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "two-visitors",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "denial",
+      "phase": "reopened",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "ru",
+      "query": "rumour",
+      "phase": "reopened",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "collect",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "lunar",
+        "stellar",
+        "lunar-place",
+        "spine",
+        "lunar-old",
+        "shift-1016",
+        "shift-995",
+        "deposit",
+        "stellar-place"
+      ],
+      "missing": [],
+      "forbidden": [
+        "stellar",
+        "stellar-place",
+        "deposit",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "contrast",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "lunar-place",
+        "spine",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "two-visitors",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "denial",
+      "phase": "cold",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "rumour",
+      "phase": "cold",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "collect",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "lunar",
+        "stellar",
+        "lunar-place",
+        "spine",
+        "lunar-old",
+        "shift-1016",
+        "shift-995",
+        "deposit",
+        "stellar-place"
+      ],
+      "missing": [],
+      "forbidden": [
+        "stellar",
+        "stellar-place",
+        "deposit",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "contrast",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "lunar-place",
+        "spine",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "two-visitors",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "denial",
+      "phase": "warm",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "rumour",
+      "phase": "warm",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "collect",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "lunar",
+        "stellar",
+        "lunar-place",
+        "spine",
+        "lunar-old",
+        "shift-1016",
+        "shift-995",
+        "deposit",
+        "stellar-place"
+      ],
+      "missing": [],
+      "forbidden": [
+        "stellar",
+        "stellar-place",
+        "deposit",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "contrast",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "lunar-place",
+        "spine",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "two-visitors",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "stellar",
+        "lunar",
+        "lunar-place",
+        "deposit",
+        "spine",
+        "stellar-place",
+        "lunar-old"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": [
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "denial",
+      "phase": "reopened",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    },
+    {
+      "plot": "skyroom",
+      "locale": "en",
+      "query": "rumour",
+      "phase": "reopened",
+      "selected": [
+        "lunar",
+        "lunar-place",
+        "gossip",
+        "spine",
+        "lunar-old",
+        "stellar",
+        "shift-1016",
+        "shift-995"
+      ],
+      "missing": [],
+      "forbidden": [
+        "lunar",
+        "stellar",
+        "lunar-place"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "warning"
+      ]
+    }
+  ]
+}

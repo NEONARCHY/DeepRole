@@ -1,0 +1,307 @@
+{
+  "started": "2026-11-18T11:38:07.107Z",
+  "runtime": "86efb49a6d0d8fe4fa2d7e1dfba90bbe8021372b553f7bea84e5363e8de4056c",
+  "summary": {
+    "cases": 12,
+    "passed": 12,
+    "measurements": 24
+  },
+  "results": [
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "blue-belief",
+        "blue-prep",
+        "blue-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "blue-belief",
+        "blue-prep",
+        "blue-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "red-belief",
+        "red-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "red-belief",
+        "red-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "blue-belief",
+        "blue-prep",
+        "blue-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "blue-belief",
+        "blue-prep",
+        "blue-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "red-belief",
+        "red-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "red-belief",
+        "red-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "ferry",
+      "locale": "en",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "bridge-belief",
+        "bridge-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "silk-belief",
+        "silk-prep",
+        "silk-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "silk-belief",
+        "silk-prep",
+        "silk-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "linen-belief",
+        "linen-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "linen-belief",
+        "linen-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "ru",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 0,
+      "phase": "cold",
+      "selected": [
+        "silk-belief",
+        "silk-prep",
+        "silk-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 0,
+      "phase": "warm",
+      "selected": [
+        "silk-belief",
+        "silk-prep",
+        "silk-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 1,
+      "phase": "cold",
+      "selected": [
+        "linen-belief",
+        "linen-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 1,
+      "phase": "warm",
+      "selected": [
+        "linen-belief",
+        "linen-report"
+      ],
+      "warning": null,
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 2,
+      "phase": "cold",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    },
+    {
+      "plot": "loom",
+      "locale": "en",
+      "probe": 2,
+      "phase": "warm",
+      "selected": [
+        "brooch-belief",
+        "brooch-prep"
+      ],
+      "warning": "incomplete",
+      "failures": []
+    }
+  ]
+}

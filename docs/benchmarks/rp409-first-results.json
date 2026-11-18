@@ -1,0 +1,2100 @@
+{
+  "started": "2026-11-18T11:50:10.988Z",
+  "runtime": "86efb49a6d0d8fe4fa2d7e1dfba90bbe8021372b553f7bea84e5363e8de4056c",
+  "plan": "66ed5c3a02da2b2a08d89d678c5e61255b2d67dbccb3114bb119dd6218157d31",
+  "summary": {
+    "cases": 24,
+    "passed": 0,
+    "measurements": 72
+  },
+  "results": [
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "album",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "silk",
+        "copper",
+        "labels",
+        "social",
+        "shift-1009",
+        "shift-988",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "front",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "linen",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "never",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "glass",
+        "shift-1014",
+        "shift-1012",
+        "shift-1010"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "inspect",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "both",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "silk",
+        "copper",
+        "labels",
+        "glass",
+        "social",
+        "shift-1016",
+        "shift-1014"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "glass",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "missing",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "album",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "silk",
+        "copper",
+        "labels",
+        "social",
+        "shift-1009",
+        "shift-988",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "front",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "linen",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "never",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "glass",
+        "shift-1014",
+        "shift-1012",
+        "shift-1010"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "inspect",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "both",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "silk",
+        "copper",
+        "labels",
+        "glass",
+        "social",
+        "shift-1016",
+        "shift-1014"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "glass",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "missing",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "album",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "silk",
+        "copper",
+        "labels",
+        "social",
+        "shift-1009",
+        "shift-988",
+        "shift-967"
+      ],
+      "missing": [],
+      "forbidden": [
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "front",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "linen",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "never",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "glass",
+        "shift-1014",
+        "shift-1012",
+        "shift-1010"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "inspect",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "both",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "silk",
+        "copper",
+        "labels",
+        "glass",
+        "social",
+        "shift-1016",
+        "shift-1014"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "glass",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "ru",
+      "query": "missing",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "copper",
+        "silk",
+        "labels",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "copper",
+        "gossip",
+        "labels"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "album",
+      "phase": "cold",
+      "selected": [
+        "silk",
+        "gossip",
+        "glass",
+        "linen",
+        "copper",
+        "social",
+        "shift-1009",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "linen",
+        "glass",
+        "copper",
+        "gossip",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "front",
+      "phase": "cold",
+      "selected": [
+        "copper",
+        "linen",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [],
+      "forbidden": [
+        "copper"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "never",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "silk",
+        "glass",
+        "linen",
+        "labels",
+        "social",
+        "copper",
+        "shift-1014"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "inspect",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "linen",
+        "glass",
+        "silk",
+        "copper",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "both",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "silk",
+        "linen",
+        "glass",
+        "copper",
+        "labels",
+        "social",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "missing",
+      "phase": "cold",
+      "selected": [
+        "gossip",
+        "glass",
+        "linen",
+        "silk",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "album",
+      "phase": "warm",
+      "selected": [
+        "silk",
+        "gossip",
+        "glass",
+        "linen",
+        "copper",
+        "social",
+        "shift-1009",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "linen",
+        "glass",
+        "copper",
+        "gossip",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "front",
+      "phase": "warm",
+      "selected": [
+        "copper",
+        "linen",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [],
+      "forbidden": [
+        "copper"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "never",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "silk",
+        "glass",
+        "linen",
+        "labels",
+        "social",
+        "copper",
+        "shift-1014"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "inspect",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "linen",
+        "glass",
+        "silk",
+        "copper",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "both",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "silk",
+        "linen",
+        "glass",
+        "copper",
+        "labels",
+        "social",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "missing",
+      "phase": "warm",
+      "selected": [
+        "gossip",
+        "glass",
+        "linen",
+        "silk",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "album",
+      "phase": "reopened",
+      "selected": [
+        "silk",
+        "gossip",
+        "glass",
+        "linen",
+        "copper",
+        "social",
+        "shift-1009",
+        "shift-988"
+      ],
+      "missing": [],
+      "forbidden": [
+        "linen",
+        "glass",
+        "copper",
+        "gossip",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "front",
+      "phase": "reopened",
+      "selected": [
+        "copper",
+        "linen",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918",
+        "shift-897"
+      ],
+      "missing": [],
+      "forbidden": [
+        "copper"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "never",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "silk",
+        "glass",
+        "linen",
+        "labels",
+        "social",
+        "copper",
+        "shift-1014"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "inspect",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "linen",
+        "glass",
+        "silk",
+        "copper",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "both",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "silk",
+        "linen",
+        "glass",
+        "copper",
+        "labels",
+        "social",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "copper",
+        "gossip",
+        "labels",
+        "social"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "lanternhall",
+      "locale": "en",
+      "query": "missing",
+      "phase": "reopened",
+      "selected": [
+        "gossip",
+        "glass",
+        "linen",
+        "silk",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "silk",
+        "linen",
+        "glass",
+        "gossip"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "phone",
+      "phase": "cold",
+      "selected": [
+        "blue",
+        "rumor",
+        "draw",
+        "leaflet",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "cover",
+      "phase": "cold",
+      "selected": [
+        "draw",
+        "rumor",
+        "register",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "school",
+      "phase": "cold",
+      "selected": [
+        "rumor",
+        "blue",
+        "draw",
+        "red",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "sketch",
+      "phase": "cold",
+      "selected": [
+        "draw",
+        "rumor",
+        "blue",
+        "pattern",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "no-focus",
+      "phase": "cold",
+      "selected": [
+        "rumor",
+        "blue",
+        "draw",
+        "leaflet",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "two",
+      "phase": "cold",
+      "selected": [
+        "draw",
+        "blue",
+        "rumor",
+        "leaflet",
+        "register",
+        "red",
+        "shift-1016",
+        "shift-1015"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "phone",
+      "phase": "warm",
+      "selected": [
+        "blue",
+        "rumor",
+        "draw",
+        "leaflet",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "cover",
+      "phase": "warm",
+      "selected": [
+        "draw",
+        "rumor",
+        "register",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "school",
+      "phase": "warm",
+      "selected": [
+        "rumor",
+        "blue",
+        "draw",
+        "red",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "sketch",
+      "phase": "warm",
+      "selected": [
+        "draw",
+        "rumor",
+        "blue",
+        "pattern",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "no-focus",
+      "phase": "warm",
+      "selected": [
+        "rumor",
+        "blue",
+        "draw",
+        "leaflet",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "two",
+      "phase": "warm",
+      "selected": [
+        "draw",
+        "blue",
+        "rumor",
+        "leaflet",
+        "register",
+        "red",
+        "shift-1016",
+        "shift-1015"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "phone",
+      "phase": "reopened",
+      "selected": [
+        "blue",
+        "rumor",
+        "draw",
+        "leaflet",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "cover",
+      "phase": "reopened",
+      "selected": [
+        "draw",
+        "rumor",
+        "register",
+        "shift-1002",
+        "shift-981",
+        "shift-960",
+        "shift-939",
+        "shift-918"
+      ],
+      "missing": [],
+      "forbidden": [
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "school",
+      "phase": "reopened",
+      "selected": [
+        "rumor",
+        "blue",
+        "draw",
+        "red",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "sketch",
+      "phase": "reopened",
+      "selected": [
+        "draw",
+        "rumor",
+        "blue",
+        "pattern",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "no-focus",
+      "phase": "reopened",
+      "selected": [
+        "rumor",
+        "blue",
+        "draw",
+        "leaflet",
+        "shift-1016",
+        "shift-1002",
+        "shift-995",
+        "shift-981"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "ru",
+      "query": "two",
+      "phase": "reopened",
+      "selected": [
+        "draw",
+        "blue",
+        "rumor",
+        "leaflet",
+        "register",
+        "red",
+        "shift-1016",
+        "shift-1015"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "phone",
+      "phase": "cold",
+      "selected": [
+        "blue",
+        "leaflet",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "leaflet"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "cover",
+      "phase": "cold",
+      "selected": [
+        "register",
+        "rumor",
+        "pattern",
+        "red",
+        "draw",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "red",
+        "pattern",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "school",
+      "phase": "cold",
+      "selected": [
+        "blue",
+        "rumor",
+        "draw",
+        "red",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "sketch",
+      "phase": "cold",
+      "selected": [
+        "pattern",
+        "rumor",
+        "red",
+        "register",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "register",
+        "red",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "no-focus",
+      "phase": "cold",
+      "selected": [
+        "rumor",
+        "red",
+        "pattern",
+        "register",
+        "leaflet",
+        "blue",
+        "shift-1016",
+        "shift-1002"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "pattern",
+        "rumor",
+        "leaflet"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "two",
+      "phase": "cold",
+      "selected": [
+        "register",
+        "rumor",
+        "red",
+        "pattern",
+        "draw",
+        "leaflet",
+        "blue",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "pattern",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "phone",
+      "phase": "warm",
+      "selected": [
+        "blue",
+        "leaflet",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "leaflet"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "cover",
+      "phase": "warm",
+      "selected": [
+        "register",
+        "rumor",
+        "pattern",
+        "red",
+        "draw",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "red",
+        "pattern",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "school",
+      "phase": "warm",
+      "selected": [
+        "blue",
+        "rumor",
+        "draw",
+        "red",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "sketch",
+      "phase": "warm",
+      "selected": [
+        "pattern",
+        "rumor",
+        "red",
+        "register",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "register",
+        "red",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "no-focus",
+      "phase": "warm",
+      "selected": [
+        "rumor",
+        "red",
+        "pattern",
+        "register",
+        "leaflet",
+        "blue",
+        "shift-1016",
+        "shift-1002"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "pattern",
+        "rumor",
+        "leaflet"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "two",
+      "phase": "warm",
+      "selected": [
+        "register",
+        "rumor",
+        "red",
+        "pattern",
+        "draw",
+        "leaflet",
+        "blue",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "pattern",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "phone",
+      "phase": "reopened",
+      "selected": [
+        "blue",
+        "leaflet",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953",
+        "shift-932",
+        "shift-911"
+      ],
+      "missing": [],
+      "forbidden": [
+        "leaflet"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "cover",
+      "phase": "reopened",
+      "selected": [
+        "register",
+        "rumor",
+        "pattern",
+        "red",
+        "draw",
+        "shift-1002",
+        "shift-981",
+        "shift-960"
+      ],
+      "missing": [],
+      "forbidden": [
+        "red",
+        "pattern",
+        "rumor",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "school",
+      "phase": "reopened",
+      "selected": [
+        "blue",
+        "rumor",
+        "draw",
+        "red",
+        "shift-1009",
+        "shift-988",
+        "shift-967",
+        "shift-946"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "rumor",
+        "draw"
+      ],
+      "warning": "incomplete",
+      "problems": [
+        "facts",
+        "scope",
+        "warning"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "sketch",
+      "phase": "reopened",
+      "selected": [
+        "pattern",
+        "rumor",
+        "red",
+        "register",
+        "shift-1016",
+        "shift-995",
+        "shift-974",
+        "shift-953"
+      ],
+      "missing": [],
+      "forbidden": [
+        "register",
+        "red",
+        "rumor"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "no-focus",
+      "phase": "reopened",
+      "selected": [
+        "rumor",
+        "red",
+        "pattern",
+        "register",
+        "leaflet",
+        "blue",
+        "shift-1016",
+        "shift-1002"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "pattern",
+        "rumor",
+        "leaflet"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    },
+    {
+      "plot": "weavingroom",
+      "locale": "en",
+      "query": "two",
+      "phase": "reopened",
+      "selected": [
+        "register",
+        "rumor",
+        "red",
+        "pattern",
+        "draw",
+        "leaflet",
+        "blue",
+        "shift-1016"
+      ],
+      "missing": [],
+      "forbidden": [
+        "blue",
+        "register",
+        "red",
+        "pattern",
+        "rumor",
+        "leaflet",
+        "draw"
+      ],
+      "warning": null,
+      "problems": [
+        "facts",
+        "scope",
+        "warning",
+        "missing-model-caution"
+      ]
+    }
+  ]
+}

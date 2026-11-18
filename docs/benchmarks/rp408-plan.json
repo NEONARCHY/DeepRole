@@ -1,0 +1,15 @@
+{
+  "frozen": "2026-11-18T11:31:42.170632+00:00",
+  "baseline": "3c525b7ff2c3c589b6e63a698806ac3f0eba8fcc1876ee07c04acbe7a99cda2c",
+  "files": {
+    "tests/story-hearsay.test.ts": "ed42d76337ca5fc6f051ab5a662bbd572f5a188589b6e510fcf7c26f88e26c17",
+    "tests/fixtures/story-rp408-hearsay.ts": "2d7b3c53257eed9a448fa56716a1e7c0a6b850e3a4c7a537cfbb2ba8b828ae48",
+    "tests/fixtures/story-rp404-history.ts": "e8c7ef3095b42f490986eda07add0425a7a435c1e55e2b3396204e40af56aaf9",
+    "tests/fixtures/story-persisted-evidence.ts": "57ea2d746e11530af485897c80f712bfe91e16becb38b522af2ead5d6b6dbbbe",
+    "tests/fixtures/story-rp404-seal.ts": "1bd91b9e7646c846a9c6e41381223fae97eecde8ace2ec2660757380b95a7728",
+    "tests/fixtures/story-worlds.ts": "e35b5b7ca25116cb3490c5b1f4c3049bc33ab6729397dc0bcbf3f0da853173f7",
+    "vitest.config.ts": "cce14937c23bad220f746b1113140102528544fd033dc79a9c73a96cff6099fe",
+    "tests/setup.ts": "a6f20db23d92459ac399dacdb9f195d53955154995a9a8d385ba22a2d6328382",
+    "package-lock.json": "14687ffb25652d881eebe6f9ca48ac0c83ecf261c73d27bcd4adbb7ccac1a139"
+  }
+}

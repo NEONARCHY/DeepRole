@@ -56,6 +56,22 @@ it("alternative selection removes completion and restores the original open task
  f.snapshot.selectedNativeKey=open;await f.play();expect((await f.world()).sharedGame!.facts[0]!.task?.status).toBe("open");
  f.snapshot.selectedNativeKey=done;await f.play();expect((await f.world()).sharedGame!.facts[0]!.task?.status).toBe("completed");assertStoryGraph(await f.repo.rawRecords());
 });
+it("keeps two deliveries separate through preparation, cancellation and fulfillment without asking the player",async()=>{
+ const f=await setup();
+ const clay=(text:string,status:"open"|"completed")=>taskFact(text,status,"ada.clay","deliver the clay seals");
+ const paper=(text:string,status:"open"|"cancelled")=>taskFact(text,status,"marta.paper","deliver the paper seals");
+ const statuses=async()=>(await f.world()).sharedGame!.facts.flatMap(fact=>fact.task?[[fact.task.key,fact.task.status]]:[]).sort();
+ await f.send([clay("Ada promised to deliver the clay seals.","open"),paper("Marta promised to deliver the paper seals.","open")]);
+ const prep="The courier packed the clay seals in a padded box.";
+ await f.send([{text:prep,quote:prep,kind:"event",risk:"ordinary"}]);
+ expect(await statuses()).toEqual([["ada.clay","open"],["marta.paper","open"]]);
+ await f.send([paper("Marta cancelled the delivery of the paper seals.","cancelled")]);
+ expect(await statuses()).toEqual([["ada.clay","open"],["marta.paper","cancelled"]]);
+ await f.send([clay("Ada delivered the clay seals to the studio.","completed")]);
+ f.db.close();await f.db.open();await f.play();
+ expect(await statuses()).toEqual([["ada.clay","completed"],["marta.paper","cancelled"]]);
+ expect((await f.review()).total).toBe(0);
+});
 it("a different mutable value without explicit progress is a conflict; a played transition is not",async()=>{
  const f=await setup();await f.send([{...state("The gate is open.","open"),risk:"ordinary"}]);await f.send([{...state("The gate is closed.","closed"),risk:"ordinary"}]);
  expect((await f.world()).sharedGame!.facts[0]!.claim?.value).toBe("open");const page=await f.review();expect(page.items[0]!.conflicts?.[0]?.text).toBe("The gate is open.");

@@ -1,0 +1,960 @@
+{
+  "started": "2026-11-18T12:18:19.885Z",
+  "runtime": "3db78f54dee2e5c875cce610420e9c675923a24dc318277695db1f00ad0b7c5a",
+  "plan": "cfbfaf5ea5c9ce8822f682fae51cfc2c24483497eaee53e9499aded3947cf3e8",
+  "summary": {
+    "cases": 24,
+    "passed": 24,
+    "measurements": 72
+  },
+  "results": [
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "first",
+      "phase": "cold",
+      "selected": [
+        "crane",
+        "firing"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "shared-giver",
+      "phase": "cold",
+      "selected": [
+        "heron",
+        "glaze"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [
+        "reverse",
+        "measure"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "no-pair",
+      "phase": "cold",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "wrong-paper",
+      "phase": "cold",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "first",
+      "phase": "warm",
+      "selected": [
+        "crane",
+        "firing"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "shared-giver",
+      "phase": "warm",
+      "selected": [
+        "heron",
+        "glaze"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [
+        "reverse",
+        "measure"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "no-pair",
+      "phase": "warm",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "wrong-paper",
+      "phase": "warm",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "first",
+      "phase": "reopened",
+      "selected": [
+        "crane",
+        "firing"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "shared-giver",
+      "phase": "reopened",
+      "selected": [
+        "heron",
+        "glaze"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [
+        "reverse",
+        "measure"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "no-pair",
+      "phase": "reopened",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "ru",
+      "query": "wrong-paper",
+      "phase": "reopened",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "first",
+      "phase": "cold",
+      "selected": [
+        "crane",
+        "firing"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "shared-giver",
+      "phase": "cold",
+      "selected": [
+        "heron",
+        "glaze"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [
+        "reverse",
+        "measure"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "no-pair",
+      "phase": "cold",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "wrong-paper",
+      "phase": "cold",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "first",
+      "phase": "warm",
+      "selected": [
+        "crane",
+        "firing"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "shared-giver",
+      "phase": "warm",
+      "selected": [
+        "heron",
+        "glaze"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [
+        "reverse",
+        "measure"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "no-pair",
+      "phase": "warm",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "wrong-paper",
+      "phase": "warm",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "first",
+      "phase": "reopened",
+      "selected": [
+        "crane",
+        "firing"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "shared-giver",
+      "phase": "reopened",
+      "selected": [
+        "heron",
+        "glaze"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [
+        "reverse",
+        "measure"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "no-pair",
+      "phase": "reopened",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "tileworks",
+      "locale": "en",
+      "query": "wrong-paper",
+      "phase": "reopened",
+      "selected": [
+        "crane"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "west",
+      "phase": "cold",
+      "selected": [
+        "west",
+        "west-seam"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "east",
+      "phase": "cold",
+      "selected": [
+        "east",
+        "east-bracket"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "other",
+      "phase": "cold",
+      "selected": [
+        "other",
+        "payment"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "east"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "false-paper",
+      "phase": "cold",
+      "selected": [
+        "west"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "west",
+      "phase": "warm",
+      "selected": [
+        "west",
+        "west-seam"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "east",
+      "phase": "warm",
+      "selected": [
+        "east",
+        "east-bracket"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "other",
+      "phase": "warm",
+      "selected": [
+        "other",
+        "payment"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "east"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "false-paper",
+      "phase": "warm",
+      "selected": [
+        "west"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "west",
+      "phase": "reopened",
+      "selected": [
+        "west",
+        "west-seam"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "east",
+      "phase": "reopened",
+      "selected": [
+        "east",
+        "east-bracket"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "other",
+      "phase": "reopened",
+      "selected": [
+        "other",
+        "payment"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "east"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "ru",
+      "query": "false-paper",
+      "phase": "reopened",
+      "selected": [
+        "west"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "west",
+      "phase": "cold",
+      "selected": [
+        "west",
+        "west-seam"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "east",
+      "phase": "cold",
+      "selected": [
+        "east",
+        "east-bracket"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "other",
+      "phase": "cold",
+      "selected": [
+        "other",
+        "payment"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "east"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "cold",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "false-paper",
+      "phase": "cold",
+      "selected": [
+        "west"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "west",
+      "phase": "warm",
+      "selected": [
+        "west",
+        "west-seam"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "east",
+      "phase": "warm",
+      "selected": [
+        "east",
+        "east-bracket"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "other",
+      "phase": "warm",
+      "selected": [
+        "other",
+        "payment"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "east"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "warm",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "false-paper",
+      "phase": "warm",
+      "selected": [
+        "west"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "west",
+      "phase": "reopened",
+      "selected": [
+        "west",
+        "west-seam"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "east",
+      "phase": "reopened",
+      "selected": [
+        "east",
+        "east-bracket"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "other",
+      "phase": "reopened",
+      "selected": [
+        "other",
+        "payment"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "east"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "reverse",
+      "phase": "reopened",
+      "selected": [],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "sailroom",
+      "locale": "en",
+      "query": "false-paper",
+      "phase": "reopened",
+      "selected": [
+        "west"
+      ],
+      "missing": [],
+      "forbidden": [],
+      "warning": "incomplete",
+      "problems": []
+    }
+  ]
+}

@@ -64,13 +64,13 @@ export function rankStoryFacts(facts: StoryFact[], query = "", scope?: StoryRetr
   const ranked=compact.map((source, index) => {
     const score = (source.task?.status === "open" ? 2 : 0) + (query ? scoreMemory(storyFactSearchEntry(source), haystack, tokens).score + (retrieval?.score(source) ?? 0) + (roles?.score(source) ?? 0) + (content?.score(source)??0) : 0);
     const fact = cleanStoryFact(source); inheritStoryFactSearchEntry(source, fact);
-    return { fact, index, score };
+    return { fact, index, score, related:content?.related(source) ?? 0 };
   });
   // One recap can itself be the only relevant history. Suppress this lane only
   // when several matching no-progress recaps form a repeated tail; a single
   // source remains available as before.
   const repeatedTail=!!query&&!discussionInquiry(query)&&ranked.filter(({fact,score})=>score>0&&isNonAdvancingDiscussion(fact)).length>=3;
-  return ranked.filter(({fact})=>!repeatedTail||!isNonAdvancingDiscussion(fact)).sort((a,b) => b.score - a.score || b.index - a.index);
+  return ranked.filter(({fact})=>!repeatedTail||!isNonAdvancingDiscussion(fact)).sort((a,b) => b.score - a.score || b.related - a.related || b.index - a.index);
 }
 export function storyFactContext(facts: StoryFact[], budget: number, query = "") {
   const selected: StoryFact[] = [];

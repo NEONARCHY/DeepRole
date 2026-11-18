@@ -42,7 +42,9 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
   const anchorShift = minimumLeft - (layout.anchorX ?? legacyAnchor.current) * window.innerWidth;
   const current = useRef(layout); current.current = layout;
   const [error, setError] = useState(false);
-  const [overflow, setOverflow] = useState(false);
+  const [scrollMode, setScrollMode] = useState<"column" | "fallback" | null>(null);
+  const defaultColumn = Object.keys(layout.positions).length === 0;
+  const overflow = scrollMode === "fallback" || (scrollMode === "column" && defaultColumn);
   const [compactOpen, setCompactOpen] = useState<Id | null>(null);
   const [toolsFrom, setToolsFrom] = useState<"menu" | "handle" | null>(null);
   const toolsOpen = toolsFrom !== null;
@@ -63,9 +65,15 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
   // Repair legacy overlaps and size changes locally; a later user move persists
   // the repaired geometry. If no packing fits, use a scrollable, non-overlapping stack.
   useLayoutEffect(() => {
-    if (compact) { if (overflow) setOverflow(false); return; }
+    if (compact) { if (scrollMode) setScrollMode(null); return; }
     if (gesture.current || !dock.current) return;
     const nodes = [["dock", dock.current], ...tiles.filter(tile => !layout.minimized.includes(tile.id)).map(tile => [tile.id, refs.current.get(tile.id)] as const)] as const;
+    if (defaultColumn) {
+      const stackHeight = nodes.reduce((height, [, node]) => height + (node?.getBoundingClientRect().height ?? 0), 0) + (nodes.length - 1) * WIDGET_GAP;
+      const mode = minimumTop + stackHeight > innerHeight - 8 ? "column" : null;
+      if (scrollMode !== mode) setScrollMode(mode);
+      return;
+    }
     const placed: WidgetRect[] = []; const next = structuredClone(layout); let changed = false, stackY = WIDGET_GAP;
     for (const [id, node] of nodes) {
       if (!node) continue;
@@ -73,14 +81,16 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
       const wanted = { x: overflow ? saved ? saved.x * innerWidth + anchorShift : minimumLeft : rect.x, y: overflow ? saved ? saved.y * innerHeight : stackY : rect.y, width: rect.width, height: rect.height };
       stackY += rect.height + WIDGET_GAP;
       const safe = nearestWidgetSpace(wanted, placed, { width: innerWidth, height: innerHeight }, minimumLeft, minimumTop);
-      if (!safe) { if (!overflow) setOverflow(true); return; }
+      if (!safe) { if (scrollMode !== "fallback") setScrollMode("fallback"); return; }
       placed.push(safe);
       if (overflow || Math.abs(safe.x - rect.x) > .5 || Math.abs(safe.y - rect.y) > .5) {
         next.positions[id as Id | "dock"] = { x: (safe.x - anchorShift) / innerWidth, y: safe.y / innerHeight }; changed = true;
       }
     }
-    if (overflow) setOverflow(false);
-    if (changed) { current.current = next; setLayout(next); }
+    if (scrollMode) setScrollMode(null);
+    if (changed) {
+      current.current = next; setLayout(next);
+    }
   });
   useEffect(() => { if (!gesture.current) setLayout(parseWidgetLayout(saved)); }, [saved, adaptive, compact]);
   useEffect(() => {
@@ -136,7 +146,7 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
     return { frozen, rects };
   };
   const shift = (frozen: WidgetLayout, rects: Map<string, DOMRect>, id: string, all: boolean, dx: number, dy: number) => {
-    if (overflow) return frozen;
+    if (scrollMode === "fallback") return current.current;
     const moving = [...rects].filter(([key]) => all || key === id).map(([, rect]) => rect);
     if (!moving.length) return frozen;
     dx = Math.max(minimumLeft - Math.min(...moving.map(r => r.left)), Math.min(dx, window.innerWidth - WIDGET_GAP - Math.max(...moving.map(r => r.right))));
@@ -188,7 +198,7 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
     const delta = directions[event.key]; if (!delta) return; event.preventDefault(); const { frozen, rects } = snapshot(); const step = event.shiftKey ? 32 : 8;
     commit(shift(frozen, rects, id, id === "dock" || current.current.together, delta.x * step, delta.y * step));
   };
-  const handle = <button type="button" className="dr-widget-move" aria-label={t.all} onClick={() => { if (!suppressClick.current) setToolsFrom("handle"); }} aria-haspopup="dialog" title={`${t.all}. ${t.keys}`} onPointerDown={event => start("dock", event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove("dock", event)}><GripVertical size={16} aria-hidden="true"/><span>{tools.drag}</span></button>;
+  const handle = <button type="button" className="dr-widget-move" aria-label={t.all} onClick={() => { if (!suppressClick.current) setToolsFrom("handle"); }} aria-haspopup="dialog" title={`${t.all}. ${t.keys}`} onPointerDown={event => start("dock", event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove("dock", event)}><GripVertical size={16} aria-hidden="true"/></button>;
   function shortcut(tile: TileProps) {
     const expanded = compact && compactOpen === tile.id;
     const label = tile.shortcut ?? tools[tile.id];

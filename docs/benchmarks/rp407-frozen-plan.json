@@ -1,0 +1,25 @@
+{
+  "frozenUtc": "2026-11-18T11:03:58.445083+00:00",
+  "baselineRuntime": "12e1f9b067024a1ec1f20c1329cc3ba4ead8886eb164fda762047e6230f946fa",
+  "files": {
+    "package-lock.json": "14687ffb25652d881eebe6f9ca48ac0c83ecf261c73d27bcd4adbb7ccac1a139",
+    "tests/fixtures/story-persisted-evidence.ts": "57ea2d746e11530af485897c80f712bfe91e16becb38b522af2ead5d6b6dbbbe",
+    "tests/fixtures/story-rp404-corpus.ts": "255dcf0b2130215ea3f9bcaa6541be45c2fc392c1248ec772430da1749c85422",
+    "tests/fixtures/story-rp404-expectations.ts": "eee3f53c87b95b14ea1279bcba5d3479b183dcd0539a157ec1725eab5120204a",
+    "tests/fixtures/story-rp404-history.ts": "e8c7ef3095b42f490986eda07add0425a7a435c1e55e2b3396204e40af56aaf9",
+    "tests/fixtures/story-rp404-seal.ts": "1bd91b9e7646c846a9c6e41381223fae97eecde8ace2ec2660757380b95a7728",
+    "tests/fixtures/story-rp407-references.json": "c0fd2a75b99e4eb90fec83f2896ae6b1cafa0aaafe3b89a0d30e3059f2b0af1d",
+    "tests/fixtures/story-worlds.ts": "e35b5b7ca25116cb3490c5b1f4c3049bc33ab6729397dc0bcbf3f0da853173f7",
+    "tests/setup.ts": "a6f20db23d92459ac399dacdb9f195d53955154995a9a8d385ba22a2d6328382",
+    "tests/story-rp404.audit.ts": "ea4e726e22c1c6962d7f8d3ffe0eb4a307e8c34eab71dc531b801ea9750adcb0",
+    "tests/story-rp407.audit.ts": "b62c5228dc88f02dd985a60d2ff92c10b9045c180ab80e614f2d3dc3aab38a78",
+    "vitest.config.ts": "cce14937c23bad220f746b1113140102528544fd033dc79a9c73a96cff6099fe",
+    "vitest.rp404.config.ts": "909b96d260a95dbdf839e02254e4fa67627d4986e272c452483d6074133d6cda",
+    "vitest.rp407.config.ts": "648180b8ae42da35b5436e2eb85b23535b7cd7260407e1492328076160353630"
+  },
+  "factsPerHistory": 1024,
+  "extraShiftsPerAct": 127,
+  "budget": 6000,
+  "measurements": 60,
+  "acceptance": "All listed sources, no forbidden sources; warnings and on-wire caution for false or ambiguous references. Exact source revision, quote and roles; stable cold, warm and after reopening; no storage mutation."
+}

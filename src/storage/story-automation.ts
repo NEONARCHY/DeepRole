@@ -13,6 +13,7 @@ import { automationMode, factAutomationReason, inlineStoryPeople, normalizedFact
 import { storyEffectsAt } from "./story-effect-replay";
 import { storyFactIdentity } from "../core/story-memory-lifecycle";
 import { bindStoryRoles } from "../core/story-role-binding";
+import { attendanceTask, playedAttendanceGoal } from "../core/story-attendance-goal";
 
 /** One completed reply is one bounded portion. Stored events are the durable work
  * receipt, and the existing selected-line replay owns every resulting effect. */
@@ -34,14 +35,56 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
   const reviews = automationReviews(stored,baseline,selected);
   const held = stored.filter((e): e is StoryEvent => e.type === "event" && (selected.revisionIds.includes(e.revisionId) || reviews.pending.includes(e.id) || reviews.resolutions[e.id] === "dismissed") && (e.automation?.status === "review" || e.automation?.status === "dismissed" || reviews.resolutions[e.id] === "dismissed"));
   const protectedTexts = all.flatMap(r => r.kind === "entry" && (r.data as import("../core/types").MemoryEntry).worldId === world.id && (r.data as import("../core/types").MemoryEntry).enabled ? [(r.data as import("../core/types").MemoryEntry).content] : []).concat(people.flatMap(p => p.characterSheet ? PROFILE_TEXT_FIELDS.map(k => p.characterSheet![k]).filter(Boolean) : []));
-  for (const fact of facts) {
-    const original = Array.isArray(raw?.facts) ? raw.facts.find(f => f && typeof f === "object" && storyFactIdentity(f as StoryFact) === storyFactIdentity(fact) && (f as StoryFact).quote === fact.quote) as Record<string, unknown> | undefined : undefined;
+  const origin = batch?.source ?? source;
+  const addedSources = new Map<string,StoryRevision>();
+  let historicalSources: Map<string,StoryRevision> | undefined;
+  const sourceOf = (fact:StoryFact) => {
+    const key = storyFactIdentity(fact);
+    if (addedSources.has(key)) return addedSources.get(key);
+    if (!historicalSources) {
+      // A delayed analysis may describe an older turn. Only goals already
+      // present at that turn can be fulfilled, including earlier chat segments.
+      const local = new Set(selected.revisionIds);
+      const lineage = [...(world.sharedGame?.episodeSources ?? []).filter(id=>!local.has(id)),...local];
+      const allowed = new Set(lineage.slice(0,lineage.indexOf(origin.id)+1));
+      const revisions = new Map(stored.filter((r):r is StoryRevision=>r.type === "revision" && allowed.has(r.id)).map(r=>[r.id,r]));
+      historicalSources = new Map();
+      for (const seed of baseline.factRoleSeeds ?? []) {
+        const revision = revisions.get(seed.binding.sourceRevisionId);
+        if (revision) historicalSources.set(seed.key,revision);
+      }
+      for (const e of applicable) if (e.memory) {
+        const revision = revisions.get(e.memoryRoles?.sourceRevisionId ?? e.revisionId);
+        if (revision) historicalSources.set(storyFactIdentity(e.memory),revision);
+      }
+    }
+    return historicalSources.get(key);
+  };
+  for (const proposal of facts) {
+    const original = Array.isArray(raw?.facts) ? raw.facts.find(f => f && typeof f === "object" && storyFactIdentity(f as StoryFact) === storyFactIdentity(proposal) && (f as StoryFact).quote === proposal.quote) as Record<string, unknown> | undefined : undefined;
     if (automationMode(world) === "off" && world.storyAutomation) continue;
-    const automation = decision(factAutomationReason(fact, original?.risk, previous, protectedTexts));
-    if (held.some(e => e.memory && storyFactIdentity(e.memory) === storyFactIdentity(fact))) continue;
+    const match = original?.risk === "ordinary" ? playedAttendanceGoal(proposal,origin,previous,sourceOf) : undefined;
+    const repeated = !match && proposal.kind === "event" && !proposal.task && !proposal.claim
+      ? previous.find(f=>f.task?.status === "completed" && f.text === proposal.text && f.quote === proposal.quote) : undefined;
+    const fact = match ? { ...proposal,task:match.task } : repeated ? {...proposal,task:repeated.task} : proposal;
+    const comparable = match && !match.plan.task ? [...previous,{...match.plan,task:attendanceTask(match.plan)}] : previous;
+    const reason = factAutomationReason(fact, original?.risk, comparable, protectedTexts);
+    const uncertainVisit = !match && reason === "new" && fact.task?.status === "completed"
+      && previous.some(f=>f.task?.key === fact.task!.key && attendanceTask(f));
+    const automation = decision(uncertainVisit ? "uncertain" : reason);
+    if (held.some(e => e.memory && (storyFactIdentity(e.memory) === storyFactIdentity(fact) || storyFactIdentity(e.memory) === storyFactIdentity(proposal)))) continue;
     const event: StoryEvent = { ...common, id: createId("event"), ordinal: ordinal++, label: "Memory proposal", quote: fact.quote, participantIds: [], changes: [], memory: fact, memoryRoles: bindStoryRoles(fact,batch?.source??source), ...(world.storyAutomation ? { automation } : {}) };
     result.push(storyRow(event));
-    if (automation.status === "saved") { approved.add(event.id); previous.push(fact); }
+    if (automation.status === "saved") {
+      approved.add(event.id);
+      if (match) previous.splice(previous.indexOf(match.plan),1);
+      else if (fact.task) {
+        const prior = previous.findIndex(f=>f.task?.key === fact.task!.key);
+        if (prior >= 0) previous.splice(prior,1);
+      }
+      previous.push(fact);
+      addedSources.set(storyFactIdentity(fact),origin);
+    }
   }
   if (automationMode(world) === "off") return result;
   for (const person of inlineStoryPeople(raw?.people, (batch?.source ?? source).content)) {

@@ -1,0 +1,642 @@
+{
+  "started": "2026-11-18T13:50:24.151Z",
+  "runtime": "0d34f762d094fec9cbbbdf66bfa359c4fc34b4a1e09f679aec728f398bea6f19",
+  "plan": "792f9a46044d6cf5f5cc286900d3af4adff1dfe342e453d81315d278707b2d19",
+  "summary": {
+    "cases": 16,
+    "passed": 16,
+    "measurements": 48
+  },
+  "rows": [
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "two-names",
+      "phase": "cold",
+      "selected": [
+        "glass",
+        "print",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "reversed",
+      "phase": "cold",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "common-topic",
+      "phase": "cold",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "wrong-owner",
+      "phase": "cold",
+      "selected": [
+        "glass"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "two-names",
+      "phase": "warm",
+      "selected": [
+        "glass",
+        "print",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "reversed",
+      "phase": "warm",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "common-topic",
+      "phase": "warm",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "wrong-owner",
+      "phase": "warm",
+      "selected": [
+        "glass"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "two-names",
+      "phase": "reopened",
+      "selected": [
+        "glass",
+        "print",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "reversed",
+      "phase": "reopened",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "common-topic",
+      "phase": "reopened",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "ru",
+      "query": "wrong-owner",
+      "phase": "reopened",
+      "selected": [
+        "glass"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "two-names",
+      "phase": "cold",
+      "selected": [
+        "glass",
+        "print",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "reversed",
+      "phase": "cold",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "common-topic",
+      "phase": "cold",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "wrong-owner",
+      "phase": "cold",
+      "selected": [
+        "glass"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "two-names",
+      "phase": "warm",
+      "selected": [
+        "glass",
+        "print",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "reversed",
+      "phase": "warm",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "common-topic",
+      "phase": "warm",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "wrong-owner",
+      "phase": "warm",
+      "selected": [
+        "glass"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "two-names",
+      "phase": "reopened",
+      "selected": [
+        "glass",
+        "print",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "reversed",
+      "phase": "reopened",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "common-topic",
+      "phase": "reopened",
+      "selected": [
+        "print",
+        "glass",
+        "boxes"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "planetarium",
+      "locale": "en",
+      "query": "wrong-owner",
+      "phase": "reopened",
+      "selected": [
+        "glass"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "named-terms",
+      "phase": "cold",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "no-markings",
+      "phase": "cold",
+      "selected": [
+        "pier",
+        "received",
+        "shed"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "missing-party",
+      "phase": "cold",
+      "selected": [
+        "pier",
+        "received"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "named-terms",
+      "phase": "warm",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "no-markings",
+      "phase": "warm",
+      "selected": [
+        "pier",
+        "received",
+        "shed"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "missing-party",
+      "phase": "warm",
+      "selected": [
+        "pier",
+        "received"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "named-terms",
+      "phase": "reopened",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "no-markings",
+      "phase": "reopened",
+      "selected": [
+        "pier",
+        "received",
+        "shed"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "ru",
+      "query": "missing-party",
+      "phase": "reopened",
+      "selected": [
+        "pier",
+        "received"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "terms",
+      "phase": "cold",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "named-terms",
+      "phase": "cold",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "no-markings",
+      "phase": "cold",
+      "selected": [
+        "pier",
+        "received",
+        "shed"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "missing-party",
+      "phase": "cold",
+      "selected": [
+        "pier",
+        "received"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "terms",
+      "phase": "warm",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "named-terms",
+      "phase": "warm",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "no-markings",
+      "phase": "warm",
+      "selected": [
+        "pier",
+        "received",
+        "shed"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "missing-party",
+      "phase": "warm",
+      "selected": [
+        "pier",
+        "received"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "terms",
+      "phase": "reopened",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "named-terms",
+      "phase": "reopened",
+      "selected": [
+        "shed",
+        "pier",
+        "received",
+        "unpaid",
+        "inspected"
+      ],
+      "warning": null,
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "no-markings",
+      "phase": "reopened",
+      "selected": [
+        "pier",
+        "received",
+        "shed"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    },
+    {
+      "plot": "dockyard",
+      "locale": "en",
+      "query": "missing-party",
+      "phase": "reopened",
+      "selected": [
+        "pier",
+        "received"
+      ],
+      "warning": "incomplete",
+      "problems": []
+    }
+  ]
+}

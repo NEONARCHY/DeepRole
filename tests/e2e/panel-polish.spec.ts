@@ -16,7 +16,7 @@ for (const locale of ["ru", "en"]) test(`reset ignores a legacy parent position 
   const titleBottom = await page.locator(".native-chat-title").evaluate(node => node.getBoundingClientRect().bottom);
   expect(rects[0].y).toBeCloseTo(Math.max(48, titleBottom + 8), 0);
   for (let i = 1; i < rects.length; i++) expect(rects[i].top - rects[i - 1].bottom).toBeCloseTo(3, 0);
-  const scene = page.locator('[data-widget="scene"] > .scene-controls'); expect((await scene.boundingBox())!.y).toBeCloseTo(rects.at(-1).y, 0);
+  const scene = page.locator('[data-widget="scene"] > .dr-world-scene'); expect((await scene.boundingBox())!.y).toBeCloseTo(rects.at(-1).y, 0);
   await page.evaluate(() => (window as any).toggleNativeSidebar());
   await expect.poll(async () => (await geometry()).every(rect => Math.abs(rect.x - 8) < 1)).toBe(true);
   await page.screenshot({ path: info.outputPath("reset-sidebar-hidden.png") });

@@ -1,0 +1,470 @@
+[
+  {
+    "plot": {
+      "id": "tileworks",
+      "title": [
+        "Изразцы для станции",
+        "Tiles for the station"
+      ],
+      "cast": [
+        [
+          "Вера",
+          "Vera"
+        ],
+        [
+          "Нина",
+          "Nina"
+        ],
+        [
+          "Лара",
+          "Lara"
+        ]
+      ],
+      "shifts": [
+        [
+          "Рабочие перебирали упаковочную солому",
+          "The workers sorted packing straw"
+        ],
+        [
+          "В печной журнал внесли расход угля",
+          "The kiln ledger recorded coal use"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "crane",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Вера обещала Нине изразец с журавлём после подписи на листе обжига.",
+            "Vera promised Nina the crane tile after the firing sheet was signed."
+          ]
+        },
+        {
+          "id": "heron",
+          "act": 1,
+          "kind": "promise",
+          "prose": [
+            "Вера обещала Ларе изразец с цаплей после подписи на листе глазури.",
+            "Vera promised Lara the heron tile after the glaze sheet was signed."
+          ]
+        },
+        {
+          "id": "reverse",
+          "act": 2,
+          "kind": "promise",
+          "prose": [
+            "Нина обещала Вере вернуть медное лекало после замера стены.",
+            "Nina promised Vera the copper stencil after measuring the wall."
+          ]
+        },
+        {
+          "id": "rumor",
+          "act": 3,
+          "kind": "belief",
+          "prose": [
+            "Лара думает, что Нина уже забрала изразец с журавлём.",
+            "Lara thinks Nina already collected the crane tile."
+          ]
+        },
+        {
+          "id": "glaze",
+          "act": 4,
+          "kind": "event",
+          "prose": [
+            "Лара подшила подписанный лист глазури для изразца с цаплей. Передача ещё впереди.",
+            "Lara filed the signed glaze sheet for the heron tile. The handover is still pending."
+          ]
+        },
+        {
+          "id": "firing",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "Нина подшила подписанный лист обжига для изразца с журавлём. Получение изразца она не подтверждала.",
+            "Nina filed the signed firing sheet for the crane tile. She did not acknowledge receipt of the tile."
+          ]
+        },
+        {
+          "id": "measure",
+          "act": 6,
+          "kind": "event",
+          "prose": [
+            "Нина закончила замер стены и вернула Вере медное лекало.",
+            "Nina finished measuring the wall and returned the copper stencil to Vera."
+          ]
+        },
+        {
+          "id": "foreign",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "Лара принесла страховой полис для тележки с кирпичами.",
+            "Lara brought an insurance policy for the brick cart."
+          ]
+        }
+      ]
+    },
+    "probes": [
+      {
+        "id": "first",
+        "recent": [],
+        "draft": [
+          "Что именно Вера обещала Нине и подписан ли нужный лист?",
+          "What exactly did Vera promise Nina, and was the required sheet signed?"
+        ],
+        "wanted": [
+          "crane",
+          "firing"
+        ],
+        "exclude": [
+          "heron",
+          "reverse",
+          "rumor",
+          "glaze",
+          "measure",
+          "foreign"
+        ],
+        "warning": false
+      },
+      {
+        "id": "shared-giver",
+        "recent": [],
+        "draft": [
+          "Напомни об обещании Веры Ларе. Подписан ли документ?",
+          "Remind me of Vera’s promise to Lara. Was the document signed?"
+        ],
+        "wanted": [
+          "heron",
+          "glaze"
+        ],
+        "exclude": [
+          "crane",
+          "reverse",
+          "rumor",
+          "firing",
+          "measure",
+          "foreign"
+        ],
+        "warning": false
+      },
+      {
+        "id": "reverse",
+        "recent": [],
+        "draft": [
+          "Что Нина обещала Вере и чем закончилась передача?",
+          "What did Nina promise Vera, and how did the handover end?"
+        ],
+        "wanted": [
+          "reverse",
+          "measure"
+        ],
+        "exclude": [
+          "crane",
+          "heron",
+          "rumor",
+          "glaze",
+          "firing",
+          "foreign"
+        ],
+        "warning": false
+      },
+      {
+        "id": "terms",
+        "recent": [],
+        "draft": [
+          "Что Вера обещала Нине?",
+          "What did Vera promise Nina?"
+        ],
+        "wanted": [
+          "crane"
+        ],
+        "exclude": [
+          "heron",
+          "reverse",
+          "rumor",
+          "glaze",
+          "firing",
+          "measure",
+          "foreign"
+        ],
+        "warning": false
+      },
+      {
+        "id": "no-pair",
+        "recent": [],
+        "draft": [
+          "Что Лара обещала Вере?",
+          "What did Lara promise Vera?"
+        ],
+        "wanted": [],
+        "exclude": [
+          "crane",
+          "heron",
+          "reverse",
+          "rumor",
+          "glaze",
+          "firing",
+          "measure",
+          "foreign"
+        ],
+        "warning": true
+      },
+      {
+        "id": "wrong-paper",
+        "recent": [],
+        "draft": [
+          "По обещанию Веры Нине уже нашли страховой полис?",
+          "For Vera’s promise to Nina, did they find the insurance policy?"
+        ],
+        "wanted": [
+          "crane"
+        ],
+        "exclude": [
+          "heron",
+          "reverse",
+          "rumor",
+          "glaze",
+          "firing",
+          "measure",
+          "foreign"
+        ],
+        "warning": true
+      }
+    ]
+  },
+  {
+    "plot": {
+      "id": "sailroom",
+      "title": [
+        "Паруса обсерватории",
+        "Sails of the observatory"
+      ],
+      "cast": [
+        [
+          "Мила",
+          "Mila"
+        ],
+        [
+          "Дора",
+          "Dora"
+        ],
+        [
+          "Рита",
+          "Rita"
+        ]
+      ],
+      "shifts": [
+        [
+          "В мастерской сушили верёвки",
+          "The workshop dried ropes"
+        ],
+        [
+          "На склад пришли тюки хлопка",
+          "Cotton bales reached the warehouse"
+        ]
+      ],
+      "beats": [
+        {
+          "id": "west",
+          "act": 0,
+          "kind": "promise",
+          "prose": [
+            "Мила обещала Рите запасной парус для западной мачты после проверки шва.",
+            "Mila promised Rita a spare sail for the western mast after the seam inspection."
+          ]
+        },
+        {
+          "id": "east",
+          "act": 1,
+          "kind": "promise",
+          "prose": [
+            "Дора обещала Рите запасной парус для восточной мачты после проверки крепления.",
+            "Dora promised Rita a spare sail for the eastern mast after the bracket inspection."
+          ]
+        },
+        {
+          "id": "other",
+          "act": 2,
+          "kind": "promise",
+          "prose": [
+            "Мила обещала Доре запасной парус для северной мачты после оплаты полотна.",
+            "Mila promised Dora a spare sail for the northern mast after payment for the canvas."
+          ]
+        },
+        {
+          "id": "west-seam",
+          "act": 3,
+          "kind": "event",
+          "prose": [
+            "Мила завершила проверку шва запасного паруса для западной мачты. Рита пока не забирала парус.",
+            "Mila finished the seam inspection of the spare sail for the western mast. Rita has not collected the sail yet."
+          ]
+        },
+        {
+          "id": "east-bracket",
+          "act": 4,
+          "kind": "event",
+          "prose": [
+            "Дора завершила проверку крепления запасного паруса для восточной мачты и вручила парус Рите.",
+            "Dora finished the bracket inspection of the spare sail for the eastern mast and handed the sail to Rita."
+          ]
+        },
+        {
+          "id": "payment",
+          "act": 5,
+          "kind": "event",
+          "prose": [
+            "Дора оплатила полотно для запасного паруса на северную мачту.",
+            "Dora paid for the canvas for the spare sail on the northern mast."
+          ]
+        },
+        {
+          "id": "rumor",
+          "act": 6,
+          "kind": "belief",
+          "prose": [
+            "Рита полагает, что все паруса уже выдали.",
+            "Rita believes that all the sails have been handed over."
+          ]
+        },
+        {
+          "id": "noise",
+          "act": 7,
+          "kind": "event",
+          "prose": [
+            "Дора получила расписку за зимние перчатки.",
+            "Dora received a receipt for winter gloves."
+          ]
+        }
+      ]
+    },
+    "probes": [
+      {
+        "id": "west",
+        "recent": [],
+        "draft": [
+          "Что Мила обещала Рите и закончена ли проверка?",
+          "What did Mila promise Rita, and has the inspection finished?"
+        ],
+        "wanted": [
+          "west",
+          "west-seam"
+        ],
+        "exclude": [
+          "east",
+          "other",
+          "east-bracket",
+          "payment",
+          "rumor",
+          "noise"
+        ],
+        "warning": false
+      },
+      {
+        "id": "east",
+        "recent": [],
+        "draft": [
+          "Меня интересует только обещание Доры Рите. Чем закончилась передача?",
+          "Just Dora’s promise to Rita. How did the handover end?"
+        ],
+        "wanted": [
+          "east",
+          "east-bracket"
+        ],
+        "exclude": [
+          "west",
+          "other",
+          "west-seam",
+          "payment",
+          "rumor",
+          "noise"
+        ],
+        "warning": false
+      },
+      {
+        "id": "other",
+        "recent": [],
+        "draft": [
+          "Что именно Мила обещала Доре? Внесена ли оплата?",
+          "What exactly did Mila promise Dora? Has the payment been made?"
+        ],
+        "wanted": [
+          "other",
+          "payment"
+        ],
+        "exclude": [
+          "west",
+          "east",
+          "west-seam",
+          "east-bracket",
+          "rumor",
+          "noise"
+        ],
+        "warning": false
+      },
+      {
+        "id": "terms",
+        "recent": [],
+        "draft": [
+          "Напомни об обещании Доры Рите.",
+          "Remind me of Dora’s promise to Rita."
+        ],
+        "wanted": [
+          "east"
+        ],
+        "exclude": [
+          "west",
+          "other",
+          "west-seam",
+          "east-bracket",
+          "payment",
+          "rumor",
+          "noise"
+        ],
+        "warning": false
+      },
+      {
+        "id": "reverse",
+        "recent": [],
+        "draft": [
+          "Что Рита обещала Доре насчёт запасного паруса?",
+          "What did Rita promise Dora about the spare sail?"
+        ],
+        "wanted": [],
+        "exclude": [
+          "west",
+          "east",
+          "other",
+          "west-seam",
+          "east-bracket",
+          "payment",
+          "rumor",
+          "noise"
+        ],
+        "warning": true
+      },
+      {
+        "id": "false-paper",
+        "recent": [],
+        "draft": [
+          "По обещанию Милы Рите сохранилась ли расписка за перчатки?",
+          "Regarding Mila’s promise to Rita, is there a receipt for the gloves?"
+        ],
+        "wanted": [
+          "west"
+        ],
+        "exclude": [
+          "east",
+          "other",
+          "west-seam",
+          "east-bracket",
+          "payment",
+          "rumor",
+          "noise"
+        ],
+        "warning": true
+      }
+    ]
+  }
+]

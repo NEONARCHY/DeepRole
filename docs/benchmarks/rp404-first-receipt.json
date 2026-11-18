@@ -1,0 +1,11 @@
+{
+  "startedAtUtc": "2026-11-18T08:27:09.7861572Z",
+  "finishedAtUtc": "2026-11-18T08:27:49.7779136Z",
+  "exitCode": 1,
+  "planSha256": "ed73fc1ce0d1c6c6e5efebbbdcc4b08d36c7b2d58fdccce92cc7c582214f3d41",
+  "result": "docs/benchmarks/rp404-first-results.json",
+  "resultSha256": "9902505ba7322e18491505772228c50ab12daa67c47d6b49a20cf1b93057eab2",
+  "completedMeasurements": 312,
+  "vitest": "9 passed; the aggregate quality gate failed",
+  "scope": "First independent compiler evaluation. Mock IndexedDB, no model calls."
+}

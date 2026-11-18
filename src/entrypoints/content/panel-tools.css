@@ -8,7 +8,7 @@
   max-height: max(88px, calc((100dvh - var(--dr-min-top) - 8px) * .5)); overflow-y: auto;
 }
 .dr-widget-deck-tools, .dr-widget-minimized {
-  display: flex; flex-wrap: wrap; gap: 4px;
+  display: grid; gap: 4px;
   padding: 4px; border: 1px solid var(--dr-border); border-radius: 12px; background: var(--dr-panel);
 }
 .dr-widget-minimized { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,6rem),1fr)); margin-top: 4px; }
@@ -20,8 +20,16 @@
   cursor: pointer; font: 500 max(13px,.8125rem)/1.4 system-ui,sans-serif;
 }
 .dr-widget-dock button svg, .dr-panel-tools-dialog button svg { flex: none; }
-.dr-widget-deck-tools > button { flex: 1 1 auto; }
+.dr-widget-deck-tools { position:relative; grid-template-columns: minmax(0,1fr) 44px; }
+.dr-widget-deck-tools .dr-panel-tools-open {
+  justify-content: start; gap: 8px; padding-inline: 8px;
+  background: transparent; border-color: transparent; font-weight: 600; text-align: start;
+}
 .dr-widget-dock .dr-widget-move { cursor: grab; touch-action: none; background: transparent; border-color: transparent; color: var(--dr-muted); }
+.dr-widget-deck-tools::after {
+  content: ""; position: absolute; inset-inline-end: 50px; inset-block: 12px;
+  border-inline-end: 1px solid var(--dr-border-strong); pointer-events: none;
+}
 .dr-widget-dock .dr-widget-move:active { cursor: grabbing; }
 .dr-widget-dock .dr-panel-tools-open svg { color: var(--dr-primary); }
 .dr-widget-dock button:hover, .dr-widget-tools button:hover, .dr-panel-tools-dialog button:not(:disabled):hover { background: var(--dr-raised); color: var(--dr-text); }
@@ -30,6 +38,16 @@
 .dr-widget-minimized button[aria-expanded=true] { background: var(--dr-selected); }
 .dr-widget-dock [role=alert], .dr-panel-tools-dialog [role=alert] { color: var(--dr-danger); }
 .dr-widget-tools { position: absolute; inset-inline-end: 0; top: 0; z-index: 1; }
+.dr-widget-tools button { color: var(--dr-muted); background: var(--dr-panel); }
+@media (hover:hover) and (pointer:fine) {
+  .dr-widget-tools button { padding:0; border:0; background:transparent; }
+  .dr-widget-tools button:hover { background:transparent; }
+  .dr-widget-tools svg {
+    box-sizing:content-box; padding:4px; border:1px solid var(--dr-border-strong); border-radius:6px;
+    background:var(--dr-panel); color:var(--dr-muted);
+  }
+  .dr-widget-tools button:is(:hover,:focus-visible) svg { color:var(--dr-text); background:var(--dr-raised); }
+}
 .dr-widget-tools button span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
 .dr-widget-tools button:is(:hover,:focus-visible) span {
   width: max-content; height: auto; clip-path: none; inset-inline-end: calc(100% + 4px); top: 4px;
@@ -72,10 +90,19 @@
 .dr-panel-tools-dialog button:disabled { color: var(--dr-muted); cursor: default; }
 .dr-panel-layout-reset small { margin-top: 8px; }
 @media (prefers-color-scheme: light) {
-  :is(.dr-widget-dock,.dr-widget-tools,.dr-panel-tools-dialog) {
+  .dr-widget-deck, .dr-root:has(.dr-widget-deck select[aria-expanded=true]) > .dr-select-menu {
     color-scheme: light;
-    --dr-panel: #f0f3f4; --dr-surface: #fff; --dr-raised: #e4ebed; --dr-selected: #e4eff2;
+    --dr-native-scheme: light; --dr-bg: #fff;
+    --dr-panel: #f0f3f4; --dr-surface: #fff; --dr-raised: #e4ebed; --dr-selected: #e4eff2; --dr-primary-soft: #e4eff2;
     --dr-text: #202a2e; --dr-muted: #506069; --dr-border: #d7dfe1; --dr-border-strong: #b3c0c4;
-    --dr-primary: #24576a; --dr-action-hover: #194758; --dr-on-action: #fff; --dr-danger: #983e48;
+    --dr-primary: #24576a; --dr-action: #285b6d; --dr-action-hover: #194758; --dr-on-action: #fff;
+    --dr-success:#286346; --dr-warning:#805114; --dr-danger: #983e48;
+    --dr-danger-soft:#f7e8eb; --dr-warning-soft:#fbf1dc;
+    --dr-button-neutral:#e7ecee; --dr-button-neutral-hover:#d9e3e6;
+    --dr-retry:#f2dbe0; --dr-retry-hover:#eecbd2; --dr-on-retry:#602d38;
+    --dr-surface-light:none; --dr-action-light:none; --dr-depth-card:0 1px 3px #2030380a;
   }
+  .dr-widget-deck .dr-chat-meter { --meter-accent:var(--dr-success); }
+  .dr-widget-deck .dr-chat-meter:is(.is-mid,.is-low) { --meter-accent:var(--dr-warning); }
+  .dr-widget-deck .dr-chat-meter.is-critical { --meter-accent:var(--dr-danger); }
 }

@@ -11,7 +11,7 @@ export default defineConfig({
   vite: () => ({ define: { "import.meta.env.VITE_BUILD_TIME": JSON.stringify(buildTime) } }),
   zip: {
     includeSources: ["**/*", ".gitattributes"],
-    excludeSources: ["coverage/**", ".vitest/**", "test-results/**", "test-results-*/**", "test-results-*.png", "playwright-report/**", "tests/**", ".lazyweb/**", "private-assets/**", "downloads/*.zip"],
+    excludeSources: ["coverage/**", ".vitest/**", "test-results/**", "test-results-*/**", "test-results-*.png", "playwright-report/**", "tests/**", ".lazyweb/**", "private-assets/**", "downloads/**"],
   },
   manifest: ({ browser }) => ({
     name: "__MSG_extName__",

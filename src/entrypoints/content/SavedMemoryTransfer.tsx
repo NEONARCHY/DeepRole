@@ -1,4 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState } from "react";
+import { History } from "lucide-react";
 import { isBackgroundBuildFailure, savedMemoryText, type SavedMemoryPreview } from "../../core/saved-memory-continuation";
 import type { Locale, WorldProfile } from "../../core/types";
 import { PageMemoryDialog } from "./PageMemoryDialog";
@@ -66,7 +67,7 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
   const previewButton = <button type="button" className={`${singleGame ? secondary : actionClassName ?? "dr-meter-transfer"} dr-saved-memory-action`} aria-haspopup="dialog" disabled={disabled || busy} onClick={() => {
     if (chooseBetweenWorlds) { choose(); setOpen(true); }
     else void loadPreview(worlds?.[0]);
-  }}>{singleGame ? t.viewScene : t.title}</button>;
+  }}>{!actionClassName && <History size={16} aria-hidden="true"/>}{singleGame ? t.viewScene : t.title}</button>;
 
   return <>
     {singleGame ? <>

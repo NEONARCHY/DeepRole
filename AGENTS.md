@@ -1,5 +1,13 @@
 # DeepRole project conventions
 
+## Product purpose
+
+DeepRole should let people play by writing ordinary roleplay messages. The extension should manage routine bookkeeping, recover relevant history, and guide DeepSeek with the facts and constraints of the current scene. Design the default path so a player can keep playing with the panels closed.
+
+Before adding a control or warning, ask what DeepRole can resolve from the user's message and saved lore. Bring the player in when a choice genuinely changes the story or needs their consent, such as conflicting canon or a world reset. Keep manual corrections and advanced tools available to players who want them.
+
+For long games, select evidence that fits the current turn and its participants, conditions and objectives. Update a goal when a played scene establishes its outcome. Keep its source for later recollection. Elapsed time alone cannot establish completion. Measure both missing context and unnecessary demands for player review.
+
 ## Continuation between computers
 
 - At the start of work on this repository, read the current section of `CODEX-HANDOFF.md` before choosing the next implementation task. It contains the latest completed work, user decisions, verification limits, and the next task; do not hardcode a historical RP number.
