@@ -450,7 +450,8 @@
 }
 .lm-create-dialog {
   display: grid;
-  gap: 17px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
   width: min(440px, 100%);
   max-height: 100%;
   overflow: auto;
@@ -461,17 +462,16 @@
   color: var(--dr-text);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.600);
 }
-.lm-create-heading { display: grid; gap: 7px; }
-.lm-create-heading>span { color: var(--dr-success); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.lm-create-heading { display: grid; gap: 8px; }
 .lm-create-heading h2 { margin: 0; font-size: 23px; line-height: 1.2; letter-spacing: -.03em; }
-.lm-create-heading p { margin: 0; color: var(--dr-muted); font-size: 12px; line-height: 1.55; }
-.lm-create-field { display: grid; gap: 7px; color: var(--dr-text); font-size: 12px; font-weight: 600; }
+.lm-create-heading p { margin: 0; color: var(--dr-muted); font-size: max(13px, .875rem); line-height: 1.5; }
+.lm-create-field { display: grid; gap: 8px; color: var(--dr-text); font-size: max(13px, .875rem); font-weight: 600; }
 .lm-create-field small { display: inline; color: var(--dr-muted); font-size: 11px; font-weight: 400; }
 .lm-create-field input,.lm-create-field textarea {
   box-sizing: border-box;
   min-width: 0;
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--dr-border);
   border-radius: 10px;
@@ -483,19 +483,21 @@
 .lm-create-field textarea { min-height: 74px; max-height: 150px; resize: vertical; line-height: 1.5; }
 .lm-create-field :is(input,textarea)::placeholder { color: var(--dr-muted); }
 .lm-create-field :is(input,textarea):focus { border-color: var(--dr-primary); outline: 2px solid var(--dr-primary); outline-offset: 0; }
-.lm-create-check { display: flex; align-items: flex-start; gap: 9px; color: var(--dr-muted); font-size: 11px; line-height: 1.5; cursor: pointer; }
+.lm-create-check { display: flex; align-items: center; min-height: 44px; gap: 12px; color: var(--dr-text); font-size: max(13px, .875rem); line-height: 1.5; cursor: pointer; }
 .lm-create-check input { flex: none; margin: 1px 0 0; accent-color: var(--dr-primary); }
 .lm-create-check:has(input:disabled) { opacity: .55; }
-.lm-create-colors { display: flex; gap: 8px; margin: 0; padding: 0; border: 0; }
+.lm-create-colors { display: flex; flex-wrap: wrap; gap: 4px; min-inline-size: 0; margin: 0; padding: 0; border: 0; }
 .lm-create-colors legend { margin-bottom: 8px; color: var(--dr-text); font-size: 12px; font-weight: 600; }
-.lm-create-colors label { position: relative; display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+.lm-create-colors label { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
 .lm-create-colors label.is-selected { border-color: var(--dr-border-strong); }
 .lm-create-colors label:focus-within { outline: 2px solid var(--dr-primary); outline-offset: 2px; }
 .lm-create-colors input { position: absolute; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .lm-create-colors label span { width: 22px; height: 22px; border-radius: 50%; pointer-events: none; }
 .lm-create-note { margin: 0; padding: 10px 12px; border-radius: 9px; background: var(--dr-panel); color: var(--dr-muted); font-size: 11px; line-height: 1.5; }
-.lm-create-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.lm-create-actions .button { min-height: 38px; }
+.lm-create-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.lm-create-dialog :is(button, summary, .dr-bond-toggle, input:not([type="checkbox"],[type="radio"]), select) { min-height: 44px; }
+.lm-create-dialog summary { align-content: center; }
+.lm-create-dialog button { white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 700px) {
-  .lm-create-dialog { gap: 13px; }
+  .lm-create-dialog { gap: 16px; padding: 16px; }
 }

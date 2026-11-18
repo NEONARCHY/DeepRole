@@ -9,14 +9,14 @@ import { navigationText } from "../../src/core/navigation-i18n";
 test("imports a DeepRole world larger than the old 10 MB limit", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   const world = { id: "portable-world", name: "Перенесённый мир", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const pack = { format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }] };
   const buffer = Buffer.from(JSON.stringify(pack) + " ".repeat(10_100_000));
   expect(buffer.byteLength).toBeGreaterThan(10_000_000);
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "portable-world.json", mimeType: "application/json", buffer });
   await expect(page.getByText("Распознан мир DeepRole", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Перенесённый мир", exact: true })).toBeVisible();
 });
 
@@ -29,7 +29,7 @@ for (const locale of ["ru", "en"] as const) test(`opens a centered lore-import w
   }
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
   await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
-  await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Загрузить мир из файла", "Load a world from a file"), exact: true }).click();
   const importDialog = page.getByRole("dialog", { name: l("Добавить из файла", "Add from file"), exact: true });
   await expect(importDialog).toBeVisible();
   await expect(page.locator(".lore-import-backdrop")).toHaveCSS("animation-name", "none");
@@ -54,15 +54,15 @@ test("imports BDS only after preview, links a profile, and isolates the library"
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   // The file chooser and the drag-and-drop path use the same preview and validation.
   const source = { "  Оригинал  ": { value: "  Текст\nс переносом.  ", importance: "called" }, "Правило": { value: "Сохранить", importance: "always" } };
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Тестовый мир.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(source)) });
   await expect(page.getByText("2 записей · всегда: 1 · автоподбор: 1 · вручную: 0 · выключено: 0")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Подтвердить импорт", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Сохранить в библиотеку", exact: true })).toBeEnabled();
   await page.locator(".rp-import-preview summary").first().click();
   expect(await page.locator(".rp-import-preview pre").first().textContent()).toBe(source["  Оригинал  "].value);
-  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Тестовый мир", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Мир и профили", exact: true }).click();
   await page.getByRole("button", { name: "Добавить профиль", exact: true }).click();
@@ -110,10 +110,10 @@ test("world tree edits entry relationships without changing lore", async ({ page
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Древо.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Башня": { value: "Исходный текст башни", importance: "always" }, "Дверь": { value: "Исходный текст двери", importance: "called" } })) });
   await expect(page.getByText("Распознана память Better Deepseek (BDS)", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   const tower = page.locator(".memory-card").filter({ has: page.getByRole("heading", { name: "Башня", exact: true }) });
   await tower.getByRole("button", { name: "Изменить", exact: true }).click();
@@ -145,15 +145,15 @@ test("world tree edits entry relationships without changing lore", async ({ page
 test("same importer recognizes a DeepRole world and refuses unrelated JSON", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   const input = page.getByLabel("Выбрать JSON", { exact: true });
   await input.setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from('{"format":"deeprole-backup"}') });
   await expect(page.getByRole("alert")).toHaveText("Не удалось прочитать резервную копию");
-  await expect(page.getByRole("button", { name: "Подтвердить импорт", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Сохранить в библиотеку", exact: true })).toHaveCount(0);
   const world = { id: "world", name: "Из DeepRole", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   await input.setInputFiles({ name: "world.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }] })) });
   await expect(page.getByText("Распознан мир DeepRole", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Из DeepRole", exact: true })).toBeVisible();
 });
 
@@ -161,13 +161,13 @@ test("RPG map supports window/full-screen, pan, zoom, search and node editing", 
   await page.setViewportSize({ width: 1200, height: 850 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   const world = { id: "w", name: "Лунная экспедиция", description: "Только тестовый мир", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const entry = (id: string, title: string, content: string) => ({ id, title, content, entityIds: id === "tower" ? ["character"] : [], worldId: "w", bookId: null, keywords: [], activation: "smart", priority: "normal", enabled: true, source: { type: "manual" }, createdAt: 1, updatedAt: 1 });
   const entries = [ { ...entry("tower", "Северная башня", "Наблюдательная башня у озера."), links: [{ targetId: "door", label: "возможный проход", mode: "context" }] }, entry("door", "Закрытая дверь", "Старинная дверь с печатью."), entry("moon", "Лунный камень", "Светится ночью."), entry("oath", "Клятва", "Сохранить тайну."), entry("lake", "Озеро", "Холодное озеро."), entry("bridge", "Мост", "Соединяет берега.") ];
   const entity = { id: "character", worldId: "w", kind: "character", name: "Проводник", description: "Тестовый персонаж", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1 };
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "map.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ format: "deeprole-world", version: 1, records: [{ kind: "world", id: "w", data: world }, { kind: "entity", id: entity.id, data: entity }, ...entries.map((data) => ({ kind: "entry", id: data.id, data }))] })) });
-  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await page.getByRole("button", { name: "Открыть карту мира", exact: true }).click();
   const map = page.getByRole("dialog", { name: "Карта мира", exact: true });
   await map.getByRole("button", { name: "Развернуть на весь экран", exact: true }).click();
@@ -209,9 +209,13 @@ for (const locale of ["ru", "en"] as const) test(`imports to the library if the 
   await page.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
   await page.goto("/tests/fixtures/sidepanel.html?world&locale=" + locale);
   const worldPicker = page.getByRole("combobox", { name: locale === "ru" ? "Мир" : "World", exact: true });
+  await page.locator(".dr-play-scene > summary").click();
   await expect(worldPicker).toHaveValue("world-a");
   await page.evaluate(() => {
     const tabs = (window as any).chrome.tabs;
+    const query = tabs.query;
+    tabs.query = async () => (await query()).map((tab: object) => ({ ...tab, title: "Lighthouse archive - DeepSeek" }));
+    (window as any).setPageState({});
     (window as any).importSceneCalls = [];
     const send = tabs.sendMessage;
     tabs.sendMessage = async (tabId: number, message: { type: string }) => {
@@ -229,9 +233,10 @@ for (const locale of ["ru", "en"] as const) test(`imports to the library if the 
   });
   const attach = dialog.getByRole("checkbox", { name: menuText(locale, "attachImport"), exact: true });
   await expect(attach).not.toBeChecked();
+  await expect(attach).toHaveAccessibleDescription(sceneText(locale, "importChatName", { chat: "Lighthouse archive" }));
   await attach.press("Space");
   await expect(attach).toBeChecked();
-  await expect(dialog.getByText(menuText(locale, "replaceImportHint"), { exact: true })).toBeVisible();
+  await expect(attach).toHaveAccessibleDescription(sceneText(locale, "importChatName", { chat: "Lighthouse archive" }) + " · " + menuText(locale, "replaceImportHint"));
   const submit = dialog.getByRole("button", { name: menuText(locale, "importAndAttach"), exact: true });
   expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);

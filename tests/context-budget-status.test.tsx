@@ -2,7 +2,23 @@ import {afterEach,expect,it} from "vitest";
 import {cleanup,render,screen} from "@testing-library/react";
 import {MemoryStatus} from "../src/entrypoints/shared/MemoryStatus";
 import type {ContextSelection,Locale} from "../src/core/types";
+import {storyUpdateText} from "../src/core/story-update-i18n";
+import {translate} from "../src/core/i18n";
 afterEach(cleanup);
+for (const locale of ["ru", "en"] as const) it(`keeps the next preview and the actual warning independent (${locale})`, () => {
+  const props = { locale, connected: true, pendingHandoff: "Workshop", available: 1, onAdd() {} };
+  const missing = storyUpdateText(locale, "missing");
+  const blocked = storyUpdateText(locale, "blocked");
+  const unsentMemory = translate(locale, "memoryInjectWait");
+  const { rerender } = render(<MemoryStatus {...props} warning={missing}/>);
+  for (const warning of [missing, blocked, unsentMemory]) {
+    rerender(<MemoryStatus {...props} warning={warning}/>);
+    expect(screen.getByRole("status")).toHaveTextContent(warning);
+    expect(screen.getByText(locale === "ru" ? "Память готова" : "Memory is ready")).toBeVisible();
+  }
+  rerender(<MemoryStatus {...props}/>);
+  expect(screen.queryByRole("status")).toBeNull();
+});
 for(const locale of ["ru","en"] as Locale[])it(`game facts without lore entries are ready memory ${locale}`,()=>{
  const selection:ContextSelection={entries:[],estimatedTokens:300,omittedCount:0,contextReport:{limit:2000,total:300,required:200,selected:{lore:0,profiles:0,facts:1,continuation:0},omitted:{lore:0,profiles:0,facts:0,continuation:0}}};
  render(<MemoryStatus locale={locale} connected selection={selection} available={0} onAdd={()=>{}}/>);

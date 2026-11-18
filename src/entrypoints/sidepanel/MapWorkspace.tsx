@@ -102,7 +102,7 @@ export function MapWorkspace(props: Props) {
       </div>
     </header>
     {creating !== null && <div className="lm-create-backdrop"><form className="lm-create-dialog" role="dialog" aria-modal="true" aria-label={m("createWorldTitle")} onSubmit={(event) => void create(event)} onInvalidCapture={event => { const details = (event.target as HTMLElement).closest("details"); if (details) details.open = true; }}>
-      <div className="lm-create-heading"><span>{m("createWorldEyebrow")}</span><h2>{m("createWorldTitle")}</h2><p>{m("createWorldHint")}</p></div>
+      <div className="lm-create-heading"><h2>{m("createWorldTitle")}</h2><p>{m("createWorldHint")}</p></div>
       <label className="lm-create-field">{t("name")}<input autoFocus required maxLength={100} aria-label={t("name")} placeholder={m("worldNamePlaceholder")} value={name} disabled={busy} onChange={(event) => setName(event.target.value)} /></label>
       <label className="lm-create-field">{t("description")} <small>{m("optional")}</small><textarea rows={3} maxLength={500} placeholder={m("worldDescriptionPlaceholder")} value={description} disabled={busy} onChange={(event) => setDescription(event.target.value)} /></label>
       <label className="lm-create-check"><input type="checkbox" checked={useDescriptionInContext} disabled={busy} onChange={(event) => setUseDescriptionInContext(event.target.checked)} /><span>{m("useDescriptionInChat")}</span></label>

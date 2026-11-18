@@ -105,6 +105,7 @@ export function PageWidget(props: {
   onContinueStory?: () => void;
   savedMemoryTransfer?: { scope: string; blocked: boolean; worlds?: Pick<WorldProfile, "id" | "name">[]; preview: (worldId?: string) => Promise<SavedMemoryPreview>; open: (version: string, worldId?: string) => Promise<void> };
   savedMemoryQueued?: boolean;
+  savedMemoryAttempt?: import("../../core/saved-memory-continuation").SavedMemoryAttempt;
   onCancelContinuation?: () => void;
   onKeepContinuationMemory?: () => Promise<void>;
   onDismissCapacityWarning?: () => void;
@@ -317,13 +318,13 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && !props.state.sendStorageFailure && !props.state.promptLength && props.state.continuationDraft?.blockedLength && <PromptLengthNotice locale={props.state.locale} limit={{ length: props.state.continuationDraft.blockedLength, draft: props.state.continuationDraft.draft, url: props.state.continuationDraft.url }} onDismiss={props.onDismissContinuationDraft} />}
     {!props.state.vaultLocked && !props.state.sendStorageFailure && !props.state.promptLength && props.state.continuationDraft && !props.state.continuationDraft.blockedLength && <DraftSendNotice
       className="dr-continuation-draft" locale={props.state.locale} title={continuationText(props.state.locale, "unconfirmedTitle")}
-      detail={continuationText(props.state.locale, props.state.continuationDraft.returnChatId ? "returnUnconfirmed" : "sendUnconfirmed")} original={props.state.continuationDraft.draft}
+      detail={props.savedMemoryAttempt === "movedGame" ? savedMemoryText(props.state.locale).movedGame : continuationText(props.state.locale, props.state.continuationDraft.returnChatId ? "returnUnconfirmed" : "sendUnconfirmed")} original={props.state.continuationDraft.draft}
       returnChatId={props.state.continuationDraft.returnChatId}
       onCheck={!props.state.continuationDraft.returnChatId && props.state.continuationDraft.promptDigest ? props.onCheckContinuationDraft : undefined}
       checking={props.state.continuationChecking}
       onDismiss={props.onDismissContinuationDraft} />}
     {props.state.toast && <div className="dr-toast" role="status">{props.state.toast}</div>}
-    {!props.state.vaultLocked && props.savedMemoryQueued && !props.state.continuationCommitPending && <div className="dr-continuation-progress dr-saved-memory-ready" role="status">{savedMemoryText(props.state.locale).queued}</div>}
+    {!props.state.vaultLocked && props.savedMemoryQueued && (!props.state.continuationDraft || props.state.continuationDraft.blockedLength) && !props.state.continuationCommitPending && <div className="dr-continuation-progress dr-saved-memory-ready" role="status">{savedMemoryText(props.state.locale)[props.savedMemoryAttempt ?? "queued"]}</div>}
     {!props.state.vaultLocked && props.state.continuationCommitPending && <section className="dr-alert dr-transfer-commit" aria-label={continuationText(props.state.locale, "commitTitle")}>
       <strong>{continuationText(props.state.locale, "commitTitle")}</strong>
       <p role="status">{continuationText(props.state.locale, props.state.continuationCommitRunning ? "commitSaving" : "commitPending")}</p>
@@ -339,7 +340,7 @@ export function PageWidget(props: {
       busy={!!props.state.generating || serviceBusy || !!props.state.transferring}
       onContinue={props.onContinueStory} onClose={props.onDismissCapacityWarning} onDisable={props.onDisableCapacityWarnings}
     />}
-    {!props.state.vaultLocked && props.state.warning && <Alert title={t("memoryNotAddedTitle")} text={props.state.warning} primary={t("copyContext")} onPrimary={props.onCopyContext} />}
+    {!props.state.vaultLocked && props.state.warning && <Alert title={t("gameMemoryNotice")} text={props.state.warning} primary={t("copyContext")} onPrimary={props.onCopyContext} />}
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
       <div ref={contextAnchor} hidden={props.state.startupError} className={`dr-context-anchor ${contextPosition && contextPosition.x + contextShift > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={props.state.startupError ? { display: "none" } : contextStyle}>
@@ -351,7 +352,7 @@ export function PageWidget(props: {
           {chatEstimate.atLeast && <small className="dr-chat-meter-note">{x("chatMeterAtLeast")}</small>}
           {props.onContinueStory && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring || !!props.state.continuation && !["review", "ready"].includes(props.state.continuation.phase)} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation?.phase === "review" ? "reviewAction" : props.state.continuation?.phase === "ready" ? "startSummary" : props.state.transferring ? "creating" : "continue")}</button>}
         </div></WidgetTile>}
-        {(props.state.showMemoryContextIndicator !== false || memoryIssue) && <WidgetTile id="memory" title={memoryIssue ? memoryIssueTitle : t("context")} icon={memoryIssue ? <AlertTriangle size={16} /> : <BrainCircuit size={16} />}><div className={`dr-memory-control${memoryIssue ? " has-issue" : ""}`}>
+        {(props.state.showMemoryContextIndicator !== false || memoryIssue) && <WidgetTile id="memory" shortcut={memoryIssue ? memoryIssueTitle : undefined} title={memoryIssue ? memoryIssueTitle : t("context")} icon={memoryIssue ? <AlertTriangle size={16} /> : <BrainCircuit size={16} />}><div className={`dr-memory-control${memoryIssue ? " has-issue" : ""}`}>
           <button className="dr-pill" onClick={() => setOpen(!open)} aria-haspopup="dialog" aria-controls={memoryDialogId} aria-expanded={open}><span className="dr-orb" /><span><strong>{t("context")} <b className="dr-count">{referenceCount}</b></strong><small>{t("shortTokens", { count: props.state.selection.estimatedTokens })}</small></span></button>
           {memoryIssue && <div className="dr-memory-issue-summary" role="status" aria-live="polite"><button type="button" data-no-widget-drag className="dr-memory-issue" aria-haspopup="dialog" aria-controls={memoryDialogId} onClick={() => setOpen(true)}><AlertTriangle size={16} aria-hidden="true"/><span><strong>{memoryIssueTitle}</strong><small>{memoryCopy.details}</small></span><ChevronRight size={16} aria-hidden="true"/></button></div>}
         </div></WidgetTile>}

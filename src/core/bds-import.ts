@@ -7,6 +7,9 @@ export function parseBds(text: string): BdsItem[] {
   if (text.length > 10_000_000) throw new Error("bdsInvalid");
   let value: unknown;
   try { value = JSON.parse(text.replace(/^\uFEFF/, "")); } catch { throw new Error("bdsInvalid"); }
+  return parseBdsData(value);
+}
+export function parseBdsData(value: unknown): BdsItem[] {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("bdsInvalid");
   const rows = Object.entries(value);
   if (!rows.length || rows.length > 10000) throw new Error("bdsInvalid");

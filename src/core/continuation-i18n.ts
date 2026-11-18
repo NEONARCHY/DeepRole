@@ -3,7 +3,7 @@ import type { Locale } from "./types";
 const copy = {
   ru: {
     unconfirmedTitle: "Перенос не подтверждён",
-    sendUnconfirmed: "DeepSeek не подтвердил первую реплику. Игра осталась привязана к прежнему чату.",
+    sendUnconfirmed: "Перенос пока не подтверждён. Перед повторной отправкой проверь ответ DeepSeek.",
     returnUnconfirmed: "Первую реплику ещё не удалось подтвердить. Её текст сохранён до закрытия вкладки. Вернитесь в чат попытки и проверьте ответ перед повторной отправкой.",
     returnMessage: "Вернуться к реплике",
     checkReply: "Проверить ответ DeepSeek",
@@ -20,7 +20,7 @@ const copy = {
     reviewAction: "Проверить изменения", readyToSummarize: "2/3 · Память актуальна",
     startSummary: "Подготовить сжимку и продолжить", summary: "3/3 · Сжимаем последние сцены…",
     summaryArchived: "Служебный запрос переноса истории", summaryFailed: "Сжимка не завершена. Перенос остановлен.", summaryDone: "Сжимка готова. Открываем новый чат…", cancel: "Отменить перенос", cancelled: "Перенос остановлен.",
-    reviewHint: "После сохранения выбранных изменений DeepSeek подготовит сжимку и откроется новый чат. Закрытие окна ставит перенос на ожидание.",
+    reviewHint: "Можно продолжить с текущей памятью или сохранить выбранные записи. Затем DeepSeek подготовит краткое содержание и откроется новый чат. Если закрыть окно, перенос встанет на паузу.",
     keepMemory: "Продолжить без изменений памяти", saveContinue: "Сохранить и продолжить", tooLarge: "Память мира слишком велика для полного сравнения одним запросом. Перенос остановлен.",
     continuePrompt: "Продолжи игру с того же момента по переданному контексту последних сцен. Сохрани язык и стиль переписки. Не повторяй пересказ, не выбирай за игрока и не разыгрывай заново завершённые события.",
     saved: "Состояние сохранено", creating: "Сохраняем историю…", continue: "Продолжить в новом чате", recap: "Подготовить пересказ с DeepSeek",
@@ -39,7 +39,7 @@ const copy = {
   },
   en: {
     unconfirmedTitle: "Transfer not confirmed",
-    sendUnconfirmed: "DeepSeek did not confirm the first message. The game is still linked to the previous chat.",
+    sendUnconfirmed: "The transfer is still unconfirmed. Check the DeepSeek reply before sending again.",
     returnUnconfirmed: "The first message is still unconfirmed. Its text is kept until this tab closes. Return to the attempted chat and check for a response before sending again.",
     returnMessage: "Return to message",
     checkReply: "Check DeepSeek response",
@@ -56,7 +56,7 @@ const copy = {
     reviewAction: "Review changes", readyToSummarize: "2/3 · Memory is up to date",
     startSummary: "Prepare summary and continue", summary: "3/3 · Summarizing recent scenes…",
     summaryArchived: "Story transfer service request", summaryFailed: "The summary did not finish. Transfer stopped.", summaryDone: "Summary ready. Opening a new chat…", cancel: "Cancel transfer", cancelled: "Transfer stopped.",
-    reviewHint: "After saving your selected changes, DeepSeek will prepare a summary and a new chat will open. Closing this window pauses the transfer.",
+    reviewHint: "Continue with your current memory or save selected changes. DeepSeek will then prepare a summary and a new chat will open. Closing this window pauses the transfer.",
     keepMemory: "Continue without changing memory", saveContinue: "Save and continue", tooLarge: "The world's memory is too large for a complete comparison in one request. Transfer stopped.",
     continuePrompt: "Continue the roleplay from the exact moment in the supplied recent-scene context. Preserve the conversation's language and style. Do not repeat the recap, decide for the player, or replay completed events.",
     saved: "Story state saved", creating: "Saving your story…", continue: "Continue in a new chat", recap: "Prepare a recap with DeepSeek",

@@ -25,11 +25,11 @@ for (const locale of ["ru", "en"] as const) for (const width of [320,900]) test(
     await page.screenshot({path:info.outputPath(`settings-home-${locale}-${width}.png`),fullPage:true,animations:"disabled"});
     expect((await new AxeBuilder({page}).include(".dr-settings-directory").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
     for(const section of ["app","appearance","characters","images","safety","data","memory","diagnostics"] as const) {
-      if(section==="memory" || section==="diagnostics") {
-        await directory.getByText(navigationText(locale,"advanced"),{exact:true}).focus(); await page.keyboard.press("Enter");
-        if(section==="diagnostics") { await directory.getByText(navigationText(locale,"support"),{exact:true}).focus(); await page.keyboard.press("Enter"); }
-      }
       const route=directory.getByRole("button",{name:navigationText(locale,section),exact:true});
+      if((section==="memory" || section==="diagnostics") && !await route.isVisible()) {
+        await directory.getByText(navigationText(locale,"advanced"),{exact:true}).focus(); await page.keyboard.press("Enter");
+      }
+      await expect(route).toHaveAccessibleDescription(navigationText(locale,`${section}Hint`));
       await route.focus();await page.keyboard.press("Enter");
       const heading=directory.getByRole("heading",{name:navigationText(locale,section),exact:true});
       await expect(heading).toBeFocused();
@@ -42,9 +42,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320,900]) test(
       }
       if(section==="data") await expect(page.locator(".dr-service-diagnostics")).not.toBeVisible();
       await directory.getByRole("button",{name:navigationText(locale,"back"),exact:true}).click();
-      await expect(directory.getByRole("heading",{name:navigationText(locale,"back"),exact:true})).toBeFocused();
+      await expect(route).toBeFocused();
     }
-    await directory.getByText(navigationText(locale,"advanced"),{exact:true}).click();
     await directory.getByRole("button",{name:navigationText(locale,"memory"),exact:true}).click();
     await expect(page.locator(".settings-form input[type=number]")).toHaveValue("3333");
     await page.locator(".bottom-nav").getByRole("button",{name:navigationText(locale,"play"),exact:true}).click();

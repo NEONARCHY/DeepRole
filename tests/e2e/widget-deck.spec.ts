@@ -3,18 +3,17 @@ import { test, expect } from "@playwright/test";
 for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`portrait visibility lives beside panel controls ${locale} ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 850 });
   await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);
-  const dock = page.locator(".dr-widget-deck-tools");
-  const hide = dock.getByRole("button", { name: locale === "ru" ? "Скрыть портреты персонажей" : "Hide character portraits" });
-  await expect(hide).toBeVisible();
-  await expect(hide).toHaveAttribute("aria-pressed", "true");
-  await hide.click();
-  const show = dock.getByRole("button", { name: locale === "ru" ? "Показать портреты персонажей" : "Show character portraits" });
-  await expect(show).toHaveAttribute("aria-pressed", "false");
+  await page.locator(".dr-panel-tools-open").click();
+  const portraits = page.getByRole("checkbox", { name: locale === "ru" ? "Показывать портреты" : "Show portraits", exact:true });
+  await expect(portraits).toBeChecked();
+  await portraits.uncheck();
+  await expect(portraits).not.toBeChecked();
   expect(await page.evaluate(() => (window as Window & { portraitsVisible?: boolean }).portraitsVisible)).toBe(false);
-  await show.click();
-  await expect(hide).toHaveAttribute("aria-pressed", "true");
+  await portraits.check();
+  await expect(portraits).toBeChecked();
   expect(await page.evaluate(() => (window as Window & { portraitsVisible?: boolean }).portraitsVisible)).toBe(true);
-  const box = (await dock.boundingBox())!;
+  await page.keyboard.press("Escape");
+  const box = (await page.locator(".dr-widget-deck-tools").boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(width);
 });
 
@@ -55,7 +54,9 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
   await memory.focus(); await memory.press("ArrowRight");
   expect((await memory.boundingBox())!.x).toBeCloseTo(before.x + 8, 0);
   expect((await meter.boundingBox())!.x).toBeCloseTo(meterBefore.x, 0);
-  await page.getByRole("button", { name: locale === "ru" ? "Перемещать панели вместе" : "Move panels together", exact: true }).click();
+  await page.locator(".dr-panel-tools-open").click();
+  await page.getByRole("checkbox", { name: locale === "ru" ? "Перемещать панели вместе" : "Move panels together", exact: true }).click();
+  await page.keyboard.press("Escape");
   // Vertical movement has room even on the 320px screen.
   const oldY = (await meter.boundingBox())!.y;
   await memory.press("ArrowDown"); expect((await meter.boundingBox())!.y).toBeCloseTo(oldY + 8, 0);
@@ -64,12 +65,14 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`indepe
   }
   const buttons = page.locator("[data-restore-widget]"); await expect(buttons).toHaveCount(5);
   const boxes = await buttons.evaluateAll(nodes => nodes.map(n => ({ y: n.getBoundingClientRect().y, right: n.getBoundingClientRect().right })));
-  expect(new Set(boxes.map(b => b.y)).size).toBe(1); expect(Math.max(...boxes.map(b => b.right))).toBeLessThanOrEqual(width);
+  expect(await buttons.first().innerText()).not.toBe(""); expect(Math.max(...boxes.map(b => b.right))).toBeLessThanOrEqual(width);
   await page.screenshot({ path: info.outputPath(`dock-${locale}-${width}.png`) });
   await page.reload(); await expect(buttons).toHaveCount(5);
   await page.locator('[data-restore-widget="characters"]').click(); await expect(page.locator(".dr-characters")).toBeVisible();
   await page.locator(".dr-character-row").click(); await expect(page.getByRole("dialog")).toBeVisible(); await page.keyboard.press("Escape");
+  await page.locator(".dr-panel-tools-open").click();
   await page.getByRole("button", { name: locale === "ru" ? "Сбросить расположение панелей" : "Reset panel layout" }).click();
+  await page.keyboard.press("Escape");
   await expect(buttons).toHaveCount(0); await expect(page.locator('[data-widget]:visible')).toHaveCount(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -78,8 +81,8 @@ test("panel pointer drag, cancel, failed persistence and viewport clamp", async 
   await page.setViewportSize({ width: 1280, height: 950 }); await page.goto("/tests/fixtures/page-widget.html?panels=1&locale=en");
   const tile = page.locator('[data-widget="characters"]');
   const before = (await tile.boundingBox())!, handle = (await tile.boundingBox())!;
-  await page.mouse.move(handle.x + 45, handle.y + 12); await page.mouse.down(); await page.mouse.move(handle.x + 305, handle.y + 42, { steps: 8 }); await page.mouse.up();
-  await expect.poll(async () => (await tile.boundingBox())!.x).toBeCloseTo(before.x + 260, 0);
+  await page.mouse.move(handle.x + 45, handle.y + 12); await page.mouse.down(); await page.mouse.move(handle.x + 365, handle.y + 42, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await tile.boundingBox())!.x).toBeCloseTo(before.x + 320, 0);
   const moved = (await tile.boundingBox())!, nextHandle = (await tile.boundingBox())!;
   await page.mouse.move(nextHandle.x + 45, nextHandle.y + 12); await page.mouse.down(); await page.mouse.move(nextHandle.x + 105, nextHandle.y + 62); await page.keyboard.press("Escape"); await page.mouse.up();
   expect((await tile.boundingBox())!.x).toBeCloseTo(moved.x, 0);
@@ -95,7 +98,7 @@ for (const locale of ["ru", "en"]) test(`panel button clicks still work and can 
   const panel = page.locator('[data-widget="memory"]'), button = panel.locator(".dr-pill");
   await expect(panel.locator(".dr-widget-move")).toHaveCount(0);
   await button.click(); await expect(button).toHaveAttribute("aria-expanded", "true");
-  await button.click(); await expect(button).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("Escape"); await expect(button).toHaveAttribute("aria-expanded", "false");
   const before = (await panel.boundingBox())!, source = (await button.boundingBox())!;
   await page.mouse.move(source.x + 15, source.y + 15); await page.mouse.down();
   await page.mouse.move(source.x + 215, source.y + 45, { steps: 8 }); await page.mouse.up();
@@ -166,10 +169,10 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) test(`panel 
   await expect(panel.locator(".dr-widget-tools")).toHaveCSS("transition-duration", "0s");
 });
 
-test("touch panels keep move and minimize controls available", async ({ browser }, info) => {
+test("touch panels keep move and minimize controls available", async ({ browser, baseURL }, info) => {
   const context = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 850 } });
   try {
-    const page = await context.newPage(); await page.goto("http://127.0.0.1:4173/tests/fixtures/page-widget.html?panels=1&locale=ru");
+    const page = await context.newPage(); await page.goto(baseURL + "/tests/fixtures/page-widget.html?panels=1&locale=ru");
     expect(await page.evaluate(() => matchMedia("(hover:hover) and (pointer:fine)").matches)).toBe(false);
     const panel = page.locator('[data-widget="characters"]');
     await expect(panel.locator(".dr-widget-tools")).toHaveCSS("opacity", "1");

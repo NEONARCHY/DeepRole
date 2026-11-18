@@ -4,7 +4,7 @@ import type { Locale } from "../../core/types";
 import { DEFAULT_PANEL_WIDTH, MAX_PANEL_WIDTH, MIN_PANEL_WIDTH, panelWidth, panelWidthCopy } from "../../core/panel-width";
 
 /** Preview locally; persist once on release, blur or keyboard commit. */
-export function PanelWidthControl({ locale, value, onSave, onPreview }: { locale: Locale; value?: number; onSave: (width: number) => Promise<void>; onPreview?: (width: number | null) => void }) {
+export function PanelWidthControl({ locale, value, onSave, onPreview, inlineHint }: { locale: Locale; value?: number; onSave: (width: number) => Promise<void>; onPreview?: (width: number | null) => void; inlineHint?: boolean }) {
   const t = panelWidthCopy(locale); const id = useId();
   const [draft, setDraft] = useState(panelWidth(value)); const [busy, setBusy] = useState(false); const [error, setError] = useState(false);
   const saving = useRef(false);
@@ -18,8 +18,9 @@ export function PanelWidthControl({ locale, value, onSave, onPreview }: { locale
     finally { onPreview?.(null); setBusy(false); saving.current = false; }
   };
   return <div className="dr-panel-width-control" data-no-widget-drag>
-    <div className="dr-panel-width-heading"><SettingsHelp locale={locale} title={t.title} text={t.hint}/><output>{draft} {t.unit}</output></div>
-    <input id={id} aria-label={t.title} type="range" min={MIN_PANEL_WIDTH} max={MAX_PANEL_WIDTH} step={1} disabled={busy} value={draft} onChange={event => { const next = Number(event.target.value); setDraft(next); onPreview?.(next); }} onPointerUp={() => void save(draft)} onKeyUp={event => { if (["ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(event.key)) void save(draft); }} onBlur={() => void save(draft)} />
+    <div className="dr-panel-width-heading">{inlineHint ? <label htmlFor={id}>{t.title}</label> : <SettingsHelp locale={locale} title={t.title} text={t.hint}/>}<output>{draft} {t.unit}</output></div>
+    {inlineHint && <small id={id + "-hint"}>{t.hint}</small>}
+    <input id={id} aria-label={t.title} aria-describedby={inlineHint ? id + "-hint" : undefined} type="range" min={MIN_PANEL_WIDTH} max={MAX_PANEL_WIDTH} step={1} disabled={busy} value={draft} onChange={event => { const next = Number(event.target.value); setDraft(next); onPreview?.(next); }} onPointerUp={() => void save(draft)} onKeyUp={event => { if (["ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(event.key)) void save(draft); }} onBlur={() => void save(draft)} />
     <button type="button" disabled={busy || draft === DEFAULT_PANEL_WIDTH} onClick={() => { setDraft(DEFAULT_PANEL_WIDTH); onPreview?.(DEFAULT_PANEL_WIDTH); void save(DEFAULT_PANEL_WIDTH); }}>{t.reset}</button>
     {error && <p className="error-text" role="alert">{t.failed}</p>}
   </div>;

@@ -101,7 +101,7 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
   }
   await repo.updateRecords(records => {
     const snapshot = records.find(r => r.kind === "snapshot" && r.id === expected.id)?.data as HandoffSnapshot | undefined;
-    if (!snapshot || snapshot.targetChatId && snapshot.targetChatId !== targetChatId || JSON.stringify({ ...snapshot, appliedAt: undefined, targetChatId: undefined }) !== JSON.stringify({ ...expected, appliedAt: undefined, targetChatId: undefined })) throw new Error("handoff-conflict");
+    if (!snapshot || snapshot.targetChatId && snapshot.targetChatId !== targetChatId || !sameStoryValue({ ...snapshot, appliedAt: undefined, targetChatId: undefined }, { ...expected, appliedAt: undefined, targetChatId: undefined })) throw new Error("handoff-conflict");
     const books = records.filter(r => r.kind === "book").map(r => r.data as MemoryBook);
     const worldId = memoryWorld(snapshot, books);
     if (worldId && !records.some(r => r.kind === "world" && r.id === worldId)) throw new Error("handoff-scope");

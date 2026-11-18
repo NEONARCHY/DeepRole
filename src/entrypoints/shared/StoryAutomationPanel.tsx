@@ -14,7 +14,9 @@ export function StoryAutomationPanel({ locale, policy, recording, compact = fals
     {error && <p role="alert">{t.failed}</p>}{saved && <p role="status">{t.saved}</p>}
   </>;
   if (compact && (policy || recording)) return <details className="settings-card dr-story-automation dr-story-automation-settings">
-    <summary><span>{t.mode}</span><span className="dr-story-mode-value">{t[mode]}</span><ChevronRight size={16} aria-hidden="true"/></summary>
+    <summary><span>{t.mode}</span><span className="dr-story-mode-value">{t[mode]}</span><ChevronRight size={16} aria-hidden="true"/>
+      {mode === "off" && <small className="dr-mode-explanation">{t.pausedSummary}</small>}
+    </summary>
     <div className="dr-story-automation-body">{controls}</div>
   </details>;
   return <section className="settings-card dr-story-automation" aria-label={t.title}>

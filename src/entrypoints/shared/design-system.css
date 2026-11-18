@@ -7,7 +7,7 @@
 @import "./support-details.css";
 /* Scoped to DeepRole only, including content-script shadow roots and dialogs. */
 :is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu), :is(.app-shell,.dr-root,.dr-loremap) * {
-  scrollbar-width:thin; scrollbar-color:var(--dr-raised) transparent; color-scheme:dark;
+  scrollbar-width:thin; scrollbar-color:var(--dr-raised) transparent; color-scheme:var(--dr-native-scheme, dark);
 }
 :is(.app-shell,.dr-root,.dr-loremap,.dr-select-menu)::-webkit-scrollbar,
 :is(.app-shell,.dr-root,.dr-loremap) *::-webkit-scrollbar { width:6px; height:6px; }
@@ -168,7 +168,7 @@
 .dr-root select,
 .dr-root .scene-controls select {
   appearance: none;
-  color-scheme: dark;
+  color-scheme: var(--dr-native-scheme, dark);
   padding-right: 36px;
   border-color: var(--dr-border);
   background-color: var(--dr-bg);

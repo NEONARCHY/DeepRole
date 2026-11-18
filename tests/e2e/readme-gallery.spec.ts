@@ -208,7 +208,7 @@ for (const locale of ["en", "ru"] as const) {
   test(`README panel settings and continuation ${locale}`, async ({ page }, info) => {
     await page.setViewportSize({ width: 460, height: 980 });
     await sidepanel(page, locale);
-    await openSettingsSection(page,"app",locale);
+    await openSettingsSection(page,"appearance",locale);
     const card = page.locator(".settings-card").filter({ hasText: locale === "ru" ? "Панели и сцена" : "Panels and scene" });
     await expect(card.getByRole("slider")).toHaveValue("224");
     await capture(page, card, info, `settings-${locale}.png`);

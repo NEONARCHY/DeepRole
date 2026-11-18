@@ -19,12 +19,13 @@ it.each(["ru", "en"] as const)("%s guided view reads once in StrictMode, without
   expect(screen.queryByText(review(locale, "read"))).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: ux(locale, "timeline") }));
   expect(screen.getByText(ux(locale, "timelineHint"))).toBeVisible();
-  expect(screen.getByLabelText(fact(locale, "text"))).not.toBeVisible();
+  expect(screen.getByText("The gate is locked.")).not.toBeVisible();
 });
 
 it("keeps an edited fact across sections and a normal refresh, then blocks a changed base", async () => {
   let page = snapshot(); const onSave = vi.fn();
   render(<StoryReview locale="en" guided onRead={async () => structuredClone(page)} onFact={onSave} onPreview={async () => storyReviewPreview()} />);
+  fireEvent.click(await screen.findByRole("button", { name: fact("en", "editText") }));
   const field = await screen.findByLabelText(fact("en", "text"));
   fireEvent.change(field, { target: { value: "My checked gate fact." } });
   fireEvent.click(screen.getByRole("button", { name: ux("en", "timeline") }));
@@ -39,28 +40,38 @@ it("keeps an edited fact across sections and a normal refresh, then blocks a cha
   expect(screen.getByText(fact("en", "save"))).not.toBeDisabled();
 });
 
-it("a typed but unchanged saved fact still offers removal, not another approval", () => {
-  const page = snapshot(); page.facts[0]!.accepted = true; const onSave = vi.fn();
+it("cancelling an unchanged edit restores the option to confirm removal", () => {
+  const page = snapshot(); page.facts[0]!.accepted = true; const onSave = vi.fn(async () => true);
   render(<StoryFacts locale="en" page={page} busy={false} onSave={onSave}/>);
+  fireEvent.click(screen.getByText(fact("en", "editText")));
   fireEvent.change(screen.getByLabelText(fact("en", "text")), { target: { value: "Temporary edit" } });
   fireEvent.change(screen.getByLabelText(fact("en", "text")), { target: { value: page.facts[0]!.text } });
+  expect(screen.getByText(fact("en", "saveEdit"))).toBeDisabled();
+  fireEvent.click(screen.getByText(ux("en", "discardFact")));
   fireEvent.click(screen.getByText(fact("en", "remove")));
+  expect(onSave).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText(fact("en", "confirmExclude")));
   expect(onSave).toHaveBeenCalledWith("fact-1", page.facts[0]!.text, false);
 });
 
-it("can edit a fact again after saving without inventing a concurrent change", () => {
-  const page = snapshot(), onSave = vi.fn();
+it("can edit a fact again after saving without inventing a concurrent change", async () => {
+  const page = snapshot(), onSave = vi.fn(async () => true);
   const view = render(<StoryFacts locale="en" page={page} busy={false} onSave={onSave}/>);
+  fireEvent.click(screen.getByText(fact("en", "editText")));
   fireEvent.change(screen.getByLabelText(fact("en", "text")), { target: { value: "The gate is blue." } });
   fireEvent.click(screen.getByText(fact("en", "save")));
+  expect(onSave).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText(fact("en", "confirmSave")));
+  await waitFor(() => expect(screen.queryByLabelText(fact("en", "text"))).toBeNull());
   expect(onSave).toHaveBeenCalledWith("fact-1", "The gate is blue.", true);
   const saved = { ...page, facts: [{ ...page.facts[0]!, text: "The gate is blue.", accepted: true, edited: true }] };
   view.rerender(<StoryFacts locale="en" page={saved} busy={false} onSave={onSave}/>);
+  fireEvent.click(screen.getByText(fact("en", "editText")));
   fireEvent.change(screen.getByLabelText(fact("en", "text")), { target: { value: "The gate is green." } });
   expect(screen.queryByText(ux("en", "changedFact"))).toBeNull();
-  expect(screen.getByText(fact("en", "save"))).toBeEnabled();
+  expect(screen.getByText(fact("en", "saveEdit"))).toBeEnabled();
   fireEvent.click(screen.getByText(ux("en", "discardFact")));
-  expect(screen.getByLabelText(fact("en", "text"))).toHaveValue("The gate is blue.");
+  expect(screen.getByText("The gate is blue.")).toBeVisible();
 });
 
 it.each(["ru", "en"] as const)("%s a new starting point needs a concrete confirmation", async locale => {

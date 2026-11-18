@@ -1,12 +1,14 @@
 import { defineConfig } from "wxt";
 
+const buildTime = new Date().toISOString();
+
 export default defineConfig({
   srcDir: "src",
   // WXT defaults Firefox to MV2, which drops optional_host_permissions.
   // Both targets use MV3; Firefox's minimum remains 128 for optional host access.
   manifestVersion: 3,
   modules: ["@wxt-dev/module-react"],
-  vite: () => ({ define: { "import.meta.env.VITE_BUILD_TIME": JSON.stringify(new Date().toISOString()) } }),
+  vite: () => ({ define: { "import.meta.env.VITE_BUILD_TIME": JSON.stringify(buildTime) } }),
   zip: {
     includeSources: ["**/*", ".gitattributes"],
     excludeSources: ["coverage/**", ".vitest/**", "test-results/**", "test-results-*/**", "test-results-*.png", "playwright-report/**", "tests/**", ".lazyweb/**", "private-assets/**", "downloads/*.zip"],

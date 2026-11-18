@@ -43,14 +43,16 @@ test("outgoing preview shows records and reasons, not a claim they were already 
     const entry = (await repository.list("entry"))[0];
     (window as any).setPageState({ selection: { entries: [{ entry, score: 8, reasons: ["keyword:Мира"], manuallySelected: false, estimatedTokens: 30 }], estimatedTokens: 30, omittedCount: 0 } });
   });
-  await expect(page.locator(".dr-memory-status")).toContainText("Сейчас ничего не отправлено");
+  await expect(page.locator(".dr-memory-status")).toContainText("Эти сведения выбраны для следующей реплики");
   await page.getByRole("button", { name: /Посмотреть записи/ }).click();
   await expect(page.locator(".dr-memory-preview-list")).toContainText("Совпали слова");
   await expect(page.locator(".dr-memory-preview-list strong")).not.toBeEmpty();
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
   await page.screenshot({ path: info.outputPath("ready-memory-360.png"), fullPage: true });
-  await page.evaluate(() => (window as any).setPageState({ warning: "unsupported" }));
-  await expect(page.locator(".dr-memory-status")).toContainText("Память не попала в запрос");
+  const message = "DeepSeek не прислал обновление данных. Ответ сохранён, изменения не выдумываются.";
+  await page.evaluate(warning => (window as any).setPageState({ warning }), message);
+  await expect(page.locator(".dr-memory-status").getByRole("status")).toHaveText(message);
+  await expect(page.locator(".dr-memory-status")).toContainText("Память готова");
   await page.evaluate(() => (window as any).setPageState({ warning: "", pendingHandoff: "Arrival", selection: { entries: [], estimatedTokens: 40, omittedCount: 0 } }));
   await expect(page.locator(".dr-memory-status")).toContainText("Память готова");
   await expect(page.locator(".dr-memory-status")).toContainText("Пересказ «Arrival» добавится один раз");
@@ -62,6 +64,7 @@ for (const locale of ["ru", "en"] as const) test(`compact settings keep help acc
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   if (locale === "en") await setEnglish(page);
+  else await openSettingsSection(page, "memory", locale);
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
   await expect(page.locator(".dr-mode-guide, .dr-score-guide")).toHaveCount(0);
   const help = page.getByRole("button", { name: l("Как работает подбор памяти", "How memory selection works"), exact: true });
@@ -93,7 +96,7 @@ for (const locale of ["ru", "en"] as const) test(`chat context indicators do not
   await page.goto(`/tests/fixtures/page-widget.html${locale === "en" ? "?locale=en" : ""}`);
   await page.evaluate(() => (window as any).setWidgetState({ conversationEstimate: { estimatedTokens: 499, messageCount: 20, atLeast: false, source: "history" } }));
   const meter = page.locator(".dr-chat-meter");
-  const memory = page.locator('[data-widget="memory"] > .dr-pill');
+  const memory = page.locator('[data-widget="memory"] button[aria-haspopup="dialog"]').first();
   await expect(meter).toBeVisible();
   await expect(memory).toBeVisible();
   const meterBox = await meter.boundingBox();
@@ -113,15 +116,17 @@ for (const locale of ["ru", "en"] as const) test(`chat context indicators do not
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("chat widget explains waiting and no-result states without hiding the conversation", async ({ page }) => {
+test("the memory dialog shows analysis status and returns control to the chat when closed", async ({ page }) => {
   await page.goto("/tests/fixtures/page-widget.html");
   await page.evaluate(() => (window as any).setWidgetState({ canAnalyzeChat: true, activity: { phase: "waiting", type: "memory-analysis" } }));
   await expect(page.locator(".dr-service-state")).toContainText("DeepSeek готовит предложения");
   await page.getByRole("button", { name: /^Контекст/ }).click();
   await expect(page.locator(".dr-play-tools").getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "DeepSeek chat control", exact: true }).click();
-  await expect(page.locator("body")).toHaveAttribute("data-chat-control-clicked", "true");
   await page.evaluate(() => (window as any).setWidgetState({ activity: { phase: "empty", type: "memory-analysis" } }));
   await expect(page.locator(".dr-service-state")).toContainText("Память не менялась");
   await expect(page.locator(".dr-play-tools").getByRole("button", { name: "Обновить лор", exact: true })).toBeEnabled();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: /^Контекст/ })).toBeFocused();
+  await page.getByRole("button", { name: "DeepSeek chat control", exact: true }).click();
+  await expect(page.locator("body")).toHaveAttribute("data-chat-control-clicked", "true");
 });

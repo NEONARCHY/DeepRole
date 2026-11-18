@@ -2,7 +2,7 @@ import { afterEach, expect, it } from "vitest";
 import { addCharacterAction } from "../src/storage/characters";
 import { DeepRoleDatabase } from "../src/storage/database";
 import { DeepRoleRepository } from "../src/storage/repository";
-import { DEFAULT_ACTIONS, EMPTY_CHARACTER } from "../src/core/characters";
+import { DEFAULT_ACTIONS, EMPTY_CHARACTER, MAX_ACTIVE_ACTIONS } from "../src/core/characters";
 import { DEFAULT_PANEL_WIDTH, panelWidth } from "../src/core/panel-width";
 import { parseBackupSettings } from "../src/core/record-validation";
 import type { DataRecord } from "../src/core/types";
@@ -37,7 +37,7 @@ it("rejects the wrong chat/world and a full action list", async () => {
   const repo = await setup(); const before = await repo.rawRecords();
   await expect(addCharacterAction({ ...scope, worldId: "other" }, "new", DEFAULT_ACTIONS, repo)).rejects.toThrow("character-scope");
   await expect(addCharacterAction({ ...scope, chatUrl: "https://chat.deepseek.com/chat/s/other" }, "new", DEFAULT_ACTIONS, repo)).rejects.toThrow("character-scope");
-  await expect(addCharacterAction(scope, "new", ["neutral", ...Array.from({ length: 31 }, (_, i) => `action-${i}`)], repo)).rejects.toThrow("character-invalid");
+  await expect(addCharacterAction(scope, "new", ["neutral", ...Array.from({ length: MAX_ACTIVE_ACTIONS - 1 }, (_, i) => `action-${i}`)], repo)).rejects.toThrow("character-invalid");
   expect(await repo.rawRecords()).toEqual(before);
 });
 

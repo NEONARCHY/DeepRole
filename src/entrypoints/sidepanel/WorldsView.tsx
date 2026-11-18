@@ -11,9 +11,10 @@ import type { BackupPayload } from "../../core/types";
 import { castText } from "../../core/cast-i18n";
 import { Select } from "../shared/Select";
 import { useEffect, useId, useRef, useState, type DragEvent as ReactDragEvent, type ReactNode } from "react";
-import { Check, ChevronDown, Plus, Upload, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileUp, Plus, Upload, X } from "lucide-react";
 import { formatRecordCount, menuText } from "../../core/menu-i18n";
 import { uiText } from "../../core/ui-i18n";
+import { navigationText } from "../../core/navigation-i18n";
 import { experienceText } from "../../core/experience-i18n";
 import { characterDescription, characterText, EMPTY_CHARACTER, EMPTY_STATUS, actionsFor } from "../../core/characters";
 import { ActionAvailability } from "../shared/ActionAvailability";
@@ -21,7 +22,7 @@ import { BOOK_COLORS } from "../../core/defaults";
 import { createId } from "../../core/id";
 import { importFileTooLarge } from "../../core/import-limits";
 import { sceneText, type SceneKey } from "../../core/scene-i18n";
-import { buildLoreImport, parseLoreImport, type LoreImport } from "../../core/lore-import";
+import { buildLoreImport, parseLoreImportData, type LoreImport } from "../../core/lore-import";
 import type { DataRecord, Locale, MemoryBook, MemoryEntry, SceneEntity, SceneState, StoryTemplate, WorldProfile } from "../../core/types";
 import { repository } from "../../storage/repository";
 import { saveEditorRecord } from "../../storage/editing";
@@ -44,7 +45,7 @@ import { relationshipText } from "../../core/relationship-i18n";
 import { WorldBracketModeControl } from '../shared/WorldBracketModeControl';
 
 type T = (key: SceneKey, vars?: Record<string, string | number>) => string;
-export type WorldImportTarget = import("../../core/messages").ImportSceneTarget & { tabId: number };
+export type WorldImportTarget = import("../../core/messages").ImportSceneTarget & { tabId: number; chatTitle?: string };
 export type WorldStartRequest = { kind: "import"; target?: WorldImportTarget } | { kind: "create" };
 export function WorldsView(props: { defaultActions?: string[]; onExport: (worldId: string | null) => void; locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; templates: StoryTemplate[]; books: MemoryBook[]; entries: MemoryEntry[]; selectedWorld: string | null; activeWorldId: string | null; scene: SceneState; onScene: (scene: SceneState) => Promise<boolean>; connected: boolean; importTarget?: WorldImportTarget; initialStart?: WorldStartRequest; onImportFinished: (id: string, target?: WorldImportTarget) => Promise<boolean>; memoryList: ReactNode; onUseWorld: (id: string | null) => Promise<boolean>; onWorld: (id: string | null) => void; onChanged: () => Promise<void>; onTemplate: (id: string) => Promise<void>; onEntry: (entry: MemoryEntry | "new") => void; onBook: (book: MemoryBook) => void; confirmDeletions: boolean; selection?: ContextSelection; overrides?: MemoryOverrides; onMemoryUse?: (id: string, action: "include" | "exclude" | "reset") => Promise<void>; openMapWorldId?: string | null; onMapOpened?: () => void }) {
   const t: T = (key, vars) => sceneText(props.locale, key, vars);
@@ -56,6 +57,7 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
   const [importer, setImporter] = useState<{ target?: WorldImportTarget } | null>(() => props.initialStart?.kind === "import" ? { target: props.initialStart.target } : null);
   const [backup, setBackup] = useState<{ fileName: string; payload: BackupPayload } | null>(null);
   const importButton = useRef<HTMLButtonElement>(null);
+  const choiceId = useId();
   const [view, setView] = useState<"map" | "list" | "manage">("map");
   const [mapOpen, setMapOpen] = useState(() => props.initialStart?.kind === "create");
   const [createWorldInMap, setCreateWorldInMap] = useState(() => props.initialStart?.kind === "create");
@@ -99,11 +101,20 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
   }
   function closeMap() { setMapOpen(false); setCreateWorldInMap(false); }
   return <div className="view-stack worlds-view" aria-busy={busy}>
-    <div className="view-title"><div><small>DeepRole</small><h1>{mt("lore")}</h1></div></div>
-    <p className="dr-view-subtitle">{world ? x("mapHint") : x("startHint")}</p>
-    <div data-dr-guide="world-start" className={props.worlds.length ? "button-row" : "dr-start-choices"}><button aria-label={x("create")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={startNewWorld}><strong>{x("create")}</strong>{!props.worlds.length && <small>{x("newHint")}</small>}</button><button ref={importButton} aria-label={x("import")} className={props.worlds.length ? "button secondary small" : "dr-start-choice"} onClick={() => { setMessage(""); setImporter({ target: props.importTarget }); }}><strong>{x("import")}</strong>{!props.worlds.length && <small>{x("importHint")}</small>}</button></div>
+    <header className="dr-worlds-heading">
+      <div className="view-title"><h1>{navigationText(props.locale, "worlds")}</h1></div>
+      <p className="dr-view-subtitle">{t("libraryPurpose")}</p>
+    </header>
+    <div data-dr-guide="world-start" className="dr-play-choices">
+      <button className="dr-play-choice" ref={importButton} aria-label={x("import")} aria-describedby={choiceId + "-import"} onClick={() => { setMessage(""); setImporter({ target: props.importTarget }); }}>
+        <FileUp aria-hidden="true" /><span className="dr-play-copy"><strong>{x("import")}</strong><small id={choiceId + "-import"}>{x("importHint")}</small></span><ChevronRight aria-hidden="true" />
+      </button>
+      <button className="dr-play-choice" aria-label={x("create")} aria-describedby={choiceId + "-create"} onClick={startNewWorld}>
+        <Plus aria-hidden="true" /><span className="dr-play-copy"><strong>{x("create")}</strong><small id={choiceId + "-create"}>{x("newHint")}</small></span><ChevronRight aria-hidden="true" />
+      </button>
+    </div>
     {message && <p className="rp-status" role="status">{message}</p>}
-    <div data-dr-guide="world-picker"><WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("createNewWorld")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} /></div>
+    <div data-dr-guide="world-picker"><WorldLibraryPicker label={t("worldLibrary")} worlds={props.worlds} selectedId={props.selectedWorld} unassigned={t("unassigned")} createLabel={x("create")} onSelect={(id) => { props.onWorld(id); setEditor(null); }} onCreate={startNewWorld} /></div>
     {backup && <BackupRestore returnFocus={importButton.current} t={(key, vars) => translate(props.locale, key, vars)} fileName={backup.fileName} payload={backup.payload} onClose={() => setBackup(null)} onRestore={async mode => {
       await restoreBackup(backup.payload, mode);
       setBackup(null); setEditor(null);
@@ -112,7 +123,7 @@ export function WorldsView(props: { defaultActions?: string[]; onExport: (worldI
     }} />}
     {importer && <BdsImport locale={props.locale} worlds={props.worlds} target={importer.target} onClose={() => { setImporter(null); importButton.current?.focus(); }} onBackup={(payload, fileName) => { setBackup({ payload, fileName }); setImporter(null); }} onDone={async (id, target) => {
       const connected = await props.onImportFinished(id, target);
-      if (mounted.current) { setImporter(null); setMessage(target && !connected ? mt("savedNotAttached") : t("importSuccess")); }
+      if (mounted.current) { setImporter(null); setMessage(target && !connected ? mt("savedNotAttached") : t("importedToLibrary")); }
     }} />}
     {editor?.kind === "world" && <WorldEditor locale={props.locale} key={`world-editor:${editor.id ?? "new-world"}`} world={props.worlds.find((w) => w.id === editor.id)} t={t} busy={busy} onSave={saveWorld} onCancel={() => setEditor(null)} />}
     {world && <section className={worldConnected ? "lore-connection is-attached" : "lore-connection"} aria-label={mt("useWorld")}>
@@ -329,15 +340,27 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; target?: Wor
   const mounted = useRef(false);
   const committing = useRef(false);
   const [savingImport, setSavingImport] = useState(false);
+  const preview = Boolean(pack || items.length);
+  const sectionId = useId();
+  const selectedWorld = props.worlds.find((item) => item.id === worldId);
+  const nameLabel = t(worldId ? "importBookName" : "importWorldName");
+  const chatTitle = props.target?.chatTitle;
+  const chatLabel = chatTitle && chatTitle.toLowerCase() !== "deepseek"
+    ? t("importChatName", { chat: chatTitle })
+    : t(props.target?.chatId ? "importCurrentChat" : "importNewChat");
   const requestClose = () => { if (!committing.current) props.onClose(); };
   useEffect(() => {
     mounted.current = true;
     const previous = document.activeElement as HTMLElement | null;
     const dialog = dialogRef.current;
-    const focusable = () => [...(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]') ?? [])].filter((element) => element.getClientRects().length);
+    const focusable = () => [...(dialog?.querySelectorAll<HTMLElement>('button, input, select, a[href], summary, [tabindex]') ?? [])]
+      .filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length);
     dialog?.querySelector<HTMLElement>(".rp-import-choose")?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); if (!committing.current) props.onClose(); return; }
+      if (event.key === "Escape") {
+        if (dialog?.querySelector('select[aria-expanded="true"]')) return;
+        event.preventDefault(); if (!committing.current) props.onClose(); return;
+      }
       if (event.key !== "Tab") return;
       const controls = focusable(); const first = controls[0]; const last = controls.at(-1);
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
@@ -364,12 +387,12 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; target?: Wor
         const payload = await parseBackupData(data, file.size, password);
         if (current() && !await repository.isLocked() && current()) props.onBackup(payload, file.name);
       } else if (data?.format === "deeprole-world") { const value = parseWorldPackageData(data, file.size); setPack(value); setName((value.records.find((r) => r.kind === "world")!.data as WorldProfile).name); }
-      else { if (file.size > 10_000_000) throw new Error("fileInvalid"); const value = parseLoreImport(await file.text()); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
+      else { if (file.size > 10_000_000) throw new Error("fileInvalid"); const value = parseLoreImportData(data); setLore(value); setName(value.name ?? file.name.replace(/\.json$/i, "")); }
     } catch (error) {
       if (!current()) return;
       const code = error instanceof Error ? error.message : "";
       setError(code === "backupTooLarge" ? translate(props.locale, "backupTooLarge") : code === "worldTooLarge" ? t("worldTooLarge")
-        : fullBackup ? translate(props.locale, encrypted && !(error instanceof InvalidEncryptedPayloadError) ? "wrongPassword" : "invalidBackup") : t("fileInvalid"));
+        : fullBackup ? translate(props.locale, encrypted && !(error instanceof InvalidEncryptedPayloadError) ? "wrongPassword" : "invalidBackup") : t(code === "loreImportConflict" ? "importFieldConflict" : "fileInvalid"));
     }
     finally { if (current()) setBusy(false); }
   }
@@ -413,31 +436,41 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; target?: Wor
         <button type="button" className="button secondary" disabled={busy} onClick={requestClose}>{t("importClose")}</button>
       </div>
     </div> : <fieldset className="rp-import-fields" disabled={savingImport} aria-label={t("importFile")}>
-    <div className={`rp-import-dropzone${dragging ? " is-dragging" : ""}`} role="region" aria-label={t("importDropTitle")} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }} onDragLeave={(event) => { event.preventDefault(); if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={onDrop}>
-      <Upload aria-hidden="true" /><strong>{fileName || t("importDropTitle")}</strong><p>{dragging ? t("importDropActive") : t("importDropHint")}</p>
-      <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t("chooseFile")}</button>
-      <input ref={inputRef} className="rp-import-input" aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readFile(file); }} />
+    <div className={`rp-import-dropzone${dragging ? " is-dragging" : ""}`} data-preview={preview} role="region" aria-label={t("importDropTitle")} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }} onDragLeave={(event) => { event.preventDefault(); if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={onDrop}>
+      <Upload aria-hidden="true" />
+      <div className="rp-import-filename"><strong>{fileName || t("importDropTitle")}</strong>
+        {(dragging || !preview) && <p>{t(dragging ? "importDropActive" : "filePreviewHint")}</p>}
+      </div>
+      <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t(fileName ? "changeFile" : "chooseFile")}</button>
+      <input ref={inputRef} className="rp-import-input" hidden aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readFile(file); }} />
     </div>
-    <p className="rp-hint">{props.locale === "ru" ? "Также поддерживается память из " : "You can also import memory from "}<a href="https://github.com/EdgeTypE/better-deepseek" target="_blank" rel="noopener noreferrer">Better Deepseek (BDS)</a>.</p>
+    {!preview && <div className="rp-import-formats"><p>{t("importDropHint")}</p><a href="https://github.com/EdgeTypE/better-deepseek" target="_blank" rel="noopener noreferrer">Better Deepseek (BDS)</a></div>}
     {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
-    {props.target && (pack || items.length > 0) && <><label className="rp-check"><input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label>{attach && <p className="rp-hint">{menuText(props.locale, props.target.worldId ? "replaceImportHint" : "attachHint")}</p>}</>}
-    {(pack || items.length > 0 && !worldId) && <><label className="rp-check"><input type="checkbox" checked={prepareCast} onChange={e => setPrepareCast(e.target.checked)} />{castText(props.locale, "auto")}</label><p className="rp-hint">{castText(props.locale, "autoHint")}</p></>}
-    {pack && <><p role="status">{t("detectedWorld")}</p><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p><Field name={t("name")}><input className="input" aria-label={t("name")} value={name} onChange={(e) => setName(e.target.value)} /></Field></>}
+    {error && <p role="alert">{error}</p>}
+    {preview && <div className="rp-import-destination">
+      {items.length > 0 && props.worlds.length > 0 && <Field name={t("destination")}><Select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</Select></Field>}
+      <Field name={nameLabel}><input className="input" aria-label={nameLabel} value={name} onChange={(e) => setName(e.target.value)} /></Field>
+      <p className="rp-import-outcome" id={sectionId + "-outcome"}>{selectedWorld ? t("importExistingLibrary", { world: selectedWorld.name }) : t("importNewLibrary")}</p>
+    </div>}
+    {preview && <div className="rp-import-options">
+      {props.target && <div><label className="rp-check"><input type="checkbox" checked={attach} aria-describedby={sectionId + "-chat"} onChange={(e) => setAttach(e.target.checked)} />{menuText(props.locale, "attachImport")}</label>
+        <p id={sectionId + "-chat"}>{chatLabel}{selectedWorld && selectedWorld.id === props.target.worldId ? " · " + t("importAlreadyActive") : attach ? " · " + menuText(props.locale, props.target.worldId ? "replaceImportHint" : "attachHint") : ""}</p></div>}
+      {!worldId && <div><label className="rp-check"><input type="checkbox" checked={prepareCast} aria-describedby={sectionId + "-cast"} onChange={e => setPrepareCast(e.target.checked)} />{castText(props.locale, "auto")}</label>
+        <p id={sectionId + "-cast"}>{castText(props.locale, "autoHint")}</p></div>}
+    </div>}
+    {pack && <div className="rp-import-contents"><strong role="status">{t("detectedWorld")}</strong><p>{t("packagePreview", { name: (pack.records.find((r) => r.kind === "world")!.data as WorldProfile).name, count: pack.records.length })}</p></div>}
     {items.length > 0 && <>
-      <p role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</p>
-      <p className="rp-status">{t("previewModes", { count: items.length, always: items.filter((i) => i.activation === "always").length, smart: items.filter((i) => i.activation === "smart").length, manual: items.filter((i) => i.activation === "manual").length, disabled: items.filter((i) => !i.enabled).length })}</p>
-      <p className="rp-hint rp-import-character-hint">{t("jsonPreservation")} {t("loreCardsHint")}</p>
+      <div className="rp-import-contents"><strong role="status">{t(lore?.format === "bds" ? "detectedBds" : "detectedJson")}</strong>
+        <p>{t("previewModes", { count: items.length, always: items.filter((i) => i.activation === "always").length, smart: items.filter((i) => i.activation === "smart").length, manual: items.filter((i) => i.activation === "manual").length, disabled: items.filter((i) => !i.enabled).length })}</p>
+        <p className="rp-import-character-hint">{t("jsonPreservation")} {t("loreCardsHint")}</p></div>
       {!!lore?.unsupportedFields.length && <div className="rp-status" role="note"><p>{t("unsupportedImport", { fields: lore.unsupportedFields.join(", ") })}</p><label className="rp-check"><input type="checkbox" checked={acceptUnsupported} onChange={(e) => setAcceptUnsupported(e.target.checked)} />{t("acceptUnsupported")}</label></div>}
-      <Field name={t("name")}><input aria-label={t("name")} className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-      <details><summary>{t("advanced")}</summary><Field name={t("destination")} help={t("worldHint")}><Select aria-label={t("destination")} value={worldId} onChange={(e) => setWorldId(e.target.value)}><option value="">{t("newWorldImport")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</Select></Field>
-      {lore?.format === "bds" && <><p>{t("alwaysMapping")}</p><Field name={t("mapping")} help={t("mappingHint")}><Select aria-label={t("mapping")} value={mode} onChange={(e) => setMode(e.target.value as "smart" | "manual")}><option value="smart">{t("smart")}</option><option value="manual">{t("manual")}</option></Select></Field></>}</details>
+      {lore?.format === "bds" && <details><summary>{t("advanced")}</summary><p>{t("alwaysMapping")}</p><Field name={t("mapping")} help={t("mappingHint")}><Select aria-label={t("mapping")} value={mode} onChange={(e) => setMode(e.target.value as "smart" | "manual")}><option value="smart">{t("smart")}</option><option value="manual">{t("manual")}</option></Select></Field></details>}
       <LoreImportPreview locale={props.locale} items={items} />
     </>}
-    {error && <p role="alert">{error}</p>}
     </fieldset>}
       </div>
       {!committedImport && (pack || items.length > 0) && <footer className="rp-import-footer">
-        <HelpButton className="button primary" disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => {
+        <HelpButton className="button primary" aria-describedby={sectionId + "-outcome"} disabled={!name.trim() || busy || !!lore?.unsupportedFields.length && !acceptUnsupported} onClick={() => {
           if (pack) void importRecords(() => cloneWorldPackage(pack, name.trim()), attach ? props.target : undefined, pack.photos);
           else if (lore) void importRecords(() => buildLoreImport(lore, name.trim(), mode, worldId || undefined), attach ? props.target : undefined);
         }}>{attach && props.target ? menuText(props.locale, "importAndAttach") : t("confirmImport")}</HelpButton>

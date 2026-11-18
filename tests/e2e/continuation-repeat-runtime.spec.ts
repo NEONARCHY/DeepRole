@@ -52,9 +52,14 @@ for (const locale of ["ru", "en"] as const) for (const mode of ["automatic", "re
     const thirdFact = "Nora placed the blue ribbon inside the brass casket.", uncertain = "If the ferry arrives, Nora may lend the lantern.";
     const reply = (chat: string, facts: { text: string; risk: string; kind: string }[]) => facts.map(f => f.text).join("\n") + "\n<deeprole_characters>" + JSON.stringify({ version: 2, world: f.world.id, chat,
       facts: facts.map(f => ({ ...f, quote: f.text })) }) + "</deeprole_characters>";
-    const drafts = ["I watch Nora store the silver token.", "I ask Nora to store the wooden seal.", "  I check Nora's copper box and green drawer, then ask her to store the blue ribbon.\n", "I check the token, the seal and the ribbon; remind me about the lantern."];
+    const probe = !decision && !recover;
+    const olderMove = locale === "ru" ? "Нора кладёт кисть в холщовый мешок." : "Nora placed the brush inside the canvas bag.";
+    const hearsay = locale === "ru" ? "— Думаю, кисть поставили на подоконник." : "“Someone placed the brush on the windowsill.”";
+    const locationDraft = locale === "ru" ? "  Напомни, где сейчас кисть и печать?\n" : "  Where are the brush and the seal now?\n";
+    const drafts = ["I watch Nora store the silver token.", "I ask Nora to store the wooden seal.", probe ? locationDraft : "  I check Nora's copper box and green drawer, then ask her to store the blue ribbon.\n", "I check the token, the seal and the ribbon; remind me about the lantern."];
     const replies = [reply(second, [{ text: firstFact, kind: "event", risk: "ordinary" }, { text: uncertain, kind: "plan", risk: "uncertain" }]),
       reply(second, [{ text: secondFact, kind: "event", risk: "ordinary" }]), reply(third, [{ text: thirdFact, kind: "event", risk: "ordinary" }]), "Nora nods. Nothing changes in the workshop."];
+    if (probe) replies[0] = olderMove + "\n" + hearsay + "\n" + replies[0];
     const histories = new Map([[second, [] as ReturnType<typeof message>[]], [third, [] as ReturnType<typeof message>[]]]);
     const blocked = new Set([f.binding.chatId]), sent: { chat: string; prompt: string }[] = [];
     let destination = second, releaseThird!: () => void, reads = 0;
@@ -141,6 +146,12 @@ for (const locale of ["ru", "en"] as const) for (const mode of ["automatic", "re
     expect(sent).toHaveLength(2); expect((await game()).activeChatId).toBe(second);
     await send(2);
     expect(sent[2]!.prompt).toContain(automationMarker(f.world)); expect(sent[2]!.prompt).toContain(secondFact);
+    if (probe) {
+      const sceneReference = sent[2]!.prompt.match(/<deeprole_handoff[^>]*>([\s\S]*?)<\/deeprole_handoff>/u)?.[1];
+      expect(sceneReference).toContain(olderMove);
+      expect(sceneReference).not.toContain(hearsay);
+      expect(sent[2]!.prompt.endsWith(locationDraft)).toBe(true);
+    }
     if (mode === "automatic") expect(sent[2]!.prompt).toContain(firstFact);
     if (recover) {
       histories.get(third)!.push(message(3, null, "USER", sent[2]!.prompt), message(4, 3, "ASSISTANT", replies[2]!));

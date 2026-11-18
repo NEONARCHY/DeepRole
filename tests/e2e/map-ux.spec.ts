@@ -8,9 +8,9 @@ async function setup(page: Page, locale: "ru" | "en") {
   await page.setViewportSize({ width: 1280, height: 900 }); await page.goto("/tests/fixtures/sidepanel.html");
   const l = (ru: string, en: string) => locale === "ru" ? ru : en;
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
-  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click(); await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+  await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click(); await page.getByRole("button", { name: l("Загрузить мир из файла", "Load a world from a file"), exact: true }).click();
   await page.getByLabel(l("Выбрать JSON", "Choose JSON"), { exact: true }).setInputFiles({ name: "Observatory.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(sample)) });
-  await page.getByRole("button", { name: l("Подтвердить импорт", "Confirm import"), exact: true }).click(); await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
+  await page.getByRole("button", { name: l("Сохранить в библиотеку", "Save to library"), exact: true }).click(); await page.getByRole("button", { name: l("Открыть карту мира", "Open world map"), exact: true }).click();
   const map = page.getByRole("dialog", { name: l("Карта мира", "World map"), exact: true });
   async function find(title: string) { await map.getByRole("textbox", { name: l("Найти запись или ветвь…", "Find a record or branch…"), exact: true }).fill(title); await map.locator(".lm-results").getByRole("button", { name: title, exact: true }).click(); }
   return { map, l, find };

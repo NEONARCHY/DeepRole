@@ -1,23 +1,53 @@
-.dr-settings-directory { min-width: 0; }
+.dr-settings-directory { min-width: 0; color: var(--dr-text); overflow-wrap: anywhere; }
 .app-shell .view-stack:has(.dr-settings-directory) { animation: none; }
-.dr-settings-directory h2 { font-size: 1.125rem; margin: 16px 0 8px; overflow-wrap: anywhere; }
-.dr-settings-directory h3 { font-size: .75rem; margin: 0; padding: 16px 14px 4px; color: var(--dr-muted); }
-.dr-settings-directory p { font-size: .875rem; line-height: 1.6; color: var(--dr-muted); margin: 8px 0 16px; overflow-wrap: anywhere; }
-.dr-settings-route { display: flex; width: 100%; align-items: center; gap: 12px; text-align: start; padding: 14px; border: 0; border-bottom: 1px solid var(--dr-border); background: transparent; color: var(--dr-text); cursor: pointer; min-height: 64px; }
-.dr-settings-route:hover { background: var(--dr-panel); }
-.dr-settings-route span { flex: 1; min-width: 0; }
-.dr-settings-route strong, .dr-settings-route small { display: block; overflow-wrap: anywhere; }
-.dr-settings-route strong { font-size: .9375rem; }
-.dr-settings-route small { color: var(--dr-muted); line-height: 1.5; margin-top: 4px; }
-.dr-settings-route svg { flex-shrink: 0; }
-.dr-settings-directory details { margin-top: 24px; }
-.dr-settings-directory summary { min-height: 44px; padding-block: 12px; cursor: pointer; font-weight: 600; }
-.dr-settings-directory :focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 3px; }
-.dr-settings-scope { padding: 12px; background: var(--dr-panel); border-radius: 10px; }
-.dr-settings-group { margin-top: 16px; border: 1px solid var(--dr-border); border-radius: 14px; background: var(--dr-panel); overflow: hidden; }
-.dr-settings-group > :last-child { border-bottom: 0; }
-.dr-settings-route > svg:first-child { color: var(--dr-muted); }
-.dr-settings-route:hover { background: var(--dr-surface); }
-.dr-settings-advanced { padding: 0 14px; border: 1px solid var(--dr-border); border-radius: 12px; }
-.dr-settings-advanced > details { border-top: 1px solid var(--dr-border); margin-top: 12px; }
-.dr-settings-directory .dr-settings-save-hint { font-size: .75rem; margin-bottom: 4px; }
+.app-shell .dr-settings-directory h1 { margin: 4px 0; font-size: 1.375rem; line-height: 1.25; }
+.dr-settings-directory p { margin: 4px 0; font-size: .875rem; line-height: 1.5; color: var(--dr-muted); }
+.dr-settings-directory nav { display: grid; gap: 16px; margin-top: 16px; }
+.dr-settings-group { display: grid; min-width: 0; }
+.app-shell .dr-settings-group h2 { margin: 0 0 4px; padding-inline: 2px; font-size: .875rem; line-height: 1.5; color: var(--dr-muted); }
+.dr-settings-route {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) 16px; align-items: center; gap: 12px;
+  width: 100%; min-height: 56px; padding: 12px; text-align: start; cursor: pointer;
+  color: var(--dr-text); background: var(--dr-surface); border: 1px solid var(--dr-border); border-radius: 0;
+}
+.dr-settings-route + .dr-settings-route { border-top: 0; }
+.dr-settings-group h2 + .dr-settings-route { border-radius: 12px 12px 0 0; }
+.dr-settings-route:last-child { border-radius: 0 0 12px 12px; }
+.dr-settings-route > svg { color: var(--dr-muted); }
+.dr-settings-route strong, .dr-settings-route small { display: block; white-space: normal; overflow-wrap: anywhere; }
+.dr-settings-route strong { font-size: .9375rem; line-height: 1.35; }
+.dr-settings-route small, .dr-setting-switch small { margin-top: 4px; color: var(--dr-muted); font-size: .8125rem; line-height: 1.5; font-weight: 400; }
+.dr-settings-route:hover, .dr-settings-route:focus-visible { background: var(--dr-selected); }
+.dr-settings-directory :focus-visible { outline: 2px solid var(--dr-primary); outline-offset: -2px; }
+.dr-settings-directory h1:focus { outline: none; }
+.dr-settings-advanced { border-top: 1px solid var(--dr-border); }
+.app-shell .dr-settings-advanced > summary { min-height: 44px; padding: 12px 2px; cursor: pointer; font-size: .875rem; line-height: 1.5; font-weight: 600; }
+.dr-settings-advanced > summary + .dr-settings-route { border-radius: 12px 12px 0 0; }
+.dr-settings-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 8px; margin-inline-start: -4px; border: 0; background: transparent; color: var(--dr-text); font: inherit; cursor: pointer; }
+.dr-settings-back:hover { background: var(--dr-selected); border-radius: 8px; }
+.dr-settings-directory .dr-settings-save-hint { font-size: .8125rem; }
+.app-shell .dr-settings-page .settings-card { padding: 16px; min-width: 0; }
+.app-shell .dr-settings-page .settings-card > div { gap: 12px; min-width: 0; }
+.app-shell .dr-settings-page .settings-card header { align-items: center; margin-bottom: 12px; }
+.app-shell .dr-settings-page .settings-card header h2 { margin: 0; font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
+.app-shell .dr-settings-page .settings-card header > svg { flex: none; margin: 0; }
+.app-shell .dr-settings-page .dr-setting-switch { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; min-height: 44px; gap: 12px; cursor: pointer; }
+.dr-setting-switch + .dr-setting-switch { padding-top: 12px; border-top: 1px solid var(--dr-border); }
+.dr-setting-switch strong, .dr-setting-switch small { display: block; overflow-wrap: anywhere; }
+.dr-setting-switch strong { color: var(--dr-text); font-size: .875rem; line-height: 1.45; font-weight: 600; }
+.app-shell .dr-settings-page :is(.settings-card .button,.segmented button,.dr-panel-width-control > button,.dr-panel-width-control input[type="range"],.field-label input:not([type="checkbox"]), .settings-card label.toggle-row) { min-height: 44px; }
+.app-shell .dr-settings-page .segmented button { font-size: .875rem; }
+.app-shell .dr-settings-page .dr-settings-help-button { flex: 0 0 44px; min-width: 44px; min-height: 44px; border: 0; background: radial-gradient(circle, var(--dr-selected) 12px, transparent 13px); }
+.app-shell .dr-settings-page .dr-settings-help-title { flex-direction: row-reverse; justify-content: space-between; }
+.app-shell .dr-settings-page .dr-panel-width-heading { align-items: center; margin-bottom: 0; }
+.app-shell .dr-settings-page .dr-panel-width-control > button { padding: 8px 12px; border: 1px solid var(--dr-border-strong); border-radius: 8px; color: var(--dr-text); background: var(--dr-panel); font: inherit; cursor: pointer; }
+.app-shell .dr-settings-page .dr-panel-width-control > button:disabled { color: var(--dr-muted); cursor: default; }
+.app-shell .dr-settings-page :is(.setting-copy,.dr-settings-help-copy,.field-label) { font-size: .8125rem; line-height: 1.5; overflow-wrap: anywhere; }
+.dr-settings-page .dr-switch-target { display: grid; place-items: center; min-width: 44px; min-height: 44px; cursor: pointer; }
+.app-shell .dr-settings-page :is(button,select,summary,input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"])) { min-height: 44px; }
+.app-shell .dr-settings-page :is(button,.dr-switch-target) { min-width: 44px; }
+.dr-settings-page .dr-action-list { display: grid; gap: 0; }
+.dr-settings-page .dr-action-list > span { display: flex; gap: 4px; padding: 4px 0; min-height: 44px; border-radius: 0; background: transparent; border-bottom: 1px solid var(--dr-border); }
+.dr-settings-page .dr-action-list > span > span { flex: 1; min-width: 0; font-size: .875rem; }
+.dr-settings-page .dr-action-list small { font-size: .8125rem; }
+.app-shell .dr-settings-page summary { padding-block: 12px; }

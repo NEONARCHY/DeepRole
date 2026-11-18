@@ -14,7 +14,17 @@
 .app-shell .lore-connection p { flex-basis: 100%; margin: 0; font-size: 12px; line-height: 1.5; color: var(--dr-muted); }
 .app-shell .dr-memory-status { border: 1px solid var(--dr-border); border-radius: 14px; padding: 16px; background: var(--dr-surface); }
 .app-shell .dr-memory-status.is-ready { border-color: var(--dr-border); background: var(--dr-surface); }
-.app-shell .dr-memory-status.is-failed { border-color: var(--dr-border-strong); background: var(--dr-panel); }
+.app-shell .dr-memory-status > .dr-memory-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--dr-border);
+  color: var(--dr-text);
+  overflow-wrap: anywhere;
+}
+.app-shell .dr-memory-notice svg { flex: none; width: 16px; height: 16px; }
+.app-shell .dr-memory-status .dr-preview-toggle { min-height: 44px; flex-wrap: wrap; }
 .app-shell .dr-status-heading { display: flex; gap: 10px; align-items: center; font-size: 14px; line-height: 1.45; }
 .app-shell .dr-status-heading > svg { flex-shrink: 0; width: 18px; height: 18px; color: var(--dr-primary); }
 .app-shell .is-ready .dr-status-heading > svg { color: var(--dr-success); }

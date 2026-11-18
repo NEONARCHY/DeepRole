@@ -52,4 +52,11 @@ describe("continuation history recovery", () => {
     expect(matchingContinuationDraft({ ...draft, requestId: undefined }, "s", "t", draft)).toBeNull();
     expect(continuationDraftKey({ ...draft, requestId: "next" })).not.toBe(continuationDraftKey(draft));
   });
+  it("compares the captured memory policy by value across storage serialization", async () => {
+    const { draft } = await fixture();
+    const policy = { mode: "automatic" as const, revision: "r", profileVersions: {}, profileLocks: {} };
+    const reordered = { profileLocks: {}, profileVersions: {}, revision: "r", mode: "automatic" as const };
+    expect(continuationDraftKey({ ...draft, automation: reordered })).toBe(continuationDraftKey({ ...draft, automation: policy }));
+    expect(continuationDraftKey({ ...draft, automation: { ...policy, revision: "s" } })).not.toBe(continuationDraftKey({ ...draft, automation: policy }));
+  });
 });

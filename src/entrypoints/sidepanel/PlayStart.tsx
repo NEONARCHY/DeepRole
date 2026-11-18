@@ -1,6 +1,7 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { ArrowUpRight, BookOpen, ChevronRight, Globe2, Plus, SlidersHorizontal, Upload } from "lucide-react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
+import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, FileUp, Globe2, Plus, SlidersHorizontal } from "lucide-react";
 import type { Locale, WorldProfile } from "../../core/types";
+import { experienceText } from "../../core/experience-i18n";
 import { GameChatLink } from "../shared/GameChatLink";
 import { menuText } from "../../core/menu-i18n";
 import { storyAutomationText } from "../../core/story-automation-i18n";
@@ -11,21 +12,26 @@ const ru = {
   offsite: "Здесь можно подготовить мир. Когда откроете DeepSeek, подключите его к чату.",
   goToSite: "Открыть DeepSeek",
   select: "Выберите мир для игры",
-  firstWorld: "С чего начнётся история?",
-  firstWorldHint: "Импортируйте готовый лор или создайте мир для своей истории.",
-  selectHint: "Выбранный мир будет использоваться в открытом чате.",
-  importWorld: "Импортировать мир",
-  addWorld: "Создать мир",
+  firstWorld: "Добавьте мир для игры",
+  firstWorldHint: "Мир хранит персонажей, места и правила, которые DeepSeek учитывает в игре.",
+  selectHint: "Выберите мир из списка, чтобы подключить его к этому чату.",
+  importWorld: experienceText("ru", "import"),
+  importHint: "Выберите файл JSON и проверьте содержимое перед импортом.",
+  addWorld: experienceText("ru", "create"),
+  createHint: "Откроется редактор, где можно задать название и описание.",
   library: "Открыть библиотеку миров",
-  chat: "Мир и сцена",
-  play: "Пишите в DeepSeek как обычно. DeepRole подберёт лор к каждой реплике.",
+  chat: "Настроить мир и сцену",
+  sceneHint: "Выбрать мир и персонажей для этого чата.",
+  play: "Продолжайте историю в DeepSeek. Сведения о мире добавятся к реплике автоматически.",
   first: "Напишите первую реплику в DeepSeek.",
   queued: "Контекст подготовлен для первого сообщения в новом чате.",
   resume: "Продолжите сохранённую игру",
-  resumeHint: "Игра продолжится с доступной памятью. Первую реплику отправишь сам.",
+  resumeHint: "Подключите сохранённую игру, затем напишите первую реплику в DeepSeek.",
+  unavailableHint: "Если переписка не открывается, игру можно продолжить из сохранённой памяти.",
   elsewhere: "Игра продолжается в другом чате.",
   openActive: "Открыть активный чат",
-  memory: "Память игры",
+  memory: "Открыть память игры",
+  saveMode: "Сохранение фактов",
   waiting: "Ждёт первой сцены",
   recording: "Запись сцен включена",
   disabled: "Запись сцен выключена",
@@ -37,21 +43,26 @@ const en: Record<keyof typeof ru, string> = {
   offsite: "Prepare a world here, then open DeepSeek to connect it to your chat.",
   goToSite: "Open DeepSeek",
   select: "Choose a world to play",
-  firstWorld: "Where does the story begin?",
-  firstWorldHint: "Import existing lore or create a world for your story.",
-  selectHint: "The selected world will be used in the open chat.",
-  importWorld: "Import world",
-  addWorld: "Create world",
+  firstWorld: "Add a world to play",
+  firstWorldHint: "A world holds the characters, places and rules DeepSeek uses in your story.",
+  selectHint: "Select a world from the list to connect it to this chat.",
+  importWorld: experienceText("en", "import"),
+  importHint: "Choose a JSON file and review its contents before importing.",
+  addWorld: experienceText("en", "create"),
+  createHint: "Open the editor to give your world a name and description.",
   library: "Open world library",
-  chat: "World and scene",
-  play: "Write in DeepSeek as usual. DeepRole picks relevant lore for each turn.",
+  chat: "Set up world and scene",
+  sceneHint: "Choose the world and characters for this chat.",
+  play: "Continue your story in DeepSeek. DeepRole adds relevant world details to your message automatically.",
   first: "Write your first turn in DeepSeek.",
   queued: "Context is ready for the first message in the new chat.",
   resume: "Continue your saved game",
   resumeHint: "Continue with the available game memory. You send the first message.",
+  unavailableHint: "If the conversation won’t open, you can continue from saved game memory.",
   elsewhere: "The game continues in another chat.",
   openActive: "Open active chat",
-  memory: "Story memory",
+  memory: "Open story memory",
+  saveMode: "Saving facts",
   waiting: "Waiting for the first scene",
   recording: "Scene recording is active",
   disabled: "Scene recording is off",
@@ -60,7 +71,7 @@ const en: Record<keyof typeof ru, string> = {
 };
 export const playStartText = (locale: Locale) => locale === "ru" ? ru : en;
 
-export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messageCount, pendingHandoff, savedMemoryQueued, savedTransfer, controls, onStart, onLibrary, onMemory }: {
+export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messageCount, pendingHandoff, savedMemoryQueued, savedMemoryAttempt, savedTransfer, controls, onStart, onLibrary, onMemory }: {
   locale: Locale;
   world?: WorldProfile;
   hasWorlds: boolean;
@@ -69,6 +80,7 @@ export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messag
   messageCount: number;
   pendingHandoff: boolean;
   savedMemoryQueued?: boolean;
+  savedMemoryAttempt?: import("../../core/saved-memory-continuation").SavedMemoryAttempt;
   savedTransfer?: ReactNode;
   controls: ReactNode;
   onStart: (kind: "import" | "create") => void;
@@ -76,6 +88,7 @@ export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messag
   onMemory: () => void;
 }) {
   const t = playStartText(locale);
+  const actionId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   const previousWorld = useRef(world?.id);
   useEffect(() => {
@@ -88,7 +101,7 @@ export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messag
   const automation = storyAutomationText(locale);
   const game = world?.sharedGame;
   const ready = pendingHandoff || savedMemoryQueued;
-  const elsewhere = !ready && !!chatId && !!game && game.activeChatId !== chatId;
+  const elsewhere = (!ready || savedMemoryAttempt === "movedGame") && !!chatId && !!game && game.activeChatId !== chatId;
   const recording = !!chatId && !!game?.managed && game.activeChatId === chatId;
   const mode = world?.storyAutomation?.mode;
   const waiting = !!mode && mode !== "off" && messageCount === 0;
@@ -103,9 +116,10 @@ export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messag
   const offsite = !compatible && !savedTransfer && !savedMemoryQueued;
   const title = offsite ? t.openSite : world?.name ?? (savedTransfer || savedMemoryQueued ? t.resume : hasWorlds ? t.select : t.firstWorld);
   const next = offsite ? t.offsite
+    : savedMemoryAttempt ? savedMemoryText(locale)[savedMemoryAttempt]
     : savedMemoryQueued ? savedMemoryText(locale).queued
-    : savedTransfer ? t.resumeHint
-    : world ? elsewhere ? t.elsewhere : pendingHandoff ? t.queued : messageCount ? t.play : t.first
+    : savedTransfer ? compatible ? t.resumeHint : t.unavailableHint
+    : world ? elsewhere ? t.elsewhere : pendingHandoff ? t.queued : messageCount || recording ? t.play : t.first
     : hasWorlds ? t.selectHint : t.firstWorldHint;
 
   return <section className="play-world-card dr-play-start" data-dr-guide="play-world">
@@ -124,21 +138,30 @@ export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messag
         <button className="button secondary" type="button" onClick={onLibrary}>{t.library}</button>
       </div> : compatible && !world && !savedMemoryQueued ? <>
         {hasWorlds && controls}
-        <div className="dr-play-actions">
-          <button className={`button ${hasWorlds || savedTransfer ? "secondary" : "primary"}`} type="button" onClick={() => onStart("import")}><Upload size={17} aria-hidden="true"/>{t.importWorld}</button>
-          <button className="button secondary" type="button" onClick={() => onStart("create")}><Plus size={17} aria-hidden="true"/>{t.addWorld}</button>
+        <div className="dr-play-choices">
+          {(["import", "create"] as const).map(kind => {
+            const importing = kind === "import", Icon = importing ? FileUp : Plus;
+            const label = `${actionId}-${kind}`;
+            return <button key={kind} className="dr-play-choice" type="button" data-primary={importing && !hasWorlds && !savedTransfer}
+              aria-labelledby={label} aria-describedby={label + "-hint"} onClick={() => onStart(kind)}>
+              <Icon aria-hidden="true"/>
+              <span className="dr-play-copy"><strong id={label}>{importing ? t.importWorld : t.addWorld}</strong>
+                <small id={label + "-hint"}>{importing ? t.importHint : t.createHint}</small></span>
+              <ChevronRight aria-hidden="true"/>
+            </button>;
+          })}
         </div>
       </> : elsewhere && game && <GameChatLink key={game.activeChatId} chatId={game.activeChatId} locale={locale}>{t.openActive}<ChevronRight size={16} aria-hidden="true"/></GameChatLink>}
     </div>
     {compatible && world && <>
       <button className="dr-play-memory" type="button" onClick={onMemory}>
         <BookOpen size={20} aria-hidden="true"/>
-        <span><strong>{t.memory}</strong><span className="dr-play-memory-state" data-recording={recording && mode !== "off"}>{memory}</span>{reviews > 0 && <span className="dr-play-review-count">{t.reviewCount.replace("{count}", String(reviews))}</span>}</span>
+        <span className="dr-play-copy"><strong>{t.memory}</strong><small className="dr-play-memory-state" data-recording={recording && mode !== "off"}>{!elsewhere && (mode === "off" || recording && mode) && <>{t.saveMode}{": "}</>}<span>{memory}</span></small>{reviews > 0 && <span className="dr-play-review-count">{t.reviewCount.replace("{count}", String(reviews))}</span>}</span>
         <ChevronRight size={16} aria-hidden="true"/>
       </button>
       <details className="dr-play-scene">
-        <summary><SlidersHorizontal size={18} aria-hidden="true"/>{t.chat}<ChevronRight className="dr-play-chevron" size={16} aria-hidden="true"/></summary>
-        <div>{controls}<button className="button secondary" type="button" onClick={onLibrary}>{menuText(locale, "browse")}</button></div>
+        <summary><SlidersHorizontal aria-hidden="true"/><span className="dr-play-copy"><strong>{t.chat}</strong><small>{t.sceneHint}</small></span><ChevronDown className="dr-play-chevron" aria-hidden="true"/></summary>
+        <div>{controls}<button className="button secondary" type="button" onClick={onLibrary}>{t.library}</button></div>
       </details>
     </>}
   </section>;

@@ -21,7 +21,7 @@ const failTransferWrite = (worker: Worker) => worker.evaluate(() => {
   return original.call(this, value, ...args);
  };
 });
-for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "unchanged", "commit-failure", "receipt-failure", "opening-unavailable", "early-route", "early-route-commit-failure", "early-route-receipt-failure", "early-route-rejected", "old-chat-read-only", "early-route-quota", "saved-memory", "saved-memory-source-reload", "saved-memory-quota", "saved-memory-no-history", "saved-memory-commit-reload", "saved-memory-oversize", "saved-memory-oversize-home", "saved-memory-business-error", "saved-memory-stream-refusal", "saved-memory-flight-record-auto", "saved-memory-flight-record-review", "saved-memory-flight-record-partial", "saved-memory-flight-stale-check", "saved-memory-flight-reload", "saved-memory-flight-home", "saved-memory-flight-late", "saved-memory-flight-mismatch", "saved-memory-flight-partial", "saved-memory-flight-cancel", "saved-memory-draft-reload", "saved-memory-draft-home", "saved-memory-draft-cancel", "saved-memory-http-retry", "saved-memory-network-retry", "saved-memory-truncated-retry", "saved-memory-business-retry", "saved-memory-redirect", "saved-memory-client-redirect", "saved-memory-route-race", "saved-memory-route-mismatch", "saved-memory-managed"] as const) {
+for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "unchanged", "commit-failure", "receipt-failure", "opening-unavailable", "early-route", "early-route-commit-failure", "early-route-receipt-failure", "early-route-rejected", "old-chat-read-only", "early-route-quota", "saved-memory", "saved-memory-source-reload", "saved-memory-source-updated", "saved-memory-source-edit-failed", "saved-memory-quota", "saved-memory-no-history", "saved-memory-commit-reload", "saved-memory-oversize", "saved-memory-oversize-home", "saved-memory-business-error", "saved-memory-stream-refusal", "saved-memory-flight-record-auto", "saved-memory-flight-record-review", "saved-memory-flight-record-partial", "saved-memory-flight-stale-check", "saved-memory-flight-reload", "saved-memory-flight-home", "saved-memory-flight-late", "saved-memory-flight-mismatch", "saved-memory-flight-partial", "saved-memory-flight-cancel", "saved-memory-draft-reload", "saved-memory-draft-home", "saved-memory-draft-cancel", "saved-memory-http-retry", "saved-memory-network-retry", "saved-memory-truncated-retry", "saved-memory-business-retry", "saved-memory-redirect", "saved-memory-client-redirect", "saved-memory-route-race", "saved-memory-route-mismatch", "saved-memory-managed"] as const) {
  test(`full continuation chain ${locale} ${scenario}`, async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Installed Edge MV3; shared UI has Firefox coverage"); test.setTimeout(90000);
   const extension = path.resolve(process.env.DEEPROLE_TEST_EXTENSION ?? ".output/chrome-mv3"), context = await chromium.launchPersistentContext("", { channel: "msedge", headless: true, args: ["--disable-extensions-except=" + extension, "--load-extension=" + extension] });
@@ -72,7 +72,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    const useXhr = locale === "en" && (refused || noHistory || oversized || redirected || routeRace);
     const concurrentDraft = locale === "en" && (oversized || streamRefusal || keepDraft) ? "A newer draft typed while preparing the request." : "";
    const earlyRoute = inFlight || scenario.startsWith("early-route") || scenario === "saved-memory-quota" || refused || Boolean(concurrentDraft) || managed || oversizeHome || redirected && useXhr;
-   const savedScene = "SAVED_SCENE: Mira waits by the blue clock. The key is still on the table.";
+   let savedScene = "SAVED_SCENE: Mira waits by the blue clock. The key is still on the table.";
    if (savedMode) f.world.sharedGame = { ...captureWorldGame(f.records, f.world, f.binding), ...(managed ? { managed: true } : { recentChatId: f.binding.chatId, recentStory: boundStory([{ role: "assistant", text: savedScene }, { role: "user", text: "UNANSWERED: I leave the workshop." }], "history") }) };
    let otherGame: (typeof f.records)[number][] = [];
    if (multipleSaves) {
@@ -252,7 +252,10 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    else if (!noHistory) await expect(chat.locator(".dr-character-row")).toHaveCount(2);
    // Narrow layouts intentionally start with compact widget buttons.
    if (!noHistory && !redirected && !sourceReload) {
-    if (locale === "ru") await chat.locator('[data-restore-widget="meter"]').click();
+    if (locale === "ru") {
+     await chat.locator(".dr-panel-tools-open").click();
+     await chat.locator('[data-restore-widget="meter"]').click();
+    }
     await chat.getByRole("button", { name: t("continue"), exact: true }).click();
    }
    if (savedMode) {
@@ -263,7 +266,10 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
     }
     if (noHistory) await expect(chat.locator("#conversation")).toHaveText("This old conversation is unavailable.");
     const sourceRequests = noHistory || redirected || sourceReload ? [] : ["analysis"];
-    if (locale === "ru" || noHistory || oversized || refused || redirected) await chat.setViewportSize({ width: 320, height: 660 });
+    if (scenario === "saved-memory-source-updated") {
+     await chat.setViewportSize({ width: 320, height: 480 });
+     await chat.evaluate(() => { document.documentElement.style.fontSize = "125%"; });
+    } else if (locale === "ru" || noHistory || oversized || refused || redirected) await chat.setViewportSize({ width: 320, height: 660 });
     await chat.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
     const transfer = fromPlay ? panel : chat;
     if (fromPlay) {
@@ -272,12 +278,16 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
      await panel.reload();
      await chat.bringToFront();
     }
+    const panelMenu = chat.locator(".dr-widget-deck[data-compact] .dr-panel-tools-open");
     const restore = chat.locator('[data-restore-widget="scene"]');
     const openPreview = transfer.getByRole("button", { name: clientRedirect ? copy.viewScene : copy.title, exact: true });
-    await expect((fromPlay ? openPreview : openPreview.or(restore)).filter({ visible: true })).toBeVisible({ timeout: 12_000 });
+    await expect((fromPlay ? openPreview : openPreview.or(restore).or(panelMenu)).filter({ visible: true }).first()).toBeVisible({ timeout: 12_000 });
     const openTransfer = async () => {
      if (await openPreview.isVisible()) await openPreview.press("Enter", { timeout: 1000 });
-     else if (!fromPlay) await restore.press("Enter", { timeout: 1000 });
+     else if (!fromPlay) {
+      if (!(await restore.isVisible())) await panelMenu.press("Enter", {timeout:1000});
+      await restore.press("Enter", {timeout:1000});
+     }
     };
     const preview = transfer.getByRole("dialog", { name: copy.title });
     await expect(async () => {
@@ -317,6 +327,46 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
     await expect(dialog).not.toContainText("UNANSWERED");
     expect(sent.map(r => r.kind)).toEqual(sourceRequests);
     expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+    if (scenario === "saved-memory-source-edit-failed") {
+     // A rejected edit is already over. The confirmed durable scene is still valid.
+     const edit = await worker.evaluate(async ({ url, worldId }) => {
+      const api = (globalThis as any).chrome;
+      const [source] = await api.tabs.query({ url });
+      return api.tabs.sendMessage(source.id, { type: "DR_SET_SCENE", scene: { worldId, bookId: null, focusIds: [] },
+       importTarget: { chatId: "a-different-chat", chatUrl: url, worldId, empty: false } });
+     }, { url: f.binding.chatUrl, worldId: f.world.id });
+     expect(edit.ok).toBe(false);
+    }
+    if (scenario === "saved-memory-source-updated") {
+     savedScene = "Mira returned the blue key to the marked drawer.";
+     await panel.evaluate(async ({ id, text }) => {
+      await new Promise<void>((resolve, reject) => {
+       const open = indexedDB.open("deeprole");
+       open.onerror = () => reject(open.error);
+       open.onsuccess = () => {
+        const db = open.result, tx = db.transaction("records", "readwrite"), store = tx.objectStore("records");
+        const get = store.get("world:" + id);
+        get.onsuccess = () => {
+         const row = get.result;
+         row.data.sharedGame.revision = "new-scene-revision";
+         row.data.sharedGame.recentStory.turns[0].text = text;
+         store.put(row);
+        };
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onabort = () => { db.close(); reject(tx.error); };
+       };
+      });
+     }, { id: f.world.id, text: savedScene });
+     const confirm = dialog.getByRole("button", { name: copy.open, exact: true });
+     await confirm.press("Enter");
+     await expect(dialog.getByRole("alert")).toHaveText(copy.updated);
+     await expect(dialog.locator("blockquote")).toHaveText(savedScene);
+     expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+     expect((await confirm.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+     await expect(chat).toHaveURL(f.binding.chatUrl);
+     expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+     expect(sent.map(r => r.kind)).toEqual(sourceRequests);
+    }
     if (clientRedirect) {
      await transfer.keyboard.press("Escape");
      await expect(dialog).toHaveCount(0);
@@ -661,7 +711,10 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
        activeChatId: stored.find(row => row.kind === "world").data.sharedGame.activeChatId,
       }).toEqual({ targetBound: false, applied: false, activeChatId: f.binding.chatId });
        if (streamRefusal || retryFailure) {
-       await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();
+       if (keepDraft) {
+         await expect(chat.getByText(t("sendUnconfirmed"), { exact: true })).toBeVisible();
+         await expect(chat.getByText(copy.queued, { exact: true })).toHaveCount(0);
+       } else await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();
        expect(sent.map(r => r.kind)).toEqual([...sourceRequests, "game"]);
         // RP382 expectations fixed before the first run: a refused/interrupted
         // first request never activates the destination; reload neither resends
@@ -685,7 +738,8 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
           expect(stillPending.find(row => row.kind === "snapshot").data.appliedAt).toBeUndefined();
           expect(stillPending.find(row => row.kind === "world").data.sharedGame.activeChatId).toBe(f.binding.chatId);
           expect(stillPending.some(row => row.kind === "binding" && row.data.chatId === destination)).toBe(false);
-          await chat.reload(); await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();
+          await chat.reload(); await expect(chat.getByText(t("sendUnconfirmed"), { exact: true })).toBeVisible();
+          await expect(chat.getByText(copy.queued, { exact: true })).toHaveCount(0);
           expect(sent.map(r => r.kind)).toEqual([...sourceRequests, ...Array(attempt + 1).fill("game")]);
          }
         }

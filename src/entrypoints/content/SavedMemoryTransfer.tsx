@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState } from "react";
-import { savedMemoryText, type SavedMemoryPreview } from "../../core/saved-memory-continuation";
+import { isBackgroundBuildFailure, savedMemoryText, type SavedMemoryPreview } from "../../core/saved-memory-continuation";
 import type { Locale, WorldProfile } from "../../core/types";
 import { PageMemoryDialog } from "./PageMemoryDialog";
 
@@ -31,8 +31,8 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
     try { await action(); }
     catch (e) {
       const code = e instanceof Error ? e.message : "";
-      if (code === "handoff-stale") setPreview(undefined);
-      setError(code === "handoff-stale" ? t.stale : code === "draft-not-empty" ? t.draft : code === "busy" ? t.busy : t.failed);
+      if (code === "handoff-stale" || code === "handoff-scope" || code === "story-game-inactive") setPreview(undefined);
+      setError(isBackgroundBuildFailure(e) ? t.transferMismatch : code === "handoff-tab-inactive" ? t.inactiveTab : code === "story-game-inactive" ? t.movedSource : code === "handoff-stale" || code === "handoff-scope" ? t.stale : code === "draft-not-empty" ? t.draft : code === "busy" ? t.busy : t.failed);
     } finally { running.current = false; setBusy(false); }
   }
 
@@ -45,9 +45,22 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
       setPreview(await onPreview(selected?.id));
     });
   }
+  async function confirm(current: SavedMemoryPreview, selected?: WorldOption) {
+    try {
+      await onOpen(current.version, selected?.id);
+      setOpen(false);
+    } catch (cause) {
+      if (!(cause instanceof Error) || cause.message !== "handoff-stale") throw cause;
+      // Only refresh the preview. A different save needs its own confirmation.
+      choose(selected);
+      setOpen(true);
+      setPreview(await onPreview(selected?.id));
+      setError(t.updated);
+    }
+  }
   const choosing = !!worlds && !world;
   const confirmation = !choosing && <button type="button" className={`${primary} dr-saved-memory-action`} disabled={disabled || busy || !preview} onClick={() => {
-    if (preview) void run(async () => { await onOpen(preview.version, world?.id); setOpen(false); });
+    if (preview) void run(() => confirm(preview, world));
   }}>{worlds ? t.connect : t.open}</button>;
 
   const previewButton = <button type="button" className={`${singleGame ? secondary : actionClassName ?? "dr-meter-transfer"} dr-saved-memory-action`} aria-haspopup="dialog" disabled={disabled || busy} onClick={() => {
@@ -60,7 +73,7 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
       <div className="dr-play-actions">
         <button type="button" className={`${primary} dr-saved-memory-action`} disabled={disabled || busy} onClick={() => void run(async () => {
           const current = await onPreview(singleGame.id);
-          await onOpen(current.version, singleGame.id);
+          await confirm(current, singleGame);
         })}>{t.resumeGame(singleGame.name)}</button>
         {previewButton}
       </div>

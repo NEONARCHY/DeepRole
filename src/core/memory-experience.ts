@@ -17,9 +17,8 @@ export function pendingActivity(request: ServiceRequest | null, chatId: string |
   if (!request || (request.chatId ?? null) !== chatId) return null;
   return serviceActivity(request, now - request.createdAt < SERVICE_TIMEOUT_MS ? "waiting" : "error");
 }
-export function memoryReadiness(connected: boolean, warning: string | undefined, selected: number, available: number): "offline" | "failed" | "ready" | "empty" | "matching" {
+export function memoryReadiness(connected: boolean, selected: number, available: number): "offline" | "ready" | "empty" | "matching" {
   if (!connected) return "offline";
-  if (warning) return "failed";
   if (selected > 0) return "ready";
   return available > 0 ? "matching" : "empty";
 }

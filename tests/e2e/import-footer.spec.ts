@@ -4,11 +4,13 @@ import { setEnglish } from "./helpers/settings";
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for (const format of ["entries", "world"] as const) {
   test(`import footer stays visible ${locale} ${width} ${format}`, async ({ page }, info) => {
     const l = (ru: string, en: string) => locale === "ru" ? ru : en;
+    await page.emulateMedia({ colorScheme: format === "entries" ? "light" : "dark" });
     await page.setViewportSize({ width, height: 560 });
     await page.goto("/tests/fixtures/sidepanel.html?world");
     if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
     await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
-    await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+    await page.getByRole("button", { name: l("Загрузить мир из файла", "Load a world from a file"), exact: true }).click();
+    if (width === 320) await page.addStyleTag({ content: "html { font-size: 125%; }" });
     await expect(page.getByRole("link", { name: "Better Deepseek (BDS)", exact: true })).toHaveAttribute("href", "https://github.com/EdgeTypE/better-deepseek");
     const value = format === "entries" ? Array.from({ length: 45 }, (_, i) => ({ title: `Fact ${i}`, content: "Unchanged text.\n".repeat(120) })) : await page.evaluate(async () => {
       const { repository } = await import("/src/storage/repository.ts" as string);
@@ -16,9 +18,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for 
       const worlds = await repository.list("world");
       return exportWorld(worlds[0]!.id);
     });
-    await page.locator('input[type="file"]').setInputFiles({ name: "Neutral world.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(value)) });
-    const confirm = page.getByRole("button", { name: l("Подтвердить импорт", "Confirm import"), exact: true });
+    await page.locator('.lore-import-modal input[type="file"]').setInputFiles({ name: "Neutral world.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(value)) });
+    const confirm = page.getByRole("button", { name: l("Сохранить в библиотеку", "Save to library"), exact: true });
     await expect(confirm).toBeEnabled();
+    await expect(confirm).toHaveAccessibleDescription(l("Новый мир появится в разделе «Миры».", "Your new world will appear in Worlds."));
     const body = page.locator(".lore-import-modal > .modal-body");
     const footer = page.locator(".rp-import-footer");
     const checkGeometry = async () => {
@@ -26,6 +29,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for 
       expect(Math.abs(dialogBox.x + dialogBox.width / 2 - width / 2)).toBeLessThan(2);
       const buttonBox = (await confirm.boundingBox())!;
       const bodyBox = (await body.boundingBox())!;
+      expect(buttonBox.height).toBeGreaterThanOrEqual(44);
+      expect(await body.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
       expect(buttonBox.y).toBeGreaterThanOrEqual(bodyBox.y + bodyBox.height);
       expect(buttonBox.y + buttonBox.height).toBeLessThanOrEqual(560);
       expect(buttonBox.x).toBeGreaterThanOrEqual(0);

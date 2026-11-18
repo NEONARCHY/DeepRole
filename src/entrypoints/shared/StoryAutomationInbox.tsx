@@ -8,6 +8,8 @@ import { storyReviewError, storyReviewText } from "../../core/story-review-i18n"
 import { readActiveAutomation, resolveActiveAutomation, type StoryReviewTabs } from "../../adapters/story-review-client";
 import { Select } from "./Select";
 import { storyTaskText } from "../../core/story-task-i18n";
+import { storyUpdateText } from "../../core/story-update-i18n";
+import { StoryMemoryAction } from "./StoryMemoryAction";
 export function StoryAutomationInbox({ locale,tabs,scope,revision,blocked = false,headingRef }: { locale: Locale; tabs: StoryReviewTabs; scope: { worldId: string; chatId: string }; revision?: string; blocked?: boolean; headingRef?: Ref<HTMLHeadingElement> }) {
   const t = storyAutomationText(locale), taskText = storyTaskText(locale), id = useId(), generation = useRef(0);
   const [page,setPage] = useState<AutomationReviewPage>(), [busy,setBusy] = useState(false), [error,setError] = useState(""), [query,setQuery] = useState("");
@@ -32,7 +34,14 @@ export function StoryAutomationInbox({ locale,tabs,scope,revision,blocked = fals
           {item.text && <p>{item.text}</p>}<details><summary>{t.source}</summary><p className="dr-story-review-source">{item.quote}</p></details>{!!item.conflicts?.length&&<p className="setting-copy">{taskText.replaceHint}</p>}
           {item.type === "person" && <><span className="field-label" id={id+item.id+"-person-label"}>{t.personTarget}</span><Select aria-labelledby={id+item.id+"-person-label"} id={id+item.id+"-person"} value={draft.target} disabled={busy || blocked} onChange={e => update({ target: e.target.value })}><option value="">{t.newPerson}</option>{page.people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</Select>{!draft.target && <><span className="field-label" id={id+item.id+"-name-label"}>{t.personName}</span><input type="text" className="input" aria-labelledby={id+item.id+"-name-label"} id={id+item.id+"-name"} maxLength={80} disabled={busy || blocked} value={draft.name} onChange={e => update({ name: e.target.value })}/></>}</>}
           {Object.keys(item.fields).length > 0 && <fieldset className="dr-story-inbox-fields" disabled={busy || blocked}><legend>{t.addFields}</legend>{PROFILE_FIELDS.filter(k => item.fields[k]).map(k => <div key={k}><label><input type="checkbox" checked={draft.fields.includes(k)} onChange={e => update({ fields: e.target.checked ? [...draft.fields,k] : draft.fields.filter(f => f !== k) })}/><span>{characterText(locale,k)}</span></label><p>{item.fields[k]}</p></div>)}</fieldset>}
-          <div className="button-row"><button className="button" type="button" disabled={busy || blocked || !page.ready || item.type === "profile" && !draft.fields.length || item.type === "person" && !draft.target && !draft.name.trim() || item.type === "person" && !!draft.target && !draft.fields.length} onClick={() => void save(item,true)}>{item.conflicts?.length ? taskText.replace : t.accept}</button><button className="button secondary" type="button" disabled={busy || blocked || !page.ready} onClick={() => void save(item,false)}>{item.conflicts?.length ? taskText.keep : t.decline}</button></div>
+          <StoryMemoryAction key={JSON.stringify([page.gameRevision, page.guard, draft, item.conflicts, page.ready, blocked, busy])}
+            locale={locale} label={item.conflicts?.length ? taskText.replace : t.accept}
+            confirmLabel={storyUpdateText(locale, "confirmSave")}
+            hint={item.conflicts?.length ? taskText.replaceHint : storyUpdateText(locale, item.type === "fact" ? "saveFactHint" : "acceptProfileHint")}
+            disabled={busy || blocked || !page.ready || item.type === "profile" && !draft.fields.length || item.type === "person" && !draft.target && !draft.name.trim() || item.type === "person" && !!draft.target && !draft.fields.length}
+            onConfirm={() => void save(item,true)}>
+            <button className="button secondary" type="button" disabled={busy || blocked || !page.ready} onClick={() => void save(item,false)}>{item.conflicts?.length ? taskText.keep : t.decline}</button>
+          </StoryMemoryAction>
         </article>;
       })}
     </>}

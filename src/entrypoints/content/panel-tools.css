@@ -1,0 +1,81 @@
+.dr-widget-dock {
+  position: relative; z-index: 2; pointer-events: auto; box-sizing: border-box;
+  width: var(--dr-panel-width, 224px); max-width: calc(100vw - var(--dr-min-left,8px) - 8px);
+  color: var(--dr-text); overflow-wrap: anywhere;
+}
+.dr-widget-deck[data-compact] .dr-widget-dock {
+  width: min(320px, calc(100vw - var(--dr-min-left) - 8px));
+  max-height: max(88px, calc((100dvh - var(--dr-min-top) - 8px) * .5)); overflow-y: auto;
+}
+.dr-widget-deck-tools, .dr-widget-minimized {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 4px; border: 1px solid var(--dr-border); border-radius: 12px; background: var(--dr-panel);
+}
+.dr-widget-minimized { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,6rem),1fr)); margin-top: 4px; }
+.dr-widget-minimized:empty { display: none; }
+.dr-widget-tools button, .dr-widget-dock button, .dr-panel-tools-dialog button {
+  box-sizing: border-box; min-width: 44px; min-height: 44px; padding: 6px 8px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: normal; overflow-wrap: anywhere;
+  border: 1px solid var(--dr-border); border-radius: 8px; color: var(--dr-text); background: var(--dr-surface);
+  cursor: pointer; font: 500 max(13px,.8125rem)/1.4 system-ui,sans-serif;
+}
+.dr-widget-dock button svg, .dr-panel-tools-dialog button svg { flex: none; }
+.dr-widget-deck-tools > button { flex: 1 1 auto; }
+.dr-widget-dock .dr-widget-move { cursor: grab; touch-action: none; background: transparent; border-color: transparent; color: var(--dr-muted); }
+.dr-widget-dock .dr-widget-move:active { cursor: grabbing; }
+.dr-widget-dock .dr-panel-tools-open svg { color: var(--dr-primary); }
+.dr-widget-dock button:hover, .dr-widget-tools button:hover, .dr-panel-tools-dialog button:not(:disabled):hover { background: var(--dr-raised); color: var(--dr-text); }
+.dr-widget-dock button:focus-visible, .dr-widget-tools button:focus-visible, .dr-panel-tools-dialog :focus-visible { outline: 2px solid var(--dr-primary); outline-offset: -2px; }
+.dr-widget-minimized button { justify-content: start; text-align: start; }
+.dr-widget-minimized button[aria-expanded=true] { background: var(--dr-selected); }
+.dr-widget-dock [role=alert], .dr-panel-tools-dialog [role=alert] { color: var(--dr-danger); }
+.dr-widget-tools { position: absolute; inset-inline-end: 0; top: 0; z-index: 1; }
+.dr-widget-tools button span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+.dr-widget-tools button:is(:hover,:focus-visible) span {
+  width: max-content; height: auto; clip-path: none; inset-inline-end: calc(100% + 4px); top: 4px;
+  padding: 8px; background: var(--dr-panel); color: var(--dr-text); border: 1px solid var(--dr-border); border-radius: 8px; pointer-events: none;
+}
+@media (hover:none), (pointer:coarse) {
+  .dr-widget-deck .dr-widget-tile[data-widget], .dr-widget-deck[data-compact] .dr-widget-tile[data-widget] {
+    flex-direction: column; padding: 0; max-width: calc(100vw - var(--dr-min-left) - 8px);
+  }
+  .dr-widget-tile .dr-widget-tools { position: static; align-self: end; }
+  .dr-widget-tools button span, .dr-widget-tools button:is(:hover,:focus-visible) span {
+    position: static; width: auto; height: auto; clip-path: none; border: 0; padding: 0; background: transparent;
+  }
+}
+.dr-panel-tools-dialog {
+  pointer-events: auto; box-sizing: border-box; width: min(26rem,calc(100vw - 16px)); max-height: calc(100dvh - 16px);
+  margin: auto; padding: 0; border: 1px solid var(--dr-border-strong); border-radius: 16px; overflow: auto; overscroll-behavior: contain;
+  background: var(--dr-panel); color: var(--dr-text); box-shadow: var(--dr-depth-dialog); font: max(14px,.875rem)/1.5 system-ui,sans-serif;
+}
+.dr-panel-tools-dialog::backdrop { background: rgb(8 16 20 / 45%); }
+.dr-panel-tools-dialog header {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 16px; background: var(--dr-panel); border-bottom: 1px solid var(--dr-border);
+}
+.dr-panel-tools-dialog h2 { margin: 0; font-size: 1.125rem; line-height: 1.3; overflow-wrap: anywhere; }
+.dr-panel-tools-body { padding: 0 16px 16px; }
+.dr-panel-tools-body > :not(:last-child) { border-bottom: 1px solid var(--dr-border); padding-block: 12px; }
+.dr-panel-setting { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.dr-panel-setting strong, .dr-panel-tools-body small { display: block; overflow-wrap: anywhere; }
+.dr-panel-tools-body small, .dr-panel-tools-body > p { margin: 4px 0 0; color: var(--dr-muted); font-size: max(13px,.8125rem); line-height: 1.5; }
+.dr-panel-chooser h3 { margin: 0 0 8px; font-size: inherit; }
+.dr-panel-chooser > div { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,8rem),1fr)); gap: 4px; }
+.dr-panel-chooser button { text-align: start; justify-content: start; }
+.dr-panel-chooser button[aria-expanded=true] { border-color: var(--dr-primary); background: var(--dr-selected); }
+.dr-panel-tools-dialog .dr-panel-width-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dr-panel-width-heading label { font-weight: 600; }
+.dr-panel-tools-dialog .dr-panel-width-control input[type=range] { min-height: 44px; }
+.dr-panel-tools-dialog .dr-settings-help-button { flex: none; min-height: 44px; min-width: 44px; }
+.dr-panel-tools-dialog .dr-settings-help-copy { color: var(--dr-text); font-size: inherit; }
+.dr-panel-tools-dialog button:disabled { color: var(--dr-muted); cursor: default; }
+.dr-panel-layout-reset small { margin-top: 8px; }
+@media (prefers-color-scheme: light) {
+  :is(.dr-widget-dock,.dr-widget-tools,.dr-panel-tools-dialog) {
+    color-scheme: light;
+    --dr-panel: #f0f3f4; --dr-surface: #fff; --dr-raised: #e4ebed; --dr-selected: #e4eff2;
+    --dr-text: #202a2e; --dr-muted: #506069; --dr-border: #d7dfe1; --dr-border-strong: #b3c0c4;
+    --dr-primary: #24576a; --dr-action-hover: #194758; --dr-on-action: #fff; --dr-danger: #983e48;
+  }
+}

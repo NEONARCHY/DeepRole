@@ -10,13 +10,13 @@ for (const locale of ["ru", "en"] as const) test(`JSON preview and branch modes 
   if (locale === "en") { await page.getByRole("button", { name: "Настройки", exact: true }).click(); await setEnglish(page); }
   const label = (ru: string, en: string) => locale === "ru" ? ru : en;
   await page.getByRole("button", { name: label("Миры", "Worlds"), exact: true }).click();
-  await page.getByRole("button", { name: label("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+  await page.getByRole("button", { name: label("Загрузить мир из файла", "Load a world from a file"), exact: true }).click();
   const data = { name: "Observatory", entries: [...entries, { title: "World_rules", content: "Preserve the calendar.", activation: "always" }], extraSetting: true };
   await page.getByLabel(label("Выбрать JSON", "Choose JSON"), { exact: true }).setInputFiles({ name: "Neutral.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(data)) });
   await expect(page.getByText(label("Распознаны записи JSON", "JSON entries recognized"), { exact: true })).toBeVisible();
   await expect(page.locator(".rp-import-character-hint")).toContainText(label("Текст записей не меняется", "Entry text stays unchanged"));
   await expect(page.locator(".rp-import-character-hint")).toContainText(label("экспорт мира DeepRole", "DeepRole world export"));
-  const confirm = page.getByRole("button", { name: label("Подтвердить импорт", "Confirm import"), exact: true }); await expect(confirm).toBeDisabled();
+  const confirm = page.getByRole("button", { name: label("Сохранить в библиотеку", "Save to library"), exact: true }); await expect(confirm).toBeDisabled();
   await expect(page.getByRole("note")).toContainText("extraSetting");
   await page.getByRole("checkbox", { name: label("Импортировать без этих дополнительных настроек", "Import without these extra settings"), exact: true }).check();
   await confirm.click(); await page.getByRole("button", { name: label("Открыть карту мира", "Open world map"), exact: true }).click();
@@ -59,12 +59,12 @@ for (const locale of ["ru", "en"] as const) test(`JSON preview and branch modes 
 });
 
 test("ambiguous JSON does not partly import or leave an old preview enabled", async ({ page }) => {
-  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click(); await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.goto("/tests/fixtures/sidepanel.html"); await page.getByRole("button", { name: "Миры", exact: true }).click(); await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   const file = page.getByLabel("Выбрать JSON", { exact: true });
   await file.setInputFiles({ name: "Valid.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Gate", content: "Closed" }])) });
-  await expect(page.getByRole("button", { name: "Подтвердить импорт", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Сохранить в библиотеку", exact: true })).toBeEnabled();
   const before = await records(page);
   await file.setInputFiles({ name: "Conflict.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ title: "Gate", content: "Closed", text: "Open" }])) });
-  await expect(page.getByRole("alert")).toContainText("Не удалось однозначно"); await expect(page.getByRole("button", { name: "Подтвердить импорт", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("alert")).toContainText("Не удалось однозначно"); await expect(page.getByRole("button", { name: "Сохранить в библиотеку", exact: true })).toHaveCount(0);
   expect(await records(page)).toEqual(before);
 });

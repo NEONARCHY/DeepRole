@@ -38,9 +38,9 @@ for (const locale of ["ru", "en"] as const) test(`world library action rules wor
   await page.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
   const world = { id: "w", name: "Harbor", description: "Keep all lore", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const person = { id: "mira", name: "Mira", worldId: "w", kind: "character", description: "Original profile", aliases: [], memberIds: [], characterSheet: EMPTY_CHARACTER, createdAt: 1, updatedAt: 1 };
-  await page.getByRole("button", { name: locale === "ru" ? "Загрузить готовый лор" : "Import existing lore", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Загрузить мир из файла" : "Load a world from a file", exact: true }).click();
   await page.getByLabel(locale === "ru" ? "Выбрать JSON" : "Choose JSON", { exact: true }).setInputFiles({ name: "world.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ format: "deeprole-world", version: 1, records: [{ kind: "world", id: "w", data: world }, { kind: "entity", id: person.id, data: person }] })) });
-  await page.getByRole("button", { name: locale === "ru" ? "Подтвердить импорт" : "Confirm import", exact: true }).click();
+  await page.getByRole("button", { name: locale === "ru" ? "Сохранить в библиотеку" : "Save to library", exact: true }).click();
   await page.getByRole("button", { name: locale === "ru" ? "Мир и профили" : "World & profiles", exact: true }).click();
   await page.locator(".rp-card").filter({ hasText: "Mira" }).getByRole("button", { name: locale === "ru" ? "Изменить" : "Edit", exact: true }).click();
   const policy = page.locator(".rp-editor .dr-action-policy"); await policy.locator("summary").first().click();

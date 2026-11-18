@@ -1,13 +1,11 @@
 import { chromium, expect, test } from "@playwright/test";
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
+import { castText } from "../../src/core/cast-i18n";
 
 for (const locale of ["ru", "en"] as const) test(`BDS import connects explicitly and sends preserved lore (${locale})`, async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Installed Chrome MV3 runtime; shared UI is covered in Firefox");
   test.setTimeout(60000);
-  const profile = await mkdtemp(path.join(tmpdir(), "deeprole-import-test-"));
-  const context = await chromium.launchPersistentContext(profile, { channel: "msedge", headless: true, args: [`--disable-extensions-except=${path.resolve(".output/chrome-mv3")}`, `--load-extension=${path.resolve(".output/chrome-mv3")}`] });
+  const context = await chromium.launchPersistentContext("", { channel: "msedge", headless: true, args: [`--disable-extensions-except=${path.resolve(".output/chrome-mv3")}`, `--load-extension=${path.resolve(".output/chrome-mv3")}`] });
   context.setDefaultTimeout(10000);
   try {
     const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
@@ -29,17 +27,18 @@ for (const locale of ["ru", "en"] as const) test(`BDS import connects explicitly
     // frames. Wait for its 500 ms security window, not another click or force:true.
     await menuFrame.waitForFunction(() => performance.now() >= 650);
     await menu.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
-    await expect(menu.getByRole("heading", { name: locale === "ru" ? "Лор" : "Lore", exact: true })).toBeVisible();
-    await menu.getByRole("button", { name: locale === "ru" ? "Загрузить готовый лор" : "Import existing lore", exact: true }).click();
+    await expect(menu.getByRole("heading", { name: locale === "ru" ? "Миры" : "Worlds", exact: true })).toBeVisible();
+    await menu.getByRole("button", { name: locale === "ru" ? "Загрузить мир из файла" : "Load a world from a file", exact: true }).click();
     const title = locale === "ru" ? "Алекс_характер" : "AlexPersonality";
     const canon = "  PRESERVED_CHARACTER_LORE\nAlex is a patient navigator.  ";
     const source = { [title]: { value: canon, importance: "called" }, Rule: { value: "PRESERVED_WORLD_RULE", importance: "always" } };
     await menu.getByLabel(locale === "ru" ? "Выбрать JSON" : "Choose JSON", { exact: true }).setInputFiles({ name: "Test World.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(source)) });
-    const connect = menu.getByRole("checkbox", { name: locale === "ru" ? "Использовать в открытом чате" : "Use in the open chat", exact: true });
+    const connect = menu.getByRole("checkbox", { name: locale === "ru" ? "Подключить к открытому чату" : "Connect to the open chat", exact: true });
     await expect(connect).toBeChecked();
+    await menu.getByRole("checkbox", { name: castText(locale, "auto"), exact: true }).uncheck();
     // Browsing/importing without this explicit choice cannot switch the chat.
     if (locale === "ru") await connect.uncheck();
-    await menu.getByRole("button", { name: locale === "ru" ? "Подтвердить импорт" : "Confirm import", exact: true }).click();
+    await menu.getByRole("button", { name: locale === "ru" ? "Сохранить в библиотеку" : "Import and connect", exact: true }).click();
     const draft = locale === "ru" ? "Расскажи об Алексе" : "Tell me about Alex";
     if (locale === "ru") {
       await expect(menu.getByText("Только в библиотеке", { exact: true })).toBeVisible();
@@ -47,7 +46,8 @@ for (const locale of ["ru", "en"] as const) test(`BDS import connects explicitly
       expect(sent.at(-1)).toBe(draft);
       await menu.getByRole("button", { name: "Использовать в этом чате", exact: true }).click();
     }
-    await expect(menu.getByText(locale === "ru" ? "Подключён к этому чату" : "Connected to this chat", { exact: true })).toBeVisible();
+    await menu.getByRole("button", { name: locale === "ru" ? "Миры" : "Worlds", exact: true }).click();
+    await expect(menu.locator(".lore-connection.is-attached")).toContainText(locale === "ru" ? "Подключён к этому чату" : "Connected to this chat");
     await chat.getByRole("textbox", { name: "Message", exact: true }).fill(draft);
     await chat.getByRole("button", { name: "Send", exact: true }).click();
     await expect.poll(() => sent.at(-1)).toContain("PRESERVED_CHARACTER_LORE");

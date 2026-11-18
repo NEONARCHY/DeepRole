@@ -69,11 +69,11 @@ export function CharacterSettings({ settings, onSettings, worldActions, onAction
   useEffect(() => { setDraft(actionsFor(worldActions ?? settings.characterActions).join("\n")); setRenames({}); }, [worldActions?.join("\n"), settings.characterActions?.join("\n")]);
   const actions = draft.split("\n").map(s => s.trim()).filter(Boolean);
   return <section className="dr-character-settings">
-    <div className="toggle-row"><SettingsHelp locale={settings.locale} title={t("enable")} text={t("enableHint")}/><input aria-label={t("enable")} type="checkbox" checked={!!settings.characterSheetsEnabled} onChange={e => void onSettings({ ...settings, characterSheetsEnabled: e.target.checked })} /></div>
+    <div className="toggle-row"><SettingsHelp locale={settings.locale} title={t("enable")} text={t("enableHint")}/><label className="dr-switch-target"><input aria-label={t("enable")} type="checkbox" checked={!!settings.characterSheetsEnabled} onChange={e => void onSettings({ ...settings, characterSheetsEnabled: e.target.checked })} /></label></div>
 
     <RelationshipSettings settings={settings} onSettings={onSettings} />
     {settings.characterSheetsEnabled && <>
-      <div className="toggle-row"><SettingsHelp locale={settings.locale} title={t("sprites")} text={t("floatingSettingHint")}/><input aria-label={t("sprites")} type="checkbox" checked={settings.characterSpritesEnabled !== false} onChange={e => void onSettings({ ...settings, characterSpritesEnabled: e.target.checked })} /></div>
+      <div className="toggle-row"><SettingsHelp locale={settings.locale} title={t("sprites")} text={t("floatingSettingHint")}/><label className="dr-switch-target"><input aria-label={t("sprites")} type="checkbox" checked={settings.characterSpritesEnabled !== false} onChange={e => void onSettings({ ...settings, characterSpritesEnabled: e.target.checked })} /></label></div>
 
       <button type="button" className="button secondary" disabled={busy} onClick={() => {
         setBusy(true); setLayoutError(false);

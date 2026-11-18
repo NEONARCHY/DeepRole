@@ -1,4 +1,4 @@
-import { validNativeStoryId } from "../core/story-transport";
+import { nativeStoryMessageKey, validNativeStoryId } from "../core/story-transport";
 import { validFieldHistoryReference, type FieldHistoryQuery, type FieldHistoryReference } from "../core/field-history";
 import { isUserMessage, nativeMessageRows, REASONING } from "./deepseek-message-dom";
 
@@ -17,18 +17,38 @@ export function firstStoryTurnView(draft: string, root: ParentNode = document): 
     : ++placeholders <= 1 && !row.textContent?.trim());
 }
 
+function historyRows(root: ParentNode) {
+  return nativeMessageRows(root).filter(r => !r.closest(REASONING) && !r.matches("[data-deeprole-service-reply], [data-deeprole-memory-request], [data-deeprole-character-text-hidden]") && shown(r) && !r.textContent?.trimStart().startsWith("[DeepRole Service]"));
+}
+
+function historyRowKey(row: HTMLElement, diagnosticVirtualKey: boolean) {
+  const id = row.getAttribute("data-message-id"), virtual = diagnosticVirtualKey ? row.closest("[data-virtual-list-item-key]")?.getAttribute("data-virtual-list-item-key") : null;
+  // A virtual key needs server confirmation. Conflicting explicit keys are ambiguous.
+  if (id !== null && virtual != null && id !== virtual) return null;
+  return id ?? virtual;
+}
+
 export function fieldHistoryAnchor(root: ParentNode = document, diagnosticVirtualKey = false): string | null {
-  const rows = nativeMessageRows(root).filter(r => !r.closest(REASONING) && !r.matches("[data-deeprole-service-reply], [data-deeprole-memory-request], [data-deeprole-character-text-hidden]") && shown(r) && !r.textContent?.trimStart().startsWith("[DeepRole Service]"));
-  const key = (row: HTMLElement) => {
-    const id = row.getAttribute("data-message-id"), virtual = diagnosticVirtualKey ? row.closest("[data-virtual-list-item-key]")?.getAttribute("data-virtual-list-item-key") : null;
-    // The virtual key is a diagnostic candidate only, never proof of selection.
-    // Disagreeing explicit/native keys are ambiguous. Do not strip prefixes or
-    // guess an ID from a list position, prose, DOM id or numeric suffix.
-    if (id !== null && virtual != null && id !== virtual) return null;
-    return id ?? virtual;
-  };
-  const id = rows.at(-1) ? key(rows.at(-1)!) : null;
-  return validNativeStoryId(id) && rows.filter(r => key(r) === id).length === 1 ? id : null;
+  const rows = historyRows(root);
+  const last = rows.at(-1);
+  const id = last && historyRowKey(last, diagnosticVirtualKey);
+  return validNativeStoryId(id) && rows.filter(r => historyRowKey(r, diagnosticVirtualKey) === id).length === 1 ? id : null;
+}
+
+/** DeepSeek may paint the submitted draft before the POST. The visible reply
+ * immediately before it must still be the same parent selected by the server. */
+export function continuedTurnView(parent: string, draft: string, root: ParentNode = document): boolean {
+  const rows = historyRows(root);
+  const matches = rows.filter(row => {
+    const key = historyRowKey(row, true);
+    return validNativeStoryId(key) && nativeStoryMessageKey(key) === parent;
+  });
+  const reply = matches[0];
+  if (matches.length !== 1 || !reply || isUserMessage(reply) || !reply.textContent?.trim()) return false;
+  const pending = rows.slice(rows.indexOf(reply) + 1);
+  if (!pending.length) return true;
+  return pending.length <= 2 && isUserMessage(pending[0]!) && pending[0]!.textContent?.trim() === draft.trim()
+    && (!pending[1] || !isUserMessage(pending[1]) && !pending[1].textContent?.trim());
 }
 /** Listener belongs to one explicit field click; no background polling or storage writes. */
 export async function requestFieldHistory(chatId: string | null, query: FieldHistoryQuery, inScope: () => boolean, root: ParentNode = document, signal?: AbortSignal): Promise<FieldHistoryReference | null> {

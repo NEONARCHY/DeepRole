@@ -20,9 +20,9 @@ test("production iframe is centered, modeless, and returns to the sidebar withou
     await panel.evaluate(async () => (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru", onboardingComplete: true } }));
     await panel.reload();
     await panel.getByRole("button", { name: "Миры", exact: true }).click();
-    await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+    await panel.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
     await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Обсерватория.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ name: "Обсерватория", entries: [{ title: "Правило мира", content: "По ночам над городом видны две луны.", activation: "always" }, { title: "Мира", content: "Мира работает в обсерватории и хранит карту неба.", activation: "smart" }, { title: "Башня", content: "Башня стоит на берегу озера.", activation: "smart" }] })) });
-    await panel.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+    await panel.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
     const chat = await context.newPage();
     await chat.goto("https://chat.deepseek.com/a/chat/floating-test");
     await chat.getByRole("textbox", { name: "Message", exact: true }).fill("Мой несохранённый черновик");

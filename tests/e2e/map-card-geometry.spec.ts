@@ -4,9 +4,9 @@ for (const height of [600, 700, 900]) test(`selected map card remains reachable 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "QA geometry.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ entries: [{ title: "Mira_portrait", content: "Mira wears a blue coat." }, { title: "Mira_personality", content: "Mira is patient." }] })) });
-  await page.getByRole("button", { name: "Подтвердить импорт", exact: true }).click();
+  await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await page.getByRole("button", { name: "Открыть карту мира", exact: true }).click();
   await page.setViewportSize({ width: 360, height });
   const map = page.getByRole("dialog", { name: "Карта мира", exact: true });

@@ -1,0 +1,18 @@
+.dr-recovery [hidden] { display: none; }
+.center-screen.dr-recovery p, .center-screen.dr-recovery .button {
+  max-width: min(32rem, 100%);
+  overflow-wrap: anywhere;
+  font-size: .9375rem;
+}
+.dr-recovery .button { min-width: 44px; min-height: 44px; }
+@media (prefers-color-scheme: light) {
+  .center-screen.dr-recovery {
+    color-scheme: light;
+    color: CanvasText;
+    background: Canvas;
+    --muted: CanvasText;
+    --surface: ButtonFace;
+    --line: ButtonBorder;
+  }
+  .dr-recovery .button { color: ButtonText; }
+}

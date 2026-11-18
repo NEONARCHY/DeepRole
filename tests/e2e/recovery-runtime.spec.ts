@@ -22,6 +22,7 @@ for (const browser of ["edge", "brave"] as const) for (const locale of ["ru", "e
     await expect(recovery.locator("#status")).toHaveAttribute("data-result", "ready");
     await expect(recovery.locator("html")).toHaveAttribute("lang", locale);
     await expect(recovery.locator("#status")).toHaveText(locale === "ru" ? "Фоновая часть отвечает" : "The background service responds");
+    await expect(recovery.locator("#reload")).toBeHidden();
     await recovery.screenshot({ path: info.outputPath("ready.png") });
     await recovery.evaluate(() => {
       const api = (globalThis as any).chrome;
@@ -31,6 +32,29 @@ for (const browser of ["edge", "brave"] as const) for (const locale of ["ru", "e
     });
     await recovery.locator("#check").click();
     await expect(recovery.locator("#status")).toHaveAttribute("data-result", "failed");
+    await expect(recovery.locator("#reload")).toBeHidden();
+    await recovery.evaluate(() => {
+      (globalThis as any).chrome.runtime.sendMessage = async () => ({ ok: true, build: "2025-01-01T00:00:00.000Z" });
+    });
+    await recovery.setViewportSize({ width: 320, height: 470 });
+    await recovery.addStyleTag({ content: "html { font-size: 20px; }" });
+    await recovery.locator("#check").focus();
+    await recovery.keyboard.press("Enter");
+    await expect(recovery.locator("#status")).toHaveAttribute("data-result", "mismatch");
+    await expect(recovery.locator("#background-build")).toContainText("2025-01-01");
+    await recovery.locator("#check").focus();
+    await recovery.keyboard.press("Tab");
+    await expect(recovery.locator("#reload")).toBeFocused();
+    for (const colorScheme of ["light", "dark"] as const) {
+      await recovery.emulateMedia({ colorScheme });
+      for (const control of await recovery.locator(".button").all()) {
+        const box = await control.boundingBox();
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+      }
+      expect(await recovery.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+      await recovery.screenshot({ path: info.outputPath("mismatch-" + colorScheme + ".png"), fullPage: true });
+    }
     await recovery.evaluate(() => (globalThis as any).restorePing());
     await recovery.locator("#check").click();
     await expect(recovery.locator("#status")).toHaveAttribute("data-result", "ready");

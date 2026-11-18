@@ -43,7 +43,7 @@ test("a 280 MiB library exports once and the downloaded file restores all 24 cha
     await repository.clear();
   });
   await page.getByRole("button",{name:"Миры",exact:true}).click();
-  await page.getByRole("button",{name:"Загрузить готовый лор",exact:true}).click();
+  await page.getByRole("button",{name:"Загрузить мир из файла",exact:true}).click();
   await page.locator(".rp-import-input").setInputFiles(file);
   const preview=page.getByRole("dialog",{name:"Восстановление копии",exact:true});
   await expect(preview).toBeVisible({timeout:90_000});

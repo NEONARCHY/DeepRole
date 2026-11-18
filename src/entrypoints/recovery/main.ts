@@ -1,7 +1,7 @@
 import { browser } from "wxt/browser";
 import { startupDeadline } from "../../core/startup";
 import { recoveryCopy } from "../../core/recovery-i18n";
-import type { DeepRoleMessage } from "../../core/messages";
+import { readBackgroundBuild } from "../../adapters/background-build";
 import "../sidepanel/styles.css";
 
 async function start() {
@@ -15,14 +15,23 @@ async function start() {
   (document.getElementById("library") as HTMLAnchorElement).href = browser.runtime.getURL("/sidepanel.html");
   const status = document.getElementById("status")!;
   const check = document.getElementById("check") as HTMLButtonElement;
+  const reload = document.getElementById("reload") as HTMLButtonElement;
+  reload.textContent = copy.reload;
+  reload.onclick = () => { if (status.dataset.result === "mismatch") browser.runtime.reload(); };
   async function ping() {
-    check.disabled = true;
+    check.disabled = true; reload.hidden = true;
     status.textContent = copy.checking;
     try {
-      const response = await startupDeadline(browser.runtime.sendMessage({ type: "DR_PING" } satisfies DeepRoleMessage), 4000);
-      status.textContent = response?.ok && typeof response.build === "string" ? copy.ready : copy.failed;
-      status.dataset.result = response?.ok && typeof response.build === "string" ? "ready" : "failed";
-    } catch { status.textContent = copy.failed; status.dataset.result = "failed"; }
+      const version = await readBackgroundBuild();
+      const result = version === import.meta.env.VITE_BUILD_TIME ? "ready" : "mismatch";
+      status.textContent = copy[result];
+      status.dataset.result = result;
+      reload.hidden = result !== "mismatch";
+      document.getElementById("background-build")!.textContent = `${copy.backgroundBuild}: ${version}`;
+    } catch {
+      status.textContent = copy.failed; status.dataset.result = "failed";
+      document.getElementById("background-build")!.textContent = "";
+    }
     finally { check.disabled = false; }
   }
   check.onclick = () => void ping();

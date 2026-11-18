@@ -96,8 +96,14 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["below", "ex
           if (location.pathname === "/") { window.history.pushState({}, "", "/a/chat/s/" + target); await new Promise(resolve => setTimeout(resolve, 100)); }
           const body = JSON.stringify({ chat_session_id: target, parent_message_id: parent, prompt });
           try {
+            // Navigation can update the page marker after the native send starts.
+            const flags = document.documentElement.dataset;
+            const previousStrict = flags.deeproleStrictMemory;
+            if ((window as any).pendingTransferMarker) delete flags.deeproleStrictMemory;
             const pending = xhr ? new Promise<string>((resolve, reject) => { const request = new XMLHttpRequest(); request.open("POST", "/api/v0/chat/completion"); request.onload = () => resolve(request.responseText); request.onerror = reject; request.onabort = reject; request.send(body); })
               : fetch("/api/v0/chat/completion", { method: "POST", body }).then(r => r.text());
+            if ((window as any).pendingTransferMarker && previousStrict !== undefined) flags.deeproleStrictMemory = previousStrict;
+            (window as any).pendingTransferMarker = false;
             if ((window as any).concurrentDraft) { editor.value = (window as any).concurrentDraft; editor.dispatchEvent(new Event("input", { bubbles: true })); (window as any).concurrentDraft = ""; }
             await pending; await render();
           } catch { /* Expected local block before network. */ }
@@ -149,7 +155,10 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["below", "ex
           return original.call(this, values, ...args);
         };
       }, scenario === "session-blocked");
-      if (locale === "en") await chat.evaluate(() => { (window as any).concurrentDraft = "NEW_DRAFT_KEEP"; });
+      await chat.evaluate(en => {
+        (window as any).pendingTransferMarker = true;
+        if (en) (window as any).concurrentDraft = "NEW_DRAFT_KEEP";
+      }, locale === "en");
       await submit(failedDraft);
       await expect.poll(() => worker.evaluate(() => (globalThis as any).failedDraftWrites)).toBeGreaterThan(0);
       const warning = chat.locator(".dr-send-storage");

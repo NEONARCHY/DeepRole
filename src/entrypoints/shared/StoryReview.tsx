@@ -51,9 +51,9 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
   const t = (key: StoryReviewTextKey) => storyReviewText(locale, key), n = (v: number) => new Intl.NumberFormat(locale).format(v);
   useEffect(() => { if (!guided) return; const timer = setTimeout(() => void run("read"), 0); return () => clearTimeout(timer); }, [guided, operationBlocked]);
   async function memory(task: () => Promise<void>, repair = false) {
-    if (running.current || operationBlocked || readOnly) return; running.current = true; const token = ++generation.current; setBusy(repair ? "repair" : "read"); setNotice(null);
-    try { await task(); const value = await onRead(null); if (!validStoryReviewPage(value)) throw Error("story-review-invalid"); if (mounted.current && token === generation.current) setPage(value); }
-    catch (error) { if (mounted.current && token === generation.current) setNotice(storyReviewError(error)); }
+    if (running.current || operationBlocked || readOnly) return false; running.current = true; const token = ++generation.current; setBusy(repair ? "repair" : "read"); setNotice(null);
+    try { await task(); const value = await onRead(null); if (!validStoryReviewPage(value)) throw Error("story-review-invalid"); if (!mounted.current || token !== generation.current) return false; setPage(value); return true; }
+    catch (error) { if (mounted.current && token === generation.current) setNotice(storyReviewError(error)); return false; }
     finally { running.current = false; if (mounted.current && token === generation.current) setBusy(null); }
   }
   async function game(operation: "start" | "restart" | "sync" | "undo" | "out-of-character", manual: "stop" | "keep" = "stop") {
@@ -124,7 +124,7 @@ export function StoryReview({ locale, onRead, onPreview, onGame, onFact, onRepai
         {page.managed && page.guard && onSupplement && <details className="dr-story-tool"><summary>{ux("supplements")}</summary><p className="setting-copy">{ux("supplementsHint")}</p><ProfileSupplements locale={locale} scope={{ chatId: page.chatId, worldId: page.worldId }} onAction={onSupplement} onChanged={() => void memory(async () => {})} disabled={blocked}/></details>}
         {guided && !page.managed && !needsRecording && <p>{ux("initial")}</p>}
       </section>}
-      <section hidden={guided && section !== "memory"}>{page.managed && <StoryFacts locale={locale} page={page} busy={blocked} compact={guided} onSave={onFact ? (event, text, accept) => void memory(() => onFact(page, event, text, accept)) : undefined} onRepair={onRepair ? () => void memory(() => onRepair(page), true) : undefined}/>}
+      <section hidden={guided && section !== "memory"}>{page.managed && <StoryFacts locale={locale} page={page} busy={blocked} compact={guided} onSave={onFact ? (event, text, accept) => memory(() => onFact(page, event, text, accept)) : undefined} onRepair={onRepair ? () => void memory(() => onRepair(page), true) : undefined}/>}
         {guided && !page.managed && !needsRecording && <p>{ux("initial")}</p>}
       </section>
       {(!guided || visited.timeline) && <section hidden={guided && section !== "timeline"}>{guided && !workspaceSection && <p className="setting-copy">{ux("timelineHint")}</p>}

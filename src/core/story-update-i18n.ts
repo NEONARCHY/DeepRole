@@ -1,5 +1,15 @@
 import type { Locale } from "./types";
 const ru = {
+  editText: "Исправить текст", saveEdit: "Сохранить правку", inactiveFact: "Вне памяти игры", inMemory: "В памяти игры",
+  cancelDecision: "Отмена", confirmSave: "Подтвердить сохранение", confirmExclude: "Подтвердить исключение",
+  saveFactHint: "DeepRole сможет выбирать эту запись для будущих ответов в игре.",
+  editFactHint: "Для следующих ответов DeepRole будет использовать исправленный текст записи.",
+  excludeFactHint: "DeepRole перестанет выбирать эту запись для следующих ответов. Реплика останется в истории.",
+  sameQuote: "Текст записи дословно совпадает с цитатой из ответа.",
+  acceptProfileHint: "Выбранные сведения будут сохранены в анкете персонажа.",
+  supersededFact: "Есть более новая запись", excludeOlder: "Исключить старую запись",
+  editOlderHint: "Правка изменит текст этой записи в истории. Для текущей памяти DeepRole также учитывает более поздние записи.",
+  excludeOlderHint: "У этой записи уже есть замена. Подтверждение снимет со старой записи отметку о принятии. Исходная реплика останется в истории.",
   secret: "Раскрытый секрет", task: "Задача — проверьте её состояние",
   cleanupFailed: "Удаление служебного чата не подтверждено. Проверьте оставшееся служебное окно; игровой чат не удаляется.",
   title: "Память выбранной истории", hint: "Здесь видна принятая память и прежние ручные предложения. Можно проверить цитату, исправить или исключить факт. Новые спорные предложения находятся в «Нужно проверить». При смене варианта память следует выбранной линии.",
@@ -12,6 +22,16 @@ const ru = {
   strict: "Не отправлять без памяти", strictHint: "Если расширение не смогло подготовить память, отправка остановится. Повторите её самостоятельно после проверки; расширение не отправляет сообщения повторно.", blocked: "Сообщение не отправлено: память не подготовлена. Текст возвращён в поле, если оно было пустым. Проверьте мир/сейф и отправьте сами ещё раз.",
 };
 const en: Record<keyof typeof ru, string> = {
+  editText: "Edit text", saveEdit: "Save edit", inactiveFact: "Outside story memory", inMemory: "In story memory",
+  cancelDecision: "Cancel", confirmSave: "Confirm save", confirmExclude: "Confirm exclusion",
+  saveFactHint: "DeepRole can select this entry for future replies in this game.",
+  editFactHint: "DeepRole will use the edited text when it selects this entry for future replies.",
+  excludeFactHint: "DeepRole will stop selecting this entry for future replies. The message stays in the story.",
+  sameQuote: "The entry matches the original quote exactly.",
+  acceptProfileHint: "The selected details will be saved to the character profile.",
+  supersededFact: "A newer entry exists", excludeOlder: "Exclude older entry",
+  editOlderHint: "This edit changes the entry in the story. DeepRole also considers later entries when selecting current facts.",
+  excludeOlderHint: "A later entry already replaced this one. Confirm to withdraw acceptance of the older entry. The original message stays in the story.",
   secret: "Revealed secret", task: "Task — check its status",
   cleanupFailed: "Service-chat deletion was not confirmed. Check the remaining service window; the game chat is never deleted.",
   title: "Memory of the selected story", hint: "Accepted memory and earlier manual proposals appear here. Check the quote, edit or exclude a fact. New uncertain proposals appear under Review needed. Memory follows the selected line when you switch replies.",

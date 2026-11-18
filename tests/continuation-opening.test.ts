@@ -7,6 +7,9 @@ import { storyWorld } from "./fixtures/story-worlds";
 import { automationMarker, captureStoryAutomation } from "../src/core/story-automation";
 import { continuationPromptDigest } from "../src/core/continuation-recovery";
 import { assembledPrompt } from "../src/core/request-injection";
+import { formatMemoryContext } from "../src/core/context";
+import { boundStory } from "../src/core/story-continuation";
+import { handoffLocationHistory, handoffLocationReference } from "../src/core/handoff-location";
 import { DEFAULT_SETTINGS } from "../src/core/defaults";
 import { characterRevision } from "../src/core/characters";
 import { runStoryGame } from "../src/storage/story-game";
@@ -20,9 +23,10 @@ const dbs: DeepRoleDatabase[] = [];
 afterEach(async () => { await Promise.all(dbs.map(db => db.delete())); dbs.length = 0; });
 const fact = "Mira stored the blue key in the metal drawer.";
 const uncertain = "If the bell rings, Mira may lend the lantern.";
-async function setup(mode: "automatic" | "review" = "automatic", initialFact = fact) {
+async function setup(mode: "automatic" | "review" = "automatic", initialFact = fact, initialScene?: string) {
   const f = storyWorld(); f.world.storyAutomation = { mode, revision: "policy" };
   f.world.sharedGame = captureWorldGame(f.records, f.world, f.binding);
+  if (initialScene) f.world.sharedGame.recentStory = boundStory([{role: "assistant", text: initialScene}], "history");
   const db = new DeepRoleDatabase("opening-" + crypto.randomUUID()); dbs.push(db);
   const repo = new DeepRoleRepository(db);
   await repo.updateRecords(() => ({ records: f.records, removed: [], result: undefined }));
@@ -30,7 +34,8 @@ async function setup(mode: "automatic" | "review" = "automatic", initialFact = f
   const { preview } = await savedMemoryContinuation(input, undefined, repo);
   const { snapshot } = await savedMemoryContinuation(input, preview.version, repo);
   const original = "  I ask about the key.\n";
-  const prompt = assembledPrompt(original, "<deeprole_context>" + automationMarker(f.world) + "</deeprole_context>");
+  const sceneContext = initialScene ? formatMemoryContext({entries: [], estimatedTokens: 0, omittedCount: 0}, snapshot) + "\n" : "";
+  const prompt = assembledPrompt(original, sceneContext + "<deeprole_context>" + automationMarker(f.world) + "</deeprole_context>");
   const draft = { snapshotId: snapshot!.id, snapshotToken: "token", targetChatId: "target", requestId: "request", draft: original, promptDigest: await continuationPromptDigest(prompt), automation: captureStoryAutomation(f.world, f.entities) };
   const reply = initialFact + "\n" + uncertain + "\n<deeprole_characters>" + JSON.stringify({ version: 2, world: f.world.id, chat: "target", facts: [{ text: initialFact, quote: initialFact, kind: "event", risk: "ordinary" }, { text: uncertain, quote: uncertain, kind: "plan", risk: "uncertain" }] }) + "</deeprole_characters>";
   const history: StoryGameSnapshot = { chatId: "target", selectedNativeKey: key("2"), messages: [
@@ -39,6 +44,35 @@ async function setup(mode: "automatic" | "review" = "automatic", initialFact = f
   ] };
   return { f, db, repo, snapshot: snapshot!, draft, history, original, reply, opening: { draft, history, settings: DEFAULT_SETTINGS } };
 }
+
+it("recovers a pre-journal placement only from a delivered local checkpoint on the selected game lineage", async () => {
+  const move = "Mira placed the lens in the velvet pouch.";
+  const scene = "— I think she placed the lens on the bench.";
+  const f = await setup("automatic", scene, move);
+  await completeContinuation(f.snapshot, "target", f.repo, f.opening);
+  const world = (await f.repo.get<WorldProfile>("world", f.f.world.id))!;
+  const fromHome = {fromHome: true as const, worldId: world.id};
+  const {preview} = await savedMemoryContinuation(fromHome, undefined, f.repo);
+  const {snapshot} = await savedMemoryContinuation(fromHome, preview.version, f.repo);
+  const records = await f.repo.list<StoryRecord>("story");
+  const saved = (await f.repo.list<typeof f.snapshot>("snapshot")).find(s => s.id === f.snapshot.id)!;
+  const query = "Where is the lens?";
+  const found = handoffLocationHistory(records, [saved], world, snapshot);
+  expect(found.map(p => p.text)).toEqual([move]);
+  const reference = handoffLocationReference(scene, query, found);
+  expect(reference.indexOf(move)).toBeGreaterThan(reference.indexOf(scene));
+  const fullScene = "The light in the workshop is warm. ".repeat(50) + "\n\nThe evening is quiet.";
+  const bounded = handoffLocationReference(fullScene, query, found);
+  expect(bounded).toContain(move);
+  expect(bounded).toContain("The evening is quiet.");
+  expect(bounded.length).toBeLessThanOrEqual(1600);
+  expect(handoffLocationReference(scene, "Where is the atlas?", found)).toBe(scene);
+  for (const checkpoint of [{...saved, appliedAt: undefined}, {...saved, targetChatId: "other"}, {...saved, summary: scene}, {...saved, savedMemory: undefined}]) {
+    expect(handoffLocationHistory(records, [checkpoint], world, snapshot)).toEqual([]);
+  }
+  expect(handoffLocationHistory(records, [saved], world, {...snapshot!, sharedGameRevision: "stale"})).toEqual([]);
+  expect(handoffLocationHistory(records, [saved], {...world, sharedGame: {...world.sharedGame!, id: "other-game"}}, snapshot)).toEqual([]);
+});
 
 it.each(["automatic", "review"] as const)("atomically records a recovered first pair once in %s mode", async mode => {
   const f = await setup(mode);
@@ -71,6 +105,13 @@ it("commits pending memory choices with the accepted turn without rewriting lore
   const saved = await f.repo.rawRecords();
   await completeContinuation(f.snapshot, "target", f.repo, f.opening, undefined, { includedIds: [], excludedIds: [] });
   expect(await f.repo.rawRecords()).toEqual(saved);
+});
+it("accepts the exact saved snapshot after extension messaging reorders its keys", async () => {
+  const f = await setup();
+  const reordered = { ...Object.fromEntries(Object.entries(f.snapshot).reverse()) } as typeof f.snapshot;
+  await expect(completeContinuation({ ...reordered, summary: "different scene" }, "target", f.repo, f.opening)).rejects.toThrow("handoff-conflict");
+  await completeContinuation(reordered, "target", f.repo, f.opening);
+  expect(await f.repo.get("binding", "binding:target")).toBeDefined();
 });
 it.each(["automatic", "review"] as const)("keeps first-segment facts and review while saving a second continuation in %s", async mode => {
   const sourceFact = "Nora placed the wooden seal inside the green drawer.";

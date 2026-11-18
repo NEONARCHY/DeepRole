@@ -30,6 +30,7 @@ for (const locale of ["ru", "en"]) for (const pinned of [false, true]) test(`ada
     if (width <= 640) expect((await card.boundingBox())!.width).toBeLessThan(wide);
   }
   await page.screenshot({ path: info.outputPath("adaptive-narrow.png") });
+  await page.locator(".dr-panel-tools-open").click();
   await page.locator('[data-restore-widget="characters"]').click();
   await expect(page.locator('[data-widget="characters"]')).toBeVisible();
   await page.keyboard.press("Escape");
@@ -41,7 +42,9 @@ for (const locale of ["ru", "en"]) for (const pinned of [false, true]) test(`ada
   await expect(deck).not.toHaveAttribute("data-compact", "true");
   expect((await card.boundingBox())!.width).toBeCloseTo(wide, 0);
   expect(await page.evaluate(() => localStorage.getItem("poses"))).toBe(before);
-  await page.getByRole("button", { name: locale === "ru" ? "Адаптивный размер: вкл" : "Adaptive sizing: on", exact: true }).click();
+  await page.locator(".dr-panel-tools-open").click();
+  await page.getByRole("checkbox", {name:locale === "ru" ? "Адаптивный размер" : "Adaptive sizing",exact:true}).uncheck();
+  await page.keyboard.press("Escape");
   await expect(deck).not.toHaveAttribute("data-adaptive", "true");
   expect(await page.evaluate(() => localStorage.getItem("poses"))).toBe(before);
   await page.screenshot({ path: info.outputPath("manual-sizes-restored.png") });
@@ -54,7 +57,7 @@ for (const locale of ["ru", "en"]) test(`adaptive sizing setting is saved ${loca
   if (locale === "en") {
     const { setEnglish } = await import("./helpers/settings"); await setEnglish(page);
   }
-  await openSettingsSection(page,"app",locale);
+  await openSettingsSection(page,"appearance",locale);
   const toggle = page.getByRole("checkbox", { name: locale === "ru" ? "Адаптивный размер" : "Adaptive sizing", exact: true });
   await expect(toggle).toBeChecked(); await toggle.uncheck();
   await expect.poll(() => page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.adaptiveLayout)).toBe(false);

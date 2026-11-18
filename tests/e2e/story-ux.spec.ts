@@ -75,6 +75,8 @@ for (const locale of ["ru", "en"] as const) for (const colorScheme of ["dark", "
     expect((await mode.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await mode.selectOption("off");
     await expect(settings.locator("summary")).toContainText(t.off);
+    await settings.locator("summary").press("Enter");
+    await expect(settings.getByText(t.pausedSummary, { exact: true })).toBeVisible();
     await proposal.getByRole("button", { name: t.decline, exact: true }).click();
     await expect(inbox.getByText(t.empty, { exact: true })).toBeVisible();
     await expect(page.locator(".dr-story-advanced > summary").filter({ hasText: ux(locale, "extraCheck") })).toBeVisible();
@@ -104,6 +106,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) test
   await expect(page.getByText(ux(locale, "active"), { exact: true })).toBeVisible();
   await page.getByRole("button", { name: ux(locale, "memory"), exact: true }).click();
   const field = page.getByRole("textbox", { name: facts(locale, "text"), exact: true });
+  await page.getByRole("button", { name: facts(locale, "editText"), exact: true }).click();
   await field.fill("My manually reviewed fact");
   await page.getByRole("button", { name: ux(locale, "timeline"), exact: true }).click();
   await expect(page.getByText(ux(locale, "timelineHint"))).toBeVisible(); await expect(field).toBeHidden();

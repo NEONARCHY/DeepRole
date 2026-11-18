@@ -53,6 +53,7 @@ for (const locale of ["ru", "en"]) test(`compact dock and minimized panels follo
   const dock = page.locator(".dr-widget-dock");
   await expect(page.locator(".dr-widget-deck")).toHaveAttribute("data-compact", "true");
   await expect.poll(async () => (await dock.boundingBox())!.x).toBeCloseTo(272, 0);
+  await page.locator(".dr-panel-tools-open").click();
   await page.locator('[data-restore-widget="characters"]').click();
   const character = page.locator('[data-widget="characters"]'); await expect(character).toBeVisible();
   await page.evaluate(() => (window as any).toggleNativeSidebar());
@@ -83,7 +84,9 @@ test("legacy saved coordinates shift together without being rewritten", async ({
   await expect.poll(xs).toEqual([272, 272, 272, 272, 272, 272]);
   await page.evaluate(() => (window as any).toggleNativeSidebar());
   await expect.poll(xs).toEqual([8, 8, 8, 8, 8, 8]);
-  await page.getByRole("button", { name: "Move panels together", exact: true }).click();
+  await page.locator(".dr-panel-tools-open").click();
+  await page.getByRole("checkbox", { name: "Move panels together", exact: true }).check();
+  await page.keyboard.press("Escape");
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("deeprole.widgetLayout.v1")!).anchorX)).toBeCloseTo(272 / 1500, 6);
   await page.reload();
   await expect.poll(xs).toEqual([8, 8, 8, 8, 8, 8]);

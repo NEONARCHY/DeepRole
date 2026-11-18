@@ -1,6 +1,6 @@
 import { captureStoryAutomation } from "../core/story-automation";
 import { startCastWorker } from "../adapters/cast-worker";
-import { savedMemoryBinding, type SavedMemoryRequest, type SavedMemoryTransferState } from "../core/saved-memory-continuation";
+import { isBackgroundBuildFailure, savedMemoryBinding, savedMemoryText, type SavedMemoryRequest, type SavedMemoryTransferState } from "../core/saved-memory-continuation";
 import { isDeepSeekFirstChatRoute, isDeepSeekHome } from "../core/chat-scope";
 import { reportMemoryPreparationFailure, type MemoryPreparationStage } from "../core/memory-preparation-diagnostic";
 import { startIsolatedFieldWorker } from "../adapters/isolated-field-worker";
@@ -31,6 +31,7 @@ import { validCharacterDiscoveryInput, validDiscoveryProfileInput, type Characte
 import { validSupplementInput, currentStoryProfileEntities, storyProfileRecords, type SupplementInput } from "../core/profile-supplements";
 import { storyReviewError, storyReviewText } from "../core/story-review-i18n";
 import { relationshipNarrative } from "../core/relationships";
+import { handoffLocationHistory, handoffLocationReference, type HandoffPassage } from "../core/handoff-location";
 import { observePhotoImages } from "../adapters/photo-loader";
 import { setPortraitPhotoStorage } from "./shared/portrait-file";
 import { characterFieldPrompt, characterFieldResult, validCharacterTextRequest, type CharacterTextRequest, type CharacterTextRunOptions } from "../core/character-text";
@@ -75,6 +76,7 @@ import { chatCapacity, contextWarningLevel } from "../core/context-capacity";
 import { continuationText } from "../core/continuation-i18n";
 import type { StoryContinuation } from "../core/types";
 import { startupBudget } from "../core/startup";
+import { requireMatchingBackground } from "../adapters/background-build";
 import { formatMemoryContext } from "../core/context";
 import { parseSceneChoices, sceneChoiceRecoveryPrompt, sceneChoiceText, type SceneChoice } from "../core/scene-choices";
 import { createId } from "../core/id";
@@ -240,6 +242,7 @@ class PageController {
   private worlds: WorldProfile[] = [];
   private entities: SceneEntity[] = [];
   private storyRecords: import("../core/story-records").StoryRecord[] = [];
+  private handoffPassages: { snapshotId: string; passages: HandoffPassage[] } | null = null;
   private draftScene: SceneState = { ...EMPTY_SCENE };
   private previousChatId: string | null = null;
   private sceneQueue = Promise.resolve();
@@ -510,6 +513,10 @@ class PageController {
     if (this.pendingService && this.failedServiceIds.has(this.pendingService.id)) this.pendingService = null;
     const pendingSnapshotId = pending?.snapshotId;
     this.appliedSnapshot = pendingSnapshotId ? this.snapshots.find((item) => item.id === pendingSnapshotId) ?? null : null;
+    this.handoffPassages = this.appliedSnapshot?.savedMemory ? {
+      snapshotId: this.appliedSnapshot.id,
+      passages: handoffLocationHistory(archiveRecords, this.snapshots, this.worlds.find(w => w.id === this.appliedSnapshot?.worldId), this.appliedSnapshot),
+    } : null;
     this.snapshotToken = this.appliedSnapshot ? pending?.snapshotToken ?? null : null;
     this.retryContinuationTarget = this.appliedSnapshot?.savedMemory ? pending?.retryContinuationTarget ?? null : null;
     if (this.appliedSnapshot?.savedMemory) this.draftOverrides = pending?.continuationOverrides ?? this.appliedSnapshot.memoryOverrides ?? EMPTY_OVERRIDES;
@@ -681,6 +688,7 @@ class PageController {
     if (!pending.length) { window.clearTimeout(this.selfieScanTimer); this.selfieScanTimer = 0; }
   }
   private clearPrivateState() {
+    this.handoffPassages = null;
     this.searchIndex.clear();
     this.reviewReminderTarget = undefined;
     this.reviewReminder.clear();
@@ -954,7 +962,8 @@ class PageController {
       settings: world ?? this.settings,
       character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService || savedMemoryTarget,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
       story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : (opening || savedMemoryTarget) && world && (chatId || requestChatId) ? {world,chat:(chatId ?? requestChatId)!,facts:world.sharedGame?.facts ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : world && recentGame && savedBranch && !this.pendingService ? {world,chat:recentGame.activeChatId,branch:savedBranch,facts:recentGame.facts,taskArchive:this.taskArchives.get(savedBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,referenceOnly:true} : undefined,
-      snapshot,
+      snapshot: snapshot && savedMemoryTarget && !this.pendingService && this.handoffPassages?.snapshotId === snapshot.id
+        ? { ...snapshot, summary: handoffLocationReference(snapshot.summary, draft, this.handoffPassages.passages) } : snapshot,
       continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
       restart: !!recentGame?.restartPending && !this.pendingService,
       choices: choicesEnabled && !this.pendingService,
@@ -1109,7 +1118,8 @@ class PageController {
     this.state.generating = this.adapter.isGenerating();
     const authenticationPage = this.adapter.isAuthenticationPage();
     const savedMemory = this.savedMemoryTransferState(authenticationPage), savedMemoryQueued = this.savedMemoryTarget();
-    const activitySignature = JSON.stringify([this.state.activity, this.state.generating, this.state.warning, savedMemory, savedMemoryQueued]);
+    const savedMemoryAttempt = this.savedMemoryAttempt();
+    const activitySignature = JSON.stringify([this.state.activity, this.state.generating, this.state.warning, savedMemory, savedMemoryQueued, savedMemoryAttempt]);
     if (activitySignature !== this.publishedActivity) {
       this.publishedActivity = activitySignature;
       void browser.runtime.sendMessage({ type: "DR_CONTEXT_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
@@ -1125,6 +1135,7 @@ class PageController {
         open: (version, worldId) => this.openSavedMemory(savedMemory.scope, version, worldId),
       } : undefined}
       savedMemoryQueued={savedMemoryQueued}
+      savedMemoryAttempt={savedMemoryAttempt}
       onDismissCapacityWarning={() => void this.dismissCapacityWarning()}
       onDisableCapacityWarnings={() => void updateSettings({ contextWarningsEnabled: false }).then(() => this.reload())}
       onPanelWidthChange={async width => { await updateSettings({ floatingPanelWidth: width }); await this.reload(); }}
@@ -2155,6 +2166,22 @@ class PageController {
       snapshot.sourceChatId, this.adapter.getChatId(), !!this.currentBinding()) || !this.retryContinuationTarget && isDeepSeekHome(location.href);
   }
 
+  private savedMemoryAttempt(): import("../core/saved-memory-continuation").SavedMemoryAttempt | undefined {
+    const snapshot = this.appliedSnapshot;
+    if (!snapshot?.savedMemory || this.state.vaultLocked) return;
+    if (this.pendingContinuationCommit) return "savingTurn";
+    const draft = this.state.continuationDraft;
+    if (draft?.blockedLength || this.retryContinuationTarget?.returnHomeAfterLengthBlock || this.state.promptLength || this.state.sendStorageFailure) return;
+    const attempt = draft ?? this.retryContinuationTarget;
+    if (!attempt || attempt.snapshotId !== snapshot.id || attempt.snapshotToken !== this.snapshotToken) return;
+    const activeChat = this.worlds.find(world => world.id === snapshot.worldId)?.sharedGame?.activeChatId;
+    if (activeChat && activeChat !== snapshot.sourceChatId && activeChat !== attempt.targetChatId) return "movedGame";
+    if (draft) return "checkFirstTurn";
+    for (const delivery of this.deliveries.values()) {
+      if (delivery.snapshot?.id === snapshot.id && delivery.snapshotToken === attempt.snapshotToken && delivery.targetChatId === attempt.targetChatId) return "waitingForReply";
+    }
+  }
+
   private async openSavedMemory(scope: string, version: string, worldId?: string) {
     const source = this.resolveSavedMemory(scope, worldId);
     const fromHome = "fromHome" in source;
@@ -2166,17 +2193,32 @@ class PageController {
     if (this.transferring) throw Error("busy");
     guard();
     this.transferring = true; this.state.transferring = true; this.render();
+    const startedAt = Date.now();
+    let stage: MemoryPreparationStage = "scene";
     try {
-      await this.sceneQueue; guard();
+      // The last edit's promise may still be rejected after the edit has ended.
+      // Recover the durable scene before validating this independent transfer.
+      await this.sceneQueue.catch(async () => {
+        if (!await this.reload()) throw Error("handoff-stale");
+      });
+      guard();
+      stage = "handshake";
+      await requireMatchingBackground(); guard();
+      stage = "capture";
       const { snapshot } = await repository.savedMemoryContinuation(source, version);
       guard();
       if (!snapshot) throw Error("handoff-invalid");
       const token = createId("handoff");
+      stage = "recovery";
       if (!await this.saveTabState({ snapshotId: snapshot.id, snapshotToken: token, retryContinuationTarget: null, continueOnFreshChat: false, continueUntil: fromHome ? null : Date.now() + 90_000 }, { snapshotId: null, continuationKey: continuationKey(null) })) throw Error("handoff-conflict");
       try { guard(); }
       catch (error) { await this.saveTabState({ snapshotId: null, snapshotToken: null, continueUntil: null }, { snapshotId: snapshot.id, snapshotToken: token }); throw error; }
+      stage = fromHome ? "reload" : "navigation";
       if (fromHome) await this.reload();
       else location.assign("https://chat.deepseek.com/");
+    } catch (error) {
+      reportMemoryPreparationFailure(stage, error, startedAt);
+      throw error;
     } finally { this.transferring = false; this.state.transferring = false; this.render(); }
   }
 
@@ -2403,6 +2445,9 @@ class PageController {
       const opening = this.savedMemoryTarget() && requestIdentity?.nativeParentKey === null && requestChatId !== this.appliedSnapshot?.sourceChatId
         ? { snapshot: this.appliedSnapshot, token: this.snapshotToken } : null;
       const preparationStartedAt = Date.now();
+      // The new route may still be publishing its page-wide sending mode.
+      // Once this request uses a saved transfer it must never fall back to a bare send.
+      let requiresTransfer = Boolean(opening);
       let preparationStage: MemoryPreparationStage = "navigation";
       const prepareContext = async (url: string) => {
         preparationStage = "navigation";
@@ -2451,7 +2496,13 @@ class PageController {
         const shared = this.worlds.find(w => w.id === bound?.worldId)?.sharedGame;
         if (!this.pendingService && bound && requestChatId === bound.chatId && shared?.managed && shared.activeBindingId === bound.id && !this.trackedBindings.has(bound.id)) {
           preparationStage = "start";
-          await this.storyGame.run("start"); loaded = await this.reload();
+          if (storyIdentity?.nativeParentKey) {
+            await this.storyGame.run("start", storyIdentity.nativeParentKey, "stop", undefined, {
+              beforeSend: true, draft, verifyContinuedTurn: true,
+              allowed: () => location.href === url && this.currentBinding()?.id === bound.id && this.sharedGameActive(),
+            });
+          } else await this.storyGame.run("start");
+          loaded = await this.reload();
           if (!loaded || location.href !== url) throw Error("context-changed");
         }
         // Start at the verified native parent before preparing this user turn.
@@ -2515,6 +2566,10 @@ class PageController {
           || this.retryContinuationTarget && storyIdentity.chatId !== this.retryContinuationTarget.targetChatId)) throw Error("context-changed");
         const characterChatId = currentChatId ?? (location.pathname === "/" ? requestChatId : undefined);
         const snapshot = this.appliedSnapshot && memoryWorld(this.appliedSnapshot, this.books) === scene.worldId ? this.appliedSnapshot : null;
+        if (snapshot?.savedMemory) {
+          requiresTransfer = true;
+          await requireMatchingBackground();
+        }
         const delivery: ContextDelivery = {
           targetChatId: characterChatId,
           storyIdentity,
@@ -2593,6 +2648,7 @@ class PageController {
         await this.preserveContinuationSend(id, delivery, draft, context);
         this.assertScope(delivery.scope);
         if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
+        if (delivery.continuationDraft) this.render();
         window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: true, context, ...(delivery.snapshot ? { continuation: true, url } : {}), ...(capture ? { capture: true } : {}), ...(draft !== initialDraft ? { replacementDraft: draft } : {}), ...(typeof event.data.editNativeKey === "string" && storyIdentity ? { preparedIdentity: storyIdentity } : {}) }, "*");
         this.maybeWarnContext();
       };
@@ -2609,7 +2665,9 @@ class PageController {
         this.deliveries.delete(id);
         reportMemoryPreparationFailure(preparationStage, error, preparationStartedAt);
         if (error instanceof Error && error.message.startsWith("story-")) { this.state.warning = storyReviewText(this.state.locale, storyReviewError(error)); this.render(); }
-        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false }, location.origin);
+        const incompatible = isBackgroundBuildFailure(error);
+        if (incompatible) this.showToast(savedMemoryText(this.state.locale).transferMismatch);
+        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible }, location.origin);
       });
       return;
     }
@@ -2709,15 +2767,21 @@ class PageController {
       && continuationDraftKey(this.state.continuationDraft) === key && !this.pendingContinuationCommit;
     if (!current() || automatic && this.checkedContinuationHistory.has(attemptKey)) return;
     this.checkedContinuationHistory.add(attemptKey);
+    const startedAt = Date.now();
     this.state.continuationChecking = true; this.render();
     try {
+      await requireMatchingBackground();
+      if (!current()) return;
       const history = await checkContinuationHistory(window, notice, current);
       if (!history || !current() || await repository.isLocked()) return;
       // The background revalidates this exact attempt while committing both
       // transfer and first scene. A failed write retains the proof for GET retry.
-      if (!await repository.recoverContinuation(snapshot, notice.snapshotToken, notice.targetChatId, key, history)) return;
+      if (!await repository.recoverContinuation(snapshot, notice.snapshotToken, notice.targetChatId, key, history)) throw Error("handoff-guard");
       await this.reload();
-    } catch { /* Keep the exact draft; unknown history is not proof of acceptance. */ }
+    } catch (error) {
+      if (isBackgroundBuildFailure(error) && current()) this.showToast(savedMemoryText(this.state.locale).transferMismatch);
+      reportMemoryPreparationFailure("recovery", error instanceof Error && error.message === "storage-unavailable" ? "handoff-storage" : error, startedAt);
+    }
     finally { this.state.continuationChecking = false; this.render(); }
   }
 
@@ -2949,7 +3013,7 @@ class PageController {
         scene: this.currentScene(),
         selection: this.selection, overrides: this.overrides(), memoryDelivery: this.memoryDelivery(),
         pendingHandoff: this.state.pendingHandoff,
-        savedMemory: this.savedMemoryTransferState(status.reason === "authentication-page"), savedMemoryQueued: this.savedMemoryTarget(),
+        savedMemory: this.savedMemoryTransferState(status.reason === "authentication-page"), savedMemoryQueued: this.savedMemoryTarget(), savedMemoryAttempt: this.savedMemoryAttempt(),
         activity: this.currentActivity(), generating: this.adapter.isGenerating(), warning: this.state.warning,
       } satisfies DeepRoleMessage;
     }

@@ -1,6 +1,7 @@
 import type { SceneState, StoryContinuation } from "./types";
 import { validStoryAutomationCapture } from "./story-automation";
 import { DEEPSEEK_PROMPT_CHAR_LIMIT } from "./request-injection";
+import { canonicalStoryValue } from "./story-value";
 
 /** Preserve a queued transfer while the outgoing document is still unloading. */
 export function waitingForContinuationHome(sourceChatId: string | undefined, chatId: string | null, until: number | null | undefined, now = Date.now()): boolean {
@@ -28,7 +29,7 @@ export interface ContinuationReceipt { snapshotId: string; snapshotToken: string
 /** Original user text only, kept in extension session RAM until dismissed/accepted. */
 export interface ContinuationDraft extends ContinuationTarget { draft: string; blockedLength?: number; requestId?: string; promptDigest?: string; purpose?: "user-turn" | "out-of-character"; automation?: import("./story-automation").StoryAutomationCapture }
 export function continuationDraftKey(value?: ContinuationDraft | null): string | null {
- return value ? JSON.stringify([value.snapshotId, value.snapshotToken, value.targetChatId, value.draft, value.requestId ?? null, value.promptDigest ?? null, value.automation ?? null, value.purpose ?? null, value.blockedLength ?? null]) : null;
+ return value ? canonicalStoryValue([value.snapshotId, value.snapshotToken, value.targetChatId, value.draft, value.requestId ?? null, value.promptDigest ?? null, value.automation ?? null, value.purpose ?? null, value.blockedLength ?? null]) : null;
 }
 export function matchingContinuationDraft(value: ContinuationDraft | null | undefined, snapshotId: string | undefined, token: string | null, target: ContinuationTarget | null | undefined): ContinuationDraft | null {
  const blocked = value?.blockedLength !== undefined;

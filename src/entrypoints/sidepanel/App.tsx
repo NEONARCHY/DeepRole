@@ -24,7 +24,7 @@ import { ImageSettings } from "./ImageSettings";
 import { PortraitUploadSettings } from "../shared/PortraitUploadSettings";
 import { portraitUploadText } from "../../core/portrait-upload-i18n";
 import { requestImagePermission } from "../../storage/image-permissions";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { PanelWidthControl } from "../shared/PanelWidthControl";
 import { CharacterSettings } from "../shared/CharacterSheets";
 import { saveDefaultActionList, saveWorldActionList } from "../../storage/action-settings";
@@ -126,6 +126,7 @@ type Tab = "overview" | "settings" | "worlds" | "story";
 
 interface PageState {
   tabId?: number;
+  chatTitle?: string;
   memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
   pendingHandoff?: string;
   activity?: ServiceActivity | null;
@@ -140,6 +141,7 @@ interface PageState {
   scene?: SceneState;
   savedMemory?: SavedMemoryTransferState;
   savedMemoryQueued?: boolean;
+  savedMemoryAttempt?: import("../../core/saved-memory-continuation").SavedMemoryAttempt;
 }
 
 const EMPTY_PAGE: PageState = { chatId: null, chatUrl: "", messageCount: 0, compatible: false };
@@ -307,12 +309,13 @@ export function App() {
           tabId: tab.id,
           chatId: response.chatId,
           chatUrl: response.chatUrl,
+          chatTitle: tab.url === response.chatUrl ? tab.title?.replace(/\s*[-–—|]\s*DeepSeek\s*$/i, "").trim() : undefined,
           messageCount: response.messageCount,
           compatible: response.status.compatible,
           scene: response.scene,
           selection: response.selection, overrides: response.overrides, memoryDelivery: response.memoryDelivery,
           activity: response.activity, generating: response.generating, warning: response.warning, pendingHandoff: response.pendingHandoff,
-          savedMemory: response.savedMemory, savedMemoryQueued: response.savedMemoryQueued,
+          savedMemory: response.savedMemory, savedMemoryQueued: response.savedMemoryQueued, savedMemoryAttempt: response.savedMemoryAttempt,
         });
       } else setPage(EMPTY_PAGE);
     } catch {
@@ -395,7 +398,7 @@ export function App() {
     } catch { setToast(st("offsite")); return false; }
   }
   const importTarget: WorldImportTarget | undefined = page.compatible && page.tabId !== undefined && !page.generating && !page.pendingHandoff
-    ? { tabId: page.tabId, chatId: page.chatId, chatUrl: page.chatUrl, worldId: scene.worldId, empty: page.messageCount === 0 }
+    ? { tabId: page.tabId, chatTitle: page.chatTitle, chatId: page.chatId, chatUrl: page.chatUrl, worldId: scene.worldId, empty: page.messageCount === 0 }
     : undefined;
   function startWorld(kind: WorldStartRequest["kind"]) {
     setWorldStart(kind === "import" ? { kind, target: importTarget } : { kind });
@@ -408,7 +411,7 @@ export function App() {
     if (!target) { await refreshPage(); return false; }
     let connected = false;
     try {
-      const { tabId, ...importScope } = target;
+      const { tabId, chatTitle: _displayTitle, ...importScope } = target;
       const tab = await menuTab();
       if (tab?.id === tabId) {
         const next = { worldId: id, focusIds: [], bookId: null };
@@ -582,8 +585,17 @@ export function App() {
     );
   }
 
+  async function refreshWorldLibrary() {
+    // The local commit is complete. A suspended chat may acknowledge the broadcast much later.
+    void notifyDataChanged();
+    await refresh(true);
+    void refreshPage();
+  }
+
   const saved = page.savedMemoryQueued ? undefined : page.savedMemory;
-  const recoveryFirst = !!saved && (!!saved.worlds || !page.compatible || !page.messageCount);
+  const connectedGame = !!page.chatId && activeWorld?.sharedGame?.activeChatId === page.chatId;
+  const canResumeHere = !scene.worldId || !saved?.worlds || saved.worlds.some(world => world.id === scene.worldId);
+  const recoveryFirst = !!saved && (!page.compatible || !connectedGame && canResumeHere && (!!saved.worlds || !page.messageCount));
   const savedTransfer = saved && <SavedMemoryTransfer key={JSON.stringify([page.tabId, saved.scope])}
     locale={settings.locale} worlds={saved.worlds} disabled={saved.blocked} actionClassName={recoveryFirst ? "button primary" : "button secondary"}
     quickResume={page.chatId === null && saved.worlds?.length === 1 && (!scene.worldId || scene.worldId === saved.worlds[0]!.id)}
@@ -619,7 +631,7 @@ export function App() {
         {relevantProposals.length > 0 && <section className="dr-assistant"><header><strong>{at("proposals")}</strong></header>{relevantProposals.map((batch) => <button key={batch.id} onClick={() => setReviewId(batch.id)}>{at("review")} · {batch.items.length + Number(!!batch.profileChange)}</button>)}</section>}
         {activeReview && <MemoryReview key={activeReview.id} locale={settings.locale} batch={activeReview} onClose={() => setReviewId(null)} onDiscard={async () => { await discardMemoryProposals(activeReview.id); await refresh(); }} onSave={async (items, profileChoice) => { await applyMemoryProposals(activeReview.id, items, undefined, profileChoice); const count = items.filter((item) => item.selected && !item.issue).length + Number(!!profileChoice); setToast(at("memoryUpdated").replace("{count}", String(count))); await refresh(); await refreshPage(); }} />}
         {activeTab === "overview" && lastChange && <div className="button-row"><button className="button secondary small" onClick={() => void undoLoreChange(lastChange.id).then(() => refresh()).catch(() => setToast(at("conflict")))}>{at("undo")}</button></div>}
-        {activeTab === "worlds" && <WorldsView defaultActions={settings.characterActions} onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} importTarget={importTarget} initialStart={worldStart} onImportFinished={finishWorldImport} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={async () => { await notifyDataChanged(); await refresh(true); await refreshPage(); }} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
+        {activeTab === "worlds" && <WorldsView defaultActions={settings.characterActions} onExport={id => setExportRequest({ worldId: id })} locale={settings.locale} worlds={worlds} entities={entities} templates={templates} books={books} entries={entries} selectedWorld={libraryWorld} activeWorldId={scene.worldId} scene={scene} onScene={changeScene} connected={page.compatible} importTarget={importTarget} initialStart={worldStart} onImportFinished={finishWorldImport} memoryList={memoryList} onUseWorld={(id) => changeScene({ worldId: id, focusIds: [], bookId: null })} onWorld={chooseLibraryWorld} onEntry={openEntry} onBook={setBookEditor} selection={page.selection} overrides={page.overrides} onMemoryUse={page.compatible ? overrideMemory : undefined} confirmDeletions={settings.confirmDeletions} onChanged={refreshWorldLibrary} onTemplate={applyTemplate} openMapWorldId={openMapWorldId} onMapOpened={() => setOpenMapWorldId(null)} />}
         {activeTab === "overview" && (
           <Overview
             locale={settings.locale}
@@ -639,7 +651,7 @@ export function App() {
           />
         )}
 
-        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary data-dr-guide="continuation-toggle">{mt("continue")}</summary>
+        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary data-dr-guide="continuation-toggle" aria-labelledby="dr-play-continue-title" aria-describedby="dr-play-continue-hint"><span className="dr-play-copy"><strong id="dr-play-continue-title">{mt("continue")}</strong><small id="dr-play-continue-hint">{settings.locale === "ru" ? "Перенести игру в новый чат DeepSeek." : "Move your game to a new DeepSeek chat."}</small></span></summary>
           <div data-dr-guide="continuation-content">
           <HandoffView
             t={t}
@@ -754,7 +766,7 @@ function Overview(props: {
   const preview = <MemoryStatus key={props.page.chatUrl + props.world?.id} locale={props.locale} connected warning={warning} selection={selection} pendingHandoff={pendingHandoff} available={enabledEntries} onAdd={props.onNewMemory} neutralEmpty={!!props.world}/>;
   return <div className="view-stack play-view">
     <div className="view-title"><h1 ref={props.headingRef} tabIndex={-1}>{mt("play")}</h1></div>
-    <PlayStart locale={props.locale} world={props.world} hasWorlds={props.hasWorlds} compatible={props.page.compatible} chatId={props.page.chatId} messageCount={props.page.messageCount} pendingHandoff={!!props.page.pendingHandoff} savedMemoryQueued={props.page.savedMemoryQueued} savedTransfer={props.savedTransfer} controls={props.controls} onStart={props.onWorldStart} onLibrary={props.onOpenMemory} onMemory={props.onOpenStory}/>
+    <PlayStart locale={props.locale} world={props.world} hasWorlds={props.hasWorlds} compatible={props.page.compatible} chatId={props.page.chatId} messageCount={props.page.messageCount} pendingHandoff={!!props.page.pendingHandoff} savedMemoryQueued={props.page.savedMemoryQueued} savedMemoryAttempt={props.page.savedMemoryAttempt} savedTransfer={props.savedTransfer} controls={props.controls} onStart={props.onWorldStart} onLibrary={props.onOpenMemory} onMemory={props.onOpenStory}/>
     <ServiceProgress locale={props.locale} activity={props.page.activity} />
     {showContext && showPreview && preview}
     {!!selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {selection.omittedCount}</p>}
@@ -901,6 +913,16 @@ function HandoffView(props: {
   );
 }
 
+function SettingSwitch({ label, hint, checked, onChange }: {
+  label: string; hint: string; checked: boolean; onChange: (checked: boolean) => void;
+}) {
+  const id = useId();
+  return <label className="toggle-row dr-setting-switch">
+    <span><strong id={id}>{label}</strong><small id={id + "-hint"}>{hint}</small></span>
+    <input type="checkbox" aria-labelledby={id} aria-describedby={id + "-hint"} checked={checked} onChange={event => onChange(event.target.checked)} />
+  </label>;
+}
+
 function SettingsView(props: {
   onExport: () => void;
   t: ReturnType<typeof useTranslator>;
@@ -911,6 +933,7 @@ function SettingsView(props: {
   onToast: (message: string) => void;
 }) {
   const [section, setSection] = useState<SettingsSection>("home");
+  const n = (key: Parameters<typeof navigationText>[1]) => navigationText(props.settings.locale, key);
   const changePreference = (next: DeepRoleSettings) => { void props.onSettings(next).catch(() => { /* App shows the persistent storage error. */ }); };
   const [capacityDraft, setCapacityDraft] = useState(String(chatCapacity(props.settings.chatContextCapacity)));
   useEffect(() => setCapacityDraft(String(chatCapacity(props.settings.chatContextCapacity))), [props.settings.chatContextCapacity]);
@@ -975,15 +998,19 @@ function SettingsView(props: {
 
   return (
     <div className="view-stack">
-      <div className="view-title"><div><h1>{props.t("settings")}</h1></div></div>
       <SettingsNavigation locale={props.settings.locale} section={section} onSelect={setSection} worldName={props.world?.name}/>
       <div className="dr-settings-page" hidden={section !== "appearance"}>
+        <SettingsCard icon={<Pin />} title={n("panels")}>
+          <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />
+          <SettingSwitch label={adaptiveText(props.settings.locale).title} hint={n("adaptive")} checked={props.settings.adaptiveLayout !== false} onChange={adaptiveLayout => changePreference({ ...props.settings, adaptiveLayout })} />
+          <SettingSwitch label={sceneChoiceText(props.settings.locale, "pinChoices")} hint={n("fixedChoices")} checked={!!props.settings.pinSceneChoices} onChange={pinSceneChoices => changePreference({ ...props.settings, pinSceneChoices })} />
+          <SettingSwitch label={sceneChoiceText(props.settings.locale, "pinPortraits")} hint={n("fixedPortraits")} checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={pinned => changePreference({ ...props.settings, pinPortraitLeft: pinned, pinPortraitRight: pinned })} />
+        </SettingsCard>
         <SettingsCard icon={<Eye />} title={portraitUploadText(props.settings.locale, "title")}>
           <PortraitUploadSettings settings={props.settings} onSettings={props.onSettings} />
         </SettingsCard>
         <SettingsCard icon={<Eye />} title={x("reasoningTitle")} locale={props.settings.locale} help={x("reasoningHint")}>
-          <label className="toggle-row"><span>{x("reasoningShow")}</span><input type="checkbox" checked={props.settings.showDeepSeekReasoning === true} onChange={event => changePreference({ ...props.settings, showDeepSeekReasoning: event.target.checked })} /></label>
-
+          <SettingSwitch label={x("reasoningShow")} hint={n("thoughts")} checked={props.settings.showDeepSeekReasoning === true} onChange={showDeepSeekReasoning => changePreference({ ...props.settings, showDeepSeekReasoning })} />
         </SettingsCard>
       </div>
       <div className="dr-settings-page" data-dr-guide="settings-images-content" hidden={section !== "images"}><ImageSettings locale={props.settings.locale} onPermission={profile => requestImagePermission(profile.baseUrl)} onModels={async profile => { const result = await browser.runtime.sendMessage({ type: "DR_IMAGE_MODELS", profile } satisfies DeepRoleMessage); if (!result?.ok) throw Object.assign(new Error(result?.error ?? "failed"), { code: result?.error ?? "failed", diagnostic: result?.diagnostic, headers: result?.headers }); return result.models; }} /></div>
@@ -1005,35 +1032,25 @@ function SettingsView(props: {
           props.onRefresh();
         }} />
       </SettingsCard>
-      </div><div className="dr-settings-page" hidden={section !== "app"}>
-      <SettingsCard icon={<Pin />} title={props.settings.locale === "ru" ? "Панели и сцена" : "Panels and scene"} locale={props.settings.locale} help={props.settings.locale === "ru" ? "Эти настройки действуют во всех чатах. Перетаскивание портретов остаётся доступным, когда закрепление выключено." : "These settings apply across chats. You can still drag portraits when pinning is off."}>
-        <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />
-        <div className="toggle-row"><SettingsHelp locale={props.settings.locale} title={adaptiveText(props.settings.locale).title} text={adaptiveText(props.settings.locale).hint}/><input aria-label={adaptiveText(props.settings.locale).title} type="checkbox" checked={props.settings.adaptiveLayout !== false} onChange={event => changePreference({ ...props.settings, adaptiveLayout: event.target.checked })} /></div>
-
-
-        <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinChoices")}</span><input type="checkbox" checked={!!props.settings.pinSceneChoices} onChange={event => changePreference({ ...props.settings, pinSceneChoices: event.target.checked })} /></label>
-        <label className="toggle-row"><span>{sceneChoiceText(props.settings.locale, "pinPortraits")}</span><input type="checkbox" checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={event => changePreference({ ...props.settings, pinPortraitLeft: event.target.checked, pinPortraitRight: event.target.checked })} /></label>
-      </SettingsCard>
       </div><div className="dr-settings-page" hidden={section !== "safety"}>
       <SettingsCard icon={<ShieldCheck />} title={replyRecoveryText(props.settings.locale).title} locale={props.settings.locale} help={replyRecoveryText(props.settings.locale).hint}>
-        <label className="toggle-row"><span>{replyRecoveryText(props.settings.locale).toggle}</span><input type="checkbox" checked={props.settings.replyRecoveryEnabled !== false} onChange={event => changePreference({ ...props.settings, replyRecoveryEnabled: event.target.checked })} /></label>
-
+        <SettingSwitch label={replyRecoveryText(props.settings.locale).toggle} hint={n("recovery")} checked={props.settings.replyRecoveryEnabled !== false} onChange={replyRecoveryEnabled => changePreference({ ...props.settings, replyRecoveryEnabled })} />
       </SettingsCard>
       <StoryUpdateSettings settings={props.settings} onSave={changePreference} />
       </div><div className="dr-settings-page" hidden={section !== "app"}>
       <SettingsCard icon={<Languages />} title={props.t("language")}>
-        <div className="segmented"><HelpButton className={props.settings.locale === "ru" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton className={props.settings.locale === "en" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
+        <div className="segmented"><HelpButton aria-pressed={props.settings.locale === "ru"} className={props.settings.locale === "ru" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton aria-pressed={props.settings.locale === "en"} className={props.settings.locale === "en" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
       </SettingsCard>
-      <SettingsCard icon={<Eye />} title={x("contextIndicatorsTitle")} locale={props.settings.locale} help={[x("contextIndicatorsHint"), continuationText(props.settings.locale, "warnings") + ": " + continuationText(props.settings.locale, "warningHint"), continuationText(props.settings.locale, "capacity") + ": " + continuationText(props.settings.locale, "capacityHint")].join("\n\n")}>
+      <SettingsCard icon={<Eye />} title={n("meters")}>
+        <SettingSwitch label={x("chatContextIndicator")} hint={n("chatMeter")} checked={props.settings.showChatContextMeter} onChange={showChatContextMeter => changePreference({ ...props.settings, showChatContextMeter })} />
+        <SettingSwitch label={x("memoryContextIndicator")} hint={n("memoryMeter")} checked={props.settings.showMemoryContextIndicator} onChange={showMemoryContextIndicator => changePreference({ ...props.settings, showMemoryContextIndicator })} />
+        <SettingSwitch label={continuationText(props.settings.locale, "warnings")} hint={continuationText(props.settings.locale, "warningHint")} checked={props.settings.contextWarningsEnabled !== false} onChange={contextWarningsEnabled => changePreference({ ...props.settings, contextWarningsEnabled })} />
 
-        <label className="toggle-row"><span>{x("chatContextIndicator")}</span><input type="checkbox" checked={props.settings.showChatContextMeter} onChange={(event) => changePreference({ ...props.settings, showChatContextMeter: event.target.checked })} /></label>
-        <label className="toggle-row"><span>{x("memoryContextIndicator")}</span><input type="checkbox" checked={props.settings.showMemoryContextIndicator} onChange={(event) => changePreference({ ...props.settings, showMemoryContextIndicator: event.target.checked })} /></label>
-        <label className="toggle-row"><span>{continuationText(props.settings.locale, "warnings")}</span><input type="checkbox" checked={props.settings.contextWarningsEnabled !== false} onChange={event => changePreference({ ...props.settings, contextWarningsEnabled: event.target.checked })} /></label>
-
-        <label className="field-label"><span>{continuationText(props.settings.locale, "capacity")}</span><input type="number" min="8000" max="2000000" step="1000" value={capacityDraft} onChange={event => setCapacityDraft(event.target.value)} onBlur={() => {
+        <label className="field-label"><span>{continuationText(props.settings.locale, "capacity")}</span><input aria-describedby="dr-capacity-note" type="number" min="8000" max="2000000" step="1000" value={capacityDraft} onChange={event => setCapacityDraft(event.target.value)} onBlur={() => {
           const number = Number(capacityDraft), value = capacityDraft.trim() && Number.isFinite(number) ? Math.min(2_000_000, Math.max(8000, Math.round(number))) : chatCapacity(props.settings.chatContextCapacity);
           setCapacityDraft(String(value)); if (value !== props.settings.chatContextCapacity) changePreference({ ...props.settings, chatContextCapacity: value });
         }} /></label>
+        <p className="setting-copy" id="dr-capacity-note">{continuationText(props.settings.locale, "capacityHint")}</p>
 
       </SettingsCard>
       </div>
@@ -1048,9 +1065,8 @@ function SettingsView(props: {
       {restore && <BackupRestore t={props.t} fileName={restore.fileName} payload={restore.payload} onClose={() => setRestore(null)} onRestore={async (mode) => { await restoreBackup(restore.payload, mode); setRestore(null); props.onToast(props.t("importSuccess")); props.onRefresh(); }} />}
       <div className="dr-settings-page" hidden={section !== "diagnostics"}><StoryDiagnostics locale={props.settings.locale} onCheck={() => checkActiveStoryDiagnostics(menuTabs)} /><ServiceDiagnostics locale={props.settings.locale} onCheck={() => readServiceDiagnostics()} /></div>
       <div className="dr-settings-page" hidden={section !== "app"}>
-      <SettingsCard icon={<BrainCircuit />} title={u("reminders")} locale={props.settings.locale} help={u("remindersHint")}>
-
-        <label className="toggle-row"><span>{u("remind")}</span><input type="checkbox" checked={props.settings.suggestionsEnabled} onChange={(event) => changePreference({ ...props.settings, suggestionsEnabled: event.target.checked })} /></label>
+      <SettingsCard icon={<BrainCircuit />} title={u("reminders")}>
+        <SettingSwitch label={u("remind")} hint={u("remindersHint")} checked={props.settings.suggestionsEnabled} onChange={suggestionsEnabled => changePreference({ ...props.settings, suggestionsEnabled })} />
         <label className="field-label"><span className="help-field-title">{u("interval")}</span><input type="number" min="4" max="100" value={reminderDraft} disabled={!props.settings.suggestionsEnabled} onChange={(event) => setReminderDraft(event.target.value)} onBlur={() => { const number = Number(reminderDraft); const value = reminderDraft.trim() && Number.isFinite(number) ? Math.min(100, Math.max(4, Math.round(number))) : props.settings.suggestionInterval; setReminderDraft(String(value)); if (value !== props.settings.suggestionInterval) changePreference({ ...props.settings, suggestionInterval: value }); }} /></label>
       </SettingsCard></div>
       <div className="dr-settings-page" hidden={section !== "data"}><SettingsCard icon={<CircleHelp />} title={props.t("deletionProtection")}>

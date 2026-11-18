@@ -55,7 +55,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings are discove
   await settings.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true }).click(); await expect(settings.getByRole("status").last()).toHaveText(locale === "ru" ? "Сохранено" : "Saved");
   expect(await page.evaluate(async () => { const { repository } = await import("/src/storage/repository.ts" as string); return (await repository.get("world", "world-a"))?.characterActions.includes("Focused"); })).toBe(true);
   expect(await page.evaluate(async () => (await (window as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.characterActions?.includes("Focused") ?? false)).toBe(false);
-  await openSettingsSection(page,"app",locale);
+  await openSettingsSection(page,"appearance",locale);
   await expect(page.getByRole("slider", { name: locale === "ru" ? "Ширина всех панелей" : "Width of all panels" })).toBeVisible();
 });
 
@@ -63,11 +63,12 @@ for (const locale of ["ru", "en"] as const) test(`all floating panels share a pe
   await page.setViewportSize({ width: 1280, height: 950 }); await page.goto(`/tests/fixtures/page-widget.html?panels=1&locale=${locale}`);
   const widths = () => page.locator(".dr-widget-tile>:not(.dr-widget-tools)").evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width));
   await expect.poll(widths).toEqual([224, 224, 224, 224, 224]);
-  await page.getByRole("button", { name: locale === "ru" ? "Ширина всех панелей" : "Width of all panels", exact: true }).click();
+  await page.locator(".dr-panel-tools-open").click();
   const range = page.getByRole("slider"); await range.focus(); await range.press("End"); await expect.poll(widths).toEqual([360, 360, 360, 360, 360]);
   await range.press("Escape"); await expect(range).toBeHidden(); await page.reload(); await expect.poll(widths).toEqual([360, 360, 360, 360, 360]);
   await page.evaluate(() => (window as any).setWidgetState({ adaptiveLayout: true })); await page.setViewportSize({ width: 360, height: 900 });
   await expect(page.locator(".dr-widget-deck")).toHaveAttribute("data-compact", "true");
+  await page.locator(".dr-panel-tools-open").click();
   await page.locator('[data-restore-widget="characters"]').click(); const rect = await page.locator('[data-widget="characters"]').boundingBox(); expect(rect!.x + rect!.width).toBeLessThanOrEqual(360);
   await page.setViewportSize({ width: 1280, height: 950 }); await expect.poll(widths).toEqual([360, 360, 360, 360, 360]);
 });

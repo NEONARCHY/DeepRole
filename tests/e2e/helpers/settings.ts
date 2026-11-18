@@ -6,9 +6,11 @@ export async function openSettingsSection(page: Page | FrameLocator | Locator, s
   const directory = page.locator(".dr-settings-directory");
   const back = directory.getByRole("button", {name:/^(Все настройки|All settings)$/});
   if (await back.isVisible()) await back.click();
-  if(section === "memory" || section === "diagnostics") await directory.getByText(navigationText(locale,"advanced"),{exact:true}).click();
-  if(section === "diagnostics") await directory.getByText(navigationText(locale,"support"),{exact:true}).click();
-  await directory.getByRole("button", {name:navigationText(locale,section),exact:true}).click();
+  const route = directory.getByRole("button", {name:navigationText(locale,section),exact:true});
+  if ((section === "memory" || section === "diagnostics") && !(await route.isVisible())) {
+    await directory.getByText(navigationText(locale,"advanced"),{exact:true}).click();
+  }
+  await route.click();
 }
 
 export async function setEnglish(page: Page) {

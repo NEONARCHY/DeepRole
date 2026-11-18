@@ -228,7 +228,7 @@ The **chat context meter** estimates the conversation's size; the **Context** ba
 
 Graphite surfaces, pale-blue accents, soft glow on important actions, iOS-style switches, matching dropdowns and thin dark scrollbars. Secondary actions stay quieter; animation can be turned off, and reduced-motion preferences are respected.
 
-The floating panels below the chat title share one width: **224 px by default**, adjustable together from **200 to 360 px** using the toolbar or **Settings → App → Panels and scene**. Panels keep a 1 px gap. Drag a panel by its non-interactive area, or use the always-visible group handle to move the set. Reset returns it below the current chat title; closing DeepSeek's sidebar moves it smoothly into the freed space.
+Open **Panel settings** below the chat title to change the panel width, show portraits or move panels together. In a narrow chat with adaptive sizing on, **Chat panels** also lets you choose which panel to open. Memory warnings remain visible in the chat. The panels share one width, **224 px by default**, adjustable from **200 to 360 px** here or in **Settings → Chat appearance**. Pull the **Drag** handle to move the set, or focus it and use the arrow keys. **Reset panel layout** returns the panels below the chat title.
 
 **Adaptive sizing is on by default.** Narrow windows use compact panel buttons and a portrait row instead of forcing large cards over each other. Your manual sizes are kept.
 
@@ -270,7 +270,7 @@ Large exports store each saved photo once, even when it is assigned to several a
 
 1. Open **Settings → Files & security → Export**.
 2. Choose **This world**, select the world and click **Download file**.
-3. On another installation, use **Lore → Import existing lore** or **Settings → Files & security → Import**, choose the JSON and confirm the world import.
+3. On another installation, use **Worlds → Load a world from a file** or **Settings → Files & security → Import**, choose the JSON and confirm the world import.
 
 The file contains the stored versions, not discarded original upload files. Unsaved character edits must be saved first. More pictures make a larger JSON. Treat it as private: an ordinary world export is not password-encrypted. API keys/connections are not included, and exporting a world is not exporting the full DeepSeek conversation. For shared lore games, their archives and all extension settings, choose **Full backup** below.
 
@@ -279,7 +279,7 @@ The file contains the stored versions, not discarded original upload files. Unsa
 | **Export world** | That world's lore, effective roster and names, images, action rules, relationship settings and starting characteristic values. Excludes played scores and game history. |
 | **Full backup** | All worlds, records, settings, shared lore games, archives, saved history and played character progress. Use this when moving to another computer. |
 
-Choose **Settings → Files & security → Export → Full backup**, keep the downloaded file somewhere safe, then import it into DeepRole on the other computer. Both **Settings → Files & security → Import** and **Lore → Import existing lore** recognize full backups, including password-protected files. Both open the same preview: add missing records without overwriting existing ones, or restore the full library and settings after explicit confirmation. World exports retain their separate world-import flow.
+Choose **Settings → Files & security → Export → Full backup**, keep the downloaded file somewhere safe, then import it into DeepRole on the other computer. Both **Settings → Files & security → Import** and **Worlds → Load a world from a file** recognize full backups, including password-protected files. Both open the same preview: add missing records without overwriting existing ones, or restore the full library and settings after explicit confirmation. World exports retain their separate world-import flow.
 
 **Do not uninstall just to update.** Back up first, replace the files in the folder your browser loaded, reload DeepRole on the extensions page and refresh DeepSeek. A local rebuild does not update a separately unpacked folder automatically.
 

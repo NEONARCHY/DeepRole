@@ -331,7 +331,8 @@ export default defineBackground(() => {
             const inScope = tab.url && ("fromHome" in input
               ? input.fromHome === true && Object.keys(input).length === 2 && isDeepSeekHome(tab.url)
               : validNativeStoryId(input.chatId) && typeof input.chatUrl === "string" && isSameDeepSeekChat(input.chatUrl, tab.url, input.chatId));
-            if (!inScope || expected !== undefined && !tab.active) throw Error("handoff-scope");
+            if (!inScope) throw Error("handoff-scope");
+            if (expected !== undefined && !tab.active) throw Error("handoff-tab-inactive");
             return { ok: true, data: await savedMemoryContinuation(input, expected) };
           }
           if (message.operation === "saveCharacter" || message.operation === "applyCharacterTurn" || message.operation === "savePortraitLayout" || message.operation === "addCharacterAction") {
@@ -385,6 +386,8 @@ export default defineBackground(() => {
         } catch (error) {
           // Keep actionable, fixed story codes; never send arbitrary storage text.
           const code = error instanceof Error ? error.message : "";
+          if (message.operation === "savedMemoryContinuation" && ["handoff-scope", "handoff-stale", "handoff-tab-inactive", "story-game-inactive"].includes(code)) return { ok: false, error: code };
+          if (message.operation === "recoverContinuation" && ["handoff-conflict", "handoff-scope", "handoff-opening-conflict"].includes(code)) return { ok: false, error: code };
           const storyCodes = ["vault-locked", "story-game-paused", "story-manual-conflict", "story-profile-conflict", "story-manual-baseline-conflict", "story-effects-untracked", "story-native-line-unavailable", "story-source-incomplete", "story-review-stale", "story-binding-conflict", "story-start-stale"];
           const detail = code === "story-binding-conflict" && error instanceof Error ? safeMemoryPreparationDetail(error.cause) : undefined;
           return { ok: false, error: code.startsWith("character-") || storyCodes.includes(code) ? code : "storage-unavailable", ...(detail ? { detail } : {}) };

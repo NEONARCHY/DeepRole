@@ -1,4 +1,4 @@
-import { buildBdsImport, parseBds } from "./bds-import";
+import { buildBdsImport, parseBdsData } from "./bds-import";
 import type { ActivationMode, DataRecord, MemoryEntry, MemoryPriority } from "./types";
 
 export interface LoreImportItem {
@@ -10,6 +10,7 @@ export interface LoreImport {
 }
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const invalid = (): never => { throw new Error("loreImportInvalid"); };
+const conflictingFields = (): never => { throw new Error("loreImportConflict"); };
 const titles = ["title", "name", "comment"];
 const texts = ["content", "text", "value"];
 const modes = ["activation", "importance", "mode"];
@@ -19,7 +20,7 @@ function stringField(row: Record<string, unknown>, keys: string[]): string | und
   if (present.some((key) => typeof row[key] !== "string")) invalid();
   const values = present.map((key) => row[key] as string).filter((value) => value.trim());
   // A file with conflicting text columns needs an explicit choice, not a guess.
-  if (new Set(values).size > 1) invalid();
+  if (new Set(values).size > 1) conflictingFields();
   return values[0];
 }
 function activation(value: unknown): ActivationMode {
@@ -33,9 +34,13 @@ export function parseLoreImport(text: string): LoreImport {
   if (text.length > 10_000_000) invalid();
   let value: unknown;
   try { value = JSON.parse(text.replace(/^\uFEFF/, "")); } catch { return invalid(); }
+  return parseLoreImportData(value);
+}
+
+export function parseLoreImportData(value: unknown): LoreImport {
   // Keep the original strict BDS path and its lossless importance mapping.
   if (object(value) && Object.values(value).length && Object.values(value).every((row) => object(row) && "importance" in row && "value" in row && Object.keys(row).every((key) => ["importance", "value"].includes(key)))) {
-    const items = parseBds(text).map((item) => ({ ...item, keywords: [], activation: item.importance === "always" ? "always" as const : "smart" as const, enabled: true, priority: "normal" as const, originalImportance: item.importance }));
+    const items = parseBdsData(value).map((item) => ({ ...item, keywords: [], activation: item.importance === "always" ? "always" as const : "smart" as const, enabled: true, priority: "normal" as const, originalImportance: item.importance }));
     return { format: "bds", items, unsupportedFields: [] };
   }
   if (object(value) && value.format !== undefined) invalid();
@@ -61,12 +66,12 @@ export function parseLoreImport(text: string): LoreImport {
       if (!Array.isArray(words) || words.some((word) => typeof word !== "string" || !word.trim())) return invalid();
       return words as string[];
     });
-    if (new Set(wordValues.map((words) => JSON.stringify(words))).size > 1) invalid();
+    if (new Set(wordValues.map((words) => JSON.stringify(words))).size > 1) conflictingFields();
     const selectedModes = modes.filter((field) => raw[field] !== undefined).map((field) => activation(raw[field]));
-    if (new Set(selectedModes).size > 1) invalid();
+    if (new Set(selectedModes).size > 1) conflictingFields();
     for (const field of ["constant", "enabled", "disabled"]) if (raw[field] !== undefined && typeof raw[field] !== "boolean") invalid();
-    if (raw.constant === true && selectedModes.length && selectedModes[0] !== "always") invalid();
-    if (typeof raw.enabled === "boolean" && typeof raw.disabled === "boolean" && raw.enabled === raw.disabled) invalid();
+    if (raw.constant === true && selectedModes.length && selectedModes[0] !== "always") conflictingFields();
+    if (typeof raw.enabled === "boolean" && typeof raw.disabled === "boolean" && raw.enabled === raw.disabled) conflictingFields();
     if (raw.priority !== undefined && !["low", "normal", "high"].includes(String(raw.priority))) invalid();
     for (const field of Object.keys(raw)) if (!known.has(field)) unsupported.add(field);
     return { title, content, keywords: wordValues[0] ?? [], activation: selectedModes[0] ?? (raw.constant ? "always" : "smart"), enabled: raw.enabled !== false && raw.disabled !== true, priority: (raw.priority as MemoryPriority | undefined) ?? "normal", ...(raw.importance === "always" || raw.importance === "called" ? { originalImportance: raw.importance } : {}) };

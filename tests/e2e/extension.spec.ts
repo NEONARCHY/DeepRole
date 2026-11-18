@@ -20,9 +20,10 @@ test("installed extension shares its private library with chat and remembers wor
     await panel.evaluate(async () => { await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "ru", onboardingComplete: true } }); });
     await panel.reload();
     await panel.getByRole("button", { name: "Миры", exact: true }).click();
-    await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+    await panel.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
     await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Runtime World.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Runtime rule": { value: "Only this world", importance: "always" }, "Promise": { value: "A unique promise", importance: "called" } })) });
-    const confirmImport = panel.getByRole("button", { name: "Подтвердить импорт", exact: true });
+    const confirmImport = panel.getByRole("button", { name: "Сохранить в библиотеку", exact: true });
+    await panel.emulateMedia({colorScheme:"dark"});
     await expect(confirmImport).not.toHaveCSS("box-shadow", "none");
     expect(await confirmImport.evaluate(node => getComputedStyle(node).backgroundImage)).toContain("linear-gradient");
     expect(await confirmImport.evaluate(node => getComputedStyle(node, "::before").pointerEvents)).toBe("none");
@@ -96,7 +97,7 @@ test("installed extension shares its private library with chat and remembers wor
     await character.getByRole("tab", { name: "Изображения", exact: true }).click();
     await expect(character.getByLabel("Действие портрета", { exact: true }).locator('option[value="Focused"]')).toHaveCount(1);
     await character.getByRole("button", { name: "Закрыть", exact: true }).first().click();
-    await chat.getByRole("button", { name: "Ширина всех панелей", exact: true }).click();
+    await chat.getByRole("button", { name: "Вид панелей", exact: true }).click();
     await chat.getByRole("slider", { name: "Ширина всех панелей", exact: true }).press("End");
     await expect.poll(async () => panel.evaluate(async () => (await (globalThis as any).chrome.storage.local.get("deeprole_settings")).deeprole_settings.floatingPanelWidth)).toBe(360);
     await chat.getByRole("slider").press("Escape");

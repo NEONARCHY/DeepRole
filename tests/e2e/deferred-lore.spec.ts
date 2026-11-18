@@ -18,7 +18,7 @@ for (const locale of ["ru", "en"] as const) test(`lore download failure leaves o
   await page.getByRole("button", { name: l("Обновить меню", "Refresh menu"), exact: true }).click();
   await expect(page.getByRole("button", { name: "Миры", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Загрузить готовый лор", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Загрузить мир из файла", exact: true })).toBeVisible();
   expect(attempts).toBe(2);
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Настройки", exact: true })).toBeVisible();

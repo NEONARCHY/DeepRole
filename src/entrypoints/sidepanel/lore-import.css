@@ -1,3 +1,7 @@
+.dr-worlds-heading { display: grid; gap: var(--dr-space-2); }
+.dr-worlds-heading .view-title { min-height: 0; }
+.worlds-view .dr-worlds-heading :is(h1, .dr-view-subtitle) { margin: 0; }
+
 .modal-backdrop.lore-import-backdrop {
   align-items: center;
   justify-items: center;
@@ -24,14 +28,14 @@
 
 .lore-import-modal > .modal-body {
   min-height: 0;
-  padding: 10px 17px 18px;
+  padding: 8px 16px 16px;
 }
 
 .lore-import-modal > header,
 .rp-import-footer { flex-shrink: 0; }
 
 .rp-import-footer {
-  padding: 12px 17px;
+  padding: 12px 16px;
   border-top: 1px solid var(--line);
   background: var(--dr-bg);
 }
@@ -43,12 +47,16 @@
 .lore-import-modal .rp-status { overflow-wrap: anywhere; }
 
 .lore-import-modal .rp-check {
-  font-size: 11px;
+  gap: 12px;
+  font-size: .875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .rp-import-fields {
   display: grid;
-  gap: 13px;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
   min-inline-size: 0;
   margin: 0;
   padding: 0;
@@ -59,12 +67,13 @@
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 9px;
-  min-height: 156px;
-  padding: 20px 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  grid-template-columns: minmax(0, 1fr);
   border: 1px dashed var(--dr-border);
   border-radius: 14px;
-  background: rgba(33, 33, 33, .5);
+  background: var(--dr-surface);
   color: var(--dr-text);
   text-align: center;
   transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
@@ -76,34 +85,58 @@
   color: var(--dr-primary);
 }
 
-.rp-import-dropzone > strong {
-  max-width: 100%;
+.rp-import-filename {
+  min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: .875rem;
 }
-
-.rp-import-dropzone > p {
-  max-width: 310px;
+.rp-import-filename p, .rp-import-formats p, .rp-import-options p,
+.rp-import-destination > p, .rp-import-contents p {
   margin: 0;
   color: var(--dr-muted);
-  font-size: 10px;
+  font-size: .8125rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.rp-import-filename p { margin-top: 4px; }
+.rp-import-dropzone[data-preview="true"] {
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 8px 0 12px;
+  justify-items: start;
+  text-align: start;
+  border: 0;
+  border-bottom: 1px solid var(--dr-border);
+  border-radius: 0;
+  background: transparent;
+}
+.rp-import-dropzone[data-preview="true"] > svg { width: 20px; }
+.rp-import-choose { max-width: 100%; white-space: normal; }
+.rp-import-formats a { display: inline-flex; align-items: center; min-height: 44px; color: var(--dr-primary); }
+.rp-import-destination, .rp-import-contents { display: grid; gap: 8px; min-width: 0; }
+.rp-import-destination .field-label { min-width: 0; margin: 0; }
+.rp-import-options { border-block: 1px solid var(--dr-border); }
+.rp-import-options:empty { display: none; }
+.rp-import-options > div { padding: 4px 0 12px; }
+.rp-import-options > div + div { border-top: 1px solid var(--dr-border); }
+.lore-import-modal summary {
+  min-height: 44px;
+  align-content: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.rp-import-contents { font-size: .875rem; }
+.lore-import-modal :is(a, summary):focus-visible {
+  outline: 2px solid var(--dr-primary);
+  outline-offset: -2px;
 }
 
 .rp-import-dropzone.is-dragging {
   border-style: solid;
   border-color: var(--dr-primary);
-  background: rgba(255, 255, 255, .12);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, .12);
-}
-
-.rp-import-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
+  background: var(--dr-selected);
+  outline: 2px solid var(--dr-primary);
+  outline-offset: -2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -115,5 +148,5 @@
 .rp-import-search { display:flex; align-items:center; gap:8px; color:var(--dr-muted); }
 .rp-import-search input { flex:1; min-width:0; }
 .rp-import-pages { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--dr-muted); font-size:12px; }
-.rp-import-pages .button { min-height:40px; min-width:44px; padding:8px; }
+.rp-import-pages .button { min-height:44px; min-width:44px; padding:8px; }
 .rp-import-preview { overscroll-behavior:contain; }

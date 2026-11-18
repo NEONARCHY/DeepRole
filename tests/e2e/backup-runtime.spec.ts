@@ -46,7 +46,7 @@ test("installed Edge exports a full backup and restores the same file through th
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
     }));
     await panel.reload(); await panel.getByRole("button", { name: "Миры", exact: true }).click();
-    await panel.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+    await panel.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
     await panel.locator(".rp-import-input").setInputFiles(file);
     const preview = panel.getByRole("dialog", { name: "Восстановление копии", exact: true });
     await expect(preview).toBeVisible();

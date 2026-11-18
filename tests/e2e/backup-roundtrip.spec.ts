@@ -55,7 +55,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) for
     const before = await records(page);
     if (route === "lore") await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
     const choose = async () => {
-      if (route === "lore") await page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true }).click();
+      if (route === "lore") await page.getByRole("button", { name: l("Загрузить мир из файла", "Load a world from a file"), exact: true }).click();
       await page.locator(route === "lore" ? ".rp-import-input" : '.dr-settings-page:not([hidden]) input[type="file"]').setInputFiles(file);
     };
     await choose();
@@ -70,7 +70,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) for
     await page.screenshot({ path: info.outputPath(`backup-${route}-${locale}-${width}.png`) });
     await preview.getByRole("button", { name: l("Отмена", "Cancel"), exact: true }).click();
     await expect(preview).toHaveCount(0); expect(await records(page)).toEqual(before);
-    if (route === "lore") await expect(page.getByRole("button", { name: l("Загрузить готовый лор", "Import existing lore"), exact: true })).toBeFocused();
+    if (route === "lore") await expect(page.getByRole("button", { name: l("Загрузить мир из файла", "Load a world from a file"), exact: true })).toBeFocused();
     await choose();
     await preview.getByRole("radio", { name: new RegExp("^" + l("Полностью восстановить копию", "Restore the full backup")) }).check();
     const restore = preview.getByRole("button", { name: l("Полностью восстановить копию", "Restore the full backup"), exact: true });
@@ -94,7 +94,7 @@ test("lore picker decrypts exported backup and preserves data on cancel or wrong
   const { file } = await exportedCopy(page, "ru", true);
   const before = await records(page);
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   let password: string | null = null, prompts = 0;
   page.on("dialog", async dialog => { prompts++; if (password === null) await dialog.dismiss(); else await dialog.accept(password); });
   const picker = page.locator(".rp-import-input");
@@ -116,7 +116,7 @@ test("malformed full backup selected as lore is rejected without partial writes"
   const data = JSON.parse(text); delete data.records.find((r: any) => r.kind === "entry").data.title;
   const before = await records(page);
   await page.getByRole("button", { name: "Миры", exact: true }).click();
-  await page.getByRole("button", { name: "Загрузить готовый лор", exact: true }).click();
+  await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   await page.locator(".rp-import-input").setInputFiles({ name: "broken-backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(data)) });
   await expect(page.getByRole("alert")).toHaveText("Не удалось прочитать резервную копию");
   await expect(page.getByRole("dialog", { name: "Восстановление копии", exact: true })).toHaveCount(0);

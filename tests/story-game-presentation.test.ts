@@ -21,6 +21,25 @@ it('reuses an existing managed read for presentation instead of fetching again',
   const f=fixture();f.scope.managed=true;const task=f.client.run();await vi.waitFor(()=>expect(f.requests).toHaveLength(1));f.reply();await task;
   expect(await f.client.readForPresentation()).toEqual(f.snapshot);expect(f.requests).toHaveLength(1);expect(f.store.runStoryGame).toHaveBeenCalledTimes(1);
 });
+it.each(['matching', 'different-draft', 'partial', 'different-parent', 'previous-variant', 'duplicate'])('verifies the first ordinary turn after transfer: %s', async mode => {
+  const f = fixture();
+  if (mode === 'partial') f.snapshot.messages[1]!.completion = 'partial';
+  if (mode === 'different-parent') f.snapshot.selectedNativeKey = key('2');
+  if (mode === 'previous-variant') document.body.insertAdjacentHTML('beforeend', '<article data-role="assistant" data-message-id="5">Other reply</article>');
+  if (mode === 'duplicate') document.body.insertAdjacentHTML('beforeend', '<article data-role="assistant" data-message-id="3">Duplicate</article>');
+  document.body.insertAdjacentHTML('beforeend', '<article data-role="user" data-message-id="6">Next turn</article><article data-role="assistant" data-message-id="7"></article>');
+  const task = f.client.run('start', key('3'), 'stop', undefined, {
+    allowed: () => true, beforeSend: true, verifyContinuedTurn: true, draft: mode === 'different-draft' ? 'Other draft' : 'Next turn',
+  });
+  f.reply();
+  if (mode === 'matching') {
+    await task;
+    expect(f.store.runStoryGame).toHaveBeenCalledWith(expect.objectContaining({ operation: 'start', nativeParentKey: key('3') }), location.href);
+  } else {
+    await expect(task).rejects.toThrow('story-native-line-unavailable');
+    expect(f.store.runStoryGame).not.toHaveBeenCalled();
+  }
+});
 it('starts before the first POST with pending native rows only after verifying empty server history',async()=>{
   document.body.innerHTML='<article data-role="user" data-message-id="2">Request</article><article data-role="assistant" data-message-id="3"></article>';
   const f=fixture(),task=f.client.run('start',null,'stop',undefined,{allowed:()=>true,beforeSend:true,draft:'Request'});

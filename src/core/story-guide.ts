@@ -6,7 +6,7 @@ const guides = {
     intro: "Лор хранит факты о мире. «Продолжить в новом чате» сохраняет доступную историю и точный прогресс одним нажатием. Обновление лора и подготовка пересказа — дополнительные шаги для особенно длинной истории, а не обязательное условие.",
     sections: [
       { title: "История уже идёт, а мира ещё нет?", lines: [
-        "Готовый JSON не нужен. В «Лор → Создать свой мир» создайте пустой мир и дайте ему название. Затем подключите его к текущему чату через «Игра → Мир».",
+        "Готовый JSON не нужен. В «Миры → Создать свой мир» создайте пустой мир и дайте ему название. Затем подключите его к текущему чату через «Игра → Мир».",
         "Нажмите «Обновить лор», проверьте предложения DeepSeek и сохраните нужные. Так вы соберёте память из уже сыгранной истории, без ручного заполнения всех фактов.",
         "«Обновить лор» не создаёт мир автоматически. Без выбранного мира записи сохраняются в области «Без мира», а не в отдельном мире."
       ] },
@@ -48,7 +48,7 @@ const guides = {
     intro: "Lore stores world facts. “Continue in a new chat” saves available history and exact progress in one click. Updating lore and preparing a recap are optional steps for especially long stories, not required for a transfer.",
     sections: [
       { title: "Already playing, but no world yet?", lines: [
-        "You do not need a ready-made JSON file. In “Lore → Create your world”, create an empty world and give it a name. Then connect it to the current chat through “Play → World”.",
+        "You do not need a ready-made JSON file. In “Worlds → Create your world”, create an empty world and give it a name. Then connect it to the current chat through “Play → World”.",
         "Click “Update lore”, review DeepSeek’s suggestions and save the ones you want. This builds memory from the story you have already played, without entering every fact by hand.",
         "“Update lore” does not create a world automatically. With no world selected, records are saved under “No world”, not in a separate world."
       ] },

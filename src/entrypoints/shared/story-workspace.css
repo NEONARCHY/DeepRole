@@ -170,3 +170,8 @@
  .dr-workspace-nav button svg { display:none; }
  .dr-workspace-nav .dr-story-inbox-count { position:absolute; top:4px; right:4px; }
 }
+.dr-story-automation-settings .dr-mode-explanation {
+  grid-column: 1 / -1; color: var(--dr-muted); font-size: max(13px, .875rem);
+  font-weight: 400; line-height: 1.5; overflow-wrap: anywhere;
+}
+.dr-story-automation-settings[open] .dr-mode-explanation { display: none; }

@@ -7,13 +7,18 @@ export async function continuationPromptDigest(text: string): Promise<string> {
 }
 
 /** Exact first pair from the canonical server graph, never a DOM/text guess. */
-export async function acceptedContinuationHistory(value: unknown, draft: ContinuationDraft): Promise<boolean> {
-  if (!draft.requestId || !draft.promptDigest || !validStoryGameSnapshot(value)
-    || value.chatId !== draft.targetChatId || value.messages.length !== 2) return false;
+export async function continuationHistoryIssue(value: unknown, draft: ContinuationDraft) {
+  if (!draft.requestId || !draft.promptDigest || !validStoryGameSnapshot(value) || value.chatId !== draft.targetChatId) return "native-shape";
+  if (value.messages.length !== 2) return "handoff-history-count";
   const user = value.messages.find(m => m.identity.role === "user");
   const reply = value.messages.find(m => m.identity.role === "assistant");
-  if (!user || !reply || user.completion !== "complete" || reply.completion !== "complete"
-    || user.identity.nativeParentKey !== null || reply.identity.nativeParentKey !== user.identity.nativeMessageKey
-    || value.selectedNativeKey !== reply.identity.nativeMessageKey) return false;
-  return await continuationPromptDigest(user.content) === draft.promptDigest;
+  if (!user || !reply || user.identity.nativeParentKey !== null || reply.identity.nativeParentKey !== user.identity.nativeMessageKey
+    || value.selectedNativeKey !== reply.identity.nativeMessageKey) return "handoff-history-branch";
+  if (user.completion !== "complete") return "handoff-history-user-incomplete";
+  if (reply.completion !== "complete") return "handoff-history-reply-incomplete";
+  return await continuationPromptDigest(user.content) === draft.promptDigest ? null : "handoff-history-digest";
+}
+
+export async function acceptedContinuationHistory(value: unknown, draft: ContinuationDraft): Promise<boolean> {
+  return await continuationHistoryIssue(value, draft) === null;
 }

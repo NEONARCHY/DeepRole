@@ -3,12 +3,11 @@ import { memoryReadiness, pendingActivity, selectionReason, serviceActivity } fr
 import type { RankedMemory, ServiceRequest } from "../src/core/types";
 
 describe("memory status reflects the actual outgoing selection", () => {
-  it("does not claim readiness offline or after a failed injection", () => {
-    expect(memoryReadiness(false, undefined, 4, 8)).toBe("offline");
-    expect(memoryReadiness(true, "failed", 4, 8)).toBe("failed");
-    expect(memoryReadiness(true, "", 4, 8)).toBe("ready");
-    expect(memoryReadiness(true, "", 0, 8)).toBe("matching");
-    expect(memoryReadiness(true, "", 0, 0)).toBe("empty");
+  it("describes the current connection and outgoing selection", () => {
+    expect(memoryReadiness(false, 4, 8)).toBe("offline");
+    expect(memoryReadiness(true, 4, 8)).toBe("ready");
+    expect(memoryReadiness(true, 0, 8)).toBe("matching");
+    expect(memoryReadiness(true, 0, 0)).toBe("empty");
   });
   it("explains matches, explicit scene selection and overrides separately", () => {
     const item = { entry: { activation: "smart" }, manuallySelected: false, reasons: ["name-in-title"] } as RankedMemory;

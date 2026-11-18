@@ -3,6 +3,7 @@ import path from "node:path";
 import { buildBdsImport } from "../../src/core/bds-import";
 import { automationMarker } from "../../src/core/story-automation";
 import { storyAutomationText } from "../../src/core/story-automation-i18n";
+import { storyUpdateText } from "../../src/core/story-update-i18n";
 import { navigationText } from "../../src/core/navigation-i18n";
 import { castText } from "../../src/core/cast-i18n";
 import { menuText } from "../../src/core/menu-i18n";
@@ -214,6 +215,12 @@ for (const [locale, transport, historyUnavailable, pendingRows] of [
     await mode.focus();
     await expect(mode).toBeFocused();
     await panel.screenshot({ path: info.outputPath("automatic-memory.png"), fullPage: true });
+    const beforeConfirmation = await progress();
+    await review.getByRole("button", { name: config.accept, exact: true }).press("Enter");
+    await expect(review.getByRole("button", { name: storyUpdateText(locale, "confirmSave"), exact: true })).toBeVisible();
+    await review.getByRole("button", { name: storyUpdateText(locale, "cancelDecision"), exact: true }).press("Enter");
+    expect((await progress())?.facts).toEqual(beforeConfirmation?.facts);
+    expect((await progress())?.pendingReviewIds).toEqual(beforeConfirmation?.pendingReviewIds);
     await review.getByRole("button", { name: config.decline, exact: true }).click();
     await expect(review.getByText(config.empty, { exact: true })).toBeVisible();
     await expect.poll(async () => {

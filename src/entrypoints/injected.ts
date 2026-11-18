@@ -12,7 +12,7 @@ import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagn
 import { installServiceBackgroundRender } from "../adapters/service-background-render";
 import { isDeepSeekFirstChatRoute } from "../core/chat-scope";
 
-type FreshContext = { context: string | null; timedOut: boolean; continuation?: boolean; url?: string; oversizedLength?: number };
+type FreshContext = { context: string | null; timedOut: boolean; continuation?: boolean; url?: string; oversizedLength?: number; blockSend?: boolean };
 
 export default defineUnlistedScript(() => {
   installServiceBackgroundRender();
@@ -80,6 +80,7 @@ export default defineUnlistedScript(() => {
     if (pending.has(event.data.id) && event.data.ok && event.data.capture === true) captureRequests.add(event.data.id);
     pending.get(event.data.id)?.({
       context: event.data.ok && typeof event.data.context === "string" ? event.data.context : null,
+      blockSend: event.data.ok === false && event.data.blockSend === true,
       timedOut: false, continuation: event.data.ok === true && event.data.continuation === true,
       url: typeof event.data.url === "string" ? event.data.url : undefined,
       oversizedLength: Number.isSafeInteger(event.data.oversizedLength) && event.data.oversizedLength > DEEPSEEK_PROMPT_CHAR_LIMIT ? event.data.oversizedLength : undefined,
@@ -258,10 +259,11 @@ export default defineUnlistedScript(() => {
     const strict = document.documentElement.dataset.deeproleStrictMemory === "active";
     const id = crypto.randomUUID(); let url = location.href;
     const captured = { ...unchanged, id, url, dispatch: captureDispatch(body, id) };
-    const failed = (reason: string) => {
-      if (strict) memoryBlocked(body);
+    const failed = (reason: string, mustBlock = false) => {
+      const blocked = mustBlock || strict || document.documentElement.dataset.deeproleStrictMemory === "active";
+      if (blocked) memoryBlocked(body);
       else status(false, id, url, undefined, reason);
-      return { ...captured, blocked: strict };
+      return { ...captured, blocked };
     };
     if (draft === null) return document.documentElement.dataset.deeproleContext || strict ? failed("unsupported-request-shape") : captured;
     const value = JSON.parse(body), editedId = value?.message_id;
@@ -269,7 +271,10 @@ export default defineUnlistedScript(() => {
     const contextStartedAt = Date.now();
     const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
     const context = contextResponse.context;
-    if (continuationPaused()) { captureRequests.delete(id); editPreparations.delete(id); return { ...captured, blocked: true }; }
+    if (contextResponse.blockSend || continuationPaused()) {
+      captureRequests.delete(id); editPreparations.delete(id);
+      return failed("context-unavailable", true);
+    }
     const identity = captured.dispatch?.identity;
     if (contextResponse.continuation && identity?.nativeParentKey === null
       && (contextResponse.url === url || contextResponse.url === location.href)

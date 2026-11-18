@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { advancePortraitCycles, nextPortraitCycle, portraitVariations, scenePortraitIndex, validPortraitCycles } from "../src/core/portrait-variations";
-import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, portraitSources, validCharacterSheet, validCharacterScenes, validActions } from "../src/core/characters";
+import { characterInstruction, EMPTY_CHARACTER, EMPTY_STATUS, MAX_ACTIVE_ACTIONS, portraitSources, validCharacterSheet, validCharacterScenes, validActions } from "../src/core/characters";
 import { parseWidgetLayout } from "../src/entrypoints/content/WidgetDeck";
 import type { CharacterScene, PortraitCycle, SceneEntity } from "../src/core/types";
 
@@ -9,7 +9,7 @@ const person: SceneEntity = { id: "mira", name: "Mira", kind: "character", world
 const scene = (): CharacterScene => ({ revision: "1", presentIds: ["mira"], states: { mira: { ...EMPTY_STATUS } }, updatedAt: 1 });
 
 describe("portrait variation cycles", () => {
-  it("keeps archived portrait actions independently of the 32 active model actions", () => {
+  it("keeps archived portrait actions independently of the active model action limit", () => {
     const names = ["neutral", ...Array.from({ length: 63 }, (_, i) => `action-${i}`)];
     const sprites = Object.fromEntries(names.map(name => [name, images]));
     const cycles = Object.fromEntries(names.map(name => [name, nextPortraitCycle(images)]));
@@ -17,8 +17,8 @@ describe("portrait variation cycles", () => {
     expect(validPortraitCycles({ mira: cycles })).toBe(true);
     expect(validCharacterSheet({ ...EMPTY_CHARACTER, sprites: { ...sprites, extra: images } })).toBe(true);
     expect(validPortraitCycles({ mira: { ...cycles, extra: nextPortraitCycle(images) } })).toBe(true);
-    expect(validActions(names.slice(0, 32))).toBe(true);
-    expect(validActions(names.slice(0, 33))).toBe(false);
+    expect(validActions(names.slice(0, MAX_ACTIVE_ACTIONS))).toBe(true);
+    expect(validActions(names.slice(0, MAX_ACTIVE_ACTIONS + 1))).toBe(false);
     const prompt = characterInstruction("w", "a", [{ ...person, characterSheet: { ...EMPTY_CHARACTER, sprites } }], scene(), ["neutral", "happy"], [], "Mira");
     expect(prompt).not.toContain("action-"); expect(prompt).not.toContain("base64");
   });

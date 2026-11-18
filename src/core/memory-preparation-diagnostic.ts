@@ -8,6 +8,8 @@ const codes = new Set([
   "story-checkpoint-no-scope", "story-manual-conflict", "story-profile-conflict", "story-manual-baseline-conflict", "story-effects-untracked",
   "native-http", "native-format", "native-too-large", "native-unreadable", "native-exception", "native-shape",
   "native-chat", "native-scope", "native-anchor", "native-timeout",
+  "handoff-history-count", "handoff-history-branch", "handoff-history-user-incomplete", "handoff-history-reply-incomplete", "handoff-history-digest",
+  "handoff-scope", "handoff-stale", "handoff-tab-inactive", "storage-unavailable", "handoff-conflict", "handoff-opening-conflict", "handoff-guard", "handoff-storage", "handoff-build-mismatch", "handoff-background-unavailable",
 ]);
 const details = new Set([
   "activation-tab-url", "activation-tab-chat", "activation-tab-inactive",

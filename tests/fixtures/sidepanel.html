@@ -105,7 +105,7 @@
             queued = true;
             return { ok: true };
           }
-          return { type: "DR_PAGE_STATE", chatId, chatUrl, messageCount: chatId ? 2 : 0, status: { compatible: true }, scene, selection: { entries: [], estimatedTokens: 0, omittedCount: 0 },
+          return { type: "DR_PAGE_STATE", chatId, chatUrl, messageCount: chatId && !qs.has("loadingHistory") ? 2 : 0, status: { compatible: true }, scene, selection: { entries: [], estimatedTokens: 0, omittedCount: 0 },
             ...(saves ? { savedMemoryQueued: queued, savedMemory: queued ? undefined : { scope: savedScope, blocked: false, worlds: saves === "source" ? undefined : options.slice(0, saves === "single" ? 1 : 2) } } : {}) };
         };
       }

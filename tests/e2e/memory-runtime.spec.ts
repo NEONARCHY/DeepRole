@@ -132,7 +132,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await chat.evaluate(() => { (window as any).serviceReply.textContent = '<deeprole_data>{"type":"memory-suggestions","items":[{"targetEntryId":"Optional thread","title":"Optional thread","content":"REVIEWED_NEW_CANON","keywords":[]}]}</deeprole_data>'; });
     await expect(chat.getByRole("button", { name: "Review changes", exact: true })).toBeVisible();
     await expect(chat.locator(".dr-memory-review")).toBeVisible();
-    await expect(chat.locator("[data-message-id='service-reply']")).toContainText("Review the records in DeepRole, then choose Save selected changes.");
+    await expect(chat.locator("[data-message-id='service-reply']")).toContainText("Suggestions are ready. Open “Review changes” in DeepRole.");
     await expect(chat.locator("[data-message-id='service-reply']")).not.toContainText("<deeprole_data>", { useInnerText: true });
     await expect(chat.locator("html")).toHaveAttribute("data-deeprole-context", /PRECISE_NEW_CANON/);
     await expect(chat.getByRole("button", { name: "Save selected changes · 0", exact: true })).toBeDisabled();

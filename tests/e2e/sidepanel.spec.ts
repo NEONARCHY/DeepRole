@@ -56,7 +56,7 @@ test("scene pins use persistent switches in compact settings", async ({ page }, 
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/tests/fixtures/sidepanel.html");
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
-  await openSettingsSection(page,"app","ru");
+  await openSettingsSection(page,"appearance","ru");
   for (const label of ["Закрепить варианты на экране", "Закрепить оба портрета"]) {
     const control = page.getByRole("checkbox", { name: label });
     await expect(control).not.toBeChecked();
@@ -89,7 +89,7 @@ for(const locale of ["ru","en"] as const) test(`preference failure is visible, k
   await page.goto(`/tests/fixtures/sidepanel.html?locale=${locale}`);
   await page.locator(".bottom-nav").getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();
   for(const item of [
-    {section:"app",name:locale==="ru"?"Закрепить варианты на экране":"Pin options on screen",key:"pinSceneChoices"},
+    {section:"appearance",name:locale==="ru"?"Закрепить варианты на экране":"Pin options on screen",key:"pinSceneChoices"},
     {section:"characters",name:characterText(locale,"enable"),key:"characterSheetsEnabled"},
     {section:"safety",name:locale==="ru"?"Автоматически исправлять данные ответа":"Automatically correct reply metadata",key:"automaticMetadataRepair"},
   ] as const){
@@ -110,7 +110,7 @@ for(const locale of ["ru","en"] as const) test(`preference failure is visible, k
 for(const locale of ["ru","en"] as const) test(`slow preference save has a visible pending state and prevents overlapping writes ${locale}`,async({page})=>{
   await page.goto(`/tests/fixtures/sidepanel.html?locale=${locale}`);
   await page.locator(".bottom-nav").getByRole("button",{name:locale==="ru"?"Настройки":"Settings",exact:true}).click();
-  await openSettingsSection(page,"app",locale);
+  await openSettingsSection(page,"appearance",locale);
   const toggle=page.getByRole("checkbox",{name:locale==="ru"?"Закрепить варианты на экране":"Pin options on screen",exact:true});
   await page.evaluate(()=>(window as any).delaySettingsSave=true); await toggle.click();
   await expect(page.getByRole("status").filter({hasText:locale==="ru"?"Сохраняем настройки…":"Saving settings…"})).toHaveText(locale==="ru"?"Сохраняем настройки…":"Saving settings…");

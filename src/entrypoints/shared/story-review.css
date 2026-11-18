@@ -15,3 +15,41 @@
 .dr-character-discovery input:not([type="checkbox"]):not([type="radio"]) { width: 100%; box-sizing: border-box; min-height: 44px; padding: var(--dr-space-2); background: var(--dr-raised); color: var(--dr-text); border: 1px solid var(--dr-border-strong); border-radius: var(--dr-radius); font: inherit; }
 .dr-character-discovery label.dr-character-check { display:flex; align-items:center; min-height:44px; }
 .dr-profile-supplements select { width:100%; min-height:44px; background:var(--dr-raised); color:var(--dr-text); border:1px solid var(--dr-border-strong); border-radius:var(--dr-radius); font:inherit; padding:var(--dr-space-2); }
+.dr-story-facts .dr-fact-entry, .dr-memory-action {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--dr-space-2); min-width: 0;
+}
+.dr-story-review .dr-fact-entry {
+  padding: var(--dr-space-4); margin-block: 0;
+}
+.dr-story-facts .dr-fact-entry + .dr-fact-entry { margin-block-start: var(--dr-space-3); }
+.dr-fact-entry > header {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px;
+}
+.dr-fact-entry > header strong { font-size: max(14px, .9375rem); line-height: 1.5; overflow-wrap: anywhere; }
+.dr-fact-entry .dr-fact-state, .dr-fact-entry > small {
+  color: var(--dr-muted); font-size: max(13px, .8125rem); line-height: 1.5;
+}
+.dr-fact-entry .dr-fact-state[data-used="true"] { color: var(--dr-primary); }
+.dr-story-review .dr-fact-entry p, .dr-story-review .dr-fact-entry .field-label { margin: 0; }
+.dr-story-review .dr-fact-entry .dr-fact-text {
+  white-space: pre-wrap; font-size: max(15px, 1rem); line-height: 1.55; overflow-wrap: anywhere;
+}
+.dr-fact-entry > details { border-block-start: 1px solid var(--dr-border); }
+.dr-story-review .dr-fact-entry summary {
+  min-height: 44px; align-content: center; cursor: pointer; color: var(--dr-muted); font-size: max(13px, .875rem);
+}
+.dr-story-review .dr-fact-entry .dr-story-review-source {
+  padding-inline-start: 12px; border-inline-start: 2px solid var(--dr-border-strong);
+  font-size: max(13px, .875rem); line-height: 1.5;
+}
+.dr-memory-action .button-row { display: flex; flex-wrap: wrap; gap: var(--dr-space-2); }
+.dr-memory-action .button-row .button {
+  min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere;
+}
+.dr-memory-action[data-confirming] {
+  padding: 12px; border-inline-start: 2px solid var(--dr-primary); background: var(--dr-bg);
+}
+.dr-memory-action[data-confirming] > p { margin: 0; font-size: max(13px, .875rem); line-height: 1.5; }
+.dr-fact-entry :is(summary, button, textarea):focus-visible, .dr-memory-action button:focus-visible {
+  outline: 2px solid var(--dr-primary); outline-offset: -2px;
+}
