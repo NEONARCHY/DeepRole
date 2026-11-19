@@ -42,7 +42,7 @@ export class StoryGameClient {
     const task=this.readSnapshot(initial,anchor,false);this.presentationTask=task;
     try{return await task;}catch{return undefined;}finally{if(this.presentationTask===task)this.presentationTask=null;}
   }
-  private async readSnapshot(initial: Scope, anchor: string | null, preparation: boolean): Promise<StoryGameSnapshot> {
+  private async readSnapshot(initial: Scope, anchor: string | null, preparation: boolean, timeoutMs = 9000): Promise<StoryGameSnapshot> {
     const startedAt=Date.now();
     const diagnose=(code:unknown)=>{if(preparation)reportMemoryPreparationFailure("native-snapshot",code,startedAt);};
     const epoch=this.presentationEpoch;
@@ -71,7 +71,7 @@ export class StoryGameClient {
         if(!preparation&&anchor&&!value.messages.length){reject(Error('story-native-line-unavailable'));return;}
         resolve(value);
       };
-      const timer=this.win.setTimeout(()=>{finish();diagnose('native-timeout');reject(Error('story-native-line-unavailable'));},9000);
+      const timer=this.win.setTimeout(()=>{finish();diagnose('native-timeout');reject(Error('story-native-line-unavailable'));},timeoutMs);
       this.win.addEventListener('message',receive);
       this.win.postMessage({source:'deeprole-extension',type:'STORY_GAME_SNAPSHOT_REQUEST',requestId,chatId:initial.chatId},this.win.location.origin);
     }).finally(() => {
@@ -82,6 +82,7 @@ export class StoryGameClient {
     return snapshot;
   }
   async run(operation: StoryGameInput["operation"] = "sync", nativeParentKey: string | null = null, manual: "stop" | "keep" = "stop", reviewedBase?: string, automaticStart?: { allowed: () => boolean; beforeSend: boolean; draft?: string; verifyContinuedTurn?: boolean }) {
+    const startedAt = Date.now();
     // A new visible variant must not be mistaken for an older in-flight sync.
     // Serialise reads, then take a fresh scope/anchor for THIS invocation.
     while (this.task || this.presentationTask) { try { await (this.task ?? this.presentationTask); } catch { /* A new explicit/read attempt gets its own scope. */ } }
@@ -102,12 +103,35 @@ export class StoryGameClient {
       // Undo acts on the already saved head. It does not need a readable newest
       // site reply and must remain available after an interrupted answer.
       if (operation === "undo") return this.store.runStoryGame({ chatId: initial.chatId!, worldId: initial.worldId!, expectedBase: initial.base, operation, snapshot: { chatId: initial.chatId!, selectedNativeKey: null, messages: [] }, nativeParentKey: null, manual }, initial.url);
-      const snapshot = await this.readSnapshot(initial, anchor, preparation);
+      let snapshot = await this.readSnapshot(initial, anchor, preparation);
       if (!same() || automaticStart && !automaticStart.allowed()) throw Error("story-binding-conflict");
       if (beforeSend && automaticStart?.verifyContinuedTurn && nativeParentKey) {
-        const complete = snapshot.messages.some(m => m.identity.nativeMessageKey === nativeParentKey && m.identity.role === "assistant" && m.completion === "complete");
-        if (!complete || snapshot.selectedNativeKey !== nativeParentKey || !continuedTurnView(nativeParentKey, automaticStart.draft ?? "", this.win.document))
+        const visible = () => continuedTurnView(nativeParentKey, automaticStart.draft ?? "", this.win.document);
+        const issue = (value: StoryGameSnapshot) => {
+          if (value.selectedNativeKey !== nativeParentKey) return "native-parent-selection";
+          const parent = value.messages.find(m => m.identity.nativeMessageKey === nativeParentKey);
+          if (parent && parent.identity.role !== "assistant") return "native-parent-role";
+          if (!parent || parent.completion !== "complete") return "native-parent-incomplete";
+          return visible() ? null : "native-parent-view";
+        };
+        let failure = issue(snapshot);
+        // The just-finished reply can appear in the page and in history at
+        // different times. Retry only the read, within the original read budget.
+        const deadline = startedAt + 9000;
+        if ((failure === "native-parent-incomplete" || failure === "native-parent-view") && deadline - Date.now() > 400) {
+          await new Promise<void>(resolve => this.win.setTimeout(resolve, 350));
+          if (!same() || !automaticStart.allowed()) throw Error("story-binding-conflict");
+          const remaining = deadline - Date.now();
+          if (visible() && remaining > 0) {
+            snapshot = await this.readSnapshot(initial, anchor, true, remaining);
+            if (!same() || !automaticStart.allowed()) throw Error("story-binding-conflict");
+            failure = issue(snapshot);
+          }
+        }
+        if (failure) {
+          reportMemoryPreparationFailure("native-snapshot", failure, startedAt);
           throw Error("story-native-line-unavailable");
+        }
       } else if (beforeSend && (snapshot.selectedNativeKey !== nativeParentKey
         || nativeParentKey === null && snapshot.messages.length > 0
         || (openingDraft !== undefined ? !firstStoryTurnView(openingDraft, this.win.document)

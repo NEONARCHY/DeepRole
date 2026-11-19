@@ -1,0 +1,387 @@
+{
+  "started": "2026-11-18T21:57:42.008Z",
+  "runtime": "9f0cb99cc4abff58e84d01d54cf5e2a3b7ef710c87cf8d1082d58e28f7d96fba",
+  "summary": {
+    "cases": 12,
+    "passed": 12,
+    "measurements": 24
+  },
+  "rows": [
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "velvet",
+        "silk"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "velvet"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "silk"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "velvet",
+        "silk"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "velvet"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "silk"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "silk",
+        "velvet"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "velvet"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "silk"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "silk",
+        "velvet"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "velvet"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "silk"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "dial"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "dial"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "dial"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial"
+      ],
+      "warning": "incomplete",
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "dial"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring"
+      ],
+      "warning": null,
+      "guard": true,
+      "problems": []
+    }
+  ]
+}

@@ -42,6 +42,8 @@ export interface StorySnapshot {
   names: Record<string, string>;
 }
 export interface StoryBaseline extends StoryScope {
+  /** Read-only task evidence retained across a chat switch, outside current facts. */
+  priorTaskSeeds?: { baselineId: string; key: string }[];
   episodeSourceSeeds?: string[];
   factRoleSeeds?: import("./story-role-binding").FactRoleSeed[];
   memoryBatchSeeds?: string[];
@@ -199,8 +201,11 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
       const origin = value.origin;
       if (value.memoryBatchSeeds !== undefined && !ids(value.memoryBatchSeeds)) return false;
       if (value.episodeSourceSeeds !== undefined && !validEpisodeSources(value.episodeSourceSeeds)) return false;
+      if (value.priorTaskSeeds !== undefined && (!Array.isArray(value.priorTaskSeeds) ||
+        !value.priorTaskSeeds.every(r => object(r) && keys(r, ["baselineId", "key"]) && id(r.baselineId) && typeof r.key === "string" && !!r.key) ||
+        new Set(value.priorTaskSeeds.map(r => r.key)).size !== value.priorTaskSeeds.length)) return false;
       if (value.factRoleSeeds !== undefined && (!Array.isArray(value.factSeeds) || !validFactRoleSeeds(value.factRoleSeeds,value.factSeeds))) return false;
-      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds", "memoryBatchSeeds", "factRoleSeeds", "episodeSourceSeeds"])
+      return keys(value, [...common, "historyBeforeBaseline", "legacyEntryScope", "origin", "snapshot", "legacyEffects", "profileSeeds", "identitySeeds", "mergeSeeds", "factSeeds", "storySeeds", "storySourceChatId", "gameId", "pendingReviewSeeds", "reviewResolutionSeeds", "memoryBatchSeeds", "factRoleSeeds", "episodeSourceSeeds", "priorTaskSeeds"])
         && (value.gameId === undefined || id(value.gameId)) && (value.pendingReviewSeeds === undefined || ids(value.pendingReviewSeeds)) && (value.reviewResolutionSeeds === undefined || validReviewResolutions(value.reviewResolutionSeeds))
          && value.historyBeforeBaseline === "unknown" && value.legacyEntryScope === "unclassified"
         && object(origin) && keys(origin, ["bindingId", "chatId", "worldId", "sceneRevision", "nativeAnchor"]) && id(origin.bindingId) && id(origin.chatId) && id(origin.worldId) && optionalId(origin.sceneRevision)
@@ -329,6 +334,27 @@ export function assertStoryGraph(records: DataRecord[]): void {
       }else if(item.roleRoster.length)throw Error("story-evidence-invalid");
     }
     if (item.type === "baseline") {
+      if (item.priorTaskSeeds?.length) {
+        const lineage = new Set(item.episodeSourceSeeds);
+        const closed = new Set(item.factSeeds?.flatMap(f => f.task && f.task.status !== "open" ? [f.task.key] : []));
+        const origins = new Map<string, Set<string>>();
+        for (const ref of item.priorTaskSeeds) {
+          let eligible = origins.get(ref.baselineId);
+          if (!eligible) {
+            const old = all.get(ref.baselineId);
+            if (old?.type !== "baseline" || old.id === item.id || !item.gameId || old.gameId !== item.gameId || old.worldId !== item.worldId) throw Error("story-evidence-invalid");
+            const seeds = new Map(old.factRoleSeeds?.map(s => [s.key, s.binding.sourceRevisionId]));
+            eligible = new Set();
+            for (const f of old.factSeeds ?? []) {
+              if (f.kind !== "promise" || f.task?.status !== "open" || !closed.has(f.task.key)) continue;
+              const key = storyFactIdentity(f), revision = seeds.get(key);
+              if (revision && lineage.has(revision)) eligible.add(key);
+            }
+            origins.set(ref.baselineId, eligible);
+          }
+          if (!eligible.has(ref.key)) throw Error("story-evidence-invalid");
+        }
+      }
       timeProof(item.factSeeds ?? [], item.factRoleSeeds ?? [], item.worldId);
       if (item.episodeSourceSeeds && !validEpisodeLineage(item.episodeSourceSeeds, [...all.values()], { worldId: item.worldId, gameId: item.gameId, playthroughId: item.playthroughId })) throw Error("story-evidence-invalid");
       for(const seed of item.factRoleSeeds??[]){const source=roleProof(seed.binding,item.worldId),oldBase=all.get(branch(source).baselineId);if(source.playthroughId!==item.playthroughId&&(oldBase?.type!=="baseline"||!item.gameId||item.gameId!==oldBase.gameId))throw Error("story-evidence-invalid");}

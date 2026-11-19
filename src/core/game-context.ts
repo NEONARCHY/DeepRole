@@ -8,7 +8,7 @@ import { storyContentRelevance } from "./story-content-relevance";
 import { taskProgressRecall } from './story-task-progress-recall';
 import { repeatSelectionFacts,repeatSelectionTopic } from './story-repeat-selection';
 import { narrativeRecallFacts, NARRATIVE_RECALL_GUIDE } from './story-narrative-recall';
-import { compoundConditionEvidence, COMPOUND_CONDITION_GUIDE } from './story-compound-conditions';
+import { compoundActionDetails, compoundConditionEvidence, COMPOUND_CONDITION_GUIDE } from './story-compound-conditions';
 import { taskHistorySources } from './story-task-history';
 import type { TaskArchive } from './story-task-archive';
 import { discussionPriorityFacts } from "./story-discussion-priority";
@@ -20,7 +20,8 @@ import { previousObjectEvidence, PREVIOUS_OBJECT_GUIDE, UNCERTAIN_PREVIOUS_OBJEC
 import { hearsayEvidence, HEARSAY_GUIDE, UNCERTAIN_HEARSAY } from "./story-hearsay";
 import { photoPermissionEvidence, photoGuide } from "./story-photo-permission";
 import { promisePairEvidence, PROMISE_PAIR_GUIDE, UNCERTAIN_PROMISE_PAIR } from "./story-promise-pair";
-import { promiseComparisonEvidence, COMPARE_PROMISES, INCOMPLETE_COMPARISON } from "./story-promise-comparison";
+import { promiseComparisonEvidence, prerequisiteEvidence, prerequisiteGuide, COMPARE_PROMISES, INCOMPLETE_COMPARISON } from "./story-promise-comparison";
+import { promiseReferenceEvidence, PROMISE_REFERENCE, CLARIFY_PROMISE } from "./story-promise-reference";
 import { obligationRecallFacts,obligationRecallIntent,obligationPremiseQuestion,materialRecallAction,sequenceRecallAction,UNPROVED_OBLIGATION_PREMISE } from './story-obligation-recall';
 import { storyFactIdentity } from "./story-memory-lifecycle";
 import { isPlainStoryContinuation,storyContinuationCandidates } from "./story-continuation-balance";
@@ -86,8 +87,15 @@ function inquiryEvidence(input:GameContextInput, proof:PriorityProof, options:Ga
  const scope={worldId:story.world.id,entities:input.entities??[]};
  const comparison=promiseComparisonEvidence(facts,draft,scope,roles,episodes,archive);
  if (comparison) return {...comparison,guide:COMPARE_PROMISES,uncertain:INCOMPLETE_COMPARISON,historySources:archive?.length?comparison.facts:undefined};
+ const prerequisite=prerequisiteEvidence(facts,draft,scope,roles,episodes,archive);
+ if (prerequisite) {
+   const guide=prerequisiteGuide(!!prerequisite.unverified);
+   return {...prerequisite,guide,uncertain:guide};
+ }
  const pair=promisePairEvidence(facts,draft,scope,roles,episodes,archive);
  if (pair) return {...pair,guide:PROMISE_PAIR_GUIDE,uncertain:UNCERTAIN_PROMISE_PAIR,historySources:archive?.length?pair.facts:undefined};
+ const promise=promiseReferenceEvidence(facts,draft,input.recentMessages,scope,roles,episodes,archive);
+ if (promise) return {...promise,guide:PROMISE_REFERENCE,uncertain:CLARIFY_PROMISE,historySources:archive?.length?promise.facts:undefined};
  if (roles?.question) return;
  const photo=photoPermissionEvidence(facts,draft,input.recentMessages,names,roles,episodes);
  if (photo) return {...photo,guide:photoGuide(photo.scope),uncertain:photoGuide('unknown')};
@@ -191,7 +199,17 @@ function compileNarrativeRecall(input:GameContextInput,options:GameContextOption
     ? compoundConditionEvidence(proof.facts,input.draft,proof.names,proof.roles,proof.episodes,proof.selected) : undefined;
   const group=conditions ? {primary:conditions.facts,repeats:new Set<StoryFact>(),reason:conditions.reason}
     : narrativeRecallFacts(proof.facts,input.draft,proof.names,proof.roles,proof.episodes,input.recentMessages);
- if(!group)return unchanged;
+ if(!group){
+   if(coverage.kind!=='unverified'||coverage.reason!=='query')return unchanged;
+   const details=compoundActionDetails(proof.facts,input.draft,proof.names,proof.selected,proof.roles,proof.episodes);
+   if(!details.length)return unchanged;
+   const ids=[...new Set([...proof.selected,...details].map(storyFactIdentity))];
+   if(ids.length>BUDGET_SOURCE_ROWS)return unchanged;
+   let chosen:StoryFact[]=[];
+   const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,covers:rows=>rows.length===ids.length,referenceGuard:[proof.referenceGuard,COMPOUND_CONDITION_GUIDE].filter(Boolean).join('\n')},p=>{chosen=p.selected});
+   if(candidate.report.total<=candidate.report.limit && candidate.report.required<=candidate.report.limit && ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)))return {context:candidate,selected:chosen,coverage};
+   return unchanged;
+ }
   const incomplete=(reason: 'query'|'source'|'capacity'):GameMemoryCoverage=>({kind:'incomplete',reason});
   const alreadySelected=coverage.kind==='complete'&&group.primary.length>0&&group.primary.every(f=>proof.selected.some(old=>storyFactIdentity(old)===storyFactIdentity(f)));
   // Disabling repeat selection must not silently discard discussions through

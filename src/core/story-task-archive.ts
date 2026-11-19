@@ -10,7 +10,7 @@ export interface TaskArchive { facts: StoryFact[]; roleSeeds: FactRoleSeed[] }
 /** Read-only view of accepted checkpoints and selected events. The active
  * episode lineage bounds earlier chat segments; unrelated branches, drafts and
  * rejected proposals are never searched. Missing evidence stays missing. */
-export function readTaskArchive(records: StoryRecord[], world: WorldProfile, branchId: string): TaskArchive | undefined {
+export function readTaskArchive(records: StoryRecord[], world: WorldProfile, branchId: string, origins?: Map<string, string>): TaskArchive | undefined {
   const game = world.sharedGame;
   if (!game?.managed || game.restartPending || !game.episodeSources?.length) return;
   const all = new Map(records.map(r => [r.id, r]));
@@ -28,14 +28,48 @@ export function readTaskArchive(records: StoryRecord[], world: WorldProfile, bra
     bases.set(base.id,base);segmentHeads.set(base.id,{branch:owner,head:id});
   }
   const candidates: {fact:StoryFact;seed?:FactRoleSeed}[]=[], removed=new Set<string>();
+  const checkpoint = new Map<string, string>();
   const add=(fact:StoryFact,seed?:FactRoleSeed)=>{
     for(const key of fact.replaces??[])removed.add(key);
     if(fact.task)candidates.push({fact,seed});
   };
   try {
+    const currentClosings = new Map(game.facts.flatMap(f => f.task && f.task.status !== "open" ? [[f.task.key, f] as const] : []));
+    const sourceRows = new Map<string, Map<string, {fact:StoryFact; seed?:FactRoleSeed}>>();
+    // Older transfers can omit the link on their receiving checkpoint. A
+    // played segment on this exact lineage may still witness the same closure.
+    for (const base of bases.values()) {
+      if (!base.priorTaskSeeds?.length) continue;
+      const closedHere = new Set(base.factSeeds?.flatMap(f => {
+        const current = f.task && currentClosings.get(f.task.key);
+        return current && current.quote === f.quote && storyFactIdentity(current) === storyFactIdentity(f) ? [f.task!.key] : [];
+      }));
+      for (const ref of base.priorTaskSeeds) {
+        let rows = sourceRows.get(ref.baselineId);
+        if (!rows) {
+          const old = all.get(ref.baselineId);
+          if (old?.type !== "baseline" || old.gameId !== game.id || old.worldId !== world.id) return;
+          const seeds = new Map(old.factRoleSeeds?.map(s => [s.key,s]));
+          rows = new Map((old.factSeeds ?? []).map(fact => {
+            const key = storyFactIdentity(fact);
+            return [key, {fact, seed:seeds.get(key)}];
+          }));
+          sourceRows.set(old.id,rows);
+        }
+        const row = rows.get(ref.key);
+        if (row?.fact.kind !== "promise" || row.fact.task?.status !== "open"
+          || (base.id !== baseline.id && !closedHere.has(row.fact.task.key))) continue;
+        candidates.push(row);
+        checkpoint.set(ref.key, ref.baselineId);
+      }
+    }
     for(const base of bases.values()){
       const seeds=new Map((base.factRoleSeeds??[]).map(s=>[s.key,s]));
-      for(const fact of base.factSeeds??[])add(fact,seeds.get(storyFactIdentity(fact)));
+      for(const fact of base.factSeeds??[]){
+        const key=storyFactIdentity(fact);
+        add(fact,seeds.get(key));
+        if(origins && fact.task && seeds.has(key)) checkpoint.set(key,base.id);
+      }
       const segment=base.id===baseline.id?{branch,head:branch.headRevisionId}:segmentHeads.get(base.id);
       if(!segment)continue;
       const projection=all.get(segment.branch.projectionId??'');
@@ -64,5 +98,25 @@ export function readTaskArchive(records: StoryRecord[], world: WorldProfile, bra
     if(old&&JSON.stringify(old.seed)!==JSON.stringify(seed))return;
     found.set(key,{fact,seed});
   }
+  if (origins) for (const key of found.keys()) {
+    const id = checkpoint.get(key);
+    if (id) origins.set(key, id);
+  }
   return {facts:[...found.values()].map(v=>v.fact),roleSeeds:[...found.values()].map(v=>v.seed)};
+}
+
+export function transferTaskSeeds(records: StoryRecord[], world: WorldProfile): StoryBaseline["priorTaskSeeds"] {
+  const game = world.sharedGame;
+  if (!game?.managed || game.restartPending) return;
+  const closed = new Set(game.facts.flatMap(f => f.task && f.task.status !== "open" ? [f.task.key] : []));
+  if (!closed.size) return;
+  const projection = records.find(r => r.type === "projection" && r.bindingId === game.activeBindingId && r.worldId === world.id);
+  if (!projection) return;
+  const origins = new Map<string, string>();
+  const archive = readTaskArchive(records, world, projection.branchId, origins);
+  const refs = archive?.facts.flatMap(f => {
+    const key = storyFactIdentity(f), baselineId = origins.get(key);
+    return baselineId && f.kind === "promise" && f.task?.status === "open" && closed.has(f.task.key) ? [{baselineId, key}] : [];
+  });
+  return refs?.length ? refs : undefined;
 }

@@ -32,6 +32,10 @@ it.each(['matching', 'different-draft', 'partial', 'different-parent', 'previous
     allowed: () => true, beforeSend: true, verifyContinuedTurn: true, draft: mode === 'different-draft' ? 'Other draft' : 'Next turn',
   });
   f.reply();
+  if (mode === 'partial') {
+    await vi.waitFor(() => expect(f.requests).toHaveLength(2));
+    f.reply();
+  }
   if (mode === 'matching') {
     await task;
     expect(f.store.runStoryGame).toHaveBeenCalledWith(expect.objectContaining({ operation: 'start', nativeParentKey: key('3') }), location.href);
@@ -39,6 +43,29 @@ it.each(['matching', 'different-draft', 'partial', 'different-parent', 'previous
     await expect(task).rejects.toThrow('story-native-line-unavailable');
     expect(f.store.runStoryGame).not.toHaveBeenCalled();
   }
+});
+it.each(['late-server', 'late-page', 'changed-selection', 'changed-scope'] as const)('rechecks a settling first-turn parent: %s', async mode => {
+  const f = fixture();
+  const timers = vi.spyOn(window, 'setTimeout');
+  if (mode === 'late-page') document.body.replaceChildren();
+  else f.snapshot.messages[1]!.completion = 'interrupted';
+  const task = f.client.run('start',key('3'),'stop',undefined,{allowed:()=>true,beforeSend:true,verifyContinuedTurn:true,draft:'Next turn'});
+  const outcome = task.then(() => 'started', error => (error as Error).message);
+  f.reply();
+  await vi.waitFor(() => expect(timers.mock.calls.some(([, ms]) => ms === 350)).toBe(true));
+  if (mode === 'late-page') document.body.innerHTML = '<article data-role="assistant" data-message-id="3">Reply</article>';
+  if (mode === 'changed-scope') {
+    f.scope.worldId = 'different-world';
+    expect(await outcome).toBe('story-binding-conflict');
+    expect(f.requests).toHaveLength(1);
+  } else {
+    await vi.waitFor(()=>expect(f.requests).toHaveLength(2));
+    f.snapshot.messages[1]!.completion = 'complete';
+    if (mode === 'changed-selection') f.snapshot.selectedNativeKey = key('2');
+    f.reply();
+    expect(await outcome).toBe(mode === 'changed-selection' ? 'story-native-line-unavailable' : 'started');
+  }
+  expect(f.store.runStoryGame).toHaveBeenCalledTimes(mode.startsWith('late-') ? 1 : 0);
 });
 it('starts before the first POST with pending native rows only after verifying empty server history',async()=>{
   document.body.innerHTML='<article data-role="user" data-message-id="2">Request</article><article data-role="assistant" data-message-id="3"></article>';

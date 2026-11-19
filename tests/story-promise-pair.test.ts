@@ -13,6 +13,22 @@ const neighbour=make('promise','Rosa promised Dina the jade carving after inspec
 const delivered=make('event','Rosa handed the jade carving to Cora.');
 const otherDelivery=make('event','Rosa handed the jade carving to Dina.');
 const draft='What did Rosa promise Cora, and how did the handover end?';
+const outcomeQuestion = "How did Rosa’s violin promise end? What was the original condition and what proves the handover?";
+it('keeps the original condition, its relevant inspection and the terminal record together', () => {
+  const open:StoryFact = {...make('promise','Rosa promised Cora a violin after inspection of the pegs.'),task:{key:'instrument',title:'Violin',status:'open'}};
+  const final:StoryFact = {...make('event','Cora received the violin.'),task:{...open.task!,status:'completed'}};
+  const check = make('event','Cora inspected the pegs on the violin.');
+  const decoys = [make('event','Cora inspected the pegs on the cello.'),make('event','Cora never inspected the pegs on the violin.')];
+  const recallOutcome = (rows:StoryFact[], closing=final) => recall([...rows,closing],outcomeQuestion,undefined,[open]);
+  expect(recallOutcome([check,...decoys])).toEqual({facts:[open,check,final],certain:true});
+  const signed = {...final,...make('event','Cora signed the form for the violin.')};
+  expect(recallOutcome([], signed)).toEqual({facts:[open,signed],certain:false});
+  const unrelated = {...final,...make('event','Cora received the flute. The violin is still missing.')};
+  expect(recallOutcome([], unrelated)).toEqual({facts:[open,unrelated],certain:false});
+  expect(recallOutcome([{...check,quote:'Cora inspected the pegs on the cello.'}])).toEqual({facts:[open,final],certain:true});
+  expect(recall([final],outcomeQuestion,undefined,[{...open,...make('promise','Rosa promised Cora a flute after inspection of the violin.')}]))
+    .toEqual({facts:[],certain:false});
+});
 function recall(facts:StoryFact[], query=draft, missing?:StoryFact, archive:StoryFact[]=[]) {
   const original=createStoryRoleReader(scope,query);
   const ordered=[...archive,...facts];
@@ -56,4 +72,15 @@ it('restores the original agreement with its later closed state only when both r
   const terms='What did Rosa promise Cora?';
   expect(recall([current,neighbour],terms,undefined,[past])).toEqual({facts:[past,current],certain:true});
   expect(recall([current,neighbour],terms,current,[past])).toEqual({facts:[],certain:false});
+});
+
+it('separates a destination from the person addressed and checks what was signed for',()=>{
+  const open:StoryFact={...make('promise','Rosa promised Cora a violin for the music school.'),task:{key:'violin',title:'Violin',status:'open'}};
+  const closed:StoryFact={...make('event','Dina collected the violin and signed for the violin.'),task:{...open.task!,status:'completed'}};
+  const query='What did Rosa promise the music school, and who signed for the violin?';
+  const neighbour=make('promise','Rosa promised Cora a flute after a concert for the music school.');
+  expect(recall([neighbour,closed],query,undefined,[open])).toEqual({facts:[open,closed],certain:true});
+  expect(recall([neighbour],query)).toEqual({facts:[],certain:false});
+  expect(recall([closed],query.replace('signed for the violin','signed for the flute'),undefined,[open])).toEqual({facts:[open,closed],certain:false});
+  expect(recall([closed],query.replace('music school','music hall'),undefined,[open])).toEqual({facts:[],certain:false});
 });

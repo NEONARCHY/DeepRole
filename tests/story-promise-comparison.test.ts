@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
-import { promiseComparisonEvidence } from '../src/core/story-promise-comparison';
+import { prerequisiteEvidence, promiseComparisonEvidence } from '../src/core/story-promise-comparison';
+import { maintenancePremise } from '../src/core/story-maintenance-premise';
 import { createStoryRoleReader } from '../src/core/story-source-roles';
 import type { StoryFact } from '../src/core/story-update';
 import { storyWorld } from './fixtures/story-worlds';
@@ -12,12 +13,57 @@ const brass=row('promise','Rosa promised Cora the brass compass after calibratio
 const bone=row('promise','Rosa promised Dina the bone compass after polishing.');
 const scene=row('event','The brass compass went in a felt pouch, while the bone compass was packed in a leather sleeve.');
 const draft='Compare Rosa’s promises to Cora and Dina. How do I tell the items apart?';
+it('keeps an explicit Russian denial scoped to the observed action and location', () => {
+  const observe = maintenancePremise('Можно начинать, раз часы уже починили?')!;
+  const here = (part:string) => part.includes('у ворот');
+  expect(observe('Утром у ворот часы не починили.',here)).toBe('denied');
+  expect(observe('Утром у ворот часы починили.',here)).toBe('reported');
+  expect(observe('Утром у ворот проверили часы.',here)).toBeUndefined();
+  expect(observe('Утром у ворот проверили часы, а в саду часы починили.',here)).toBeUndefined();
+  expect(observe('Если бы у ворот часы починили, мы бы услышали звон.',here)).toBeUndefined();
+});
 function compare(facts:StoryFact[],question=draft,missing?:StoryFact) {
   const reader=createStoryRoleReader(scope,question);
   return promiseComparisonEvidence(facts,question,scope,{...reader,status:f=>reader.read(f)?'bound':'unknown'},{
     read:f=>f===missing?undefined:{episode:1,period:'earlier-turn',revisionId:'source-'+facts.indexOf(f)},position:f=>facts.indexOf(f),
   });
 }
+
+it('uses the designated job, its marking and the last observation of its prerequisite', () => {
+  const job:StoryFact = {...row('promise','Rosa promised Cora the west panel for the theatre after a pressure test.'),
+    task:{key:'west',title:'Deliver panel',status:'open'}};
+  const other = row('promise','Dina promised Cora the east panel for the gallery after a pressure test.');
+  const mark = row('event','Cora tied a red ribbon to the west panel and a blue ribbon to the east panel.');
+  const machine = row('event','Rosa replaced the machine beside the west panel.');
+  const pending = row('event','The pressure test of the west panel is still pending.');
+  const later = row('event','The west panel passed the pressure test and shipment was authorized.');
+  const query = 'Can we ship the marked one for the theatre now that the machine works? Whose job is it?';
+  function select(extra:StoryFact[], question=query) {
+    const facts = [job,other,...extra], reader = createStoryRoleReader(scope,question);
+    return prerequisiteEvidence(facts,question,scope,{...reader,status:f=>reader.read(f)?'bound':'unknown'},{
+      read:f=>({episode:1,period:'earlier-turn',revisionId:'source-'+facts.indexOf(f)}),position:f=>facts.indexOf(f),
+    });
+  }
+  expect(select([mark,machine])).toEqual({facts:[job,mark],certain:false});
+  expect(select([mark,pending,machine,row('belief','Dina believes that the west panel passed the pressure test.')])).toEqual({facts:[job,mark,pending],certain:true});
+  expect(select([mark,pending,later])).toEqual({facts:[job,mark,later],certain:true});
+  expect(select([row('event','Cora marked the east panel blue.'),pending])).toEqual({facts:[job,pending],certain:false});
+  expect(select([mark,{...pending,quote:'Only the east panel is still awaiting its pressure test.'}])).toEqual({facts:[job,mark],certain:false});
+  expect(select([mark,pending],query.replace('for the theatre','for the depot'))).toBeUndefined();
+  const gaugeQuery = query.replace('the machine works','the gauge was replaced');
+  const denied = row('event','Rosa did not replace the gauge beside the west panel.');
+  const replaced = row('event','Rosa replaced the gauge beside the west panel.');
+  const unrelated = [
+    machine, row('event','If Rosa replaced the gauge beside the west panel, the reading would improve.'),
+    row('event','Rosa replaced the gauge beside the east panel and checked the west panel.'),
+    row('event','Rosa replaced the gauge cover beside the west panel.'),
+    row('event','Rosa inspected the gauge beside the west panel.'), {...denied,text:replaced.text},
+  ];
+  expect(select([mark,pending,...unrelated],gaugeQuery)).toEqual({facts:[job,mark,pending],certain:true,unverified:true});
+  for (const witness of [denied,replaced]) {
+    expect(select([mark,pending,...unrelated,witness],gaugeQuery)).toEqual({facts:[job,mark,pending,witness],certain:true});
+  }
+});
 
 it('uses both beneficiaries of a common giver, including explicit repeated names',()=>{
   const spare=row('promise','Rosa promised the school an iron compass after cleaning.');

@@ -10,6 +10,10 @@ import { storyFactIdentity } from './story-memory-lifecycle';
 const decision = /(?:^| )(?:can|allowed|permitted|wait|stop|conditions?|outstanding|можно|нельзя|услови\p{L}*|останов\p{L}*|подожд\p{L}*|придется)(?: |$)/u;
 const question = /^(?:what|which|who|where|when|can|may|how|что|чего|кто|кому|где|когда|как|каки\p{L}*|на каких|можно)(?: |$)/u;
 const separated = /[,;.!?\n]+|\s+(?:and then|then|afterwards|and i|затем|потом|после этого|и я)\s+/iu;
+// A bare conjunction can join either objects or actions. Split only when
+// its next word is an action, so "the map and receipt" stays together.
+const coordinated = /\s+(?:и\s+(?=(?:подшиваю|записываю|убираю|открываю|осматриваю|проверяю|беру|кладу|передаю|отдаю|поднимаю|показываю|смотрю|заглядываю)\s)|and\s+(?=(?:file|record|store|open|inspect|check|take|put|hand|give|lift|show|look|peek)\s))/iu;
+const spatialObject = /(?:^|\s)(?:под|за|внутри|under|underneath|behind|inside)\s+(?:(?:the|a|an)\s+)?([\p{L}-]+(?:\s+(?!на\s|в\s|для\s|у\s|и\s|on\s|in\s|of\s|for\s|and\s)[\p{L}-]+){0,2})/iu;
 const rule = /(?:^| )(?:once|until|only|must|requires?|permission|consent|allowed|refus\p{L}*|denied|forbid\p{L}*|forbade|signed|complet\p{L}*|cancel\p{L}*|delayed|still|not|never|только|после|когда|пока|нельзя|согласи\p{L}*|разреш\p{L}*|отказ\p{L}*|запре[тщ]\p{L}*|подпис\p{L}*|задерж\p{L}*|отлож\p{L}*|заверш\p{L}*|отмен\p{L}*|не)(?: |$)/u;
 const consequential = /(?:^| )(?:offer|give|release|hand|deliver|allow|publish|broadcast|lend|promise|help|предлага\p{L}*|выда\p{L}*|вруча\p{L}*|отда\p{L}*|переда\p{L}*|публику\p{L}*|помо(?:чь|га\p{L}*)|пуст\p{L}*)(?: |$)/u;
 const framing = new Set(tokenize('each them their its his her about what where which while then only before after once now again behind into from that this can could should would has have was had did take open check look first next вместе теперь потом затем только каждый каждому своих своей пока после перед когда которые чтобы что можно беру открываю нахожу проверяю'));
@@ -23,6 +27,44 @@ function actionClauses(query:string) {
   if (!question.test(last) || !decision.test(last)) return;
   const clauses = parts.flatMap(part=>part.split(separated)).map(s=>s.trim()).filter(Boolean);
   return clauses.length >= 2 && clauses.length <= 10 ? clauses : undefined;
+}
+
+/** Find a missing observation about a named object in an already grounded action.
+ * Read-only supplement: keep existing selection, ambiguity and budget decisions. */
+export function compoundActionDetails(facts:StoryFact[], draft:string, names:string[], selected:StoryFact[], roles?:StoryRoleReader, episodes?:EpisodeReader) {
+  if (!selected.length || !episodes || !roles || roles.question || !spatialObject.test(draft)) return [];
+  const clauses = actionClauses(draft)?.flatMap(part=>part.split(coordinated));
+  if (!clauses || clauses.length>10) return [];
+  const lex = storyRecallLexicon(names);
+  const terms = (text:string) => new Set(tokenize(lex.mask(text)).filter(t=>/^\p{L}{3,}$/u.test(t) && !framing.has(t)));
+  const sourceTerms = (fact:StoryFact) => {
+    const quote = terms(fact.quote);
+    return new Set([...terms(fact.text)].filter(w=>quote.has(w)));
+  };
+  const supported = (f:StoryFact)=>!!episodes.read(f) && roles.status?.(f)!==undefined && !Object.values(roles.read(f)??{}).some(p=>p.unavailable);
+  const chosen = selected.filter(supported).map(fact=>({fact,words:sourceTerms(fact)}));
+  const actions = clauses.map(clause=>{
+    const words=terms(clause);
+    return {clause,anchors:chosen.filter(row=>[...row.words].filter(w=>words.has(w)).length>=2)};
+  });
+  const details = new Set<StoryFact>();
+  for (const action of actions) {
+    const phrase = spatialObject.exec(action.clause)?.[1];
+    if (!phrase || !action.anchors.length || !actions.some(other=>other!==action && other.anchors.some(row=>!action.anchors.includes(row)))) continue;
+    const object=[...terms(phrase)];
+    if (!object.length) continue;
+    const namesObject = (words:Set<string>)=>object.every(w=>words.has(w));
+    const candidates = facts.filter(f=>{
+      if (f.kind!=='event' || f.task || f.claim?.status==='ended') return false;
+      const sentences=(text:string)=>text.split(/[.!?;\n]+/u).map(terms).filter(namesObject);
+      const quotes=sentences(f.quote);
+      if (!quotes.length) return false;
+      return sentences(f.text).some(summary=>quotes.some(quote=>action.anchors.some(({words})=>
+        [...words].filter(w=>!object.includes(w) && summary.has(w) && quote.has(w)).length>=2)));
+    });
+    if (candidates.length===1 && supported(candidates[0]!) && !chosen.some(row=>row.fact===candidates[0])) details.add(candidates[0]!);
+  }
+  return [...details];
 }
 
 export function compoundConditionEvidence(facts:StoryFact[], draft:string, names:string[], roles?:StoryRoleReader, episodes?:EpisodeReader, selected:StoryFact[] = []) {

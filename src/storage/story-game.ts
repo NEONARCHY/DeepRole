@@ -103,6 +103,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
   if (input.operation === "start" || input.operation === "restart") {
     const inheritedProfiles: ProfileSeeds = {}, inheritedIdentities: IdentitySeeds = {};
     let inheritedMerges: MergeSeeds = {};
+    let transferSeeds: Pick<StoryBaseline, "priorTaskSeeds" | "factSeeds" | "factRoleSeeds" | "episodeSourceSeeds"> | undefined;
     const prior = baseline && rows(all).find(r => r.id === baseline!.branchId) as StoryBranch | undefined;
     if (prior?.gameManaged && input.operation !== "restart") return { records: [], removed: [], result: { active: true, changed: false } };
     if (input.recoverOpening && (!world.storyAutomation || world.storyAutomation.mode === "off")) return { records: [], removed: [], result: { active: false, changed: false } };
@@ -115,6 +116,10 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
       || baseline.origin.nativeAnchor && baseline.origin.nativeAnchor.nativeMessageKey !== anchor)) {
       // Preserve old sources/checkpoints unchanged. Rotate only the live binding's
       // identity, atomically; another tab cannot keep writing the archived owner.
+      if (input.operation === "start" && world.sharedGame?.activeBindingId === binding.id && baseline.gameId === world.sharedGame.id && baseline.factSeeds) {
+        const { priorTaskSeeds, factSeeds, factRoleSeeds, episodeSourceSeeds } = baseline;
+        transferSeeds = { priorTaskSeeds, factSeeds, factRoleSeeds, episodeSourceSeeds };
+      }
       inheritedMerges = currentMergeSeeds(rows(all), input.worldId, input.chatId, binding.id);
       const rawPeople = people(all, input.worldId, input.chatId), rawById = new Map(rawPeople.map(p => [p.id, p]));
       for (const p of currentStoryProfileEntities(rawPeople, rows(all), input.worldId, input.chatId, binding.id)) {
@@ -131,6 +136,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     }
     if (!baseline) {
       write(planLegacyStory(all, { worldId: input.worldId, bindingId: binding.id }).records); baseline = rows(all).find((r): r is StoryBaseline => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === input.worldId)!;
+      if (transferSeeds) baseline = { ...baseline, ...transferSeeds };
       if (Object.keys(inheritedProfiles).length || Object.keys(inheritedIdentities).length || Object.keys(inheritedMerges).length) { baseline = { ...baseline, ...(Object.keys(inheritedProfiles).length ? { profileSeeds: inheritedProfiles } : {}), ...(Object.keys(inheritedIdentities).length ? { identitySeeds: inheritedIdentities } : {}), ...(Object.keys(inheritedMerges).length ? { mergeSeeds: inheritedMerges } : {}) }; write([storyRow(baseline)]); }
     }
     const branch = rows(all).find(r => r.id === baseline!.branchId) as StoryBranch;

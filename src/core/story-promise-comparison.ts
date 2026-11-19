@@ -1,12 +1,19 @@
 import type { EpisodeReader } from './story-episodes';
-import { closedPromiseEvidence, promiseParticipants } from './story-promise-pair';
+import { closedPromiseEvidence, promiseDestination, promiseParticipants } from './story-promise-pair';
 import type { StoryRetrievalScope } from './story-retrieval-query';
 import type { StoryRoleReader } from './story-source-roles';
 import type { StoryFact } from './story-update';
 import { normalizeText, storyObjectTokens } from './text';
+import { maintenancePremise } from './story-maintenance-premise';
 
 export const COMPARE_PROMISES = '<deeprole_reference_guard>Compare the two recorded commitments separately. Preserve the giver, recipient, item and condition from each quote. Use the distinguishing scene for the requested difference. A prerequisite is not delivery. Keep a later closing status. Report only what the selected sources establish.</deeprole_reference_guard>';
 export const INCOMPLETE_COMPARISON = '<deeprole_reference_guard>Only part of the requested comparison is established. State which agreement, distinguishing detail or outcome is unknown. Do not substitute another promise or infer that an unrecorded event never happened.</deeprole_reference_guard>';
+export function prerequisiteGuide(unverified:boolean) {
+  const source = unverified
+    ? 'No matching observation of the work named by the player was identified. If the quotes document only work on a different part, say explicitly that there is no information about the requested work (RU: «Об этой детали сведений нет»). Give the documented work in a separate sentence. Do not say the named work did not happen or choose between the two parts.'
+    : 'Report only what the quotation establishes about the specific action and object. A negative answer about an event requires an explicit denial for that same action and object in the relevant scene. Keep its speaker and time limits. Earlier assistant guesses and a record about a different part prove neither occurrence nor nonoccurrence.';
+  return '<deeprole_reference_guard>'+source+' Answer permission to proceed separately, using the responsible person, recorded prerequisite and last observation. Repair alone does not satisfy another condition. Describe markings literally.</deeprole_reference_guard>';
+}
 
 const comparison = /(?:^| )(?:сравни\p{L}*|сопостав\p{L}*|свер(?:им|ить|ь)|различ\p{L}*|отлича\p{L}*|compare|contrast|reconcile|differ(?:s|ent|ences?)?|tell .{1,24} apart)(?= |$)/u;
 const commitment = /(?:^| )(?:обеща\p{L}*|обязательств\p{L}*|заказ\p{L}*|promises?|commitments?|orders?)(?= |$)/u;
@@ -59,6 +66,64 @@ const subjectPart=(s:string)=>s.split(conditionStart,1)[0]!;
 const conditionPart=(s:string)=>{const match=conditionStart.exec(s);return match?s.slice(match.index+match[0].length):'';};
 const clausesOf=(s:string)=>s.split(/[.!?;\n]+|,?\s+(?:while|whereas|but|а|зато)\s+/iu);
 type Side = {fact:StoryFact; item:Set<string>; condition:Set<string>; giver:string};
+
+/** A player can ask if work can proceed without naming its owner or using the word "promise". */
+export function prerequisiteEvidence(facts:StoryFact[], draft:string, scope:StoryRetrievalScope, roles?:StoryRoleReader, episodes?:EpisodeReader, archive:StoryFact[] = []) {
+  if (draft.length > 800) return;
+  const query = normalizeText(draft);
+  if (!/(?:^| )(?:можно ли|можно|can we|can i|can they|may we)(?= |$)/u.test(query)
+    || !/(?:^| )(?:раз|теперь когда|после замены|после ремонта|now that|since|after replacing|after repairing)(?= |$)/u.test(query)) return;
+  const targets = [...query.matchAll(/(?:^| )(?:для |for (?:the )?)([\p{L} ]+?)(?= (?:то|тот|те|раз|теперь|после|now that|since|after) |$)/gu)];
+  if (targets.length !== 1) return;
+  const destination = targets[0]![1]!;
+  const {mask} = promiseParticipants(scope);
+  if (mask(draft).includes('@')) return;
+  const partial = (facts:StoryFact[] = []):{facts:StoryFact[]; certain:boolean; unverified?:boolean} => ({facts, certain:false});
+  const asksMarking = /(?:^| )(?:цвет\p{L}*|перевязан\p{L}*|помечен\p{L}*|colou?r\p{L}*|marked|tagged|ribbons?)(?= |$)/u.test(query);
+  const promises = facts.filter(f => f.kind === 'promise' && f.claim?.status !== 'ended');
+  const candidates = promises.filter(f => promiseDestination(f.quote,destination) && promiseDestination(f.text,destination));
+  if (!candidates.length) return;
+  if (!roles || !episodes || candidates.length !== 1) return partial();
+  const anchor = candidates[0]!;
+  const supported = (f:StoryFact) => !!episodes.read(f) && roles.status?.(f) !== undefined && !Object.values(roles.read(f) ?? {}).some(p => p.unavailable);
+  if (!supported(anchor) || !roles.read(anchor)?.promisor || anchor.task?.status !== 'open') return partial();
+  const condition = agreedWords(anchor,mask,conditionPart);
+  for (const w of words('ему надо должна должен предстоит дождаться нужно has have been must needs should')) condition.delete(w);
+  if (!condition.size) return partial([anchor]);
+  const identity = agreedWords(anchor,mask,subjectPart);
+  const closed = closedPromiseEvidence(facts,archive,episodes,supported);
+  for (const other of [...promises,...closed.keys()]) if (other !== anchor) {
+    for (const w of agreedWords(other,mask,subjectPart)) identity.delete(w);
+  }
+  const events = facts.filter(f => f.kind === 'event' && f.claim?.status !== 'ended' && (!f.task || f.task.key === anchor.task?.key)
+    && supported(f) && ![f.quote,f.text].some(s => reported.test(normalizeText(s))));
+  const relevant = (s:string) => common(words(mask(s)),identity).length > 0;
+  const progress = events.filter(f => episodes.position(f) > episodes.position(anchor)
+    && [f.quote,f.text].every(s => relevant(s) && common(words(mask(s)),condition).length > 0));
+  const describesMarking = (s:string) => {
+    const line = normalizeText(s);
+    if (!/(?:^| )(?:пометил\p{L}*|перевязал\p{L}*|метк\p{L}*|лент\p{L}*|ribbons?|marked|tagged|tied)(?= |$)/u.test(line)
+      || /(?:^| )(?:не|если|бы|not|never|would|if)(?= |$)/u.test(line)) return false;
+    return clausesOf(s).flatMap(c => c.split(/\s+and\s+/iu)).some(c => relevant(c) && markings.test(normalizeText(c)));
+  };
+  const markers = asksMarking ? events.filter(f => normalizeText(f.quote).includes(normalizeText(f.text)) && describesMarking(f.text)) : [];
+  const latest = (rows:StoryFact[]) => {
+    const last = rows.reduce((n,f) => Math.max(n,episodes.position(f)), -1);
+    return rows.filter(f => episodes.position(f) === last);
+  };
+  const status = latest(progress), labels = latest(markers);
+  const premise = maintenancePremise(draft);
+  const witnesses = premise ? events.filter(f => {
+    const observation = premise(f.quote,relevant);
+    return observation && observation === premise(f.text,relevant);
+  }) : [];
+  const selected = [...new Set([anchor,...labels,...status,...(witnesses.length <= 3 ? witnesses : [])])];
+  const explicitStatus = /(?:^| )(?:отлож\p{L}*|приостанов\p{L}*|по прежнему|все еще|еще заполн\p{L}*|разрешил\p{L}*|put off|postponed|pending|still|passed|authori[sz]ed)(?= |$)/u;
+  const observed = (s:string) => clausesOf(s).some(c => common(words(mask(c)),condition).length > 0 && explicitStatus.test(normalizeText(c))
+    && !/(?:^| )(?:если|возможно|бы|if|maybe|would|might)(?= |$)/u.test(normalizeText(c)));
+  return {facts:selected, ...(premise && !witnesses.length ? {unverified:true} : {}), certain:status.length === 1 && [status[0]!.quote,status[0]!.text].every(observed)
+    && witnesses.length <= 3 && (!asksMarking || labels.length === 1)};
+}
 
 function distinguishes(value:string, mask:Mask, unique:Set<string>[], colour:boolean) {
   const clauses=clausesOf(value).filter(s=>!colour||markings.test(normalizeText(s))).map(s=>words(mask(s)));

@@ -1,0 +1,483 @@
+{
+  "started": "2026-11-18T21:40:55.549Z",
+  "runtime": "0d34f762d094fec9cbbbdf66bfa359c4fc34b4a1e09f679aec728f398bea6f19",
+  "summary": {
+    "cases": 12,
+    "passed": 0,
+    "measurements": 24
+  },
+  "rows": [
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "velvet",
+        "silk",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "velvet",
+        "silk",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "velvet",
+        "silk",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "velvet",
+        "silk",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "velvet",
+        "silk",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "velvet",
+        "silk",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "silk",
+        "velvet",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "silk",
+        "velvet",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "silk",
+        "velvet",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "velvet",
+        "silk"
+      ],
+      "selected": [
+        "silk",
+        "velvet",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "velvet"
+      ],
+      "selected": [
+        "silk",
+        "velvet",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "wardrobe",
+      "locale": "en",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "silk"
+      ],
+      "selected": [
+        "silk",
+        "velvet",
+        "needles"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "ru",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "both",
+      "phase": "cold",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "first",
+      "phase": "cold",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "second",
+      "phase": "cold",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "both",
+      "phase": "reopened",
+      "expected": [
+        "dial",
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection",
+        "clarification"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "first",
+      "phase": "reopened",
+      "expected": [
+        "dial"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    },
+    {
+      "world": "workshop",
+      "locale": "en",
+      "probe": "second",
+      "phase": "reopened",
+      "expected": [
+        "spring"
+      ],
+      "selected": [
+        "spring",
+        "dial",
+        "lamp"
+      ],
+      "warning": null,
+      "guard": false,
+      "problems": [
+        "selection"
+      ]
+    }
+  ]
+}

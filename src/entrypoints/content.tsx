@@ -21,7 +21,7 @@ import type { StoryFact } from "../core/story-update";
 import { compileGameContext } from "../core/game-context";
 import { readTaskArchive, type TaskArchive } from "../core/story-task-archive";
 import { GameSearchIndex } from "../core/game-search-index";
-import { memoryDeliveryView } from "../core/memory-delivery-view";
+import { awaitingTransferredContext, memoryDeliveryView } from "../core/memory-delivery-view";
 import { storyUpdateText } from "../core/story-update-i18n";
 import { StoryRepairClient } from "../adapters/story-repair-client";
 import { CharacterDiscoveryClient } from "../adapters/character-discovery-client";
@@ -771,6 +771,10 @@ class PageController {
     const chatId = this.adapter.getChatId();
     return chatId ? this.bindings.find((binding) => binding.chatId === chatId) : undefined;
   }
+  private needsTransferredContext() {
+    const binding = this.currentBinding();
+    return !this.pendingService && awaitingTransferredContext(this.worlds.find(w => w.id === binding?.worldId), binding, this.storyRecords, this.memoryDispatchRecords);
+  }
   private memoryDelivery() {
     const binding = this.currentBinding(), worldId = this.currentScene().worldId, chatId = this.adapter.getChatId();
     if (this.state.vaultLocked || this.pendingService || !binding || !worldId || !chatId || binding.worldId !== worldId
@@ -928,7 +932,7 @@ class PageController {
     const gameMode = tracked ? "active" : "";
     if (document.documentElement.dataset.deeproleStoryGame !== gameMode) document.documentElement.dataset.deeproleStoryGame = gameMode;
     const savedMemoryTarget = this.savedMemoryTarget();
-    const strictMode = (this.settings.strictMemorySending || savedMemoryTarget) && !this.pendingService ? "active" : "";
+    const strictMode = (this.settings.strictMemorySending || savedMemoryTarget || this.needsTransferredContext()) && !this.pendingService ? "active" : "";
     const transferMode = this.pendingContinuationCommit ? "active" : "";
     if (document.documentElement.dataset.deeproleTransferPending !== transferMode) document.documentElement.dataset.deeproleTransferPending = transferMode;
     if (document.documentElement.dataset.deeproleStrictMemory !== strictMode) document.documentElement.dataset.deeproleStrictMemory = strictMode;
@@ -2396,7 +2400,7 @@ class PageController {
     }
     if (event.data.type === "STRICT_MEMORY_BLOCKED") {
       const savedTransfer = this.savedMemoryTarget();
-      if (event.origin !== location.origin || !this.settings.strictMemorySending && !savedTransfer || event.data.url !== location.href
+      if (event.origin !== location.origin || !this.settings.strictMemorySending && !savedTransfer && !this.needsTransferredContext() || event.data.url !== location.href
         || event.data.chatId !== this.adapter.getChatId() && !(savedTransfer && isDeepSeekHome(location.href))) return;
       if (typeof event.data.draft === "string" && event.data.draft.length <= 100000 && !this.adapter.getDraft().trim()) this.adapter.setDraft(event.data.draft);
       this.state.warning = storyUpdateText(this.state.locale, "blocked"); this.render(); return;
@@ -2447,7 +2451,7 @@ class PageController {
       const preparationStartedAt = Date.now();
       // The new route may still be publishing its page-wide sending mode.
       // Once this request uses a saved transfer it must never fall back to a bare send.
-      let requiresTransfer = Boolean(opening);
+      let requiresTransfer = Boolean(opening) || this.needsTransferredContext();
       let preparationStage: MemoryPreparationStage = "navigation";
       const prepareContext = async (url: string) => {
         preparationStage = "navigation";
@@ -2482,6 +2486,7 @@ class PageController {
         for (let attempt = 0; attempt < 5 && (!loaded || task !== this.reloadTask); attempt++) {
           task = this.reloadTask; loaded = await task;
         }
+        requiresTransfer ||= this.needsTransferredContext();
         if (!loaded || location.href !== url) throw new Error("context-changed");
         if (this.pendingContinuationCommit) throw Error("handoff-commit-pending");
         const oldNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);

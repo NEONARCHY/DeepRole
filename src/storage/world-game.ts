@@ -16,6 +16,7 @@ import { boundStory } from "../core/story-continuation";
 import { storyReplyProse, compactStoryFacts } from "../core/story-update";
 import { automationReviews } from "../core/story-automation";
 import { roleSeed, selectedRoleSeeds } from "../core/story-role-binding";
+import { transferTaskSeeds } from "../core/story-task-archive";
 const stories = (all: DataRecord[]) => all.filter(r => r.kind === "story").map(r => r.data as StoryRecord);
 const replace = (all: DataRecord[], changes: DataRecord[], removed: { kind: RecordKind; id: string }[] = []) => {
  const keys = new Set([...changes, ...removed].map(r => r.kind + ":" + r.id));
@@ -83,6 +84,7 @@ export function planWorldGameActivation(initial: DataRecord[], input: WorldGameA
   }
  }
  if (input.mode !== "initialize" && game.activeBindingId !== binding.id) {
+  const priorTaskSeeds = transferTaskSeeds(stories(all), { ...world, sharedGame: game });
   for (const row of all) if (row.kind === "entity" && (row.data as SceneEntity).worldId === world.id && (row.data as SceneEntity).playthroughChatId === game.activeChatId) (row.data as SceneEntity).sharedInWorld = true;
    const played = binding.characterScenes?.[world.id];
    if (played && (Object.keys(played.states).length || played.presentIds.length) && !stories(all).some(r => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === world.id)) all = replace(all, planLegacyStory(all, { worldId: world.id, bindingId: binding.id }).records);
@@ -97,7 +99,7 @@ export function planWorldGameActivation(initial: DataRecord[], input: WorldGameA
    // New native chat => new anchor, never replay its old transcript over current progress.
    const planned = planLegacyStory(all, { worldId: world.id, bindingId: binding.id }); all = replace(all, planned.records);
    const baseline = stories(all).find((r): r is StoryBaseline => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === world.id)!;
-   all = replace(all, [storyRow({ ...baseline, gameId: game.id, ...(game.episodeSources ? {episodeSourceSeeds:[...game.episodeSources]} : {}), ...(game.factRoleSeeds?{factRoleSeeds:structuredClone(game.factRoleSeeds)}:{}), ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: structuredClone(game.profileSeeds), identitySeeds: structuredClone(game.identitySeeds), mergeSeeds: structuredClone(game.mergeSeeds), factSeeds: structuredClone(game.facts), storySeeds: structuredClone(game.recentStory), memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
+   all = replace(all, [storyRow({ ...baseline, ...(priorTaskSeeds ? {priorTaskSeeds} : {}), gameId: game.id, ...(game.episodeSources ? {episodeSourceSeeds:[...game.episodeSources]} : {}), ...(game.factRoleSeeds?{factRoleSeeds:structuredClone(game.factRoleSeeds)}:{}), ...(world.storyAutomation ? { gameId: game.id, pendingReviewSeeds: [...game.pendingReviewIds ?? []], reviewResolutionSeeds: { ...game.reviewResolutions } } : {}), profileSeeds: structuredClone(game.profileSeeds), identitySeeds: structuredClone(game.identitySeeds), mergeSeeds: structuredClone(game.mergeSeeds), factSeeds: structuredClone(game.facts), storySeeds: structuredClone(game.recentStory), memoryBatchSeeds: [...game.memoryBatchSources ?? []], storySourceChatId: game.recentChatId })]);
   }
  }
  if (game.managed && game.activeBindingId === binding.id && !stories(all).some(r => r.type === "baseline" && r.origin.bindingId === binding!.id && r.worldId === world.id)) {

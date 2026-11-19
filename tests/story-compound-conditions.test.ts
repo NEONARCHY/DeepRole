@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { compoundConditionEvidence, COMPOUND_CONDITION_GUIDE } from '../src/core/story-compound-conditions';
+import { compoundActionDetails, compoundConditionEvidence, COMPOUND_CONDITION_GUIDE } from '../src/core/story-compound-conditions';
 import { compileGameContext, type GameContextInput } from '../src/core/game-context';
 import { memoryCoverageIssue, type GameMemoryCoverage } from '../src/core/game-memory-coverage';
 import { decodeStoryMemory } from '../src/core/story-memory-transport';
@@ -21,6 +21,20 @@ const facts = [
 const query = 'I unlock the brass cupboard, then check the linen chest. What can each apprentice take?';
 const roles = {status:()=> 'unknown' as const,question:undefined,read:()=>undefined,score:()=>0};
 const episodes = {position:(f:StoryFact)=>facts.indexOf(f)+1,read:(f:StoryFact)=>({revisionId:f.text,episode:1,period:'earlier-turn' as const})};
+it('keeps a named detail with its own observation in a compound turn',()=>{
+  const turn = 'I look under the copper lining in the brass cupboard, then check the linen chest. What can each apprentice take?';
+  const lining = event('Violet pigment and porcelain glaze stained the copper lining.');
+  const wrongMaterial = event('Violet pigment and porcelain glaze stained a paper lining.');
+  const separateScene = event('A copper lining gleamed on the pier. The glaze and pigment stayed indoors.');
+  const changedSummary = {...lining,quote:separateScene.quote};
+  const select = (extra:StoryFact[]) => compoundActionDetails([...facts,...extra],turn,[],facts,roles,episodes);
+  const result = select([lining,wrongMaterial,separateScene,changedSummary]);
+  expect(result).toEqual([lining]);
+  const other = event('The copper lining beside the violet pigment and porcelain glaze was dented.');
+  const ambiguous = select([lining,other]);
+  expect(ambiguous).toEqual([]);
+  expect(compoundActionDetails([...facts,lining],turn,[],facts,roles,{...episodes,read:f=>f===lining?undefined:episodes.read(f)})).toEqual([]);
+});
 it('recovers separate obligations and outcome evidence for two distant objects without a shared character deciding relevance',()=>{
   const noise = Array.from({length:240},(_,i)=>event('Eda and Ivo logged the temperature in the foyer. Entry '+i+'.'));
   const before = structuredClone(facts);
