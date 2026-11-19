@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { compoundActionDetails, compoundConditionEvidence, COMPOUND_CONDITION_GUIDE } from '../src/core/story-compound-conditions';
+import { compoundActionDetails, compoundConditionEvidence, COMPOUND_CONDITION_GUIDE, unrelatedCancellation } from '../src/core/story-compound-conditions';
 import { compileGameContext, type GameContextInput } from '../src/core/game-context';
 import { memoryCoverageIssue, type GameMemoryCoverage } from '../src/core/game-memory-coverage';
 import { decodeStoryMemory } from '../src/core/story-memory-transport';
@@ -21,6 +21,19 @@ const facts = [
 const query = 'I unlock the brass cupboard, then check the linen chest. What can each apprentice take?';
 const roles = {status:()=> 'unknown' as const,question:undefined,read:()=>undefined,score:()=>0};
 const episodes = {position:(f:StoryFact)=>facts.indexOf(f)+1,read:(f:StoryFact)=>({revisionId:f.text,episode:1,period:'earlier-turn' as const})};
+it('distinguishes the subject of a cancellation from the orders explicitly left in force',()=>{
+  const draft='I check the studio kiln, then file the theatre receipt. Which conditions remain and what did Eda sign?';
+  const text='Eda cancelled the separate cabinet commission; the theatre and studio did not withdraw their order.';
+  const row:StoryFact={...event(text),task:{key:'cabinet',title:'Cabinet commission',status:'cancelled'}};
+  const exclude=(question:string,record:StoryFact)=>unrelatedCancellation(question,['Eda','Ivo'])?.(record)??false;
+  expect(exclude(draft,row)).toBe(true);
+  expect(exclude(draft.replace('theatre receipt','cabinet receipt'),row)).toBe(false);
+  expect(exclude(draft.replace('conditions remain','orders were cancelled'),row)).toBe(false);
+  expect(exclude(draft,{...row,quote:'The theatre withdrew its order.'})).toBe(false);
+  expect(exclude(draft,{...row,quote:text.replace('did not withdraw','did not sign but later withdrew')})).toBe(false);
+  const named=text.replace('cabinet commission','commission for Ivo');
+  expect(exclude(draft.replace('Eda sign','Ivo sign'),{...row,text:named,quote:named})).toBe(false);
+});
 it('keeps a named detail with its own observation in a compound turn',()=>{
   const turn = 'I look under the copper lining in the brass cupboard, then check the linen chest. What can each apprentice take?';
   const lining = event('Violet pigment and porcelain glaze stained the copper lining.');

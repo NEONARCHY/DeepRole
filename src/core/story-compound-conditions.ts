@@ -29,6 +29,37 @@ function actionClauses(query:string) {
   return clauses.length >= 2 && clauses.length <= 10 ? clauses : undefined;
 }
 
+const cancellation = /(?:^| )(?:отмен\p{L}*|отозв\p{L}*|отзыв\p{L}*|cancel\p{L}*|withdr(?:aw|ew)\p{L}*)(?= |$)/u;
+const negative = /(?:^| )(?:не|ни|not|neither|never)(?= |$)/u;
+const retainedOrder = /(?:^| )(?:не (?:отмен|отозв|отзыв)\p{L}*|(?:not|never) (?:cancel|withdraw)\p{L}*|neither .{1,80} nor .{1,80} (?:cancel|withdr)\p{L}*)(?= |$)/u;
+const separateOrder = /(?:^| )(?:отдельн\p{L}*|друг(?:ой|ую|ое)|separate|unrelated)(?= |$)/u;
+
+/** A cancelled request may explicitly mention other recipients only to say
+ * their orders still stand. Keep the whole record whenever its own subject
+ * is requested, or the text and quote do not both establish this contrast. */
+export function unrelatedCancellation(draft:string,names:string[]) {
+  const query=normalizeText(draft);
+  if (!actionClauses(draft) || cancellation.test(query) || separateOrder.test(query)
+    || /(?:^| )(?:все|всех|любые|all|every|everything)(?= |$)/u.test(query)) return;
+  const lex=storyRecallLexicon(names);
+  const terms=(text:string)=>tokenize(text).filter(t=>/^\p{L}{3,}$/u.test(t) && !framing.has(t))
+    .map(t=>/^[а-я]{3}[ау]$/u.test(t)?t.slice(0,-1):t);
+  const request=new Set(terms(draft));
+  const mentioned=(t:string)=>request.has(t) || (t.length>=5 && [...request].some(w=>w.length>=5 && w.replace(/и$/u,'')===t.replace(/и$/u,'')));
+  const contrasts=(text:string)=>{
+    const parts=text.split(/[.,;!?\n]+|\s+(?:но|зато|but|whereas)\s+/iu).map(normalizeText).filter(Boolean);
+    const withdrawn=parts.filter(s=>cancellation.test(s) && !negative.test(s));
+    if (withdrawn.length!==1) return false;
+    const primary=withdrawn[0]!;
+    // Ignore a shared actor as a topic. Keep a named person in the request's object.
+    if (!separateOrder.test(primary) || terms(lex.mask(primary)).some(mentioned)
+      || terms(primary.slice(primary.search(cancellation))).some(mentioned)) return false;
+    return parts.some(s=>retainedOrder.test(s) && new Set(terms(lex.mask(s)).filter(mentioned)).size>=2);
+  };
+  return (f:StoryFact)=>f.task?.status==='cancelled' && f.kind==='event' && !terms(f.task.title).some(mentioned)
+    && contrasts(f.quote) && contrasts(f.text);
+}
+
 /** Find a missing observation about a named object in an already grounded action.
  * Read-only supplement: keep existing selection, ambiguity and budget decisions. */
 export function compoundActionDetails(facts:StoryFact[], draft:string, names:string[], selected:StoryFact[], roles?:StoryRoleReader, episodes?:EpisodeReader) {
@@ -62,7 +93,23 @@ export function compoundActionDetails(facts:StoryFact[], draft:string, names:str
       return sentences(f.text).some(summary=>quotes.some(quote=>action.anchors.some(({words})=>
         [...words].filter(w=>!object.includes(w) && summary.has(w) && quote.has(w)).length>=2)));
     });
-    if (candidates.length===1 && supported(candidates[0]!) && !chosen.some(row=>row.fact===candidates[0])) details.add(candidates[0]!);
+    if (candidates.length!==1 || !supported(candidates[0]!)) continue;
+    const detail=candidates[0]!;
+    if (!chosen.some(row=>row.fact===detail)) details.add(detail);
+    // The observed detail and a selected agreement can jointly identify
+    // the object of a separate permission or prohibition.
+    const observed=sourceTerms(detail);
+    const permission=/(?:^| )(?:разрешил[аи]?|разрешено|запретил[аи]?|запрещено|allowed|permitted|forbade|forbidden|prohibited)(?= |$)/u;
+    for (const anchor of action.anchors.filter(row=>row.fact.kind==='promise')) {
+      const common=[...anchor.words].filter(w=>observed.has(w) && !object.includes(w));
+      if (common.length<2) continue;
+      const matches=(text:string)=>text.split(/[.!?;\n]+/u).filter(s=>permission.test(normalizeText(s))).map(terms);
+      for (const fact of facts) {
+        if (fact.kind!=='event' || fact.task || fact.claim?.status==='ended' || selected.includes(fact)) continue;
+        const quotes=matches(fact.quote);
+        if (quotes.length && matches(fact.text).some(s=>quotes.some(q=>common.filter(w=>s.has(w)&&q.has(w)).length>=2)) && supported(fact)) details.add(fact);
+      }
+    }
   }
   return [...details];
 }

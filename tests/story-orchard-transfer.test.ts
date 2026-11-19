@@ -58,6 +58,8 @@ it("carries the archived promise through two chats without reopening the complet
       const taskArchive = readTaskArchive(records, world, branch);
       const q = probes.orchard!.find(p => p.id === "ambiguous")!, discussion = q.recent![0]![0];
       const checks = [
+        {draft:"Сначала заглядываю под кальку на листе для кружка, потом осматриваю канаву у нижнего ряда и подшиваю расписку учебного сада. Какие условия ещё висят, что видно под калькой и за что расписалась Нина?",recent:[],expected:["lower","map","overlay","privacy","pump","receipt"],compound:true},
+        {draft:"Что случилось с просьбой гербария о грушевых ветках?",recent:[],expected:["spare"],herbarium:true},
         {draft:probes.orchard!.find(p=>p.id==="reverse-actions")!.draft[0],recent:[],expected:["lower","map","overlay","privacy","pump","receipt"],compound:true},
         {draft:"Можно срезать для питомника те, что перевязаны жёлтыми лентами, раз батарею уже заменили? Кто должен резать?", recent: [], expected:["lower","pump","tags"], unverified:true},
         {draft: probes.orchard!.find(p => p.id === "free")!.draft[0], recent: [], expected: ["lower","pump","tags"]},
@@ -79,7 +81,9 @@ it("carries the archived promise through two chats without reopening the complet
         if (check.compound) {
           expect(ids,check.draft).toEqual(expect.arrayContaining(check.expected));
           expect(ids).not.toContain("basket");
-        } else expect(ids,check.draft).toEqual(check.expected);
+          expect(ids,check.draft).not.toContain("spare");
+        } else if (check.herbarium) expect(ids).toContain("spare");
+        else expect(ids,check.draft).toEqual(check.expected);
         if (check.unverified) expect(result.text).toContain("No matching observation");
       }
       const raw = await repo.rawRecords();

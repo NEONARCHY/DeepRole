@@ -8,7 +8,7 @@ import { storyContentRelevance } from "./story-content-relevance";
 import { taskProgressRecall } from './story-task-progress-recall';
 import { repeatSelectionFacts,repeatSelectionTopic } from './story-repeat-selection';
 import { narrativeRecallFacts, NARRATIVE_RECALL_GUIDE } from './story-narrative-recall';
-import { compoundActionDetails, compoundConditionEvidence, COMPOUND_CONDITION_GUIDE } from './story-compound-conditions';
+import { compoundActionDetails, compoundConditionEvidence, unrelatedCancellation, COMPOUND_CONDITION_GUIDE } from './story-compound-conditions';
 import { taskHistorySources } from './story-task-history';
 import type { TaskArchive } from './story-task-archive';
 import { discussionPriorityFacts } from "./story-discussion-priority";
@@ -202,11 +202,15 @@ function compileNarrativeRecall(input:GameContextInput,options:GameContextOption
  if(!group){
    if(coverage.kind!=='unverified'||coverage.reason!=='query')return unchanged;
    const details=compoundActionDetails(proof.facts,input.draft,proof.names,proof.selected,proof.roles,proof.episodes);
-   if(!details.length)return unchanged;
-   const ids=[...new Set([...proof.selected,...details].map(storyFactIdentity))];
+   const unrelated=unrelatedCancellation(input.draft,proof.names);
+   const retained=unrelated ? proof.selected.filter(f=>!unrelated(f) || !proof.episodes?.read(f) || proof.roles?.status?.(f)===undefined
+     || Object.values(proof.roles.read(f)??{}).some(p=>p.unavailable)) : proof.selected;
+   if(!details.length && retained.length===proof.selected.length)return unchanged;
+   const ids=[...new Set([...retained,...details].map(storyFactIdentity))];
    if(ids.length>BUDGET_SOURCE_ROWS)return unchanged;
    let chosen:StoryFact[]=[];
-   const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,covers:rows=>rows.length===ids.length,referenceGuard:[proof.referenceGuard,COMPOUND_CONDITION_GUIDE].filter(Boolean).join('\n')},p=>{chosen=p.selected});
+   const scope=retained.length<proof.selected.length?'<deeprole_reference_guard>Answer about the actions, items and recipients in this turn. Mention another order only if the player asks or it is needed to explain a documented condition.</deeprole_reference_guard>':'';
+   const candidate=compileGameContextPass(input,options,{ids,budgetRows:true,covers:rows=>rows.length===ids.length,referenceGuard:[proof.referenceGuard,COMPOUND_CONDITION_GUIDE,scope].filter(Boolean).join('\n')},p=>{chosen=p.selected});
    if(candidate.report.total<=candidate.report.limit && candidate.report.required<=candidate.report.limit && ids.every(id=>chosen.some(f=>storyFactIdentity(f)===id)))return {context:candidate,selected:chosen,coverage};
    return unchanged;
  }
