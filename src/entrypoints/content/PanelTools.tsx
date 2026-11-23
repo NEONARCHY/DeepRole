@@ -6,6 +6,7 @@ import { PanelWidthControl } from "../shared/PanelWidthControl";
 
 export const panelToolsText = {
   ru: {
+    hideSidebar: "Скрыть боковую панель", showSidebar: "Показать боковую панель",
     title: "Вид панелей", compactTitle: "Панели чата", choose: "Открыть панель", close: "Закрыть", mode: "Перемещать панели вместе",
     modeHint: "Потяните одну панель, и остальные сдвинутся вместе с ней.",
     portraits: "Показывать портреты", portraitsHint: "Портреты участников сцены появляются рядом с вариантами ответа.",
@@ -14,6 +15,7 @@ export const panelToolsText = {
     meter: "Объём чата", memory: "Память", characters: "Персонажи", scene: "Мир и сцена", choices: "Варианты", notices: "Проверка",
   },
   en: {
+    hideSidebar: "Hide sidebar", showSidebar: "Show sidebar",
     title: "Panel settings", compactTitle: "Chat panels", choose: "Open a panel", close: "Close", mode: "Move panels together",
     modeHint: "Drag one panel to move the others with it.",
     portraits: "Show portraits", portraitsHint: "Scene participants appear beside the reply options.",

@@ -1,6 +1,9 @@
 import { chromium, expect, test } from "@playwright/test";
 import path from "node:path";
+import { characterTab, closeSavedCharacter } from "./character-helpers";
+import { chooseImageCompression } from "./image-upload-helpers";
 import { storyWorld } from "../fixtures/story-worlds";
+import { characterText } from "../../src/core/characters";
 import { oldChatNoticeText } from "../../src/core/old-chat-notice";
 for (const locale of ["ru", "en"] as const) test("installed previous chat reminder " + locale + ": retry, once, reload, ordinary play and dismissal", async ({}, info) => {
  test.skip(info.project.name !== "chromium", "Synthetic installed Edge MV3"); test.setTimeout(120000);
@@ -27,8 +30,59 @@ for (const locale of ["ru", "en"] as const) test("installed previous chat remind
   expect(await request()).toContain('<deeprole_chat_notice version="1">'); expect(await receipt()).toBeUndefined();
   fail = false; const prompt = await request(); expect(prompt).toContain("https://chat.deepseek.com/a/chat/s/new-chat"); expect(prompt).toContain("I open the door.");
   await expect.poll(async () => (await receipt())?.sentAt).toBeTruthy(); await chat.reload(); await chat.bringToFront(); await expect(card).toBeVisible({ timeout: 12000 });
-  // Explicit Continue here now also moves the shared game to this chat.
-  await chat.locator("textarea").fill("My untouched draft"); await card.getByRole("button", { name: t.stay }).click(); await expect(card).toHaveCount(0); await expect(chat.locator("textarea")).toHaveValue("My untouched draft");
+  await chat.locator("textarea").fill("My untouched draft");
+  if (locale === "ru") {
+    const openFromGallery = async () => {
+      await chat.getByRole("button", { name: characterText(locale, "openGallery"), exact: true }).click();
+      await chat.locator(".dr-character-gallery-card").first().getByRole("button", { name: new RegExp("^" + characterText(locale, "editCharacter")) }).click();
+    };
+    await openFromGallery();
+    const editor = chat.locator(".dr-character-editor");
+    await chat.setViewportSize({ width: 320, height: 680 });
+    await characterTab(editor, "images", locale);
+    const library = editor.locator(".dr-portrait-library");
+    const samples = await chat.evaluate(() => Array.from({ length: 5 }, (_, index) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 20;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = `hsl(${index * 50},60%,50%)`;
+      ctx.fillRect(0, 0, 20, 20);
+      return canvas.toDataURL("image/png").split(",")[1]!;
+    }));
+    await library.locator("input[type=file]").setInputFiles(samples.map((data, i) => ({
+      name: `sample-${i}.png`, mimeType: "image/png", buffer: Buffer.from(data, "base64"),
+    })));
+    await chooseImageCompression(chat, "original");
+    await expect(library.locator(".dr-library-image")).toHaveCount(5);
+    const save = editor.getByRole("button", { name: "Сохранить персонажа", exact: true });
+    await save.click();
+    await expect(editor.locator("footer [role=alert]")).toContainText("Игра привязана к другому чату");
+    const resume = editor.getByRole("button", { name: t.stay, exact: true });
+    for (const colorScheme of ["light", "dark"] as const) {
+      await chat.emulateMedia({ colorScheme });
+      const bounds = await resume.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+      expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    }
+    await resume.focus();
+    await chat.keyboard.press("Enter");
+    await expect(card).toHaveCount(0);
+    await expect(library.locator(".dr-library-image")).toHaveCount(5);
+    await save.click();
+    await closeSavedCharacter(editor, locale, true);
+    await chat.setViewportSize({ width: 1280, height: 720 });
+    await chat.reload();
+    await openFromGallery();
+    await characterTab(editor, "images", locale);
+    await expect(library.locator(".dr-library-image")).toHaveCount(5);
+    await editor.getByRole("button", { name: "Закрыть", exact: true }).first().click();
+  } else {
+    await card.getByRole("button", { name: t.stay }).click();
+    await expect(card).toHaveCount(0);
+    await expect(chat.locator("textarea")).toHaveValue("My untouched draft");
+  }
   await chat.reload(); await expect(card).toHaveCount(0); expect(await request()).not.toContain("<deeprole_chat_notice");
  } finally { await context.close(); }
 });

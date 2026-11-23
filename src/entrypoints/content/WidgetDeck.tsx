@@ -1,5 +1,5 @@
 import { Children, isValidElement, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent, type KeyboardEvent } from "react";
-import { GripVertical, Minus, SlidersHorizontal } from "lucide-react";
+import { GripVertical, Minus, PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from "lucide-react";
 import { panelWidth as normalizePanelWidth } from "../../core/panel-width";
 import { PanelTools, panelToolsText } from "./PanelTools";
 import type { Locale } from "../../core/types";
@@ -8,7 +8,7 @@ import { nearestWidgetSpace, WIDGET_GAP, type WidgetRect } from "../../core/widg
 const ids = ["meter", "memory", "characters", "scene", "choices", "notices"] as const;
 type Id = typeof ids[number];
 type Point = { x: number; y: number };
-export interface WidgetLayout { positions: Partial<Record<Id | "dock", Point>>; minimized: Id[]; together: boolean; anchorX?: number }
+export interface WidgetLayout { positions: Partial<Record<Id | "dock", Point>>; minimized: Id[]; together: boolean; anchorX?: number; collapsed?: boolean }
 export const WIDGET_LAYOUT_KEY = "deeprole.widgetLayout.v1";
 const empty = (): WidgetLayout => ({ positions: {}, minimized: [], together: false });
 export function parseWidgetLayout(value: unknown): WidgetLayout {
@@ -17,6 +17,7 @@ export function parseWidgetLayout(value: unknown): WidgetLayout {
   const v = value as Partial<WidgetLayout>;
   if (Number.isFinite(v.anchorX)) result.anchorX = Math.max(0, Math.min(1, v.anchorX!));
   result.together = v.together === true;
+  if (v.collapsed === true) result.collapsed = true;
   result.minimized = Array.isArray(v.minimized) ? ids.filter(id => v.minimized!.includes(id)) : [];
   for (const id of [...ids, "dock"] as const) {
     const p = v.positions?.[id];
@@ -44,7 +45,8 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
   const [error, setError] = useState(false);
   const [scrollMode, setScrollMode] = useState<"column" | "fallback" | null>(null);
   const defaultColumn = Object.keys(layout.positions).length === 0;
-  const overflow = scrollMode === "fallback" || (scrollMode === "column" && defaultColumn);
+  const collapsed = !!layout.collapsed;
+  const overflow = !collapsed && (scrollMode === "fallback" || (scrollMode === "column" && defaultColumn));
   const [compactOpen, setCompactOpen] = useState<Id | null>(null);
   const [toolsFrom, setToolsFrom] = useState<"menu" | "handle" | null>(null);
   const toolsOpen = toolsFrom !== null;
@@ -65,6 +67,7 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
   // Repair legacy overlaps and size changes locally; a later user move persists
   // the repaired geometry. If no packing fits, use a scrollable, non-overlapping stack.
   useLayoutEffect(() => {
+    if (collapsed) return;
     if (compact) { if (scrollMode) setScrollMode(null); return; }
     if (gesture.current || !dock.current) return;
     const nodes = [["dock", dock.current], ...tiles.filter(tile => !layout.minimized.includes(tile.id)).map(tile => [tile.id, refs.current.get(tile.id)] as const)] as const;
@@ -94,14 +97,14 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
   });
   useEffect(() => { if (!gesture.current) setLayout(parseWidgetLayout(saved)); }, [saved, adaptive, compact]);
   useEffect(() => {
-    if (!compact || !compactOpen) return;
+    if (collapsed || !compact || !compactOpen) return;
     const close = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || toolsOpen || event.composedPath().some(node => node instanceof HTMLDialogElement)) return;
       setCompactOpen(null); focusShortcut(compactOpen);
     };
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
-  }, [compact, compactOpen, toolsOpen]);
+  }, [collapsed, compact, compactOpen, toolsOpen]);
   useLayoutEffect(() => { window.dispatchEvent(new Event("deeprole-layout-change")); });
   useLayoutEffect(() => {
     const update = () => resized(n => n + 1);
@@ -214,20 +217,25 @@ export function WidgetDeck({ children, locale, saved, onSave, portraitsVisible, 
       }}>{tile.icon}<span>{label}</span></button>;
   }
   // Reset geometry belongs to the current chat boundary, not a legacy parent offset.
-  return <div className="dr-widget-deck" data-adaptive={adaptive || undefined} data-compact={compact || undefined} data-minimum-left={minimumLeft} data-overflow={overflow || undefined} style={{ position: "fixed", left: minimumLeft, top: minimumTop, "--dr-min-left": `${minimumLeft}px`, "--dr-min-top": `${minimumTop}px`, "--dr-panel-width": `${Math.min(preferredWidth, Math.max(120, innerWidth - minimumLeft - 8))}px` } as CSSProperties}>
+  const toggleLabel = collapsed ? tools.showSidebar : tools.hideSidebar;
+  return <div className="dr-widget-deck" data-collapsed={collapsed || undefined} data-adaptive={adaptive || undefined} data-compact={compact || undefined} data-minimum-left={minimumLeft} data-overflow={overflow || undefined} style={{ position: "fixed", left: minimumLeft, top: minimumTop, "--dr-min-left": `${minimumLeft}px`, "--dr-min-top": `${minimumTop}px`, "--dr-panel-width": `${Math.min(preferredWidth, Math.max(120, innerWidth - minimumLeft - 8))}px` } as CSSProperties}>
     <div className="dr-widget-dock" ref={dock} style={style("dock")}>
       <div className="dr-widget-deck-tools">
-        <button ref={toolsButton} type="button" className="dr-panel-tools-open" aria-haspopup="dialog" aria-expanded={toolsOpen} onClick={() => setToolsFrom("menu")}><SlidersHorizontal size={16} aria-hidden="true"/><span>{compact ? tools.compactTitle : tools.title}</span></button>
-        {handle}
+        {!collapsed && <button ref={toolsButton} type="button" className="dr-panel-tools-open" aria-haspopup="dialog" aria-expanded={toolsOpen} onClick={() => setToolsFrom("menu")}><SlidersHorizontal size={16} aria-hidden="true"/><span>{compact ? tools.compactTitle : tools.title}</span></button>}
+        <button className="dr-sidebar-toggle" type="button" aria-label={toggleLabel} title={toggleLabel} aria-expanded={!collapsed}
+          onClick={() => commit({ ...layout, collapsed: !collapsed })}>
+          {collapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
+        </button>
+        {!collapsed && handle}
       </div>
-      <div className="dr-widget-minimized">{tiles.filter(tile => compact ? tile.shortcut || tile.id === "notices" : layout.minimized.includes(tile.id)).map(shortcut)}</div>
+      {!collapsed && <div className="dr-widget-minimized">{tiles.filter(tile => compact ? tile.shortcut || tile.id === "notices" : layout.minimized.includes(tile.id)).map(shortcut)}</div>}
       {error && !toolsOpen && <small role="alert">{t.failed}</small>}
     </div>
-    {toolsOpen && <PanelTools locale={locale} together={layout.together} changeTogether={() => commit({ ...layout, together: !layout.together })}
+    {!collapsed && toolsOpen && <PanelTools locale={locale} together={layout.together} changeTogether={() => commit({ ...layout, together: !layout.together })}
       portraits={portraitsVisible} changePortraits={onTogglePortraits} adaptive={adaptive} changeAdaptive={onToggleAdaptive}
       width={panelWidth} previewWidth={setPreviewWidth} saveWidth={onPanelWidthChange} reset={() => commit(empty())}
       close={() => setToolsFrom(null)} saveError={error} fromHandle={toolsFrom === "handle"} shortcuts={compact && tiles.length ? tiles.map(shortcut) : undefined}/>}
-    {tiles.map(tile => <div key={tile.id} ref={node => { if (node) refs.current.set(tile.id, node); else refs.current.delete(tile.id); }} data-widget={tile.id} className="dr-widget-tile" hidden={compact ? compactOpen !== tile.id : layout.minimized.includes(tile.id)} style={style(tile.id)} tabIndex={0} role="group" aria-label={`${t.move}: ${tile.title}. ${t.keys}`} onPointerDown={event => start(tile.id, event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove(tile.id, event)} onClickCapture={event => { if (suppressClick.current) { suppressClick.current = false; event.preventDefault(); event.stopPropagation(); } }}>
+    {tiles.map(tile => <div key={tile.id} ref={node => { if (node) refs.current.set(tile.id, node); else refs.current.delete(tile.id); }} data-widget={tile.id} className="dr-widget-tile" hidden={collapsed || (compact ? compactOpen !== tile.id : layout.minimized.includes(tile.id))} style={style(tile.id)} tabIndex={0} role="group" aria-label={`${t.move}: ${tile.title}. ${t.keys}`} onPointerDown={event => start(tile.id, event)} onPointerMove={move} onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)} onKeyDown={event => keyMove(tile.id, event)} onClickCapture={event => { if (suppressClick.current) { suppressClick.current = false; event.preventDefault(); event.stopPropagation(); } }}>
       <div className="dr-widget-tools"><button type="button" title={`${t.minimize}: ${tile.title}`} aria-label={`${t.minimize}: ${tile.title}`} onClick={() => { if (compact) setCompactOpen(null); else commit({ ...layout, minimized: [...layout.minimized, tile.id] }); requestAnimationFrame(() => focusShortcut(tile.id)); }}><Minus size={16} aria-hidden="true"/><span>{t.minimize}</span></button></div>
       {tile.children}
     </div>)}

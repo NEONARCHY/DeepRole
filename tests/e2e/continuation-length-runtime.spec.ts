@@ -110,11 +110,15 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["below", "ex
         });
       }, { once: true });
     }, { target, xhr: locale === "en" });
-    await chat.goto(f.binding.chatUrl); await chat.bringToFront(); await panel.reload();
-    await panel.getByRole("button", { name: copy.title, exact: true }).click();
+    await chat.goto(f.binding.chatUrl); await chat.bringToFront();
+    const sourceId = await worker.evaluate(async url => (await (globalThis as any).chrome.tabs.query({ url }))[0].id, f.binding.chatUrl);
+    await panel.goto(panel.url() + "?" + new URLSearchParams({ sourceTab: String(sourceId), sourceUrl: f.binding.chatUrl }));
+    await chat.bringToFront();
+    await panel.locator('[data-dr-guide="continuation-toggle"]').press("Enter");
+    await panel.getByRole("button", { name: copy.title, exact: true }).press("Enter", { timeout: 10000 });
     const dialog = panel.getByRole("dialog", { name: copy.title });
     await expect(dialog.locator("blockquote")).toHaveText(savedScene);
-    await dialog.getByRole("button", { name: copy.open, exact: true }).click();
+    await dialog.getByRole("button", { name: copy.open, exact: true }).press("Enter");
     await expect(chat).toHaveURL(origin + "/"); await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();
     const before = await rows(panel), editor = chat.getByRole("textbox", { name: "Message", exact: true }), notice = chat.locator(".dr-prompt-limit");
     const head = '  💡 "Wait" \\ map\nI examine Mira\'s copper box, ask Leon about his blue key, and tell Nora that I will borrow her lantern only if the ferry arrives. I do not take either object.\n';

@@ -70,17 +70,7 @@ export function continuationScopeMatches(flow: ContinuationFlow, chatId: string 
     && flow.scene.bookId === scene.bookId
     && JSON.stringify([...flow.scene.focusIds].sort()) === JSON.stringify([...scene.focusIds].sort());
 }
-/** The model already sees the conversation; explicitly anchor its latest scene. */
+/** Include every turn supplied by the history reader, preserving its partial flag. */
 export function recentSceneReference(story: StoryContinuation): string {
-  const turns = [];
-  let remaining = 60_000, truncated = false;
-  for (const turn of story.turns.slice(-60).reverse()) {
-    if (turn.text.length > remaining) {
-      truncated = true;
-      if (!turns.length) turns.unshift({ ...turn, text: turn.text.slice(-remaining) });
-      break;
-    }
-    turns.unshift(turn); remaining -= turn.text.length;
-  }
-  return JSON.stringify({ partial: story.partial || truncated || turns.length < story.turns.length, turns });
+  return JSON.stringify({ partial: story.partial, turns: story.turns });
 }

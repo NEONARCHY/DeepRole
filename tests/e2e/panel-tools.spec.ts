@@ -2,6 +2,54 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { panelToolsText } from "../../src/entrypoints/content/PanelTools";
 
+for (const width of [320, 1280]) for (const theme of ["dark","light"] as const) {
+  test(`whole sidebar toggle at ${width}px in ${theme}`, async ({ page }) => {
+    await page.setViewportSize({width,height:440});
+    await page.emulateMedia({colorScheme:theme});
+    await page.goto("/tests/fixtures/page-widget.html?panels&locale=ru");
+    await page.evaluate(()=>(window as any).setWidgetState({adaptiveLayout:false}));
+    await page.addStyleTag({content:"html{font-size:125%!important}"});
+    const deck=page.locator(".dr-widget-deck"), tile=deck.locator('[data-widget="characters"]');
+    await tile.locator(".dr-widget-tools button").focus();
+    await page.keyboard.press("Enter");
+    const shortcut=deck.locator('[data-restore-widget="characters"]');
+    await expect(shortcut).toBeVisible();
+    const hide=deck.getByRole("button",{name:panelToolsText.ru.hideSidebar}), show=deck.getByRole("button",{name:panelToolsText.ru.showSidebar});
+    await hide.focus();
+    await page.keyboard.press("Space");
+    await expect(show).toBeFocused();
+    await expect(deck.locator(".dr-widget-tile:visible")).toHaveCount(0);
+    await expect(deck.getByRole("button")).toHaveCount(1);
+    const box=(await show.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x+box.width).toBeLessThanOrEqual(width);
+    expect((await deck.boundingBox())!.height).toBeLessThan(65);
+    await page.reload();
+    await expect(show).toBeVisible();
+    await show.click();
+    await expect(shortcut).toBeVisible();
+    await expect(tile).toBeHidden();
+    await expect(deck.locator('[data-widget="memory"]')).toBeVisible();
+  });
+}
+
+test("restoring the compact sidebar returns to its open panel", async ({page})=>{
+  await page.setViewportSize({width:320,height:440});
+  await page.goto("/tests/fixtures/page-widget.html?panels&locale=en");
+  await page.evaluate(()=>(window as any).setWidgetState({adaptiveLayout:true}));
+  const deck=page.locator(".dr-widget-deck"), t=panelToolsText.en;
+  await deck.getByRole("button",{name:t.compactTitle,exact:true}).click();
+  await page.getByRole("dialog").locator('[data-restore-widget="characters"]').click();
+  const characters=deck.locator('[data-widget="characters"]');
+  await expect(characters).toBeVisible();
+  await deck.getByRole("button",{name:t.hideSidebar}).click();
+  await expect(characters).toBeHidden();
+  await page.keyboard.press("Escape");
+  await deck.getByRole("button",{name:t.showSidebar}).click();
+  await expect(characters).toBeVisible();
+});
+
 test("a compact chat exposes a memory warning and review shortcut before opening panel settings", async ({ page }) => {
   await page.setViewportSize({width:320,height:440});
   await page.goto("/tests/fixtures/page-widget.html?panels&locale=ru");

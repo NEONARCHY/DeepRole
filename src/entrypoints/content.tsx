@@ -95,6 +95,10 @@ import {
   characterFactPrompt,
   handoffPrompt,
   sceneHandoffPrompt,
+  transferPackets,
+  acknowledgesTransfer,
+  type TransferPacket,
+  serviceMessage,
   memoryAnalysisPrompt,
   loreDraftPrompt,
   parseServiceData,
@@ -283,6 +287,7 @@ class PageController {
   private characterTextTurns: { requestId: string; chatId: string; replyIdentity: string }[] = [];
   private characterTextWaiter: { id: string; url: string; worldId: string | null; resolve: (text: string) => void; reject: (error: Error) => void; timer: number } | null = null;
   private pendingService: ServiceRequest | null = null;
+  private transferQueue: { flowId: string; packets: TransferPacket[] } | null = null;
   private preparingService = false;
   private autoContinuePending = false;
   private autoContinueAttempted = false;
@@ -730,6 +735,7 @@ class PageController {
     this.worlds = []; this.entities = []; this.documents = []; this.appliedSnapshot = null; this.snapshotToken = null; this.provisionalContinuationTarget = null;
     this.retryContinuationTarget = null;
     this.pendingContinuationCommit = null; this.state.continuationCommitPending = false;
+    this.transferQueue = null;
     this.deliveries.clear(); this.proposals = []; this.changes = []; this.pendingService = null;
     this.serviceFeedback = null;
     this.state.pendingHandoff = undefined;
@@ -838,6 +844,17 @@ class PageController {
     // observe that the notice is gone and compile an intermediate checkpoint.
     const task = this.sceneQueue.catch(() => undefined).then(async () => {
       this.assertScope(scope);
+      await this.reload();
+      this.assertScope(scope);
+      const current = this.currentBinding();
+      if (!current || current.worldId !== binding.worldId) throw new Error("character-scope");
+      const game = this.worlds.find(world => world.id === current.worldId)?.sharedGame;
+      if (game) {
+        if (game.activeChatId === current.chatId && game.activeBindingId === current.id) return;
+        if (game.activationId !== notice.snapshotId || game.activeChatId !== notice.targetChatId) throw new Error("story-game-stale");
+        await this.activateGame("resume");
+        return;
+      }
       await repository.acknowledgeOldChatNotice({ chatId: binding.chatId, chatUrl: scope.url, worldId: binding.worldId ?? null, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "dismissed" });
       this.assertScope(scope);
       await this.reload();
@@ -1312,7 +1329,9 @@ class PageController {
   }
 
   private async saveCharacter(edit: Omit<CharacterEdit, "chatUrl">) {
-    if (this.state.vaultLocked || !this.settings.characterSheetsEnabled || edit.chatId !== this.adapter.getChatId() || edit.worldId !== this.currentScene().worldId) throw new Error("character-scope");
+    const scope = this.pageScope();
+    await this.sceneQueue.catch(() => undefined);
+    if (scope.url !== location.href || this.state.vaultLocked || !this.settings.characterSheetsEnabled || edit.chatId !== this.adapter.getChatId() || edit.worldId !== this.currentScene().worldId) throw new Error("character-scope");
     const url = location.href;
     const saved = await repository.saveCharacter({ ...edit, chatUrl: url });
     if (location.href !== url) return saved;
@@ -1618,7 +1637,7 @@ class PageController {
 
   private updateMemoryPreloader(request: ServiceRequest) {
     if (!["memory-analysis", "continue-handoff"].includes(request.type)) return;
-    const label = request.type === "continue-handoff" ? continuationText(this.state.locale, "summary") : experienceText(this.state.locale, "memoryPreloader");
+    const label = request.transferPart ? this.partLabel(request) : request.type === "continue-handoff" ? continuationText(this.state.locale, "summary") : experienceText(this.state.locale, "memoryPreloader");
     this.rememberServiceReply(request);
     presentMemoryAnalysis(request.id, label, undefined, document, request.replyIdentity);
   }
@@ -1636,7 +1655,7 @@ class PageController {
 
   private cleanArchivedMemoryPayloads() {
     this.syncCharacterTextServices();
-    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"), this.pendingService?.id, continuationText(this.state.locale, "summaryArchived"));
+    replaceArchivedMemoryPayloads(experienceText(this.state.locale, "memoryResultArchived"), this.pendingService?.id, continuationText(this.state.locale, "summaryArchived"), this.state.locale === "ru" ? "Часть переноса получена" : "Transfer part received");
   }
 
   private readSelection() {
@@ -1764,7 +1783,7 @@ class PageController {
     finally { this.processingService = false; }
   }
 
-  private async runService(request: ServiceRequest): Promise<{ ok: boolean; error?: string }> {
+  private async runService(request: ServiceRequest, story?: StoryContinuation): Promise<{ ok: boolean; error?: string }> {
     // Legacy rows can still be read/hidden; new field jobs never use this path.
     if (["character-text"].includes(request.type)) return { ok: false, error: "invalid-brief" };
     // Reject at the time of the click, rather than queueing a command behind I/O.
@@ -1793,6 +1812,7 @@ class PageController {
     const cancel = async (error: string) => {
       if (location.href === initialUrl && sceneKey() === initialScene && error !== "vault-locked") this.serviceFeedback = serviceActivity(request, "error");
       if (stored) {
+        if (this.transferQueue?.flowId === request.continuationId) this.transferQueue = null;
         if (request.type === "memory-analysis") removeServicePreloader(request.id, findServiceReplyRows(request.id));
         if (this.pendingService?.id === request.id) this.pendingService = null;
         this.malformedServiceReplies.delete(request.id);
@@ -1825,10 +1845,11 @@ class PageController {
       // A correction must inspect the complete world. Never claim a partial
       // model prompt covered old mentions that were omitted by a size cap.
       if (target && (existing.length > 100 || existing.reduce((sum, entry) => sum + entry.title.length + entry.content.length + 120, 0) > 60000)) return { ok: false, error: "character-world-too-large" };
-      if (request.continuationId && (scope.length > 1000 || scope.reduce((sum, entry) => sum + entry.title.length + entry.content.length + 120, 0) > 220000)) return { ok: false, error: "continuation-world-too-large" };
-      if (request.type !== "scene-choices") request.baseVersions = Object.fromEntries(await Promise.all(existing.map(async (entry) => [entry.id, await memoryFingerprint(entry)])));
+      const summary = request.type === "continue-handoff" && !!request.continuationId;
+      if (summary && !story?.turns.length) return { ok: false, error: "history-unavailable" };
+      if (request.type !== "scene-choices" && !summary) request.baseVersions = Object.fromEntries(await Promise.all(existing.map(async (entry) => [entry.id, await memoryFingerprint(entry)])));
       if (target) request.baseEntityVersion = await characterFactFingerprint(target);
-      const basePrompt = request.type === "character-text" ? characterFieldPrompt(request.characterText!, existing, this.state.locale) : target ? characterFactPrompt(target, request.brief!, existing, this.state.locale) : request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale, this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === request.worldId)?.relationshipsEnabled !== false ? relationshipLoreBrief(this.entities.filter(e => e.worldId === request.worldId), request.brief ?? "") : "") : request.type === "continue-handoff" && request.continuationId ? sceneHandoffPrompt(request.brief ?? "{}", existing, this.state.locale) : handoffPrompt();
+      const basePrompt = request.type === "character-text" ? characterFieldPrompt(request.characterText!, existing, this.state.locale) : target ? characterFactPrompt(target, request.brief!, existing, this.state.locale) : request.type === "scene-choices" ? sceneChoiceRecoveryPrompt(this.state.locale) : request.type === "memory-analysis" ? memoryAnalysisPrompt(book?.name, existing, this.state.locale) : request.type === "lore-draft" ? loreDraftPrompt(request.brief!, this.state.locale, this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === request.worldId)?.relationshipsEnabled !== false ? relationshipLoreBrief(this.entities.filter(e => e.worldId === request.worldId), request.brief ?? "") : "") : summary && story ? sceneHandoffPrompt(recentSceneReference(story), existing, this.state.locale) : handoffPrompt();
       // Service bodies deliberately bypass the injection bridge. Attach bounded,
       // read-only reference here; never create a character-update receipt for them.
       const serviceWorld = this.worlds.find(w => w.id === request.worldId);
@@ -1836,7 +1857,11 @@ class PageController {
       const serviceScene = serviceWorld ? this.currentBinding()?.characterScenes?.[serviceWorld.id] ?? handoffCharacterScene(this.appliedSnapshot, serviceWorld.id) : undefined;
       const reference = serviceWorld && this.settings.characterSheetsEnabled ? characterInstruction(serviceWorld.id, request.chatId ?? "", serviceCharacters, serviceScene, actionsFor(serviceWorld.characterActions ?? this.settings.characterActions), request.focusIds ?? [], this.adapter.getRecentMessages(2).join("\n"), undefined, this.settings.relationshipsEnabled !== false && serviceWorld.relationshipsEnabled !== false, true) : "";
       const selectedMemory = ["scene-choices", "handoff", "continue-handoff"].includes(request.type) ? formatMemoryContext(this.selection, null) : "";
-      const prompt = [basePrompt.replace("[DeepRole Service]\n", `[DeepRole Service]\n[Request ID: ${request.id}]\n`), reference, selectedMemory].filter(Boolean).join("\n\n");
+      const packets = request.continuationId && (summary || request.type === "memory-analysis")
+        ? transferPackets(basePrompt, request.id, reference, selectedMemory)
+        : [{ id: request.id, prompt: serviceMessage(basePrompt, request.id, reference, selectedMemory) }];
+      const first = packets[0]!, prompt = first.prompt;
+      if (packets.length > 1) request = { ...request, id: first.id, transferPart: { number: 1, total: packets.length } };
       if (prompt.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
         this.state.promptLength = { length: prompt.length, url: initialUrl };
         return await cancel("prompt-too-long");
@@ -1851,7 +1876,8 @@ class PageController {
       this.publishContext("");
       this.pendingService = request;
       stored = true;
-      await this.saveTabState({ service: request });
+      if (!await this.saveTabState({ service: request })) return await cancel("storage-unavailable");
+      if (packets.length > 1) this.transferQueue = { flowId: request.continuationId!, packets };
       if (await repository.isLocked()) return await cancel("vault-locked");
       // A user can type, navigate or start an answer while fingerprints/storage await.
       const submitError = guard(true);
@@ -1891,7 +1917,7 @@ class PageController {
     const request = this.pendingService;
     this.rememberServiceReply(request);
     const replyRows = findServiceReplyRows(request.id, document, request.type === "scene-choices" ? "<deeprole_choices>" : SERVICE_START, request.replyIdentity);
-    const virtualizedReply = request.type !== "scene-choices" && !replyRows.length
+    const virtualizedReply = request.type !== "scene-choices" && !request.transferPart && !replyRows.length
       ? findVirtualizedServiceReply(request.id, request.priorReplyIdentity) : null;
     if (virtualizedReply) replyRows.push(virtualizedReply);
     if (request.type === "character-text") { await this.scanCharacterTextService(request, replyRows); return; }
@@ -1914,6 +1940,18 @@ class PageController {
       ? findVirtualizedServiceResponseElements(virtualizedReply)
       : findServiceResponseElements(request.id, document, request.replyIdentity);
     if (["memory-analysis", "continue-handoff"].includes(request.type)) this.updateMemoryPreloader(request);
+    if (request.transferPart && request.transferPart.number < request.transferPart.total) {
+      // An early handoff or memory proposal can never authorize the next packet.
+      if (this.adapter.isGenerating()) return;
+      if (!candidates.some(element => acknowledgesTransfer(element.textContent ?? "", request.id))) {
+        await this.handleUnusableServiceReply(request, replyRows);
+        return;
+      }
+      this.processingService = true;
+      try { await this.advanceTransferPart(request); }
+      finally { this.processingService = false; this.scheduleScan(); }
+      return;
+    }
     for (const element of candidates) {
       const parsed = parseServiceData(element.textContent || element.innerText || "");
       if (!parsed) continue;
@@ -1970,6 +2008,40 @@ class PageController {
     await this.handleUnusableServiceReply(request, replyRows);
   }
 
+  private async advanceTransferPart(previous: ServiceRequest) {
+    const flow = this.state.continuation, queue = this.transferQueue, part = previous.transferPart!;
+    const inScope = () => !!flow && this.state.continuation?.id === flow.id
+      && flow.id === previous.continuationId && this.flowInScope(flow) && !this.state.vaultLocked;
+    const available = () => inScope() && !this.adapter.getDraft() && !this.adapter.isGenerating();
+    let active = previous;
+    try {
+      if (!available() || !queue || queue.flowId !== flow?.id || queue.packets.length !== part.total
+        || queue.packets[part.number - 1]?.id !== previous.id) throw Error("transfer-interrupted");
+      const packet = queue.packets[part.number]!;
+      const next: ServiceRequest = { ...previous, id: packet.id, createdAt: Date.now(), priorReplyIdentity: previous.replyIdentity,
+        replyIdentity: undefined, transferPart: { ...part, number: part.number + 1 } };
+      if (await repository.isLocked() || !available()) throw Error("transfer-interrupted");
+      if (!await this.saveTabState({ service: next }, { serviceId: previous.id, continuationKey: continuationKey(flow) })) throw Error("transfer-interrupted");
+      this.pendingService = active = next;
+      if (!available()) throw Error("transfer-interrupted");
+      const label = this.partLabel(previous);
+      presentMemoryAnalysis(previous.id, label, label, document, previous.replyIdentity);
+      this.malformedServiceReplies.delete(previous.id);
+      if (!this.adapter.setDraft(packet.prompt) || !this.adapter.submitDraft()) {
+        if (this.adapter.getDraft() === packet.prompt) this.adapter.setDraft("");
+        throw Error("composer-not-found");
+      }
+      if (next.transferPart!.number === part.total) this.transferQueue = null;
+    } catch {
+      await this.endUnusableService(active);
+    }
+  }
+
+  private partLabel(request: ServiceRequest): string {
+    const part = request.transferPart!;
+    return this.state.locale === "ru" ? `Перенос · часть ${part.number} из ${part.total}` : `Transfer · part ${part.number} of ${part.total}`;
+  }
+
   private async handleUnusableServiceReply(request: ServiceRequest, replyRows: HTMLElement[]) {
     if (this.pendingService?.id !== request.id) return;
     const expired = Date.now() - request.createdAt >= SERVICE_TIMEOUT_MS;
@@ -2000,7 +2072,11 @@ class PageController {
     }
     this.settleCharacterText(request.id, undefined, "service-failed");
     this.failedServiceIds.add(request.id);
-    if (request.continuationId && this.state.continuation?.id === request.continuationId) await this.setContinuation(null);
+    this.transferQueue = null;
+    const flow = this.state.continuation;
+    if (flow && request.continuationId === flow.id) {
+      await this.setContinuation(request.transferPart && flow.phase === "summary" ? { ...flow, phase: "ready" } : null);
+    }
     if (request.type === "memory-analysis") presentMemoryAnalysis(request.id,
       experienceText(this.state.locale, "memoryPreloader"), experienceText(this.state.locale, "memoryAnalysisFailed"), document, request.replyIdentity);
     else if (request.type === "continue-handoff") presentMemoryAnalysis(request.id, continuationText(this.state.locale, "summary"), continuationText(this.state.locale, "summaryFailed"), document, request.replyIdentity);
@@ -2062,6 +2138,7 @@ class PageController {
   private async cancelContinuation(): Promise<void> {
     const flow = this.state.continuation;
     if (!flow) return;
+    this.transferQueue = null;
     await this.setContinuation(null);
     if (flow.snapshotId) {
       const pending = await browser.runtime.sendMessage({ type: "DR_GET_TAB_STATE" } satisfies DeepRoleMessage) as TabSessionState;
@@ -2276,7 +2353,7 @@ class PageController {
       guard();
       const requestId = createId("service");
       await this.setContinuation({ ...flow, phase: "summary", requestId });
-      const result = await this.runService({ id: requestId, continuationId: flow.id, type: "continue-handoff", bookId: flow.scene.bookId, brief: recentSceneReference(story), createdAt: Date.now() });
+      const result = await this.runService({ id: requestId, continuationId: flow.id, type: "continue-handoff", bookId: flow.scene.bookId, createdAt: Date.now() }, story);
       if (!result.ok && this.state.continuation?.id === flow.id) await this.setContinuation({ ...flow, phase: "ready" });
       return result;
     } catch (error) {

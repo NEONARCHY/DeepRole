@@ -32,6 +32,8 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    const commitFailure = scenario === "commit-failure" || scenario === "early-route-commit-failure";
    const receiptFailure = scenario === "receipt-failure" || scenario === "early-route-receipt-failure";
    f.world.contextBudget = 8000; f.entry.activation = "always";
+   const archive = "ARCHIVE_BEGIN" + " old approved fact ".repeat(2500) + "ARCHIVE_END";
+   if (scenario === "unchanged") f.records.push({ kind: "entry", id: "manual-archive", data: { ...f.entry, id: "manual-archive", activation: "manual", content: archive } });
    const sourceScene = structuredClone(f.binding.characterScenes![f.world.id]!);
    const savedMode = scenario.startsWith("saved-memory");
     const sourceReload = scenario === "saved-memory-source-reload";
@@ -110,14 +112,16 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
     }
     if (url.includes("/api/v0/chat/completion")) {
      const prompt = route.request().postDataJSON().prompt;
-     sent.push({ kind: prompt.includes("[DeepRole Scene Handoff]") ? "summary" : prompt.startsWith("[DeepRole Service]") ? "analysis" : "game", prompt });
+     sent.push({ kind: prompt.includes("[DeepRole Transfer Part]") ? "part" : prompt.includes("[DeepRole Scene Handoff]") ? "summary" : prompt.startsWith("[DeepRole Service]") ? "analysis" : "game", prompt });
      if (sent.at(-1)!.kind === "game") {
       const before = await rows(panel);
       expect(before.find(r => r.kind === "world" && r.id === f.world.id).data.sharedGame.activeChatId).toBe(f.binding.chatId);
       expect(before.some(r => r.kind === "binding" && [destination, "chain-target"].includes(r.data.chatId))).toBe(false);
      }
      const kind = sent.at(-1)!.kind;
-      if (kind === "game" && inFlight) { await flightGate; try { await route.abort("failed"); } catch { /* Original document unloaded. */ } return; }
+      if (scenario === "unchanged" && locale === "ru" && kind === "part" && sent.filter(r => r.kind === "part").length === 2)
+       return route.fulfill({ status: 503, json: {} });
+     if (kind === "game" && inFlight) { await flightGate; try { await route.abort("failed"); } catch { /* Original document unloaded. */ } return; }
        const gameAttempts = sent.filter(request => request.kind === "game").length;
       if (kind === "game" && businessError && (!businessRetry || gameAttempts === 1)) return route.fulfill({ json: { code: 0, data: { biz_code: 1, biz_msg: "Usage limit reached", biz_data: null } } });
       if (kind === "game" && networkRetry && gameAttempts === 1) return route.abort("failed");
@@ -178,11 +182,16 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
       return;
      }
      if (!firstTurn) conversation.innerHTML = '<article data-role="user" data-message-id="1">I deliver the parcel.</article><article data-role="assistant" data-message-id="2">The parcel has been delivered. Resident 2 waits for the answer.</article>';
+     if (!firstTurn && !changes) {
+      conversation.lastElementChild!.textContent = "Earlier scene. ".repeat(3200) + "FINAL_MOMENT: The parcel is on the shelf.";
+     }
      form.addEventListener("submit", async event => {
       event.preventDefault(); const composer = document.querySelector("textarea")!, prompt = composer.value; composer.value = "";
       const summary = prompt.includes("[DeepRole Scene Handoff]"), user = document.createElement("article"), answer = document.createElement("article");
-      user.dataset.role = "user"; user.dataset.messageId = firstTurn ? "3" : summary ? "summary-user" : "analysis-user"; user.textContent = prompt;
-      answer.dataset.role = "assistant"; answer.dataset.messageId = firstTurn ? "4" : summary ? "summary-answer" : "analysis-answer"; conversation.append(user, answer);
+      const part = prompt.includes("[DeepRole Transfer Part]");
+      const partId = part ? prompt.match(/\[Request ID: ([\w-]+)\]/u)![1] : "";
+      user.dataset.role = "user"; user.dataset.messageId = part ? "user-" + partId : firstTurn ? "3" : summary ? "summary-user" : "analysis-user"; user.textContent = prompt;
+      answer.dataset.role = "assistant"; answer.dataset.messageId = part ? "reply-" + partId : firstTurn ? "4" : summary ? "summary-answer" : "analysis-answer"; conversation.append(user, answer);
       // Live DeepSeek allocates the route before sending the first completion.
       // Keep the ordinary fixture too: neither route order may drop the recap.
       if (home && earlyRoute) { history.pushState({}, "", "/a/chat/s/" + target); await new Promise(resolve => setTimeout(resolve, 100)); }
@@ -225,6 +234,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
         history.pushState({}, "", "/chat/s/" + target);
        }
        else if (!response.ok) answer.textContent = "Start a new chat to continue.";
+       else if (part) answer.textContent = '<deeprole_data>' + JSON.stringify({ type: "transfer-part", request: partId }) + '</deeprole_data>';
        else answer.textContent = '<deeprole_data>' + JSON.stringify(summary ? { type: "handoff", title: "Last moment", summary: recap } : { type: "memory-suggestions", items: changes ? [{ title: "Parcel delivered", content: newFact, keywords: ["parcel"], activation: "smart", priority: "normal" }] : [] }) + '</deeprole_data>';
       }).catch(() => { user.remove(); answer.remove(); });
      });
@@ -801,8 +811,17 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    }
    if (scenario === "unchanged") {
     const progress = chat.getByRole("region", { name: t("title"), exact: true }); await expect(progress).toContainText(t("readyToSummarize"));
-    expect(sent.map(r => r.kind)).toEqual(["analysis"]); expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+    expect(sent.map(r => r.kind)).toEqual(["part", "analysis"]); expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+    await chat.setViewportSize({ width: 320, height: 570 });
+    await chat.emulateMedia({ colorScheme: locale === "ru" ? "dark" : "light" });
     await progress.getByRole("button", { name: t("startSummary"), exact: true }).click();
+    if (locale === "ru") {
+      await expect.poll(() => sent.filter(r => r.kind === "part").length).toBe(2);
+      await expect(progress.getByRole("button", { name: t("startSummary"), exact: true })).toBeEnabled();
+      expect((await rows(panel)).filter(r => r.kind === "snapshot")).toHaveLength(0);
+      expect(homeAttempts).toBe(0);
+      await progress.getByRole("button", { name: t("startSummary"), exact: true }).click();
+    }
    } else {
     const review = chat.locator(".dr-memory-review"); await expect(review).toBeVisible();
     expect(sent.map(r => r.kind)).toEqual(["analysis"]); expect(homeAttempts).toBe(0); expect((await rows(panel)).filter(r => r.kind === "entry")).toHaveLength(1);
@@ -822,6 +841,21 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    expect(checkpoint.summary).toBe(recap); expect(checkpoint.characterScene.states).toEqual(sourceScene.states);
    expect(sent.filter(r => r.kind === "analysis")).toHaveLength(1); expect(sent.filter(r => r.kind === "summary")).toHaveLength(1);
    if (scenario !== "unchanged") expect(sent.find(r => r.kind === "summary")!.prompt).toContain(newFact);
+   else {
+    const summaryIndex = sent.findIndex(r => r.kind === "summary");
+    const analysisIndex = sent.findIndex(r => r.kind === "analysis");
+    const marker = "[Transfer data fragment]\n";
+    const assemble = (parts: typeof sent) => parts.map(r => {
+      expect(r.prompt.length).toBeLessThanOrEqual(40000);
+      expect(r.prompt).toContain(marker);
+      return r.prompt.slice(r.prompt.indexOf(marker) + marker.length, -"\n[End of transfer data fragment]".length);
+    }).join("");
+    expect(assemble(sent.slice(0, analysisIndex + 1))).toContain(archive);
+    const full = assemble(sent.slice(analysisIndex + (locale === "ru" ? 2 : 1), summaryIndex + 1));
+    expect(full).toContain(archive);
+    expect(full).toContain("Earlier scene. ".repeat(3200) + "FINAL_MOMENT: The parcel is on the shelf.");
+    expect(full).toContain(f.entry.content);
+   }
    if (scenario === "opening-unavailable") {
     expect(sent.filter(r => r.kind === "game")).toHaveLength(0); expect(checkpoint.appliedAt).toBeUndefined();
     expect((await rows(panel)).find(r => r.kind === "world").data.sharedGame.activeChatId).toBe(f.binding.chatId);
@@ -865,7 +899,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
    await expect(chat.locator("html")).not.toHaveAttribute("data-deeprole-transfer-pending","active");
    const final = await rows(panel), game = final.find(r => r.kind === "world").data.sharedGame;
    expect(game.activeChatId).toBe("chain-target"); expect(game.scene.states).toEqual(sourceScene.states); expect(game.recentStory.turns).toEqual([{ role: "assistant", text: recap }]);
-   expect(final.filter(r => r.kind === "entry")).toHaveLength(scenario === "unchanged" ? 1 : 2);
+   expect(final.filter(r => r.kind === "entry")).toHaveLength(2);
    for (const person of f.entities) expect(final.find(r => r.kind === "entity" && r.id === person.id).data).toEqual(person);
    const gameplay = sent.filter(r => r.kind === "game"); expect(gameplay).toHaveLength(1); expect(gameplay[0]!.prompt).toContain(recap); expect(gameplay[0]!.prompt).toContain(f.entry.content); expect(gameplay[0]!.prompt).not.toContain("PRIVATE_REASONING_MUST_NOT_TRANSFER");
    if(!commitFailure){

@@ -480,6 +480,7 @@ export interface ServiceRequest {
   imageAttemptId?: string;
   imageMessageKey?: string;
   continuationId?: string;
+  transferPart?: { number: number; total: number };
   /** Observed native reply key, never an inferred id or model-provided selector. */
   replyIdentity?: string;
   /** Last assistant key before submitting; prevents a virtualized old reply from being accepted. */

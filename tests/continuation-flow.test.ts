@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { continuationScopeMatches, recentSceneReference, matchingContinuationReceipt, matchingContinuationDraft, continuationDraftKey, matchesContinuationTarget, matchesProvisionalContinuationTarget, waitingForContinuationHome, type ContinuationFlow } from "../src/core/continuation-flow";
 import { boundStory } from "../src/core/story-continuation";
-import { sceneHandoffPrompt } from "../src/core/service-protocol";
+import { acknowledgesTransfer, memoryAnalysisPrompt, sceneHandoffPrompt, serviceMessage, TRANSFER_DATA, TRANSFER_END, transferAcknowledgment, transferPackets } from "../src/core/service-protocol";
+import { storyWorld } from "./fixtures/story-worlds";
 import { formatMemoryContext, injectContextIntoPrompt } from "../src/core/context";
 import { presentHiddenHandoffs } from "../src/adapters/deepseek-handoff-dom";
 import { visibleStoryHistory } from "../src/adapters/story-history-dom";
@@ -66,12 +67,43 @@ describe("reviewed scene transfer", () => {
     expect(continuationScopeMatches(flow, "b", flow.chatUrl, flow.scene)).toBe(false);
     expect(continuationScopeMatches(flow, "a", flow.chatUrl + "?other", flow.scene)).toBe(false);
   });
-  it("bounds recent scene input from the tail and records unavailable history", () => {
-    const story = boundStory(Array.from({ length: 80 }, (_, n) => ({ role: "assistant" as const, text: "scene " + n })), "history");
-    const reference = JSON.parse(recentSceneReference(story));
-    expect(reference.turns).toHaveLength(60); expect(reference.partial).toBe(true);
-    expect(reference.turns.at(-1).text).toBe("scene 79");
-    expect(JSON.parse(recentSceneReference(boundStory([{ role: "assistant", text: "z".repeat(70000) }], "page", true))).turns[0].text).toHaveLength(60000);
+  it("includes every available turn and retains the history reader's partial flag", () => {
+    const story = boundStory(Array.from({ length: 80 }, (_, n) => ({ role: "assistant", text: "scene " + n })), "history", true);
+    expect(JSON.parse(recentSceneReference(story))).toEqual({ partial: true, turns: story.turns });
+  });
+  it.each([39999, 40000, 40001, 42404])("delivers a checkpoint of %i characters without losing data", length => {
+    const { entry } = storyWorld("ru");
+    const turns = [{ role: "user" as const, text: "" }, { role: "assistant" as const, text: "Last played moment." }];
+    const build = () => sceneHandoffPrompt(JSON.stringify({ partial: false, turns }), [entry], "ru");
+    turns[0]!.text = "x".repeat(length - serviceMessage(build(), "req", "CAST", entry.content).length);
+    const expected = serviceMessage(build(), "req", "CAST", entry.content);
+    expect(expected).toHaveLength(length);
+    const packets = transferPackets(build(), "req", "CAST", entry.content);
+    expect(packets).toHaveLength(length <= 40000 ? 1 : 2);
+    for (const packet of packets) expect(packet.prompt.length).toBeLessThanOrEqual(40000);
+    if (length <= 40000) expect(packets[0]!.prompt).toBe(expected);
+    else {
+      const data = packets.map(p => p.prompt.slice(p.prompt.indexOf(TRANSFER_DATA) + TRANSFER_DATA.length, -TRANSFER_END.length)).join("");
+      expect(data).toBe(expected.slice(expected.indexOf("[Approved memory ")));
+    }
+  });
+  it("transports all approved rows, huge references and escaped Unicode through multiple review packets", () => {
+    const { entry } = storyWorld();
+    const reference = "BEFORE" + '💡"\\\n'.repeat(24000) + "AFTER";
+    const base = memoryAnalysisPrompt("Book", [entry, { ...entry, id: "last", content: reference }], "en");
+    const packets = transferPackets(base, "batch", reference);
+    expect(packets.length).toBeGreaterThan(3);
+    expect(new Set(packets.map(p => p.id)).size).toBe(packets.length);
+    const data = packets.map(p => {
+      expect(p.prompt.length).toBeLessThanOrEqual(40000);
+      const chunk = p.prompt.slice(p.prompt.indexOf(TRANSFER_DATA) + TRANSFER_DATA.length, -TRANSFER_END.length);
+      expect(chunk).not.toMatch(/^[\uDC00-\uDFFF]|[\uD800-\uDBFF]$/u);
+      return chunk;
+    }).join("");
+    expect(data).toBe(base.slice(base.indexOf("[Existing approved entries]")) + "\n\n" + reference);
+    expect(acknowledgesTransfer(transferAcknowledgment(packets[0]!.id), packets[0]!.id)).toBe(true);
+    expect(acknowledgesTransfer(transferAcknowledgment(packets[0]!.id), packets[1]!.id)).toBe(false);
+    expect(acknowledgesTransfer('<deeprole_data>{"type":"handoff","summary":"early"}</deeprole_data>', packets[0]!.id)).toBe(false);
   });
   it("requests a checkpoint without replay, inventions or approval of rejected lore", () => {
     const prompt = sceneHandoffPrompt('{"turns":[]}', [], "ru");

@@ -98,7 +98,7 @@ export function CharacterSettings({ settings, onSettings, worldActions, onAction
   </section>;
 }
 
-export function CharacterPanel(props: { storyProfileIds?: string[]; generationScope?: string; onAskSelfie?: (entityId: string) => Promise<void>; relationshipsEnabled?: boolean; relationshipDisplay?: DeepRoleSettings["relationshipDisplay"]; locale: Locale; entities: SceneEntity[]; scene?: CharacterScene; actions: string[]; base: string; worldId: string; chatId: string; status: CharacterCopyKey; generating?: boolean; onAddAction?: (worldId: string, name: string) => Promise<string[]>; onSave: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>; onGenerateText?: CharacterTextRequestGenerator; onRequestFactChange?: (entityId: string, brief: string) => Promise<void>; onRetry: () => void; openId?: string | null; onOpened?: () => void }) {
+export function CharacterPanel(props: { onResumeHere?: () => Promise<void>; storyProfileIds?: string[]; generationScope?: string; onAskSelfie?: (entityId: string) => Promise<void>; relationshipsEnabled?: boolean; relationshipDisplay?: DeepRoleSettings["relationshipDisplay"]; locale: Locale; entities: SceneEntity[]; scene?: CharacterScene; actions: string[]; base: string; worldId: string; chatId: string; status: CharacterCopyKey; generating?: boolean; onAddAction?: (worldId: string, name: string) => Promise<string[]>; onSave: (edit: Omit<CharacterEdit, "chatUrl">) => Promise<CharacterSaveResult>; onGenerateText?: CharacterTextRequestGenerator; onRequestFactChange?: (entityId: string, brief: string) => Promise<void>; onRetry: () => void; openId?: string | null; onOpened?: () => void }) {
   const panel = useRef<HTMLElement>(null);
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
   const [edit, setEdit] = useState<{ entity: SceneEntity | null; entityId: string | null; session: number; scene?: CharacterScene; base: string; original: CharacterEditBaseline } | null>(null);
@@ -130,7 +130,7 @@ export function CharacterPanel(props: { storyProfileIds?: string[]; generationSc
   const partners = new Set(characterInterlocutors(props.entities, props.scene).map(person => person.id));
   const role = (entity: SceneEntity) => t(entity.characterSheet?.protagonist ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : props.scene?.presentIds.includes(entity.id) ? "present" : "absent");
   const hero = props.entities.find(person => person.characterSheet?.protagonist);
-const editor = edit && <CharacterEditor key={`${props.worldId}:${props.chatId}:${edit.session}`} hasStoryProfile={props.storyProfileIds?.includes(edit.entityId ?? "")} hero={hero} relationshipsEnabled={props.relationshipsEnabled} embedded={gallery} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={edit.original.interlocutor} actions={props.actions} onAddAction={props.onAddAction ? name => props.onAddAction!(props.worldId, name) : undefined} onClose={() => setEdit(null)} onExit={() => { setEdit(null); setGallery(false); }} onGenerateText={props.onGenerateText} generationScope={props.generationScope} onRequestFactChange={props.onRequestFactChange} onSave={async (value) => { const saved = await props.onSave({ ...value, entityId: edit.entityId, base: edit.base, original: edit.original, worldId: props.worldId, chatId: props.chatId }); setEdit(current => current?.session === edit.session ? { ...current, entityId: saved.entityId, base: saved.base, original: saved.original } : current); return saved.original; }} />;
+const editor = edit && <CharacterEditor onResumeHere={props.onResumeHere} key={`${props.worldId}:${props.chatId}:${edit.session}`} hasStoryProfile={props.storyProfileIds?.includes(edit.entityId ?? "")} hero={hero} relationshipsEnabled={props.relationshipsEnabled} embedded={gallery} locale={props.locale} entity={edit.entity} scene={edit.scene} interlocutor={edit.original.interlocutor} actions={props.actions} onAddAction={props.onAddAction ? name => props.onAddAction!(props.worldId, name) : undefined} onClose={() => setEdit(null)} onExit={() => { setEdit(null); setGallery(false); }} onGenerateText={props.onGenerateText} generationScope={props.generationScope} onRequestFactChange={props.onRequestFactChange} onSave={async (value) => { const saved = await props.onSave({ ...value, entityId: edit.entityId, base: edit.base, original: edit.original, worldId: props.worldId, chatId: props.chatId }); setEdit(current => current?.session === edit.session ? { ...current, entityId: saved.entityId, base: saved.base, original: saved.original } : current); return saved.original; }} />;
   return <section ref={panel} className="dr-characters" aria-label={t("title")}>
     <header><strong>{t("title")}</strong><div className="dr-character-header-actions"><CastSetup worldId={props.worldId} locale={props.locale} compact /><button type="button" aria-label={t("openGallery")} title={t("openGallery")} onClick={event => { galleryOrigin.current = event.currentTarget; editOrigin.current = null; setGallery(true); }}><Expand size={16} /></button><button type="button" aria-label={t("add")} title={t("add")} onClick={() => openEdit(null)}><Plus size={16} /></button></div></header>
     <p className="dr-character-status" role="status">{t(props.generating ? "waiting" : props.status)}</p>
@@ -177,7 +177,7 @@ const editor = edit && <CharacterEditor key={`${props.worldId}:${props.chatId}:$
 }
 
 
-export function CharacterEditor(props: { hasStoryProfile?: boolean; generationScope?: string; hero?: SceneEntity; relationshipsEnabled?: boolean; locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; interlocutor?: boolean; actions: string[]; embedded?: boolean; onAddAction?: (name: string) => Promise<string[]>; onClose: () => void; onExit?: () => void; onGenerateText?: CharacterTextRequestGenerator; onRequestFactChange?: (entityId: string, brief: string) => Promise<void>; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean }) => Promise<CharacterEditBaseline> }) {
+export function CharacterEditor(props: { onResumeHere?: () => Promise<void>; hasStoryProfile?: boolean; generationScope?: string; hero?: SceneEntity; relationshipsEnabled?: boolean; locale: Locale; entity: SceneEntity | null; scene?: CharacterScene; interlocutor?: boolean; actions: string[]; embedded?: boolean; onAddAction?: (name: string) => Promise<string[]>; onClose: () => void; onExit?: () => void; onGenerateText?: CharacterTextRequestGenerator; onRequestFactChange?: (entityId: string, brief: string) => Promise<void>; onSave: (value: { name: string; sheet: CharacterSheet; state: CharacterStatus; present: boolean; interlocutor?: boolean }) => Promise<CharacterEditBaseline> }) {
   const t = (key: CharacterCopyKey) => characterText(props.locale, key);
   const ui = editorCopy(props.locale);
   const uploadChoice = usePortraitUploadChoice(props.locale);
@@ -213,6 +213,18 @@ export function CharacterEditor(props: { hasStoryProfile?: boolean; generationSc
   const [error, setError] = useState<CharacterCopyKey | null>(null); const [dirty, setDirty] = useState(false); const [saved, setSaved] = useState(false);
   const [factBrief, setFactBrief] = useState(""); const [factBusy, setFactBusy] = useState(false); const [factError, setFactError] = useState("");
   const dialog = useRef<HTMLDivElement>(null); const input = useRef<HTMLInputElement>(null); const mounted = useRef(true);
+  async function resumeEditingHere() {
+    if (!props.onResumeHere || busy || uploading) return;
+    setBusy(true);
+    try {
+      await props.onResumeHere();
+      if (mounted.current) setError(null);
+    } catch {
+      if (mounted.current) setError("resumeFailed");
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  }
   const manageActions = () => {
     setTab("profile");
     requestAnimationFrame(() => {
@@ -296,7 +308,7 @@ export function CharacterEditor(props: { hasStoryProfile?: boolean; generationSc
         <details className="dr-action-help"><summary>{t("variations")}</summary><p className="dr-character-hint">{t("variationHint")}</p></details>
         </fieldset></section>
       </div>
-      <footer>{dirty && <small className="dr-editor-unsaved">{ui.pending}</small>}{fieldError && <p role="alert">{fieldError}</p>}{saved && !dirty && <small role="status">{t("saveDone")}</small>}{(error || libraryError) && <p role="alert">{error ? t(error) : libraryError}</p>}<button type="button" disabled={busy || uploading} onClick={close}>{t(props.embedded ? "backGallery" : "cancel")}</button><button className="dr-character-primary" type="submit" disabled={busy || uploading || !name.trim()}>{t(busy ? "saving" : "save")}</button></footer>
+      <footer>{dirty && <small className="dr-editor-unsaved">{ui.pending}</small>}{fieldError && <p role="alert">{fieldError}</p>}{saved && !dirty && <small role="status">{t("saveDone")}</small>}{(error || libraryError) && <p role="alert">{error ? t(error) : libraryError}</p>}{(error === "gameInactive" || error === "resumeFailed") && props.onResumeHere && <button type="button" disabled={busy || uploading} onClick={resumeEditingHere}>{t("resumeHere")}</button>}<button type="button" disabled={busy || uploading} onClick={close}>{t(props.embedded ? "backGallery" : "cancel")}</button><button className="dr-character-primary" type="submit" disabled={busy || uploading || !name.trim()}>{t(busy ? "saving" : "save")}</button></footer>
     </form>
   </div></div>;
 }

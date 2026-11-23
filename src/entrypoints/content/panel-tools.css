@@ -20,10 +20,18 @@
   cursor: pointer; font: 500 max(13px,.8125rem)/1.4 system-ui,sans-serif;
 }
 .dr-widget-dock button svg, .dr-panel-tools-dialog button svg { flex: none; }
-.dr-widget-deck-tools { position:relative; grid-template-columns: minmax(0,1fr) 44px; }
+.dr-widget-deck-tools { position:relative; grid-template-columns: minmax(0,1fr) 44px 44px; }
+.dr-widget-dock .dr-sidebar-toggle { background: transparent; border-color: transparent; }
+.dr-widget-deck[data-collapsed] .dr-widget-dock { width: max-content; }
+.dr-widget-deck[data-collapsed] .dr-widget-deck-tools { grid-template-columns: 44px; }
+.dr-widget-deck[data-collapsed] .dr-widget-deck-tools::after { display: none; }
 .dr-widget-deck-tools .dr-panel-tools-open {
   justify-content: start; gap: 8px; padding-inline: 8px;
   background: transparent; border-color: transparent; font-weight: 600; text-align: start;
+}
+.dr-widget-deck:not([data-collapsed]) .dr-widget-dock { container: dr-dock / inline-size; }
+@container dr-dock (max-width: 14rem) {
+  .dr-widget-deck-tools .dr-panel-tools-open svg { display: none; }
 }
 .dr-widget-dock .dr-widget-move { cursor: grab; touch-action: none; background: transparent; border-color: transparent; color: var(--dr-muted); }
 .dr-widget-deck-tools::after {

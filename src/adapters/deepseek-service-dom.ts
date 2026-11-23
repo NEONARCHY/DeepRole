@@ -1,4 +1,4 @@
-import { parseServiceData, SERVICE_END, SERVICE_START } from "../core/service-protocol";
+import { acknowledgesTransfer, parseServiceData, SERVICE_END, SERVICE_START } from "../core/service-protocol";
 import { nativeMessageRow, nativeMessageRows, nativeMessageIdentity, isUserMessage, REASONING } from "./deepseek-message-dom";
 import { syncHiddenMessageLayout } from "./hidden-message-layout";
 
@@ -99,10 +99,14 @@ export function findServiceReplyRows(requestId: string, root: ParentNode = docum
 }
 
 /** A reload restores DeepSeek's saved reply; suppress completed technical blocks again. */
-export function replaceArchivedMemoryPayloads(summary: string, pendingId?: string, handoffSummary = summary): void {
+export function replaceArchivedMemoryPayloads(summary: string, pendingId?: string, handoffSummary = summary, partSummary = handoffSummary): void {
   for (const turn of serviceTurns(document)) {
     if (!turn.requestId || turn.requestId === pendingId || !turn.response) continue;
     if (turn.response.querySelector('[data-deeprole-memory-card][data-deeprole-result]')) continue;
+    if (/^\[DeepRole Service\]\s*\[Request ID: [\w-]+\]\s*\[DeepRole Transfer Part\]/u.test(turn.request.textContent?.trim() ?? "")) {
+      if (acknowledgesTransfer(serviceReplyText(turn.response), turn.requestId)) presentMemoryAnalysis(turn.requestId, partSummary, partSummary);
+      continue;
+    }
     if (turn.request.textContent?.includes("[DeepRole Scene Handoff]")) { presentMemoryAnalysis(turn.requestId, handoffSummary, handoffSummary); continue; }
     for (const payload of findServiceResponseElements(turn.requestId)) {
       if (parseServiceData(payload.textContent || "")?.type === "memory-suggestions") presentMemoryAnalysis(turn.requestId, summary, summary);
