@@ -2,6 +2,25 @@ import { isPhotoAddress, isPhotoData, PHOTO_PREFIX } from "./photo-assets";
 import { uncachedSelfieImageKey } from "./selfies";
 import type { DataRecord } from "./types";
 export interface PortablePhoto { id: string; image: string }
+/** Replay requests must carry image data for the generation provider. */
+export function restoreReplayImages<T>(value: T, photos: unknown): T {
+  if (!Array.isArray(photos)) return value;
+  const images = new Map<string, string>();
+  for (const photo of photos) {
+    if (photo && isPhotoAddress(photo.id) && isPhotoData(photo.image)) images.set(photo.id, photo.image);
+  }
+  const walk = (v: unknown): unknown => {
+    if (!v || typeof v !== "object") return v;
+    if (Array.isArray(v)) return v.map(walk);
+    const entries = Object.entries(v);
+    const replay = entries.some(([key]) => key === "input") && entries.some(([key]) => key === "config")
+      && entries.some(([key, item]) => key === "images" && Array.isArray(item));
+    return Object.fromEntries(entries.map(([key, item]) => [key, replay && key === "images" && Array.isArray(item)
+      ? item.map(image => isPhotoAddress(image) ? images.get(image) ?? image : image)
+      : walk(item)]));
+  };
+  return walk(value) as T;
+}
 const imageSource = (v: unknown): v is string => isPhotoAddress(v) || isPhotoData(v);
 /** Only structured photo fields. Lore, descriptions, quotes and native text remain exact. */
 export function mapPortablePhotoFields<T>(value: T, map: (image: string) => string): T {
@@ -55,5 +74,6 @@ export async function packPortablePhotos(records: DataRecord[], read: (id: strin
     mapped.set(source,id); if (!photos.has(id)) photos.set(id,{id,image});
     progress?.(++done,sources.size);
   }
-  return { records: mapPortablePhotoFields(records,image => mapped.get(image)!), photos: [...photos.values()] };
+  const table = [...photos.values()];
+  return { records: restoreReplayImages(mapPortablePhotoFields(records,image => mapped.get(image)!), table), photos: table };
 }

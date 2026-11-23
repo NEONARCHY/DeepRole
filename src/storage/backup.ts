@@ -8,7 +8,7 @@ import { getSettings, saveSettings } from "./settings";
 import { validDataRecord, parseBackupSettings } from "../core/record-validation";
 import { importFileTooLarge } from "../core/import-limits";
 import { assertStoryGraph, canonicalStoryValue } from "../core/story-records";
-import { validPortablePhotos } from "../core/portable-photos";
+import { restoreReplayImages, validPortablePhotos } from "../core/portable-photos";
 import { ServiceAuditOutbox } from "./service-outbox";
 import { assertDispatchCaptureGraph } from "./story-dispatch-capture";
 
@@ -52,7 +52,7 @@ export async function parseBackupData(value: unknown, bytes: number, password?: 
   const raw = parsed?.format === "deeprole-encrypted"
     ? await decryptJson<BackupPayload>(parsed, password ?? "")
     : parsed;
-  const payload = raw && Array.isArray(raw.records) ? { ...raw, records: raw.records.map(normalizeActionRecord) } : raw;
+  const payload = raw && Array.isArray(raw.records) ? { ...raw, records: restoreReplayImages(raw.records.map(normalizeActionRecord), raw.photos) } : raw;
   validateBackup(payload);
   return { ...payload, settings: parseBackupSettings(payload.settings) };
 }

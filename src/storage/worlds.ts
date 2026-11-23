@@ -10,7 +10,7 @@ import { actionsFor } from "../core/characters";
 import { getSettings } from "./settings";
 import { importFileTooLarge } from "../core/import-limits";
 import type { Illustration } from "../core/image-generation";
-import { validPortablePhotos, type PortablePhoto } from "../core/portable-photos";
+import { restoreReplayImages, validPortablePhotos, type PortablePhoto } from "../core/portable-photos";
 import { worldGamePeople } from "../core/world-game";
 
 export interface WorldPackage { format: "deeprole-world"; version: 1 | 2; photos?: PortablePhoto[]; records: DataRecord[] }
@@ -47,7 +47,7 @@ export function parseWorldPackage(text: string): WorldPackage {
 export function parseWorldPackageData(input: unknown, bytes: number): WorldPackage {
   if (importFileTooLarge(bytes, "world")) throw new Error("worldTooLarge");
   const raw = input as WorldPackage;
-  const value = raw && Array.isArray(raw.records) ? { ...raw, records: raw.records.map(normalizeActionRecord) } : raw;
+  const value = raw && Array.isArray(raw.records) ? { ...raw, records: restoreReplayImages(raw.records.map(normalizeActionRecord), raw.photos) } : raw;
   if (value?.format !== "deeprole-world" || ![1,2].includes(value.version) || !Array.isArray(value.records)) throw new Error("invalidBackup");
   if (value.version === 2 && !validPortablePhotos(value.photos,value.records) || value.version === 1 && value.photos !== undefined) throw Error("invalidBackup");
   if (value.records.some((r) => !validDataRecord(r) || value.version !== 2 && hasInternalPhotoAddresses(r.kind, r.data))) throw new Error("invalidBackup");

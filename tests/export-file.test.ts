@@ -8,7 +8,7 @@ import { parseBackupData,restoreBackup,createBackup,parseBackup } from "../src/s
 import { parseWorldPackageData,cloneWorldPackage,exportWorld } from "../src/storage/worlds";
 import { jsonFileBlob } from "../src/core/json-file";
 import { readJsonFile } from "../src/core/read-json-file";
-import { packPortablePhotos,portablePhotoId } from "../src/core/portable-photos";
+import { packPortablePhotos,portablePhotoId,restoreReplayImages } from "../src/core/portable-photos";
 import { storyWorld } from "./fixtures/story-worlds";
 import type { SceneEntity,WorldProfile } from "../src/core/types";
 const dbs:DeepRoleDatabase[]=[];
@@ -86,4 +86,13 @@ it("incremental parser crosses every split, UTF-8 boundary and escaped quote saf
 });
 it.each(['{"records":[{},]}','{"records":[{}]','{"records":[]} trailing','{"format":"a","format":"b"}'])("incremental parser rejects malformed JSON %s",async(text)=>{
  const bytes=new TextEncoder().encode(text),file={size:20*1024*1024,stream:()=>new ReadableStream({start(c){c.enqueue(bytes);c.close();}})} as Blob;await expect(readJsonFile(file)).rejects.toThrow();
+});
+it("keeps replay images usable in new and previously packed world files",async()=>{
+ const id=await portablePhotoId(image);
+ const records=[{kind:"illustration",id:"example",data:{id:"example",request:{input:{},config:{},images:[image]},image}}] as any;
+ const packed=await packPortablePhotos(records,async()=>image);
+ expect((packed.records[0]!.data as any).request.images).toEqual([image]);
+ const old=[{...packed.records[0]!,data:{...packed.records[0]!.data,request:{input:{},config:{},images:[id]}}}];
+ expect((restoreReplayImages(old,packed.photos)[0]!.data as any).request.images).toEqual([image]);
+ expect((restoreReplayImages(old,[])[0]!.data as any).request.images).toEqual([id]);
 });
