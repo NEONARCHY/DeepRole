@@ -14,7 +14,9 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     const title = locale === "ru" ? "Как обновить и перенести историю" : "How to update and continue your story";
     const help = page.getByRole("button", { name: title, exact: true });
     const continuation = page.locator(".play-continuation");
-    const updateCard = page.locator(".quick-actions .action-card").last();
+    const updateCard = page.locator(".play-memory-details > summary").filter({
+      hasText: locale === "ru" ? "Добавить или проверить память вручную" : "Add or check memory manually",
+    });
     await expect.poll(async () => {
       const card = (await updateCard.boundingBox())!;
       const divider = (await continuation.boundingBox())!;

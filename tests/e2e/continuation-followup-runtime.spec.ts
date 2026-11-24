@@ -3,6 +3,7 @@ import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { captureWorldGame } from "../../src/storage/world-game";
 import { boundStory } from "../../src/core/story-continuation";
+import { openSavedPreview } from "./continuation-helpers";
 import { savedMemoryText } from "../../src/core/saved-memory-continuation";
 import { automationMarker } from "../../src/core/story-automation";
 import { storyUpdateText } from "../../src/core/story-update-i18n";
@@ -137,8 +138,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["recovered-a
       }, { once: true });
     }, { target, xhr: locale === "en" });
     await chat.goto(f.binding.chatUrl); await chat.bringToFront(); await panel.reload();
-    const open = panel.getByRole("button", { name: copy.title, exact: true });
-    await expect(open).toBeVisible({ timeout: 15000 }); await open.click();
+    await openSavedPreview(panel, locale);
     const dialog = panel.getByRole("dialog", { name: copy.title });
     await expect(dialog.locator("blockquote")).toHaveText(savedScene);
     await dialog.getByRole("button", { name: copy.open, exact: true }).click();

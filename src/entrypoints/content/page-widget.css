@@ -165,6 +165,10 @@ button { font: inherit; }
 .dr-scene-choice-toggle[aria-pressed=true] { border-color:var(--dr-border-strong);color:var(--dr-text);background:var(--dr-surface); }
 @media (prefers-reduced-motion:reduce) { .dr-chat-meter-track>i { transition:none; } }
 .dr-root :is(.dr-launcher,.dr-composer-action,.dr-pill,.dr-panel,.dr-alert) { backdrop-filter:none; }
+.dr-alert-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.dr-alert .dr-alert-close { display:grid; place-items:center; flex:none; min-width:32px; min-height:32px; padding:0; background:transparent; }
+.dr-alert .dr-alert-close:hover { color:var(--dr-text); background:var(--dr-raised); }
+.dr-alert .dr-alert-close:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
 .dr-root .dr-transfer-commit {
   box-sizing: border-box;
   width: min(330px, calc(100vw - 36px));

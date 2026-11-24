@@ -9,6 +9,8 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1100]) test(`lazy s
   const grid=dialog.locator(".dr-portrait-library-grid"); await grid.scrollIntoViewIfNeeded();
   await expect.poll(()=>grid.locator('img[src^="blob:"]').count()).toBeGreaterThan(0);
   expect(await grid.locator('img[src^="blob:"]').count()).toBeLessThan(60);
+  const nextPage = dialog.locator(".dr-library-pages button").last();
+  while (await nextPage.isEnabled()) await nextPage.click();
   await grid.locator(".dr-library-view").last().click();
   const viewer=page.locator('[data-deeprole-photo-viewer]'); await expect(viewer.getByRole("dialog")).toBeVisible();
   await expect.poll(()=>viewer.locator("img").evaluate(image=>(image as HTMLImageElement).naturalHeight)).toBe(1440);

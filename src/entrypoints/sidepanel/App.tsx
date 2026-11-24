@@ -47,7 +47,6 @@ import {
   LayoutDashboard,
   LockKeyhole,
   MemoryStick,
-  MessageSquareMore,
   Plus,
   Pin,
   Search,
@@ -59,7 +58,7 @@ import {
   X,
 } from "lucide-react";
 import { browser } from "wxt/browser";
-import { continuationText } from "../../core/continuation-i18n";
+import { continuationActions, continuationText } from "../../core/continuation-i18n";
 import { chatCapacity } from "../../core/context-capacity";
 import { BOOK_COLORS, DEFAULT_SETTINGS } from "../../core/defaults";
 import { replyRecoveryText } from "../../core/reply-recovery";
@@ -104,7 +103,7 @@ import { saveEditorRecord } from "../../storage/editing";
 import { InvalidEncryptedPayloadError } from "../../storage/crypto";
 import { removeBook } from "../../storage/worlds";
 
-import { HelpButton, HelpSection, HelpLocale } from "../shared/Help";
+import { Help, HelpButton, HelpSection, HelpLocale } from "../shared/Help";
 import { SettingsHelp } from "../shared/SettingsHelp";
 import { DeferredWorldsView as WorldsView } from "./DeferredWorldsView";
 import type { WorldImportTarget, WorldStartRequest } from "./WorldsView";
@@ -596,8 +595,14 @@ export function App() {
   const connectedGame = !!page.chatId && activeWorld?.sharedGame?.activeChatId === page.chatId;
   const canResumeHere = !scene.worldId || !saved?.worlds || saved.worlds.some(world => world.id === scene.worldId);
   const recoveryFirst = !!saved && (!page.compatible || !connectedGame && canResumeHere && (!!saved.worlds || !page.messageCount));
-  const savedTransfer = saved && <SavedMemoryTransfer key={JSON.stringify([page.tabId, saved.scope])}
-    locale={settings.locale} worlds={saved.worlds} disabled={saved.blocked} actionClassName={recoveryFirst ? "button primary" : "button secondary"}
+  const reviewTransfer = {
+    disabled: !page.chatId || !page.messageCount || !page.compatible || page.generating || page.activity?.phase === "preparing" || page.activity?.phase === "waiting",
+    onStart: () => void runService("continue-handoff"),
+  };
+  const transferKey = JSON.stringify([page.tabId, page.chatId, scene.worldId]);
+  const savedTransfer = saved && <SavedMemoryTransfer key={transferKey}
+    locale={settings.locale} worlds={saved.worlds} disabled={saved.blocked} actionClassName="button primary"
+    review={recoveryFirst ? undefined : reviewTransfer}
     quickResume={page.chatId === null && saved.worlds?.length === 1 && (!scene.worldId || scene.worldId === saved.worlds[0]!.id)}
     onPreview={async worldId => {
       const result = await requestSavedMemory({ type: "DR_SAVED_MEMORY_PREVIEW", scope: saved.scope, worldId });
@@ -651,16 +656,16 @@ export function App() {
           />
         )}
 
-        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary data-dr-guide="continuation-toggle" aria-labelledby="dr-play-continue-title" aria-describedby="dr-play-continue-hint"><span className="dr-play-copy"><strong id="dr-play-continue-title">{mt("continue")}</strong><small id="dr-play-continue-hint">{settings.locale === "ru" ? "Перенести игру в новый чат DeepSeek." : "Move your game to a new DeepSeek chat."}</small></span></summary>
+        {activeTab === "overview" && <div className="dr-story-continuation"><div className="dr-story-help"><MemoryGuide locale={settings.locale} topic="story" /></div><details className="play-continuation"><summary data-dr-guide="continuation-toggle" aria-labelledby="dr-play-continue-title" aria-describedby="dr-play-continue-hint"><span className="dr-play-copy"><strong id="dr-play-continue-title">{mt("continue")}</strong><small id="dr-play-continue-hint">{settings.locale === "ru" ? "Открыть новый чат или сохранить пересказ." : "Open a new chat or save a recap."}</small></span></summary>
           <div data-dr-guide="continuation-content">
           <HandoffView
             t={t}
             locale={settings.locale}
-            savedTransfer={recoveryFirst ? undefined : savedTransfer}
+            transfer={!recoveryFirst && savedTransfer || <SavedMemoryTransfer key={transferKey}
+              locale={settings.locale} disabled review={reviewTransfer} actionClassName="button primary" />}
             snapshots={snapshots.filter((s) => memoryWorld(s, books) === scene.worldId)}
-            disabled={!page.chatId || !page.messageCount || !page.compatible || page.generating || page.activity?.phase === "preparing" || page.activity?.phase === "waiting"}
+            disabled={reviewTransfer.disabled}
             onCreate={() => void runService("handoff")}
-            onContinue={() => void runService("continue-handoff")}
             onApply={(id) => void applySnapshot(id)}
             onDelete={async (id) => {
               if (settings.confirmDeletions && !window.confirm(t("confirmDelete"))) return;
@@ -880,25 +885,27 @@ function HandoffView(props: {
   t: ReturnType<typeof useTranslator>;
   locale: DeepRoleSettings["locale"];
   snapshots: HandoffSnapshot[];
-  savedTransfer?: React.ReactNode;
+  transfer: React.ReactNode;
   disabled?: boolean;
   onCreate: () => void;
-  onContinue: () => void;
   onApply: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const copy = continuationActions(props.locale);
+  const actions = [
+    { ...copy.transfer, label: continuationText(props.locale, "continue"), button: props.transfer },
+    { ...copy.recap, button: <HelpButton className="button secondary" disabled={props.disabled} onClick={props.onCreate}>{copy.recap.label}</HelpButton> },
+  ];
   return (
     <div className="view-stack">
-      <div className="view-title"><div><small>{props.t("handoff")}</small><h1>{props.t("snapshots")}</h1></div></div>
       <HelpSection className="handoff-hero">
-        <MessageSquareMore />
-        <h2>{props.t("saveSnapshot")}</h2>
-        <p>{continuationText(props.locale, "hint")}</p>
-        <p>{continuationText(props.locale, "detail")}</p>
-        <HelpButton className="button primary" disabled={props.disabled} onClick={props.onContinue}>{props.t("continueChat")}</HelpButton>
-        {props.savedTransfer && <div className="dr-handoff-saved"><p>{props.locale === "ru" ? "Если старый чат недоступен, можно продолжить из сохранённой памяти." : "If the old chat is unavailable, you can continue from saved memory."}</p>{props.savedTransfer}</div>}
-        <details className="memory-detail"><summary>{continuationText(props.locale, "recap")}</summary><p>{uiText(props.locale, "handoffHint")}</p><HelpButton className="button secondary" disabled={props.disabled} onClick={props.onCreate}>{props.t("saveSnapshot")}</HelpButton></details>
+        <h2>{copy.title}</h2>
+        {actions.map(({ label, detail, example, button }) => <div key={label} className="dr-handoff-action">
+          <div className="dr-handoff-action-controls">{button}<Help label={label} text={example} /></div>
+          <p>{detail}</p>
+        </div>)}
       </HelpSection>
+      <h2 className="dr-handoff-snapshots-title">{props.t("snapshots")}</h2>
       {props.snapshots.length === 0 && <EmptyState icon={<ArchiveRestore />} text={props.t("noSnapshots")} />}
       {props.snapshots.map((snapshot) => (
         <article className="snapshot-card" key={snapshot.id}>

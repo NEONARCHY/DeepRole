@@ -17,10 +17,45 @@ async function drag(page: Page, handle: Locator, dx: number, dy: number) {
 }
 async function ratio(image: Locator) { const box = (await image.boundingBox())!; expect(box.width / box.height).toBeCloseTo(.75, 3); }
 
+for (const blockBlob of [false, true]) test(`saved portraits survive a new chat and a mood change (blob blocked: ${blockBlob})`, async ({ page }) => {
+  if (blockBlob) await page.route("**/tests/fixtures/characters.html?*", async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, headers: { ...response.headers(), "content-security-policy": "img-src 'self' data:" } });
+  });
+  await page.goto("/tests/fixtures/characters.html?saved-portraits");
+  await page.waitForFunction(() => !!(window as any).getCast);
+  const portraits = page.locator("[data-deeprole-portrait-layer] img");
+  const setScene = (chatId: string, action: string) => page.evaluate(({ chatId, action }) => {
+    const fixture = window as any;
+    const cast = fixture.getCast();
+    fixture.setCast({ chatId, scene: { ...cast.scene, states: Object.fromEntries(cast.entities.map((person: any) =>
+      [person.id, { ...cast.scene.states[person.id], action }])) }, entities: cast.entities.map((person: any) => ({
+      ...person, characterSheet: { ...person.characterSheet, sprites: {
+        neutral: fixture.storeFixturePortrait(person.id === "hero" ? "a" : "b"),
+        happy: fixture.storeFixturePortrait(person.id === "hero" ? "c" : "d"),
+      } },
+    })) });
+  }, { chatId, action });
+  await setScene("a", "neutral");
+  await expect(portraits).toHaveCount(2);
+  for (const image of await portraits.all()) await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBe(2);
+  const originalStage = await page.locator("[data-deeprole-portrait-layer]").elementHandle();
+  await setScene("new-chat", "neutral");
+  await expect.poll(() => originalStage!.evaluate(node => node.isConnected)).toBe(false);
+  for (const image of await portraits.all()) await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBe(2);
+  await setScene("new-chat", "happy");
+  await expect(portraits.first()).toHaveAttribute("data-dr-photo-source", /photo:c{64}:/);
+  for (const image of await portraits.all()) await expect.poll(() => image.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBe(3);
+});
+
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) test(`player speech portrait updates independently ${locale} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 950 });
   await page.goto(`/tests/fixtures/characters.html?locale=${locale}`);
   await page.waitForFunction(() => !!(window as any).getCast);
+  const choices = page.locator("[data-deeprole-choices-host]");
+  const resetLabel = locale === "ru" ? "Сбросить расстановку" : "Reset layout";
+  await expect(choices.locator(".choice-tools").getByRole("button", { name: resetLabel })).toBeVisible();
+  await expect(choices.locator(".dr-cast-toolbar")).toHaveCount(0);
   const speech = locale === "ru" ? "Разговаривает" : "speaking";
   const images = await page.evaluate(speech => {
     const image = (color: string) => {

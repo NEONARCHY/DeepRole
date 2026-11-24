@@ -3,6 +3,7 @@ import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { captureWorldGame } from "../../src/storage/world-game";
 import { boundStory } from "../../src/core/story-continuation";
+import { openSavedPreview } from "./continuation-helpers";
 import { savedMemoryText } from "../../src/core/saved-memory-continuation";
 import { oldChatNoticeText } from "../../src/core/old-chat-notice";
 import { menuText } from "../../src/core/menu-i18n";
@@ -126,7 +127,7 @@ for (const locale of ["ru", "en"] as const) for (const mode of ["automatic", "re
     const transfer = async (expectedScene: string) => {
       await chat.bringToFront(); await panel.reload();
       if (expectedScene !== initialScene) await panel.locator("summary").filter({ hasText: menuText(locale, "continue") }).click();
-      const open = panel.getByRole("button", { name: copy.title, exact: true }); await expect(open).toBeVisible(); await open.click();
+    await openSavedPreview(panel, locale);
       const dialog = panel.getByRole("dialog", { name: copy.title }); await expect(dialog.locator("blockquote")).toHaveText(expectedScene);
       await dialog.getByRole("button", { name: copy.open, exact: true }).click();
       await expect(chat).toHaveURL(origin + "/"); await expect(chat.getByText(copy.queued, { exact: true })).toBeVisible();

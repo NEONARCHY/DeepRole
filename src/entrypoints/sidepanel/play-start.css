@@ -93,8 +93,14 @@
 .play-view .play-memory-details .action-card strong { font-size: max(15px, 1rem); }
 .play-view .play-memory-details .action-card small { font-size: max(13px, .875rem); line-height: 1.45; }
 .play-view .play-memory-details .action-card:disabled { opacity: 1; color: var(--dr-muted); border-style: dashed; }
-.dr-handoff-saved { display:grid; gap:8px; padding-block-start:12px; border-block-start:1px solid var(--dr-border); }
-.dr-handoff-saved .button { min-height:44px; min-width:0; white-space:normal; }
+.dr-handoff-action { display:grid; gap:6px; padding-block:12px; }
+.dr-handoff-action + .dr-handoff-action { border-block-start:1px solid var(--dr-border); }
+.dr-handoff-action:last-child { padding-block-end:0; }
+.dr-handoff-action-controls { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; }
+.dr-handoff-action-controls .button { min-height:44px; min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.dr-handoff-action-controls .dr-help { min-width:44px; min-height:44px; }
+.handoff-hero .dr-handoff-action p { margin:0; }
+.dr-handoff-snapshots-title { margin:0; font-size:16px; }
 .app-shell .dr-memory-dialog:has(.dr-saved-memory-review) { font-size:.9375rem; }
 .app-shell .dr-memory-dialog:has(.dr-saved-memory-review) > header h2 { font-size:1.125rem; }
 .app-shell .dr-memory-dialog .dr-saved-memory-action { min-block-size:44px; }

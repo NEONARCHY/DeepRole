@@ -469,7 +469,7 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     .choice-expand[aria-expanded=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}
     .choice-pin[hidden],.grid[hidden]{display:none}
     :host([data-deeprole-choices-minimized=true]) .choice-heading{margin-bottom:0}
-    :host([data-deeprole-choices-minimized=true]) :is(.choice-navigation,.choice-status,.dr-cast-toolbar){display:none}
+    :host([data-deeprole-choices-minimized=true]) :is(.choice-navigation,.choice-status,.dr-cast-layout-status){display:none}
     :host([data-deeprole-choices-minimized=true]) .choice-pin:not(.choice-restore){display:none}
     .grid{display:grid;grid-template-columns:1fr;gap:var(--choice-gap)}
     .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border-strong);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit;box-shadow:inset 0 1px 0 #ffffff08;transition:border-color 280ms var(--dr-ease-out)}

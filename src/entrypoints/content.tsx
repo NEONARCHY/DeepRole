@@ -22,7 +22,7 @@ import { compileGameContext } from "../core/game-context";
 import { readTaskArchive, type TaskArchive } from "../core/story-task-archive";
 import { GameSearchIndex } from "../core/game-search-index";
 import { awaitingTransferredContext, memoryDeliveryView } from "../core/memory-delivery-view";
-import { storyUpdateText } from "../core/story-update-i18n";
+import { storyUpdateNotice, storyUpdateText } from "../core/story-update-i18n";
 import { StoryRepairClient } from "../adapters/story-repair-client";
 import { CharacterDiscoveryClient } from "../adapters/character-discovery-client";
 import { runDiscoveryProfileQueue } from "../adapters/discovery-profile-queue";
@@ -287,7 +287,7 @@ class PageController {
   private characterTextTurns: { requestId: string; chatId: string; replyIdentity: string }[] = [];
   private characterTextWaiter: { id: string; url: string; worldId: string | null; resolve: (text: string) => void; reject: (error: Error) => void; timer: number } | null = null;
   private pendingService: ServiceRequest | null = null;
-  private transferQueue: { flowId: string; packets: TransferPacket[] } | null = null;
+  private transferQueue: { inScene: () => boolean; packets: TransferPacket[] } | null = null;
   private preparingService = false;
   private autoContinuePending = false;
   private autoContinueAttempted = false;
@@ -1147,7 +1147,7 @@ class PageController {
     }
     this.state.contextPosition = this.resolveContextIndicatorPosition();
     this.root?.render(<PageWidget
-      state={{ ...this.state, selection: this.selection, memoryDelivery: this.memoryDelivery() }}
+      state={{ ...this.state, warningChatId: this.adapter.getChatId(), selection: this.selection, memoryDelivery: this.memoryDelivery() }}
       onStayInOldChat={() => this.stayInOldChat()}
       onContinueStory={() => void this.continueStory().then(result => { if (!result.ok) this.showToast(continuationText(this.state.locale, result.error === "draft-not-empty" ? "ready" : result.error === "busy" ? "waiting" : result.error === "continuation-world-too-large" ? "tooLarge" : "failed")); })}
       savedMemoryTransfer={savedMemory ? {
@@ -1520,7 +1520,7 @@ class PageController {
         this.clearStoryGameWarning();
         if (synced.changed) await this.reload();
         const status: CharacterCopyKey = outOfCharacter ? "outOfCharacter" : synced.update ? synced.update.status === "accepted" || synced.update.status === "partial" ? "updated" : synced.update.status === "missing" ? "missing" : "invalidUpdate" : response.turn ? "updated" : response.text.includes("<deeprole_characters>") ? "invalidUpdate" : "missing";
-        if (!outOfCharacter && synced.update && synced.update.status !== "accepted") this.storyGameWarning = this.state.warning = storyUpdateText(this.state.locale, synced.update.status);
+        if (!outOfCharacter && synced.update && synced.update.status !== "accepted") this.storyGameWarning = this.state.warning = storyUpdateNotice(this.state.locale, synced.update);
         this.characterStatus = status;
         if (this.state.characters) this.state.characters.status = status;
         if (response.turn || response.text.includes("<deeprole_characters>")) foldCharacterPayload(response.row, this.state.locale, status);
@@ -1791,8 +1791,9 @@ class PageController {
     const initialUrl = location.href;
     const sceneKey = () => JSON.stringify({ ...this.currentScene(), focusIds: [...this.currentScene().focusIds].sort() });
     const initialScene = sceneKey();
+    const inScene = () => location.href === initialUrl && sceneKey() === initialScene;
     const guard = (ownRequest = false): string | undefined => {
-      if (location.href !== initialUrl || sceneKey() !== initialScene) return "scene-changed";
+      if (!inScene()) return "scene-changed";
       if (request.continuationId && (this.state.continuation?.id !== request.continuationId || !this.flowInScope(this.state.continuation))) return "scene-changed";
       if (request.type === "scene-choices" && (!this.state.sceneChoicesEnabled || !request.sceneSignature || latestSceneChoiceTarget()?.signature !== request.sceneSignature)) return "scene-changed";
       if (this.adapter.isGenerating() || (this.pendingService && this.pendingService.chatId === this.adapter.getChatId() && (!ownRequest || this.pendingService.id !== request.id) && Date.now() - this.pendingService.createdAt < 10 * 60 * 1000)) return "busy";
@@ -1810,9 +1811,9 @@ class PageController {
     this.render();
     let stored = false;
     const cancel = async (error: string) => {
-      if (location.href === initialUrl && sceneKey() === initialScene && error !== "vault-locked") this.serviceFeedback = serviceActivity(request, "error");
+      if (inScene() && error !== "vault-locked") this.serviceFeedback = serviceActivity(request, "error");
       if (stored) {
-        if (this.transferQueue?.flowId === request.continuationId) this.transferQueue = null;
+        if (this.transferQueue?.packets[0]?.id === request.id) this.transferQueue = null;
         if (request.type === "memory-analysis") removeServicePreloader(request.id, findServiceReplyRows(request.id));
         if (this.pendingService?.id === request.id) this.pendingService = null;
         this.malformedServiceReplies.delete(request.id);
@@ -1857,7 +1858,7 @@ class PageController {
       const serviceScene = serviceWorld ? this.currentBinding()?.characterScenes?.[serviceWorld.id] ?? handoffCharacterScene(this.appliedSnapshot, serviceWorld.id) : undefined;
       const reference = serviceWorld && this.settings.characterSheetsEnabled ? characterInstruction(serviceWorld.id, request.chatId ?? "", serviceCharacters, serviceScene, actionsFor(serviceWorld.characterActions ?? this.settings.characterActions), request.focusIds ?? [], this.adapter.getRecentMessages(2).join("\n"), undefined, this.settings.relationshipsEnabled !== false && serviceWorld.relationshipsEnabled !== false, true) : "";
       const selectedMemory = ["scene-choices", "handoff", "continue-handoff"].includes(request.type) ? formatMemoryContext(this.selection, null) : "";
-      const packets = request.continuationId && (summary || request.type === "memory-analysis")
+      const packets = summary || (request.type === "memory-analysis" && !target)
         ? transferPackets(basePrompt, request.id, reference, selectedMemory)
         : [{ id: request.id, prompt: serviceMessage(basePrompt, request.id, reference, selectedMemory) }];
       const first = packets[0]!, prompt = first.prompt;
@@ -1877,7 +1878,7 @@ class PageController {
       this.pendingService = request;
       stored = true;
       if (!await this.saveTabState({ service: request })) return await cancel("storage-unavailable");
-      if (packets.length > 1) this.transferQueue = { flowId: request.continuationId!, packets };
+      if (packets.length > 1) this.transferQueue = { inScene, packets };
       if (await repository.isLocked()) return await cancel("vault-locked");
       // A user can type, navigate or start an answer while fingerprints/storage await.
       const submitError = guard(true);
@@ -1957,7 +1958,7 @@ class PageController {
       if (!parsed) continue;
       if (this.pendingService?.id !== request.id) return;
       if (request.continuationId && (this.state.continuation?.id !== request.continuationId || !this.flowInScope(this.state.continuation))) { await this.cancelContinuation(); return; }
-      if (request.continuationId && this.adapter.isGenerating()) return;
+      if ((request.continuationId || request.transferPart) && this.adapter.isGenerating()) return;
       this.malformedServiceReplies.delete(request.id);
       if ((parsed.type === "memory-suggestions") !== ["memory-analysis", "lore-draft"].includes(request.type)) continue;
       if (request.targetEntityId && parsed.type === "memory-suggestions" && !parsed.profile) continue;
@@ -2010,18 +2011,21 @@ class PageController {
 
   private async advanceTransferPart(previous: ServiceRequest) {
     const flow = this.state.continuation, queue = this.transferQueue, part = previous.transferPart!;
-    const inScope = () => !!flow && this.state.continuation?.id === flow.id
-      && flow.id === previous.continuationId && this.flowInScope(flow) && !this.state.vaultLocked;
-    const available = () => inScope() && !this.adapter.getDraft() && !this.adapter.isGenerating();
+    const available = () => this.transferQueue === queue && queue?.inScene()
+      && !this.state.vaultLocked && !this.adapter.getDraft() && !this.adapter.isGenerating()
+      && (!previous.continuationId || !!flow && flow.id === previous.continuationId
+        && this.state.continuation?.id === flow.id && this.flowInScope(flow));
     let active = previous;
     try {
-      if (!available() || !queue || queue.flowId !== flow?.id || queue.packets.length !== part.total
+      if (!available() || !queue || queue.packets.length !== part.total
         || queue.packets[part.number - 1]?.id !== previous.id) throw Error("transfer-interrupted");
       const packet = queue.packets[part.number]!;
       const next: ServiceRequest = { ...previous, id: packet.id, createdAt: Date.now(), priorReplyIdentity: previous.replyIdentity,
         replyIdentity: undefined, transferPart: { ...part, number: part.number + 1 } };
       if (await repository.isLocked() || !available()) throw Error("transfer-interrupted");
-      if (!await this.saveTabState({ service: next }, { serviceId: previous.id, continuationKey: continuationKey(flow) })) throw Error("transfer-interrupted");
+      const expected: TabSessionGuard = { serviceId: previous.id };
+      if (previous.continuationId) expected.continuationKey = continuationKey(flow);
+      if (!await this.saveTabState({ service: next }, expected)) throw Error("transfer-interrupted");
       this.pendingService = active = next;
       if (!available()) throw Error("transfer-interrupted");
       const label = this.partLabel(previous);
@@ -2039,7 +2043,9 @@ class PageController {
 
   private partLabel(request: ServiceRequest): string {
     const part = request.transferPart!;
-    return this.state.locale === "ru" ? `Перенос · часть ${part.number} из ${part.total}` : `Transfer · part ${part.number} of ${part.total}`;
+    const updatingLore = !request.continuationId && request.type === "memory-analysis";
+    if (this.state.locale === "ru") return `${updatingLore ? "Обновление лора" : "Перенос"} · часть ${part.number} из ${part.total}`;
+    return `${updatingLore ? "Updating lore" : "Transfer"} · part ${part.number} of ${part.total}`;
   }
 
   private async handleUnusableServiceReply(request: ServiceRequest, replyRows: HTMLElement[]) {
@@ -2138,7 +2144,6 @@ class PageController {
   private async cancelContinuation(): Promise<void> {
     const flow = this.state.continuation;
     if (!flow) return;
-    this.transferQueue = null;
     await this.setContinuation(null);
     if (flow.snapshotId) {
       const pending = await browser.runtime.sendMessage({ type: "DR_GET_TAB_STATE" } satisfies DeepRoleMessage) as TabSessionState;
@@ -2149,6 +2154,7 @@ class PageController {
     }
     const request = this.pendingService;
     if (request?.continuationId === flow.id) {
+      this.transferQueue = null;
       await this.saveTabState({ service: null }, { serviceId: request.id });
       if (this.pendingService?.id === request.id) this.pendingService = null;
       presentMemoryAnalysis(request.id, continuationText(this.state.locale, "summary"), continuationText(this.state.locale, "cancelled"), document, request.replyIdentity);

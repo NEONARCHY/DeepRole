@@ -2,6 +2,7 @@ import { chromium, expect, test, type Page, type Worker } from "@playwright/test
 import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { continuationText } from "../../src/core/continuation-i18n";
+import { continuationLauncher, continuationMethod } from "./continuation-helpers";
 import { savedMemoryText } from "../../src/core/saved-memory-continuation";
 import { boundStory } from "../../src/core/story-continuation";
 import { automationMarker } from "../../src/core/story-automation";
@@ -267,6 +268,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
      await chat.locator('[data-restore-widget="meter"]').click();
     }
     await chat.getByRole("button", { name: t("continue"), exact: true }).click();
+    await continuationMethod(chat, locale, "review").click();
    }
    if (savedMode) {
     const copy = savedMemoryText(locale);
@@ -289,11 +291,16 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
      await chat.bringToFront();
     }
     const panelMenu = chat.locator(".dr-widget-deck[data-compact] .dr-panel-tools-open");
-    const restore = chat.locator('[data-restore-widget="scene"]');
-    const openPreview = transfer.getByRole("button", { name: clientRedirect ? copy.viewScene : copy.title, exact: true });
+    const restore = chat.locator('[data-restore-widget="scene"], [data-restore-widget="meter"]').filter({ visible: true }).first();
+    const launcher = continuationLauncher(transfer, locale);
+    const recover = transfer.getByRole("button", { name: clientRedirect ? copy.viewScene : copy.title, exact: true });
+    const openPreview = recover.or(launcher).filter({ visible: true }).first();
     await expect((fromPlay ? openPreview : openPreview.or(restore).or(panelMenu)).filter({ visible: true }).first()).toBeVisible({ timeout: 12_000 });
     const openTransfer = async () => {
-     if (await openPreview.isVisible()) await openPreview.press("Enter", { timeout: 1000 });
+     if (await launcher.isVisible()) {
+      await launcher.press("Enter", { timeout: 1000 });
+      await continuationMethod(transfer, locale, "saved").press("Enter", { timeout: 1000 });
+     } else if (await openPreview.isVisible()) await openPreview.press("Enter", { timeout: 1000 });
      else if (!fromPlay) {
       if (!(await restore.isVisible())) await panelMenu.press("Enter", {timeout:1000});
       await restore.press("Enter", {timeout:1000});

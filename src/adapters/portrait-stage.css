@@ -19,13 +19,6 @@
 /* The corner follows the 3:4 image, independently of text height. */
 .dr-cast-highlights{display:grid;gap:var(--dr-space-1);width:100%;min-width:0}.dr-cast-highlights[hidden]{display:none}
 .dr-cast-highlights>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;padding:var(--dr-space-1) var(--dr-space-2);border-radius:6px;box-sizing:border-box;background:var(--dr-surface);font-size:12px;line-height:1.4;font-weight:400}
-.dr-cast-toolbar{max-width:690px;display:flex;align-items:center;flex-wrap:wrap;gap:var(--dr-space-2);margin-top:var(--dr-space-2)}
-.dr-cast-toolbar p{flex:1;font-size:11px;line-height:1.5;color:var(--dr-muted);margin:0}
-.dr-cast-toolbar button{min-height:38px;padding:var(--dr-space-2) var(--dr-space-3);border:1px solid var(--dr-border);border-radius:8px;color:var(--dr-text);background:var(--dr-surface);font:12px/1.4 system-ui;cursor:pointer}
-.dr-cast-toolbar .dr-cast-layout-status{flex-basis:100%;font-size:11px}.dr-cast-layout-status:empty{display:none}
-:host([data-adaptive-portraits]) .dr-cast-toolbar{display:none}
-.dr-cast-toolbar button:hover,.dr-cast-resize:hover{background:var(--dr-raised)}
-.dr-cast-widget button:focus-visible,.dr-cast-toolbar button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px;border-radius:8px}
 .dr-cast-frame[data-pinned-compact] .dr-cast-widget{overflow:hidden}
 .dr-cast-frame[data-pinned-compact] .dr-cast-portrait{gap:1px;min-height:0}
 .dr-cast-frame[data-pinned-compact] .dr-cast-portrait img{height:48px;aspect-ratio:auto;object-fit:cover;border-radius:9px 9px 2px 2px}
@@ -48,4 +41,7 @@
   .dr-cast-widget:hover .dr-cast-move,.dr-cast-widget:hover .dr-cast-resize,.dr-cast-widget:focus-within .dr-cast-move,.dr-cast-widget:focus-within .dr-cast-resize,.dr-cast-widget:has(.is-dragging) .dr-cast-move,.dr-cast-widget:has(.is-dragging) .dr-cast-resize{opacity:1}
 }
 @media(prefers-reduced-motion:reduce){.dr-cast-move,.dr-cast-resize,.dr-cast-highlights{transition:none}}
-:host([data-deeprole-choices-pinned=true]) .dr-cast-toolbar{display:none}
+.dr-cast-layout-status{margin:var(--dr-space-2) 0 0;font-size:11px;color:var(--dr-muted)}
+.dr-cast-layout-status:empty{display:none}
+.dr-cast-resize:hover{background:var(--dr-raised)}
+.dr-cast-widget button:focus-visible,.choice-tools .choice-pin:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px;border-radius:8px}

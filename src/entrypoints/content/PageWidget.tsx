@@ -7,7 +7,7 @@ import {memoryCoverageIssue} from "../../core/game-memory-coverage";
 import {gameMemoryCoverageText} from "../../core/game-memory-coverage-i18n";
 import {PageMemoryDialog} from "./PageMemoryDialog";
 import { MemoryBudgetEditor } from "./MemoryBudgetEditor";
-import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell, AlertTriangle, ChevronRight } from "lucide-react";
+import { BrainCircuit, Gauge, Users, Globe, ListChecks, Bell, AlertTriangle, ChevronRight, X } from "lucide-react";
 import { WidgetDeck, WidgetTile, type WidgetLayout } from "./WidgetDeck";
 import { translate } from "../../core/i18n";
 import type { ContextSelection, ConversationEstimate, HandoffSnapshot, MemoryEntry } from "../../core/types";
@@ -46,6 +46,7 @@ import type { CharacterTextRequestGenerator } from "../../core/character-text";
 import { DEEPSEEK_PROMPT_CHAR_LIMIT } from "../../core/request-injection";
 
 export interface WidgetState {
+  warningChatId?: string | null;
   continuationCommitPending?: boolean;
   continuationCommitRunning?: boolean;
   memoryDelivery?: import("../../core/memory-delivery-view").MemoryDeliveryView;
@@ -147,6 +148,10 @@ export function PageWidget(props: {
   onUndo?: (id: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [transferOpenSignal, setTransferOpenSignal] = useState(0);
+  const [transferTarget, setTransferTarget] = useState<HTMLDivElement | null>(null);
+  const [dismissedWarnings, setDismissedWarnings] = useState<ReadonlySet<string>>(() => new Set());
+  const warningKey = JSON.stringify([props.state.warningChatId, props.state.scene?.worldId, props.state.warning]);
   const memoryDialogId = useId();
   const [adding, setAdding] = useState(false);
   const [attachQuery, setAttachQuery] = useState("");
@@ -245,6 +250,22 @@ export function PageWidget(props: {
   const chatMeterState = chatEstimatePercent >= 90 ? "is-critical" : chatEstimatePercent >= 75 ? "is-low" : chatEstimatePercent >= 50 ? "is-mid" : "is-roomy";
   const serviceBusy = props.state.activity?.phase === "preparing" || props.state.activity?.phase === "waiting";
   const analysisBlocked = serviceBusy || !!props.state.generating || !props.state.canAnalyzeChat;
+  const showChatMeter = props.state.showChatContextMeter !== false && !!chatEstimate?.messageCount;
+  const showWorld = ((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && !!props.onSceneChange;
+  const savedTransfer = props.savedMemoryTransfer;
+  const transferReview = props.onContinueStory && !props.state.continuation && {
+    disabled: analysisBlocked || !!props.state.transferring,
+    onStart: props.onContinueStory,
+  };
+  const transferInMeter = showChatMeter && !!transferReview && !savedTransfer?.worlds;
+  const transferInWorld = !transferInMeter && showWorld && !!(savedTransfer || transferReview);
+  const transfer = !props.state.continuation && (transferReview || savedTransfer) && <SavedMemoryTransfer
+    key={JSON.stringify([props.state.warningChatId, props.state.scene?.worldId])}
+    locale={props.state.locale} disabled={savedTransfer?.blocked ?? true} worlds={savedTransfer?.worlds}
+    onPreview={savedTransfer?.preview} onOpen={savedTransfer?.open}
+    review={savedTransfer?.worlds ? undefined : transferReview || undefined}
+    openSignal={transferOpenSignal} triggerTarget={transferInMeter || transferInWorld ? transferTarget : null}
+  />;
   const analysisHelp = [at("chatAnalyzeHelp"), analysisBlocked ? x(serviceBusy ? "waiting" : "generating") : undefined].filter(Boolean).join("\n");
   const proposals = props.state.proposals ?? [];
   const review = proposals.find((batch) => batch.id === reviewId);
@@ -339,19 +360,25 @@ export function PageWidget(props: {
     {!props.state.vaultLocked && props.state.contextCapacityWarning && props.onContinueStory && props.onDismissCapacityWarning && <ContextCapacityWarning
       locale={props.state.locale} {...props.state.contextCapacityWarning}
       busy={!!props.state.generating || serviceBusy || !!props.state.transferring}
-      onContinue={props.onContinueStory} onClose={props.onDismissCapacityWarning} onDisable={props.onDisableCapacityWarnings}
+      onContinue={() => {
+        if (!transferReview || savedTransfer?.worlds) { props.onContinueStory?.(); return; }
+        props.onDismissCapacityWarning?.();
+        setTransferOpenSignal(value => value + 1);
+      }} onClose={props.onDismissCapacityWarning} onDisable={props.onDisableCapacityWarnings}
     />}
-    {!props.state.vaultLocked && props.state.warning && <Alert title={t("gameMemoryNotice")} text={props.state.warning} primary={t("copyContext")} onPrimary={props.onCopyContext} />}
+    {!props.state.vaultLocked && props.state.warning && !dismissedWarnings.has(warningKey) &&
+      <Alert title={t("gameMemoryNotice")} text={props.state.warning} primary={t("copyContext")} onPrimary={props.onCopyContext}
+        closeLabel={t("close")} onClose={() => setDismissedWarnings(previous => new Set(previous).add(warningKey))} />}
     {!props.state.vaultLocked && props.state.handoffOffer && <Alert title={t("continueStoryQuestion", { title: props.state.handoffOffer.title })} text={t("snapshotNextText")} primary={t("apply")} secondary={t("notNow")} onPrimary={props.onApplyHandoff} onSecondary={props.onDismissHandoff} />}
     {!props.state.vaultLocked && props.state.selectionPosition && props.state.selectionText && <div className="dr-selection" style={{ left: props.state.selectionPosition.x, top: props.state.selectionPosition.y }}><button onClick={props.onSaveSelection}><span className="dr-orb" />{t("saveToDeepRole")}</button></div>}
       <div ref={contextAnchor} hidden={props.state.startupError} className={`dr-context-anchor ${contextPosition && contextPosition.x + contextShift > window.innerWidth / 2 ? "is-right" : ""} ${contextPosition && contextPosition.y > window.innerHeight / 2 ? "is-bottom" : ""}`} style={props.state.startupError ? { display: "none" } : contextStyle}>
       {props.state.vaultLocked ? <button className="dr-pill" onPointerDown={startContextDrag} onPointerMove={moveContext} onPointerUp={finishContextDrag} onPointerCancel={() => { drag.current = null; }} onClick={() => { if (!suppressContextClick.current) setMenuOpen(true); }} aria-expanded={menuOpen}><span className="dr-orb" /><span><strong>{t("vaultClosed")}</strong><small>{t("unlock")}</small></span></button> : <WidgetDeck locale={props.state.locale} saved={props.state.widgetLayout} onSave={props.onWidgetLayoutChange} portraitsVisible={props.state.characterSpritesEnabled !== false} onTogglePortraits={props.onTogglePortraits} panelWidth={props.state.floatingPanelWidth} onPanelWidthChange={props.onPanelWidthChange} adaptive={!!props.state.adaptiveLayout} onToggleAdaptive={props.onToggleAdaptiveLayout} minimumLeft={chatTitleMinimumLeft(290)} minimumTop={chatTitleMinimumTop()}>
-        {props.state.showChatContextMeter !== false && chatEstimate && chatEstimate.messageCount > 0 && <WidgetTile id="meter" title={x("chatMeterTitle")} icon={<Gauge size={16} />}><div className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / ${capacityLabel}; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
+        {showChatMeter && chatEstimate && <WidgetTile id="meter" title={x("chatMeterTitle")} icon={<Gauge size={16} />}><div ref={transferInMeter ? setTransferTarget : undefined} className={`dr-chat-meter ${chatMeterState}`} role="group" title={x("chatMeterEstimateHelp")} aria-label={`${x("chatMeterTitle")}: ~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / ${capacityLabel}; ${x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}`}>
           <div className="dr-chat-meter-heading"><span>{x("chatMeterTitle")}</span><strong>~{compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / {capacityLabel}</strong></div>
           <div className="dr-chat-meter-track" role="progressbar" aria-valuemin={0} aria-valuemax={capacity} aria-valuenow={Math.min(chatEstimate.estimatedTokens, capacity)} aria-valuetext={`~${compactTokens(chatEstimate.estimatedTokens, props.state.locale)} / ${capacityLabel}`}><i style={{ width: `${chatEstimatePercent}%` }} /></div>
           <div className="dr-chat-meter-foot"><strong>{x("chatMeterRemaining", { count: compactTokens(chatRemaining, props.state.locale) })}</strong><small>{x(chatEstimate.source === "history" ? "chatMeterHistory" : "chatMeterPageOnly")}</small></div>
           {chatEstimate.atLeast && <small className="dr-chat-meter-note">{x("chatMeterAtLeast")}</small>}
-          {props.onContinueStory && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring || !!props.state.continuation && !["review", "ready"].includes(props.state.continuation.phase)} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation?.phase === "review" ? "reviewAction" : props.state.continuation?.phase === "ready" ? "startSummary" : props.state.transferring ? "creating" : "continue")}</button>}
+          {props.onContinueStory && props.state.continuation && ["review", "ready"].includes(props.state.continuation.phase) && <button type="button" className="dr-meter-transfer" disabled={analysisBlocked || !!props.state.transferring} onClick={props.onContinueStory}>{continuationText(props.state.locale, props.state.continuation.phase === "review" ? "reviewAction" : "startSummary")}</button>}
         </div></WidgetTile>}
         {(props.state.showMemoryContextIndicator !== false || memoryIssue) && <WidgetTile id="memory" shortcut={memoryIssue ? memoryIssueTitle : undefined} title={memoryIssue ? memoryIssueTitle : t("context")} icon={memoryIssue ? <AlertTriangle size={16} /> : <BrainCircuit size={16} />}><div className={`dr-memory-control${memoryIssue ? " has-issue" : ""}`}>
           <button className="dr-pill" onClick={() => setOpen(!open)} aria-haspopup="dialog" aria-controls={memoryDialogId} aria-expanded={open}>
@@ -372,16 +399,16 @@ export function PageWidget(props: {
           {props.state.analysisSuggested && <button className="dr-pill" onClick={() => setOpen(true)}>{at("analyze")}</button>}
         </WidgetTile>}
 {props.state.characters && props.onSaveCharacter && <WidgetTile id="characters" title={props.state.locale === "ru" ? "Персонажи" : "Characters"} icon={<Users size={16} />}><CharacterPanel key={`${props.state.characters.worldId}:${props.state.characters.chatId}`} {...props.state.characters} locale={props.state.locale} generating={props.state.generating} onSave={props.onSaveCharacter} onResumeHere={props.state.oldChatNotice ? props.onStayInOldChat : undefined} onAskSelfie={props.onAskSelfie} onAddAction={props.onAddCharacterAction} onGenerateText={props.onGenerateCharacterText} generationScope={props.state.scene?.bookId ?? ""} onRequestFactChange={props.onRequestCharacterFact} onRetry={() => props.onRetryCharacters?.()} onOpened={props.onCharacterOpened} /></WidgetTile>}
-        {((props.state.worlds?.length ?? 0) > 0 || (props.state.books?.length ?? 0) > 0) && props.onSceneChange &&
+        {showWorld && props.onSceneChange &&
           <WidgetTile id="scene" title={props.state.locale === "ru" ? "Мир и сцена" : "World and scene"} icon={<Globe size={16} />}>
-            <div className="dr-world-scene">
+            <div className="dr-world-scene" ref={transferInWorld ? setTransferTarget : undefined}>
               <SceneControls compact locale={props.state.locale} worlds={props.state.worlds ?? []} entities={props.state.entities ?? []} books={props.state.books ?? []} scene={props.state.scene ?? EMPTY_SCENE} onChange={props.onSceneChange} />
-              {props.savedMemoryTransfer && <SavedMemoryTransfer key={props.savedMemoryTransfer.scope} locale={props.state.locale} disabled={props.savedMemoryTransfer.blocked} worlds={props.savedMemoryTransfer.worlds} onPreview={props.savedMemoryTransfer.preview} onOpen={props.savedMemoryTransfer.open}/>}
             </div>
           </WidgetTile>}
       </WidgetDeck>}
       {!props.state.vaultLocked && props.state.activity && <ServiceProgress locale={props.state.locale} activity={props.state.activity} />}
     </div>
+    {!props.state.vaultLocked && transfer}
     {!props.state.vaultLocked && <PageMemoryDialog open={open} title={t("selectedMemory")} closeLabel={t("close")} dialogId={memoryDialogId} onClose={() => setOpen(false)} assistantOpen={assistantOpen}
       footer={memoryDialogOpen && props.state.toast && <span role="status">{props.state.toast}</span>}
       help={<MemoryGuide locale={props.state.locale} threshold={props.state.worlds?.find(world => world.id === props.state.scene?.worldId)?.relevanceThreshold} />}>
@@ -446,6 +473,12 @@ function compactTokens(value: number, locale: "ru" | "en"): string {
   return new Intl.NumberFormat(locale === "ru" ? "ru-RU" : "en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
-function Alert(props: { title: string; text: string; primary: string; secondary?: string; onPrimary: () => void; onSecondary?: () => void }) {
-  return <div className="dr-alert"><strong>{props.title}</strong><p>{props.text}</p><div className="dr-alert-actions"><button onClick={props.onPrimary}>{props.primary}</button>{props.secondary && <button onClick={props.onSecondary}>{props.secondary}</button>}</div></div>;
+function Alert(props: { title: string; text: string; primary: string; secondary?: string; onPrimary: () => void; onSecondary?: () => void; closeLabel?: string; onClose?: () => void }) {
+  return <div className="dr-alert">
+    <div className="dr-alert-heading"><strong>{props.title}</strong>{props.onClose &&
+      <button type="button" className="dr-alert-close" aria-label={props.closeLabel} title={props.closeLabel} onClick={props.onClose}><X size={14} aria-hidden="true" /></button>}
+    </div>
+    <p>{props.text}</p>
+    <div className="dr-alert-actions"><button onClick={props.onPrimary}>{props.primary}</button>{props.secondary && <button onClick={props.onSecondary}>{props.secondary}</button>}</div>
+  </div>;
 }

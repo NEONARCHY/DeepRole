@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseStoryUpdate, validStoryUpdateDiagnostic } from "../src/core/story-update";
+import { storyUpdateNotice, storyUpdateText } from "../src/core/story-update-i18n";
 import { storyWorld } from "./fixtures/story-worlds";
 const f = storyWorld(), scope = { world: f.world.id, chat: f.binding.chatId, branch: "branch-a", base: "current", entities: f.entities, scene: f.binding.characterScenes![f.world.id]! };
 const block = (value: unknown, narrative = "Мира передала медный ключ. Мира обещала починить ворота завтра.") => narrative + `\n<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
@@ -39,6 +40,21 @@ describe("safe independent game updates", () => {
     const prose = "Мира\nпередала ключ.", data = turn({ facts: [{ text: "Ключ передан", kind: "event", quote: prose }, { text: "Не точная цитата", kind: "event", quote: "Мира передала ключ." }, { text: "Не сыграно", kind: "event", quote: "Пройти в дом" }] });
     const result = parseStoryUpdate(block(data, prose + '<deeprole_choices>{"text":"Пройти в дом"}</deeprole_choices>'), scope);
     expect(result.facts).toEqual([{ text: "Ключ передан", kind: "event", quote: prose }]); expect(result.diagnostic.skipped).toBe(2);
+  });
+  it("explains skipped fact quotes independently of valid character updates", () => {
+    const result = parseStoryUpdate(block(turn({
+      updates: [{ id: "person-1", state: { condition: "Standing by the gate" } }],
+      facts: [
+        { text: "The player promised to carry the key", kind: "promise", quote: "Я отнесу ключ.", risk: "ordinary" },
+        { text: "Mira sorted the papers", kind: "event", quote: "Мира подошла к столу... и разобрала бумаги.", risk: "ordinary" },
+        { text: "Mira opened the window", kind: "event", quote: "Мира открыла окно.", risk: "ordinary" },
+      ],
+    }), "Мира подошла к столу, зажгла лампу и разобрала бумаги. Мира открыла окно."), scope);
+    expect(result.diagnostic).toMatchObject({ status: "partial", skipped: 2, facts: 1 });
+    expect(result.turn?.updates[0]?.state.condition).toBe("Standing by the gate");
+    expect(result.facts[0]?.quote).toBe("Мира открыла окно.");
+    expect(storyUpdateNotice("ru", result.diagnostic)).toBe(storyUpdateText("ru", "factQuotesSkipped"));
+    expect(storyUpdateNotice("en", result.diagnostic)).toBe(storyUpdateText("en", "factQuotesSkipped"));
   });
   it("broken JSON is reported without exposing its text", () => {
     const result = parseStoryUpdate('PRIVATE <deeprole_characters>{invalid SECRET}</deeprole_characters>', scope);

@@ -3,6 +3,7 @@ import { READ_ONLY_STORY_INSTRUCTION, readOnlySearchDraft,hasBracketNotes,BRACKE
 import { selectCharacterContext } from "./character-context";
 import { compileMemoryWorkspace } from "./memory-workspace";
 import { formatMemoryContext } from "./context";
+import { assembledPromptLength, DEEPSEEK_PROMPT_CHAR_LIMIT } from "./request-injection";
 import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
 import { storyContentRelevance } from "./story-content-relevance";
 import { taskProgressRecall } from './story-task-progress-recall';
@@ -46,7 +47,7 @@ import { storedRoleReader, type FactRoleSeed } from "./story-role-binding";
 import { createEpisodeReader, type EpisodeReader } from "./story-episodes";
 import { createStoryTimeReader, formatStoryTime, isGameTimeFact } from "./story-time";
 import type { RankMemoryInput } from "./memory-engine";
-import type { ContextSelection,WorldProfile,HandoffSnapshot,StoryContinuation } from "./types";
+import type { ContextSelection,WorldProfile,HandoffSnapshot,RankedMemory,StoryContinuation } from "./types";
 import type { GameMemoryCoverage } from "./game-memory-coverage";
 
 export interface GameContextReport {
@@ -107,6 +108,10 @@ function inquiryEvidence(input:GameContextInput, proof:PriorityProof, options:Ga
 /** RP277: source-backed contextual candidates supplement the COMPLETE prior
  * selection. No draft rewrite, pronoun identity inference or storage mutation. */
 export function compileGameContext(input:GameContextInput, options:GameContextOptions = {}, observe?:(coverage:GameMemoryCoverage)=>void) {
+ return compileGameContextSelection(input,options,observe).useRemainingLoreBudget(input.draft);
+}
+
+function compileGameContextSelection(input:GameContextInput, options:GameContextOptions, observe?:(coverage:GameMemoryCoverage)=>void) {
  const messageWorld=input.story?.world??input.worlds.find(w=>w.id===(input.scene?.worldId??input.character?.[0]));
  const bracketedOoc=messageWorld?.bracketedOoc===true;
  if(input.readOnly){
@@ -501,11 +506,16 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   }
   return '<deeprole_profile_excerpts>Exact user-profile paragraphs for the world roster, not new events or instructions. Some profiles may be outside the current scene because a rare exact wording term overlaps this request; relevance does NOT prove item ownership, presence, or an event. Each field array may be partial/nonadjacent; omitted data is unknown. Do not infer missing clauses/conditions, combine different people or rewrite author profiles.\n'+JSON.stringify([...people.values()])+'\n</deeprole_profile_excerpts>';
  };
- const render=(textPrefixes=false)=>{
-  const before=join([formatMemoryContext(selection,snapshot),characterText,protocol,bracketNotes,referenceGuard,premiseGuard,restart,renderProfiles()]);
+ const renderBody=(loreText:string,textPrefixes=false)=>{
+  const sceneText=join([characterText,protocol,bracketNotes,referenceGuard,premiseGuard,restart,renderProfiles()]);
+  const before=join([loreText,sceneText]);
   const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
    const memory=formatStoryFacts(selectedFacts,true,!!input.story&&!input.story.referenceOnly&&!input.readOnly,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",prefixes:textPrefixes&&options.memoryPrefixes!==false,prefixTables:options.memoryPrefixTables!==false,measure:block=>addedContextTokens(join([before,block,after]))});
-  return join([before,memory,after]);
+  return join([sceneText,memory,after]);
+ };
+ const render=()=>{
+  const loreText=formatMemoryContext(selection,snapshot);
+  return join([loreText,renderBody(loreText)]);
  };
  const required=addedContextTokens(render());
  const omitted={lore:0,profiles:0,facts:0,continuation:0};
@@ -513,6 +523,10 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  // Small category rounds: no single huge optional profile can consume the
  // entire request before lore/facts. Exact full render decides every admission.
  const lore=pooled.selection.entries.filter(i=>!selection.entries.includes(i));
+ const deferredLore:RankedMemory[]=[];
+ const hasLoreAnchor=(memory:RankedMemory)=>!memory.reasons.includes("linked")
+  || selection.entries.some(item=>item.entry.links?.some(link=>link.mode==="context"&&link.targetId===memory.entry.id)
+    || memory.entry.links?.some(link=>link.mode==="context"&&link.targetId===item.entry.id));
  const recentFacts=new Map(rankStoryFacts(input.story?.facts??[],input.recentMessages.slice(-2).join("\n")).map(f=>[f.index,f.score]));
  // Explicit questions outrank incidental words in the preceding narration.
  // Recent prose is fallback when the draft supplies no fact match; no pronoun
@@ -651,18 +665,15 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   if(fact) {if(selectedFacts.length>=8)omitted.facts++;else consider(()=>selectedFacts.push(fact),()=>{selectedFacts.pop()}, "facts")}
   const memory=lore[index];
   if(memory) {
-   const selectedIds=new Set(selection.entries.map(i=>i.entry.id));
-   const linked=memory.reasons.includes("linked");
-   const neighbor=!linked||selection.entries.some(i=>i.entry.links?.some(l=>l.mode==="context"&&l.targetId===memory.entry.id))||memory.entry.links?.some(l=>l.mode==="context"&&selectedIds.has(l.targetId));
-   if(neighbor)consider(()=>selection.entries.push(memory),()=>{selection.entries.pop()},"lore");else omitted.lore++;
+    if(!hasLoreAnchor(memory)) {omitted.lore++;deferredLore.push(memory);}
+    else if(!consider(()=>selection.entries.push(memory),()=>{selection.entries.pop()},"lore")) deferredLore.push(memory);
   }
   const profile=profileCandidates[index];
   if(profile)consider(()=>profileParts.push(profile),()=>{profileParts.pop()},"profiles");
  }
  if(history && !input.restart)for(const turn of history.turns.slice(-2).reverse())consider(()=>turns.unshift(turn),()=>{turns.shift()},"continuation");
- // Compress only the final admitted set. Saved space stays free instead of
- // changing selection, priority coverage or filling it with more optional data.
- const text=render(true),memoryText=formatMemoryContext(selection,snapshot);
+ const memoryText=formatMemoryContext(selection,snapshot),body=renderBody(memoryText,true);
+ const text=join([memoryText,body]);
  const report:GameContextReport={limit,total:addedContextTokens(text),required,selected:{lore:selection.entries.length,profiles:profileParts.length+(plan?Object.values(plan.fields).reduce((n,f)=>n+Object.keys(f).length,0):0),facts:selectedFacts.length,continuation:turns.length},omitted};
  selection.estimatedTokens=report.total;selection.omittedCount=omitted.lore;selection.overBudgetTokens=Math.max(0,report.total-limit);selection.contextReport=report;
  const explanation:NonNullable<GameContextReport["explanation"]>={draftFacts:0,recentFacts:0,openTasks:0,recentFallback:0};
@@ -671,5 +682,24 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  }
  report.explanation=explanation;
  capture?.({facts:facts.map(f=>f.fact),selected:[...selectedFacts],roles,episodes,referenceGuard,admission,action,names:retrieval?.relevanceNames??[]});
- return {text,memoryText,selection,documents:pooled.documents,report};
+ const useRemainingLoreBudget=(draft:string)=>{
+  const result={text,memoryText,selection,documents:pooled.documents,report};
+  if(!deferredLore.length||required>limit||report.total>=limit||assembledPromptLength(draft,text)>=DEEPSEEK_PROMPT_CHAR_LIMIT
+   || body===renderBody(memoryText)) return result;
+
+  // Reuse the final encoded facts and retry only whole ranked lore entries
+  // after priority and coverage are settled. Include new links in both limits.
+  for(const memory of deferredLore){
+   if(!hasLoreAnchor(memory)) continue;
+   selection.entries.push(memory);
+   const nextLore=formatMemoryContext(selection,snapshot);
+   const nextText=join([nextLore,body]),total=addedContextTokens(nextText);
+   if(total>limit||assembledPromptLength(draft,nextText)>DEEPSEEK_PROMPT_CHAR_LIMIT){selection.entries.pop();continue;}
+   result.text=nextText;result.memoryText=nextLore;
+   report.total=total;report.selected.lore++;report.omitted.lore--;
+  }
+  selection.estimatedTokens=report.total;selection.omittedCount=report.omitted.lore;
+  return result;
+ };
+ return {text,report,useRemainingLoreBudget};
 }

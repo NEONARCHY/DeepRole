@@ -3,6 +3,7 @@ import path from "node:path";
 import { storyWorld } from "../fixtures/story-worlds";
 import { captureWorldGame } from "../../src/storage/world-game";
 import { boundStory } from "../../src/core/story-continuation";
+import { openSavedPreview } from "./continuation-helpers";
 import { savedMemoryText } from "../../src/core/saved-memory-continuation";
 import { automationMarker } from "../../src/core/story-automation";
 import { oldChatNoticeText } from "../../src/core/old-chat-notice";
@@ -115,7 +116,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["below", "ex
     await panel.goto(panel.url() + "?" + new URLSearchParams({ sourceTab: String(sourceId), sourceUrl: f.binding.chatUrl }));
     await chat.bringToFront();
     await panel.locator('[data-dr-guide="continuation-toggle"]').press("Enter");
-    await panel.getByRole("button", { name: copy.title, exact: true }).press("Enter", { timeout: 10000 });
+    await openSavedPreview(panel, locale);
     const dialog = panel.getByRole("dialog", { name: copy.title });
     await expect(dialog.locator("blockquote")).toHaveText(savedScene);
     await dialog.getByRole("button", { name: copy.open, exact: true }).press("Enter");

@@ -7,9 +7,20 @@ import {EMPTY_CHARACTER,EMPTY_STATUS} from "/src/core/characters.ts";
 import {characterStatusForSheet} from "/src/core/character-actions.ts";
 import {syncSceneChoiceCards} from "/src/adapters/deepseek-choices-dom.ts";
 import {syncChoicePortraits} from "/src/adapters/deepseek-characters-dom.ts";
+import {observePhotoImages} from "/src/adapters/photo-loader.ts";
 import "/src/entrypoints/shared/design-system.css";
 import "/src/entrypoints/shared/characters.css";
 const locale=new URL(location.href).searchParams.get("locale")??"en"; document.documentElement.lang=locale;
+if (new URL(location.href).searchParams.has("saved-portraits")) {
+ window.savedPortraits=new Map();
+ window.storeFixturePortrait=id=>{
+  const address="deeprole-photo:"+id.repeat(64)+":1:a:a";
+  const canvas=document.createElement("canvas");canvas.width=id==="a"||id==="b"?2:3;canvas.height=4;
+  const context=canvas.getContext("2d");context.fillStyle="#465770";context.fillRect(0,0,canvas.width,canvas.height);
+  window.savedPortraits.set(address,canvas.toDataURL("image/png"));return address;
+ };
+ observePhotoImages(document,async id=>{if(!window.savedPortraits.has(id))throw Error("photo-missing");return window.savedPortraits.get(id);});
+}
 const entities=[{id:"hero",name:"Noah",worldId:"w",kind:"character",description:"",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,gender:"male",protagonist:true,sprites:{}},createdAt:1,updatedAt:1},{id:"mira",name:"Mira",worldId:"w",kind:"character",description:"Original profile",aliases:[],memberIds:[],characterSheet:{...EMPTY_CHARACTER,gender:"female",appearance:"Blue coat",sprites:{}},createdAt:1,updatedAt:1}];
 const count=Number(new URL(location.href).searchParams.get("count"));
 if(count===1)entities.splice(1); else if(Number.isInteger(count)&&count>=2&&count<=1000)for(let i=2;i<count;i++)entities.push({...entities[1],id:`extra-${i}`,name:`Character ${i}`});

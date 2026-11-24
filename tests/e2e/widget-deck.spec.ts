@@ -1,4 +1,61 @@
+import { continuationLauncher, continuationMethod } from "./continuation-helpers";
 import { test, expect, type Locator } from "@playwright/test";
+
+test("the context meter and world share one launcher for the two transfer methods", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 760 });
+  await page.goto("/tests/fixtures/page-widget.html?panels&saved-game");
+  await page.evaluate(() => (window as any).setWidgetState({ canAnalyzeChat: true, conversationEstimate: undefined }));
+  const launcher = continuationLauncher(page, "ru");
+  await expect(launcher).toHaveCount(1);
+  await expect(launcher).toBeVisible();
+  await launcher.click();
+  expect(await page.evaluate(() => (window as any).continued)).toBeUndefined();
+  await page.evaluate(() => (window as any).setWidgetState({
+    conversationEstimate: { estimatedTokens: 120000, messageCount: 20, source: "history" },
+  }));
+  await expect(page.locator(".dr-chat-meter").locator(".dr-saved-memory-action")).toHaveCount(1);
+  await continuationMethod(page, "ru", "saved").click();
+  await expect(page.getByRole("dialog").locator("blockquote")).toHaveText("Mira put the key in the drawer.");
+  await page.getByRole("button", { name: "К выбору способа", exact: true }).click();
+  await continuationMethod(page, "ru", "review").click();
+  expect(await page.evaluate(() => (window as any).continued)).toBe(true);
+  expect(await page.evaluate(() => (window as any).savedGameOpened)).toBeUndefined();
+});
+
+test("the capacity warning opens the same transfer picker with the meter hidden", async ({ page }) => {
+  await page.goto("/tests/fixtures/page-widget.html?panels&saved-game");
+  await page.locator(".dr-sidebar-toggle").click();
+  await expect(page.locator(".dr-sidebar-toggle")).toHaveAttribute("aria-expanded", "false");
+  await page.evaluate(() => (window as any).setWidgetState({
+    showChatContextMeter: false, canAnalyzeChat: true, contextCapacityWarning: { level: 1, percent: 82 },
+  }));
+  await continuationLauncher(page.getByRole("dialog"), "ru").click();
+  await expect(continuationMethod(page, "ru", "review")).toBeEnabled();
+  await expect(continuationMethod(page, "ru", "saved")).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).continued)).toBeUndefined();
+});
+
+for (const locale of ["ru", "en"] as const) {
+  test(`memory warning can be dismissed until reload in ${locale}`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 760 });
+    const warning = "Fixture scene conflict";
+    const setWarning = (value: string) => page.evaluate(value => (window as any).setWidgetState({ warning: value }), value);
+    await page.goto(`/tests/fixtures/page-widget.html?locale=${locale}`);
+    await setWarning(warning);
+    const notice = page.locator(".dr-alert").filter({ hasText: warning });
+    await expect(notice).toBeVisible();
+    await notice.getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).click();
+    await expect(notice).toHaveCount(0);
+    await setWarning("");
+    await setWarning(warning);
+    await expect(notice).toHaveCount(0);
+    await setWarning("Another memory warning");
+    await expect(page.getByText("Another memory warning")).toBeVisible();
+    await page.reload();
+    await setWarning(warning);
+    await expect(notice).toBeVisible();
+  });
+}
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1280]) {
   test(`world, scene and saved game share one column ${locale} ${width}`, async ({ page }, info) => {
@@ -41,6 +98,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1280]) {
     await picker.press("Escape");
     await scene.click(); await expect(scene).toHaveAttribute("aria-expanded","true"); await scene.click();
     await transfer.click();
+    await continuationMethod(page, locale, "saved").click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toContainText("Mira put the key in the drawer.");
     await page.keyboard.press("Escape"); await expect(transfer).toBeFocused();

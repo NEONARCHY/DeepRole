@@ -6,10 +6,13 @@ import { DEFAULT_IMAGE_SETTINGS } from "../../src/core/image-generation";
 import { selfieImageKey } from "../../src/core/selfies";
 import { EMPTY_CHARACTER, EMPTY_STATUS } from "../../src/core/characters";
 import { DEFAULT_RELATIONSHIP, relationshipState } from "../../src/core/relationships";
+import { DEEPSEEK_PROMPT_CHAR_LIMIT } from "../../src/core/request-injection";
+import { SERVICE_END, SERVICE_START, TRANSFER_DATA, TRANSFER_END, transferAcknowledgment } from "../../src/core/service-protocol";
+import { continuationMethod } from "./continuation-helpers";
 import { characterTab, closeSavedCharacter } from "./character-helpers";
 
 const fixture = `<!doctype html><html><head><title>Mock DeepSeek</title></head><body><main><header><h1>Roleplay</h1></header><div id="conversation"></div><form><textarea aria-label="Message"></textarea><button type="submit">Send</button></form></main></body></html>`;
-async function setup(records: Array<[string, any]>) {
+async function setup(records: Array<[string, any]>, locale: "en" | "ru" = "en") {
   // Keep Windows LevelDB paths short. Playwright clears this output root on the next run.
   const profiles = path.join(test.info().project.outputDir, "profiles"); await mkdir(profiles, { recursive: true });
   const profile = await mkdtemp(path.join(profiles, "deeprole-sync-test-"));
@@ -21,16 +24,16 @@ async function setup(records: Array<[string, any]>) {
   await context.route("https://chat.deepseek.com/**", (route) => route.fulfill({ contentType: "text/html", body: fixture }));
   const panel = await context.newPage(); await panel.goto(`chrome-extension://${new URL(worker.url()).host}/sidepanel.html`);
   await expect(panel.locator(".onboarding")).toBeVisible();
-  await panel.evaluate(async (seed) => {
+  await panel.evaluate(async ({ seed, locale }) => {
     await new Promise<void>((resolve, reject) => {
       const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
       open.onsuccess = () => { const db = open.result; const tx = db.transaction("records", "readwrite"); for (const [kind, data] of seed) tx.objectStore("records").put({ pk: kind + ":" + data.id, kind, id: data.id, data, updatedAt: Date.now() }); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
     });
-    await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale: "en", onboardingComplete: true }, deeprole_library_change: { token: "seed" } });
-  }, records);
+    await (globalThis as any).chrome.storage.local.set({ deeprole_settings: { locale, onboardingComplete: true }, deeprole_library_change: { token: "seed" } });
+  }, { seed: records, locale });
   const chat = await context.newPage(); await chat.goto("https://chat.deepseek.com/chat/s/a");
   await chat.bringToFront();
-  await expect(chat.getByRole("button", { name: /^Context/ })).toBeVisible();
+  await expect(chat.getByRole("button", { name: locale === "ru" ? /^Контекст/ : /^Context/ })).toBeVisible();
   await expect.poll(() => command(panel, { type: "DR_GET_PAGE_STATE" }).catch(() => null)).toMatchObject({ type: "DR_PAGE_STATE", chatId: "a" });
   return { context, panel, chat, worker };
   } catch (error) { await context.close(); throw error; }
@@ -193,6 +196,7 @@ test("reviewed continuation preserves exact progress before consuming an accepte
     await chat.evaluate(() => { document.querySelector("#conversation")!.innerHTML = '<article data-role="user" data-message-id="1">I promised to return.</article><article data-role="assistant" data-message-id="2">Mira waits at the harbor.</article>'; });
     await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
     await chat.getByRole("button", { name: "Continue in a new chat", exact: true }).click();
+    await continuationMethod(chat, "en", "review").click();
     await finishNoChangeReview(chat);
     await expect(chat).toHaveURL("https://chat.deepseek.com/");
     await expect.poll(() => posts).toBe(1);
@@ -261,6 +265,7 @@ test("reviewed continuation waits for the latest validated relationship update a
     await expect(chat.getByRole("button", { name: "Continue in a new chat", exact: true })).toBeEnabled();
     await enableContinuationComposer(chat);
     await chat.getByRole("button", { name: "Continue in a new chat", exact: true }).click();
+    await continuationMethod(chat, "en", "review").click();
     await finishNoChangeReview(chat);
     await expect(chat).toHaveURL("https://chat.deepseek.com/");
     const checkpoint = (await databaseRecords(panel)).find(r => r.kind === "snapshot").data;
@@ -658,6 +663,93 @@ async function pendingService(panel: Page) {
   return panel.evaluate(async () => {
     const state = await (globalThis as any).chrome.storage.session.get(null);
     return (Object.entries(state).find(([key]) => key.startsWith("deeprole_tab_state_"))?.[1] as any)?.service;
+  });
+}
+
+for (const draftAppears of [false, true]) {
+  test(`oversized update lore ${draftAppears ? "preserves a draft typed between parts" : "sends the same data in parts and reviews once"}`, async () => {
+    const world = { id: "w", name: "Harbor observatory", description: "", color: "#58a6ff", contextBudget: 6000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+    const people = ["Mira", "Leon", "Nora", "Ivo", "Ada"].map((name, i) => ({
+      id: name.toLowerCase(), worldId: world.id, name, kind: "character", description: "", aliases: [], memberIds: [],
+      characterSheet: { ...EMPTY_CHARACTER, protagonist: i === 0, appearance: `Portrait of ${name}. `.repeat(60), personality: "Takes meticulous notes at the observatory. ".repeat(25), goals: "Catalog the instruments before the museum opens. ".repeat(22), background: "Apprenticed with a clockmaker in a neighboring port. ".repeat(20) },
+      createdAt: 1, updatedAt: 1,
+    }));
+    const entries = Array.from({ length: 21 }, (_, i) => ({
+      ...entry(`observatory-${i}`), worldId: world.id, updatedAt: i + 1,
+      content: `Record ${i}: The observatory archives contain the original instrument logs and a survey of the north wall. `.repeat(9),
+    }));
+    const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: world.id, focusIds: people.map(person => person.id), bookId: null, createdAt: 1, updatedAt: 1 };
+    const records: Array<[string, unknown]> = [
+      ["world", world], ["binding", binding],
+      ...people.map<[string, unknown]>(person => ["entity", person]),
+      ...entries.map<[string, unknown]>(item => ["entry", item]),
+    ];
+    const { context, panel, chat } = await setup(records, draftAppears ? "ru" : "en");
+    try {
+      const sent: string[] = [];
+      await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
+        const prompt: string = route.request().postDataJSON().prompt;
+        sent.push(prompt);
+        return route.fulfill({ status: prompt.length <= DEEPSEEK_PROMPT_CHAR_LIMIT ? 200 : 413, json: {} });
+      });
+      await chat.bringToFront();
+      await chat.evaluate(() => {
+        const conversation = document.querySelector("#conversation")!;
+        conversation.innerHTML = '<article data-message-id="user">Mira and Nora opened the archive.</article><article data-message-id="answer">They found the north wall logs.</article>';
+        let part = 0;
+        document.querySelector("form")!.addEventListener("submit", event => {
+          event.preventDefault();
+          const composer = document.querySelector("textarea")!;
+          const prompt = composer.value;
+          composer.value = "";
+          part++;
+          const user = document.createElement("article"), answer = document.createElement("article");
+          user.dataset.role = "user"; user.dataset.messageId = `lore-user-${part}`; user.textContent = prompt;
+          answer.dataset.role = "assistant"; answer.dataset.messageId = `lore-answer-${part}`;
+          conversation.append(user, answer);
+          void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt, chat_session_id: "a" }) });
+        });
+      });
+      const request = { id: "update-lore", type: "memory-analysis", bookId: null, createdAt: Date.now() };
+      expect(await command(panel, { type: "DR_RUN_SERVICE", request })).toEqual({ ok: true });
+      await expect.poll(() => sent.length).toBe(1);
+      expect(sent[0]).toContain("[DeepRole Transfer Part]");
+      expect(sent[0]).not.toContain("Analyze the roleplay conversation");
+      await expect(chat.locator("[data-deeprole-service-preloader]")).toContainText(draftAppears ? "Обновление лора · часть 1 из 2" : "Updating lore · part 1 of 2");
+
+      const proposals = () => databaseRecords(panel).then(rows => rows.filter(row => row.kind === "proposal"));
+      const suggestion = SERVICE_START + JSON.stringify({ type: "memory-suggestions", items: [{ title: entries[0]!.title, targetEntryId: entries[0]!.id, content: "Mira and Nora found the north wall logs.", keywords: ["logs"] }] }) + SERVICE_END;
+      const reply = (part: number, text: string) => chat.locator(`[data-message-id="lore-answer-${part}"]`).evaluate((row, value) => { row.textContent = value; }, text);
+      await reply(1, suggestion);
+      await expect.poll(() => pendingService(panel)).toMatchObject({ id: "update-lore_part_1" });
+      expect(await proposals()).toHaveLength(0);
+      expect(sent).toHaveLength(1);
+      const composer = chat.getByRole("textbox", { name: "Message" });
+      if (draftAppears) await composer.fill("My next move");
+      await reply(1, transferAcknowledgment("update-lore_part_1"));
+
+      if (draftAppears) {
+        await expect.poll(() => pendingService(panel)).toBeFalsy();
+        await expect(composer).toHaveValue("My next move");
+        expect(sent).toHaveLength(1);
+        expect(await proposals()).toHaveLength(0);
+        return;
+      }
+
+      await expect.poll(() => sent.length).toBe(2);
+      expect(sent.every(prompt => prompt.length <= DEEPSEEK_PROMPT_CHAR_LIMIT)).toBe(true);
+      expect(sent[1]).toContain("Analyze the roleplay conversation");
+      expect(sent[1]).toContain("using ALL 2 data fragments");
+      const payload = sent.map(prompt => prompt.slice(prompt.indexOf(TRANSFER_DATA) + TRANSFER_DATA.length, -TRANSFER_END.length)).join("");
+      expect(payload.length).toBeGreaterThan(DEEPSEEK_PROMPT_CHAR_LIMIT);
+      expect(payload).toContain("Portrait of Mira");
+      expect(payload).toContain("Portrait of Ada");
+      for (const { id, title, content } of entries) expect(payload).toContain(JSON.stringify({ id, title, content }));
+      expect(await proposals()).toHaveLength(0);
+      await reply(2, suggestion);
+      await expect.poll(async () => (await proposals()).map(row => [row.id, row.data.items[0].targetEntryId])).toEqual([["update-lore", entries[0]!.id]]);
+      expect((await databaseRecords(panel)).find(row => row.kind === "entry" && row.id === entries[0]!.id)?.data.content).toBe(entries[0]!.content);
+    } finally { await context.close(); }
   });
 }
 

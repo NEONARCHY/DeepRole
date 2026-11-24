@@ -1,5 +1,7 @@
 import type { Locale } from "./types";
+import type { StoryUpdateDiagnostic } from "./story-update";
 const ru = {
+  factQuotesSkipped: "Часть записей памяти пропущена из-за неточных цитат из ответа DeepSeek. Подтверждённые изменения сохранены.",
   editText: "Исправить текст", saveEdit: "Сохранить правку", inactiveFact: "Вне памяти игры", inMemory: "В памяти игры",
   cancelDecision: "Отмена", confirmSave: "Подтвердить сохранение", confirmExclude: "Подтвердить исключение",
   saveFactHint: "DeepRole сможет выбирать эту запись для будущих ответов в игре.",
@@ -22,6 +24,7 @@ const ru = {
   strict: "Не отправлять без памяти", strictHint: "Если расширение не смогло подготовить память, отправка остановится. Повторите её самостоятельно после проверки; расширение не отправляет сообщения повторно.", blocked: "Сообщение не отправлено: память не подготовлена. Текст возвращён в поле, если оно было пустым. Проверьте мир/сейф и отправьте сами ещё раз.",
 };
 const en: Record<keyof typeof ru, string> = {
+  factQuotesSkipped: "Some memory entries were skipped because their quotes did not match the DeepSeek reply. Valid changes were saved.",
   editText: "Edit text", saveEdit: "Save edit", inactiveFact: "Outside story memory", inMemory: "In story memory",
   cancelDecision: "Cancel", confirmSave: "Confirm save", confirmExclude: "Confirm exclusion",
   saveFactHint: "DeepRole can select this entry for future replies in this game.",
@@ -44,3 +47,8 @@ const en: Record<keyof typeof ru, string> = {
   strict: "Do not send without memory", strictHint: "Sending pauses if the extension cannot prepare memory. Check the connection and resend yourself; the extension never resends automatically.", blocked: "Message not sent: memory was not prepared. Your text was restored if the composer was empty. Check the world/vault, then send again yourself.",
 };
 export const storyUpdateText = (locale: Locale, key: keyof typeof ru) => (locale === "ru" ? ru : en)[key];
+export function storyUpdateNotice(locale: Locale, diagnostic: StoryUpdateDiagnostic): string {
+  const onlyFactQuotes = diagnostic.status === "partial" && diagnostic.issues.length === diagnostic.skipped
+    && diagnostic.skipped > 0 && diagnostic.issues.every(issue => issue.rule === "quote" && issue.path.startsWith("facts["));
+  return storyUpdateText(locale, onlyFactQuotes ? "factQuotesSkipped" : diagnostic.status);
+}

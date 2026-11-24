@@ -1,5 +1,53 @@
 import type { Locale } from "./types";
 
+export function continuationPickerText(locale: Locale) {
+  return locale === "ru" ? {
+    intro: "Выбери, откуда взять сцену для нового чата.",
+    review: "Сначала сверить переписку",
+    reviewDetail: "Подходит, если последние события ещё не сохранились. DeepSeek сверит доступную переписку с памятью. После проверки DeepRole откроет новый чат и сам отправит первую реплику.",
+    saved: "Взять последнее сохранение",
+    savedDetail: "Откроется последнее сохранение без запроса в старый чат. Сначала посмотри сцену: более свежие события могли ещё не сохраниться. В новом чате первую реплику отправишь сам.",
+    savedUnavailable: "Продолжение из сохранённой памяти сейчас недоступно.",
+    reviewUnavailable: "Сверка переписки сейчас недоступна.",
+    back: "К выбору способа",
+  } : {
+    intro: "Choose where the new chat should get its starting scene.",
+    review: "Review the conversation first",
+    reviewDetail: "Use this if the latest events have yet to be saved. DeepSeek compares the available conversation with memory. After review, DeepRole opens a new chat and sends the first message.",
+    saved: "Use the latest save",
+    savedDetail: "Uses the latest save without contacting the old chat. Preview the scene first. Newer events may be missing. You send the first message in the new chat.",
+    savedUnavailable: "Continuing from a save is currently unavailable.",
+    reviewUnavailable: "Conversation review is currently unavailable.",
+    back: "Back to transfer options",
+  };
+}
+
+export function continuationActions(locale: Locale) {
+  return locale === "ru" ? {
+    title: "Перенос игры и пересказы",
+    transfer: {
+      detail: "В окне выбора можно сверить переписку или взять последнее сохранение.",
+      example: "Если разговор у маяка уже виден в сохранённой сцене, можно перенести её и написать следующий ход. Если разговор ещё не сохранился, сначала сверь переписку.",
+    },
+    recap: {
+      label: "Сохранить пересказ на потом",
+      detail: "DeepSeek подготовит пересказ. Ты останешься в текущем чате.",
+      example: "Сохрани пересказ встречи у маяка. Позже открой чат с тем же миром и нажми «Применить» у пересказа. Он добавится к следующей реплике один раз.",
+    },
+  } : {
+    title: "Game transfers and recaps",
+    transfer: {
+      detail: "Choose whether to review the conversation or use the latest save.",
+      example: "If the saved scene already shows the conversation at the lighthouse, move it over and write the next turn. If the conversation has yet to be saved, review it first.",
+    },
+    recap: {
+      label: "Save a recap for later",
+      detail: "DeepSeek prepares a recap while you stay in the current chat.",
+      example: "Save a recap of the lighthouse meeting. Later, open a chat with the same world and select Apply on the recap. It is included once, with your next message.",
+    },
+  };
+}
+
 const copy = {
   ru: {
     unconfirmedTitle: "Перенос не подтверждён",
@@ -21,7 +69,7 @@ const copy = {
     startSummary: "Подготовить сжимку и продолжить", summary: "3/3 · Сжимаем последние сцены…",
     summaryArchived: "Служебный запрос переноса истории", summaryFailed: "Сжимка не завершена. Перенос остановлен.", summaryDone: "Сжимка готова. Открываем новый чат…", cancel: "Отменить перенос", cancelled: "Перенос остановлен.",
     reviewHint: "Можно продолжить с текущей памятью или сохранить выбранные записи. Затем DeepSeek подготовит краткое содержание и откроется новый чат. Если закрыть окно, перенос встанет на паузу.",
-    keepMemory: "Продолжить без изменений памяти", saveContinue: "Сохранить и продолжить", tooLarge: "Весь лор не помещается в запрос на сверку. В панели мира выберите «Продолжить из сохранённой памяти» и проверьте последнюю сохранённую сцену.",
+    keepMemory: "Продолжить без изменений памяти", saveContinue: "Сохранить и продолжить", tooLarge: "Весь лор не помещается в запрос на сверку. Откройте «Продолжить в новом чате» и выберите «Взять последнее сохранение».",
     continuePrompt: "Продолжи игру с того же момента по переданному контексту последних сцен. Сохрани язык и стиль переписки. Не повторяй пересказ, не выбирай за игрока и не разыгрывай заново завершённые события.",
     saved: "Состояние сохранено", creating: "Сохраняем историю…", continue: "Продолжить в новом чате", recap: "Подготовить пересказ с DeepSeek",
     ready: "Сначала сохраните или отправьте черновик, затем повторите перенос. Черновик не изменён.",
@@ -57,7 +105,7 @@ const copy = {
     startSummary: "Prepare summary and continue", summary: "3/3 · Summarizing recent scenes…",
     summaryArchived: "Story transfer service request", summaryFailed: "The summary did not finish. Transfer stopped.", summaryDone: "Summary ready. Opening a new chat…", cancel: "Cancel transfer", cancelled: "Transfer stopped.",
     reviewHint: "Continue with your current memory or save selected changes. DeepSeek will then prepare a summary and a new chat will open. Closing this window pauses the transfer.",
-    keepMemory: "Continue without changing memory", saveContinue: "Save and continue", tooLarge: "The full lore exceeds the memory review limit. In the world panel, choose “Continue from saved memory” and check the last saved scene.",
+    keepMemory: "Continue without changing memory", saveContinue: "Save and continue", tooLarge: "The full lore exceeds the memory review limit. Open “Continue in a new chat” and choose “Use the latest save”.",
     continuePrompt: "Continue the roleplay from the exact moment in the supplied recent-scene context. Preserve the conversation's language and style. Do not repeat the recap, decide for the player, or replay completed events.",
     saved: "Story state saved", creating: "Saving your story…", continue: "Continue in a new chat", recap: "Prepare a recap with DeepSeek",
     ready: "Save or send your draft, then try the transfer again. Your draft is untouched.",

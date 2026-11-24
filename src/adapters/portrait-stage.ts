@@ -24,7 +24,7 @@ export interface PortraitStageOptions {
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
 type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
-type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; manualFrame: HTMLElement; toolbar: HTMLElement; hint: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
+type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; manualFrame: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
 let statsId = 0;
@@ -361,7 +361,7 @@ function dispose(stage: Stage) {
   stage.anchor.ownerDocument.defaultView?.removeEventListener("deeprole-pinned-layout", stage.onResize);
   stage.anchor.ownerDocument.defaultView?.removeEventListener("deeprole-inline-layout", stage.onResize);
   clearAdaptive(stage);
-  stage.overlay.remove(); stage.toolbar.remove();
+  stage.overlay.remove(); stage.reset.remove(); stage.status.remove();
   const section = stage.anchor.shadowRoot?.querySelector<HTMLElement>("section");
   section?.classList.remove("dr-cast-content"); if (section) section.style.paddingTop = "";
   stages.delete(stage.anchor); activeStages.delete(stage);
@@ -450,7 +450,8 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
   const detached = [...activeStages].filter(stage => !stage.anchor.isConnected && stage.scope === scope).map(stage => stage.anchor);
   for (const host of [...hosts, ...(!hosts.length ? detached : [])]) {
     const shadow = host.shadowRoot; const section = shadow?.querySelector("section");
-    if (!shadow || !section) continue;
+    const controls = section?.querySelector(".choice-tools");
+    if (!shadow || !section || !controls) continue;
     if (!shadow.querySelector("[data-portrait-stage-style]")) { const style = host.ownerDocument.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
     section.classList.add("dr-cast-content");
     let stage = stages.get(host);
@@ -459,7 +460,9 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       if (stage) {
         stages.delete(stage.anchor);
         stage.observer.disconnect(); stage.observer.observe(stage.frame);
-        stage.anchor = host; stage.toolbar.remove(); shadow.append(stage.toolbar);
+        stage.anchor = host;
+        controls.insertBefore(stage.reset, controls.querySelector(".choice-expand"));
+        section.append(stage.status);
         stage.placementKey = undefined; stage.needsRedock = true;
         stages.set(host, stage); stage.observer.observe(host);
         for (const widget of stage.widgets.values()) stage.observer.observe(widget.box);
@@ -475,10 +478,15 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       const manualFrame = doc.createElement("div"); manualFrame.className = "dr-cast-manual-frame";
       floating.append(style, frame, manualFrame); doc.body.append(overlay);
       section.classList.add("dr-cast-content");
-      const toolbar = doc.createElement("div"); toolbar.className = "dr-cast-toolbar";
-      const hint = doc.createElement("p"); const reset = doc.createElement("button"); reset.type = "button";
+      const reset = doc.createElement("button"); reset.type = "button"; reset.className = "choice-pin";
+      const icon = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("viewBox", "0 0 24 24");
+      icon.setAttribute("aria-hidden", "true");
+      const path = doc.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M3 12a9 9 0 1 1 2.6 6.4M3 4v8h8");
+      icon.append(path); reset.append(icon);
       const status = doc.createElement("p"); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite"); status.className = "dr-cast-layout-status";
-      toolbar.append(hint, reset, status); shadow.append(toolbar);
+      controls.insertBefore(reset, controls.querySelector(".choice-expand")); section.append(status);
       // The same layer can move to a new choices card after the next reply.
       // Keep resize/scroll listeners bound to the layer, not its former host.
       let currentStage: Stage | undefined;
@@ -489,7 +497,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         doc.defaultView?.requestAnimationFrame(() => { framePending = false; if (currentStage && !currentStage.disposed) arrange(currentStage); });
       };
       const observer = new ResizeObserver(onResize);
-      stage = { anchor: host, overlay, frame, manualFrame, toolbar, hint, reset, status, widgets: new Map(), options, locale, scope, partnerIds: new Set(), busy: false, dragging: false, observer, onResize, disposed: false };
+      stage = { anchor: host, overlay, frame, manualFrame, reset, status, widgets: new Map(), options, locale, scope, partnerIds: new Set(), busy: false, dragging: false, observer, onResize, disposed: false };
       currentStage = stage;
       stages.set(host, stage); activeStages.add(stage); observer.observe(host); observer.observe(frame);
       doc.defaultView?.addEventListener("resize", onResize);
@@ -505,7 +513,8 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       });
     }
     stage.options = options; stage.locale = locale;
-    text(stage.hint, characterText(locale, "floatingHint")); text(stage.reset, characterText(locale, "layoutReset"));
+    const resetLabel = characterText(locale, "layoutReset");
+    attr(stage.reset, "aria-label", resetLabel); attr(stage.reset, "title", resetLabel);
     const partners = new Set(characterInterlocutors(entities, scene).map(person => person.id));
     const focused = stage.overlay.shadowRoot!.activeElement as HTMLElement | null;
     const hero = entities.find(entity => entity.characterSheet?.protagonist);

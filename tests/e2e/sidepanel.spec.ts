@@ -79,8 +79,7 @@ test("does not run analysis or handoff from an empty chat", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
   await expect(page.getByText("Сначала откройте игровой чат DeepSeek.",{exact:true})).toBeVisible();
   await page.locator(".play-continuation > summary").click();
-  await page.locator(".play-continuation .memory-detail > summary").click();
-  await expect(page.getByRole("button", { name: "Сохранить состояние истории", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Сохранить пересказ на потом", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Продолжить в новом чате", exact: true })).toBeDisabled();
 });
 

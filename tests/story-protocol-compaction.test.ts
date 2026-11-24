@@ -12,7 +12,7 @@ for(const mode of ["automatic","review"] as const)it(`defers only duplicate evid
  const base=storyUpdateInstruction(f.world.id,f.binding.chatId,"branch-a",true),short=storyUpdateInstruction(f.world.id,f.binding.chatId,"branch-a",true,true),policy=storyAutomationInstruction(f.world,true);
  expect(estimateTokens(short+policy)).toBeLessThan(estimateTokens(base+policy));expect(out).toContain(short);expect(out).toContain(policy);
  expect(out).not.toContain("Optional facts: max8 {text,kind,quote}");
- for(const rule of ["world:","chat:","branch:","version:2","event=happened","promise=commitment","plan=intention","belief=attributed belief","secret=revelation","task=obligation","never clear known goals","Existing numeric/selfie schemas and safety gates remain","Never turn plans/wishes/hypotheticals/negations/OOC/choices into events","No age/identity guesses","No transition on differing state requires review","Never output replaces","Filled/protected/manual fields and author lore must never be replaced","exact continuous played prose, never JSON/options"] )expect(out).toContain(rule);
+ for(const rule of ["world:","chat:","branch:","version:2","event=happened","promise=commitment","plan=intention","belief=attributed belief","secret=revelation","task=obligation","never clear known goals","Existing numeric/selfie schemas and safety gates remain","Never turn plans/wishes/hypotheticals/negations/OOC/choices into events","No age/identity guesses","No transition on differing state requires review","Never output replaces","Filled/protected/manual fields and author lore must never be replaced","one verbatim span from this reply; no added ellipses, player text, JSON or choices"] )expect(out).toContain(rule);
  expect(input).toEqual(before);
 });
 for(const mode of [undefined,"off"] as const)it(`retains complete default evidence rules when policy is ${mode??"absent"}`,()=>{
@@ -21,7 +21,7 @@ for(const mode of [undefined,"off"] as const)it(`retains complete default eviden
  expect(compileGameContext(input).text).toContain("Optional facts: max8 {text,kind,quote}");expect(compileGameContext(input).text).not.toContain("follow the accompanying policy below");
 });
 it("leaves standalone and full legacy instructions unchanged unless compact policy is explicitly supplied",()=>{
- expect(storyUpdateInstruction("w","c","b",true)).toContain("exact continuous quote from THIS played prose");
+ expect(storyUpdateInstruction("w","c","b",true)).toContain("copy one verbatim span from THIS reply");
  expect(storyUpdateInstruction("w","c","b",false,true)).toBe(storyUpdateInstruction("w","c","b"));
 });
 it("uses this request's kind definitions without dropping status, attribution or evidence",()=>{

@@ -1,22 +1,37 @@
 import { isPhotoAddress, isPhotoData } from "../core/photo-assets";
 import { dataImageBlob } from "./image/image-codec";
 
+interface PhotoLoad {
+  address: string;
+  displayedSource?: string;
+  removeImageListeners?: () => void;
+  visible: boolean;
+  intersecting: boolean;
+  loading: boolean;
+  token: number;
+}
+
 /** Lazy, bounded decoding. No original image collection is retained by the UI. */
 export function observePhotoImages(doc: Document, read: (id: string) => Promise<string>, readPreview?: (id: string, size: number) => Promise<string>): () => void {
   const win = doc.defaultView!;
-  const states = new Map<HTMLImageElement, { address: string; url?: string; visible: boolean; intersecting: boolean; loading: boolean; token: number }>();
+  const states = new Map<HTMLImageElement, PhotoLoad>();
   const roots = new Set<Document | ShadowRoot>();
   const observers = new Map<Document | ShadowRoot, MutationObserver>();
   const queue: HTMLImageElement[] = [];
   let active = 0, stopped = false;
   const release = (image: HTMLImageElement) => {
     const state = states.get(image); if (!state) return;
-    state.token++; if (state.url) { URL.revokeObjectURL(state.url); state.url = undefined; image.removeAttribute("src"); }
+    state.token++;
+    state.removeImageListeners?.();
+    const source = state.displayedSource;
+    state.displayedSource = undefined;
+    if (source?.startsWith("blob:")) URL.revokeObjectURL(source);
+    if (source && image.getAttribute("src") === source) image.removeAttribute("src");
   };
   const pump = () => {
     while (!stopped && active < 2 && queue.length) {
       const image = queue.shift()!, state = states.get(image);
-      if (!state?.visible || state.url || state.loading || !image.isConnected) continue;
+      if (!state?.visible || state.displayedSource || state.loading || !image.isConnected) continue;
       const token = ++state.token; state.loading = true; active++;
       void (async () => {
         const root = image.getRootNode();
@@ -41,9 +56,29 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
           } finally { bitmap.close(); }
         }
         if (stopped || states.get(image) !== state || token !== state.token || !state.visible || !image.isConnected) return;
-        state.url = URL.createObjectURL(blob); image.src = state.url;
+        const url = URL.createObjectURL(blob);
+        const removeListeners = () => {
+          image.removeEventListener("load", removeListeners);
+          image.removeEventListener("error", tryInline, true);
+          state.removeImageListeners = undefined;
+        };
+        const tryInline = (event: Event) => {
+          if (states.get(image) !== state || state.token !== token || image.getAttribute("src") !== url) return;
+          // A page can block blob URLs while still allowing embedded images.
+          // Retry this same photo before the portrait advances to another pose.
+          event.stopImmediatePropagation();
+          removeListeners();
+          URL.revokeObjectURL(url);
+          state.displayedSource = data;
+          image.src = data;
+        };
+        state.removeImageListeners = removeListeners;
+        image.addEventListener("load", removeListeners, { once: true });
+        image.addEventListener("error", tryInline, true);
+        state.displayedSource = url;
+        image.src = url;
       })().catch(() => { if (states.get(image) === state && token === state.token) image.dispatchEvent(new Event("error")); })
-        .finally(() => { active--; state.loading = false; if (states.get(image) === state && token !== state.token && state.visible && !state.url) queue.push(image); pump(); });
+        .finally(() => { active--; state.loading = false; if (states.get(image) === state && token !== state.token && state.visible && !state.displayedSource) queue.push(image); pump(); });
     }
   };
   // Prepare a whole visible library page as soon as any image in it
@@ -78,13 +113,14 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
       if (element.shadowRoot) observe(element.shadowRoot);
       if (!(element instanceof HTMLImageElement)) continue;
       const src = element.getAttribute("src"), previous = states.get(element);
+      if (src && src === previous?.displayedSource) continue;
       const inlineLibraryPhoto = isPhotoData(src) && !!element.closest(".dr-portrait-library-grid");
       if (!isPhotoAddress(src) && !inlineLibraryPhoto) {
-        if (previous && src && src !== previous.url) { release(element); states.delete(element); intersection.unobserve(element); delete element.dataset.drPhotoSource; element.setAttribute("src", src); }
+        if (previous && src) { release(element); states.delete(element); intersection.unobserve(element); delete element.dataset.drPhotoSource; }
         continue;
       }
-      if (previous?.address === src && !previous.url) continue;
-      release(element); states.set(element, { address: src, visible: false, intersecting: false, loading: false, token: 0 });
+      if (previous?.address === src && !previous.displayedSource) continue;
+      release(element); states.set(element, { address: src, visible: false, intersecting: previous?.intersecting ?? false, loading: false, token: 0 });
       if (isPhotoAddress(src)) element.dataset.drPhotoSource = src;
       element.removeAttribute("src"); intersection.observe(element);
     }

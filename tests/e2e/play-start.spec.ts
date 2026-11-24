@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { continuationLauncher, continuationMethod, openSavedPreview } from "./continuation-helpers";
 import AxeBuilder from "@axe-core/playwright";
 import { castText } from "../../src/core/cast-i18n";
 import { learningText } from "../../src/core/learning";
@@ -265,7 +266,7 @@ test("a different selected world keeps confirmation for the only saved game", as
   await expect(page.locator(".dr-play-start").getByText(playStartText("ru").resumeHint)).toHaveCount(0);
   await page.locator('[data-dr-guide="continuation-toggle"]').press("Enter");
   await expect(page.getByRole("button", { name: t.viewScene, exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: t.title, exact: true }).press("Enter");
+  await openSavedPreview(page, "ru");
   const dialog = page.getByRole("dialog", { name: t.title });
   await expect(dialog.locator("blockquote")).toContainText("saved-a");
   await expect(dialog.getByRole("button", { name: t.connect, exact: true })).toBeEnabled();
@@ -277,19 +278,50 @@ test("an active chat groups saved-memory fallback with ordinary continuation", a
   const t = savedMemoryText("ru");
   await narrow(page);
   await page.goto("/tests/fixtures/sidepanel.html?play=active&saved=source");
-  const open = page.getByRole("button", { name: t.title, exact: true });
+  const open = continuationLauncher(page, "ru");
   await expect(open).toHaveCount(0);
   await page.locator('[data-dr-guide="continuation-toggle"]').press("Enter");
   const continuation = page.locator('[data-dr-guide="continuation-content"]');
-  await expect(continuation.getByRole("button", { name: "Продолжить в новом чате", exact: true })).toBeEnabled();
-  await expect(continuation.getByRole("button", { name: t.title, exact: true })).toBeVisible();
-  await expect(open).toHaveClass(/secondary/);
+  await expect(continuationLauncher(continuation, "ru")).toBeEnabled();
+  await expect(continuation.getByRole("button", { name: t.title, exact: true })).toHaveCount(0);
   await open.press("Enter");
+  expect(await page.evaluate(() => (window as any).savedTransfer.requests)).toEqual([]);
+  await continuationMethod(page, "ru", "saved").press("Enter");
   const dialog = page.getByRole("dialog", { name: t.title });
   await expect(dialog.getByRole("button", { name: t.open, exact: true })).toBeEnabled();
   expect(await page.evaluate(() => (window as any).savedTransfer.requests.map((request: { type: string }) => request.type)))
     .toEqual(["DR_SAVED_MEMORY_PREVIEW"]);
 });
+
+for (const locale of ["ru", "en"] as const) {
+  test(`explains both transfer methods and the recap on a narrow panel (${locale})`, async ({ page }) => {
+    await narrow(page);
+    await page.goto(`/tests/fixtures/sidepanel.html?play=active&saved=source&locale=${locale}`);
+    await page.locator('[data-dr-guide="continuation-toggle"]').press("Enter");
+    const rows = page.locator(".dr-handoff-action");
+    await expect(rows).toHaveCount(2);
+    await continuationLauncher(page, locale).click();
+    const methods = page.getByRole("dialog");
+    await expect(methods).toBeVisible();
+    await expect(continuationMethod(page, locale, "review")).toHaveAccessibleDescription(/сам отправит первую реплику|sends the first message/);
+    await expect(continuationMethod(page, locale, "saved")).toHaveAccessibleDescription(/отправишь сам|You send the first message/);
+    expect(await methods.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.keyboard.press("Escape");
+    for (const [index, sample] of (locale === "ru"
+      ? ["разговор у маяка", "Он добавится к следующей реплике один раз"]
+      : ["conversation at the lighthouse", "It is included once"]).entries()) {
+      const row = rows.nth(index);
+      await row.locator(".dr-help").click();
+      const help = page.getByRole("tooltip");
+      await expect(help).toContainText(sample);
+      const bounds = await help.boundingBox();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+      await page.keyboard.press("Escape");
+      await expect(help).toHaveCount(0);
+    }
+  });
+}
 
 test("reloading a connected game keeps the play instruction while history is loading", async ({ page }) => {
   await page.goto("/tests/fixtures/sidepanel.html?play=active&saved=source&loadingHistory");
@@ -297,5 +329,8 @@ test("reloading a connected game keeps the play instruction while history is loa
   await expect(card.getByText(playStartText("ru").play, { exact: true })).toBeVisible();
   await expect(card.getByText(playStartText("ru").resumeHint)).toHaveCount(0);
   await page.locator('[data-dr-guide="continuation-toggle"]').press("Enter");
-  await expect(page.getByRole("button", { name: savedMemoryText("ru").title })).toBeEnabled();
+  await expect(continuationLauncher(page, "ru")).toBeEnabled();
+  await continuationLauncher(page, "ru").press("Enter");
+  await expect(continuationMethod(page, "ru", "review")).toBeDisabled();
+  await expect(continuationMethod(page, "ru", "saved")).toBeEnabled();
 });

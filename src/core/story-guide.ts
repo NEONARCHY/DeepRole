@@ -3,7 +3,7 @@ import type { Locale } from "./types";
 const guides = {
   ru: {
     title: "Как обновить и перенести историю", close: "Закрыть памятку", current: "",
-    intro: "Лор хранит факты о мире. «Продолжить в новом чате» сохраняет доступную историю и точный прогресс одним нажатием. Обновление лора и подготовка пересказа — дополнительные шаги для особенно длинной истории, а не обязательное условие.",
+    intro: "Лор хранит факты о мире. В разделе «Продолжение истории» можно сверить память при переносе, открыть новый чат с уже сохранённой сценой или подготовить пересказ для дальнейшей игры.",
     sections: [
       { title: "История уже идёт, а мира ещё нет?", lines: [
         "Готовый JSON не нужен. В «Миры → Создать свой мир» создайте пустой мир и дайте ему название. Затем подключите его к текущему чату через «Игра → Мир».",
@@ -24,12 +24,12 @@ const guides = {
         "Это память о фактах, не копия всей переписки. Проверьте важные детали: модель может что-то пропустить. Текущую сцену и прогресс переносит кнопка «Продолжить в новом чате»."
       ] },
       { title: "3. Продолжите в новом чате", lines: [
-        "В этом же чате нажмите «Продолжить в новом чате» на индикаторе контекста или в Игра → Продолжение истории. DeepRole локально сохранит состояние, откроет пустой чат и один раз отправит продолжение — без обязательного ответа DeepSeek в старом чате.",
+        "Нажмите «Продолжить в новом чате» и выберите «Сначала сверить переписку». DeepSeek проверит доступную историю, затем DeepRole откроет новый чат и отправит первую реплику с пересказом.",
         "Мир, портреты, ручной выбор памяти, точные отношения, характеристики и их журналы сохраняются. Новый чат получает прежний пересказ и доступную переписку до последнего события. Исходный чат не удаляется.",
-        "Частичная история помечается в сохранениях: так бывает, если она очень длинная, сервер не отдаёт её полностью или доступны только сообщения со страницы. Для общего обзора есть «Подготовить пересказ с DeepSeek». Числа при этом берутся из базы, а не из пересказа."
+        "Если нужная сцена уже сохранена или старый чат недоступен, выберите «Взять последнее сохранение». Проверьте сохранённый фрагмент, откройте новый чат и отправьте первую реплику. Более свежие события могут отсутствовать."
       ] },
       { title: "Если хотите продолжить позже или в другом чате", lines: [
-        "«Сохранить состояние истории» создаёт только пересказ: чат не переключается.",
+        "«Сохранить пересказ на потом» готовит пересказ в DeepSeek. Вы остаётесь в текущем чате.",
         "Откройте нужный чат, подключите тот же мир, затем в «Продолжении истории» нажмите «Применить» у нужного сохранённого состояния. Оно добавится к следующему отправленному сообщению один раз; сама кнопка сообщение не отправляет.",
         "Если автоматический переход не сработал, сохранённое состояние доступно здесь же. Если DeepRole подготовил черновик продолжения, отправьте его сами. Пока DeepSeek отвечает, новый запуск недоступен."
       ] },
@@ -45,7 +45,7 @@ const guides = {
   },
   en: {
     title: "How to update and continue your story", close: "Close guide", current: "",
-    intro: "Lore stores world facts. “Continue in a new chat” saves available history and exact progress in one click. Updating lore and preparing a recap are optional steps for especially long stories, not required for a transfer.",
+    intro: "Lore stores world facts. Under Continue your story, you can review memory as you transfer, open a new chat from the saved scene, or prepare a recap for later.",
     sections: [
       { title: "Already playing, but no world yet?", lines: [
         "You do not need a ready-made JSON file. In “Worlds → Create your world”, create an empty world and give it a name. Then connect it to the current chat through “Play → World”.",
@@ -66,12 +66,12 @@ const guides = {
         "This is factual memory, not a copy of the full conversation. Check important details: the model may miss something. “Continue in a new chat” carries the current scene and progress."
       ] },
       { title: "3. Continue in a new chat", lines: [
-        "In the same chat, click “Continue in a new chat” on the context meter or under Play → Continue your story. DeepRole saves a local checkpoint, opens an empty chat and sends the continuation once — no answer from DeepSeek in the old chat is required.",
+        "Select “Continue in a new chat”, then “Review the conversation first”. DeepSeek checks the available history. After review, DeepRole opens a new chat and sends the first message with the recap.",
         "The world, portraits, memory selections, exact relationships, attributes and their histories are preserved. The new chat receives the earlier recap and available conversation through the latest event. Your original chat is not deleted.",
-        "Partial history is labelled in saved states: the conversation may be too long, the server may return only part of it, or only page messages may be available. “Prepare a recap with DeepSeek” provides a compact overview. Scores come from the local database, never from the recap."
+        "If the scene you need is already saved or the old chat is unavailable, choose “Use the latest save”. Check the saved scene, open a new chat and send the first message. Newer events may be missing."
       ] },
       { title: "To continue later or in a different chat", lines: [
-        "“Save story state” only creates a recap. It does not switch chats.",
+        "“Save a recap for later” prepares a recap with DeepSeek while you stay in the current chat.",
         "Open the destination chat and connect the same world. In “Continue your story”, click “Apply” on the saved state you want. It is added once to your next sent message; clicking Apply does not send a message.",
         "If the automatic move fails, the saved state is still available here. If DeepRole prepared a continuation draft, send it yourself. You cannot start another request while DeepSeek is answering."
       ] },

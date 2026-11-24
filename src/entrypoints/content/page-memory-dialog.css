@@ -19,6 +19,12 @@
 .dr-memory-dialog:has(.dr-saved-memory-review) .dr-memory-dialog-close { width:44px; height:44px; }
 .dr-saved-memory-review p,.dr-saved-memory-review blockquote { margin:0; }
 .dr-saved-memory-review blockquote { white-space:pre-wrap; padding:12px; background:var(--dr-surface); border-radius:8px; }
+.dr-continuation-methods { display:grid; gap:12px; }
+.dr-continuation-methods > div { display:grid; gap:6px; padding:12px; border:1px solid var(--dr-border); border-radius:10px; }
+.dr-continuation-methods > div > p { color:var(--dr-muted); }
+.dr-continuation-methods .dr-saved-memory-action { width:100%; min-height:44px; white-space:normal; overflow-wrap:anywhere; }
+.dr-continuation-methods .dr-meter-transfer { font-size:inherit; }
+.dr-continuation-methods > div:first-of-type .dr-meter-transfer { background:var(--dr-action); color:var(--dr-on-action); border-color:var(--dr-action); }
 @keyframes dr-memory-appear { from { opacity:0; } to { opacity:1; } }
 @media(max-width:480px) { .dr-memory-dialog > header { padding:12px; gap:8px; } .dr-memory-dialog > header h2 { font-size:16px; } .dr-memory-dialog-body,.dr-memory-dialog-footer { padding:12px; } }
 @media(prefers-reduced-motion:reduce) { .dr-memory-dialog[open] { animation:none; } }

@@ -1,5 +1,7 @@
 import {expect,it} from "vitest";
 import {compileGameContext,addedContextTokens,type GameContextInput} from "../src/core/game-context";
+import {assembledPromptLength,DEEPSEEK_PROMPT_CHAR_LIMIT} from "../src/core/request-injection";
+import {decodeStoryMemory} from "../src/core/story-memory-transport";
 import {characterInstruction,DEFAULT_ACTIONS} from "../src/core/characters";
 import {roleSeed} from "../src/core/story-role-binding";
 import {storyWorld} from "./fixtures/story-worlds";
@@ -40,6 +42,57 @@ it("counts the exact complete prompt and preserves useful memory within the defa
  expect(r.text).toContain("Memory accompaniment mode is automatic");
  expect(r.text).not.toContain("Resident 3");
  expect(r.text.length).toBeLessThan(characterInstruction(...f.input.character!).length+2000);
+});
+it.each(["en","ru"] as const)("fills the saved space within the current world budget (%s)",locale=>{
+ const {world,binding,entry}=storyWorld(locale);
+ const ru=locale==="ru",draft=ru?"опись фонарей":"lantern inventory";
+ const factPrefix=ru
+  ?"Опись фонарей лежит в центральном архиве. Смотритель сверил её с журналом мастерской и подтвердил, что каждый предмет остаётся на своём месте. "
+  :"The lantern inventory is kept in the central archive. The custodian cross-checked it with the workshop log and verified that each object remains in its assigned place. ";
+ const facts=Array.from({length:8},(_,i)=>{
+  const text=factPrefix.repeat(2)+(ru?`Запись номер ${i+1} подтверждена.`:`Record number ${i+1} is confirmed.`);
+  return {kind:"event" as const,text,quote:text};
+ });
+ const pinned={...entry,id:"pinned",title:"Archive rules",activation:"always" as const,content:"The archive closes at dusk."};
+ const anchor={...entry,id:"anchor",title:draft,keywords:[draft],content:"The custodian keeps the signed paper copy on the third shelf. ".repeat(6),links:[{mode:"context" as const,label:"Related archive procedure",targetId:"neighbor"}]};
+ const neighbor={...entry,id:"neighbor",title:"Cabinet rules",keywords:[],content:"The sealed cabinet is accessible to the night keeper."};
+ const large={...anchor,id:"large",title:draft+" register",links:[],content:(ru
+  ?"Подписанный журнал хранится в опечатанном шкафу вместе с расписанием выдачи. "
+  :"The signed register has been indexed by cabinet and shelf number. ").repeat(55)};
+ const unrelated={...neighbor,id:"unrelated",title:"Canal toll",content:"Merchant boats pay two coins."};
+ const input:GameContextInput={draft,recentMessages:[],entries:[pinned],worlds:[world],activeBookId:null,scene:{worldId:world.id,bookId:null,focusIds:[]},settings:world,story:{world,chat:binding.chatId,branch:"branch-a",facts,sheetsEnabled:false}};
+ const unpacked={memoryTransport:"legacy" as const};
+ world.contextBudget=6000;
+ world.contextBudget=compileGameContext(input,unpacked).report.total;
+ const compact=compileGameContext(input);
+ expect(compact.report.selected.facts).toBe(8);
+ expect(compact.report.total).toBeLessThan(world.contextBudget);
+
+ input.entries.push(anchor,neighbor,large,unrelated);
+ const previous=compileGameContext(input,unpacked);
+ expect(previous.selection.entries.map(row=>row.entry.id)).toEqual(["pinned"]);
+ const result=compileGameContext(input);
+ expect(result.selection.entries.map(row=>row.entry.id)).toEqual(["pinned","anchor","neighbor"]);
+ expect(result.selection.omittedCount).toBe(1);
+ expect(result.report.omitted.lore).toBe(1);
+ expect(result.memoryText).toContain(anchor.content);
+ expect(result.memoryText).toContain(neighbor.content);
+ const memoryJson=(text:string)=>JSON.parse(text.split("<deeprole_story_memory>")[1]!.split("\n")[1]!);
+ expect(decodeStoryMemory(memoryJson(result.text))).toEqual(decodeStoryMemory(memoryJson(previous.text)));
+ expect(result.report.total).toBe(addedContextTokens(result.text));
+ expect(result.report.total).toBeLessThanOrEqual(world.contextBudget);
+
+ const longDraft=draft.padEnd(DEEPSEEK_PROMPT_CHAR_LIMIT-assembledPromptLength("",compact.text),ru?" Заметка.":" Note.");
+ const capped=compileGameContext({...input,draft:longDraft});
+ expect(capped.selection.entries.map(row=>row.entry.id)).toEqual(["pinned"]);
+ expect(assembledPromptLength(longDraft,capped.text)).toBe(DEEPSEEK_PROMPT_CHAR_LIMIT);
+
+ world.contextBudget+=2000;
+ const raised=compileGameContext(input);
+ expect(raised.selection.entries.map(row=>row.entry.id)).toEqual(expect.arrayContaining(["pinned","anchor","neighbor","large"]));
+ expect(raised.text).not.toContain(unrelated.content);
+ expect(raised.report.omitted.lore).toBe(0);
+ expect(raised.report.total).toBeLessThanOrEqual(world.contextBudget);
 });
 it("never silently clips required always/manual data, protected fields or scene membership",()=>{
  const f=fixture(500,10),scene=f.binding.characterScenes![f.world.id]!;scene.presentIds=f.entities.map(p=>p.id);
