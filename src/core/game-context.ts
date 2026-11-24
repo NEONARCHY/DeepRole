@@ -46,7 +46,7 @@ import { createStoryRoleReader, type StoryRoleReader } from "./story-source-role
 import { storedRoleReader, type FactRoleSeed } from "./story-role-binding";
 import { createEpisodeReader, type EpisodeReader } from "./story-episodes";
 import { createStoryTimeReader, formatStoryTime, isGameTimeFact } from "./story-time";
-import type { RankMemoryInput } from "./memory-engine";
+import { scoreMemory, type RankMemoryInput } from "./memory-engine";
 import type { ContextSelection,WorldProfile,HandoffSnapshot,RankedMemory,StoryContinuation } from "./types";
 import type { GameMemoryCoverage } from "./game-memory-coverage";
 
@@ -68,6 +68,8 @@ export interface GameContextInput extends RankMemoryInput {
  restart?:boolean;
  /** Already validated, request-specific recovered reply; never cut its meaning. */
  requiredContext?:string;
+ /** Original draft length for a one-turn retry with permission to reduce lore. */
+ fitLoreForDraftLength?:number;
 }
 type ProfilePart={id:string;name:string;field:"appearance"|"personality"|"goals"|"background";text:string;ordinal:number};
 const fields=["appearance","personality","goals","background"] as const;
@@ -517,12 +519,44 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   const loreText=formatMemoryContext(selection,snapshot);
   return join([loreText,renderBody(loreText)]);
  };
- const required=addedContextTokens(render());
- const omitted={lore:0,profiles:0,facts:0,continuation:0};
- const consider=(append:()=>void,remove:()=>void,kind:keyof typeof omitted)=>{if(required>limit){omitted[kind]++;return false}append();if(addedContextTokens(render())>limit){remove();omitted[kind]++;return false}return true};
+ const fitsWireLimit=(text:string)=>input.fitLoreForDraftLength===undefined
+  || input.fitLoreForDraftLength+assembledPromptLength("",text)<=DEEPSEEK_PROMPT_CHAR_LIMIT;
+ const requiredLore=new Set(selection.entries);
+ let requiredText=render();
+ if(!fitsWireLimit(requiredText)){
+  // A one-turn retry can defer whole automatic entries. User-picked entries
+  // and all non-lore context still have their normal protection.
+  const priority={low:0,normal:1,high:2};
+  const allRequired=selection.entries;
+  const candidates=allRequired.filter(item=>!item.manuallySelected)
+   .map(item=>({item,relevance:scoreMemory(item.entry,search,tokens).score}))
+   .sort((a,b)=>priority[b.item.entry.priority]-priority[a.item.entry.priority]
+    ||b.relevance-a.relevance||b.item.entry.updatedAt-a.item.entry.updatedAt);
+  selection.entries=allRequired.filter(item=>item.manuallySelected);
+  if(fitsWireLimit(render())){
+   for(const {item} of candidates){
+    selection.entries.push(item);
+    if(!fitsWireLimit(render()))selection.entries.pop();
+   }
+   const kept=new Set(selection.entries);
+   selection.entries=allRequired.filter(item=>kept.has(item));
+   requiredText=render();
+  } else {
+   selection.entries=allRequired;
+  }
+ }
+ const required=addedContextTokens(requiredText);
+ const omitted={lore:requiredLore.size-selection.entries.length,profiles:0,facts:0,continuation:0};
+ const consider=(append:()=>void,remove:()=>void,kind:keyof typeof omitted)=>{
+  if(required>limit){omitted[kind]++;return false;}
+  append();
+  const text=render();
+  if(addedContextTokens(text)>limit||!fitsWireLimit(text)){remove();omitted[kind]++;return false;}
+  return true;
+ };
  // Small category rounds: no single huge optional profile can consume the
  // entire request before lore/facts. Exact full render decides every admission.
- const lore=pooled.selection.entries.filter(i=>!selection.entries.includes(i));
+ const lore=pooled.selection.entries.filter(i=>!requiredLore.has(i));
  const deferredLore:RankedMemory[]=[];
  const hasLoreAnchor=(memory:RankedMemory)=>!memory.reasons.includes("linked")
   || selection.entries.some(item=>item.entry.links?.some(link=>link.mode==="context"&&link.targetId===memory.entry.id)

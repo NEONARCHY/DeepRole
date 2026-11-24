@@ -666,6 +666,75 @@ async function pendingService(panel: Page) {
   });
 }
 
+for (const locale of ["ru", "en"] as const) test(`a blocked game turn can retry with less lore without changing the saved world (${locale})`, async () => {
+  const russian = locale === "ru";
+  const world = { id: "w", name: "Архив", description: "", color: "#58a6ff", contextBudget: 6900, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
+  const entries = Array.from({ length: 7 }, (_, index) => ({
+    ...entry(`archive-${index}`), worldId: world.id, title: `Книга ${index}`, activation: "always",
+    priority: index < 2 ? "low" : "high",
+    content: (`Том ${index}. Архивариус сверяет опись перед закрытием и отмечает номер полки. `).repeat(81),
+  }));
+  const memoryOverrides = { includedIds: [entries[0]!.id], excludedIds: [] };
+  const binding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: world.id, focusIds: [], bookId: null, memoryOverrides, createdAt: 1, updatedAt: 1 };
+  const { context, panel, chat } = await setup([["world", world], ["binding", binding], ...entries.map<[string, unknown]>(item => ["entry", item])], locale);
+  try {
+    const sent: string[] = [], draft = "Кто там?";
+    await context.route("https://chat.deepseek.com/api/v0/chat/completion", route => {
+      sent.push(route.request().postDataJSON().prompt);
+      return route.fulfill({ status: sent.at(-1)!.length <= DEEPSEEK_PROMPT_CHAR_LIMIT ? 200 : 413, json: {} });
+    });
+    await chat.evaluate(() => {
+      document.querySelector("form")!.addEventListener("submit", event => {
+        event.preventDefault();
+        const composer = document.querySelector("textarea")!;
+        const prompt = composer.value;
+        composer.value = "";
+        void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ chat_session_id: "a", prompt }) }).catch(() => undefined);
+      });
+    });
+    const composer = chat.getByRole("textbox", { name: "Message" });
+    const send = chat.getByRole("button", { name: "Send", exact: true });
+    await composer.fill(draft);
+    await send.press("Enter");
+    const notice = chat.getByRole("region", { name: russian ? "Сообщение не отправлено" : "Message not sent" });
+    await expect(notice.getByRole("alert")).toContainText(/40[,\s]000/);
+    expect(sent).toHaveLength(0);
+    await expect(composer).toHaveValue(draft);
+    const retryLabel = russian ? "Отправить с частью лора" : "Send with less lore";
+    const retry = notice.getByRole("button", { name: retryLabel });
+
+    await composer.fill("Другой черновик");
+    await retry.click();
+    await expect(composer).toHaveValue("Другой черновик");
+    expect(sent).toHaveLength(0);
+    await composer.fill(draft);
+
+    await chat.getByRole("button", { name: russian ? /^Контекст/ : /^Context/ }).click();
+    const memory = chat.getByRole("dialog", { name: russian ? "Подключённая память" : "Selected memory" });
+    await expect(memory).toContainText(russian ? "Повышение бюджета здесь не поможет" : "Raising this budget will not make it fit");
+    if (!russian) await chat.setViewportSize({ width: 360, height: 760 });
+    await expect(memory.locator(".dr-memory-budget-suggest")).toHaveCount(0);
+    await memory.getByRole("button", { name: retryLabel }).click();
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0]!.length).toBeLessThanOrEqual(DEEPSEEK_PROMPT_CHAR_LIMIT);
+    expect(sent[0]!.endsWith("\n\n[User message]\n" + draft)).toBe(true);
+    expect(sent[0]).toContain(entries[0]!.content);
+    expect(sent[0]).not.toContain(entries[1]!.content);
+    for (const entry of entries.slice(2)) expect(sent[0]).toContain(entry.content);
+    const rows = await databaseRecords(panel);
+    expect(rows.filter(row => row.kind === "entry").map(row => row.data)).toEqual(entries);
+    expect(rows.find(row => row.kind === "binding")?.data.memoryOverrides).toEqual(memoryOverrides);
+    expect(rows.find(row => row.kind === "world")?.data.contextBudget).toBe(6900);
+
+    await memory.getByRole("button", { name: russian ? "Закрыть" : "Close", exact: true }).click();
+    await expect(notice).toHaveCount(0);
+    await composer.fill("Что дальше?");
+    await send.press("Enter");
+    await expect(notice.getByRole("alert")).toContainText(/40[,\s]000/);
+    expect(sent).toHaveLength(1);
+  } finally { await context.close(); }
+});
+
 for (const draftAppears of [false, true]) {
   test(`oversized update lore ${draftAppears ? "preserves a draft typed between parts" : "sends the same data in parts and reviews once"}`, async () => {
     const world = { id: "w", name: "Harbor observatory", description: "", color: "#58a6ff", contextBudget: 6000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };

@@ -164,7 +164,7 @@ export default defineUnlistedScript(() => {
       window.postMessage({ source: SOURCE, type: story ? "STORY_HISTORY_RESULT" : "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
     }
   }
-  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string): Promise<FreshContext> {
+  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string, editing = false): Promise<FreshContext> {
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {
         pending.delete(id);
@@ -175,7 +175,7 @@ export default defineUnlistedScript(() => {
       // without one, keep ordinary chats' fail-open delay short. Never retry.
       }, contextHandshakeTimeoutMs(Boolean(document.documentElement.dataset.deeproleContext), document.documentElement.dataset.deeproleStoryGame === "active"));
       pending.set(id, (result) => { window.clearTimeout(timer); pending.delete(id); resolve(result); });
-      window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId, storyIdentity: storyIdentity ?? null, ...(captureTransport ? { captureTransport } : {}), ...(editNativeKey ? { editNativeKey } : {}) }, "*");
+      window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId, storyIdentity: storyIdentity ?? null, ...(captureTransport ? { captureTransport } : {}), ...(editing ? { editing, editNativeKey } : {}) }, "*");
     });
   }
   function status(ok: boolean, id?: string, url = location.href, httpStatus?: number, reason?: string, link?: NativeStoryRequestLink) {
@@ -256,7 +256,8 @@ export default defineUnlistedScript(() => {
     }
     if (isDeepRoleServiceBody(body)) return { ...unchanged, serviceId: deepRoleServiceRequestId(body) ?? undefined };
     if (continuationPaused()) return { ...unchanged, blocked: true };
-    const strict = document.documentElement.dataset.deeproleStrictMemory === "active";
+    const strict = document.documentElement.dataset.deeproleStrictMemory === "active"
+      || !editing && document.documentElement.dataset.deeproleLoreRetry === "active";
     const id = crypto.randomUUID(); let url = location.href;
     const captured = { ...unchanged, id, url, dispatch: captureDispatch(body, id) };
     const failed = (reason: string, mustBlock = false) => {
@@ -269,7 +270,7 @@ export default defineUnlistedScript(() => {
     const value = JSON.parse(body), editedId = value?.message_id;
     const editNativeKey = editing && !readStoryTransportIdentity(body) && outgoingChatId(body) && validNativeStoryId(typeof editedId === "number" && Number.isSafeInteger(editedId) ? String(editedId) : editedId) && typeof value.prompt === "string" ? nativeStoryMessageKey(String(editedId)) : undefined;
     const contextStartedAt = Date.now();
-    const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey);
+    const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey, editing);
     const context = contextResponse.context;
     if (contextResponse.blockSend || continuationPaused()) {
       captureRequests.delete(id); editPreparations.delete(id);

@@ -80,7 +80,7 @@ export interface WidgetState {
   locale: "ru" | "en";
   selection: ContextSelection;
   warning: string;
-  promptLength?: { length: number; url: string; draft?: string; restored?: boolean };
+  promptLength?: { length: number; url: string; draft?: string; restored?: boolean; canFitLore?: boolean };
   sendStorageFailure?: { url: string; draft: string };
   continuationDraft?: import("../../core/continuation-flow").ContinuationDraft & { url: string; returnChatId?: string };
   continuationChecking?: boolean;
@@ -98,6 +98,7 @@ export interface WidgetState {
 
 export function PageWidget(props: {
   onDismissPromptLength?: () => void;
+  onRetryPromptWithLessLore?: () => void;
   onDismissContinuationDraft?: () => void;
   onDismissSendStorageFailure?: () => void;
   onCheckContinuationDraft?: () => void;
@@ -153,6 +154,11 @@ export function PageWidget(props: {
   const [dismissedWarnings, setDismissedWarnings] = useState<ReadonlySet<string>>(() => new Set());
   const warningKey = JSON.stringify([props.state.warningChatId, props.state.scene?.worldId, props.state.warning]);
   const memoryDialogId = useId();
+  const promptLimit = props.state.promptLength;
+  const attachedLoreTooLong = !!promptLimit?.draft && promptLimit.draft.length < DEEPSEEK_PROMPT_CHAR_LIMIT;
+  const retryWithLessLore = props.onRetryPromptWithLessLore && <button type="button" onClick={props.onRetryPromptWithLessLore}>
+    {props.state.locale === "ru" ? "Отправить с частью лора" : "Send with less lore"}
+  </button>;
   const [adding, setAdding] = useState(false);
   const [attachQuery, setAttachQuery] = useState("");
   const [quick, setQuick] = useState(false);
@@ -336,7 +342,10 @@ export function PageWidget(props: {
       title={props.state.locale === "ru" ? "Не удалось сохранить реплику" : "Could not save your message"}
       detail={props.state.locale === "ru" ? "Сообщение не отправлено. Скопируйте исходную реплику ниже перед перезагрузкой или уходом: сейчас она сохранена только на этой странице. Затем попробуйте отправить снова." : "Message not sent. Copy the original message below before reloading or leaving: it is only kept on this page. Then try sending again."}
       original={props.state.sendStorageFailure.draft} onDismiss={props.onDismissSendStorageFailure} />}
-    {!props.state.vaultLocked && !props.state.sendStorageFailure && props.state.promptLength && <PromptLengthNotice key={props.state.promptLength.length} locale={props.state.locale} limit={props.state.promptLength} onDismiss={props.onDismissPromptLength} />}
+    {!props.state.vaultLocked && !props.state.sendStorageFailure && promptLimit && <PromptLengthNotice key={promptLimit.length} locale={props.state.locale} limit={promptLimit} onDismiss={props.onDismissPromptLength}
+      action={retryWithLessLore || (attachedLoreTooLong && <button type="button" onClick={() => { setOpen(true); setQuick(false); setReviewId(null); }}>
+        {props.state.locale === "ru" ? "Открыть память" : "Open memory"}
+      </button>)} />}
     {!props.state.vaultLocked && !props.state.sendStorageFailure && !props.state.promptLength && props.state.continuationDraft?.blockedLength && <PromptLengthNotice locale={props.state.locale} limit={{ length: props.state.continuationDraft.blockedLength, draft: props.state.continuationDraft.draft, url: props.state.continuationDraft.url }} onDismiss={props.onDismissContinuationDraft} />}
     {!props.state.vaultLocked && !props.state.sendStorageFailure && !props.state.promptLength && props.state.continuationDraft && !props.state.continuationDraft.blockedLength && <DraftSendNotice
       className="dr-continuation-draft" locale={props.state.locale} title={continuationText(props.state.locale, "unconfirmedTitle")}
@@ -415,7 +424,13 @@ export function PageWidget(props: {
       {(open || assistantOpen) && <>
       {!assistantOpen && <>
         <GameMemoryNotice locale={props.state.locale} coverage={props.state.selection.memoryCoverage} report={props.state.selection.contextReport}/>
-        {props.onSaveMemoryBudget && props.state.worlds?.filter(world => world.id === props.state.scene?.worldId).map(world => <MemoryBudgetEditor key={world.id} world={world} required={props.state.selection.contextReport?.required ?? 0} locale={props.state.locale} onSave={props.onSaveMemoryBudget!}/>)}
+        {attachedLoreTooLong && <div className="dr-game-memory-notice">
+          <p>{props.state.locale === "ru"
+            ? "Реплика с лором превысила лимит DeepSeek в 40 000 символов. Повышение бюджета здесь не поможет."
+            : "The message plus lore exceeds DeepSeek’s 40,000-character limit. Raising this budget will not make it fit."}</p>
+          {retryWithLessLore && <><p>{props.state.locale === "ru" ? "Для этой реплики можно временно пропустить часть записей с режимом «Всегда»." : "You can skip some lore set to Always for this message."}</p>{retryWithLessLore}</>}
+        </div>}
+        {props.onSaveMemoryBudget && props.state.worlds?.filter(world => world.id === props.state.scene?.worldId).map(world => <MemoryBudgetEditor key={world.id} world={world} required={props.state.selection.contextReport?.required ?? 0} locale={props.state.locale} onSave={props.onSaveMemoryBudget!} showSuggestion={!attachedLoreTooLong}/>)}
         <SectionGuide locale={props.state.locale} text={x("previewHint")} />
         {props.state.pendingHandoff && <p className="dr-inline-note">{experienceText(props.state.locale, "pendingRecap", { name: props.state.pendingHandoff })}</p>}
         <div className="dr-play-tools">{props.onQuickSave && <button onClick={() => { setQuick(!quick); setReviewId(null); }}>{at("remember")}</button>}<button disabled={analysisBlocked} onClick={props.onAnalyze}>{at("analyze")}</button>{props.state.analysisSuggested && <button onClick={props.onDismissSuggestion}>{t("later")}</button>}</div>
@@ -442,22 +457,24 @@ function clampPosition(position: { x: number; y: number }, width: number, height
   };
 }
 
-function PromptLengthNotice({ locale, limit, onDismiss }: {
+function PromptLengthNotice({ locale, limit, onDismiss, action }: {
   locale: WidgetState["locale"];
   limit: NonNullable<WidgetState["promptLength"]>;
   onDismiss?: () => void;
+  action?: React.ReactNode;
 }) {
   const format = new Intl.NumberFormat(locale === "ru" ? "ru-RU" : "en-US");
   const used = format.format(limit.length), max = format.format(DEEPSEEK_PROMPT_CHAR_LIMIT);
   const title = locale === "ru" ? "Сообщение не отправлено" : "Message not sent";
   const detail = locale === "ru"
-    ? `${used} из ${max} символов с учётом памяти. Сократите реплику или объём подключённого лора.`
-    : `${used} of ${max} characters including memory. Shorten the message or reduce the attached lore.`;
-  return <DraftSendNotice className="dr-prompt-limit" locale={locale} title={title} detail={detail} original={limit.draft} onDismiss={onDismiss} />;
+    ? `${used} из ${max} символов с учётом памяти. ${limit.canFitLore ? "Часть записей «Всегда» можно пропустить на один ход." : "Сократите реплику или объём подключённого лора."}`
+    : `${used} of ${max} characters including memory. ${limit.canFitLore ? "Some lore set to Always can be skipped for this turn." : "Shorten the message or reduce the attached lore."}`;
+  return <DraftSendNotice className="dr-prompt-limit" locale={locale} title={title} detail={detail} original={limit.draft} onDismiss={onDismiss} action={action} />;
 }
 
-function DraftSendNotice({ className, locale, title, detail, original, onDismiss, returnChatId, onCheck, checking }: {
+function DraftSendNotice({ className, locale, title, detail, original, onDismiss, returnChatId, onCheck, checking, action }: {
   className: string; locale: WidgetState["locale"]; title: string; detail: string; original?: string; onDismiss?: () => void; returnChatId?: string; onCheck?: () => void; checking?: boolean;
+  action?: React.ReactNode;
 }) {
   const draft = locale === "ru" ? "Исходная реплика" : "Original message";
   return <section className={`dr-send-notice ${className}`} aria-label={title}>
@@ -465,6 +482,7 @@ function DraftSendNotice({ className, locale, title, detail, original, onDismiss
     {original && <details><summary>{draft}</summary><textarea rows={4} value={original} readOnly aria-label={draft} /></details>}
     {returnChatId && <a className="dr-button" href={`https://chat.deepseek.com/a/chat/s/${encodeURIComponent(returnChatId)}`}>{continuationText(locale, "returnMessage")}</a>}
     {onCheck && <button type="button" onClick={onCheck} disabled={checking}>{continuationText(locale, checking ? "checkingReply" : "checkReply")}</button>}
+    {action}
     {onDismiss && <button type="button" onClick={onDismiss}>{returnChatId ? continuationText(locale, "cancelRecovery") : locale === "ru" ? "Закрыть" : "Close"}</button>}
   </section>;
 }

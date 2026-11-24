@@ -171,6 +171,7 @@ export default defineContentScript({
 });
 
 interface PageScope { url: string; chatId: string | null }
+interface LoreLengthRetry { id: string; scope: PageScope; scopeKey: string; draft: string; armedUntil?: number }
 interface ContextDelivery {
   oldChatNotice?: OldChatNoticeEdit;
   recoveredReply?: RecoveredReplyEdit;
@@ -274,6 +275,7 @@ class PageController {
   private attemptedContinuationCommit: string | null = null;
   private readonly checkedContinuationHistory = new Set<string>();
   private readonly deliveries = new Map<string, ContextDelivery>();
+  private loreLengthRetry?: LoreLengthRetry;
   private readonly searchIndex = new GameSearchIndex();
   private readonly malformedServiceReplies = new Map<string, { text: string; stableSince: number }>();
   private readonly failedServiceIds = new Set<string>();
@@ -737,6 +739,7 @@ class PageController {
     this.pendingContinuationCommit = null; this.state.continuationCommitPending = false;
     this.transferQueue = null;
     this.deliveries.clear(); this.proposals = []; this.changes = []; this.pendingService = null;
+    this.clearLoreLengthRetry(); this.state.promptLength = undefined;
     this.serviceFeedback = null;
     this.state.pendingHandoff = undefined;
     this.state.continuationDraft = undefined;
@@ -940,7 +943,7 @@ class PageController {
     void browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
   }
 
-  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string, requestChatId?: string, requiredContext?: string, opening = false) {
+  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string, requestChatId?: string, requiredContext?: string, opening = false, fitLore = false) {
     this.state.oldChatNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
     const scene = this.currentScene();
     const world = this.worlds.find((w) => w.id === scene.worldId);
@@ -989,7 +992,11 @@ class PageController {
       restart: !!recentGame?.restartPending && !this.pendingService,
       choices: choicesEnabled && !this.pendingService,
       requiredContext,
+      ...(fitLore ? { fitLoreForDraftLength: draft.length } : {}),
     },{searchIndex:this.searchIndex,memoryTransport:"columns"},coverage=>{memoryCoverage=coverage;});
+    // A reduced retry belongs only to this network request. The live preview
+    // and all future messages still reflect the user's saved selection.
+    if (fitLore) return compiled.text;
     this.selection = {...compiled.selection,memoryCoverage}; this.documents = compiled.documents;
     this.state.pendingHandoff = this.pendingContinuationCommit ? undefined : snapshot?.title;
     const memoryText = compiled.memoryText;
@@ -1195,7 +1202,9 @@ class PageController {
       onDiscard={async (id) => { if (this.state.continuation?.proposalId === id) await this.cancelContinuation(); const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "discard", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); this.state.reviewProposalId = null; await this.reload(); }}
       onReviewClose={() => { this.state.reviewProposalId = null; }}
       onUndo={async (id) => { const result = await browser.runtime.sendMessage({ type: "DR_REVIEW_MEMORY", operation: "undo", id } satisfies DeepRoleMessage); if (!result?.ok) throw new Error("memory-conflict"); await this.reload(); }}
-      onDismissPromptLength={() => { this.state.promptLength = undefined; if (this.state.continuationDraft?.blockedLength) void this.dismissContinuationDraft(); else this.render(); }}
+      onDismissPromptLength={() => { this.clearLoreLengthRetry(); this.state.promptLength = undefined; if (this.state.continuationDraft?.blockedLength) void this.dismissContinuationDraft(); else this.render(); }}
+      onRetryPromptWithLessLore={this.state.promptLength?.canFitLore && this.loreLengthRetry && !this.loreLengthRetry.armedUntil
+        ? () => this.retryPromptWithLessLore() : undefined}
       onDismissContinuationDraft={() => { void this.dismissContinuationDraft(); }}
       onDismissSendStorageFailure={() => { this.state.sendStorageFailure = undefined; this.render(); }}
       onCheckContinuationDraft={() => { void this.recoverContinuationFromHistory(); }}
@@ -2458,12 +2467,42 @@ class PageController {
     this.historyWasGenerating = false;
     this.serviceFeedback = null;
     this.state.warning = "";
-    if (this.state.promptLength?.url !== location.href) this.state.promptLength = undefined;
+    if (this.state.promptLength?.url !== location.href) { this.state.promptLength = undefined; this.clearLoreLengthRetry(); }
     if (this.state.continuationDraft?.url !== location.href) this.state.continuationDraft = undefined;
     if (this.state.sendStorageFailure?.url !== location.href) this.state.sendStorageFailure = undefined;
     this.lastUrl = location.href;
     this.navigationTask = this.navigationTask.catch(() => undefined).then(() => this.handleNavigation());
     void this.navigationTask.catch(() => { this.publishContext(""); });
+  }
+
+  private clearLoreLengthRetry() {
+    this.loreLengthRetry = undefined;
+    delete document.documentElement.dataset.deeproleLoreRetry;
+  }
+
+  private retryPromptWithLessLore() {
+    const retry = this.loreLengthRetry, draft = this.adapter.getDraft();
+    if (!retry || retry.armedUntil || !this.state.promptLength?.canFitLore || this.state.vaultLocked
+      || retry.scope.url !== location.href || retry.scope.chatId !== this.adapter.getChatId() || retry.scopeKey !== this.contextScopeKey()
+      || this.adapter.isGenerating() || this.pendingService || this.preparingService || (draft && draft !== retry.draft)) {
+      this.showToast(this.state.locale === "ru" ? "Проверьте текущую реплику и попробуйте снова." : "Check your current message and try again.");
+      return;
+    }
+    retry.armedUntil = Date.now() + 5000;
+    document.documentElement.dataset.deeproleLoreRetry = "active";
+    const disarm = () => {
+      if (this.loreLengthRetry !== retry) return;
+      retry.armedUntil = undefined;
+      delete document.documentElement.dataset.deeproleLoreRetry;
+      this.render();
+    };
+    if ((!draft && !this.adapter.setDraft(retry.draft)) || !this.adapter.submitDraft()) {
+      disarm();
+      this.showToast(this.state.locale === "ru" ? "Не удалось повторить отправку. Попробуйте ещё раз." : "Could not retry the message. Try again.");
+      return;
+    }
+    this.render();
+    window.setTimeout(disarm, 5000);
   }
 
   private handleBridgeMessage(event: MessageEvent) {
@@ -2478,7 +2517,8 @@ class PageController {
       // DeepSeek can clear the composer before its network call. Preserve a
       // draft typed in the meantime and offer the blocked text for copying.
       if (draft !== null && !this.adapter.getDraft()) this.adapter.setDraft(draft);
-      this.state.promptLength = { length, url, draft: draft ?? undefined, restored: draft !== null && this.adapter.getDraft() === draft };
+      this.state.promptLength = { length, url, draft: draft ?? undefined, restored: draft !== null && this.adapter.getDraft() === draft,
+        ...(this.loreLengthRetry?.id === id && this.loreLengthRetry?.draft === draft ? { canFitLore: true } : {}) };
       this.render(); return;
     }
     if (event.data.type === "STRICT_MEMORY_BLOCKED") {
@@ -2520,7 +2560,10 @@ class PageController {
       void this.failedService(event.data.id).catch(() => undefined); return;
     }
     if (event.data.type === "REQUEST_CONTEXT" && typeof event.data.id === "string" && typeof event.data.draft === "string" && event.data.draft.length <= 100000) {
-      if (this.state.promptLength && (!this.state.promptLength.draft || this.state.promptLength.restored)) this.state.promptLength = undefined;
+      const loreRetry = this.loreLengthRetry?.armedUntil && this.loreLengthRetry.armedUntil >= Date.now()
+        && this.loreLengthRetry.draft === event.data.draft && !event.data.editing ? this.loreLengthRetry : undefined;
+      this.clearLoreLengthRetry();
+      if (!loreRetry && this.state.promptLength && (!this.state.promptLength.draft || this.state.promptLength.restored)) this.state.promptLength = undefined;
       if (this.state.continuationDraft?.blockedLength) this.state.continuationDraft = undefined;
       this.pickedSceneChoice = null;
       this.scheduleHistoryRefresh(12_000);
@@ -2664,7 +2707,7 @@ class PageController {
           scope: this.pageScope(), scopeKey: sceneKey,
           snapshot,
           originalDraft: snapshot ? initialDraft : undefined,
-          promptLengthNotice: snapshot ? this.state.promptLength : undefined,
+          promptLengthNotice: snapshot || loreRetry ? this.state.promptLength : undefined,
           storageFailureNotice: snapshot ? this.state.sendStorageFailure : undefined,
           snapshotToken: this.snapshotToken, createdAt: Date.now(),
         };
@@ -2683,7 +2726,10 @@ class PageController {
           && storyIdentity?.nativeParentKey === null && storyIdentity.chatId === openingBinding.chatId && firstStoryTurnView(draft)
           && openingBinding.nextStoryMessageMode !== "out-of-character" && !explicitOutOfCharacter(draft, openingWorld.bracketedOoc === true)
           && (event.data.captureTransport === "xhr" || event.data.captureTransport === "fetch");
-        const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext, opening);
+        const canFitLore = Boolean(scene.worldId && currentChatId && currentChatId === requestChatId && !event.data.editing
+          && !opening && !requiresTransfer && !snapshot && !recoveryContext && !reminder && !this.pendingService);
+        if (loreRetry && (!canFitLore || loreRetry.scope.url !== url || loreRetry.scope.chatId !== currentChatId || loreRetry.scopeKey !== sceneKey || loreRetry.draft !== draft)) throw new Error("context-changed");
+        const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext, opening, Boolean(loreRetry));
         const context = reminder || normalContext;
         if (reminder && notice) delivery.oldChatNotice = { chatId: currentChatId!, chatUrl: url, worldId: scene.worldId, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "sent" };
         if (reply && recoveryContext && !reminder) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
@@ -2693,6 +2739,10 @@ class PageController {
         if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
         const oversizedLength = assembledPromptLength(draft, context);
         if (oversizedLength > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+          if (!loreRetry && canFitLore && draft === initialDraft && draft.trim() && draft.length < DEEPSEEK_PROMPT_CHAR_LIMIT
+            && this.selection.entries.some(item => item.entry.activation === "always" && !item.manuallySelected)) {
+            this.loreLengthRetry = { id, scope: delivery.scope, scopeKey: sceneKey, draft };
+          }
           await this.retainContinuationTarget(delivery, true);
           if (snapshot?.savedMemory && delivery.originalDraft && delivery.snapshotToken && delivery.targetChatId) {
             const recovery: ContinuationDraft = { snapshotId: snapshot.id, snapshotToken: delivery.snapshotToken, targetChatId: delivery.targetChatId, draft: delivery.originalDraft, blockedLength: oversizedLength };
@@ -2755,7 +2805,7 @@ class PageController {
         if (error instanceof Error && error.message.startsWith("story-")) { this.state.warning = storyReviewText(this.state.locale, storyReviewError(error)); this.render(); }
         const incompatible = isBackgroundBuildFailure(error);
         if (incompatible) this.showToast(savedMemoryText(this.state.locale).transferMismatch);
-        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible }, location.origin);
+        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible || Boolean(loreRetry) }, location.origin);
       });
       return;
     }
@@ -2787,6 +2837,7 @@ class PageController {
       }
     }
     if (event.data.ok && delivery) {
+      if (delivery.promptLengthNotice === this.state.promptLength) this.state.promptLength = undefined;
       if (delivery.oldChatNotice) {
         const edit = delivery.oldChatNotice;
         this.oldChatNoticeReceiptTask = this.oldChatNoticeReceiptTask.then(() => repository.acknowledgeOldChatNotice(edit))

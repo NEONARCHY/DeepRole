@@ -2,9 +2,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { Locale, WorldProfile } from "../../core/types";
 import { gameMemoryCoverageText } from "../../core/game-memory-coverage-i18n";
 
-export function MemoryBudgetEditor({ world, required, locale, onSave }: {
+export function MemoryBudgetEditor({ world, required, locale, onSave, showSuggestion = true }: {
   world: WorldProfile; required: number; locale: Locale;
   onSave: (budget: number, expected: WorldProfile) => Promise<void>;
+  showSuggestion?: boolean;
 }) {
   const t = gameMemoryCoverageText(locale), id = useId();
   const [base, setBase] = useState(world.contextBudget);
@@ -36,7 +37,7 @@ export function MemoryBudgetEditor({ world, required, locale, onSave }: {
       <input id={id} type="number" min={500} max={16000} step={1} required disabled={busy} value={draft} aria-describedby={id + "-hint"} onChange={event => { setDraft(event.target.value); setStatus(null); }} />
       <button type="submit" disabled={busy || !valid || changedElsewhere || value === world.contextBudget}>{busy ? t.budgetSaving : t.budgetSave}</button>
     </div>
-    {suggested > world.contextBudget && <button className="dr-memory-budget-suggest" type="button" disabled={busy} onClick={() => { setDraft(String(suggested)); setStatus(null); }}>{t.budgetSuggest.replace("{count}", new Intl.NumberFormat(locale).format(suggested))}</button>}
+    {showSuggestion && suggested > world.contextBudget && <button className="dr-memory-budget-suggest" type="button" disabled={busy} onClick={() => { setDraft(String(suggested)); setStatus(null); }}>{t.budgetSuggest.replace("{count}", new Intl.NumberFormat(locale).format(suggested))}</button>}
     <small id={id + "-hint"}>{t.budgetHelp}</small>
     {(changedElsewhere || status === "conflict") && <p role="alert">{t.budgetConflict} <button type="button" disabled={busy} onClick={() => { setBase(world.contextBudget); setDraft(String(world.contextBudget)); setStatus(null); }}>{t.budgetReload}</button></p>}
     {status === "saved" && !changedElsewhere && <p role="status">{t.budgetSaved}</p>}
