@@ -12,7 +12,7 @@ export function validFieldServicePresentation(value: unknown): value is FieldSer
 }
 export const fieldServiceScreenCopy = (locale: Locale) => ({
  ru: {
-  title: "Подготовка поля", request: "Запрос", response: "DeepSeek", generic: "Подготовь поле персонажа",
+   title: "Подготовка поля", request: "Задача", response: "Ход подготовки", generic: "Подготовь поле персонажа",
   brief: (field: string, name: string) => `Сгенерируй описание поля «${field}» персонажа «${name}»`,
   hint: "Можно свернуть это окно, но не закрывать. После очистки оно закроется, а текст появится в карточке персонажа.",
   privacy: "Технический запрос, ответ и размышления скрыты в этом окне.", cancel: "Отменить запрос", reveal: "Открыть интерфейс DeepSeek",
@@ -21,7 +21,7 @@ export const fieldServiceScreenCopy = (locale: Locale) => ({
   stages: { opening: "Открываем служебный чат", preparing: "Подготавливаем выдержки и запрос", reading: "Передаём выдержки", sending: "Отправляем запрос", waiting: "Ожидаем ответ", thinking: "Размышляю", generating: "Генерирую описание", validating: "Проверяем ответ", repairing: "Исправляем формат ответа", cleanup: "Удаляем временный чат", done: "Готово", failed: "Подготовка остановлена", "cleanup-failed": "Нужна проверка временного чата" },
  },
  en: {
-  title: "Preparing a field", request: "Request", response: "DeepSeek", generic: "Prepare a character field",
+   title: "Preparing a field", request: "Task", response: "Progress", generic: "Prepare a character field",
   brief: (field: string, name: string) => `Generate a description for “${field}” for the character “${name}”`,
   hint: "You can minimize this window, but do not close it. It will close after cleanup, and the text will appear in the character profile.",
   privacy: "The technical request, reply and reasoning are hidden in this window.", cancel: "Cancel request", reveal: "Open DeepSeek interface",

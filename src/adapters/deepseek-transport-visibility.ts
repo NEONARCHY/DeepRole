@@ -1,4 +1,4 @@
-import { REASONING } from "./deepseek-message-dom";
+import { NATIVE_TURN, REASONING, isUserMessage } from "./deepseek-message-dom";
 
 export const TRANSPORT_FRAGMENT = "[data-deeprole-choices-payload]";
 export const TRANSPORT_VIEW = "[data-deeprole-payload-view]";
@@ -6,6 +6,7 @@ export const TRANSPORT_SOURCE = "[data-deeprole-payload-source]";
 export const TRANSPORT_CONTAINER = "[data-deeprole-transport-container]";
 const RESULT = "[data-deeprole-characters-result]";
 const SKIP = `${REASONING}, ${RESULT}, ${TRANSPORT_VIEW}, button, [role=button], [role=toolbar], script, style`;
+const OWNED = `${TRANSPORT_VIEW}, ${RESULT}, [data-deeprole-choices-host], [data-deeprole-choices-loading], [data-deeprole-choices-recovery]`;
 const SAFE_MARKDOWN = "div,p,span,pre,code,em,strong,b,i,s,del,u,small,sub,sup,kbd,mark,blockquote,ul,ol,li,h1,h2,h3,h4,h5,h6,br,hr,table,thead,tbody,tfoot,tr,th,td";
 type Kind = "choices" | "characters";
 type Block = { kind: Kind; start: number; end: number; complete: boolean };
@@ -17,6 +18,13 @@ const results = new WeakMap<HTMLElement, { details: HTMLDetailsElement; payload:
 
 export function hasTransportView(element: HTMLElement): boolean {
   return !!projections.get(element)?.getClientRects().length;
+}
+
+export function clearDetachedTransportViews(root: ParentNode): void {
+  for (const view of root.querySelectorAll<HTMLElement>(TRANSPORT_VIEW)) {
+    const source = view.nextSibling;
+    if (!(source instanceof HTMLElement) || projections.get(source) !== view) view.remove();
+  }
 }
 
 export function transportResult(source: HTMLElement): HTMLDetailsElement | undefined {
@@ -39,6 +47,38 @@ export function readTransportSource(source: HTMLElement) {
   return { text, parts };
 }
 
+function partialTransport(text: string): Block | undefined {
+  const suffix = /<deeprole(?:_[a-z]*)?$/u.exec(text);
+  if (!suffix) return;
+  const kind = (["characters", "choices"] as const).find(value => `<deeprole_${value}>`.startsWith(suffix[0]));
+  if (kind) return { kind, start: suffix.index, end: text.length, complete: false };
+}
+
+export function hasTransportMarker(text: string): boolean {
+  return /<deeprole_(?:characters|choices)\b/u.test(text) || !!partialTransport(text);
+}
+
+/** Markdown can split one marker across nodes, then append marker-free chunks. */
+export function transportChanged(changes: MutationRecord[]): boolean {
+  const sources = new Set<HTMLElement>();
+  const elementFor = (node: Node) => node instanceof HTMLElement ? node : node.parentElement;
+  for (const change of changes) {
+    if ([...change.removedNodes].some(node => node instanceof HTMLElement
+      && (node.matches(TRANSPORT_SOURCE) || node.querySelector(TRANSPORT_SOURCE)))) return true;
+    const touched = [...change.addedNodes, ...change.removedNodes];
+    if (touched.length && touched.every(node => elementFor(node)?.closest(OWNED))) continue;
+    for (const node of [change.target, ...change.addedNodes]) {
+      const element = elementFor(node);
+      if (!element || element.closest(`${SKIP}, ${OWNED}, deeprole-page-widget, form, [contenteditable=true]`)) continue;
+      const source = element.closest<HTMLElement>(".ds-markdown") ?? element.closest<HTMLElement>(NATIVE_TURN);
+      if (source) {
+        if (!isUserMessage(source)) sources.add(source);
+      } else if (node !== change.target && hasTransportMarker(element.textContent ?? "")) return true;
+    }
+  }
+  return [...sources].some(source => hasManagedTransport(source) || hasTransportMarker(source.textContent ?? ""));
+}
+
 function transportBlocks(text: string): Block[] {
   const blocks: Block[] = [];
   for (const marker of text.matchAll(/<deeprole_(characters|choices)\b/gu)) {
@@ -49,6 +89,8 @@ function transportBlocks(text: string): Block[] {
     const index = text.indexOf(close, start + marker[0].length);
     blocks.push({ kind, start, end: index < 0 ? text.length : index + close.length, complete: index >= 0 });
   }
+  const partial = partialTransport(text);
+  if (partial && partial.start >= (blocks.at(-1)?.end ?? 0)) blocks.push(partial);
   return blocks;
 }
 
@@ -78,10 +120,18 @@ function proseView(element: HTMLElement, markup: HTMLElement) {
   const doc = element.ownerDocument;
   const host = doc.createElement("span");
   host.dataset.deeprolePayloadView = "true";
-  host.style.display = /^(SPAN|EM|STRONG|B|I|S|DEL|U|SMALL|SUB|SUP|KBD|MARK|CODE)$/u.test(element.tagName) ? "inline" : "block";
+  const computed = doc.defaultView?.getComputedStyle(element);
+  const inline = /^(SPAN|EM|STRONG|B|I|S|DEL|U|SMALL|SUB|SUP|KBD|MARK|CODE)$/u.test(element.tagName);
+  host.style.display = computed?.display && computed.display !== "none" ? computed.display : inline ? "inline" : "block";
+  // The original paragraph can carry native Markdown margins and line height.
+  // Move these to the projection host so replacing it does not move the chat.
+  for (const property of ["margin-block-start", "margin-block-end", "margin-inline-start", "margin-inline-end", "font-family", "font-size", "font-style", "font-weight", "line-height", "white-space", "letter-spacing"]) {
+    const value = computed?.getPropertyValue(property);
+    if (value) host.style.setProperty(property, value);
+  }
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = "p{margin:0 0 .75em}p:last-child{margin-bottom:0}pre,code{white-space:pre-wrap;overflow-wrap:anywhere}table{max-width:100%}:host{overflow-wrap:anywhere}";
+  style.textContent = "p{margin:0 0 .75em}p:last-child{margin-bottom:0}pre,code{white-space:pre-wrap;overflow-wrap:anywhere}table{max-width:100%}style+*{margin:0;font:inherit;white-space:inherit}:host{overflow-wrap:anywhere}";
   shadow.append(style, markup);
   return host;
 }
@@ -124,16 +174,30 @@ export function syncTransportVisibility(source: HTMLElement, enabled = true) {
       const parent = part.node.parentElement!;
       covered.set(parent, kind);
     }
-    // Handle outer text parents first. A projection already accounts for all
-    // affected descendants in the same element.
-    const parents = [...covered].sort(([a], [b]) => a.contains(b) ? -1 : b.contains(a) ? 1 : 0);
+    const visibleParents = new Set<HTMLElement>();
+    for (const part of parts) {
+      if (!(visibleText.get(part.node) ?? part.node.data).trim()) continue;
+      for (let parent = part.node.parentElement; parent && !visibleParents.has(parent); parent = parent.parentElement) {
+        visibleParents.add(parent);
+        if (parent === source) break;
+      }
+    }
+    const safe = (element: HTMLElement) => (element === source || element.matches(SAFE_MARKDOWN))
+      && [...element.querySelectorAll("*")].every(node => node.closest(`${RESULT}, ${TRANSPORT_VIEW}`)
+        || node.matches(SAFE_MARKDOWN) && !node.matches(SKIP));
+    const containers = new Map<HTMLElement, Kind>();
+    for (const [parent, kind] of covered) {
+      let element = parent;
+      // A transport-only paragraph must not leave blank margins around its
+      // hidden Markdown spans. Keep mixed prose in its original container.
+      while (element !== source && element.parentElement && !visibleParents.has(element.parentElement)
+        && !element.parentElement.querySelector("hr") && safe(element.parentElement)) element = element.parentElement;
+      if (!containers.has(element)) containers.set(element, kind);
+    }
+    const parents = [...containers].sort(([a], [b]) => a.contains(b) ? -1 : b.contains(a) ? 1 : 0);
     for (const [element, kind] of parents) {
       if ([...next.keys()].some(parent => parent.contains(element))) continue;
-      // Preserve interactive native content and media. A mixed container with
-      // those elements cannot safely be replaced by an inert prose view.
-      if (element !== source && !element.matches(SAFE_MARKDOWN)) continue;
-      const descendants = [...element.querySelectorAll("*")].filter(node => !node.closest(`${RESULT}, ${TRANSPORT_VIEW}`));
-      if (descendants.some(node => !node.matches(SAFE_MARKDOWN) || node.matches(SKIP))) continue;
+      if (!safe(element)) continue;
       const doc = element.ownerDocument;
       function copy(node: Node): Node | undefined {
         if (node.nodeType === Node.TEXT_NODE) {

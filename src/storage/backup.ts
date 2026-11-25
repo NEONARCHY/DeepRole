@@ -86,7 +86,7 @@ export async function restoreBackup(
     const incoming = incomingRecords.filter((r) => !keys.has(`${r.kind}:${r.id}`));
     assertStoryGraph([...existing, ...incoming]);
     assertDispatchCaptureGraph([...existing, ...incoming]);
-    return { records: incoming, removed: [], result: undefined };
+    return { records: incoming, removed: [], result: undefined, restoreGameHistory: true };
   },undefined,undefined,payload.photos);
 }
 

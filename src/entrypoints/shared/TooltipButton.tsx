@@ -5,6 +5,23 @@ type Props = Omit<ComponentPropsWithoutRef<"button">, "title" | "aria-label"> & 
 type Phase = "idle" | "pending" | "open";
 let dismissActive: (() => void) | undefined;
 
+export function tooltipPosition(anchor: HTMLElement, tooltip: HTMLElement) {
+  const window = anchor.ownerDocument.defaultView!;
+  const button = anchor.getBoundingClientRect();
+  const bounds = tooltip.getBoundingClientRect();
+  const below = button.bottom + 6;
+  const top = below + bounds.height <= window.innerHeight - 8 ? below : button.top - bounds.height - 6;
+  return {
+    x: Math.max(8, Math.min(button.left, window.innerWidth - bounds.width - 8)),
+    y: Math.max(8, Math.min(top, window.innerHeight - bounds.height - 8)),
+  };
+}
+
+export function tooltipContainer(button: HTMLElement | null) {
+  const root = button?.getRootNode();
+  return button?.closest("dialog[open]") ?? (root instanceof ShadowRoot ? root : document.body);
+}
+
 /** Help belongs to the action itself; never adds a second focusable control. */
 export function TooltipButton({ tooltip, nativeTooltip = false, "aria-label": label, onMouseEnter, onMouseLeave, onFocus, onBlur, onPointerDown, onClick, onKeyDown, ...props }: Props) {
   const button = useRef<HTMLButtonElement>(null);
@@ -72,14 +89,9 @@ export function TooltipButton({ tooltip, nativeTooltip = false, "aria-label": la
   }, [phase, hide]);
   useLayoutEffect(() => {
     if (phase !== "open" || !button.current || !tip.current) return;
-    const anchor = button.current.getBoundingClientRect();
-    const bounds = tip.current.getBoundingClientRect();
-    const below = anchor.bottom + 6;
-    const top = below + bounds.height <= window.innerHeight - 8 ? below : anchor.top - bounds.height - 6;
-    setPosition({ x: Math.max(8, Math.min(anchor.left, window.innerWidth - bounds.width - 8)), y: Math.max(8, Math.min(top, window.innerHeight - bounds.height - 8)) });
+    setPosition(tooltipPosition(button.current, tip.current));
   }, [phase, label, tooltip]);
 
-  const root = button.current?.getRootNode();
   return <>
     <button {...props} ref={button} type={props.type ?? "button"} aria-label={label} title={nativeTooltip ? [label, tooltip].filter(Boolean).join("\n") : undefined} aria-description={props["aria-description"] ?? (nativeTooltip ? tooltip : undefined)} aria-describedby={[props["aria-describedby"], phase === "open" ? id : undefined].filter(Boolean).join(" ") || undefined}
       onMouseEnter={(event) => { show(); onMouseEnter?.(event); }}
@@ -94,6 +106,6 @@ export function TooltipButton({ tooltip, nativeTooltip = false, "aria-label": la
       onMouseEnter={() => { overTip.current = true; cancelTimer(); }} onMouseLeave={() => { overTip.current = false; leave(); }}
       onPointerDown={(event) => event.stopPropagation()}>
       <strong>{label}</strong>{tooltip && <p>{tooltip}</p>}
-    </div>, root instanceof ShadowRoot ? root : document.body)}
+    </div>, tooltipContainer(button.current))}
   </>;
 }

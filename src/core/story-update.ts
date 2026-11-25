@@ -20,6 +20,35 @@ const string = (v: unknown, max: number) => typeof v === "string" && v.length <=
 const describe = (v: unknown) => typeof v === "string" ? `string(${v.length})` : Array.isArray(v) ? `array(${v.length})` : v === null ? "null" : typeof v;
 /** Keep source whitespace EXACT. Removing transport is not paraphrasing it. */
 export const storyReplyProse = (text: string) => text.replace(/<deeprole_[^>]*>[\s\S]*?<\/deeprole_[^>]*>/gu, "").replace(/<deeprole_[^>]*>[\s\S]*$/gu, "");
+const plainQuotationMarks = (value: string) => value.replace(/[“”«»]/gu, '"').replace(/[‘’]/gu, "'");
+const factSentences = new Intl.Segmenter("en", { granularity: "sentence" });
+
+function factStatementAt(narrative: string, start: number, length: number): string | null {
+  const sentence = factSentences.segment(narrative).containing(start);
+  if (!sentence || start + length > sentence.index + sentence.segment.length) return null;
+  const quote = sentence.segment.trim().replace(/^[*_]{1,3}|[*_]{1,3}$/gu, "");
+  return quote.length <= 500 && !/[?\r\n]/u.test(quote) && /(?<!\.)\.["'»”’)]*$/u.test(quote) ? quote : null;
+}
+
+function anchoredFactSentence(anchor: unknown, narrative: string): string | null {
+  if (typeof anchor !== "string" || anchor.length < 12 || anchor.length > 160 || /[\r\n]/u.test(anchor)
+      || !/^[\p{L}\p{N}].*[\p{L}\p{N}]$/u.test(anchor) || (anchor.match(/[\p{L}\p{N}]+/gu)?.length ?? 0) < 3) return null;
+  const start = narrative.indexOf(anchor);
+  if (start < 0 || narrative.indexOf(anchor, start + 1) >= 0) return null;
+  const before = narrative.slice(0, start).match(/[\p{L}\p{N}]$/u), end = start + anchor.length;
+  if (before || /^[\p{L}\p{N}]/u.test(narrative.slice(end))) return null;
+  return factStatementAt(narrative, start, anchor.length);
+}
+
+/** Allows the original sentence to serve as the fact if a model's separate
+ * summary cannot be supported. A partial clause cannot stand in for it. */
+export function isWholeStoryFactStatement(quote: string, reply: string): boolean {
+  const prose = storyReplyProse(reply), start = prose.indexOf(quote);
+  if (start < 0 || prose.indexOf(quote, start + 1) >= 0) return false;
+  const sentence = factStatementAt(prose, start, quote.length);
+  const withoutOuterQuotes = (value: string) => value.replace(/^["'«“‘]|["'»”’]$/gu, "");
+  return sentence !== null && withoutOuterQuotes(sentence) === withoutOuterQuotes(quote);
+}
 export function validStoryFact(v: unknown): v is StoryFact {
   return obj(v) && Object.keys(v).every(k => ["text", "kind", "quote", "claim", "task", "replaces"].includes(k)) && ["text", "kind", "quote"].every(k => Object.hasOwn(v, k))
     && string(v.text, 1200) && !!(v.text as string).trim() && string(v.quote, 2400) && !!(v.quote as string).trim() && ["event", "promise", "plan", "belief", "secret", "task"].includes(String(v.kind))
@@ -149,12 +178,39 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
     Object.assign(turn, { [key]: items });
   }
   const facts: StoryFact[] = [], narrative = storyReplyProse(text);
+  let plainNarrative: string | undefined;
   if (raw.facts !== undefined) {
     if (!Array.isArray(raw.facts) || raw.facts.length > 8) issue("facts", "limit", raw.facts);
-    else for (const [index, item] of raw.facts.entries()) {
-      const fact = obj(item) && Object.hasOwn(item, "risk") ? Object.fromEntries(Object.entries(item).filter(([k]) => k !== "risk")) : item;
+    else for (const [index, proposed] of raw.facts.entries()) {
+      let wire = proposed;
+      if (obj(proposed) && Object.hasOwn(proposed, "anchor")) {
+        const { anchor, kind, risk, ...extra } = proposed;
+        if (kind !== "event" || Object.keys(extra).length || !["ordinary", "uncertain", "conflict"].some(value => value === risk)) {
+          issue(`facts[${index}]`, "schema", proposed);
+          continue;
+        }
+        const quote = anchoredFactSentence(anchor, narrative);
+        if (!quote) { issue(`facts[${index}]`, "quote", anchor); continue; }
+        wire = { kind, risk, quote };
+      }
+      // A standalone quote is both the fact and its evidence. Keep the full
+      // evidence checks and the existing stored StoryFact format.
+      const item = obj(wire) && wire.text === undefined && wire.claim === undefined && wire.task === undefined && typeof wire.quote === "string"
+        ? { ...wire, text: wire.quote } : wire;
+      let fact = obj(item) && Object.hasOwn(item, "risk") ? Object.fromEntries(Object.entries(item).filter(([k]) => k !== "risk")) : item;
       if (!validStoryFact(fact) || fact.replaces !== undefined) { issue(`facts[${index}]`, "schema", fact); continue; }
+      if (!narrative.includes(fact.quote)) {
+        // Resolve quote marks only, then store the actual source substring.
+        // Each replacement is one UTF-16 code unit, so offsets stay exact.
+        plainNarrative ??= plainQuotationMarks(narrative);
+        const plainQuote = plainQuotationMarks(fact.quote), start = plainNarrative.indexOf(plainQuote);
+        if (start >= 0 && plainNarrative.indexOf(plainQuote, start + 1) < 0) {
+          const quote = narrative.slice(start, start + plainQuote.length);
+          fact = { ...fact, quote, text: fact.text === fact.quote ? quote : fact.text };
+        }
+      }
       if (!text.includes(fact.quote) || !narrative.includes(fact.quote) || !gameTimeEvidence(fact, narrative)) { issue(`facts[${index}]`, "quote", fact.quote); continue; }
+      raw.facts[index] = { ...item as Record<string, unknown>, ...fact };
       if (!facts.some(f => storyFactIdentity(f) === storyFactIdentity(fact) && f.quote === fact.quote)) facts.push(structuredClone(fact));
     }
   }

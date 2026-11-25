@@ -191,7 +191,7 @@ export class DeepRoleRepository {
   /** Pure transform of the current library under one cross-window write lock.
    * Do not call repository methods inside the transform (they acquire this lock).
    */
-  async updateRecords<T>(transform: (current: DataRecord[]) => { records: DataRecord[]; removed: { kind: RecordKind; id: string }[]; result: T; deleteOrphanedPhotos?: boolean }, finish?: () => Promise<void>, readKinds?: RecordKind[], photos?: import("../core/portable-photos").PortablePhoto[]): Promise<T> {
+  async updateRecords<T>(transform: (current: DataRecord[]) => { records: DataRecord[]; removed: { kind: RecordKind; id: string }[]; result: T; deleteOrphanedPhotos?: boolean; restoreGameHistory?: true }, finish?: () => Promise<void>, readKinds?: RecordKind[], photos?: import("../core/portable-photos").PortablePhoto[]): Promise<T> {
     return withLibraryLock("exclusive", async () => {
       await this.requireUnlocked();
       if (readKinds?.some(k => ["binding", "story", "entity"].includes(k))) readKinds = [...new Set([...readKinds, "world", "binding", "story", "entity"])] as RecordKind[];
@@ -205,7 +205,8 @@ export class DeepRoleRepository {
         stored.push(...linked);current.push(...await Promise.all(linked.map(async row=>({kind:row.kind,id:row.id,data:await this.decode<RecordValue>(row)}))));
       }
       const plan = transform(current);
-      plan.records = sharedGameCommit(current, plan.records, plan.removed);
+      // Validated backups can include historical projections from inactive chats.
+      if (!plan.restoreGameHistory) plan.records = sharedGameCommit(current, plan.records, plan.removed);
       if (readKinds && [...plan.records, ...plan.removed].some(row => !readKinds!.includes(row.kind))) throw new Error("repository-scope");
       const config = await getVaultConfig();
       await this.stagePortablePhotos(photos);

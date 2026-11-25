@@ -1,3 +1,4 @@
+import { CHAT_HOME } from "../core/chat-host";
 import { browser, type Browser } from "wxt/browser";
 import { isSameDeepSeekChat } from "../core/chat-scope";
 import { currentChatUrl } from "../core/old-chat-notice";
@@ -20,7 +21,7 @@ async function focusOrCreate(chatId: string, source?: Browser.tabs.Tab) {
   const matches = (tab: Browser.tabs.Tab) => !("hidden" in tab && tab.hidden === true)
     && Boolean(tab.incognito) === Boolean(source?.incognito)
     && isSameDeepSeekChat(tab.url ?? "", tab.pendingUrl ?? tab.url ?? "", chatId);
-  const tabs = (await browser.tabs.query({ url: "https://chat.deepseek.com/*", windowType: "normal" })).filter(matches);
+  const tabs = (await browser.tabs.query({ url: `${CHAT_HOME}*`, windowType: "normal" })).filter(matches);
   tabs.sort((a, b) => Number(b.windowId === source?.windowId) - Number(a.windowId === source?.windowId));
   for (const tab of tabs) {
     if (tab.id === undefined) continue;

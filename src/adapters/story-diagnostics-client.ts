@@ -1,3 +1,4 @@
+import { CHAT_ORIGIN } from "../core/chat-host";
 import { diagnosticUnavailable, readStoryDiagnosticResult, type StoryDiagnosticResult } from "../core/story-diagnostics";
 import { validNativeStoryId } from "../core/story-transport";
 import { fieldHistoryAnchor } from "./field-history-client";
@@ -47,7 +48,7 @@ interface DiagnosticTabs {
 }
 export function isDiagnosticChatUrl(value: unknown): boolean {
   if (typeof value !== "string") return false;
-  try { const url = new URL(value); return url.origin === "https://chat.deepseek.com" && !url.username && !url.password && /^\/(?:a\/)?chat\/(?:s\/)?[\w-]{1,160}\/?$/u.test(url.pathname); } catch { return false; }
+  try { const url = new URL(value); return url.origin === CHAT_ORIGIN && !url.username && !url.password && /^\/(?:a\/)?chat\/(?:s\/)?[\w-]{1,160}\/?$/u.test(url.pathname); } catch { return false; }
 }
 /** Route only to the active chat; discard a result if the user switched tabs or URL. */
 export async function checkActiveStoryDiagnostics(tabs: DiagnosticTabs): Promise<StoryDiagnosticResult> {

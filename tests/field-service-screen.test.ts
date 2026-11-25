@@ -41,10 +41,10 @@ it("masks native prompt, reasoning and reply while preserving native DOM/layout 
  expect(document.body.hasAttribute("aria-hidden")).toBe(false); expect(document.querySelector("main")!.getAttribute("aria-hidden")).toBe("true"); expect(getComputedStyle(document.body).opacity).toBe("0"); expect(getComputedStyle(document.body).display).not.toBe("none"); expect(getComputedStyle(document.body).visibility).not.toBe("hidden");
  value.dispose(); expect(document.body.hasAttribute("aria-hidden")).toBe(false); expect(document.body.textContent).toContain("PRIVATE_REASONING"); expect(document.querySelector("deeprole-field-screen")).toBeNull();
 });
-it("treats names as inert text, renders only local labels, and honors reduced motion", () => {
+it("treats names as inert text and renders only local labels", () => {
  const value = screen(); const name = '<img src=x onerror="alert(1)">'; value.configure({ locale: "ru", fieldLabel: "Внешность", characterName: name }, vi.fn());
  expect(value.host.shadowRoot!.querySelector(".brief")!.textContent).toContain(name); expect(value.host.shadowRoot!.querySelector("img")).toBeNull();
- expect(value.host.lang).toBe("ru"); expect(value.host.shadowRoot!.querySelector("style")!.textContent).toContain("prefers-reduced-motion:reduce");
+ expect(value.host.lang).toBe("ru");
 });
 it("allows exactly one cancel click, keeps cleanup masked, then offers explicit inspection on failure", () => {
  const value = screen(), cancel = vi.fn(); value.configure({ locale: "en", fieldLabel: "Goals", characterName: "Mira" }, cancel);
@@ -88,6 +88,12 @@ it.each(["ru", "en"] as const)("shows roster-specific copy, never field/name or 
  const value = new FieldServiceScreen(document, locale, "cast"); mounted.push(value);
  value.configure({ locale, fieldLabel: "PRIVATE_FIELD", characterName: "PRIVATE_NAME" }, vi.fn());
  const t = castServiceScreenCopy(locale); expect(value.host.shadowRoot!.querySelector(".brief")!.textContent).toBe(t.generic);
+ const progress = value.host.shadowRoot!.querySelector<HTMLElement>('[role="progressbar"]')!;
+ expect(progress.hasAttribute("aria-valuenow")).toBe(false);
+ value.setCastProgress(2, 4);
+ expect(progress.getAttribute("aria-valuenow")).toBe("2");
+ expect(progress.getAttribute("aria-valuemax")).toBe("4");
+ expect(progress.style.getPropertyValue("--service-progress")).toBe("50%");
  expect(value.host.shadowRoot!.textContent).not.toMatch(/PRIVATE_|карточке персонажа|character profile/u);
  for (const stage of ["reading", "generating", "repairing", "done"] as const) { value.update(stage); expect(value.host.shadowRoot!.querySelector(".status")!.textContent).toBe(t.stages[stage]); }
 });

@@ -1,0 +1,255 @@
+.desktop-play-tools {
+  position: relative;
+  z-index: var(--desktop-panel-layer);
+  grid-column: 1;
+  grid-row: 2 / span 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  color: var(--dr-text);
+  background: var(--dr-panel);
+  border-radius: 0 var(--desktop-panel) 0 0;
+}
+
+.desktop-play-tools[hidden],
+.desktop-play-tools-section[hidden] { display: none; }
+
+.desktop-play-tools > .desktop-context-reading {
+  margin: 0 var(--dr-layout-inset) var(--dr-layout-inset);
+}
+.desktop-play-tools:not(:has([data-section=memory][aria-pressed=true])) > .desktop-context-reading { display: none; }
+
+.desktop-play-tools-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--dr-layout-label);
+  padding: var(--dr-layout-row) var(--dr-layout-inset) 0;
+}
+.desktop-play-tools-heading h2 { margin: 0; font-size: 16px; font-weight: 730; }
+
+#desktop-play-tools-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline: var(--dr-layout-inset);
+  scrollbar-color: var(--dr-raised) transparent;
+  scrollbar-width: thin;
+  font-size: 13px;
+}
+
+.desktop-play-tools-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--dr-layout-row);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: var(--dr-layout-row) var(--dr-layout-label);
+  background: var(--dr-panel);
+}
+
+.desktop-play-tools-tabs button,
+.desktop-play-tools-switch,
+.desktop-play-tools-library {
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--desktop-control);
+  background: transparent;
+  color: var(--dr-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--dr-layout-label);
+  padding: var(--dr-layout-label);
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  transition: background-color var(--desktop-transition), color var(--desktop-transition);
+}
+.desktop-play-tools-tabs button { justify-content: center; }
+.desktop-play-tools :is(.desktop-play-tools-tabs button, .desktop-play-tools-switch, .desktop-play-tools-library):hover {
+  background: var(--dr-raised);
+  color: var(--dr-text);
+}
+.desktop-play-tools-tabs button[aria-pressed=true] { background: var(--dr-selected); color: var(--dr-focus); }
+.desktop-play-tools-notice { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--dr-warning); }
+.desktop-play-tools :is(button, select, input, summary):focus-visible { outline: 2px solid var(--dr-focus); outline-offset: -2px; }
+.desktop-play-tools :is(.desktop-play-tools-tabs, .desktop-play-tools-switch, .desktop-play-tools-library) svg { flex: none; }
+
+.desktop-play-tools-section {
+  display: grid;
+  gap: var(--dr-layout-gap);
+  min-width: 0;
+  padding-block: var(--dr-layout-label) var(--dr-layout-inset);
+}
+.desktop-play-tools-section > * { min-width: 0; }
+
+.desktop-app:has(#desktop-play-tools [data-needs-attention]) .desktop-panel-toggle[aria-expanded=false] { position: relative; }
+.desktop-app:has(#desktop-play-tools [data-needs-attention]) .desktop-panel-toggle[aria-expanded=false]::after {
+  content: "";
+  position: absolute;
+  inset: 7px 7px auto auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dr-focus);
+  pointer-events: none;
+}
+
+.desktop-play-tools .dr-cast-setup.is-game-panel {
+  padding: 0;
+  background: transparent;
+}
+.desktop-play-tools .is-game-panel .dr-cast-status,
+.desktop-play-tools .dr-reset-status {
+  margin: 0;
+  padding: var(--dr-layout-gap);
+  border-radius: var(--desktop-control);
+  background: var(--dr-surface);
+  overflow-wrap: anywhere;
+}
+.desktop-play-tools .is-game-panel .dr-cast-trigger {
+  justify-content: flex-start;
+  padding-inline: var(--dr-layout-gap);
+  background: var(--dr-surface);
+}
+.desktop-play-tools .is-game-panel .dr-cast-trigger:hover:not(:disabled) { background: var(--dr-raised); }
+
+.desktop-play-tools-switch, .desktop-play-tools-library {
+  width: 100%;
+  justify-content: flex-start;
+  background: var(--dr-surface);
+  color: var(--dr-text);
+  text-align: start;
+}
+.desktop-play-tools-switch i {
+  position: relative;
+  flex: none;
+  margin-inline-start: auto;
+  width: 30px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--dr-raised);
+  color: var(--dr-muted);
+  transition: background-color var(--desktop-transition);
+}
+.desktop-play-tools-switch i::before {
+  content: "";
+  position: absolute;
+  inset: 3px auto auto 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+  transition: translate var(--desktop-transition);
+}
+.desktop-play-tools-switch[aria-checked=true] i { color: var(--dr-on-action); background: var(--dr-action); }
+.desktop-play-tools-switch[aria-checked=true] i::before { translate: 12px; }
+.desktop-play-tools-library > span { flex: 1; }
+.desktop-play-tools-library small { display: block; color: var(--dr-muted); }
+
+.desktop-play-tools .dr-world-scene {
+  background: transparent;
+  border: 0;
+}
+.desktop-play-tools .dr-world-scene .scene-controls.is-compact { padding: 0; }
+.desktop-play-tools .dr-world-scene .scene-controls-line { gap: var(--dr-layout-label); }
+.desktop-play-tools .dr-world-scene .scene-world select {
+  border-radius: var(--desktop-control);
+  background-color: var(--dr-surface);
+  font: inherit;
+  font-weight: 680;
+}
+.desktop-play-tools .scene-focus-toggle {
+  padding-inline: var(--dr-layout-gap);
+  background-color: var(--dr-surface);
+  border-radius: var(--desktop-control);
+}
+.desktop-play-tools .scene-focus-panel {
+  max-height: none;
+  overflow: visible;
+  border: 0;
+  gap: var(--dr-layout-label);
+}
+.desktop-play-tools .scene-chip { min-height: 32px; border: 0; background: var(--dr-surface); }
+.desktop-play-tools .scene-chip:has(input:checked) { background: var(--dr-selected); color: var(--dr-focus); }
+.desktop-play-tools-section .dr-meter-transfer {
+  min-height: 44px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--desktop-control);
+  background: var(--dr-surface);
+  color: var(--dr-text);
+  font-size: 13px;
+}
+.desktop-play-tools-section .dr-meter-transfer:hover:not(:disabled) { background: var(--dr-raised); }
+
+.desktop-play-tools .dr-characters {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--dr-layout-row) 0 0;
+  border: 0;
+  background: none;
+  font-family: var(--desktop-font);
+}
+.desktop-play-tools .dr-characters header > strong { font-size: 14px; overflow-wrap: anywhere; }
+.desktop-play-tools .dr-character-cast-view { background: var(--dr-surface); margin-bottom: var(--dr-layout-label); }
+.desktop-play-tools .dr-character-list { max-height: none; overflow: visible; }
+.desktop-play-tools .dr-character-person { background: transparent; }
+.desktop-play-tools .dr-character-person .dr-character-row {
+  min-height: 52px;
+  padding: var(--dr-layout-label);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 45%);
+  align-items: center;
+  gap: var(--dr-layout-label);
+  border-radius: var(--desktop-control);
+}
+.desktop-play-tools .dr-character-row-action {
+  max-width: none;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-align: end;
+  text-overflow: ellipsis;
+}
+
+.desktop-play-tools :is(.dr-chat-meter, .dr-memory-control, .dr-pill) {
+  width: 100%;
+  max-width: none;
+  background: var(--dr-surface);
+  border: 0;
+  box-shadow: none;
+  border-radius: var(--desktop-control);
+}
+.desktop-play-tools .dr-pill {
+  min-height: 44px;
+  padding: var(--dr-layout-label) var(--dr-layout-gap);
+  text-align: start;
+  cursor: pointer;
+  font-size: 13px;
+}
+.desktop-play-tools .dr-pill:hover { background: var(--dr-raised); transform: none; }
+.desktop-play-tools .dr-pill > svg { flex: none; color: var(--dr-muted); }
+.desktop-play-tools .dr-memory-label { flex: 1; }
+.desktop-play-tools .dr-chat-meter-heading > :is(span, strong) { font-size: 12px; }
+
+.desktop-main[data-game-docked=true]:has(> .desktop-play-tools:not([hidden])) { --desktop-tools: 284px; }
+body:has(.desktop-app[data-overlay]) > [data-deeprole-portrait-layer],
+body:has(.desktop-app[data-overlay]) [data-deeprole-choices-pinned=true] { visibility: hidden; }
+.desktop-main[data-game-docked=false] > .desktop-play-tools {
+  position: absolute;
+  grid-area: auto;
+  inset: var(--desktop-header) auto 0 0;
+  width: min(320px, 100%);
+  border-radius: 0 var(--desktop-panel) var(--desktop-panel) 0;
+  box-shadow: var(--dr-depth-dialog);
+  animation: desktop-fade var(--desktop-reveal) var(--dr-ease-out);
+}
+@media (forced-colors: active) {
+  .desktop-play-tools-switch[aria-checked=true] i { forced-color-adjust: none; color: HighlightText; background: Highlight; }
+  .desktop-play-tools-tabs button[aria-pressed=true] { outline: 1px solid Highlight; }
+}

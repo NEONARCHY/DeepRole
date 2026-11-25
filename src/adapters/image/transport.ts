@@ -2,6 +2,7 @@ import { IMAGE_RESPONSE_HEADERS, validExtraParams, validImageProviderConfig, obj
 import { dataImageBlob, MAX_IMAGE_RESPONSE_BYTES, normalizeImage } from "./image-codec";
 import type { ImageCopyKey } from "../../core/image-i18n";
 import { providerDiagnostic, type ImageDiagnostic } from "../../core/image-diagnostics";
+import { IS_DESKTOP } from "../../core/chat-host";
 export class ImageApiError extends Error {
   constructor(public readonly code: ImageCopyKey, public readonly headers: ImageResponseHeaders = {}, public readonly downloadUrl?: string, public readonly ticketId?: string, public readonly diagnostic?: ImageDiagnostic) { super(code); }
 }
@@ -27,7 +28,7 @@ export function requestBody(config: ImageProviderConfig, input: GenerateInput, s
   return { ...params, model: config.modelId, prompt: input.prompt, ...(input.seed === undefined ? {} : { seed: input.seed }), ...sizing, ...service };
 }
 export class ImageTransport {
-  constructor(readonly config: ImageProviderConfig, private readonly key: string, private readonly permitted: ImagePermissionCheck, private readonly normalizer = normalizeImage, private readonly timeoutMs = 120_000) {}
+  constructor(readonly config: ImageProviderConfig, private readonly key: string, private readonly permitted: ImagePermissionCheck, private readonly normalizer = normalizeImage, private readonly timeoutMs = 120_000, private readonly chatId?: string) {}
   async request(path: string, body?: Record<string, unknown>): Promise<Response> {
     if (!validImageProviderConfig(this.config)) throw new ImageApiError("invalid");
     if (!this.config.enabled) throw new ImageApiError("disabled");
@@ -38,7 +39,10 @@ export class ImageTransport {
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), this.timeoutMs);
     const base: ImageDiagnostic = { source: "provider", phase: path.startsWith("/models") ? "models" : "request", endpoint: path.split("?")[0], ...(typeof (body?.model ?? body?.modelId) === "string" ? { model: String(body?.model ?? body?.modelId).slice(0, 200) } : {}) };
     try {
-      const response = await fetch(url, { method: body ? "POST" : "GET", headers: { Authorization: `Bearer ${this.key}`, ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}), redirect: "error", credentials: "omit", referrerPolicy: "no-referrer", signal: controller.signal });
+      const headers: Record<string, string> = { Authorization: `Bearer ${this.key}` };
+      if (body) headers["Content-Type"] = "application/json";
+      if (IS_DESKTOP && body && this.chatId) headers["X-DeepRole-Usage-Chat"] = this.chatId;
+      const response = await fetch(url, { method: body ? "POST" : "GET", headers, ...(body ? { body: JSON.stringify(body) } : {}), redirect: "error", credentials: "omit", referrerPolicy: "no-referrer", signal: controller.signal });
       if (!response.ok) {
         const code: ImageCopyKey = ({ 400: "badRequest", 401: "unauthorized", 402: "balance", 403: "forbidden", 404: "notFound", 413: "payloadLarge", 415: "unsupported", 429: "rate", 500: "server", 503: "unavailable" } as Record<number, ImageCopyKey>)[response.status] ?? "failed";
         let diagnostic: ImageDiagnostic = { ...base, status: response.status };
@@ -67,6 +71,12 @@ export class ImageTransport {
     if (type && ["image/png", "image/jpeg", "image/webp"].includes(type)) blob = await response.blob();
     else if (type === "application/json") {
       const json: unknown = await response.json(); if (!object(json)) throw new ImageApiError("unsupported", headers);
+      if (IS_DESKTOP && typeof json.id === "string") {
+        const record = response.headers.get("x-deeprole-usage-id");
+        if (record) void fetch("/__desktop/image-receipt", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ record, requestId: json.id }),
+        }).catch(() => undefined);
+      }
       const value = extract(json);
       if (typeof value !== "string") throw new ImageApiError("unsupported", headers);
       if (value.startsWith("https://")) {

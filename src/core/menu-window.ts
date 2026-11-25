@@ -1,8 +1,9 @@
+import { CHAT_ORIGIN } from "./chat-host";
 /** A detached menu stays with one tab and one chat, never with the last focused window. */
 export function menuChatKey(value: string): string | null {
   try {
     const url = new URL(value);
-    if (url.origin !== "https://chat.deepseek.com") return null;
+    if (url.origin !== CHAT_ORIGIN) return null;
     if (url.pathname === "/") return "home";
     const chat = url.pathname.match(/^\/(?:a\/)?chat\/(?:s\/)?([^/]+)\/?$/)?.[1];
     return chat ? `chat:${chat}` : null;

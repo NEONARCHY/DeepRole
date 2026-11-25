@@ -1,4 +1,4 @@
-:host{font:14px/1.5 system-ui,sans-serif;color:var(--dr-text)}
+:host{font:14px/1.5 var(--desktop-font,system-ui,sans-serif);color:var(--dr-text)}
 dialog{box-sizing:border-box;width:min(1120px,calc(100vw - 32px));height:min(900px,calc(100dvh - 32px));max-width:none;max-height:none;padding:0;border:1px solid var(--dr-border-strong);border-radius:16px;background:var(--dr-panel);color:var(--dr-text);box-shadow:var(--dr-depth-dialog);overflow:hidden}
 dialog[open]{display:grid;grid-template-rows:auto minmax(0,1fr) auto}
 dialog::backdrop{background:#080c11d9}

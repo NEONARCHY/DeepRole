@@ -1,3 +1,4 @@
+import { CHAT_HOME, CHAT_ORIGIN } from "./chat-host";
 const validId = (id: unknown): id is string => typeof id === "string" && /^[\w-]{1,120}$/u.test(id) && id !== "s";
 
 export function castChatId(pathname: unknown): string | undefined {
@@ -11,7 +12,7 @@ export function castChatReference(value: unknown): { id: string; url: string } |
  if (typeof value !== "string" || value.length > 2048) return;
  try {
   const url = new URL(value);
-  if (url.origin !== "https://chat.deepseek.com" || url.username || url.password) return;
+  if (url.origin !== CHAT_ORIGIN || url.username || url.password) return;
   const id = castChatId(url.pathname);
   if (!id) return;
   return { id, url: url.origin + url.pathname };
@@ -26,5 +27,5 @@ export function castChatLink(chatId?: string, savedUrl?: string): string | undef
  }
  // Old jobs stored only the ID. Use the same native route as chat continuation;
  // a missing/invalid ID never falls back to DeepSeek's new-chat page.
- return "https://chat.deepseek.com/a/chat/s/" + chatId;
+ return `${CHAT_HOME}a/chat/s/` + chatId;
 }

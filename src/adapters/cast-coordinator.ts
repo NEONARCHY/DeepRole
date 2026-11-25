@@ -1,3 +1,4 @@
+import { CHAT_HOME, CHAT_ORIGIN, IS_DESKTOP } from "../core/chat-host";
 import { browser } from "wxt/browser";
 import { nativeStartLane } from "./native-start-lane";
 import { FIELD_OWNERS_KEY } from "../core/isolated-character-text";
@@ -145,19 +146,19 @@ export class CastCoordinator {
   private async closeCleanedTab(own: Ownership) {
     if (!await this.owner(own.id, own.tabId)) return;
     const latest = await this.api.tabs.get(own.tabId).catch(() => undefined);
-    if (latest?.url && new URL(latest.url).origin === "https://chat.deepseek.com" && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
+    if (latest?.url && new URL(latest.url).origin === CHAT_ORIGIN && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
   }
   private async trusted(message: CastMessage, sender: { id?: string; url?: string; tab?: { id?: number }; frameId?: number }) {
     if (sender.id !== this.api.runtime.id) throw new Error("untrusted");
     if (message.type === "DR_CAST_WORKER") {
       if (sender.frameId !== undefined && sender.frameId !== 0) throw new Error("unowned-tab");
       const owners = await this.owners(), own = owners.find(o => o.tabId === sender.tab?.id && (!("id" in message) || !message.id || o.id === message.id));
-      if (!own || !sender.url?.startsWith("https://chat.deepseek.com/")) throw new Error("unowned-tab");
+      if (!own || !sender.url?.startsWith(CHAT_HOME)) throw new Error("unowned-tab");
       const tab = await this.api.tabs.get(own.tabId);
-      if (!tab.url?.startsWith("https://chat.deepseek.com/")) throw new Error("unowned-tab");
+      if (!tab.url?.startsWith(CHAT_HOME)) throw new Error("unowned-tab");
       return own;
     }
-    if (!sender.url?.startsWith(this.api.runtime.getURL("")) && !sender.url?.startsWith("https://chat.deepseek.com/")) throw new Error("untrusted");
+    if (!sender.url?.startsWith(this.api.runtime.getURL("")) && !sender.url?.startsWith(CHAT_HOME)) throw new Error("untrusted");
     return undefined;
   }
   async handle(message: CastMessage, sender: { id?: string; url?: string; tab?: { id?: number }; frameId?: number }): Promise<unknown> {
@@ -193,7 +194,7 @@ export class CastCoordinator {
         if (!job) {
           if (message.action === "cleaned" && message.ok && !currentId && (!message.chatId || message.chatId === own.chatId) && await this.owner(own.id, own.tabId)) {
             const latest = await this.api.tabs.get(own.tabId).catch(() => undefined);
-            if (latest?.url && new URL(latest.url).origin === "https://chat.deepseek.com" && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
+            if (latest?.url && new URL(latest.url).origin === CHAT_ORIGIN && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
             return { ok: true };
           }
           throw new Error("job-missing");
@@ -258,11 +259,11 @@ export class CastCoordinator {
           if (job.cleanup === "done" && message.ok) { await this.closeCleanedTab(own); return { ok: true }; }
           await this.audit(await mutateCastJob(job.id, j => {
             if (j.cleanup === "done") throw new Error("cleanup-finished");
-            return { ...(active(j) ? interruptedCastJob(j, "interrupted") : j), cleanup: message.ok ? "done" : "failed" };
+            return { ...(active(j) ? interruptedCastJob(j, "interrupted") : j), awaiting: false, cleanup: message.ok ? "done" : "failed" };
           }, this.repo));
           if (message.ok && await this.owner(job.id, own.tabId)) {
             const latest = await this.api.tabs.get(own.tabId).catch(() => undefined);
-            if (latest?.url && new URL(latest.url).origin === "https://chat.deepseek.com" && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
+            if (latest?.url && new URL(latest.url).origin === CHAT_ORIGIN && new URL(latest.url).pathname === "/") await this.api.tabs.remove(own.tabId);
           }
           if (message.ok && job.phase === "ready" && job.large && job.large.stage !== "done") {
             try {
@@ -317,7 +318,12 @@ export class CastCoordinator {
         await this.changeOwners(owners => owners.filter(o => o.id !== message.id));
         return { ok: true, job: castView(job) };
       }
-      if (message.action === "cancel") await this.audit(await mutateCastJob(message.id, j => ({ ...j, phase: "cancelled", awaiting: false, replyCheckpoint: undefined }), this.repo));
+      if (message.action === "cancel") await this.audit(await mutateCastJob(message.id, j => ({
+        ...j, phase: "cancelled", replyCheckpoint: undefined,
+        // A desktop request can already be dispatched while its first message
+        // is still rendering. Keep its binding reservation for cleanup only.
+        awaiting: IS_DESKTOP && j.awaiting && !j.chatId,
+      }), this.repo));
       const owner = await this.owner(message.id);
       if (owner) await this.api.tabs.sendMessage(owner.tabId, { type: "DR_CAST_RETRY_CLEANUP" });
       else if (message.action === "cleanup") throw new Error("cleanup-unavailable");
@@ -350,7 +356,7 @@ export class CastCoordinator {
       const snapshot=await this.repo.get<import("../core/types").HandoffSnapshot>("snapshot",snapshotId),world=snapshot?.worldId?await this.repo.get<WorldProfile>("world",snapshot.worldId):null;
       if(!snapshot?.resetGameId||world?.sharedGame?.id!==snapshot.resetGameId||!snapshot.appliedAt&&world.sharedGame.revision!==snapshot.sharedGameRevision)throw Error("reset-stale");
       const key="deeprole_reset_chat_"+snapshot.id,oldId=(await this.api.storage.session.get(key))[key] as number|undefined,old=oldId===undefined?undefined:await this.api.tabs.get(oldId).catch(()=>undefined);
-      const target=snapshot.appliedAt?"https://chat.deepseek.com/a/chat/s/"+encodeURIComponent(world.sharedGame.activeChatId):"https://chat.deepseek.com/";
+      const target=snapshot.appliedAt?`${CHAT_HOME}a/chat/s/`+encodeURIComponent(world.sharedGame.activeChatId):CHAT_HOME;
       if(old?.id!==undefined&&old.url===target){await this.api.tabs.update(old.id,{active:true});return;}
       if(snapshot.appliedAt){await this.api.tabs.create({url:target,active:true});return;}
       const tab=await this.api.tabs.create({url:"about:blank",active:false});if(tab.id===undefined)throw Error("tab-unavailable");
@@ -380,12 +386,12 @@ export class CastCoordinator {
     try { await beginCastServiceOperation({ id: job.id, worldId: job.worldId, createdAt: job.createdAt }, this.repo); this.knownAudits.add(job.id); }
     catch { await mutateCastJob(job.id, j => ({ ...j, phase: "error", error: "interrupted", cleanup: "none" }), this.repo).catch(() => undefined); throw new Error("interrupted"); }
     let tabId: number | undefined;
-    const workerUrl = "https://chat.deepseek.com/?deeprole_cast_job=" + encodeURIComponent(job.id) + "&deeprole_cast_locale=" + locale + (job.reset ? "&deeprole_cast_mode=reset" : "");
+    const workerUrl = `${CHAT_HOME}?deeprole_cast_job=` + encodeURIComponent(job.id) + "&deeprole_cast_locale=" + locale + (job.reset ? "&deeprole_cast_mode=reset" : "");
     try {
       const source = sourceTabId === undefined ? await this.api.windows.getLastFocused().catch(() => undefined) : await this.api.tabs.get(sourceTabId).catch(() => undefined);
       const incognito = job.incognito ?? !!source?.incognito;
       await mutateCastJob(job.id, j => ({ ...j, incognito }), this.repo);
-      const window = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito });
+      const window = await this.api.windows.create({ url: "about:blank", type: "popup", focused: !IS_DESKTOP, width: 520, height: 720, incognito });
       tabId = window?.tabs?.[0]?.id;
       if (tabId === undefined) throw new Error("tab-unavailable");
       await this.setOwner({ id: job.id, tabId, audit: castServiceProgress(job) });

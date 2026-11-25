@@ -11,7 +11,7 @@ for (const locale of ["ru", "en"] as const) test("selfie collections persist in 
   });
   const imageTitle = locale === "ru" ? "Открыть изображение: Mira" : "Open image: Mira";
   const viewer = page.locator("[data-deeprole-photo-viewer] dialog");
-  await page.locator(".dr-cast-widget[data-character-id=mira] img").click();
+  await page.locator(".dr-cast-widget[data-character-id=mira] img[data-current][data-viewable=true]").click();
   await expect(viewer).toBeVisible(); await page.keyboard.press("Escape");
   await page.getByRole("button", { name: locale === "ru" ? "Открыть галерею персонажей" : "Open character gallery" }).click();
   await page.locator(".dr-character-gallery-card img[alt=Mira]").click();

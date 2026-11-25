@@ -1,4 +1,4 @@
-import { isSameDeepSeekChat } from "./chat-scope";
+import { isSavedChatSource } from "./chat-scope";
 import type { ChatBinding, Locale, WorldProfile } from "./types";
 
 export interface SavedMemorySource {
@@ -15,7 +15,7 @@ export function savedMemoryBinding(world: WorldProfile, bindings: ChatBinding[])
   const game = world.sharedGame;
   const eligible = bindings.filter(binding => binding.worldId === world.id
     && (!game || (binding.id === game.activeBindingId && binding.chatId === game.activeChatId))
-    && isSameDeepSeekChat(binding.chatUrl, binding.chatUrl, binding.chatId));
+    && isSavedChatSource(binding.chatUrl, binding.chatId));
   return eligible.length === 1 ? eligible[0] : undefined;
 }
 

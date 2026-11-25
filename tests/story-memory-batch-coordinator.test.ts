@@ -19,9 +19,10 @@ async function fixture(){
  const bind=async(id:string)=>{expect(await w(id,"sent")).toMatchObject({ok:true});tabs.set(2,{id:2,url:"https://chat.deepseek.com/chat/s/owned",active:true});expect(await w(id,"bound",{chatId:"owned"})).toMatchObject({ok:true})};
  return {...f,api,tabs,coordinator,run,w,start,reply,bind,setIdle:(value:boolean)=>{idle=value}};
 }
-it("uses one masked owned popup, commits then cleans and acknowledges without leaking source text",async()=>{
+it("commits with the source unfocused, then cleans and acknowledges without leaking source text",async()=>{
  const f=await fixture(),id=await f.start();expect(f.api.windows.create).toHaveBeenCalledWith(expect.objectContaining({type:"popup",focused:true,width:520}));
  expect((await f.w(id,"claim")).presentation.kind).toBe("memory");expect(JSON.stringify(await browser.storage.session.get())).not.toContain("Room");await f.bind(id);
+ f.tabs.set(1,{...f.tabs.get(1),active:false});
  expect(await f.w(id,"reply",{chatId:"owned",raw:await f.reply(id)})).toMatchObject({ok:true});expect((await f.world()).sharedGame!.facts).toHaveLength(1);
  await f.run({type:"DR_FIELD",action:"cancel",id});expect(await f.repo.get("service",id)).toMatchObject({phase:"result",error:null});
  expect(await f.run({type:"DR_FIELD",action:"read",id})).toEqual({ok:true});f.tabs.set(2,{id:2,url:"https://chat.deepseek.com/",active:true});expect(await f.w(id,"cleaned",{chatId:"owned",ok:true})).toMatchObject({ok:true});

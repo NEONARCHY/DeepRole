@@ -27,27 +27,6 @@
   font-size: 14px;
 }
 
-/* Extension pages follow the system. The chat's isolated widgets keep their own palette. */
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --dr-native-scheme: light;
-    --dr-bg: #f5f6f6; --dr-panel: #f0f3f4; --dr-surface: #fff; --dr-raised: #e4ebed;
-    --dr-text: #202a2e; --dr-muted: #506069; --dr-border: #d7dfe1; --dr-border-strong: #c3ced1;
-    --dr-primary: #24576a; --dr-action: #285b6d; --dr-on-action: #fff; --dr-action-hover: #194758;
-    --dr-selected: #e4eff2; --dr-primary-soft: #e4eff2;
-    --dr-success: #286346; --dr-warning: #805114; --dr-danger: #983e48;
-    --dr-danger-soft: #f7e8eb; --dr-warning-soft: #fbf1dc;
-    --dr-retry: #f2dbe0; --dr-retry-hover: #eecbd2; --dr-on-retry: #602d38;
-    --dr-button-neutral: #e7ecee; --dr-button-neutral-hover: #d9e3e6;
-    --dr-surface-light: none; --dr-action-light: none;
-    --dr-depth-card: 0 1px 3px #2030380a; --dr-depth-panel: 0 4px 12px #20303812;
-    --dr-depth-dialog: 0 12px 36px #20303822; --dr-action-depth: none;
-    --dr-button-glow: none; --dr-action-glow: none; --dr-retry-glow: none;
-    --shadow: 0 12px 36px #20303822;
-  }
-}
-
 * { box-sizing: border-box; }
 .app-shell [hidden] { display: none !important; }
 html, body, #root { min-width: 300px; min-height: 100%; margin: 0; }

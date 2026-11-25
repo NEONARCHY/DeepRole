@@ -5,10 +5,16 @@ export function widgetDeck(doc: Document): HTMLElement | null {
   return doc.querySelector<HTMLElement>(".dr-widget-deck") ?? doc.querySelector("deeprole-page-widget")?.shadowRoot?.querySelector<HTMLElement>(".dr-widget-deck") ?? null;
 }
 export function widgetRects(doc: Document): DOMRect[] {
-  return [...(widgetDeck(doc)?.querySelectorAll<HTMLElement>(".dr-widget-dock,.dr-widget-tile:not([hidden])") ?? [])].map(node => node.getBoundingClientRect()).filter(rect => rect.width && rect.height);
+  const app = doc.getElementById("desktop-chat-history")?.parentElement;
+  const panels = app
+    ? app.querySelectorAll(".desktop-sidebar:not([hidden]), .desktop-play-tools:not([hidden]), .desktop-library:not([inert])")
+    : widgetDeck(doc)?.querySelectorAll(".dr-widget-dock,.dr-widget-tile:not([hidden])");
+  return Array.from(panels ?? [], panel => panel.getBoundingClientRect()).filter(rect => rect.width && rect.height);
 }
 
 export function sceneAvailableLeft(doc: Document): number {
+  const desktopViewport = doc.querySelector(".desktop-main > .desktop-viewport");
+  if (desktopViewport) return desktopViewport.getBoundingClientRect().left + 8;
   const deck = widgetDeck(doc);
   if (!deck) return 8;
   const minimum = Number(deck.dataset.minimumLeft) || 8;
@@ -16,6 +22,10 @@ export function sceneAvailableLeft(doc: Document): number {
   const rects = widgetRects(doc);
   const leftPanels = rects.filter(rect => rect.width && rect.right < doc.documentElement.clientWidth * .55);
   return Math.max(minimum, ...leftPanels.map(rect => rect.right + 16));
+}
+
+export function sceneAvailableRight(doc: Document): number {
+  return doc.querySelector(".desktop-main > .desktop-viewport")?.getBoundingClientRect().right ?? doc.documentElement.clientWidth;
 }
 
 const listening = new WeakSet<Document>();
@@ -64,14 +74,14 @@ export function fitAdaptiveChoices(host: HTMLElement) {
     for (const key of ["width", "left", "margin-left"]) host.style.removeProperty(key);
     return;
   }
-  const left = sceneAvailableLeft(doc), width = doc.documentElement.clientWidth;
+  const left = sceneAvailableLeft(doc), right = sceneAvailableRight(doc);
   const parent = host.parentElement?.getBoundingClientRect();
   if (!parent) return;
   const parentStyle = doc.defaultView!.getComputedStyle(host.parentElement!);
   const contentLeft = parent.left + (parseFloat(parentStyle.paddingLeft) || 0) + (parseFloat(parentStyle.borderLeftWidth) || 0);
-  const choices = Math.min(720, Math.max(1, width - left - 8), parent.width);
+  const choices = Math.min(720, Math.max(1, right - left - 8), parent.width);
   const pinned = host.dataset.deeproleChoicesPinned === "true";
-  const x = Math.max(left, Math.min(width - choices - 8, pinned ? (left + width - 8 - choices) / 2 : parent.left + (parent.width - choices) / 2));
+  const x = Math.max(left, Math.min(right - choices - 8, pinned ? (left + right - 8 - choices) / 2 : parent.left + (parent.width - choices) / 2));
   host.style.width = `${choices}px`;
   host.style.left = pinned ? `${x + choices / 2}px` : "";
   host.style.marginLeft = pinned ? "0px" : `${x - contentLeft}px`;

@@ -32,6 +32,13 @@ it.each(["foreign-id","missing-source","wrong-quote","incomplete"])("rejects %s 
  if(kind==="foreign-id")raw.requestId="foreign";if(kind==="missing-source")raw.results.pop();if(kind==="wrong-quote")raw.results[1].facts[0].quote="Invented";if(kind==="incomplete")raw.results[1].complete=false;
  const before=await f.repo.rawRecords();await expect(applyMemoryBatch(b,JSON.stringify(raw),f.repo)).rejects.toThrow();expect(await f.repo.rawRecords()).toEqual(before);
 });
+it("keeps an independently verified fact in a complete receipt containing a bad quote", async () => {
+ const f=await fixture(1), b=await f.prepare(), raw=JSON.parse(batchReply(b));
+ raw.results[1].facts.push({text:"Invented",kind:"event",quote:"Invented",risk:"ordinary"});
+ await applyMemoryBatch(b,JSON.stringify(raw),f.repo);
+ expect((await f.world()).sharedGame!.facts.map(fact=>fact.text)).toEqual([b.parts[1]!.text]);
+ expect(await readMemoryBatch(f.input,f.repo)).toMatchObject({pendingTurns:0,processedSources:2});
+});
 it("interruptions become visible errors, require explicit retry, and keep unfinished positions",async()=>{
  const f=await fixture(1);await f.prepare();await reconcileMemoryBatch(f.input,new Set(),f.repo);expect(await readMemoryBatch(f.input,f.repo)).toMatchObject({reason:"failed",pendingTurns:1,due:false});await expect(f.prepare()).rejects.toThrow("busy");
  await changeMemoryBatch(f.input,"automatic",f.repo);const retry=await f.prepare();expect(retry.parts.map(p=>p.start)).toEqual([0,0]);await applyMemoryBatch(retry,batchReply(retry),f.repo);expect((await f.world()).sharedGame!.facts).toHaveLength(1);

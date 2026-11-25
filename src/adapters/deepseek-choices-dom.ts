@@ -4,12 +4,15 @@ import { findSafeServiceContainer } from "./deepseek-service-dom";
 import { nativeMessageRow, isUserMessage } from "./deepseek-message-dom";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
 import designEffects from "../entrypoints/shared/design-effects.css?raw";
+import workspacePalette from "../entrypoints/shared/workspace-palette.css?raw";
+import workspaceMaterial from "../entrypoints/shared/workspace-material.css?raw";
 import { fitAdaptiveChoices } from "./adaptive-layout";
 import { bindPinnedChoices, composerBounds } from "./pinned-choices";
 import { bindInlineChoices, unbindInlineChoices, choiceScrollContainer } from "./inline-choices";
 import { bindPinnedChoiceSpace, unbindPinnedChoiceSpace } from "./pinned-choice-space";
+import { revealChoices } from "./choice-scroll-follow";
 import { syncHiddenMessageLayout } from "./hidden-message-layout";
-import { hasManagedTransport, hasTransportView, readTransportSource, syncTransportVisibility, TRANSPORT_CONTAINER, TRANSPORT_FRAGMENT, TRANSPORT_SOURCE, TRANSPORT_VIEW } from "./deepseek-transport-visibility";
+import { clearDetachedTransportViews, hasManagedTransport, hasTransportMarker, hasTransportView, readTransportSource, syncTransportVisibility, TRANSPORT_CONTAINER, TRANSPORT_FRAGMENT, TRANSPORT_SOURCE, TRANSPORT_VIEW } from "./deepseek-transport-visibility";
 
 const MARKER = "<deeprole_choices>";
 const HOST = "[data-deeprole-choices-host]";
@@ -18,7 +21,7 @@ const TRANSPORT_CANDIDATES = ".ds-markdown, [data-role='assistant'], [data-messa
 const RECOVERY = "[data-deeprole-choices-recovery]";
 const LOADING = "[data-deeprole-choices-loading]";
 export type ChoicePin = "pinSceneChoices" | "pinPortraits";
-export interface ChoicePresentation { allowReply?: (row: HTMLElement) => boolean; adaptiveLayout?: boolean; pinSceneChoices: boolean; pinPortraits: boolean; onToggle: (key: ChoicePin) => void | Promise<void> }
+export interface ChoicePresentation { allowReply?: (row: HTMLElement) => boolean; adaptiveLayout?: boolean; animations?: boolean; pinSceneChoices: boolean; pinPortraits: boolean; onToggle: (key: ChoicePin) => void | Promise<void> }
 const managedCards = new WeakMap<ParentNode, Set<HTMLElement>>();
 const sourceRows = new WeakMap<HTMLElement, HTMLElement>();
 const inlineAnchors = new WeakMap<HTMLElement, HTMLElement>();
@@ -28,7 +31,7 @@ function choiceCards(root: ParentNode): HTMLElement[] {
 function removeChoiceCard(host: HTMLElement): void {
   unbindInlineChoices(host); unbindPinnedChoiceSpace(host); bindPinnedChoices(host, false); inlineAnchors.get(host)?.remove(); inlineAnchors.delete(host); host.remove();
 }
-function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal?: boolean): void {
+function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal?: boolean, paused = false): void {
   sourceRows.set(host, row);
   const hadAnchor = !!inlineAnchors.get(host)?.isConnected;
   if (host.dataset.deeproleChoicesPinned === "true") {
@@ -49,8 +52,8 @@ function placeChoiceCard(host: HTMLElement, row: HTMLElement, reveal?: boolean):
     inlineAnchors.delete(host);
   }
   bindPinnedChoices(host, host.dataset.deeproleChoicesPinned === "true");
-  if (host.dataset.deeproleChoicesPinned === "true") bindPinnedChoiceSpace(host, inlineAnchors.get(host)!);
-  if (host.dataset.deeproleChoicesPinned !== "true") bindInlineChoices(host, reveal ?? hadAnchor, hadAnchor && reveal === false);
+  if (host.dataset.deeproleChoicesPinned === "true") bindPinnedChoiceSpace(host, inlineAnchors.get(host)!, reveal, paused);
+  else bindInlineChoices(host, reveal ?? hadAnchor, paused || hadAnchor && reveal === false);
 }
 type SettlingState = { signature: string; changedAt: number; row?: HTMLElement; observedGeneration: boolean; busy?: boolean; requestSource?: string; timer?: ReturnType<typeof setTimeout> };
 const settling = new WeakMap<ParentNode, SettlingState>();
@@ -243,6 +246,10 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
   const settlingReply = !active && state.observedGeneration && !!scene && Date.now() - state.changedAt < 1200;
   const waiting = generating || !!recovery?.busy || settlingReply;
   const target = !waiting && !active && recovery ? scene : null;
+  const reveal = active && previous?.observedGeneration ? (() => {
+    const scroller = scrollContainer(active.row), follow = scrollFollowing.get(root);
+    return { scroller, start: scroller.scrollTop, following: follow?.scroller === scroller ? follow.following : nearBottom(scroller) };
+  })() : undefined;
   // Generating story text (or waiting for a manual request) is not yet generating
   // options. Concealment marks only the actual choices transport, never thinking.
   const choicesStarted = (!!scene?.row.matches(TRANSPORT) || !!scene?.row.querySelector(TRANSPORT) || !!current) && !(requestSource && scene?.signature === requestSource);
@@ -282,10 +289,12 @@ function syncSceneChoiceCardsInner(enabled: boolean, generating: boolean, locale
   if (existing) { removeChoiceCard(existing); managedCards.get(root)?.delete(existing); }
   const card = createCard(active.parsed.choices.options, locale, signature, onPick, active.row.ownerDocument, root, presentation);
   const cards = managedCards.get(root) ?? new Set<HTMLElement>(); cards.add(card); managedCards.set(root, cards);
-  placeChoiceCard(card, active.row, wasNearBottom);
+  state.observedGeneration = false;
+  placeChoiceCard(card, active.row, reveal?.following ?? wasNearBottom, reveal?.following === false);
   fitAdaptiveChoices(card);
   followTarget(root, card);
   stopFollowing(root);
+  if (reveal) revealChoices(card, reveal.scroller, reveal.start, reveal.following, presentation?.animations !== false);
 }
 
 /** Hide unfinished transport too; retain its text for parsers and site updates. */
@@ -295,13 +304,15 @@ export function concealChoicePayloads(root: ParentNode): void {
   for (const element of candidates) {
     const text = element.textContent ?? "";
     const owned = hasManagedTransport(element);
-    if (!owned && !text.includes("<deeprole_")) continue;
+    if (!owned && !hasTransportMarker(text)) continue;
     if (element.matches(TRANSPORT_CANDIDATES) && !isUserMessage(element) && !text.includes("<deeprole_choice_mode")
       && !element.closest(`${USER}, ${REASONING}, ${HOST}, ${RECOVERY}, ${LOADING}, ${TRANSPORT_VIEW}`)
+      && !element.parentElement?.closest(".ds-markdown")
       && !element.querySelector(".ds-markdown, article, [data-message-id]")) eligible.push(element);
     else if (owned) syncTransportVisibility(element, false);
   }
   for (const element of eligible) syncTransportVisibility(element);
+  clearDetachedTransportViews(root);
   for (const row of root.querySelectorAll<HTMLElement>(".ds-message, article, [data-message-id], [data-deeprole-choices-request]")) {
     const text = row.textContent?.trim() ?? "";
     if (text.startsWith("[DeepRole Service]") && text.includes("[DeepRole Scene Choices]") && !row.querySelector(".ds-message, article, [data-message-id]")) {
@@ -328,7 +339,7 @@ function createLoading(locale: Locale, doc: Document): HTMLElement {
   const host = doc.createElement("div"); host.dataset.deeproleChoicesLoading = "true"; host.lang = locale;
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = `${designTokens}:host{display:block;margin:16px 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-muted)}.loading{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--dr-border);border-radius:12px;background:var(--dr-panel)}.spinner{width:14px;height:14px;border:2px solid var(--dr-border);border-top-color:var(--dr-primary);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}}`;
+  style.textContent = `${designTokens}${workspacePalette}:host{display:block;margin:16px 0;font:13px/1.5 var(--desktop-font,system-ui,sans-serif);color:var(--dr-muted)}.loading{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--dr-border);border-radius:12px;background:var(--dr-panel)}.spinner{width:14px;height:14px;border:2px solid var(--dr-border);border-top-color:var(--dr-primary);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}}`;
   const label = doc.createElement("div"); label.className = "loading"; label.setAttribute("role", "status");
   const spinner = doc.createElement("span"); spinner.className = "spinner"; spinner.setAttribute("aria-hidden", "true");
   label.append(spinner, doc.createTextNode(sceneChoiceText(locale, "waiting"))); shadow.append(style, label);
@@ -379,9 +390,9 @@ function createRecoveryCard(locale: Locale, signature: string, recovery: { busy:
   host.dataset.busy = String(recovery.busy);
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = `${designTokens}:host{display:block;margin:var(--dr-space-3) 0;font:13px/1.5 system-ui,sans-serif;color:var(--dr-text)}:host([slot="scene-choices"]){display:inline-flex;margin:0}button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 12px;border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-raised);color:var(--dr-text);font:400 12px/1.35 system-ui,sans-serif;cursor:pointer}button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}button:disabled{opacity:.65;cursor:wait}p{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}${designEffects}`;
+  style.textContent = `${designTokens}${workspacePalette}:host{display:block;margin:var(--dr-space-3) 0;font:13px/1.5 var(--desktop-font,system-ui,sans-serif);color:var(--dr-text)}:host([slot="scene-choices"]){display:inline-flex;margin:0}button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 12px;border:1px solid var(--dr-border);border-radius:10px;background:var(--dr-raised);color:var(--dr-text);font:400 12px/1.35 var(--desktop-font,system-ui,sans-serif);cursor:pointer}button:focus-visible{outline:2px solid var(--dr-primary);outline-offset:3px}button:disabled{opacity:.65;cursor:wait}p{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}${designEffects}${workspaceMaterial}`;
   const box = doc.createElement("div"); box.className = "box dr-root";
-  const button = doc.createElement("button"); button.type = "button"; button.className = "button secondary"; button.disabled = recovery.busy;
+  const button = doc.createElement("button"); button.type = "button"; button.className = "button secondary dr-choice-action"; button.disabled = recovery.busy;
   button.textContent = sceneChoiceText(locale, recovery.busy ? "waiting" : "request");
   const hint = doc.createElement("p"); hint.textContent = sceneChoiceText(locale, recovery.busy ? "waitingHint" : "requestHint");
   button.title = hint.textContent;
@@ -459,12 +470,12 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
   choiceHandlers.set(host, onPick);
   const shadow = host.attachShadow({ mode: "open" });
   const style = doc.createElement("style");
-  style.textContent = `${designTokens}
-    :host{--choice-gap:var(--dr-space-2);display:block;container-type:inline-size;margin:var(--dr-space-4) 0;font:14px/1.5 system-ui,sans-serif;color:var(--dr-text)}
+  style.textContent = `${designTokens}${workspacePalette}
+    :host{--choice-gap:var(--dr-space-2);display:block;container-type:inline-size;margin:var(--dr-space-4) 0;font:14px/1.5 var(--desktop-font,system-ui,sans-serif);color:var(--dr-text)}
     :host([data-deeprole-choices-pinned=true]){position:fixed;left:50%;bottom:24px;z-index:2147481900;width:min(720px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
     :host([data-deeprole-choices-pinned=true]) section{max-height:var(--dr-pinned-max-height,calc(100dvh - 84px));overflow:auto;overscroll-behavior:contain;box-shadow:var(--dr-depth-panel)}
     :host([data-deeprole-choices-inline=true]) section{max-height:var(--dr-inline-max-height);overflow:auto;overscroll-behavior:contain}
-    section{box-sizing:border-box;width:100%;padding:var(--choice-gap);border:0;border-radius:16px;background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
+    section{box-sizing:border-box;width:100%;padding:var(--choice-gap);border:0;border-radius:var(--desktop-card,16px);background:var(--dr-panel);background-image:var(--dr-surface-light);box-shadow:var(--dr-depth-card)}
     .choice-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--dr-space-2);margin-bottom:var(--choice-gap)}h2{margin:0;min-width:0;font-size:17px;font-weight:650}.choice-tools{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.choice-pin{display:grid;place-items:center;min-width:32px;min-height:32px;padding:4px;border:1px solid var(--dr-border);border-radius:9px;background:var(--dr-surface);color:var(--dr-muted);cursor:pointer}.choice-pin:hover{background:var(--dr-raised);color:var(--dr-text)}.choice-pin[aria-pressed=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}.choice-pin svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.choice-pin span{font-size:14px;line-height:1}
     .choice-expand[aria-expanded=true]{color:var(--dr-primary);border-color:var(--dr-primary);background:var(--dr-primary-soft)}
     .choice-pin[hidden],.grid[hidden]{display:none}
@@ -472,7 +483,7 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     :host([data-deeprole-choices-minimized=true]) :is(.choice-navigation,.choice-status,.dr-cast-layout-status){display:none}
     :host([data-deeprole-choices-minimized=true]) .choice-pin:not(.choice-restore){display:none}
     .grid{display:grid;grid-template-columns:1fr;gap:var(--choice-gap)}
-    .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border-strong);border-radius:10px;background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit;box-shadow:inset 0 1px 0 #ffffff08;transition:border-color 280ms var(--dr-ease-out)}
+    .grid button{--choice-tint:var(--dr-choice-neutral);position:relative;isolation:isolate;overflow:hidden;box-sizing:border-box;width:100%;min-height:80px;padding:var(--dr-space-3);text-align:start;border:1px solid var(--dr-border-strong);border-radius:var(--desktop-control,10px);background:var(--dr-surface);color:var(--dr-text);cursor:pointer;font:inherit;box-shadow:inset 0 1px 0 #ffffff08;transition:border-color 280ms var(--dr-ease-out)}
     .grid button::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,color-mix(in oklab,var(--choice-tint) 14%,transparent),color-mix(in oklab,var(--choice-tint) 7%,transparent) 58%,transparent);opacity:0;transform:scaleX(0);transform-origin:left center;transition:transform 280ms cubic-bezier(.2,.75,.25,1),opacity 180ms ease-out}
     .grid button[data-choice-kind=positive]{--choice-tint:var(--dr-choice-positive)}
     .grid button[data-choice-kind=negative]{--choice-tint:var(--dr-choice-negative)}
@@ -498,8 +509,9 @@ function createCard(options: SceneChoice[], locale: Locale, signature: string, o
     :host([data-deeprole-adaptive=true]){--choice-gap:calc(var(--dr-space-3) / 2)}
     :host([data-deeprole-adaptive=true]) .grid button{padding:10px;min-height:72px}
     @container(min-width:430px){:host([data-deeprole-adaptive=true]) .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    ${workspaceMaterial}
   `;
-  const section = doc.createElement("section");
+  const section = doc.createElement("section"); section.className = "dr-choice-surface";
   section.setAttribute("aria-label", sceneChoiceText(locale, "title"));
   const title = doc.createElement("h2"); title.textContent = sceneChoiceText(locale, "title");
   const heading = doc.createElement("div"); heading.className = "choice-heading";

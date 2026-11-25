@@ -3,6 +3,8 @@ import { startupDeadline } from "../../core/startup";
 import { recoveryCopy } from "../../core/recovery-i18n";
 import { readBackgroundBuild } from "../../adapters/background-build";
 import "../sidepanel/styles.css";
+import "../shared/workspace-appearance.css";
+import "../shared/workspace-material.css";
 
 async function start() {
   const saved = await startupDeadline(browser.storage.local.get("deeprole_settings"), 2000).catch(() => ({}));

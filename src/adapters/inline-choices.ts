@@ -1,6 +1,6 @@
 import { fitAdaptiveChoices } from "./adaptive-layout";
 import { composerBounds, observeChoiceComposer } from "./pinned-choices";
-import { observeChoiceScrollFollow } from "./choice-scroll-follow";
+import { isChoiceRevealScrolling, observeChoiceScrollFollow } from "./choice-scroll-follow";
 
 const bindings = new WeakMap<HTMLElement, { dispose: () => void; reveal: () => void }>();
 const GAP = 12;
@@ -81,7 +81,7 @@ export function bindInlineChoices(host: HTMLElement, reveal = false, paused = fa
     if (Math.abs(ownHeight - missing) > .5) spacer.style.height = `${missing}px`;
     // A reader above the last scene keeps their scroll position. Resizing the
     // draft only follows the card while the reader is already at the bottom.
-    if (follow.following) {
+    if (follow.following && !isChoiceRevealScrolling(host)) {
       const delta = host.getBoundingClientRect().bottom - safeBottom;
       if (delta > .5) scroller.scrollTop += delta;
     }

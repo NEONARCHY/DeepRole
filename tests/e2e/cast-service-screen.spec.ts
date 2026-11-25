@@ -16,7 +16,7 @@ for (const locale of ["ru","en"]) for (const width of [320,520]) test(`roster se
  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
  expect(await screen.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
  const request=(await screen.locator(".request").boundingBox())!,response=(await screen.locator(".response").boundingBox())!,main=(await screen.locator("main").boundingBox())!;
- expect(request.width).toBeCloseTo(response.width*.9,0); expect(request.x+request.width).toBeCloseTo(response.x+response.width,0);
+  expect(request.x).toBeCloseTo(response.x,0); expect(request.width).toBeCloseTo(response.width,0);
  expect(response.width).toBeCloseTo(main.width,0);
  expect(await screen.locator(".brief").evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
  await page.keyboard.press("Tab"); await expect(screen.locator(".cancel")).toBeFocused();

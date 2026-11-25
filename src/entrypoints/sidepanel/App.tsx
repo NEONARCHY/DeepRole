@@ -26,6 +26,7 @@ import { portraitUploadText } from "../../core/portrait-upload-i18n";
 import { requestImagePermission } from "../../storage/image-permissions";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { PanelWidthControl } from "../shared/PanelWidthControl";
+import { IS_DESKTOP } from "../../core/chat-host";
 import { CharacterSettings } from "../shared/CharacterSheets";
 import { saveDefaultActionList, saveWorldActionList } from "../../storage/action-settings";
 import { MemoryGuide } from "../shared/MemoryGuide";
@@ -616,6 +617,7 @@ export function App() {
 
   return (
     <HelpLocale.Provider value={settings.locale}><div className="app-shell" data-embedded-menu={embeddedMenu ? "true" : "false"} data-motion={settings.animationsEnabled ? "on" : "off"}>
+      <div className="workspace-toolbar">
       <header className="app-header">
         <div className="brand-mark" aria-hidden="true"><span /></div>
         <div>
@@ -627,6 +629,13 @@ export function App() {
           ? <button className="menu-close" type="button" aria-label={t("close")} title={t("close")} onClick={() => window.parent.postMessage({ source: "deeprole-menu", type: "CLOSE" }, "*")}><X /></button>
           : <div className={`site-status ${page.compatible ? "is-online" : ""}`} title={page.compatible ? t("siteConnected") : t("siteDisconnected")}><span /></div>}
       </header>
+      <nav className="bottom-nav workspace-nav" aria-label={t("navigation")}>
+        <NavButton guide="nav-overview" active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
+        <NavButton guide="nav-worlds" active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
+        <NavButton guide="nav-story" active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={openGame?.pendingReviewIds?.length} onClick={openStory} />
+        <NavButton guide="nav-settings" active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={openSettings} />
+      </nav>
+      </div>
 
       <main className="app-main" data-dr-guide={`page-${activeTab}`}>
         {detachedMenu && <p className={`dr-workspace-notice dr-menu-source${page.tabId == null ? " is-warning" : ""}`} role="status">{experienceText(settings.locale, page.tabId == null ? "menuWindowLost" : "menuWindowBound")}</p>}
@@ -692,12 +701,7 @@ export function App() {
       </main>
 
       {exportRequest && <ExportDialog locale={settings.locale} worlds={worlds} worldId={exportRequest.worldId} onClose={() => setExportRequest(null)} />}
-      <nav className="bottom-nav" aria-label={t("navigation")}>
-        <NavButton guide="nav-overview" active={activeTab === "overview"} label={navigationText(settings.locale, "play")} icon={<LayoutDashboard />} onClick={() => setActiveTab("overview")} />
-        <NavButton guide="nav-worlds" active={activeTab === "worlds"} label={navigationText(settings.locale, "worlds")} icon={<Globe2 />} onClick={() => setActiveTab("worlds")} />
-        <NavButton guide="nav-story" active={activeTab === "story"} label={navigationText(settings.locale, "story")} icon={<BookOpen />} badge={openGame?.pendingReviewIds?.length} onClick={openStory} />
-        <NavButton guide="nav-settings" active={activeTab === "settings"} label={t("settings")} icon={<Settings2 />} onClick={openSettings} />
-      </nav>
+
 
       {bookEditor && (
         <BookEditor
@@ -1008,7 +1012,7 @@ function SettingsView(props: {
       <SettingsNavigation locale={props.settings.locale} section={section} onSelect={setSection} worldName={props.world?.name}/>
       <div className="dr-settings-page" hidden={section !== "appearance"}>
         <SettingsCard icon={<Pin />} title={n("panels")}>
-          <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />
+          {!IS_DESKTOP && <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />}
           <SettingSwitch label={adaptiveText(props.settings.locale).title} hint={n("adaptive")} checked={props.settings.adaptiveLayout !== false} onChange={adaptiveLayout => changePreference({ ...props.settings, adaptiveLayout })} />
           <SettingSwitch label={sceneChoiceText(props.settings.locale, "pinChoices")} hint={n("fixedChoices")} checked={!!props.settings.pinSceneChoices} onChange={pinSceneChoices => changePreference({ ...props.settings, pinSceneChoices })} />
           <SettingSwitch label={sceneChoiceText(props.settings.locale, "pinPortraits")} hint={n("fixedPortraits")} checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={pinned => changePreference({ ...props.settings, pinPortraitLeft: pinned, pinPortraitRight: pinned })} />
@@ -1049,15 +1053,15 @@ function SettingsView(props: {
         <div className="segmented"><HelpButton aria-pressed={props.settings.locale === "ru"} className={props.settings.locale === "ru" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "ru" })}>{props.t("russian")}</HelpButton><HelpButton aria-pressed={props.settings.locale === "en"} className={props.settings.locale === "en" ? "active" : ""} onClick={() => changePreference({ ...props.settings, locale: "en" })}>{props.t("english")}</HelpButton></div>
       </SettingsCard>
       <SettingsCard icon={<Eye />} title={n("meters")}>
-        <SettingSwitch label={x("chatContextIndicator")} hint={n("chatMeter")} checked={props.settings.showChatContextMeter} onChange={showChatContextMeter => changePreference({ ...props.settings, showChatContextMeter })} />
+        {!IS_DESKTOP && <SettingSwitch label={x("chatContextIndicator")} hint={n("chatMeter")} checked={props.settings.showChatContextMeter} onChange={showChatContextMeter => changePreference({ ...props.settings, showChatContextMeter })} />}
         <SettingSwitch label={x("memoryContextIndicator")} hint={n("memoryMeter")} checked={props.settings.showMemoryContextIndicator} onChange={showMemoryContextIndicator => changePreference({ ...props.settings, showMemoryContextIndicator })} />
-        <SettingSwitch label={continuationText(props.settings.locale, "warnings")} hint={continuationText(props.settings.locale, "warningHint")} checked={props.settings.contextWarningsEnabled !== false} onChange={contextWarningsEnabled => changePreference({ ...props.settings, contextWarningsEnabled })} />
+        {!IS_DESKTOP && <><SettingSwitch label={continuationText(props.settings.locale, "warnings")} hint={continuationText(props.settings.locale, "warningHint")} checked={props.settings.contextWarningsEnabled !== false} onChange={contextWarningsEnabled => changePreference({ ...props.settings, contextWarningsEnabled })} />
 
         <label className="field-label"><span>{continuationText(props.settings.locale, "capacity")}</span><input aria-describedby="dr-capacity-note" type="number" min="8000" max="2000000" step="1000" value={capacityDraft} onChange={event => setCapacityDraft(event.target.value)} onBlur={() => {
           const number = Number(capacityDraft), value = capacityDraft.trim() && Number.isFinite(number) ? Math.min(2_000_000, Math.max(8000, Math.round(number))) : chatCapacity(props.settings.chatContextCapacity);
           setCapacityDraft(String(value)); if (value !== props.settings.chatContextCapacity) changePreference({ ...props.settings, chatContextCapacity: value });
         }} /></label>
-        <p className="setting-copy" id="dr-capacity-note">{continuationText(props.settings.locale, "capacityHint")}</p>
+        <p className="setting-copy" id="dr-capacity-note">{continuationText(props.settings.locale, "capacityHint")}</p></>}
 
       </SettingsCard>
       </div>

@@ -1,3 +1,4 @@
+import { CHAT_HOME } from "../core/chat-host";
 import { createId } from "../core/id";
 import { memoryWorld } from "../core/scene";
 import { boundStory, validStoryContinuation } from "../core/story-continuation";
@@ -111,7 +112,7 @@ export async function completeContinuation(expected: HandoffSnapshot, targetChat
     if (snapshot.appliedAt !== undefined && snapshot.targetChatId === targetChatId) return { records: [], removed: [], result: undefined };
     if (snapshot.savedMemory && (!worldId || existing || targetChatId === snapshot.sourceChatId)) throw Error("handoff-conflict");
     const binding = targetChatId === snapshot.sourceChatId ? undefined : withHandoffCharacters(existing ?? {
-      id: `binding:${targetChatId}`, chatId: targetChatId, chatUrl: `https://chat.deepseek.com/a/chat/s/${targetChatId}`,
+      id: `binding:${targetChatId}`, chatId: targetChatId, chatUrl: `${CHAT_HOME}a/chat/s/${targetChatId}`,
       worldId, focusIds: snapshot.focusIds ?? [], bookId: snapshot.bookId, messageCountAtAnalysis: 0, createdAt: Date.now(), updatedAt: Date.now(),
     }, snapshot);
     if (worldId && binding && !existing) delete binding.characterScenes;

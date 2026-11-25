@@ -1,0 +1,194 @@
+@import "./workspace-feedback.css";
+
+@property --dr-glint {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+:root, :host {
+  --dr-material-rim: linear-gradient(148deg, #fff3, #fff1 30%, transparent 58%, #fff1 88%, #fff2);
+  --dr-glint-strength: .13;
+  --dr-hover-shadow: 0 0 18px -6px color-mix(in srgb, var(--dr-focus) 48%, transparent);
+  --dr-halo-ease: cubic-bezier(.3, 0, .2, 1);
+  --dr-glint-in: 360ms;
+  --dr-glint-out: 260ms;
+}
+
+:is([data-motion=off], .dr-root[data-motion=off]) {
+  --dr-motion-fast: 0ms;
+  --dr-glint-in: 0ms;
+  --dr-glint-out: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root, :host { --dr-glint-in: 0ms; --dr-glint-out: 0ms; }
+}
+
+@media (prefers-color-scheme: light) {
+  :root, :host {
+    --dr-material-rim: linear-gradient(148deg, #0002, #0001 32%, transparent 61%, #0001 86%, #0002);
+    --dr-glint-strength: .58;
+  }
+}
+
+/* The hover light stays inside the face with a diffuse exterior shadow. */
+:is(.dr-feedback-button, .desktop-dialog, .desktop-model, .desktop-chat-menu, .desktop-empty button, .desktop-dialog footer button,
+    .app-shell :is(.button:not(.ghost, .dr-round-action), .modal),
+    .dr-root :is(.button:not(.dr-round-action), .dr-panel-tools-dialog, .dr-menu-drawer),
+    .dr-memory-dialog, .dr-export-dialog, .photo-dialog, .photo-controls button:not(.dr-round-action), .dr-choice-action) {
+  --dr-material-glint: linear-gradient(110deg, transparent 28%, rgb(255 255 255 / calc(var(--dr-glint-strength) * var(--dr-glint, 0))) 55%, transparent 82%);
+  border: 0;
+  background: var(--dr-material-glint), var(--dr-material-face, var(--dr-surface));
+  box-shadow: var(--dr-material-shadow, none);
+  transition: --dr-glint var(--dr-glint-out) var(--dr-halo-ease), box-shadow var(--dr-glint-out) var(--dr-halo-ease),
+    color var(--dr-motion-fast) var(--dr-ease-out);
+}
+
+/* Apply the gradient edge to dedicated controls and floating surfaces. */
+:is(.dr-feedback-button, .desktop-dialog, .desktop-model, .desktop-chat-menu, .desktop-empty button, .desktop-dialog footer button,
+    html:root .app-shell :is(.button.primary:not(.danger, .danger-button, .dr-round-action), .modal),
+    .dr-root :is(.button.primary:not(.danger, .danger-button, .dr-round-action), .dr-panel-tools-dialog),
+    .dr-memory-dialog, .dr-export-dialog, .photo-dialog, .photo-controls button:not(.dr-round-action), .dr-choice-action) {
+  --dr-rim-face: var(--dr-material-face, var(--dr-surface));
+  border: 1px solid transparent;
+  background: var(--dr-material-glint) padding-box,
+    linear-gradient(var(--dr-rim-face), var(--dr-rim-face)) padding-box,
+    var(--dr-material-rim) border-box var(--dr-rim-face);
+}
+
+:is(.desktop-dialog, .desktop-chat-menu, .dr-memory-dialog, .dr-export-dialog,
+    .app-shell .modal, .photo-dialog, .dr-panel-tools-dialog) {
+  --dr-material-face: var(--dr-panel);
+}
+
+:is(.desktop-dialog, .desktop-chat-menu, .dr-memory-dialog, .dr-export-dialog, .app-shell .modal) {
+  --dr-material-shadow: var(--dr-depth-dialog);
+}
+
+:is(.desktop-send.desktop-primary, .app-shell .button.primary, .dr-root .button.primary, .desktop-dialog footer .desktop-primary) {
+  --dr-material-face: var(--dr-action);
+  color: var(--dr-on-action);
+}
+
+:is(.app-shell .danger-button, .desktop-dialog .desktop-danger, .dr-alert.is-danger) {
+  --dr-material-face: var(--dr-danger-soft);
+  color: var(--dr-danger);
+}
+:is(.dr-feedback-button, .desktop-model, .desktop-empty button, .desktop-dialog footer button, .app-shell .button:not(.ghost, .dr-round-action),
+    .dr-root .button:not(.dr-round-action), .photo-controls button:not(.dr-round-action), .dr-choice-action):focus-visible {
+  --dr-glint: 1;
+  --dr-material-shadow: var(--dr-hover-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(.dr-feedback-button, .desktop-model, .desktop-empty button, .desktop-dialog footer button, .app-shell .button:not(.ghost, .dr-round-action),
+      .dr-root .button:not(.dr-round-action), .photo-controls button:not(.dr-round-action), .dr-choice-action):hover:where(:not(:disabled, [aria-disabled=true])) {
+    --dr-glint: 1;
+    --dr-material-shadow: var(--dr-hover-shadow);
+    transition-duration: var(--dr-glint-in), var(--dr-glint-in), var(--dr-motion-fast);
+  }
+}
+
+/* The hit area stays 44 px while the visible face follows the 36 px Swayfold control. */
+:is(.dr-round-action, .desktop-icon, .desktop-send, .app-shell .icon-button, .app-shell .menu-close, .choice-pin, .dr-help,
+    .dr-root :is(.dr-sidebar-toggle, .dr-widget-move, .dr-alert-close), .dr-memory-dialog .dr-memory-dialog-close,
+    .dr-character-header-actions :where(button), .dr-character-stat > button, .dr-bond-event > button) {
+  &, &:hover {
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: var(--dr-round-target, 44px);
+    height: var(--dr-round-target, 44px);
+    padding: 0;
+    /* Older controls paint their face on the hit area. The circle owns that paint. */
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: var(--desktop-control);
+    box-shadow: none !important;
+    color: var(--dr-muted);
+  }
+
+  &::before, &::after {
+    content: "";
+    position: absolute;
+    inset: var(--dr-round-inset, 4px);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  &::before {
+    z-index: -1;
+    --dr-rim-face: var(--dr-material-face, var(--dr-surface));
+    border: 1px solid transparent;
+    background: linear-gradient(var(--dr-rim-face), var(--dr-rim-face)) padding-box,
+      var(--dr-material-rim) border-box var(--dr-rim-face);
+    transition: transform var(--dr-motion-fast) var(--dr-ease-out);
+  }
+
+  &::after {
+    background: linear-gradient(110deg, transparent 28%, #fff2 55%, transparent 82%);
+    box-shadow: var(--dr-hover-shadow);
+    opacity: 0;
+    transition: opacity var(--dr-glint-out) var(--dr-halo-ease);
+  }
+
+  & svg {
+    width: 17px;
+    height: 17px;
+    stroke-width: 1.6;
+    transition: color var(--dr-motion-fast) var(--dr-ease-out), transform var(--dr-motion-fast) var(--dr-ease-out);
+  }
+
+  &:focus-visible::after { opacity: 1; }
+  &:is([aria-expanded=true], [aria-pressed=true]) { color: var(--dr-text); }
+  &:active:where(:not(:disabled, [aria-disabled=true]))::before { transform: scale(.93); }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:where(:not(:disabled, [aria-disabled=true])) { color: var(--dr-focus); }
+    &:hover:where(:not(:disabled, [aria-disabled=true]))::after { opacity: 1; transition-duration: var(--dr-glint-in); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before, &::after, & svg { transition: none; }
+    &:active::before { transform: none; }
+  }
+  @media (forced-colors: active) {
+    & { outline: 1px solid ButtonText; }
+    &::after { display: none; }
+  }
+}
+.desktop-send.desktop-primary, .desktop-send.desktop-primary:hover { color: var(--dr-on-action); }
+.desktop-send.desktop-primary:disabled { --dr-material-face: var(--dr-surface); color: var(--dr-muted); }
+.choice-pin { --dr-round-target: 32px; --dr-round-inset: 3px; }
+.dr-help { --dr-round-target: 32px; --dr-round-inset: 3px; }
+.dr-character-header-actions button { --dr-round-target: 36px; --dr-round-inset: 3px; }
+
+/* Positioning for overlays belongs to the layout component. */
+.dr-memory-dialog .dr-memory-dialog-close, .app-shell .menu-close { justify-self: end; }
+.dr-choice-surface .choice-pin[hidden] { display: none; }
+
+:is(.dr-choice-surface, .dr-cast-widget) { border: 0; border-radius: var(--desktop-card); }
+.dr-choice-surface .grid button {
+  border: 0;
+  border-radius: var(--desktop-control);
+  background: linear-gradient(125deg, color-mix(in oklab, var(--choice-tint) 12%, var(--dr-surface)), var(--dr-surface) 78%);
+  box-shadow: none;
+}
+.dr-choice-surface .grid button::before {
+  background: linear-gradient(125deg, color-mix(in oklab, var(--choice-tint) 15%, transparent), transparent 86%);
+  transform: none;
+  transition: opacity var(--dr-motion-fast) var(--dr-ease-out);
+}
+.dr-choice-surface .grid button :is(.preview, small, .number) {
+  color: color-mix(in srgb, var(--dr-muted) 55%, var(--dr-text));
+}
+.dr-choice-surface .grid .number { border: 0; box-shadow: none; transition-property: color; }
+.dr-choice-surface .grid button:is(:hover, :focus-visible, [aria-pressed=true]) :is(.preview, small, .number) { color: var(--dr-text); }
+.dr-choice-surface .grid button[aria-pressed=true] {
+  background: linear-gradient(125deg, color-mix(in oklab, var(--choice-tint) 26%, var(--dr-surface)), var(--dr-surface) 90%);
+}
+.dr-choice-surface .grid button[aria-pressed=true] .number {
+  background-color: color-mix(in oklab, var(--choice-tint) 12%, var(--dr-surface));
+  color: var(--dr-text);
+}

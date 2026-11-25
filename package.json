@@ -11,6 +11,10 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "build:desktop": "wxt prepare && vite build --config desktop/vite.config.ts",
+    "start:desktop": "electron desktop",
+    "test:desktop": "playwright test --config desktop/playwright.config.ts",
+    "zip:desktop": "npm run build:desktop && node desktop/package-win.cjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -22,6 +26,7 @@
   "dependencies": {
     "dexie": "^4.4.6",
     "lucide-react": "^0.468.0",
+    "micromark": "4.0.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
@@ -36,6 +41,7 @@
     "@vitejs/plugin-react": "^4.5.2",
     "@vitest/coverage-v8": "^5.0.3",
     "@wxt-dev/module-react": "^1.2.2",
+    "electron": "45.5.0",
     "fake-indexeddb": "^6.0.0",
     "jsdom": "^27.0.0",
     "typescript": "^5.9.0",

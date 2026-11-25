@@ -1,12 +1,28 @@
 button.dr-help, .dr-help-wrap > button.dr-help, .dr-help-section > button.dr-help { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; min-height: 24px; padding: 0; border: 1px solid var(--dr-border-strong); border-radius: 50%; background: var(--dr-panel); color: var(--dr-primary); font: 700 11px/1 system-ui, sans-serif; cursor: help; box-shadow: none; }
 button.dr-help:hover, button.dr-help:focus-visible { background: var(--dr-surface); border-color: var(--dr-primary); outline: 2px solid var(--dr-primary); outline-offset: 2px; }
-.dr-help-tooltip { position: fixed; z-index: 2147483647; width: min(280px, calc(100vw - 16px)); padding: 13px; border: 1px solid var(--dr-border-strong); border-radius: 12px; background: var(--dr-panel); color: var(--dr-text); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.533); font: 12px/1.55 system-ui, sans-serif; pointer-events: none; }
-.dr-help-tooltip strong { display: block; font-size: 12px; color: var(--dr-primary); }
-.dr-help-tooltip p { margin: 5px 0 0; }
-.dr-hover-tooltip { box-sizing: border-box; max-height: calc(100vh - 16px); overflow: auto; overflow-wrap: anywhere; pointer-events: auto; }
+.dr-help-tooltip {
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  width: min(296px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+  padding: var(--dr-layout-gap);
+  border: 1px solid transparent;
+  border-radius: var(--desktop-control, 12px);
+  background: linear-gradient(var(--dr-panel), var(--dr-panel)) padding-box,
+    var(--dr-material-rim, linear-gradient(var(--dr-border), var(--dr-border))) border-box var(--dr-panel);
+  color: var(--dr-text);
+  box-shadow: var(--dr-depth-panel);
+  font: 13px/1.5 var(--desktop-font, system-ui);
+  pointer-events: auto;
+}
+.dr-help-tooltip strong { display: block; font-size: 13px; }
+.dr-help-tooltip p { margin: var(--dr-layout-row) 0 0; color: var(--dr-muted); white-space: pre-line; }
 .help-field-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .dr-root .dr-help { pointer-events: auto; }
-.dr-section-guide { border-left: 2px solid var(--dr-border-strong); padding: 7px 11px; color: var(--dr-muted); font: 12px/1.6 system-ui, sans-serif; }
+.dr-section-guide { padding: var(--dr-layout-label) var(--dr-layout-gap); border-radius: var(--desktop-detail, 8px); background: var(--dr-surface); color: var(--dr-muted); font: 12px/1.6 var(--desktop-font, system-ui); }
 .dr-section-guide summary { cursor: pointer; color: var(--dr-primary); }
-.dr-section-guide p { margin: 7px 0 0; }
-.dr-section-guide[open] { background: var(--dr-panel); border-radius: 0 8px 8px 0; }
+.dr-section-guide p { margin: 0; }

@@ -37,7 +37,10 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
         const root = image.getRootNode();
         const full = root instanceof ShadowRoot && root.host.hasAttribute("data-deeprole-photo-viewer");
         const rect = image.getBoundingClientRect();
-        const limit = Math.max(256, Math.min(1024, Math.ceil(Math.max(rect.width, rect.height) * win.devicePixelRatio)));
+        // Stage portraits change scale as the chat and cast reflow. Keep one
+        // detailed derivative so a narrow initial layout does not lock in a tiny preview.
+        const stage = root instanceof ShadowRoot && root.host.hasAttribute("data-deeprole-portrait-layer");
+        const limit = stage ? 1024 : Math.max(256, Math.min(1024, Math.ceil(Math.max(rect.width, rect.height) * win.devicePixelRatio)));
         let prepared = false;
         const original = () => isPhotoData(state.address) ? Promise.resolve(state.address) : read(state.address);
         const data = !full && readPreview && isPhotoAddress(state.address) ? await readPreview(state.address, limit).then(data => { prepared = true; return data; }).catch(original) : await original();
@@ -49,8 +52,10 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
             const scale = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
             if (scale < 1) {
               const canvas = doc.createElement("canvas"); canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-              canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-              blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("photo-preview")), "image/webp", 0.9));
+              const context = canvas.getContext("2d")!;
+              if (stage) context.imageSmoothingQuality = "high";
+              context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+              blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("photo-preview")), "image/webp", stage ? 0.95 : 0.9));
               canvas.width = canvas.height = 0;
             }
           } finally { bitmap.close(); }

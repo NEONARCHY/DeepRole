@@ -39,7 +39,7 @@ export function validImageJob(v: unknown): v is ImageJobInput {
 }
 export class ImageJobs {
   private readonly active = new Set<string>();
-  constructor(private readonly repo: DeepRoleRepository = repository, private readonly permitted: ImagePermissionCheck = hasImagePermission, private readonly createProvider: (config: ImageProviderConfig, key: string, permitted: ImagePermissionCheck) => ImageProvider = imageProvider) {}
+  constructor(private readonly repo: DeepRoleRepository = repository, private readonly permitted: ImagePermissionCheck = hasImagePermission, private readonly createProvider: (config: ImageProviderConfig, key: string, permitted: ImagePermissionCheck, chatId?: string) => ImageProvider = imageProvider) {}
   private async promptLimits(config:ImageProviderConfig):Promise<ImagePromptLimits> {
     // OpenAI-compatible catalogs do not supply this documented Venice field.
     // Unknown is kept unknown, not guessed from a model name.
@@ -101,7 +101,7 @@ export class ImageJobs {
       if (!validImageReplay(frozen)) throw new ImageApiError("invalid");
       if (options.attemptId) await patchImageAttempt(this.repo, input, options.attemptId, { status: "generating", request: frozen, error: undefined, diagnostic: undefined, headers: undefined, ticketId: undefined }, "preparing");
       await options.onPrepared?.(frozen);
-      const provider = this.createProvider(config, key, this.permitted);
+      const provider = this.createProvider(config, key, this.permitted, input.chatId);
       let result;
       try { result = images.length ? await provider.edit({ prompt: input.prompt, images, seed: input.seed, aspectRatio }) : await provider.generate({ prompt: input.prompt, seed: input.seed, aspectRatio }); }
       catch (error) {

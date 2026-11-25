@@ -8,7 +8,7 @@ import { castProgressText } from "../../core/cast-progress-i18n";
 import type { CastView } from "../../adapters/cast-coordinator";
 import type { Locale } from "../../core/types";
 
-export function CastStatus({ job, locale, compact, anchor, children, onHide }: { job: CastView; locale: Locale; compact: boolean; anchor: RefObject<HTMLDivElement | null>; children: ReactNode; onHide: () => void }) {
+export function CastStatus({ job, locale, compact, inGamePanel, anchor, dialogTarget, children, onHide }: { job: CastView; locale: Locale; compact: boolean; inGamePanel?: boolean; anchor: RefObject<HTMLDivElement | null>; dialogTarget?: HTMLElement | null; children: ReactNode; onHide: () => void }) {
   const box = useRef<HTMLDivElement>(null), manual = useRef<CastPopupPoint | null>(null);
   const drag = useRef<{ id: number; start: CastPopupPoint; pointer: CastPopupPoint; previous: CastPopupPoint | null } | null>(null);
   const [point, setPoint] = useState<CastPopupPoint | null>(null), [hint, setHint] = useState(0), [dragging, setDragging] = useState(false);
@@ -44,16 +44,16 @@ export function CastStatus({ job, locale, compact, anchor, children, onHide }: {
   }, [compact, anchor]);
   useEffect(() => {
     setHint(0);
-    if (!waiting) return;
+    if (!waiting || inGamePanel) return;
     const timer = setInterval(() => { if (!document.hidden) setHint(old => (old + 1) % 3); }, 3600);
     return () => clearInterval(timer);
-  }, [waiting, job.phase, job.step, job.repair]);
+  }, [waiting, inGamePanel, job.phase, job.step, job.repair]);
   const endDrag = (cancel = false) => {
     if (!drag.current) return;
     const previous = drag.current.previous; drag.current = null; setDragging(false);
     if (cancel) { manual.current = previous; place.current(); }
   };
-  const status = <div ref={box} className={"dr-cast-status" + (compact ? " is-floating" : "")} data-positioned={!compact || !!point} data-dragging={dragging || undefined} style={compact ? { left: point?.x ?? 8, top: point?.y ?? 8 } : undefined} onKeyDown={e => {
+  const status = <div ref={box} className={"dr-cast-status" + (compact ? " is-floating" : "")} data-positioned={!compact || !!point} data-dragging={dragging || undefined} data-needs-attention={inGamePanel && !waiting && (job.phase === "ready" || job.phase === "error" || job.cleanup === "failed") || undefined} style={compact ? { left: point?.x ?? 8, top: point?.y ?? 8 } : undefined} onKeyDown={e => {
     if (e.key === "Escape" && !e.defaultPrevented && !drag.current) { e.preventDefault(); e.stopPropagation(); onHide(); }
   }}>
     <div className="dr-cast-status-heading">
@@ -77,11 +77,11 @@ export function CastStatus({ job, locale, compact, anchor, children, onHide }: {
     <div className="dr-cast-phase" role="status" aria-live="polite"><span className={waiting ? "dr-cast-spinner" : "dr-cast-ready-dot"} aria-hidden="true"/><strong>{t(job.large && job.large.stage !== "done" && (preparing || job.phase === "ready") ? job.phase === "ready" ? "largeBetween" : job.large.stage === "scan" ? "largeScan" : "largeProfiles" : job.phase)}</strong></div>
     {job.large && <><small>{t("largeSource")}: {job.large.source}/{job.sourceCount} · {t("largeFound")}: {job.large.found}</small><small>{t("largePrepared")}: {job.large.prepared}/{job.large.found}</small></>}
     {job.large?.stage === "scan" && <small>{t("largeRead")}: {new Intl.NumberFormat(locale).format(job.large.offset)}</small>}
-    {preparing && <><div className="dr-cast-activity" aria-hidden="true"><span/></div><p className="dr-cast-waiting-hint" aria-live="off">{t((job.large?.stage === "scan" ? ["waitNames", "waitSources", "waitService"] : job.phase === "opening" ? ["waitOpening", "waitConnection", "waitService"] : job.phase === "reading" ? ["waitFragments", "waitSources", "waitService"] : ["waitProfiles", "waitRelationships", "waitService"])[hint] as Parameters<typeof castText>[1])}</p>
+    {preparing && <><div className="dr-cast-activity" aria-hidden="true"><span/></div>{!inGamePanel && <p className="dr-cast-waiting-hint" aria-live="off">{t((job.large?.stage === "scan" ? ["waitNames", "waitSources", "waitService"] : job.phase === "opening" ? ["waitOpening", "waitConnection", "waitService"] : job.phase === "reading" ? ["waitFragments", "waitSources", "waitService"] : ["waitProfiles", "waitRelationships", "waitService"])[hint] as Parameters<typeof castText>[1])}</p>}
       {!job.large && <small>{job.phase === "analyzing" ? t("finalStep") : job.phase === "opening" ? t("source") + ": " + job.sourceCount : t("fragment") + " " + Math.min(job.step + 1, job.partCount) + "/" + job.partCount}{job.repair ? " · " + t("repairStep") : ""}</small>}{job.large && job.repair && <small>{t("repairStep")}</small>}</>}
     {!!job.draft?.characters.length && preparing && <small>{t("savedCount")}: {job.draft.characters.length}</small>}
-    {castPreparationReady(job)&&!job.reset&&<p className="dr-cast-validation-success">{castProgressText(locale).ready}</p>}
+    {!inGamePanel&&castPreparationReady(job)&&!job.reset&&<p className="dr-cast-validation-success">{castProgressText(locale).ready}</p>}
     {children}
   </div>;
-  return compact && anchor.current ? createPortal(status, anchor.current.closest(".dr-root") ?? anchor.current.ownerDocument.body) : status;
+  return compact && anchor.current ? createPortal(status, dialogTarget ?? anchor.current.closest(".dr-root") ?? anchor.current.ownerDocument.body) : status;
 }

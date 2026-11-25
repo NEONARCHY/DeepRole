@@ -9,6 +9,7 @@ import { castChatId, castChatReference } from "../core/cast-chat";
 import { enableCastThinking, restoreCastThinking } from "./cast-thinking";
 import { bootstrapCastServiceScreen, createCastServiceScreen, rememberCastServiceScreen, finishCastServiceScreenMarker } from "./field-service-screen";
 import { setServiceBackgroundWork } from "./service-background-render";
+import { IS_DESKTOP } from "../core/chat-host";
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const DELETE = /^(?:delete(?: chat| conversation)?|удалить(?: чат| диалог)?|删除(?:对话)?)$/iu;
@@ -25,6 +26,20 @@ function showRecoveredCastReply(raw: string, marker: string, locale: Locale) {
   card.append(summary, pre); row.append(card);
 }
 function currentChat(): string | undefined { return castChatId(location.pathname); }
+
+// The native client has a local delete operation for an exact chat ID.
+// An interrupted first request may have no history row yet.
+async function deleteDesktopCastChat(chatId: string, authorize: () => Promise<boolean>): Promise<boolean> {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if (!await authorize() || currentChat() !== chatId) return false;
+    const result = await fetch("/__desktop/chat?cancel_generation=1&chat_session_id=" + encodeURIComponent(chatId), { method: "DELETE" });
+    if (result.status === 409) { await pause(250); continue; }
+    if (!result.ok || currentChat() !== chatId) return false;
+    history.replaceState(null, "", "/");
+    return true;
+  }
+  return false;
+}
 /** Only opens controls belonging to the exact owned chat, never a global delete action. */
 export async function deleteOwnedChat(chatId: string, doc: Document = document, wait = pause, authorize = async () => true): Promise<boolean> {
   if (currentChat() !== chatId || !await authorize() || currentChat() !== chatId) return false;
@@ -77,6 +92,7 @@ export async function startCastWorker(): Promise<boolean> {
   let failed = !["opening", "reading", "analyzing", "ready"].includes(claim.phase);
   let capture: CastReplyCapture | undefined, activeRequestMarker = "";
   let nativeOwned: string | undefined = claim.chatId;
+  let binding: Promise<void> | undefined;
   let restoreThinking: (() => void) | undefined = claim.reasoningChanged ? () => restoreCastThinking(adapter.findComposer()) : undefined;
   let remoteTerminal: { phase: string; cleanup: string } | undefined, statusPending = false;
   let accountReplyTime = () => {};
@@ -129,6 +145,7 @@ export async function startCastWorker(): Promise<boolean> {
     if (cleaning) return;
     cleaning = true; stopped = true; capture?.stop();
     screen.update("cleanup");
+    if (IS_DESKTOP) await binding?.catch(() => undefined);
     const chatId = currentChat();
     let ok = !chatId;
     const authorize = async () => {
@@ -144,7 +161,9 @@ export async function startCastWorker(): Promise<boolean> {
             [...document.querySelectorAll<HTMLElement>("[data-testid=stop-generation],button[aria-label*='Stop' i],button[aria-label*='Останов' i]")].find(visible)?.click();
             for (let i = 0; i < 40 && adapter.isGenerating(); i++) await pause(250);
           }
-          if (!adapter.isGenerating()) ok = await deleteOwnedChat(chatId, document, pause, authorize);
+          if (!adapter.isGenerating()) ok = await (IS_DESKTOP
+            ? deleteDesktopCastChat(chatId, authorize)
+            : deleteOwnedChat(chatId, document, pause, authorize));
         }
       }
     } catch { ok = false; }
@@ -199,6 +218,7 @@ export async function startCastWorker(): Promise<boolean> {
         capture?.stop();
         capture = new CastReplyCapture(id, requestMarker, step.prompt.includes("Return ONLY <deeprole_cast>JSON"), document, (raw, identity) => { pendingCheckpoint = { raw, identity }; checkpoint(); }, step.replyCheckpoint);
         capture.start();
+        let dispatchedFromDesktopHome = false;
         if (!step.awaiting) {
           if (step.step === 0 && !step.repair && (currentChat() || nativeMessageRows(document).length)) throw new Error("not-empty-chat");
           if (adapter.getDraft().trim()) throw new Error("draft-not-empty");
@@ -217,15 +237,24 @@ export async function startCastWorker(): Promise<boolean> {
           await pause(150);
           if (touched || stopped || step.chatId && currentChat() !== step.chatId) throw new Error("user-interrupted");
           if (step.step === 0 && (currentChat() || nativeMessageRows(document).length)) throw new Error("not-empty-chat");
+          const startingNativeChat = IS_DESKTOP && step.step === 0 && !currentChat();
           if (!adapter.submitDraft()) { adapter.setDraft(""); throw new Error("composer-unavailable"); }
+          dispatchedFromDesktopHome = startingNativeChat;
           screen.focus();
         }
-        for (let i = 0; !currentChat() && i < 30; i++) await pause(200);
-        if (currentChat() && !touched && (step.chatId || nativeMessageRows(document).some(row => isUserMessage(row) && (row.textContent ?? "").includes(requestMarker)))) {
-          const chatId = currentChat()!;
-          await call({ type: "DR_CAST_WORKER", action: "bound", id, chatId }); nativeOwned = chatId;
-          bound = true; checkpoint();
-        }
+        const hasRequest = () => !!step.chatId || dispatchedFromDesktopHome
+          || nativeMessageRows(document).some(row => isUserMessage(row) && (row.textContent ?? "").includes(requestMarker));
+        const bind = async () => {
+          for (let i = 0; !touched && (!currentChat() || IS_DESKTOP && !hasRequest()) && i < 30; i++) await pause(200);
+          const chatId = currentChat();
+          if (!chatId || touched || !hasRequest()) return;
+          await call({ type: "DR_CAST_WORKER", action: "bound", id, chatId });
+          nativeOwned = chatId;
+          bound = true;
+          checkpoint();
+        };
+        binding = bind();
+        await binding;
         let checkedAt = Date.now(), visibleElapsed = 0, hiddenElapsed = 0, wasHidden = document.hidden;
         let last = "", stable = Date.now(), response = "", recovered = false;
         accountReplyTime = () => {

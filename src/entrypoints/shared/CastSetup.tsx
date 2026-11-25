@@ -14,7 +14,7 @@ import { castNotices } from "../../core/cast-notices";
 import { castReviewReason } from "../../core/cast-review";
 
 
-export function CastSetup({ worldId, locale, compact = false, hideHeading = false }: { worldId: string; locale: Locale; compact?: boolean; hideHeading?: boolean }) {
+export function CastSetup({ worldId, locale, compact = false, hideHeading = false, dialogTarget, inGamePanel = false }: { worldId: string; locale: Locale; compact?: boolean; hideHeading?: boolean; dialogTarget?: HTMLElement | null; inGamePanel?: boolean }) {
  const t = (key: CastCopyKey) => castText(locale, key);
  const reviewId = useId();
  const [job, setJob] = useState<CastView | null>(null), [draft, setDraft] = useState<CastDraft | null>(null);
@@ -35,8 +35,10 @@ export function CastSetup({ worldId, locale, compact = false, hideHeading = fals
      const version = visibilityVersion.current;
      try { const r = await run({ type: "DR_CAST", action: "status", worldId }); if (!disposed && version === visibilityVersion.current && !visibilityPending.current) setJob(r.job ?? null); } catch { /* The start action reports connection/lock errors. */ }
    };
-   void update(); const timer = setInterval(() => void update(), 2500);
-   return () => { disposed = true; clearInterval(timer); };
+   const refreshVisible = () => { if (!document.hidden) void update(); };
+   void update(); const timer = setInterval(refreshVisible, 2500);
+   document.addEventListener("visibilitychange", refreshVisible);
+   return () => { disposed = true; clearInterval(timer); document.removeEventListener("visibilitychange", refreshVisible); };
  }, [worldId]);
  useLayoutEffect(() => {
    if (!open) return;
@@ -58,7 +60,7 @@ export function CastSetup({ worldId, locale, compact = false, hideHeading = fals
    if (!job) return;
    const id = job.id, world = worldId, version = ++visibilityVersion.current;
    visibilityPending.current = true; setVisibility({ id, hidden: !visible }); setError("");
-   if (!visible) root.current?.querySelector<HTMLButtonElement>(".dr-cast-trigger")?.focus({ preventScroll: true });
+   if (!visible) requestAnimationFrame(() => root.current?.querySelector<HTMLButtonElement>(".dr-cast-trigger")?.focus({ preventScroll: true }));
    try {
      const result = await run({ type: "DR_CAST", action: visible ? "show" : "hide", id });
      if (scope.current === world && visibilityVersion.current === version) { setJob(result.job); setVisibility(null); }
@@ -75,16 +77,16 @@ export function CastSetup({ worldId, locale, compact = false, hideHeading = fals
  const notices = draft ? castNotices(draft) : { review: [], notes: [] };
  const hidden = !!job && (visibility?.id === job.id ? visibility.hidden : !!job.statusHidden);
  const hasDiagnostics = !!job?.diagnostics?.length;
-  const hasStatus = !!job && (!compact || hasDiagnostics || preparing || job.phase === "ready" || job.phase === "error" || job.phase === "cancelled" && !!job.large || job.cleanup === "pending" || job.cleanup === "failed");
+ const hasStatus = !!job && (!compact && !inGamePanel || hasDiagnostics || preparing || job.phase === "ready" || job.phase === "error" || job.phase === "cancelled" && !!job.large || job.cleanup === "pending" || job.cleanup === "failed");
  const statusVisible = hasStatus && !hidden;
   const togglesStatus = hasStatus && (hasDiagnostics || hidden || preparing || job?.phase === "ready" || job?.phase === "error" || job?.phase === "cancelled" && !!job.large || job?.cleanup === "pending" || job?.cleanup === "failed");
  const reviewAvailable = !!job?.draft?.characters.length && job.phase === "ready";
- const label = reviewAvailable ? t("review") : togglesStatus ? t(hidden ? "showStatus" : "hide") : t("start");
- return <div ref={root} className={compact ? "dr-cast-setup is-compact" : "dr-cast-setup"}>
-   {!compact && <>{!hideHeading && <strong>{t("title")}</strong>}<p>{t("hint")}</p><p className="dr-cast-notice-hint">{t("sequentialHint")}</p></>}
-   <button className={compact ? "icon-button dr-cast-trigger" : "button secondary small dr-cast-trigger"} type="button" title={label} aria-label={label} disabled={busy && (reviewAvailable || !togglesStatus)} onClick={() => reviewAvailable ? review() : togglesStatus ? void setStatusVisible(hidden) : void act({ type: "DR_CAST", action: "start", worldId, locale, retry: !!job })}><WandSparkles size={16}/>{!compact && <span>{label}</span>}</button>
-   {reviewAvailable && hasStatus && <button className={(compact ? "icon-button" : "button secondary small") + " dr-cast-progress-toggle"} title={t(hidden ? "showStatus" : "hide")} aria-label={t(hidden ? "showStatus" : "hide")} type="button" onClick={() => void setStatusVisible(hidden)}>{compact ? <ListChecks size={16}/> : t(hidden ? "showStatus" : "hide")}</button>}
-   {job && statusVisible && <CastStatus key={job.id} job={job} locale={locale} compact={compact} anchor={root} onHide={() => void setStatusVisible(false)}>
+ const label = reviewAvailable && (!inGamePanel || !hidden) ? t("review") : togglesStatus ? t(hidden ? "showStatus" : "hide") : t("start");
+ return <div ref={root} className={"dr-cast-setup" + (compact ? " is-compact" : inGamePanel ? " is-game-panel" : "")}>
+   {!compact && !inGamePanel && <>{!hideHeading && <strong>{t("title")}</strong>}<p>{t("hint")}</p><p className="dr-cast-notice-hint">{t("sequentialHint")}</p></>}
+   {(!inGamePanel || !statusVisible) && <button className={compact ? "icon-button dr-cast-trigger" : "button secondary small dr-cast-trigger"} type="button" title={label} aria-label={label} disabled={busy && (reviewAvailable || !togglesStatus)} onClick={() => reviewAvailable && (!inGamePanel || !hidden) ? review() : togglesStatus ? void setStatusVisible(hidden) : void act({ type: "DR_CAST", action: "start", worldId, locale, retry: !!job })}><WandSparkles size={16}/>{!compact && <span>{label}</span>}</button>}
+   {!inGamePanel && reviewAvailable && hasStatus && <button className={(compact ? "icon-button" : "button secondary small") + " dr-cast-progress-toggle"} title={t(hidden ? "showStatus" : "hide")} aria-label={t(hidden ? "showStatus" : "hide")} type="button" onClick={() => void setStatusVisible(hidden)}>{compact ? <ListChecks size={16}/> : t(hidden ? "showStatus" : "hide")}</button>}
+   {job && statusVisible && <CastStatus key={job.id} job={job} locale={locale} compact={compact} inGamePanel={inGamePanel} anchor={root} dialogTarget={dialogTarget} onHide={() => void setStatusVisible(false)}>
      {preparing && <button type="button" className="button secondary small" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cancel", id: job.id })}>{t("cancel")}</button>}
      {job.large && <p className="dr-cast-notice-hint">{t("largeHint")}</p>}
      {handoff && <><button type="button" className="button secondary small" disabled={busy || job.cleanup !== "done"} onClick={() => void act({ type: "DR_CAST", action: "start", worldId, locale, retry: true })}>{t("resume")}</button><button type="button" className="button secondary small" disabled={busy} onClick={() => void act({ type: "DR_CAST", action: "cancel", id: job.id })}>{t("cancel")}</button></>}
@@ -128,6 +130,6 @@ export function CastSetup({ worldId, locale, compact = false, hideHeading = fals
        const checked = { ...draft, characters: draft.characters.map(c => ({ ...c, sheet: { ...c.sheet, protagonist: c.key === hero } })), partners: draft.partners.filter(k => k !== hero) };
        await act({ type: "DR_CAST", action: "apply", id: job!.id, draft: checked, selected, hero });
      }}>{t("save")} · {selected.length}</button></footer>
-   </div></div>, root.current?.closest(".dr-root") ?? root.current ?? document.body)}
+   </div></div>, dialogTarget ?? root.current?.closest(".dr-root") ?? root.current ?? document.body)}
  </div>;
 }

@@ -1,4 +1,5 @@
 import { DEEPSEEK_PROMPT_CHAR_LIMIT, contextHandshakeTimeoutMs, deepRoleServiceRequestId, injectIntoJsonBody, isDeepRoleServiceBody, looksLikeChatUrl, outgoingUserText, outgoingChatId, outgoingParentMessageId, replaceOutgoingUserText } from "../core/request-injection";
+import { IS_DESKTOP } from "../core/chat-host";
 import { estimateChatHistory, readStoryHistory } from "../core/chat-history";
 import { readFieldHistory, validFieldHistoryQuery, type FieldHistoryQuery } from "../core/field-history";
 import { readStoryTransportIdentity, validNativeStoryId, nativeStoryMessageKey, validStoryTransportIdentity, type StoryTransportIdentity } from "../core/story-transport";
@@ -11,6 +12,7 @@ import { readStoryGameSnapshot } from "../core/story-game";
 import { reportMemoryPreparationFailure } from "../core/memory-preparation-diagnostic";
 import { installServiceBackgroundRender } from "../adapters/service-background-render";
 import { isDeepSeekFirstChatRoute } from "../core/chat-scope";
+import { defineUnlistedScript } from "wxt/utils/define-unlisted-script";
 
 type FreshContext = { context: string | null; timedOut: boolean; continuation?: boolean; url?: string; oversizedLength?: number; blockSend?: boolean };
 
@@ -250,7 +252,7 @@ export default defineUnlistedScript(() => {
   async function prepare(body: string, transport: "fetch" | "xhr", capture = false, editing = false): Promise<{ body: string; attached: boolean; blocked?: boolean; id?: string; url?: string; serviceId?: string; dispatch?: StoryDispatchIdentity; continuation?: boolean }> {
     const unchanged = { body, attached: false };
     const draft = outgoingUserText(body);
-    if (draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT && (!editing || draft.length > 100_000)) {
+    if (!IS_DESKTOP && draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT && (!editing || draft.length > 100_000)) {
       rejectLongPrompt(body, draft.length);
       return { ...unchanged, blocked: true };
     }
@@ -289,7 +291,7 @@ export default defineUnlistedScript(() => {
     }
     if (context === null || location.href !== url) {
       captureRequests.delete(id);
-      if (draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+      if (!IS_DESKTOP && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
         rejectLongPrompt(body, draft.length, url, id);
         return { ...captured, blocked: true };
       }
@@ -307,7 +309,7 @@ export default defineUnlistedScript(() => {
       }
     } catch { status(false, id, url, undefined, "invalid-request"); }
     const finalPrompt = outgoingUserText(result.body);
-    if (finalPrompt !== null && finalPrompt.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+    if (!IS_DESKTOP && finalPrompt !== null && finalPrompt.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
       captureRequests.delete(id);
       rejectLongPrompt(body, finalPrompt.length, url, id, edit?.draft);
       return { ...result, blocked: true };
@@ -417,7 +419,7 @@ export default defineUnlistedScript(() => {
       // Synchronous XHR cannot wait for storage. Never send stale memory instead.
       if (!this.asynchronous) {
         const draft = outgoingUserText(body);
-        if (draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+        if (!IS_DESKTOP && draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
           rejectLongPrompt(body, draft.length);
           throw new DOMException("DeepRole paused sending: prompt too long", "AbortError");
         }

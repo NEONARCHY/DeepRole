@@ -1,31 +1,33 @@
-import { Children, createContext, isValidElement, useContext, useEffect, useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { Children, createContext, isValidElement, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { Locale } from "../../core/types";
 import { getHelp } from "../../core/help";
-import { TooltipButton } from "./TooltipButton";
+import { TooltipButton, tooltipContainer, tooltipPosition } from "./TooltipButton";
 
 export const HelpLocale = createContext<Locale>("ru");
 
 export function Help(props: { label: string; text?: string }) {
   const locale = useContext(HelpLocale);
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ x: 8, y: 8 });
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLButtonElement>(null);
+  const tip = useRef<HTMLDivElement>(null);
   const pinned = useRef(false);
   const id = useId();
   const label = `${locale === "ru" ? "Подсказка" : "Help"}: ${props.label}`;
-  const show = () => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect) return;
-    setPosition({ x: Math.max(8, Math.min(rect.right - 280, window.innerWidth - 288)), y: rect.bottom + 8 > window.innerHeight - 180 ? Math.max(8, rect.top - 180) : rect.bottom + 8 });
-    setOpen(true);
-  };
+  const show = () => setOpen(true);
+  useLayoutEffect(() => {
+    if (open && ref.current && tip.current) setPosition(tooltipPosition(ref.current, tip.current));
+  }, [open, props.label, props.text]);
   useEffect(() => {
     if (!open) return;
     const close = () => { pinned.current = false; setOpen(false); };
     const scroll = () => { if (!pinned.current) close(); };
     const key = (event: KeyboardEvent) => { if (event.key === "Escape") { event.stopPropagation(); close(); } };
-    const outside = (event: PointerEvent) => { if (!ref.current?.contains(event.target as Node)) close(); };
+    const outside = (event: PointerEvent) => {
+      const path = event.composedPath();
+      if (!path.includes(ref.current!) && !path.includes(tip.current!)) close();
+    };
     window.addEventListener("keydown", key, true);
     window.addEventListener("pointerdown", outside);
     window.addEventListener("scroll", scroll, true);
@@ -38,8 +40,12 @@ export function Help(props: { label: string; text?: string }) {
     };
   }, [open]);
   return <>
-    <button ref={ref} type="button" className="dr-help" aria-label={label} aria-expanded={open} aria-describedby={open ? id : undefined} onMouseEnter={show} onMouseLeave={() => { if (!pinned.current) setOpen(false); }} onFocus={show} onBlur={() => { if (!pinned.current) setOpen(false); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); pinned.current = true; show(); }}>?</button>
-    {open && createPortal(<div id={id} role="tooltip" className="dr-help-tooltip" style={{ left: position.x, top: position.y }}><strong>{props.label}</strong><p>{props.text ?? getHelp(locale, props.label)}</p></div>, ref.current?.getRootNode() instanceof ShadowRoot ? (ref.current.getRootNode() as ShadowRoot) : document.body)}
+    <button ref={ref} type="button" className="dr-help" aria-label={label} aria-expanded={open} aria-describedby={open ? id : undefined} onMouseEnter={show} onMouseLeave={() => { if (!pinned.current) setOpen(false); }} onFocus={show} onBlur={() => { if (!pinned.current) setOpen(false); }} onClick={(event) => {
+      event.preventDefault(); event.stopPropagation();
+      pinned.current = !pinned.current;
+      setOpen(pinned.current);
+    }}>?</button>
+    {open && createPortal(<div ref={tip} id={id} role="tooltip" className="dr-help-tooltip" style={{ left: position?.x ?? 8, top: position?.y ?? 8, visibility: position ? "visible" : "hidden" }}><strong>{props.label}</strong><p>{props.text ?? getHelp(locale, props.label)}</p></div>, tooltipContainer(ref.current))}
   </>;
 }
 

@@ -6,6 +6,8 @@ import { getSettings } from "../../storage/settings";
 import { imageText, type ImageCopyKey } from "../../core/image-i18n";
 import type { Locale } from "../../core/types";
 import "../sidepanel/styles.css";
+import "../shared/workspace-appearance.css";
+import "../shared/workspace-material.css";
 function PermissionPage() {
   const [locale, setLocale] = useState<Locale>("en"), [origin, setOrigin] = useState(""), [busy, setBusy] = useState(false), [status, setStatus] = useState<ImageCopyKey | null>(null);
   const ticketId = new URL(location.href).searchParams.get("ticket") ?? "";

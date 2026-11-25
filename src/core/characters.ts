@@ -276,9 +276,13 @@ export function portraitSources(sheet?: CharacterSheet, action = "neutral", vari
 }
 
 /** A malformed image must not become a blank tile or trigger an endless retry loop. */
-const portraitImageCache = new WeakMap<HTMLImageElement, string[]>();
+const portraitImageCache = new WeakMap<HTMLImageElement, readonly string[]>();
 export function syncPortraitImage(image: HTMLImageElement, sheet?: CharacterSheet, action = "neutral", variation = 0, preview = false): void {
-  const sources = portraitSources(sheet, action, variation, preview); const previous = portraitImageCache.get(image);
+  syncPortraitSources(image, portraitSources(sheet, action, variation, preview));
+}
+
+export function syncPortraitSources(image: HTMLImageElement, sources: readonly string[]): void {
+  const previous = portraitImageCache.get(image);
   if (previous?.length === sources.length && previous.every((source, index) => source === sources[index])) return;
   portraitImageCache.set(image, sources);
   let index = 0;

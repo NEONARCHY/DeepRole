@@ -1,0 +1,161 @@
+@import "./design-tokens.css";
+
+@import "./workspace-palette.css";
+/* Neutral surfaces, Manrope, geometry and easing follow the Swayfold design system. */
+@font-face {
+  font-family: Manrope;
+  src: url("../../../desktop/assets/ManropeVariable.woff2?inline") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+html:root {
+  font-family: var(--desktop-font);
+  background: var(--dr-bg);
+  color: var(--dr-text);
+}
+
+html:root :is(button, a, input, textarea, select, summary):focus-visible {
+  outline-color: var(--desktop-focus);
+}
+
+html:root ::selection {
+  background: color-mix(in srgb, var(--dr-focus) 35%, transparent);
+  color: var(--dr-text);
+}
+
+/* Embedded library, extension panel, recovery and permission pages. */
+.app-shell { padding-bottom: var(--dr-space-5); }
+.workspace-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-bottom: var(--dr-space-2);
+  background: var(--dr-bg);
+}
+.app-shell .workspace-toolbar .app-header { position: static; }
+.app-shell .workspace-toolbar .workspace-nav {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+}
+html:root .app-shell :is(.app-header, .bottom-nav) {
+  background: var(--desktop-sidebar);
+  border: 0;
+  box-shadow: none;
+}
+
+html:root .app-shell .app-header {
+  gap: var(--dr-layout-gap);
+  padding: var(--dr-layout-gap) var(--dr-layout-gutter);
+}
+
+html:root .app-shell .view-title h1 { font-size: 25px; letter-spacing: -.045em; line-height: 1.23; }
+html:root .app-shell .bottom-nav {
+  margin: var(--dr-layout-label) var(--dr-layout-gutter) 0;
+  padding: var(--dr-layout-row);
+  gap: var(--dr-layout-row);
+  border: 0;
+  border-radius: var(--desktop-panel);
+  box-shadow: var(--dr-depth-panel);
+}
+
+html:root .app-shell :is(.settings-card, .panel-card, .books-block, .memory-card, .snapshot-card, .hero-card, .rp-card, .tutorial-card, .action-card) {
+  background: var(--dr-surface);
+  border: 0;
+  border-radius: var(--desktop-panel);
+  box-shadow: none;
+}
+
+html:root .app-shell :is(.button, .input, .textarea, select, .field-label input:not([type=checkbox], [type=radio], [type=range], [type=color]), .icon-button) {
+  border-radius: var(--desktop-control);
+}
+
+html:root .app-shell :is(.button, .input, .textarea, select, .search-field, .segmented,
+    .field-label input:not([type=checkbox], [type=radio], [type=range], [type=color])) { border: 0; }
+
+html:root .app-shell :is(.input, .textarea, select, .search-field,
+    .field-label input:not([type=checkbox], [type=radio], [type=range], [type=color])) {
+  background-color: var(--dr-surface);
+}
+
+html:root .app-shell :is(.settings-card, .play-world-card, .modal, .rp-editor) :is(.input, .textarea, select, .search-field,
+    .field-label input:not([type=checkbox], [type=radio], [type=range], [type=color])) {
+  background-color: var(--dr-panel);
+}
+
+html:root .app-shell :is(.button, .icon-button, .bottom-nav button, .segmented button) {
+  min-block-size: 44px;
+}
+
+html:root .app-shell .button.primary:not(.danger, .danger-button) {
+  color: var(--dr-on-action);
+}
+
+html:root .app-shell :is(.bottom-nav button.active, .segmented button.active) {
+  background: var(--dr-selected);
+  color: var(--dr-focus);
+  border-radius: var(--desktop-control);
+  box-shadow: none;
+}
+
+html:root .app-shell :is(.bottom-nav button, .segmented button):hover:where(:not(.active)) {
+  background: var(--dr-raised);
+  color: var(--dr-text);
+}
+
+html:root .app-shell :is(.modal, .dr-export-dialog, .dr-memory-dialog) {
+  background: var(--dr-panel);
+  border: 0;
+  border-radius: var(--desktop-card);
+  box-shadow: var(--dr-depth-dialog);
+}
+
+html:root .app-shell .modal-backdrop { background: var(--desktop-overlay); }
+
+html:root .app-shell :is(.setting-copy, .field-label, .toggle-row) {
+  font-size: 13px;
+}
+
+html:root .app-shell :is(.button, .segmented button, .settings-card > header strong) {
+  font-size: 13px;
+}
+
+:host :is(.dr-root, .dr-memory-dialog, .dr-context-anchor) { font-family: var(--desktop-font); }
+:host :is(.dr-widget-deck-tools, .dr-widget-minimized, .dr-chat-meter, .dr-characters, .dr-world-scene, .dr-alert) {
+  border-radius: var(--desktop-panel);
+}
+:host :is(.dr-widget-deck-tools, .dr-widget-minimized, .dr-chat-meter:not(.is-low, .is-critical), .dr-characters, .dr-world-scene) {
+  border: 0;
+  border-radius: var(--desktop-panel);
+  box-shadow: none;
+}
+:host .dr-widget-deck { gap: var(--dr-space-2); }
+:host .dr-widget-deck:not([data-compact], [data-collapsed]) {
+  gap: var(--dr-space-1);
+}
+:host .dr-widget-deck:not([data-compact], [data-collapsed])::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--dr-panel-width);
+  border-radius: var(--desktop-card);
+  background: var(--dr-panel);
+  pointer-events: none;
+}
+:host .dr-widget-deck:not([data-compact], [data-collapsed])
+  :is(.dr-widget-deck-tools, .dr-characters, .dr-world-scene, .dr-chat-meter:not(.is-low, .is-critical)) {
+  background: transparent;
+  border-color: transparent;
+}
+:host .dr-widget-deck :is(.dr-pill, .dr-memory-control:not(.has-issue), .dr-character-row, .scene-world select) {
+  border: 0;
+  box-shadow: none;
+}
+:host .dr-widget-deck :is(.dr-pill, .scene-world select) {
+  background-color: var(--dr-surface);
+}
+:is(:host, html:root) :is(.dr-widget-deck, .dr-panel-tools-dialog) :is(button, select) { font-family: var(--desktop-font); }
+:is(:host, html:root) :is(.dr-widget-deck, .dr-panel-tools-dialog) :is(button, select, input, summary):focus-visible {
+  outline-color: var(--dr-focus);
+}

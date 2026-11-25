@@ -1,6 +1,7 @@
 import type { DeepRoleSettings } from "./types";
 import { DEFAULT_PORTRAIT_MAX_EDGE, DEFAULT_PORTRAIT_PREVIEW_SIZE } from "./portrait-upload";
 import { DEFAULT_ACTIONS } from "./character-actions";
+import { IS_DESKTOP } from "./chat-host";
 
 export const DEFAULT_SETTINGS: DeepRoleSettings = {
   strictMemorySending: false,
@@ -11,7 +12,7 @@ export const DEFAULT_SETTINGS: DeepRoleSettings = {
   showDeepSeekReasoning: false,
   replyRecoveryEnabled: true,
   contextWarningsEnabled: true,
-  chatContextCapacity: 1_000_000,
+  chatContextCapacity: IS_DESKTOP ? 262_144 : 1_000_000,
   locale:
     typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ru")
       ? "ru"

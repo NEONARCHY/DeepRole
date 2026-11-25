@@ -1,0 +1,219 @@
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const { mkdir, mkdtemp, readFile, writeFile } = require("node:fs/promises");
+const { tmpdir } = require("node:os");
+const { join } = require("node:path");
+const { modelLimits, fitMessages, availableMemoryBytes, earlierSceneQuery, withEarlierStoryScene } = require("../model-context.cjs");
+const { chatRequest } = require("../chat-store.cjs");
+const { recordUsage, readTokenUsage, estimatedCost, usageSummary } = require("../usage.cjs");
+const { saveSpending, spendingNotices } = require("../spending.cjs");
+const { imageRequest, imageReceipt, veniceCharges } = require("../provider.cjs");
+
+test("model window reserves the answer and keeps contiguous complete exchanges", () => {
+  const limits = modelLimits({ maxTokens: 4096 }, { model_spec: { availableContextTokens: 24_000 } });
+  const system = { role: "system", content: "Play the scene." };
+  const oldest = { role: "user", content: "a".repeat(41_000) };
+  const reply = { role: "assistant", content: "An answer." };
+  const current = { role: "user", content: "b".repeat(41_000) };
+  const room = availableMemoryBytes(system, limits, 41_000);
+  assert.ok(room > 0);
+  assert.equal(fitMessages(system, [{ ...current, content: current.content + "b".repeat(room + 3) }], limits), null);
+  assert.deepEqual(fitMessages(system, [oldest, reply, current], limits)?.messages, [system, current]);
+  assert.deepEqual(modelLimits({ maxTokens: 4096, contextTokens: 1200 }, { context_length: 24_000 }),
+    { window: 1200, windowSource: "manual", replyTokens: 600 });
+});
+
+test("ambiguous, speculative and already-visible passages do not get an archived excerpt", () => {
+  const limits = { window: 1_500, replyTokens: 256 };
+  const system = { role: "system", content: "Play the scene." };
+  const current = { role: "user", content: "Scene settings.\n\n[User message]\nWhere is the spare pass?", sceneQuery: earlierSceneQuery("Where is the spare pass?") };
+  const user = { role: "user", content: "Continue." };
+  const old = content => ({ role: "assistant", content, recordedScene: true });
+  const gap = { role: "assistant", content: "Rain fell. ".repeat(500) };
+  for (const [older, retained] of [
+    [[old("The spare pass is in box 29."), old("The spare pass is inside the slate cupboard.")], "Rain fell."],
+    [[old("If the spare pass is in box 29, we can look for it."), old("Rain fell." )], "Rain fell."],
+    [[old("The spare pass is in box 29."), old("Rain fell.")], "The spare pass has been moved."],
+  ]) {
+    const messages = [user, older[0], user, older[1], user, gap, user, { role: "assistant", content: retained }, current];
+    const plan = fitMessages(system, messages, limits);
+    assert.equal(plan.omittedMessages, 6);
+    assert.equal(withEarlierStoryScene(plan, messages, limits), plan);
+  }
+});
+
+test("reveals the earlier or later location according to the request, within a 2,000-token window", () => {
+  const limits = { window: 2_000, replyTokens: 256 };
+  const system = { role: "system", content: "Play the scene." };
+  const before = "Мира оставила запасной пропуск в ящике № 84 под лампой.";
+  const moved = "Мира переложила запасной пропуск из ящика № 84 в серый сейф № 12.";
+  const user = { role: "user", content: "Смотрю вокруг." };
+  const scene = content => ({ role: "assistant", content, recordedScene: true });
+  const gap = [user, scene("Шёл дождь над мастерской. ".repeat(360))];
+  const ask = (draft, line, memory = "Scene settings.") => {
+    const current = { role: "user", content: `${memory}\n\n[User message]\n${draft}`, sceneQuery: earlierSceneQuery(draft) };
+    const messages = [...line, current];
+    const plan = withEarlierStoryScene(fitMessages(system, messages, limits), messages, limits);
+    assert.ok(plan.estimatedInput + limits.replyTokens <= limits.window);
+    return plan.messages.at(-1).content.match(/<deeprole_earlier_scene>[^\n]*\n(.*?)\n<\/deeprole_earlier_scene>/u)?.[1];
+  };
+  const now = "Где сейчас запасной пропуск?", earlier = "Где раньше был запасной пропуск?";
+  const archived = [user, scene(before), user, scene(moved), ...gap, user, scene("За окном дождь.")];
+  assert.equal(ask(now, archived, `<deeprole_story_memory>${before}</deeprole_story_memory>`), JSON.stringify(moved));
+  assert.equal(ask(earlier, archived), JSON.stringify(before));
+  assert.equal(ask(now, archived, `<deeprole_story_memory>${before}\nЗапасной пропуск вернулся в портфель.</deeprole_story_memory>`), undefined);
+  const retained = [user, scene(before), ...gap, user, scene(moved)];
+  assert.equal(ask(now, retained), undefined);
+  assert.equal(ask(earlier, retained), JSON.stringify(before));
+  for (const misleading of [
+    "Мира не переложила запасной пропуск из ящика № 84 в сейф № 12.",
+    "Мира сказала, что переложила запасной пропуск из ящика № 84 в сейф № 12.",
+    "Мира переложила старый фонарь из ящика, где лежит запасной пропуск, в серый сейф № 12.",
+    `${moved} Мира переложила запасной пропуск из сейфа № 12 в сумку.`,
+  ]) assert.equal(ask(now, [user, scene(before), user, scene(misleading), ...gap]), undefined);
+  const short = [user, scene(before), ...gap, user, scene("Мира переложила пропуск из ящика № 84 в серый сейф № 12.")];
+  assert.equal(ask(now, short), undefined);
+  assert.equal(earlierSceneQuery("Где сейчас и где раньше был запасной пропуск?"), undefined);
+});
+
+test("a native turn sends one matching omitted scene from its own branch in the same completion", async context => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-scene-recall-test-"));
+  const id = "scene-chat";
+  const prompt = (draft, branch = "main") => '<deeprole_story_update_mode>world:"observatory",chat:"scene-chat",branch:"' + branch
+    + '"</deeprole_story_update_mode>\n<deeprole_game_automation>{"world":"observatory","mode":"automatic","revision":"p"}</deeprole_game_automation>\n\n[User message]\n' + draft;
+  const excerpt = "Мира положила запасной пропуск в ящик № 29 под кобальтовым светильником.";
+  const turns = [["Осматриваю пропуск.", excerpt], ["Другая ветка.", "Запасной пропуск остался в красном сейфе № 81.", "alternate"],
+    ["День дождя.", "Шёл дождь над мастерской. ".repeat(240)], ["Подхожу к окну.", "За окном стучит дождь."]];
+  const messages = turns.flatMap(([visible, text, branch], index) => [
+    { id: index * 2 + 1, parent: index * 2 || null, role: "user", visible, text: prompt(visible, branch) },
+    { id: index * 2 + 2, parent: index * 2 + 1, role: "assistant", visible: text, text },
+  ]);
+  await mkdir(join(data, "Chats"));
+  const file = join(data, "Chats", id + ".json");
+  await writeFile(file, JSON.stringify({ id, title: "Мастерская", messages, head: 8 }));
+  await writeFile(join(data, "model.json"), JSON.stringify({ baseUrl: "http://127.0.0.1:9901/v1", model: "recall-test", maxTokens: 256, contextTokens: 1_800 }));
+  const posts = [];
+  const sceneAnswer = "Запасной пропуск был в ящике № 29.";
+  const echo = '{"kind":"event","anchor":"запасной пропуск в ящике","risk":"ordinary"}';
+  context.mock.method(globalThis, "fetch", async (target, options) => {
+    if (target.pathname.endsWith("/models")) return Response.json({ data: [] });
+    posts.push(JSON.parse(options.body));
+    return Response.json({ choices: [{ message: { content: `${sceneAnswer}\n\n${echo}` }, finish_reason: "stop" }] });
+  });
+  const visible = "Напомни, где запасной пропуск?";
+  const response = await chatRequest(data, {}, new Request("https://deeprole.local/api/v0/chat/completion", {
+    method: "POST", body: JSON.stringify({ chat_session_id: id, parent_message_id: 8, visible, prompt: prompt(visible) }),
+  }));
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /в ящике № 29/);
+  assert.equal(posts.length, 1);
+  const sent = posts[0].messages;
+  assert.ok(sent.some(message => message.content === "За окном стучит дождь."));
+  assert.match(sent.at(-1).content, /<deeprole_earlier_scene>/);
+  assert.ok(sent.at(-1).content.includes(excerpt));
+  assert.ok(!sent.some(message => message.content.includes("красном сейфе")));
+  const stored = JSON.parse(await readFile(file, "utf8"));
+  assert.equal(stored.messages.at(-2).text, prompt(visible));
+  assert.equal(stored.messages.at(-1).visible, sceneAnswer);
+  const explicitlyRequested = "Покажи JSON этой записи.";
+  const shown = await chatRequest(data, {}, new Request("https://deeprole.local/api/v0/chat/completion", {
+    method: "POST", body: JSON.stringify({ chat_session_id: id, parent_message_id: stored.head, visible: explicitlyRequested, prompt: prompt(explicitlyRequested) }),
+  }));
+  assert.equal(shown.status, 200);
+  await shown.text();
+  const final = JSON.parse(await readFile(file, "utf8"));
+  assert.equal(final.messages.at(-1).visible, `${sceneAnswer}\n\n${echo}`);
+});
+
+test("actual usage survives a ledger reload and matched charges replace estimates", async () => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-usage-test-"));
+  const now = new Date(2026, 10, 25, 12).getTime();
+  const tokens = readTokenUsage({ prompt_tokens: 1000, completion_tokens: 500, completion_tokens_details: { reasoning_tokens: 5 } });
+  const estimatedUsd = estimatedCost(tokens, { input: { usd: 2 }, output: { usd: 8 } });
+  assert.equal(estimatedUsd, 0.006);
+  await recordUsage(data, { id: "one", chatId: "active", at: now - 10, venice: true });
+  await recordUsage(data, { id: "one", requestId: "match", tokens, estimatedUsd });
+  await recordUsage(data, { id: "interrupted", chatId: "active", at: now - 9 });
+  await recordUsage(data, { id: "old", chatId: "active", at: now - 8 * 86_400_000, tokens, estimatedUsd });
+  const charges = new Map([["match", { usd: 0.001, diem: 0.02, bundled: 0.03, earned: 0.04 }], ["someone-else", { usd: 200, diem: 0 }]]);
+  await usageSummary(data, "active", async () => ({ status: "ok", charges }), now);
+  const summary = await usageSummary(data, "active", undefined, now);
+  assert.equal(summary.days.length, 7);
+  assert.deepEqual(summary.week, { requests: 2, measured: 1, input: 1000, output: 500, unknown: 1, estimated: 0, usd: 0.001, diem: 0.02, bundled: 0.03, earned: 0.04 });
+  assert.equal(summary.chat.requests, 3);
+  assert.equal(summary.chat.estimated, estimatedUsd);
+  assert.equal(estimatedCost({ ...tokens, cached: 5 }, { input: { usd: 2 }, output: { usd: 8 } }), undefined);
+});
+
+test("weekly and low balance notices are deduplicated and use the selected currency", async () => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-spending-test-"));
+  const now = new Date(2026, 10, 25, 12).getTime();
+  const saved = await saveSpending(data, { encryptStringAsync: async () => Buffer.from("encrypted") }, {
+    weeklyUsd: 10, lowBalance: { currency: "DIEM", threshold: 4 }, billingKey: "test-billing-key", clearBillingKey: false,
+  });
+  assert.equal(saved.hasBillingKey, true);
+  assert.equal(Object.hasOwn(saved, "billingKey"), false);
+  const spend = async () => ({ usd: 7, estimated: 1 });
+  const balances = async () => ({ USD: 100, DIEM: 2 });
+  const checks = await Promise.all([spendingNotices(data, spend, balances, now), spendingNotices(data, spend, balances, now)]);
+  assert.deepEqual(checks.flat(), [{ type: "weekly", spent: 8, threshold: 10, estimated: true }, { type: "balance", amount: 2, currency: "DIEM" }]);
+  await spendingNotices(data, spend, async () => ({ DIEM: 8 }), now);
+  assert.deepEqual(await spendingNotices(data, spend, balances, now), [{ type: "balance", amount: 2, currency: "DIEM" }]);
+  assert.deepEqual(await spendingNotices(data, spend, balances, now + 7 * 86_400_000), [{ type: "weekly", spent: 8, threshold: 10, estimated: true }]);
+});
+
+test("an illustration is charged only with an exact receipt match", async context => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-media-usage-test-"));
+  const api = "https://api.venice.ai/api/v1/image/generate";
+  context.mock.method(globalThis, "fetch", async (target, options) => {
+    assert.equal(target.href, api);
+    assert.equal(options.headers.has("x-deeprole-usage-chat"), false);
+    return Response.json({ id: "generate-image-receipt", images: ["synthetic"] });
+  });
+  const request = new Request("https://deeprole.local/__desktop/image", { method: "POST", body: JSON.stringify({
+    url: api, method: "POST", headers: { "X-DeepRole-Usage-Chat": "scene-chat" }, body: "{}",
+  }) });
+  const generated = await imageRequest(request, new Set(["https://api.venice.ai/*"]), data);
+  const record = generated.headers.get("x-deeprole-usage-id");
+  assert.ok(record);
+  assert.equal((await usageSummary(data, "scene-chat")).images.unknown, 1);
+  const receipt = await imageReceipt(data, new Request("https://deeprole.local/__desktop/image-receipt", {
+    method: "POST", body: JSON.stringify({ record, requestId: (await generated.json()).id }),
+  }));
+  assert.equal(receipt.status, 204);
+  const summary = await usageSummary(data, "scene-chat", async () => ({
+    status: "ok", charges: new Map([["generate-image-receipt", { usd: 0.03, diem: 0 }], ["unrelated", { usd: 100, diem: 0 }]]),
+  }));
+  assert.equal(summary.images.usd, 0.03);
+  assert.equal(summary.images.measured, 0);
+  assert.equal(summary.images.unknown, 0);
+  assert.equal(summary.chat.usd, 0.03);
+});
+
+test("a restricted inference key stays separate from a key with billing access", async context => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-billing-key-test-"));
+  const safeStorage = {
+    encryptStringAsync: async value => Buffer.from(value),
+    decryptStringAsync: async value => ({ result: value.toString() }),
+  };
+  await writeFile(join(data, "model.json"), JSON.stringify({
+    baseUrl: "https://api.venice.ai/api/v1", model: "test-story", key: Buffer.from("inference-key").toString("base64"),
+  }));
+  context.mock.method(globalThis, "fetch", async (target, options) => {
+    assert.equal(target.origin, "https://api.venice.ai");
+    assert.equal(target.pathname, "/api/v1/billing/usage-history");
+    if (options.headers.Authorization === "Bearer inference-key") return new Response(null, { status: 401 });
+    assert.equal(options.headers.Authorization, "Bearer billing-only-key");
+    return Response.json({ data: [
+      { currency: "BUNDLED_CREDITS", amount: -0.02, inferenceDetails: { requestId: "matched" } },
+      { currency: "USD", amount: -0.03, inferenceDetails: { requestId: "matched" } },
+      { currency: "USD", amount: -1, inferenceDetails: null },
+    ] });
+  });
+  const now = Date.now();
+  assert.deepEqual(await veniceCharges(data, safeStorage, now - 1000, now), { status: "restricted" });
+  await saveSpending(data, safeStorage, { billingKey: "billing-only-key", clearBillingKey: false });
+  const result = await veniceCharges(data, safeStorage, now - 1000, now);
+  assert.equal(result.status, "ok");
+  assert.deepEqual([...result.charges], [["matched", { usd: 0.03, diem: 0, bundled: 0.02, earned: 0 }]]);
+});

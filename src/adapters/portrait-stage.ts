@@ -1,15 +1,18 @@
-import { characterCast, characterHighlights, characterInterlocutors, characterText, actionLabel, syncPortraitImage } from "../core/characters";
+import { characterCast, characterHighlights, characterInterlocutors, characterText, actionLabel, portraitSources, syncPortraitSources } from "../core/characters";
 import { resolveCharacterAction } from "../core/character-actions";
 import { clamp, PORTRAIT_MAX_WIDTH, portraitBounds, portraitPose } from "../core/portrait-layout";
 import type { CharacterScene, Locale, PortraitLayout, PortraitPose, SceneEntity } from "../core/types";
 import portraitStyle from "./portrait-stage.css?raw";
 import designTokens from "../entrypoints/shared/design-tokens.css?raw";
+import workspacePalette from "../entrypoints/shared/workspace-palette.css?raw";
+import workspaceMaterial from "../entrypoints/shared/workspace-material.css?raw";
+import { IS_DESKTOP } from "../core/chat-host";
 import { openPortraitViewer, photoCopy } from "./portrait-viewer";
 import { photoImageSource } from "../core/photo-assets";
 import { validPortrait } from "../core/portrait-variations";
 import { scenePortraitIndex } from "../core/portrait-variations";
 import { fitScene } from "../core/adaptive-layout";
-import { sceneAvailableLeft, widgetDeck, widgetRects } from "./adaptive-layout";
+import { sceneAvailableLeft, sceneAvailableRight, widgetDeck, widgetRects } from "./adaptive-layout";
 import { nearestWidgetSpace } from "../core/widget-spacing";
 import { composerBounds, fitPinnedChoices, pinnedSceneFit, inlineSceneFit } from "./pinned-choices";
 
@@ -21,9 +24,10 @@ export interface PortraitStageOptions {
   pinLeft?: boolean;
   pinRight?: boolean;
   adaptiveLayout?: boolean;
+  animations?: boolean;
   onSave: (entityId: string | null, pose: PortraitPose | null) => Promise<void>;
 }
-type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
+type Widget = { slot: HTMLElement; box: HTMLElement; move: HTMLButtonElement; resize: HTMLButtonElement; open: HTMLButtonElement; photo: HTMLElement; image?: HTMLImageElement; pendingImage?: HTMLImageElement; sources?: string[]; pose?: PortraitPose; restingPose?: PortraitPose; statsKey?: string };
 type Stage = { anchor: HTMLElement; overlay: HTMLElement; frame: HTMLElement; manualFrame: HTMLElement; status: HTMLElement; reset: HTMLButtonElement; widgets: Map<string, Widget>; options?: PortraitStageOptions; locale: Locale; scope: string; heroId?: string; partnerIds: Set<string>; groupKey?: string; grouped?: boolean; busy: boolean; dragging: boolean; draggingId?: string; placementKey?: string; needsRedock?: boolean; observer: ResizeObserver; onResize: () => void; disposed: boolean };
 const stages = new WeakMap<HTMLElement, Stage>();
 const activeStages = new Set<Stage>();
@@ -33,6 +37,61 @@ const attr = (node: HTMLElement, key: string, value: string) => { if (node.getAt
 const css = (node: HTMLElement, key: string, value: string) => { if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value); };
 const PORTRAIT_CHOICE_GAP = 24;
 const PORTRAIT_PEER_GAP = 6;
+
+function portraitMotion(stage: Stage) {
+  return stage.options?.animations !== false && typeof stage.overlay.animate === "function" &&
+    !stage.overlay.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
+function fadeCaption(node: HTMLElement, value: string, motion: boolean) {
+  if (node.textContent === value) return;
+  const changed = !!node.textContent;
+  node.textContent = value;
+  if (!changed || !motion) return;
+  for (const animation of node.getAnimations()) if (animation.id === "deeprole-portrait-caption") animation.cancel();
+  node.animate([{ opacity: 0.25 }, { opacity: 1 }], { id: "deeprole-portrait-caption", duration: 180, easing: "ease-out" });
+}
+
+function syncPortraitViewer(widget: Widget, locale: Locale) {
+  const { image, open } = widget;
+  const viewable = image && validPortrait(photoImageSource(image));
+  if (viewable) {
+    attr(image, "data-viewable", "true"); attr(image, "title", photoCopy(locale).open);
+    attr(open, "aria-keyshortcuts", "Space"); attr(open, "aria-description", photoCopy(locale).open);
+  } else {
+    image?.removeAttribute("data-viewable"); image?.removeAttribute("title");
+    open.removeAttribute("aria-keyshortcuts"); open.removeAttribute("aria-description");
+  }
+}
+
+function presentPortrait(widget: Widget, sources: string[], stage: Stage) {
+  if (widget.sources?.length === sources.length && sources.every((source, index) => source === widget.sources?.[index])) return;
+  widget.sources = sources;
+  widget.pendingImage?.remove();
+  const image = widget.photo.ownerDocument.createElement("img");
+  image.alt = ""; image.draggable = false;
+  image.dataset.pending = "true";
+  widget.pendingImage = image;
+  image.addEventListener("load", () => {
+    if (!image.isConnected || widget.pendingImage !== image) return;
+    widget.pendingImage = undefined;
+    const previous = widget.image;
+    if (previous?.naturalWidth && photoImageSource(previous) === photoImageSource(image)) { image.remove(); return; }
+    for (const fade of previous?.getAnimations?.() ?? []) if (fade.id === "deeprole-portrait-image") fade.finish();
+    previous?.previousElementSibling?.remove();
+    previous?.removeAttribute("data-current");
+    widget.image = image;
+    delete image.dataset.pending;
+    image.dataset.current = "true";
+    syncPortraitViewer(widget, stage.locale);
+    if (!portraitMotion(stage)) { previous?.remove(); return; }
+    // The previous image remains opaque underneath until the new image is fully visible.
+    const fade = image.animate([{ opacity: 0 }, { opacity: 1 }], { id: "deeprole-portrait-image", duration: 200, easing: "ease-out" });
+    if (previous) void fade.finished.then(() => previous.remove(), () => previous.remove());
+  }, { once: true });
+  widget.photo.append(image);
+  syncPortraitSources(image, sources);
+}
 
 function clearAdaptive(stage: Stage) {
   if (!stage.anchor.hasAttribute("data-adaptive-portraits")) return;
@@ -66,13 +125,13 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
   const parent = host.parentElement!.getBoundingClientRect();
   const parentStyle = host.ownerDocument.defaultView!.getComputedStyle(host.parentElement!);
   const contentLeft = parent.left + (parseFloat(parentStyle.paddingLeft) || 0) + (parseFloat(parentStyle.borderLeftWidth) || 0);
-  const left = sceneAvailableLeft(host.ownerDocument);
-  const center = stage.options.pinSceneChoices ? (left + width - 8) / 2 : parent.left + parent.width / 2;
+  const left = sceneAvailableLeft(host.ownerDocument), right = sceneAvailableRight(host.ownerDocument);
+  const center = stage.options.pinSceneChoices ? (left + right - 8) / 2 : parent.left + parent.width / 2;
   // The fit helpers reserve one left-hand hero slot. If that hero was enlarged
   // into the floating frame, preserve the right-side budget for every NPC.
   const fitCount = stage.widgets.size + (stage.heroId && !stage.widgets.has(stage.heroId) ? 1 : 0);
   const fitted = stage.options.pinSceneChoices ? pinnedSceneFit(host.ownerDocument, fitCount)
-    : composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, fitCount) : fitScene(width, left, center, fitCount);
+    : composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, fitCount) : fitScene(right, left, center, fitCount);
   const trayHeight = height < 560 ? 70 : 104;
   const dock = widgetDeck(host.ownerDocument)?.querySelector<HTMLElement>(".dr-widget-dock")?.getBoundingClientRect();
   const laneKey = JSON.stringify([width, height, left, parent.left, parent.width, fitted.compact, fitted.x, fitted.choices, fitted.portrait, stage.heroId, [...stage.partnerIds], [...stage.widgets].map(([id, widget]) => [id, widget.pose, widget.statsKey]), stage.options.pinSceneChoices, stage.options.pinLeft, stage.options.pinRight, stage.options.pinSceneChoices ? host.style.bottom : null]);
@@ -114,7 +173,7 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
   const heroId = stage.heroId ?? widgets[0]?.[0];
   for (const [id, widget] of widgets) css(widget.box, "width", `${Math.round(fitted.portrait * (id === heroId || stage.partnerIds.has(id) ? 1 : .85))}px`);
   const tallest = Math.max(...widgets.map(([, widget]) => widget.box.offsetHeight));
-  const availableBottom = stage.options.pinSceneChoices ? (composerBounds(host.ownerDocument)?.top ?? height) - 12 : height - 8;
+  const availableBottom = stage.options.pinSceneChoices || IS_DESKTOP ? (composerBounds(host.ownerDocument)?.top ?? height) - 12 : height - 8;
   const baseline = clamp(anchor.top, 8, availableBottom - tallest) + tallest;
   let rightX = anchor.right + PORTRAIT_CHOICE_GAP;
   let leftX = anchor.left - PORTRAIT_CHOICE_GAP;
@@ -124,7 +183,7 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
     const x = side === "left" ? leftX - widget.box.offsetWidth : rightX;
     const y = baseline - widget.box.offsetHeight;
     css(widget.box, "left", `${x}px`); css(widget.box, "top", `${y}px`);
-    css(widget.resize, "top", `${Math.max(0, widget.open.querySelector("img")!.offsetHeight - 44)}px`);
+    css(widget.resize, "top", `${Math.max(0, widget.photo.offsetHeight - 44)}px`);
     widget.restingPose = portraitPose(x, y, widget.box.offsetWidth, width - 16, height - 16);
     if (side === "left") leftX = x - PORTRAIT_PEER_GAP;
     else rightX += widget.box.offsetWidth + PORTRAIT_PEER_GAP;
@@ -179,7 +238,7 @@ function arrangeCastGroup(stage: Stage, anchor: DOMRect, width: number, height: 
       const y = baseline - item.widget.box.offsetHeight;
       css(item.widget.box, "left", `${x}px`); css(item.widget.box, "top", `${y}px`);
       item.widget.restingPose = portraitPose(x, y, item.width, width - 16, height - 16);
-      css(item.widget.resize, "top", `${Math.max(0, item.widget.open.querySelector("img")!.offsetHeight - 44)}px`);
+      css(item.widget.resize, "top", `${Math.max(0, item.widget.photo.offsetHeight - 44)}px`);
       x += item.width + PORTRAIT_PEER_GAP;
     }
     rowTop = baseline + PORTRAIT_PEER_GAP;
@@ -189,7 +248,7 @@ function arrangeCastGroup(stage: Stage, anchor: DOMRect, width: number, height: 
   const heroY = top + heights[0]! - hero.box.offsetHeight;
   css(hero.box, "left", `${heroX}px`); css(hero.box, "top", `${heroY}px`);
   hero.restingPose = portraitPose(heroX, heroY, heroWidth, width - 16, height - 16);
-  css(hero.resize, "top", `${Math.max(0, hero.open.querySelector("img")!.offsetHeight - 44)}px`);
+  css(hero.resize, "top", `${Math.max(0, hero.photo.offsetHeight - 44)}px`);
   return true;
 }
 
@@ -242,21 +301,21 @@ function arrange(stage: Stage) {
   } finally { stage.widgets = widgets; stage.dragging = dragging; }
   for (const widget of widgets.values()) {
     if (!widget.pose?.manualSize) continue;
-    const image = widget.open.querySelector("img")!;
-    let captions = Math.max(0, widget.open.scrollHeight - image.offsetHeight);
+    const photo = widget.photo;
+    let captions = Math.max(0, widget.open.scrollHeight - photo.offsetHeight);
     // Text can rewrap when the image changes width. Measure at the requested
     // width before fitting again; round down to keep the entire card on screen.
     for (let pass = 0; pass < 3; pass++) {
       const bounds = portraitBounds(widget.pose, width - 16, height - 16, captions);
       css(widget.box, "width", `${Math.floor(bounds.width)}px`);
-      const measured = Math.max(0, widget.open.scrollHeight - image.offsetHeight);
+      const measured = Math.max(0, widget.open.scrollHeight - photo.offsetHeight);
       if (Math.abs(measured - captions) < 1) break;
       captions = measured;
     }
     const bounds = portraitBounds({ ...widget.pose, width: widget.box.offsetWidth }, width - 16, height - 16, captions);
     css(widget.box, "left", `${clamp(bounds.x, 8, width - widget.box.offsetWidth - 8)}px`);
     css(widget.box, "top", `${clamp(bounds.y, 8, height - widget.box.offsetHeight - 8)}px`);
-    css(widget.resize, "top", `${Math.max(0, Math.min(image.offsetHeight, widget.box.offsetHeight) - 44)}px`);
+    css(widget.resize, "top", `${Math.max(0, Math.min(photo.offsetHeight, widget.box.offsetHeight) - 44)}px`);
     widget.restingPose = undefined;
   }
 }
@@ -340,7 +399,7 @@ function arrangeAutomatic(stage: Stage) {
     css(widget.box, "top", `${y}px`);
     if (dock) widget.restingPose = portraitPose(x, y, bounds.width, width - 16, height - 16);
     else if (stage.dragging && anchorVisible) widget.restingPose = undefined;
-    css(widget.resize, "top", `${Math.max(0, widget.open.querySelector("img")!.offsetHeight - 44)}px`);
+    css(widget.resize, "top", `${Math.max(0, widget.photo.offsetHeight - 44)}px`);
   }
 }
 
@@ -473,7 +532,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       if (!shadow.querySelector("[data-portrait-stage-style]")) { const style = doc.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
       const overlay = doc.createElement("div"); overlay.dataset.deeprolePortraitLayer = "true";
       const floating = overlay.attachShadow({ mode: "open" });
-      const style = doc.createElement("style"); style.textContent = designTokens + portraitStyle;
+      const style = doc.createElement("style"); style.textContent = designTokens + workspacePalette + portraitStyle + workspaceMaterial;
       const frame = doc.createElement("div"); frame.className = "dr-cast-frame";
       const manualFrame = doc.createElement("div"); manualFrame.className = "dr-cast-manual-frame";
       floating.append(style, frame, manualFrame); doc.body.append(overlay);
@@ -513,6 +572,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       });
     }
     stage.options = options; stage.locale = locale;
+    const motion = portraitMotion(stage);
     const resetLabel = characterText(locale, "layoutReset");
     attr(stage.reset, "aria-label", resetLabel); attr(stage.reset, "title", resetLabel);
     const partners = new Set(characterInterlocutors(entities, scene).map(person => person.id));
@@ -528,13 +588,13 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
         const doc = host.ownerDocument; const slot = doc.createElement("div"); const box = doc.createElement("div"); box.className = "dr-cast-widget"; box.dataset.characterId = entity.id;
         const move = doc.createElement("button"); move.type = "button"; move.className = "dr-cast-move";
         const open = doc.createElement("button"); open.type = "button"; open.className = "dr-cast-portrait"; open.dataset.characterId = entity.id;
-        const image = doc.createElement("img"); image.alt = ""; image.draggable = false;
+        const photo = doc.createElement("span"); photo.className = "dr-cast-photo";
         const name = doc.createElement("span"); name.className = "dr-cast-name";
         const action = doc.createElement("small"); const role = doc.createElement("span"); role.className = "dr-cast-role";
-        open.append(image, name, action, role);
+        open.append(photo, name, action, role);
         const resize = doc.createElement("button"); resize.type = "button"; resize.className = "dr-cast-resize"; resize.textContent = "⤡";
         box.append(move, open, resize); slot.append(box);
-        widget = { slot, box, move, open, resize }; stage.widgets.set(entity.id, widget);
+        widget = { slot, box, move, open, resize, photo }; stage.widgets.set(entity.id, widget);
         stage.observer.observe(box);
         manipulate(stage, widget, entity.id, move, false); manipulate(stage, widget, entity.id, resize, true);
       }
@@ -546,35 +606,40 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       text(widget.move, `⠿ ${entity.name}`); attr(widget.move, "aria-label", `${characterText(locale, "layoutMove")}: ${entity.name}`); attr(widget.move, "title", characterText(locale, "layoutKeys"));
       attr(widget.resize, "aria-label", `${characterText(locale, "layoutResize")}: ${entity.name}`); attr(widget.resize, "title", characterText(locale, "layoutResizeKeys"));
       attr(widget.open, "aria-label", `${characterText(locale, "edit")}: ${entity.name}`);
-      const state = scene?.states[entity.id]; syncPortraitImage(widget.open.querySelector("img")!, entity.characterSheet, state?.action, scenePortraitIndex(entity, scene));
+      const state = scene?.states[entity.id];
+      presentPortrait(widget, portraitSources(entity.characterSheet, state?.action, scenePortraitIndex(entity, scene)), stage);
       const name = widget.open.querySelector(".dr-cast-name")!; if (name.textContent !== entity.name) name.textContent = entity.name;
-      const label = state ? actionLabel(locale, resolveCharacterAction(entity.characterSheet, state.action)) : characterText(locale, "noState"); const action = widget.open.querySelector("small")!; if (action.textContent !== label) action.textContent = label;
+      const label = state ? actionLabel(locale, resolveCharacterAction(entity.characterSheet, state.action)) : characterText(locale, "noState");
+      fadeCaption(widget.open.querySelector("small")!, label, motion);
       attr(widget.open, "title", `${entity.name} · ${label}`);
-      const role = widget.open.querySelector<HTMLElement>(".dr-cast-role")!; const roleText = characterText(locale, entity.id === hero?.id ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : "portraitPresent"); if (role.textContent !== roleText) role.textContent = roleText;
+      const role = widget.open.querySelector<HTMLElement>(".dr-cast-role")!;
+      fadeCaption(role, characterText(locale, entity.id === hero?.id ? "portraitHero" : partners.has(entity.id) ? "portraitPartner" : "portraitPresent"), motion);
       attr(widget.box, "data-talking", String(partners.has(entity.id)));
       const stats = characterHighlights(state); const key = JSON.stringify(stats);
       if (widget.statsKey !== key) {
         let highlights = widget.open.querySelector<HTMLElement>(".dr-cast-highlights");
         if (!highlights) { highlights = host.ownerDocument.createElement("span"); highlights.className = "dr-cast-highlights"; highlights.id = `dr-cast-stats-${++statsId}`; widget.open.append(highlights); }
-        highlights.replaceChildren(...stats.map(stat => { const node = host.ownerDocument.createElement("span"); node.textContent = `${stat.label}: ${stat.value}`; node.title = node.textContent; return node; }));
+        for (const [index, stat] of stats.entries()) {
+          const existing = highlights.children[index] as HTMLElement | undefined;
+          const node = existing ?? host.ownerDocument.createElement("span");
+          const label = `${stat.label}: ${stat.value}`;
+          fadeCaption(node, label, motion);
+          attr(node, "title", label);
+          if (!existing) highlights.append(node);
+        }
+        while (highlights.children.length > stats.length) highlights.lastElementChild!.remove();
         highlights.hidden = !stats.length;
         if (stats.length) widget.open.setAttribute("aria-describedby", highlights.id); else widget.open.removeAttribute("aria-describedby");
         widget.statsKey = key;
       }
-      const image = widget.open.querySelector("img")!;
-      const view = () => openPortraitViewer(host.ownerDocument, photoImageSource(image), entity.name, locale);
-      const noImage = !validPortrait(photoImageSource(image));
-      attr(image, "data-viewable", String(!noImage));
-      if (noImage) {
-        image.removeAttribute("title"); widget.open.removeAttribute("aria-keyshortcuts"); widget.open.removeAttribute("aria-description");
-      } else {
-        attr(image, "title", photoCopy(locale).open); attr(widget.open, "aria-keyshortcuts", "Space"); attr(widget.open, "aria-description", photoCopy(locale).open);
-      }
-      widget.open.onclick = event => { if (event.target === image && view()) return; onOpen(entity.id); };
+      syncPortraitViewer(widget, locale);
+      const currentWidget = widget;
+      const view = () => currentWidget.image && openPortraitViewer(host.ownerDocument, photoImageSource(currentWidget.image), entity.name, locale);
+      widget.open.onclick = event => { if (event.target === currentWidget.image && view()) return; onOpen(entity.id); };
       // Keep Enter's existing profile-editor action. Space offers the removed
       // image-viewer control's keyboard access without a second visible button.
       widget.open.onkeydown = event => {
-        if (event.key !== " " || event.altKey || event.ctrlKey || event.metaKey || noImage) return;
+        if (event.key !== " " || event.altKey || event.ctrlKey || event.metaKey || !currentWidget.open.hasAttribute("aria-keyshortcuts")) return;
         event.preventDefault(); if (!event.repeat) view();
       };
     }

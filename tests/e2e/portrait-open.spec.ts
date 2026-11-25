@@ -13,7 +13,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 1280]) {
       return image;
     });
     const widget = page.locator('.dr-cast-widget[data-character-id="mira"]');
-    const card = widget.locator(".dr-cast-portrait"), image = card.locator("img");
+    const card = widget.locator(".dr-cast-portrait"), image = card.locator("img[data-current]");
     const viewer = page.locator("[data-deeprole-photo-viewer] dialog");
     await expect(image).toHaveAttribute("src", src);
     expect(await widget.locator(".dr-cast-zoom").count()).toBe(0);

@@ -1,3 +1,4 @@
+import { CHAT_HOME } from "../../core/chat-host";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, FileUp, Globe2, Plus, SlidersHorizontal } from "lucide-react";
 import type { Locale, WorldProfile } from "../../core/types";
@@ -134,7 +135,7 @@ export function PlayStart({ locale, world, hasWorlds, compatible, chatId, messag
       <p role={savedMemoryQueued ? "status" : undefined}>{next}</p>
       {savedTransfer}
       {offsite ? <div className="dr-play-actions">
-        <a className="button primary" href="https://chat.deepseek.com/" target="_blank" rel="noreferrer">{t.goToSite}<ArrowUpRight size={16} aria-hidden="true"/></a>
+          <a className="button primary" href={CHAT_HOME} target="_blank" rel="noreferrer">{t.goToSite}<ArrowUpRight size={16} aria-hidden="true"/></a>
         <button className="button secondary" type="button" onClick={onLibrary}>{t.library}</button>
       </div> : compatible && !world && !savedMemoryQueued ? <>
         {hasWorlds && controls}

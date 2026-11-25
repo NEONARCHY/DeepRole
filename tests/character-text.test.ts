@@ -59,4 +59,9 @@ describe("hidden character field service DOM", () => {
     const row = document.createElement("article"); row.innerHTML = '<div class="ds-think-content">Private reasoning.</div><div class="ds-assistant-message-main-content"><p>Calm.</p><p>Observant.</p><button>Copy</button></div>';
     expect(plainCharacterReplyText(row)).toBe("Calm.\nObservant.");
   });
+  it("reads only the service output in a Windows chat row", () => {
+    const row = document.createElement("article");
+    row.innerHTML = '<div class="desktop-narrator">DeepRole</div><div class="desktop-story-text">{"results":[]}</div>';
+    expect(plainCharacterReplyText(row)).toBe('{"results":[]}');
+  });
 });

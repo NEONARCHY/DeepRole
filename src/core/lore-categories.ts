@@ -17,7 +17,7 @@ export const LORE_CATEGORIES = [
   { id: "personality", parentId: "characters", ru: "Характер", en: "Personality", words: ["характер", "темперамент", "personality", "temperament", "характеры"] },
   { id: "thoughts", parentId: "characters", ru: "Мысли и чувства", en: "Thoughts & feelings", words: ["мысли", "чувства", "мысль", "thoughts", "feelings", "emotion"] },
   { id: "relationships", parentId: null, ru: "Отношения и связи", en: "Relationships", color: "#f0b5cf", words: ["отношения", "связь", "связи", "дружба", "семья", "родство", "relationship", "relation", "connection", "friendship", "family", "bond", "kinship"] },
-  { id: "locations", parentId: null, ru: "Места и обстановка", en: "Places & setting", color: "#7dd9c2", words: ["локация", "местоположение", "обстановка", "комната", "город", "башня", "озеро", "мост", "дверь", "дом", "школа", "лес", "обсерватория", "location", "setting", "room", "city", "tower", "lake", "bridge", "door", "house", "home", "school", "forest", "village", "observatory"] },
+  { id: "locations", parentId: null, ru: "Места и обстановка", en: "Places & setting", color: "#80c9f3", words: ["локация", "местоположение", "обстановка", "комната", "город", "башня", "озеро", "мост", "дверь", "дом", "школа", "лес", "обсерватория", "location", "setting", "room", "city", "tower", "lake", "bridge", "door", "house", "home", "school", "forest", "village", "observatory"] },
   { id: "timeline", parentId: null, ru: "Хронология и сюжет", en: "Timeline & story", color: "#ffd08f" },
   { id: "days", parentId: "timeline", ru: "Дни", en: "Days", words: ["день", "дни", "day", "days", "утро", "вечер", "morning", "evening", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] },
   { id: "weeks", parentId: "timeline", ru: "Недели", en: "Weeks", words: ["неделя", "недели", "week", "weeks"] },
@@ -25,7 +25,7 @@ export const LORE_CATEGORIES = [
   { id: "preferences", parentId: null, ru: "Предпочтения и темы", en: "Preferences & themes", color: "#edb983" },
   { id: "fetishes", parentId: "preferences", ru: "Фетиши", en: "Fetishes", words: ["фетиш", "фетиши", "fetish", "fetishes", "kink"] },
   { id: "groups", parentId: null, ru: "Группы", en: "Groups", color: "#a2c5eb", words: ["группа", "фракция", "гильдия", "организация", "group", "faction", "guild", "organization"] },
-  { id: "templates", parentId: null, ru: "Заготовки", en: "Story starters", color: "#b9cda0" },
+  { id: "templates", parentId: null, ru: "Заготовки", en: "Story starters", color: "#9aa9e9" },
   { id: "unclassified", parentId: null, ru: "Разобрать", en: "To organize", color: "#bac6d5" },
 ] as const;
 

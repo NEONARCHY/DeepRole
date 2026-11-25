@@ -1,3 +1,4 @@
+import { CHAT_HOME, CHAT_ORIGIN, IS_DESKTOP } from "../core/chat-host";
 import { browser } from "wxt/browser";
 import { nativeStartLane } from "./native-start-lane";
 import { repository, type DeepRoleRepository } from "../storage/repository";
@@ -129,7 +130,7 @@ export class IsolatedFieldCoordinator {
   try {
    if (sender.id !== this.api.runtime.id || sender.tab?.id === undefined || sender.frameId && sender.frameId !== 0) throw new Error("untrusted");
    const tabId = sender.tab.id, tab = await this.api.tabs.get(tabId).catch(() => undefined);
-    if (!tab?.url || new URL(tab.url).origin !== "https://chat.deepseek.com") throw new Error("untrusted");
+    if (!tab?.url || new URL(tab.url).origin !== CHAT_ORIGIN) throw new Error("untrusted");
     if (message.type === "DR_FIELD" && ["memory-batch", "memory-batch-status", "memory-batch-policy", "memory-batch-cancel"].includes(message.action)) {
      const batchMessage = message as Extract<FieldMessage, { action: "memory-batch" | "memory-batch-status" | "memory-batch-policy" | "memory-batch-cancel" }>;
      if (!validMemoryBatchInput(batchMessage.input) || !fieldSourceUrl(tab.url, batchMessage.input.chatId) || !tab.active) throw Error("invalid-brief");
@@ -164,14 +165,14 @@ export class IsolatedFieldCoordinator {
      try {
       await beginServiceOperation({ id, worldId: brief.input.worldId, sourceChatId: brief.input.chatId, createdAt, mode: "history", fieldScope: "profile" }, this.repo);
       await idle();
-      const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!tab.incognito });
+      const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: !IS_DESKTOP, width: 520, height: 720, incognito: !!tab.incognito });
       const tabs = popup?.tabs ?? (popup?.id !== undefined ? await this.api.tabs.query({ windowId: popup.id }) : []);
       if (tabs.length !== 1 || tabs[0]?.id === undefined || tabs[0].id === tabId) throw Error("tab-unavailable");
       worker = tabs[0];
       const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", memoryBatch: brief.input, mode: "history", fieldScope: "profile", runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
       await this.save(owner);
       this.jobs.set(id, { prompt: brief.prompt, field: { key: "memory-batch", label: "Story memory", scope: "profile", mode: "history", maxLength: 64000 }, sources: [], partialContext: true, memoryBatch: brief, presentation: { locale: settings.locale, kind: "memory", characterName: "Story", fieldLabel: "Story memory" } });
-      await this.api.tabs.update(worker.id!, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
+      await this.api.tabs.update(worker.id!, { url: `${CHAT_HOME}?deeprole_field_job=` + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
       return { ok: true, id };
      } catch {
       await finishMemoryBatch(brief.input, id, false, this.repo).catch(() => undefined);
@@ -205,14 +206,14 @@ export class IsolatedFieldCoordinator {
     let worker: import("wxt/browser").Browser.tabs.Tab | undefined;
     try {
      await beginServiceOperation({ id, worldId: input.worldId, sourceChatId: input.chatId, createdAt, mode: "history", fieldScope: "profile" }, this.repo);
-     const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!tab.incognito });
+     const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: !IS_DESKTOP, width: 520, height: 720, incognito: !!tab.incognito });
      const tabs = popup?.tabs ?? (popup?.id !== undefined ? await this.api.tabs.query({ windowId: popup.id }) : []);
      if (tabs.length !== 1 || tabs[0]?.id === undefined || tabs[0].id === tabId) throw Error("tab-unavailable");
      worker = tabs[0];
       const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", ...("entityId" in input ? { enrichment: input } : { discoveryProfile: { worldId: input.worldId, chatId: input.chatId, guard: input.guard, eventId: input.eventId, ...(input.queueId ? { queueId: input.queueId } : {}) } }), mode: "history", fieldScope: "profile", runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
      await this.save(owner);
      this.jobs.set(id, { prompt: brief.prompt, field: brief.draft.field, sources: [], partialContext: brief.partial, ...("canonical" in brief ? { enrichment: brief } : { discoveryProfile: brief }), presentation: { locale: settings.locale, kind: "profile", characterName: brief.draft.reference.name as string, fieldLabel: brief.draft.field.label } });
-     await this.api.tabs.update(worker.id!, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
+     await this.api.tabs.update(worker.id!, { url: `${CHAT_HOME}?deeprole_field_job=` + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
      return { ok: true, id };
     } catch {
      this.jobs.delete(id);
@@ -235,14 +236,14 @@ export class IsolatedFieldCoordinator {
     let worker: import("wxt/browser").Browser.tabs.Tab | undefined;
     try {
      await beginDiscoveryServiceOperation({ id, worldId: input.worldId, sourceChatId: input.chatId, createdAt }, this.repo);
-     const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!tab.incognito });
+     const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: !IS_DESKTOP, width: 520, height: 720, incognito: !!tab.incognito });
      const tabs = popup?.tabs ?? (popup?.id !== undefined ? await this.api.tabs.query({ windowId: popup.id }) : []);
      if (tabs.length !== 1 || tabs[0]?.id === undefined || tabs[0].id === tabId) throw Error("tab-unavailable");
      worker = tabs[0];
      const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", discovery: input, runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
      await this.save(owner);
      this.jobs.set(id, { prompt: brief.prompt, field: { key: "character-discovery", scope: "scene", label: "Character discovery", maxLength: 64000, mode: "history" }, sources: [], partialContext: false, discovery: brief, presentation: { locale: settings.locale, kind: "discovery", characterName: "Story", fieldLabel: "Characters" } });
-     await this.api.tabs.update(worker.id!, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
+     await this.api.tabs.update(worker.id!, { url: `${CHAT_HOME}?deeprole_field_job=` + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
      return { ok: true, id };
     } catch {
      this.jobs.delete(id); await finishCharacterDiscovery(input, id, "failed", this.repo).catch(() => undefined);
@@ -265,14 +266,14 @@ export class IsolatedFieldCoordinator {
     catch { await finishStoryRepair(input, id, "failed", this.repo).catch(() => undefined); throw Error("interrupted"); }
     let worker: import("wxt/browser").Browser.tabs.Tab | undefined;
     try {
-     const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!tab.incognito });
+     const popup = await this.api.windows.create({ url: "about:blank", type: "popup", focused: !IS_DESKTOP, width: 520, height: 720, incognito: !!tab.incognito });
      const tabs = popup?.tabs ?? (popup?.id !== undefined ? await this.api.tabs.query({ windowId: popup.id }) : []);
      if (tabs.length !== 1 || tabs[0]?.id === undefined || tabs[0].id === tabId) throw Error("tab-unavailable");
      worker = tabs[0];
      const owner: Owner = { id, sourceTab: tabId, source: brief.source, tabId: worker.id!, createdAt, sent: false, phase: "running", repair: input, runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
      await this.save(owner);
      this.jobs.set(id, { prompt: brief.prompt, field: { key: "story-metadata", scope: "scene", label: "Story metadata", maxLength: 80000, mode: "history" }, sources: [], partialContext: false, repair: brief, presentation: { locale: settings.locale, kind: "repair", characterName: "Story", fieldLabel: "Metadata" } });
-     await this.api.tabs.update(worker.id!, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
+     await this.api.tabs.update(worker.id!, { url: `${CHAT_HOME}?deeprole_field_job=` + encodeURIComponent(id) + "&deeprole_field_locale=" + settings.locale });
      return { ok: true, id };
     } catch {
      this.jobs.delete(id); await finishStoryRepair(input, id, "failed", this.repo).catch(() => undefined);
@@ -306,7 +307,7 @@ export class IsolatedFieldCoordinator {
      // An inactive same-window tab can defer the site's rendering indefinitely.
      // An unfocused popup also stalled in the live browser. Explicitly show the
      // service page; its local screen masks native content without hiding layout.
-     const window = await this.api.windows.create({ url: "about:blank", type: "popup", focused: true, width: 520, height: 720, incognito: !!tab.incognito });
+     const window = await this.api.windows.create({ url: "about:blank", type: "popup", focused: !IS_DESKTOP, width: 520, height: 720, incognito: !!tab.incognito });
      const tabs = window?.tabs ?? (window?.id !== undefined ? await this.api.tabs.query({ windowId: window.id }) : []);
      const candidate = tabs[0];
      if (tabs.length !== 1 || !candidate || candidate.id === undefined || candidate.id === tabId) throw new Error("tab-unavailable");
@@ -319,7 +320,7 @@ export class IsolatedFieldCoordinator {
     const owner: Owner = { id, sourceTab: tabId, source: input.scope, tabId: worker.id, createdAt, sent: false, phase: "running", mode: input.draft.field.mode ?? "suggest", fieldScope: input.draft.field.scope, runtime: { stage: "opening", visibility: "unknown", at: createdAt } };
     try {
      await this.save(owner); this.jobs.set(id, { ...prepared, field: input.draft.field, historyOrigin: input.historyReference?.origin, presentation: { locale: input.locale, fieldLabel: input.draft.field.label, characterName: input.draft.reference.name as string, ...(input.draft.field.key === "character-profile" ? { kind: "profile" as const } : {}) } });
-     await this.api.tabs.update(worker.id, { url: "https://chat.deepseek.com/?deeprole_field_job=" + encodeURIComponent(id) + "&deeprole_field_locale=" + input.locale });
+     await this.api.tabs.update(worker.id, { url: `${CHAT_HOME}?deeprole_field_job=` + encodeURIComponent(id) + "&deeprole_field_locale=" + input.locale });
     } catch {
      this.stop(owner, "tab-unavailable"); const current = await this.api.tabs.get(worker.id).catch(() => undefined);
      if (!current || current.url === "about:blank" && await this.api.tabs.remove(worker.id).then(() => true, () => false)) owner.cleanup = "done";
@@ -341,7 +342,7 @@ export class IsolatedFieldCoordinator {
     if (message.action === "cancel") {
      // A saved discovery/profile/memory result is already durable. Cancelling while
      // waiting for cleanup must not rewrite that receipt as a failed generation.
-     if (owner.phase !== "result" || !owner.discovery && !owner.discoveryProfile && !owner.enrichment && !owner.memoryBatch) { this.stop(owner, "cancelled"); await this.save(owner); }
+     if (owner.phase === "running" || owner.phase === "result" && !owner.discovery && !owner.discoveryProfile && !owner.enrichment && !owner.memoryBatch) { this.stop(owner, "cancelled"); await this.save(owner); }
      this.wake(owner);
     }
     if (message.action === "ack") {
@@ -379,7 +380,8 @@ export class IsolatedFieldCoordinator {
    }
    if (message.action === "reply") {
     if (owner.phase !== "running" || !job || !owner.sent || owner.chatId !== message.chatId || currentChat?.id !== owner.chatId) throw new Error("chat-changed");
-    try { if (job.memoryBatch) { await applyMemoryBatch(job.memoryBatch, message.raw, this.repo, async () => { const latest = await this.api.tabs.get(owner.sourceTab); if (!latest.active || !fieldSourceUrl(latest.url, owner.source.chatId) || !(await this.api.tabs.sendMessage(owner.sourceTab, { type: "DR_MEMORY_BATCH_IDLE", worldId: owner.source.worldId, chatId: owner.source.chatId }))?.ok) throw Error("scene-changed"); }); job.text = "memory-batch-saved"; } else if (job.enrichment) { await applyProfileSupplement(job.enrichment, message.raw, this.repo); job.text = "profile-supplement-prepared"; } else if (job.discoveryProfile) { await applyDiscoveryProfile(job.discoveryProfile, message.raw, this.repo); job.text = "profile-prepared"; } else if (job.discovery) { await applyCharacterDiscovery(job.discovery, message.raw, this.repo); job.text = "characters-discovered"; } else if (job.repair) { await applyStoryRepair(job.repair, message.raw, await this.settings(), this.repo); job.text = "metadata-corrected"; } else job.text = isolatedFieldResult(message.raw, { field: job.field }, { requestId: owner.id, sources: job.sources }); }
+    // The owned window can take focus. Commit against the original chat and its idle/content guards.
+    try { if (job.memoryBatch) { await applyMemoryBatch(job.memoryBatch, message.raw, this.repo, async () => { const latest = await this.api.tabs.get(owner.sourceTab); if (!fieldSourceUrl(latest.url, owner.source.chatId) || !(await this.api.tabs.sendMessage(owner.sourceTab, { type: "DR_MEMORY_BATCH_IDLE", worldId: owner.source.worldId, chatId: owner.source.chatId }))?.ok) throw Error("scene-changed"); }); job.text = "memory-batch-saved"; } else if (job.enrichment) { await applyProfileSupplement(job.enrichment, message.raw, this.repo); job.text = "profile-supplement-prepared"; } else if (job.discoveryProfile) { await applyDiscoveryProfile(job.discoveryProfile, message.raw, this.repo); job.text = "profile-prepared"; } else if (job.discovery) { await applyCharacterDiscovery(job.discovery, message.raw, this.repo); job.text = "characters-discovered"; } else if (job.repair) { await applyStoryRepair(job.repair, message.raw, await this.settings(), this.repo); job.text = "metadata-corrected"; } else job.text = isolatedFieldResult(message.raw, { field: job.field }, { requestId: owner.id, sources: job.sources }); }
     catch (error) {
      if (error instanceof FieldValidationError && !this.validationAudits.has(owner.id)) {
       const validation = fieldServiceValidation(error, typeof message.raw === "string" ? message.raw.length : null, Date.now());
@@ -410,7 +412,7 @@ export class IsolatedFieldCoordinator {
      // A user can navigate during the session write above. Recheck immediately
      // before closing, never close a now-foreign chat on an old URL snapshot.
      const latest = await this.api.tabs.get(owner.tabId).catch(() => undefined);
-     if (latest?.url && new URL(latest.url).origin === "https://chat.deepseek.com" && new URL(latest.url).pathname === "/") await this.api.tabs.remove(owner.tabId).catch(() => undefined);
+     if (latest?.url && new URL(latest.url).origin === CHAT_ORIGIN && new URL(latest.url).pathname === "/") await this.api.tabs.remove(owner.tabId).catch(() => undefined);
      if (owner.delivered) { await this.api.storage.session.set({ [FIELD_OWNERS_KEY]: (await this.owners()).filter(o => o.id !== owner.id) }); this.auditSnapshots.delete(owner.id); this.queuedAudits.delete(owner.id); this.runtimeSnapshots.delete(owner.id); }
     }
     return { ok: true };

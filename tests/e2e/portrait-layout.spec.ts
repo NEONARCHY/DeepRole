@@ -24,7 +24,7 @@ for (const blockBlob of [false, true]) test(`saved portraits survive a new chat 
   });
   await page.goto("/tests/fixtures/characters.html?saved-portraits");
   await page.waitForFunction(() => !!(window as any).getCast);
-  const portraits = page.locator("[data-deeprole-portrait-layer] img");
+  const portraits = page.locator("[data-deeprole-portrait-layer] img[data-current]");
   const setScene = (chatId: string, action: string) => page.evaluate(({ chatId, action }) => {
     const fixture = window as any;
     const cast = fixture.getCast();
@@ -72,18 +72,18 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
   }, speech);
   const hero = page.locator('.dr-cast-widget[data-character-id="hero"]');
   const mira = page.locator('.dr-cast-widget[data-character-id="mira"]');
-  await expect(hero.locator("img")).toHaveAttribute("src", images.neutral);
+  await expect(hero.locator("img[data-current]")).toHaveAttribute("src", images.neutral);
   const npcBefore = await mira.locator("small").innerText();
   await page.evaluate(speech => {
     const current = (window as any).getCast();
     (window as any).setCast({ scene: { ...current.scene, states: { ...current.scene.states,
       hero: { ...current.scene.states.hero, action: speech } } } });
   }, speech);
-  await expect(hero.locator("img")).toHaveAttribute("src", images.talking);
+  await expect(hero.locator("img[data-current]")).toHaveAttribute("src", images.talking);
   await expect(hero.locator("small")).toHaveText(speech);
   await expect(hero).toHaveAttribute("data-talking", "false");
   await expect(mira.locator("small")).toHaveText(npcBefore);
-  await ratio(hero.locator("img"));
+  await ratio(hero.locator("img[data-current]"));
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath(`player-speech-${locale}-${width}.png`) });
   await page.evaluate(() => {
@@ -91,7 +91,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 1100]) tes
     (window as any).setCast({ scene: { ...current.scene, states: { ...current.scene.states,
       hero: { ...current.scene.states.hero, action: "neutral" } } } });
   });
-  await expect(hero.locator("img")).toHaveAttribute("src", images.neutral);
+  await expect(hero.locator("img[data-current]")).toHaveAttribute("src", images.neutral);
   await expect(mira.locator("small")).toHaveText(npcBefore);
 });
 

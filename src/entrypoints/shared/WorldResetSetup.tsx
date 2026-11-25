@@ -8,10 +8,10 @@ import {worldResetText} from "../../core/world-reset-i18n";
 import {CastDiagnostics} from "./CastDiagnostics";
 import {SupportDetails} from "./SupportDetails";
 import {castPreparationReady} from "../../core/cast-progress";
+import {IS_DESKTOP} from "../../core/chat-host";
 import {sendCastMessage,useWorldResetJob} from "./useWorldResetJob";
-import "./cast.css";
 
-export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=false,send=sendCastMessage,open:controlledOpen,onOpenChange,hideLauncher=false,requestedReviewId}:{worldId:string;worldName:string;locale:Locale;game:WorldGame;chatId:string;blocked?:boolean;send?:(m:CastMessage)=>Promise<any>;open?:boolean;onOpenChange?:(open:boolean)=>void;hideLauncher?:boolean;requestedReviewId?:string|null}){
+export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=false,send=sendCastMessage,open:controlledOpen,onOpenChange,hideLauncher=false,requestedReviewId,dialogTarget}:{worldId:string;worldName:string;locale:Locale;game:WorldGame;chatId:string;blocked?:boolean;send?:(m:CastMessage)=>Promise<any>;open?:boolean;onOpenChange?:(open:boolean)=>void;hideLauncher?:boolean;requestedReviewId?:string|null;dialogTarget?:HTMLElement|null}){
  const t=worldResetText(locale),id=useId(),dialog=useRef<HTMLDivElement>(null),root=useRef<HTMLDivElement>(null),origin=useRef<HTMLElement|null>(null),scope=useRef("");scope.current=JSON.stringify([worldId,chatId]);
  const [localOpen,setLocalOpen]=useState(false),[draft,setDraft]=useState<CastDraft|null>(null),[start,setStart]=useState(t.defaultStart),[entries,setEntries]=useState<string[]>([]),[first,setFirst]=useState(false),[second,setSecond]=useState(false),[typed,setTyped]=useState(""),[token,setToken]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
  const {job,setJob,loaded,failed:statusFailed}=useWorldResetJob(worldId,send),opened=useRef("");
@@ -22,7 +22,7 @@ export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=fa
  useEffect(()=>{if(job?.reset)setStart(job.reset.start);},[job?.id]);
  useLayoutEffect(()=>{if(!open)return;origin.current=(root.current?.getRootNode() as Document|ShadowRoot)?.activeElement as HTMLElement|null;dialog.current?.querySelector<HTMLButtonElement>("button")?.focus();return()=>{if(origin.current?.isConnected)origin.current.focus();};},[open]);
  const act=async(m:CastMessage)=>{
-  if(busy||blocked||game.activeChatId!==chatId&&!(m.type==="DR_CAST"&&m.action==="open-reset-chat"))return;setBusy(true);setError("");const world=scope.current;
+  if(busy||blocked&&!(IS_DESKTOP&&m.type==="DR_CAST"&&m.action==="cancel")||game.activeChatId!==chatId&&!(m.type==="DR_CAST"&&m.action==="open-reset-chat"))return;setBusy(true);setError("");const world=scope.current;
   try{const r=await run(m);if(scope.current!==world)return;if(m.type==="DR_CAST"&&m.action==="confirm-reset"){setToken(r.token);setSecond(false);setTyped("");}if(m.type==="DR_CAST"&&m.action==="apply-reset"){setDraft(null);setToken("");}const latest=await run({type:"DR_CAST",action:"status",worldId,reset:true});if(scope.current===world)setJob(latest.job??null);}
   catch(e){if(scope.current===world){const code=e instanceof Error?e.message:"";setError(code==="reset-stale"?t.stale:["reset-incomplete","reset-rules-changed"].includes(code)?t.incomplete:t.failed);}}
   finally{if(scope.current===world)setBusy(false);}
@@ -34,7 +34,7 @@ export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=fa
  const stale=!!job?.reset&&job.phase!=="applied"&&(job.reset.gameId!==game.id||job.reset.revision!==game.revision);
  useEffect(()=>{
   if(!job||!ready||!clean||disabled||stale||opened.current===job.id||job.reset?.chatId!==chatId)return;
-  if(job.statusHidden&&requestedReviewId!==job.id)return;
+  if((IS_DESKTOP||job.statusHidden)&&requestedReviewId!==job.id)return;
   review();
  },[job?.id,ready,clean,disabled,stale,chatId,job?.statusHidden,requestedReviewId]);
  const close=()=>{
@@ -44,7 +44,11 @@ export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=fa
   if(job&&ready){opened.current=job.id;setJob({...job,statusHidden:true});void run({type:"DR_CAST",action:"hide",id:job.id}).catch(()=>{});}
  };
  const step=job?.phase==="applied"?"done":token?"final":draft?"review":"preparation";
+ const inline = dialogTarget !== undefined;
+ const usablePlan = ready && clean && !stale;
+ const cleaning = inline && !preparing && job?.cleanup === "pending";
  useLayoutEffect(()=>{if(!open)return;const body=dialog.current?.querySelector(".dr-cast-body");if(body)body.scrollTop=0;dialog.current?.querySelector<HTMLElement>("h2")?.focus();},[open,step]);
+ if (inline && !open && (!job || !active || !(ready || preparing || job.phase === "error" || job.cleanup === "failed"))) return null;
  const body=open&&<div className="dr-cast-layer" onKeyDown={e=>{
   if(e.key==="Escape"&&!busy){e.preventDefault();e.stopPropagation();close();}
   if(e.key==="Tab"){const nodes=[...(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),summary,a[href]')??[])].filter(n=>n.getClientRects().length);const active=(dialog.current?.getRootNode() as Document|ShadowRoot)?.activeElement;if(e.shiftKey&&(active===nodes[0]||active===dialog.current?.querySelector("h2"))){e.preventDefault();nodes.at(-1)?.focus();}else if(!e.shiftKey&&active===nodes.at(-1)){e.preventDefault();nodes[0]?.focus();}}
@@ -90,11 +94,13 @@ export function WorldResetSetup({worldId,worldName,locale,game,chatId,blocked=fa
  </footer></div></div>;
  return <div ref={root}>
   {!hideLauncher&&<button type="button" className="button secondary" disabled={blocked||!active} onClick={()=>{if(ready&&clean&&!stale)review();else setOpen(true);}}>{t.launch}</button>}
-  {!open&&job&&active&&(ready||preparing||job.phase==="error"||job.cleanup==="failed")&&<section className="dr-reset-status" data-state={stale||job.phase==="error"?"error":ready?"ready":"preparing"} aria-label={t.title}>
-   <strong role="status">{stale?t.stoppedTitle:ready?t.readyTitle:preparing?t.preparing:t.stoppedTitle}</strong><p>{stale?t.stale:ready?t.readyHint:preparing?t.preparingHint:t.stoppedHint}</p>
+  {!open&&job&&active&&(ready||preparing||job.phase==="error"||job.cleanup==="failed")&&<section className="dr-reset-status" data-state={stale||job.phase==="error"||job.cleanup==="failed"?"error":(inline?usablePlan:ready)?"ready":"preparing"} data-needs-attention={inline&&!preparing&&!cleaning&&(usablePlan&&!job.statusHidden||job.phase==="error"||job.cleanup==="failed")||undefined} aria-label={t.title}>
+   <strong role="status">{stale?t.stoppedTitle:cleaning?t.finishing: (inline?usablePlan:ready)?t.readyTitle:preparing?t.preparing:t.stoppedTitle}</strong>
+   {!inline && <p>{stale?t.stale:ready?t.readyHint:preparing?t.preparingHint:t.stoppedHint}</p>}
     <p>{t.phase}: {job.draft?.characters.length??0}{job.reset?" / "+job.reset.people.length:""}</p>
-   <button type="button" className={ready&&clean&&!stale?"button":"button secondary"} disabled={disabled} onClick={()=>{if(ready&&clean&&!stale)review();else setOpen(true);}}>{ready&&clean&&!stale?t.review:t.showPreparation}</button>
+   {!cleaning && (inline && preparing ? <button type="button" className="button secondary" disabled={busy} onClick={()=>void act({type:"DR_CAST",action:"cancel",id:job.id})}>{t.cancel}</button> : <button type="button" className={usablePlan?"button":"button secondary"} disabled={disabled} onClick={()=>{if(usablePlan)review();else setOpen(true);}}>{usablePlan?t.review:t.showPreparation}</button>)}
+   {inline && error && <p role="alert">{error}</p>}
   </section>}
-  {body&&createPortal(body,(root.current?.getRootNode() instanceof ShadowRoot?root.current.getRootNode():document.body) as Element)}
+  {body&&createPortal(body,dialogTarget??(root.current?.getRootNode() instanceof ShadowRoot?root.current.getRootNode():document.body) as Element)}
  </div>;
 }

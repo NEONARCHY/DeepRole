@@ -111,8 +111,79 @@ for (const userScrollsAway of [false, true]) test(`streamed choices keep the bot
   await expect(page.locator("[data-deeprole-choices-host]")).toHaveCount(1);
   const after = await page.evaluate(() => window.scrollY);
   if (userScrollsAway) expect(after).toBeLessThanOrEqual(before + 2);
-  else expect(await page.locator("[data-deeprole-choices-host]").evaluate(node => node.getBoundingClientRect().top)).toBeLessThanOrEqual(60);
+  else await expect.poll(() => page.locator("[data-deeprole-choices-host]").evaluate(node => node.getBoundingClientRect().top)).toBeLessThanOrEqual(60);
 });
+
+for (const mode of ["inline", "pinned", "reduced", "disabled", "interrupted"] as const) {
+  test(`finished options reveal together with the scene scroll: ${mode}`, async ({ page }) => {
+    await page.setViewportSize({ width: mode === "pinned" ? 360 : 900, height: 660 });
+    await page.emulateMedia({ reducedMotion: mode === "reduced" ? "reduce" : "no-preference" });
+    await page.goto(`/tests/fixtures/scene-choices.html?pins&locale=${mode === "pinned" ? "ru" : "en"}`);
+    await page.addStyleTag({ content: "html { overflow-anchor:none; } form { position:fixed; z-index:1; bottom:0; left:5%; width:90%; }" });
+    const paragraphs = Array.from({ length: 45 }, (_, index) => `<p>Scene ${index}. Mira checks the gate and waits for an answer.</p>`).join("");
+    await page.evaluate(({ paragraphs, mode, payload }) => {
+      const fixture = (window as any).choicesTest;
+      fixture.setHistory(`<article data-message-id="live" data-role="assistant"><div class="ds-markdown">${paragraphs}</div></article>`);
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      fixture.update({ generating: true, pinSceneChoices: mode === "pinned", animations: mode !== "disabled" });
+      const block = document.createElement("pre"); block.textContent = payload;
+      document.querySelector(".ds-markdown")!.append(block);
+      fixture.sync();
+    }, { paragraphs, mode, payload });
+    await expect(page.locator("[data-deeprole-choices-loading]")).toHaveCount(1);
+    const trace = await page.evaluate(async mode => {
+      const fixture = (window as any).choicesTest;
+      const source = document.querySelector(".ds-markdown p:last-of-type")!;
+      const start = { scroll: window.scrollY, storyY: source.getBoundingClientRect().top };
+      fixture.update({ generating: false });
+      const card = document.querySelector("[data-deeprole-choices-host]")!;
+      const section = card.shadowRoot!.querySelector("section")!;
+      const sample = () => {
+        const style = getComputedStyle(section);
+        return { scroll: window.scrollY, storyY: source.getBoundingClientRect().top, opacity: Number(style.opacity), slide: new DOMMatrixReadOnly(style.transform).m42 };
+      };
+      const immediate = sample();
+      const reveal = section.getAnimations().find(anim => anim.id === "deeprole-choices-reveal");
+      const frames = [];
+      let stopped: number | null = null;
+      while (reveal?.playState === "running") {
+        await new Promise(requestAnimationFrame);
+        frames.push(sample());
+        if (mode === "interrupted" && stopped === null && window.scrollY > start.scroll) {
+          source.dispatchEvent(new WheelEvent("wheel", { bubbles: true, deltaY: -80 }));
+          stopped = window.scrollY;
+        }
+        // Streaming and layout updates can run again during the reveal.
+        fixture.sync();
+      }
+      await new Promise(requestAnimationFrame);
+      return { start, immediate, frames, end: sample(), stopped, animated: !!reveal };
+    }, mode);
+    if (mode === "reduced" || mode === "disabled") {
+      expect(trace.animated).toBe(false);
+      expect(trace.immediate.opacity).toBe(1);
+      expect(trace.immediate.slide).toBe(0);
+      expect(trace.immediate.scroll).toBeGreaterThan(trace.start.scroll);
+    } else {
+      expect(trace.animated).toBe(true);
+      expect(trace.immediate.scroll).toBeCloseTo(trace.start.scroll, 0);
+      expect(trace.immediate.storyY).toBeCloseTo(trace.start.storyY, 0);
+      expect(trace.immediate.opacity).toBeLessThan(.1);
+      expect(trace.immediate.slide).toBeGreaterThan(9);
+      expect(trace.frames.some(frame => frame.opacity > .1 && frame.opacity < .95)).toBe(true);
+      expect(trace.end.opacity).toBe(1);
+      expect(trace.end.slide).toBe(0);
+      if (mode === "interrupted") {
+        expect(trace.stopped).not.toBeNull();
+        expect(trace.end.scroll).toBe(trace.stopped);
+      } else {
+        expect(trace.end.storyY).toBeLessThan(trace.start.storyY - 15);
+        expect(trace.frames.some(frame => frame.scroll > trace.start.scroll && frame.scroll < trace.end.scroll - 1)).toBe(true);
+      }
+    }
+    await expect(page.locator("[data-deeprole-choices-host] .grid button")).toHaveCount(4);
+  });
+}
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
   test(`streaming choices hide transport and show one loader ${locale} ${width}`, async ({ page }, info) => {
@@ -179,7 +250,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
 }
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
-  test(`neutral choices use equal spacing and softly fill on hover or selection ${locale} ${width}`, async ({ page }, info) => {
+  test(`pastel choices use equal spacing and softly deepen on hover or selection ${locale} ${width}`, async ({ page }, info) => {
+    test.setTimeout(60_000);
     await page.setViewportSize({ width, height: 850 });
     await page.goto(`/tests/fixtures/scene-choices.html?locale=${locale}`);
     const labels = locale === "ru" ? ["Поблагодарить Миру", "Спросить о письме", "Отказаться от конверта", "Предложить обмен"] : options.map(option => option.label);
@@ -197,12 +269,14 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
       return elements.map(button => {
         const style = getComputedStyle(button); const overlay = getComputedStyle(button, "::before");
         const probe = document.createElement("span"); probe.style.backgroundColor = "var(--choice-tint)"; button.append(probe);
-        const tint = rgb(getComputedStyle(probe).backgroundColor); probe.remove();
-        const opacity = Number(overlay.opacity); const base = rgb(style.backgroundColor);
+        const tint = rgb(getComputedStyle(probe).backgroundColor);
+        probe.style.backgroundColor = "color-mix(in oklab, var(--choice-tint) 12%, var(--dr-surface))";
+        const base = rgb(getComputedStyle(probe).backgroundColor); probe.remove();
+        const opacity = Number(overlay.opacity);
         // Check readability at the strongest (left) end of the translucent gradient.
-        const background = `rgb(${base.map((value, i) => Math.round(value * (1 - .14 * opacity) + tint[i]! * .14 * opacity)).join(",")})`;
+        const background = `rgb(${base.map((value, i) => Math.round(value * (1 - .15 * opacity) + tint[i]! * .15 * opacity)).join(",")})`;
         const numberStyle = getComputedStyle(button.querySelector(".number")!);
-        return { kind: (button as HTMLElement).dataset.choiceKind, background: rgb(background).join(","), category: getComputedStyle(button.querySelector("small")!).color, border: style.borderColor, opacity, gradient: overlay.backgroundImage, origin: overlay.transformOrigin, duration: overlay.transitionDuration, pressed: button.getAttribute("aria-pressed"), contrasts: [contrast(style.color, background), contrast(getComputedStyle(button.querySelector(".preview")!).color, background), contrast(getComputedStyle(button.querySelector("small")!).color, background), contrast(numberStyle.color, button.getAttribute("aria-pressed") === "true" ? numberStyle.backgroundColor : background)] };
+        return { kind: (button as HTMLElement).dataset.choiceKind, background: rgb(background).join(","), category: getComputedStyle(button.querySelector("small")!).color, border: style.borderWidth, opacity, gradient: style.backgroundImage, duration: overlay.transitionDuration, pressed: button.getAttribute("aria-pressed"), contrasts: [contrast(style.color, background), contrast(getComputedStyle(button.querySelector(".preview")!).color, background), contrast(getComputedStyle(button.querySelector("small")!).color, background), contrast(numberStyle.color, button.getAttribute("aria-pressed") === "true" ? numberStyle.backgroundColor : background)] };
       });
     });
     const assertReadable = (samples: Awaited<ReturnType<typeof colors>>) => {
@@ -224,16 +298,17 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) {
     await expect(card.locator(".choice-status")).toBeHidden();
     await expect(card).not.toContainText(locale === "ru" ? "Выбор попадёт" : "A choice fills");
     const rest = await colors(); assertReadable(rest); expect(rest.every(sample => sample.pressed === "false" && sample.opacity === 0)).toBe(true);
-    for (const key of ["background", "category", "border"] as const) expect(new Set(rest.map(sample => sample[key])).size).toBe(1);
-    for (const sample of rest) { expect(sample.gradient).toContain("linear-gradient(90deg"); expect(sample.origin).toMatch(/^0px /); expect(sample.duration).toContain("0.28s"); }
+    expect(new Set(rest.map(sample => sample.background)).size).toBe(4);
+    expect(new Set(rest.map(sample => sample.category)).size).toBe(1);
+    for (const sample of rest) { expect(sample.border).toBe("0px"); expect(sample.gradient).toContain("linear-gradient(125deg"); expect(sample.duration).toContain("0.16s"); }
     await card.screenshot({ path: info.outputPath(`pastel-rest-${locale}-${width}.png`) });
     for (let i = 0; i < 4; i++) {
       await buttons.nth(i).hover();
-      await buttons.nth(i).evaluate(button => Promise.all(button.getAnimations().map(animation => animation.finished.catch(() => undefined))));
+      await expect.poll(() => buttons.nth(i).evaluate(button => getComputedStyle(button, "::before").opacity)).toBe("1");
       const hovered = await colors(); assertReadable(hovered); expect(hovered[i]!.opacity).toBe(1); expect(hovered[i]!.background).not.toBe(rest[i]!.background);
       if (i === 0) await card.screenshot({ path: info.outputPath(`choice-hover-${locale}-${width}.png`) });
       await page.getByRole("textbox", { name: "Message", exact: true }).fill(""); await buttons.nth(i).click();
-      await buttons.nth(i).evaluate(button => Promise.all(button.getAnimations().map(animation => animation.finished.catch(() => undefined))));
+      await expect.poll(() => buttons.nth(i).evaluate(button => getComputedStyle(button, "::before").opacity)).toBe("1");
       const selected = await colors(); assertReadable(selected); expect(selected.filter(sample => sample.pressed === "true")).toHaveLength(1);
       expect(selected[i]!.pressed).toBe("true"); expect(selected[i]!.opacity).toBe(1); expect(selected[i]!.background).not.toBe(rest[i]!.background);
       await expect(card.locator(".choice-status")).toBeHidden(); await expect(card.locator(".choice-status")).toHaveText("");

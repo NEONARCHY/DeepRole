@@ -15,7 +15,7 @@ for (const locale of ["ru", "en"]) for (const width of [320, 520]) test("opaque 
  expect(await page.locator("body").evaluate(el => getComputedStyle(el).opacity)).toBe("0");
  expect(await host.locator(".screen").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
  const request=(await host.locator(".request").boundingBox())!,response=(await host.locator(".response").boundingBox())!,main=(await host.locator("main").boundingBox())!;
- expect(request.width).toBeCloseTo(response.width*.9,0); expect(request.x+request.width).toBeCloseTo(response.x+response.width,0);
+  expect(request.x).toBeCloseTo(response.x,0); expect(request.width).toBeCloseTo(response.width,0);
  expect(response.width).toBeCloseTo(main.width,0);
  expect(await host.locator(".dots i").first().evaluate(el => getComputedStyle(el).animationName)).toBe("none");
  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

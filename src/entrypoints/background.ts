@@ -1,4 +1,6 @@
+import { CHAT_HOME } from "../core/chat-host";
 import { browser } from "wxt/browser";
+import { defineBackground } from "wxt/utils/define-background";
 import { shouldOpenWelcome } from "../core/first-run";
 import { openGameChat } from "../adapters/open-game-chat";
 import { REPOSITORY_PORT, serveJsonPort } from "../storage/repository-stream";
@@ -80,13 +82,13 @@ export default defineBackground(() => {
     if (message.type === "DR_OPEN_GAME_CHAT") {
       const url = sender.url ?? "";
       const fromPanel = url.split(/[?#]/u, 1)[0] === browser.runtime.getURL("/sidepanel.html");
-      const fromChat = sender.frameId === 0 && sender.tab?.id !== undefined && url.startsWith("https://chat.deepseek.com/");
+      const fromChat = sender.frameId === 0 && sender.tab?.id !== undefined && url.startsWith(CHAT_HOME);
       if (sender.id !== browser.runtime.id || (!fromPanel && !fromChat) || !validChatId(message.chatId)) return Promise.resolve({ ok: false });
       return openGameChat(message.chatId, sender.tab).then(() => ({ ok: true }), () => ({ ok: false }));
     }
     if (message.type === "DR_MENU_TAB") {
       if (sender.id !== browser.runtime.id || !sender.url?.startsWith(browser.runtime.getURL("/sidepanel.html")) || sender.tab?.id === undefined) return Promise.resolve({ ok: false });
-      return browser.tabs.get(sender.tab.id).then(tab => ({ ok: !!tab.url?.startsWith("https://chat.deepseek.com/"), tabId: tab.id }), () => ({ ok: false }));
+      return browser.tabs.get(sender.tab.id).then(tab => ({ ok: !!tab.url?.startsWith(CHAT_HOME), tabId: tab.id }), () => ({ ok: false }));
     }
     if (message.type === "DR_FIELD" || message.type === "DR_FIELD_WORKER") return fields.handle(message as FieldMessage, sender);
     if (message.type === "DR_CAST" || message.type === "DR_CAST_WORKER") return cast.handle(message as CastMessage, sender);
@@ -100,7 +102,7 @@ export default defineBackground(() => {
       return migrateLegacyProposals().then(() => ({ ok: true }), () => ({ ok: false }));
     }
     if (message.type === "DR_REVIEW_MEMORY") {
-      if (sender.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith("https://chat.deepseek.com/")) return;
+      if (sender.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith(CHAT_HOME)) return;
       return (async () => {
         try {
           if (message.operation === "apply") return { ok: true, change: await applyMemoryProposals(message.batchId, message.items, repository, message.profileChoice) };
@@ -111,7 +113,7 @@ export default defineBackground(() => {
       })();
     }
     if (message.type === "DR_REPOSITORY") {
-      if (sender.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith("https://chat.deepseek.com/")) return;
+      if (sender.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith(CHAT_HOME)) return;
       return (async () => {
         try {
           if (message.operation === "isLocked") return { ok: true, data: await repository.isLocked() };
@@ -415,7 +417,7 @@ export default defineBackground(() => {
       void cast.auto().catch(() => undefined);
       // An embedded extension frame can report the same tab as the content script.
       // Include that tab too, otherwise edits inside the menu leave chat context stale.
-      return browser.tabs.query({ url: "https://chat.deepseek.com/*" }).then((tabs) => Promise.all(tabs.filter((tab) => tab.id).map((tab) => browser.tabs.sendMessage(tab.id!, message).catch(() => undefined))));
+      return browser.tabs.query({ url: `${CHAT_HOME}*` }).then((tabs) => Promise.all(tabs.filter((tab) => tab.id).map((tab) => browser.tabs.sendMessage(tab.id!, message).catch(() => undefined))));
     }
     if (message.type !== "DR_OPEN_PANEL") return;
     if (browserApi.sidePanel?.open) {
@@ -428,7 +430,7 @@ export default defineBackground(() => {
   browser.runtime.onConnect.addListener(port => {
     if (port.name !== REPOSITORY_PORT) return;
     const sender = port.sender;
-    if (sender?.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith("https://chat.deepseek.com/")) { port.disconnect(); return; }
+    if (sender?.id !== browser.runtime.id || !sender.tab || !sender.url?.startsWith(CHAT_HOME)) { port.disconnect(); return; }
     serveJsonPort(port, request => {
       if (!request || typeof request !== "object" || (request as { type?: unknown }).type !== "DR_REPOSITORY") throw new Error("unsupported-operation");
       return handleMessage(request as DeepRoleMessage, sender);
@@ -443,7 +445,7 @@ export default defineBackground(() => {
         id: "deeprole-save-selection",
         title: browser.i18n.getMessage("contextMenuSave") || "Save selection to DeepRole",
         contexts: ["selection"],
-        documentUrlPatterns: ["https://chat.deepseek.com/*"],
+        documentUrlPatterns: [`${CHAT_HOME}*`],
       });
     });
   });

@@ -1,3 +1,4 @@
+import { CHAT_HOME } from "../../core/chat-host";
 import { browser } from "wxt/browser";
 import type { ImageMessage } from "../../core/image-messages";
 import { ImageJobs, validImageTarget, validImageJob } from "../../storage/image-jobs";
@@ -9,7 +10,7 @@ type ImageSender = { id?: string; url?: string; tab?: { id?: number } };
 export function imageSenderAllowed(sender: ImageSender, runtimeId: string, extensionUrl: string, models: boolean): boolean {
   if (sender.id !== runtimeId || !sender.url) return false;
   const ui = sender.url.startsWith(extensionUrl) && ["/sidepanel.html", "/image-permission.html"].includes(new URL(sender.url).pathname);
-  return models ? ui : ui || !!sender.tab?.id && sender.url.startsWith("https://chat.deepseek.com/");
+  return models ? ui : ui || !!sender.tab?.id && sender.url.startsWith(CHAT_HOME);
 }
 export async function handleImageMessage(message: ImageMessage, sender: ImageSender) {
   if (!imageSenderAllowed(sender, browser.runtime.id, browser.runtime.getURL("/"), message.type === "DR_IMAGE_MODELS")) return { ok: false, error: "forbidden" };

@@ -1,6 +1,6 @@
 import { composerBounds, observeChoiceComposer } from "./pinned-choices";
 import { choiceScrollContainer, flowTail } from "./inline-choices";
-import { choiceInnerWheelCanScroll, choiceWheelPixels, observeChoiceScrollFollow } from "./choice-scroll-follow";
+import { choiceInnerWheelCanScroll, choiceWheelPixels, isChoiceRevealScrolling, observeChoiceScrollFollow } from "./choice-scroll-follow";
 
 const bindings = new WeakMap<HTMLElement, { anchor: HTMLElement; dispose: () => void }>();
 
@@ -12,13 +12,13 @@ export function unbindPinnedChoiceSpace(host: HTMLElement): void {
  * Only our placeholder changes; native message styles and drafts stay untouched.
  * Older scenes can still scroll behind the fixed overlay deliberately.
  */
-export function bindPinnedChoiceSpace(host: HTMLElement, anchor: HTMLElement): void {
+export function bindPinnedChoiceSpace(host: HTMLElement, anchor: HTMLElement, reveal = false, paused = false): void {
   if (bindings.get(host)?.anchor === anchor) return;
   unbindPinnedChoiceSpace(host);
   const doc = host.ownerDocument, win = doc.defaultView!;
   let scroller = choiceScrollContainer(anchor), disposed = false;
   const nearBottom = () => scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 48;
-  const follow = observeChoiceScrollFollow(host, scroller, nearBottom());
+  const follow = observeChoiceScrollFollow(host, scroller, !paused && (reveal || nearBottom()), paused);
   // The pinned host is outside the chat's scroll tree. At an inner edge,
   // route the wheel to the source chat instead of the body's empty background.
   const forwardWheel = (event: WheelEvent) => {
@@ -43,7 +43,7 @@ export function bindPinnedChoiceSpace(host: HTMLElement, anchor: HTMLElement): v
       : flowTail(anchor, scroller, 0);
     const missing = Math.max(0, Math.ceil(scrollBottom - card.top + 12 - nativeTail));
     if (Math.abs(rect.height - missing) > .5) anchor.style.height = `${missing}px`;
-    if (follow.following) scroller.scrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    if (follow.following && !isChoiceRevealScrolling(host)) scroller.scrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
   };
   host.addEventListener("wheel", forwardWheel, { passive: false });
   const stopObserving = observeChoiceComposer(host, update, [anchor, ...(anchor.parentElement ? [anchor.parentElement] : [])]);

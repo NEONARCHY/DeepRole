@@ -1,5 +1,6 @@
 import type { AdapterStatus, DeepSeekAdapter } from "../core/types";
 import { estimateTokens } from "../core/text";
+import { IS_DESKTOP } from "../core/chat-host";
 import { nativeSidebarLeft } from "./chat-layout";
 import { hasTransportView, projectedTransportText, TRANSPORT_FRAGMENT } from "./deepseek-transport-visibility";
 
@@ -144,6 +145,10 @@ export class DeepSeekDomAdapter implements DeepSeekAdapter {
   }
 
   getChatTitleAnchor(): { x: number; y: number } | null {
+    if (IS_DESKTOP) {
+      const header = document.querySelector(".desktop-header")?.getBoundingClientRect();
+      if (header) return { x: header.left + 12, y: header.bottom + 12 };
+    }
     const sidebarLeft = nativeSidebarLeft(document);
     const composer = this.findComposer();
     const composerRect = composer?.getBoundingClientRect();

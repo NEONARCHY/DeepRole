@@ -3,17 +3,16 @@
 .play-view > .view-title h1:focus { outline: none; }
 
 .app-shell .play-world-card.dr-play-start {
-  --play-inset: var(--dr-space-4);
   display: grid;
   gap: 0;
   min-inline-size: 0;
   padding: 0;
-  border: 1px solid var(--dr-border-strong);
-  border-radius: 16px;
+  border: 0;
+  border-radius: var(--dr-radius);
   background: var(--dr-surface);
 }
-.dr-play-main { display: grid; gap: var(--dr-space-4); padding: var(--play-inset); min-inline-size: 0; }
-.dr-play-heading { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: var(--dr-space-3); }
+.dr-play-main { display: grid; gap: var(--dr-layout-section); padding: var(--dr-layout-inset); min-inline-size: 0; }
+.dr-play-heading { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: var(--dr-layout-gap); }
 .dr-play-symbol { display: grid; place-items: center; width: 40px; height: 40px; color: var(--dr-primary); background: var(--dr-selected); border-radius: var(--dr-radius); }
 .dr-play-symbol svg { width: 20px; height: 20px; }
 .app-shell .dr-play-heading h2 { margin: 0; font-size: max(18px, 1.25rem); line-height: 1.25; font-weight: 600; overflow-wrap: anywhere; }
@@ -28,15 +27,16 @@
 .dr-play-start .dr-game-chat-link { display: grid; gap: var(--dr-space-2); min-width: 0; }
 .dr-play-start .button svg { flex: none; }
 
-.dr-play-choices { display: grid; gap: var(--dr-space-1); }
+.dr-play-choices { display: grid; gap: var(--dr-layout-label); min-inline-size: 0; }
 .dr-play-choice, .dr-play-memory, .dr-play-scene > summary {
-  display: grid; grid-template-columns: 20px minmax(0, 1fr) 16px; gap: var(--dr-space-3); align-items: center;
-  min-block-size: 48px; min-inline-size: 0; width: 100%; padding: var(--dr-space-3) var(--play-inset);
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) 16px; gap: var(--dr-layout-gap); align-items: center;
+  min-block-size: 48px; min-inline-size: 0; width: 100%; padding: var(--dr-layout-gap) var(--dr-layout-inset);
   border: 0; background: transparent; color: var(--dr-text); font: inherit; text-align: start; cursor: pointer;
 }
-.dr-play-choice { padding: var(--dr-space-3); border: 1px solid var(--dr-border-strong); border-radius: var(--dr-radius); }
-.dr-play-choice[data-primary="true"] { background: var(--dr-selected); border-color: var(--dr-selected); }
-.dr-play-copy { display: grid; gap: var(--dr-space-1); min-width: 0; overflow-wrap: anywhere; }
+.dr-play-choice { padding: var(--dr-layout-gap); background: var(--dr-surface); border-radius: var(--desktop-control); }
+.dr-play-start .dr-play-choice { background: var(--dr-panel); }
+.dr-play-start .dr-play-choice[data-primary="true"] { background: var(--dr-selected); }
+.dr-play-copy { display: grid; gap: var(--dr-layout-row); min-width: 0; overflow-wrap: anywhere; }
 .dr-play-copy strong { font-size: max(15px, 1rem); font-weight: 600; line-height: 1.35; }
 .dr-play-copy small, .dr-play-review-count { font-size: max(13px, .875rem); font-weight: 400; line-height: 1.45; color: var(--dr-muted); }
 .dr-play-copy .dr-play-review-count { color: var(--dr-primary); }
@@ -44,15 +44,14 @@
 :is(.dr-play-choice, .dr-play-memory, .dr-play-scene > summary) > svg { width: 20px; height: 20px; color: var(--dr-muted); }
 :is(.dr-play-choice, .dr-play-memory, .dr-play-scene > summary) > svg:last-child { width: 16px; height: 16px; }
 .dr-play-choice[data-primary="true"] > svg:first-child { color: var(--dr-primary); }
-.dr-play-memory, .dr-play-scene { border-block-start: 1px solid var(--dr-border-strong); }
 .dr-play-scene > summary { list-style: none; }
 .dr-play-scene > summary::-webkit-details-marker { display: none; }
 .dr-play-scene[open] .dr-play-chevron { rotate: 180deg; }
-.dr-play-scene > div { display: grid; gap: var(--dr-space-3); padding: 0 var(--play-inset) var(--play-inset); }
+.dr-play-scene > div { display: grid; gap: var(--dr-layout-gap); padding: 0 var(--dr-layout-inset) var(--dr-layout-inset); }
 @media (hover: hover) {
-  .dr-play-choice:hover, .dr-play-memory:hover, .dr-play-scene > summary:hover { background: var(--dr-raised); }
+  .dr-play-choices .dr-play-choice:hover, .dr-play-memory:hover, .dr-play-scene > summary:hover { background: var(--dr-raised); }
 }
-:is(.dr-play-choice, .dr-play-memory, .dr-play-scene > summary):focus-visible { outline: 2px solid var(--dr-primary); outline-offset: -3px; }
+:is(.dr-play-choice, .dr-play-memory, .dr-play-scene > summary):focus-visible { outline: 2px solid var(--dr-focus); outline-offset: -3px; }
 .dr-play-start .scene-focus-toggle, .dr-play-start .scene-controls select, .dr-play-start .scene-clear,
 .play-view .play-memory-details > summary { min-block-size: 44px; }
 .dr-play-start .scene-controls-line { display:grid; grid-template-columns:minmax(0,1fr); }
@@ -60,9 +59,8 @@
 .dr-play-start .scene-chip { min-block-size: 44px; white-space: normal; }
 .play-view .play-memory-details, .app-shell .dr-story-continuation .play-continuation {
   min-width: 0;
-  padding: 0 var(--dr-space-4);
+  padding: 0 var(--dr-layout-inset);
   border: 0;
-  border-block-start: 1px solid var(--dr-border-strong);
   border-radius: 0;
 }
 .play-view .play-memory-details > summary,

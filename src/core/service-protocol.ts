@@ -1,6 +1,7 @@
 import { createId } from "./id";
 import type { ActivationMode, HandoffSnapshot, Locale, MemoryCandidate, MemoryEntry, MemoryPriority, SceneEntity } from "./types";
 import { DEEPSEEK_PROMPT_CHAR_LIMIT } from "./request-injection";
+import { IS_DESKTOP } from "./chat-host";
 
 export const SERVICE_START = "<deeprole_data>";
 export const SERVICE_END = "</deeprole_data>";
@@ -84,7 +85,7 @@ export function acknowledgesTransfer(text: string, id: string): boolean {
  * Only the last packet carries the task and accepts a substantive response. */
 export function transferPackets(base: string, id: string, ...references: string[]): TransferPacket[] {
   const ordinary = serviceMessage(base, id, ...references);
-  if (ordinary.length <= DEEPSEEK_PROMPT_CHAR_LIMIT) return [{ id, prompt: ordinary }];
+  if (IS_DESKTOP || ordinary.length <= DEEPSEEK_PROMPT_CHAR_LIMIT) return [{ id, prompt: ordinary }];
   const marker = base.startsWith(SERVICE_PREFIX + "\n[DeepRole Scene Handoff]")
     ? "[Approved memory " : "[Existing approved entries]\n";
   const dataAt = base.indexOf(marker);

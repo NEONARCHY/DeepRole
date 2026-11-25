@@ -35,6 +35,35 @@ describe("safe independent game updates", () => {
   });
   it("does not use a quote present only inside its own metadata", () => {
     expect(parseStoryUpdate(block(turn({ facts: [{ text: "Made up", kind: "event", quote: "Private invented text" }] })), scope).facts).toEqual([]);
+    expect(parseStoryUpdate(block(turn({ facts: [{ kind: "event", quote: "Мира положила ключ в ящик.", risk: "ordinary" }] })), scope).facts).toEqual([]);
+  });
+  it.each([
+    "Мира вспомнила, что это всего лишь рисунок.",
+    "Ключ лежит под зелёной лампой?",
+    "Ключ лежит под зелёной лампой. Под зелёной лампой лежит и письмо. Ключ блестит под зелёной лампой.",
+    "Ключ лежит под зелёной лампой",
+  ])("rejects an absent, repeated, or non-statement fact anchor in %s", prose => {
+    const value = turn({ facts: [{ kind: "event", anchor: "под зелёной лампой", risk: "ordinary" }] });
+    expect(parseStoryUpdate(block(value, prose), scope).facts).toEqual([]);
+  });
+  it("does not use an anchor crossing a sentence or starting inside another word", () => {
+    const prose = "The note reads spring gate code. Mira closes the ledger.";
+    const facts = ["ring gate code", "gate code. Mira"].map(anchor => ({ kind: "event", anchor, risk: "ordinary" }));
+    expect(parseStoryUpdate(block(turn({ facts }), prose), scope).facts).toEqual([]);
+  });
+  it("keeps a statement from an emphasized note without stray Markdown", () => {
+    const quote = '"Amber compass in drawer 47 behind the jade sextant."';
+    const facts = [{ kind: "event", anchor: "behind the jade sextant", risk: "ordinary" }];
+    const result = parseStoryUpdate(block(turn({ facts }), `You read:\n\n**${quote}**\n\nYou fold the note.`), scope);
+    expect(result.facts).toEqual([{ kind: "event", text: quote, quote }]);
+  });
+  it("keeps conditions in the whole sourced sentence and rejects anchors for claims", () => {
+    const quote = "Если Артур согласится, ключ останется под зелёной лампой.";
+    const event = { kind: "event", anchor: "под зелёной лампой", risk: "ordinary" };
+    const claim = { ...event, claim: { scope: "state", key: "key.location", value: "зелёная лампа" } };
+    const result = parseStoryUpdate(block(turn({ facts: [event, claim] }), quote), scope);
+    expect(result.facts).toEqual([{ kind: "event", text: quote, quote }]);
+    expect(result.diagnostic.skipped).toBe(1);
   });
   it("keeps multiline evidence exact and excludes choices and paraphrased whitespace", () => {
     const prose = "Мира\nпередала ключ.", data = turn({ facts: [{ text: "Ключ передан", kind: "event", quote: prose }, { text: "Не точная цитата", kind: "event", quote: "Мира передала ключ." }, { text: "Не сыграно", kind: "event", quote: "Пройти в дом" }] });

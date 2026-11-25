@@ -1,4 +1,5 @@
 import type { Locale } from "./types";
+import { IS_DESKTOP } from "./chat-host";
 const ru = {
  loading: "Проверяем состояние…", unavailable: "Не удалось обновить состояние. Последние полученные данные сохранены.", refresh: "Обновить состояние",
  title: "Дополнительная проверка памяти", intro: "DeepSeek дополнительно проверяет записанные сцены небольшими порциями. Обычно после 12 ходов, при большом объёме или смене сцены — раньше.",
@@ -17,4 +18,19 @@ const en: Record<keyof typeof ru, string> = {
  waiting: "Collecting new scenes. Normal memory is still saved.", running: "Review is running in the service window.", failed: "Review interrupted. Memory and unprocessed scenes are kept; there is no automatic retry.", ready: "A batch is ready. Review starts when the chat is idle and the draft is empty.",
  inactive: "Complete an ordinary game turn and resume accompaniment or scene recording.", "service-busy": "Another service operation is running or awaiting cleanup. Finish it first; no new batch is sent yet.", start: "Enable game accompaniment above first.", error: "Could not complete the action. Check the current chat and service window; memory is kept.", saved: "Setting saved",
 };
-export const memoryBatchText = (locale: Locale) => locale === "ru" ? ru : en;
+const desktop = {
+ ru: {
+  cost: "Проверка использует дополнительные запросы к модели и выполняется в фоне. По умолчанию выключена.",
+  running: "Проверяем сцены в фоне.",
+  error: "Не удалось выполнить действие. Проверьте, открыт ли актуальный чат. Память сохранена.",
+ },
+ en: {
+  cost: "Review uses additional model requests and runs in the background. Off by default.",
+  running: "Reviewing scenes in the background.",
+  error: "Could not complete the action. Check that the current chat is open. Memory is kept.",
+ },
+};
+export const memoryBatchText = (locale: Locale) => {
+ const copy = locale === "ru" ? ru : en;
+ return IS_DESKTOP ? { ...copy, ...desktop[locale] } : copy;
+};

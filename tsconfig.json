@@ -10,5 +10,5 @@
     "verbatimModuleSyntax": true,
     "types": ["node", "vitest/globals", "@testing-library/jest-dom/vitest"]
   },
-  "include": ["src", "tests", "*.config.ts", ".wxt/wxt.d.ts"]
+  "include": ["src", "desktop", "tests", "*.config.ts", ".wxt/wxt.d.ts"]
 }

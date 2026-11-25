@@ -1,3 +1,42 @@
+const revealFrames = new WeakMap<HTMLElement, number>();
+const REVEAL_MS = 240;
+
+export function isChoiceRevealScrolling(host: HTMLElement): boolean {
+  return revealFrames.has(host);
+}
+
+export function cancelChoiceRevealScroll(host: HTMLElement): void {
+  const frame = revealFrames.get(host);
+  if (frame !== undefined) host.ownerDocument.defaultView?.cancelAnimationFrame(frame);
+  revealFrames.delete(host);
+}
+
+/** Measure the destination using the normal layout, then restore the reading
+ * position before painting. Animate actual scroll without relaying out the card. */
+export function revealChoices(host: HTMLElement, scroller: Element, start: number, following: boolean, animated: boolean): void {
+  const win = host.ownerDocument.defaultView!;
+  const section = host.shadowRoot?.querySelector("section");
+  const motion = animated && typeof section?.animate === "function" && !win.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (motion) {
+    section.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }], {
+      duration: REVEAL_MS, easing: "cubic-bezier(.33, 1, .68, 1)",
+    }).id = "deeprole-choices-reveal";
+  }
+  const end = scroller.scrollTop;
+  if (!following) { if (end !== start) scroller.scrollTop = start; return; }
+  if (!motion || typeof scroller.scrollTo !== "function" || Math.abs(end - start) < 1) return;
+  const started = win.performance.now();
+  const frame = (now: number) => {
+    if (!host.isConnected || !scroller.isConnected) { revealFrames.delete(host); return; }
+    const t = Math.max(0, Math.min(1, (now - started) / REVEAL_MS));
+    scroller.scrollTo({ top: start + (end - start) * (1 - (1 - t) ** 3), behavior: "instant" });
+    if (t < 1) revealFrames.set(host, win.requestAnimationFrame(frame));
+    else revealFrames.delete(host);
+  };
+  revealFrames.set(host, win.requestAnimationFrame(frame));
+  scroller.scrollTo({ top: start, behavior: "instant" });
+}
+
 /** Reader intent must outlive the first scroll event inside the near-bottom zone.
  * A layout callback is not permission to resume after an upward gesture.
  */
@@ -14,6 +53,7 @@ export function observeChoiceScrollFollow(host: HTMLElement, initialScroller: El
     return path.includes(scroller);
   };
   const intent = (delta: number) => {
+    if (delta) cancelChoiceRevealScroll(host);
     if (delta < 0) { following = false; paused = true; resumeRequested = false; }
     else if (delta > 0) {
       resumeRequested = true;
@@ -21,6 +61,7 @@ export function observeChoiceScrollFollow(host: HTMLElement, initialScroller: El
     }
   };
   const onScroll = () => {
+    if (isChoiceRevealScrolling(host)) { lastTop = scroller.scrollTop; return; }
     const delta = scroller.scrollTop - lastTop;
     if (pointerDown && delta < -.5) intent(-1);
     else if (nearBottom() && (!paused || delta > .5 && (resumeRequested || pointerDown))) {
@@ -36,7 +77,10 @@ export function observeChoiceScrollFollow(host: HTMLElement, initialScroller: El
     if (['ArrowUp', 'PageUp', 'Home'].includes(event.key) || event.key === ' ' && event.shiftKey) intent(-1);
     else if (['ArrowDown', 'PageDown', 'End', ' '].includes(event.key)) intent(1);
   };
-  const onPointerDown = (event: PointerEvent) => { pointerDown = inChat(event); };
+  const onPointerDown = (event: PointerEvent) => {
+    pointerDown = inChat(event);
+    if (pointerDown && isChoiceRevealScrolling(host)) intent(-1);
+  };
   const onPointerUp = () => { pointerDown = false; };
   const onTouchStart = (event: TouchEvent) => { touchY = inChat(event) && event.touches.length === 1 ? event.touches[0]?.clientY ?? null : null; };
   const onTouchMove = (event: TouchEvent) => {
@@ -59,11 +103,13 @@ export function observeChoiceScrollFollow(host: HTMLElement, initialScroller: El
     reveal() { following = true; paused = false; resumeRequested = false; },
     setScroller(next: Element) {
       if (next === scroller) return;
+      cancelChoiceRevealScroll(host);
       target().removeEventListener('scroll', onScroll); scroller = next; lastTop = next.scrollTop;
       following = false; paused = true; resumeRequested = false;
       target().addEventListener('scroll', onScroll);
     },
     dispose() {
+      cancelChoiceRevealScroll(host);
       target().removeEventListener('scroll', onScroll);
       doc.removeEventListener('wheel', onWheel, true); doc.removeEventListener('keydown', onKey, true);
       doc.removeEventListener('pointerdown', onPointerDown, true);

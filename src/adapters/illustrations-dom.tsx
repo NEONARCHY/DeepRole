@@ -10,13 +10,15 @@ import { characterTurnKey, parseCharacterTurn } from "../core/characters";
 import { openPortraitViewer } from "./portrait-viewer";
 import { IllustrationLayout } from "./illustration-layout";
 import tokens from "../entrypoints/shared/design-tokens.css?raw";
+import workspacePalette from "../entrypoints/shared/workspace-palette.css?raw";
+import workspaceMaterial from "../entrypoints/shared/workspace-material.css?raw";
 import design from "../entrypoints/shared/design-system.css?raw";
 import effects from "../entrypoints/shared/design-effects.css?raw";
 import selects from "../entrypoints/shared/select.css?raw";
 import imageLayout from "../entrypoints/shared/image-generation.css?raw";
 import imageChat from "../entrypoints/shared/image-chat.css?raw";
 // Raw CSS matches the other isolated presenters and avoids the entrypoint loader's CSS transform.
-const theme = [tokens, design.replace(/^@import [^\r\n]*;\r?$/gm, ""), effects, selects, imageLayout, imageChat.replace(/^@import [^\r\n]*;\r?$/gm, "")].join("\n");
+const theme = [tokens, workspacePalette, design.replace(/^@import [^\r\n]*;\r?$/gm, ""), effects, selects, imageLayout, imageChat.replace(/^@import [^\r\n]*;\r?$/gm, ""), workspaceMaterial].join("\n");
 const sheets = new WeakMap<Document, CSSStyleSheet>();
 function styleShadow(shadow: ShadowRoot) {
   const doc = shadow.ownerDocument, Sheet = doc.defaultView?.CSSStyleSheet;

@@ -38,7 +38,7 @@ async function fixture(mode: "automatic" | "review" | "off" = "automatic", names
   const play = async (operation: "start"|"sync"|"reset"|"restore" = "sync") => { const b = await binding(), people = (await repo.list<SceneEntity>("entity")).filter(p => characterInChat(p,chat)); return runStoryGame({ ...scope(),operation,snapshot,expectedBase:characterRevision(people,b.characterScenes?.[f.world.id]),manual:"stop",nativeParentKey:null },DEFAULT_SETTINGS,repo); };
   await activate("initialize"); await play("start");
   let sequence = 2;
-  const send = async (facts: unknown[] = [],people: unknown[] = [], options: {capture?:boolean; beforeReply?:()=>Promise<void>;updates?:unknown[]} = {}) => {
+  const send = async (facts: unknown[] = [],people: unknown[] = [], options: {capture?:boolean; beforeReply?:()=>Promise<void>;updates?:unknown[];prose?:string} = {}) => {
     const parent = snapshot.selectedNativeKey!, user = String(++sequence), reply = String(++sequence), draft = "Continue "+user, policy = await world(), context = automationMarker(policy), requestId=crypto.randomUUID();
     const outgoing = context+"\n\n[User message]\n"+draft;
     if (options.capture !== false) {
@@ -51,7 +51,7 @@ async function fixture(mode: "automatic" | "review" | "off" = "automatic", names
     }
     await options.beforeReply?.();
     const prose = [...facts.map(v => (v as any).quote),...people.map(v => (v as any).quote)].join("\n") || "A normal scene.";
-    const content = prose+"\n<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat,updates:options.updates ?? [],facts,people})+"</deeprole_characters>";
+    const content = (options.prose ?? prose)+"\n<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat,updates:options.updates ?? [],facts,people})+"</deeprole_characters>";
     snapshot.messages.push({ identity:{nativeMessageKey:key(user),nativeParentKey:parent,role:"user"},completion:"complete",content:options.capture === false ? draft : outgoing },message(reply,user,"assistant",content)); snapshot.selectedNativeKey=key(reply); await play(); return reply;
   };
   const view = async () => currentStoryProfileEntities(await repo.list<SceneEntity>("entity"),await repo.list<StoryRecord>("story"),f.world.id,chat,(await binding()).id);
@@ -65,6 +65,57 @@ it.each(["event","promise","plan","belief","secret","task"])("automatically save
   const f=await fixture();await f.send([fact("The artisan returned the borrowed lantern.","ordinary",kind)]);
   expect((await f.world()).sharedGame!.facts).toHaveLength(1);expect((await f.review()).total).toBe(0);
   const before=await f.repo.rawRecords(); await f.play(); f.db.close();await f.db.open();await f.play();expect(await f.repo.rawRecords()).toEqual(before);assertStoryGraph(before);
+});
+it("uses an exact scene quote as the text of a plain fact", async () => {
+  const f = await fixture(), quote = "The artisan returned the borrowed lantern.";
+  await f.send([{ kind: "event", quote, risk: "ordinary" }]);
+  expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: quote, quote }]);
+  expect((await f.review()).total).toBe(0);
+});
+it("retains the real source quote when the model only restyles quotation marks", async () => {
+  const f = await fixture(), quote = 'Mira wrote on the note: "Locker 73."';
+  await f.send([{ kind: "event", quote: 'Mira wrote on the note: “Locker 73.”', risk: "ordinary" }], [], { prose: quote });
+  expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: quote, quote }]);
+  expect((await f.review()).total).toBe(0);
+});
+it("saves the real statement for a short anchor and holds a conditional event", async () => {
+  const f = await fixture(), quote = "The spare key is in locker 73 below the purple barometer.";
+  const condition = "If Mira agrees, the journal will go under the white lamp.";
+  await f.send([
+    { kind: "event", anchor: "below the purple barometer", risk: "ordinary" },
+    { kind: "event", anchor: "under the white lamp", risk: "ordinary" },
+  ], [], { prose: `${quote} ${condition}` });
+  expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: quote, quote }]);
+  expect((await f.review()).total).toBe(1);
+});
+it("keeps literal events independent of an unsupported reused claim key", async () => {
+  const f = await fixture();
+  const compass = fact("Amber compass in drawer 47 behind the jade sextant.", "ordinary", "event", {
+    key: "compass location", value: "drawer 47 behind the jade sextant", scope: "event",
+  });
+  const pass = "Запасной пропуск в ящике № 29 под кобальтовым светильником.";
+  const wrongLabel = { key: "compass location", value: "drawer 29 under the cobalt lamp", scope: "event" };
+  await f.send([compass]);
+  await f.send([fact(pass, "ordinary", "event", wrongLabel)]);
+  expect((await f.world()).sharedGame!.facts).toEqual([
+    { kind: "event", text: compass.text, quote: compass.quote, claim: compass.claim },
+    { kind: "event", text: pass, quote: pass },
+  ]);
+  expect((await f.review()).total).toBe(0);
+  await f.send([fact("Вход свободен.", "ordinary", "event", { key: "door status", value: "locked", scope: "state" })]);
+  expect((await f.world()).sharedGame!.facts).toHaveLength(2);
+  expect((await f.review()).total).toBe(1);
+});
+it("stores the original statement when a model translates its summary", async () => {
+  const f = await fixture(), quote = "Ящик 29, под кобальтовым светильником.";
+  await f.send([{ kind: "event", quote, text: "Drawer 29, under the cobalt lamp.", risk: "ordinary" }], [], {
+    prose: `На записке написано:\n\n*"${quote}"*`,
+  });
+  await f.send([{ kind: "event", quote: "the old trunk.", text: "The trunk contains a brooch.", risk: "ordinary" }], [], {
+    prose: "Mira denies opening the old trunk.",
+  });
+  expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: quote, quote }]);
+  expect((await f.review()).total).toBe(1);
 });
 it("never counts a repeated fact again and keeps mutable claim progression",async()=>{
   const f=await fixture();const a=fact("The door code is 123.","ordinary","event",{key:"door.code",value:"123",scope:"state"}),b=fact("The door code is 456.","ordinary","event",{key:"door.code",value:"456",scope:"state",transition:"progress"});

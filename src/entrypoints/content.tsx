@@ -1,3 +1,4 @@
+import { CHAT_HOME, CHAT_ORIGIN, IS_DESKTOP } from "../core/chat-host";
 import { captureStoryAutomation } from "../core/story-automation";
 import { startCastWorker } from "../adapters/cast-worker";
 import { isBackgroundBuildFailure, savedMemoryBinding, savedMemoryText, type SavedMemoryRequest, type SavedMemoryTransferState } from "../core/saved-memory-continuation";
@@ -39,6 +40,7 @@ import { fieldCancellation } from "../core/character-text-queue";
 import { createRoot, type Root } from "react-dom/client";
 import { WIDGET_LAYOUT_KEY, parseWidgetLayout } from "./content/WidgetDeck";
 import { browser } from "wxt/browser";
+import { defineContentScript } from "wxt/utils/define-content-script";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { injectScript } from "wxt/utils/inject-script";
 import { DeepSeekDomAdapter } from "../adapters/deepseek-dom";
@@ -51,7 +53,8 @@ import { StoryReviewReminderPresenter } from "../adapters/story-review-reminder-
 import { storyReviewReminderReply } from "../core/story-review-reminder";
 import { explicitOutOfCharacter } from "../core/story-message-mode";
 import { storyReplyPurpose, storyReplyProofChanged } from "../core/story-reply-purpose";
-import { dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
+import { concealChoicePayloads, dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
+import { transportChanged } from "../adapters/deepseek-transport-visibility";
 import { hideCharacterTextServices, plainCharacterReplyText, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { DEFAULT_SETTINGS } from "../core/defaults";
@@ -135,6 +138,8 @@ import { relationshipLoreBrief } from "../core/relationship-setup";
 import { handoffCharacterScene, withHandoffCharacters } from "../core/relationship-handoff";
 import "./shared/scene.css";
 import "./shared/memory-assistant.css";
+import "./shared/workspace-appearance.css";
+import "./shared/workspace-material.css";
 
 export default defineContentScript({
   matches: ["https://chat.deepseek.com/*"],
@@ -386,15 +391,12 @@ class PageController {
   private observePage() {
     const observer = new MutationObserver((changes) => {
       if (location.href !== this.lastUrl) this.navigate();
+      // Reconcile split or appended transport chunks before the next paint.
+      if (transportChanged(changes)) this.syncSceneChoices();
       if (this.pendingService?.type === "character-text" || this.characterTextTurns.length) this.syncCharacterTextServices();
       this.replyRecovery.process(changes);
       presentHiddenHandoffs();
       this.syncScenePhotos();
-      // Run before the next paint when DeepSeek streams a transport marker;
-      // the normal 350 ms scan can otherwise expose raw JSON for a frame.
-      if (changes.some(change => [...change.addedNodes, change.type === "characterData" ? change.target : null]
-        .some(node => node?.textContent && /<deeprole_(?:characters|choices)/u.test(node.textContent)
-          && !((node instanceof Element ? node : node.parentElement)?.closest("[data-deeprole-characters-result], [data-deeprole-payload-view], [data-deeprole-choices-loading], [data-deeprole-choices-host]"))))) this.syncSceneChoices();
       const request = this.pendingService;
       if (request && ["memory-analysis", "continue-handoff"].includes(request.type) && request.chatId === this.adapter.getChatId()) this.updateMemoryPreloader(request);
       else if (!request && changes.some(change => [...change.addedNodes].some(node => node.textContent?.includes(SERVICE_START))
@@ -549,7 +551,7 @@ class PageController {
       if (generation !== this.reloadGeneration || !restored) return false;
       this.retryContinuationTarget = null;
     }
-    const continuationTarget = location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
+    const continuationTarget = location.origin === CHAT_ORIGIN && location.pathname === "/" && !this.adapter.getChatId();
     const waitingAtSource = waitingForContinuationHome(this.appliedSnapshot?.sourceChatId, chatId, pending?.continueUntil);
     if (this.appliedSnapshot?.savedMemory && !this.pendingContinuationCommit && !this.savedMemoryTarget()) {
       const { id } = this.appliedSnapshot;
@@ -943,7 +945,7 @@ class PageController {
     void browser.runtime.sendMessage({ type: "DR_DATA_CHANGED" } satisfies DeepRoleMessage).catch(() => undefined);
   }
 
-  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string, requestChatId?: string, requiredContext?: string, opening = false, fitLore = false) {
+  private async updateContext(draft = this.adapter.getDraft(), characterRequestId?: string, requestChatId?: string, requiredContext?: string, opening = false, fitLore = false, nativeContextBytes?: number) {
     this.state.oldChatNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
     const scene = this.currentScene();
     const world = this.worlds.find((w) => w.id === scene.worldId);
@@ -992,6 +994,7 @@ class PageController {
       restart: !!recentGame?.restartPending && !this.pendingService,
       choices: choicesEnabled && !this.pendingService,
       requiredContext,
+      nativeContextBytes,
       ...(fitLore ? { fitLoreForDraftLength: draft.length } : {}),
     },{searchIndex:this.searchIndex,memoryTransport:"columns"},coverage=>{memoryCoverage=coverage;});
     // A reduced retry belongs only to this network request. The live preview
@@ -1103,7 +1106,7 @@ class PageController {
     const snapshot = this.appliedSnapshot;
     const snapshotId = this.autoContinueSnapshotId;
     const snapshotToken = this.autoContinueSnapshotToken;
-    const isFreshHome = () => location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId();
+    const isFreshHome = () => location.origin === CHAT_ORIGIN && location.pathname === "/" && !this.adapter.getChatId();
     if (!isFreshHome()) { await this.disarmAutoContinue(true); return; }
     if (!snapshot || snapshot.id !== snapshotId || !snapshotToken || this.snapshotToken !== snapshotToken) { await this.disarmAutoContinue(true); return; }
     if (snapshot.worldId && !this.worlds.some(w => w.id === snapshot.worldId) || snapshot.bookId && !this.books.some(b => b.id === snapshot.bookId && b.active)) {
@@ -1238,7 +1241,7 @@ class PageController {
         y: Math.round(this.contextIndicatorPosition.yRatio * window.innerHeight),
       };
     }
-    if (this.adapter.getChatId()) return this.adapter.getChatTitleAnchor() ?? defaultContextIndicatorPosition();
+    if (IS_DESKTOP || this.adapter.getChatId()) return this.adapter.getChatTitleAnchor() ?? defaultContextIndicatorPosition();
     return defaultContextIndicatorPosition();
   }
 
@@ -1317,18 +1320,20 @@ class PageController {
 
   private syncSceneChoices() {
     const busy = this.preparingService || pendingActivity(this.pendingService, this.adapter.getChatId(), this.adapter.isGenerating())?.phase === "waiting";
+    const choicesEnabled = (this.settings.sceneChoicesEnabled ?? true) && !this.state.vaultLocked;
+    if (!choicesEnabled && this.state.characters && !this.state.vaultLocked) concealChoicePayloads(document);
     // Existing reply options are read-only UI, not a world-bound memory update.
     // New recovery requests still require the connected-world feature flag.
-    syncSceneChoiceCards((this.settings.sceneChoicesEnabled ?? true) && !this.state.vaultLocked, this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, this.state.sceneChoicesEnabled ? {
+    syncSceneChoiceCards(choicesEnabled, this.adapter.isGenerating() || busy, this.state.locale, (choice, signature) => this.pickSceneChoice(choice, signature), document, this.state.sceneChoicesEnabled ? {
       busy, loading: !busy || this.pendingService?.type === "scene-choices" || this.serviceFeedback?.type === "scene-choices", requestSignature: this.pendingService?.type === "scene-choices" ? this.pendingService.sceneSignature : undefined, onRequest: (signature) => this.requestSceneChoices(signature),
-    } : undefined, { allowReply: row => !this.choicesPurposePending() && !this.isOutOfCharacterReply(row), adaptiveLayout: this.settings.adaptiveLayout !== false, pinSceneChoices: !!this.settings.pinSceneChoices, pinPortraits: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), onToggle: key => this.toggleChoicePin(key) });
+    } : undefined, { allowReply: row => !this.choicesPurposePending() && !this.isOutOfCharacterReply(row), adaptiveLayout: this.settings.adaptiveLayout !== false, animations: this.settings.animationsEnabled !== false, pinSceneChoices: !!this.settings.pinSceneChoices, pinPortraits: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), onToggle: key => this.toggleChoicePin(key) });
     const characters = this.state.characters;
     const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;
     const resetAt = this.settings.portraitLayoutResetAt ?? 0;
     syncChoicePortraits(!!characters && this.settings.characterSpritesEnabled !== false && !this.state.vaultLocked, characters?.entities ?? [], characters?.scene, this.state.locale, id => { if (this.state.characters) { this.state.characters.openId = id; this.render(); } }, document, worldId && chatId ? {
       scope: JSON.stringify([worldId, chatId]), layout: this.currentBinding()?.portraitLayouts?.[worldId], resetAt,
       pinSceneChoices: !!this.settings.pinSceneChoices, pinLeft: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), pinRight: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight),
-      adaptiveLayout: this.settings.adaptiveLayout !== false,
+      adaptiveLayout: this.settings.adaptiveLayout !== false, animations: this.settings.animationsEnabled !== false,
       onSave: async (entityId, pose) => {
         if (this.state.vaultLocked || chatId !== this.adapter.getChatId() || worldId !== this.currentScene().worldId) throw new Error("character-scope");
         await repository.savePortraitLayout({ worldId, chatId, chatUrl, resetAt, entityId, pose });
@@ -1872,7 +1877,7 @@ class PageController {
         : [{ id: request.id, prompt: serviceMessage(basePrompt, request.id, reference, selectedMemory) }];
       const first = packets[0]!, prompt = first.prompt;
       if (packets.length > 1) request = { ...request, id: first.id, transferPart: { number: 1, total: packets.length } };
-      if (prompt.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+      if (!IS_DESKTOP && prompt.length > DEEPSEEK_PROMPT_CHAR_LIMIT) {
         this.state.promptLength = { length: prompt.length, url: initialUrl };
         return await cancel("prompt-too-long");
       }
@@ -2119,7 +2124,7 @@ class PageController {
           this.showToast(assistantText(this.state.locale, "handoffSaved")); return;
         }
         if (continuationId) await this.setContinuation(null);
-        location.href = "https://chat.deepseek.com/";
+        location.href = CHAT_HOME;
       })().catch(() => this.showToast(assistantText(this.state.locale, "handoffSaved"))).finally(() => { this.handoffNavigationQueued = null; });
     }, 650);
   }
@@ -2311,7 +2316,7 @@ class PageController {
       catch (error) { await this.saveTabState({ snapshotId: null, snapshotToken: null, continueUntil: null }, { snapshotId: snapshot.id, snapshotToken: token }); throw error; }
       stage = fromHome ? "reload" : "navigation";
       if (fromHome) await this.reload();
-      else location.assign("https://chat.deepseek.com/");
+      else location.assign(CHAT_HOME);
     } catch (error) {
       reportMemoryPreparationFailure(stage, error, startedAt);
       throw error;
@@ -2378,6 +2383,7 @@ class PageController {
   }
 
   private maybeWarnContext() {
+    if (IS_DESKTOP) return;
     const chatId = this.adapter.getChatId(), capacity = chatCapacity(this.settings.chatContextCapacity);
     const level = contextWarningLevel(this.state.conversationEstimate, capacity);
     if (this.state.vaultLocked || this.settings.contextWarningsEnabled === false || !chatId || !level) return;
@@ -2415,7 +2421,7 @@ class PageController {
   private async handleNavigation() {
     this.dispatchCaptures.reset();
     this.dispatchReplies.reset();
-    if (this.autoContinuePending && !(location.origin === "https://chat.deepseek.com" && location.pathname === "/" && !this.adapter.getChatId())) {
+    if (this.autoContinuePending && !(location.origin === CHAT_ORIGIN && location.pathname === "/" && !this.adapter.getChatId())) {
       await this.disarmAutoContinue(true);
     }
     const chatId = this.adapter.getChatId();
@@ -2729,7 +2735,14 @@ class PageController {
         const canFitLore = Boolean(scene.worldId && currentChatId && currentChatId === requestChatId && !event.data.editing
           && !opening && !requiresTransfer && !snapshot && !recoveryContext && !reminder && !this.pendingService);
         if (loreRetry && (!canFitLore || loreRetry.scope.url !== url || loreRetry.scope.chatId !== currentChatId || loreRetry.scopeKey !== sceneKey || loreRetry.draft !== draft)) throw new Error("context-changed");
-        const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext, opening, Boolean(loreRetry));
+        let nativeContextBytes: number | undefined;
+        if (IS_DESKTOP && !reminder && (scene.worldId || scene.bookId || snapshot || recoveryContext)) {
+          const bytes = new TextEncoder().encode(draft).byteLength;
+          nativeContextBytes = await fetch(`/__desktop/memory-budget?bytes=${bytes}`, { signal: AbortSignal.timeout(3000) })
+            .then(async response => response.ok ? (await response.json() as { bytes: number | null }).bytes ?? 0 : undefined)
+            .catch(() => undefined);
+        }
+        const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext, opening, Boolean(loreRetry), nativeContextBytes);
         const context = reminder || normalContext;
         if (reminder && notice) delivery.oldChatNotice = { chatId: currentChatId!, chatUrl: url, worldId: scene.worldId, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "sent" };
         if (reply && recoveryContext && !reminder) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
@@ -2738,7 +2751,7 @@ class PageController {
         this.assertScope(delivery.scope);
         if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
         const oversizedLength = assembledPromptLength(draft, context);
-        if (oversizedLength > DEEPSEEK_PROMPT_CHAR_LIMIT) {
+        if (!IS_DESKTOP && oversizedLength > DEEPSEEK_PROMPT_CHAR_LIMIT) {
           if (!loreRetry && canFitLore && draft === initialDraft && draft.trim() && draft.length < DEEPSEEK_PROMPT_CHAR_LIMIT
             && this.selection.entries.some(item => item.entry.activation === "always" && !item.manuallySelected)) {
             this.loreLengthRetry = { id, scope: delivery.scope, scopeKey: sceneKey, draft };
@@ -2860,7 +2873,7 @@ class PageController {
         await this.reload().catch(() => undefined);
         // Session storage can fail before it saves the receipt. Keep the
         // accepted target in this page too, but never resurrect a newer token.
-        const receipt = matchingContinuationReceipt({ snapshotId: delivery.snapshot?.id, snapshotToken: delivery.snapshotToken, targetChatId: delivery.targetChatId ?? this.adapter.getChatId() }, this.appliedSnapshot?.id, this.snapshotToken, this.adapter.getChatId(), location.origin === "https://chat.deepseek.com" && location.pathname === "/");
+        const receipt = matchingContinuationReceipt({ snapshotId: delivery.snapshot?.id, snapshotToken: delivery.snapshotToken, targetChatId: delivery.targetChatId ?? this.adapter.getChatId() }, this.appliedSnapshot?.id, this.snapshotToken, this.adapter.getChatId(), location.origin === CHAT_ORIGIN && location.pathname === "/");
         if (receipt) { this.pendingContinuationCommit = receipt; this.state.continuationCommitPending = true; this.state.pendingHandoff = undefined; await this.updateContext().catch(() => this.render()); }
       });
     } else if (!event.data.ok && event.data.url === location.href && (this.selection.entries.length > 0 || this.appliedSnapshot)) {

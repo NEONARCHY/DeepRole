@@ -2,13 +2,13 @@
 .dr-select-menu {
   position:fixed; z-index:2147483100; pointer-events:auto; box-sizing:border-box;
   overflow:auto; overflow-x:hidden; overscroll-behavior:contain;
-  padding:4px; border:1px solid var(--dr-border-strong); border-radius:10px;
-  background:var(--dr-panel); color:var(--dr-text); box-shadow:0 12px 32px #0007;
+  padding:var(--dr-layout-row); border:0; border-radius:var(--desktop-control,12px);
+  background:var(--dr-panel); color:var(--dr-text); box-shadow:var(--dr-depth-dialog);
   font:12px/1.4 system-ui,sans-serif; text-align:start;
 }
-.dr-select-option { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:36px; padding:8px 10px; border-radius:6px; cursor:pointer; }
+.dr-select-option { display:flex; align-items:center; justify-content:space-between; gap:var(--dr-layout-label); min-height:36px; padding:var(--dr-layout-label) var(--dr-layout-gap); border-radius:var(--desktop-detail,8px); cursor:pointer; }
 .dr-select-option > span { min-width:0; overflow-wrap:anywhere; }
-.dr-select-option > svg { flex:none; color:var(--dr-primary); }
+.dr-select-option > svg { flex:none; color:var(--dr-focus); }
 .dr-select-option small { display:block; font-size:10px; color:var(--dr-muted); }
 .dr-select-option[data-active] { background:var(--dr-selected); }
 .dr-select-option[aria-disabled=true] { opacity:.5; cursor:not-allowed; }

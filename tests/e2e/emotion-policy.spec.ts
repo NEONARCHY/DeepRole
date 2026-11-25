@@ -26,7 +26,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) tes
   expect(stored.sheet).toMatchObject({ blockedActions: ["happy"], sprites: { neutral: images.neutral }, portraitLibrary: [images.happy] }); expect(stored.sheet.sprites.happy).toBeUndefined(); expect(stored.state).toMatchObject({ action: "neutral", condition: "Safe" });
   await expect(dialog.locator(".dr-character-portrait-editor img")).toHaveAttribute("src", images.neutral); await expect(dialog).toBeVisible();
   await dialog.locator("header").getByRole("button", { name: locale === "ru" ? "Закрыть" : "Close", exact: true }).click();
-  await expect(page.locator('.dr-cast-widget[data-character-id="mira"] img')).toHaveAttribute("src", images.neutral);
+  await expect(page.locator('.dr-cast-widget[data-character-id="mira"] img[data-current]')).toHaveAttribute("src", images.neutral);
   await page.locator(".dr-character-row").filter({ hasText: "Mira" }).click(); await policy.locator("summary").first().click(); await dialog.getByRole("button", { name: actionPolicyText(locale, "all"), exact: true }).click();
   await characterTab(dialog, "scene", locale); expect(await dialog.getByLabel(locale === "ru" ? "Действие" : "Action", { exact: true }).locator("option").evaluateAll(nodes => nodes.map(node => (node as HTMLOptionElement).value))).toContain("happy");
   await dialog.getByRole("button", { name: locale === "ru" ? "Сохранить персонажа" : "Save character", exact: true }).click();

@@ -3,7 +3,8 @@ import { READ_ONLY_STORY_INSTRUCTION, readOnlySearchDraft,hasBracketNotes,BRACKE
 import { selectCharacterContext } from "./character-context";
 import { compileMemoryWorkspace } from "./memory-workspace";
 import { formatMemoryContext } from "./context";
-import { assembledPromptLength, DEEPSEEK_PROMPT_CHAR_LIMIT } from "./request-injection";
+import { assembledPrompt, assembledPromptLength, DEEPSEEK_PROMPT_CHAR_LIMIT } from "./request-injection";
+import { IS_DESKTOP } from "./chat-host";
 import { rankStoryFacts,formatStoryFacts } from "./story-fact-context";
 import { storyContentRelevance } from "./story-content-relevance";
 import { taskProgressRecall } from './story-task-progress-recall';
@@ -70,6 +71,7 @@ export interface GameContextInput extends RankMemoryInput {
  requiredContext?:string;
  /** Original draft length for a one-turn retry with permission to reduce lore. */
  fitLoreForDraftLength?:number;
+ nativeContextBytes?:number;
 }
 type ProfilePart={id:string;name:string;field:"appearance"|"personality"|"goals"|"background";text:string;ordinal:number};
 const fields=["appearance","personality","goals","background"] as const;
@@ -519,8 +521,10 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   const loreText=formatMemoryContext(selection,snapshot);
   return join([loreText,renderBody(loreText)]);
  };
- const fitsWireLimit=(text:string)=>input.fitLoreForDraftLength===undefined
-  || input.fitLoreForDraftLength+assembledPromptLength("",text)<=DEEPSEEK_PROMPT_CHAR_LIMIT;
+ const nativeEncoder=input.nativeContextBytes===undefined?undefined:new TextEncoder();
+ const fitsWireLimit=(text:string)=>nativeEncoder
+  ? nativeEncoder.encode(assembledPrompt("",text)).byteLength<=input.nativeContextBytes!
+  : input.fitLoreForDraftLength===undefined||input.fitLoreForDraftLength+assembledPromptLength("",text)<=DEEPSEEK_PROMPT_CHAR_LIMIT;
  const requiredLore=new Set(selection.entries);
  let requiredText=render();
  if(!fitsWireLimit(requiredText)){
@@ -718,7 +722,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
  capture?.({facts:facts.map(f=>f.fact),selected:[...selectedFacts],roles,episodes,referenceGuard,admission,action,names:retrieval?.relevanceNames??[]});
  const useRemainingLoreBudget=(draft:string)=>{
   const result={text,memoryText,selection,documents:pooled.documents,report};
-  if(!deferredLore.length||required>limit||report.total>=limit||assembledPromptLength(draft,text)>=DEEPSEEK_PROMPT_CHAR_LIMIT
+  if(!deferredLore.length||required>limit||report.total>=limit||(!IS_DESKTOP&&assembledPromptLength(draft,text)>=DEEPSEEK_PROMPT_CHAR_LIMIT)
    || body===renderBody(memoryText)) return result;
 
   // Reuse the final encoded facts and retry only whole ranked lore entries
@@ -728,7 +732,7 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
    selection.entries.push(memory);
    const nextLore=formatMemoryContext(selection,snapshot);
    const nextText=join([nextLore,body]),total=addedContextTokens(nextText);
-   if(total>limit||assembledPromptLength(draft,nextText)>DEEPSEEK_PROMPT_CHAR_LIMIT){selection.entries.pop();continue;}
+   if(total>limit||!fitsWireLimit(nextText)||(!IS_DESKTOP&&assembledPromptLength(draft,nextText)>DEEPSEEK_PROMPT_CHAR_LIMIT)){selection.entries.pop();continue;}
    result.text=nextText;result.memoryText=nextLore;
    report.total=total;report.selected.lore++;report.omitted.lore--;
   }

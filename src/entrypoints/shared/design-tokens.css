@@ -1,20 +1,27 @@
 /* Shared palette and spacing, including small isolated cards inside DeepSeek. */
 :root, :host {
   --dr-space-1: 4px; --dr-space-2: 8px; --dr-space-3: 12px; --dr-space-4: 16px; --dr-space-6: 24px;
+  --dr-layout-gutter: var(--dr-space-4);
+  --dr-layout-section: var(--dr-space-4);
+  --dr-layout-inset: var(--dr-space-4);
+  --dr-layout-gap: var(--dr-space-3);
+  --dr-layout-label: var(--dr-space-2);
+  --dr-layout-row: var(--dr-space-1);
   /* AXIS-2: graphite planes, cool daylight accents, depth rather than bright strokes. */
   --dr-text: #eef3f7; --dr-muted: #afbcc9; --dr-border: #ffffff0d; --dr-surface: #2b343e;
   --dr-bg: #151a20; --dr-panel: #1d242b; --dr-raised: #35424e;
   --dr-primary: #bfdfeb; --dr-action: #bfdfeb; --dr-action-hover: #d9f1f8; --dr-on-action: #18303b;
   --dr-selected: #344b55; --dr-border-strong: #ffffff28; --dr-primary-soft: #304752;
-  --dr-success: #a5d6ba; --dr-warning: #eac08c; --dr-danger: #f4a7ac;
+  --dr-success: #9bc3fc; --dr-warning: #eac08c; --dr-danger: #f4a7ac;
+  --dr-focus: #99c2ff;
   --dr-button-neutral: #363e46; --dr-button-neutral-hover: #414a53;
   --dr-button-glow: 0 0 0 1px #d8dfe733, 0 0 16px #d8dfe72b;
   --dr-retry: #e6b9bb; --dr-retry-hover: #f0ccce; --dr-on-retry: #46292d;
   --dr-retry-glow: 0 0 0 1px #f0ccce44, 0 0 18px #e6b9bb55;
   --dr-danger-soft: #392933; --dr-warning-soft: #3b3340;
   /* Low-chroma pastels share a lightness; labels also identify each choice. */
-  --dr-choice-positive: oklch(82% 0.065 160);
-  --dr-choice-neutral: oklch(82% 0.060 245);
+  --dr-choice-positive: oklch(80% 0.105 248);
+  --dr-choice-neutral: oklch(84% 0.040 280);
   --dr-choice-negative: oklch(82% 0.070 15);
   --dr-choice-surprise: oklch(82% 0.070 305);
   /* Static depth; only the small accent overlay fades on interaction. */

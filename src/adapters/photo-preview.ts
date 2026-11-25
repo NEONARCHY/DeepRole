@@ -23,16 +23,19 @@ export class PhotoPreviewCache {
       try {
         if (generation !== this.generation) throw new Error("photo-preview-cancelled");
         if (typeof OffscreenCanvas === "undefined" || typeof createImageBitmap !== "function") throw new Error("photo-preview-unavailable");
-        const blob = dataImageBlob(await read());
+        const original = await read();
+        const blob = dataImageBlob(original);
         const bitmap = await createImageBitmap(blob);
         let image: string;
         try {
           const scale = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
+          if (limit === 1024 && scale === 1) return original;
           const canvas = new OffscreenCanvas(Math.max(1, Math.round(bitmap.width * scale)), Math.max(1, Math.round(bitmap.height * scale)));
           try {
             const context = canvas.getContext("2d"); if (!context) throw new Error("photo-preview-unavailable");
+            if (limit === 1024) context.imageSmoothingQuality = "high";
             context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-            image = await blobDataUrl(await canvas.convertToBlob({ type: "image/webp", quality: .85 }));
+            image = await blobDataUrl(await canvas.convertToBlob({ type: "image/webp", quality: limit === 1024 ? .95 : .85 }));
           } finally { canvas.width = canvas.height = 0; }
         } finally { bitmap.close(); }
         // A small bounded LRU holds only thumbnails. Originals are never cached.

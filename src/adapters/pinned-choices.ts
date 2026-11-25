@@ -1,5 +1,5 @@
 import { fitPinnedScene, fitScene } from "../core/adaptive-layout";
-import { sceneAvailableLeft } from "./adaptive-layout";
+import { sceneAvailableLeft, sceneAvailableRight } from "./adaptive-layout";
 
 const bindings = new WeakMap<HTMLElement, () => void>();
 const EDITABLE = "textarea, [contenteditable='true']";
@@ -58,9 +58,9 @@ export function fitComposerInlineChoices(host: HTMLElement): boolean {
 
 /** Shared by the pinned card and portrait stage, so neither can recenter the other. */
 export function pinnedSceneFit(doc: Document, count = 0) {
-  const width = doc.documentElement.clientWidth, left = sceneAvailableLeft(doc), composer = composerBounds(doc);
-  return composer ? fitPinnedScene(width, left, composer.left + composer.width / 2, count, composer.width)
-    : fitScene(width, left, (left + width - 8) / 2, count);
+  const right = sceneAvailableRight(doc), left = sceneAvailableLeft(doc), composer = composerBounds(doc);
+  return composer ? fitPinnedScene(right, left, composer.left + composer.width / 2, count, composer.width)
+    : fitScene(right, left, (left + right - 8) / 2, count);
 }
 
 export function inlineSceneFit(doc: Document, count = 0) {

@@ -1,3 +1,4 @@
+import { CHAT_ORIGIN } from "./chat-host";
 import { characterFieldPrompt, characterFieldResult, validCharacterTextRequest, type CharacterTextRequest } from "./character-text";
 import { fieldFactsPrompt, fieldFactsResult } from "./field-facts";
 import { profileRelatedNames, validFieldHistoryReference, type FieldHistoryReference, type FieldSource } from "./field-history";
@@ -30,7 +31,7 @@ export function fieldSourceUrl(value: unknown, chatId: unknown): value is string
   if (typeof value !== "string" || value.length > 2048) return false;
   try {
     const url = new URL(value);
-    return url.origin === "https://chat.deepseek.com" && !url.username && !url.password
+    return url.origin === CHAT_ORIGIN && !url.username && !url.password
       && !url.searchParams.has("deeprole_cast_job") && !url.searchParams.has("deeprole_field_job")
       && (chatId === null ? url.pathname === "/" : validNativeStoryId(chatId) && castChatReference(value)?.id === chatId);
   } catch { return false; }

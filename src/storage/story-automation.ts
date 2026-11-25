@@ -6,7 +6,7 @@ import { EMPTY_CHARACTER, EMPTY_STATUS, characterInChat } from "../core/characte
 import { projectStoryBranch } from "../core/story-projection";
 import { profileValues, type ProfileProposal, type ProfileValues } from "../core/character-profile";
 import { storyProfileEntities, appendProfileText, PROFILE_TEXT_FIELDS } from "../core/story-profile-view";
-import { compactStoryFacts, type StoryFact } from "../core/story-update";
+import { compactStoryFacts, isWholeStoryFactStatement, type StoryFact } from "../core/story-update";
 import { sameStoryValue } from "../core/story-value";
 import type { StoryDispatchCapture } from "../core/story-dispatch-capture";
 import { automationMode, factAutomationReason, inlineStoryPeople, normalizedFact, literalEvidence, sensitiveStoryText, conflictingStoryText, type AutomationReason, type StoryAutomationDecision, automationReviews } from "../core/story-automation";
@@ -60,9 +60,18 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
     }
     return historicalSources.get(key);
   };
-  for (const proposal of facts) {
-    const original = Array.isArray(raw?.facts) ? raw.facts.find(f => f && typeof f === "object" && storyFactIdentity(f as StoryFact) === storyFactIdentity(proposal) && (f as StoryFact).quote === proposal.quote) as Record<string, unknown> | undefined : undefined;
+  for (const proposed of facts) {
+    const original = Array.isArray(raw?.facts) ? raw.facts.find(f => f && typeof f === "object" && storyFactIdentity(f as StoryFact) === storyFactIdentity(proposed) && (f as StoryFact).quote === proposed.quote) as Record<string, unknown> | undefined : undefined;
     if (automationMode(world) === "off" && world.storyAutomation) continue;
+    const { claim, ...plain } = proposed;
+    // An unsupported event label cannot change canon. A literal independent
+    // statement can still go through the normal memory policy on its own.
+    const routineEvent = !batch && original?.risk === "ordinary" && proposed.kind === "event" && !proposed.task;
+    const unsupportedLabel = routineEvent && claim?.scope === "event" && !claim.transition
+      && !literalEvidence(claim.value, proposed.quote) && literalEvidence(proposed.text, proposed.quote);
+    let proposal: StoryFact = unsupportedLabel ? plain : proposed;
+    if (routineEvent && !proposal.claim && !literalEvidence(proposal.text, proposal.quote)
+        && isWholeStoryFactStatement(proposal.quote, origin.content)) proposal = { ...proposal, text: proposal.quote };
     const match = original?.risk === "ordinary" ? playedAttendanceGoal(proposal,origin,previous,sourceOf) : undefined;
     const repeated = !match && proposal.kind === "event" && !proposal.task && !proposal.claim
       ? previous.find(f=>f.task?.status === "completed" && f.text === proposal.text && f.quote === proposal.quote) : undefined;

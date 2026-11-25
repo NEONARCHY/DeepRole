@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { continuationPickerText, continuationText } from "../../src/core/continuation-i18n";
 import { savedMemoryText } from "../../src/core/saved-memory-continuation";
 import type { Locale } from "../../src/core/types";
@@ -16,7 +16,12 @@ export async function openSavedPreview(surface: Page | Locator, locale: Locale) 
   const recover = surface.getByRole("button", { name: savedMemoryText(locale).title, exact: true });
   const launcher = continuationLauncher(surface, locale);
   const trigger = recover.or(launcher).filter({ visible: true }).first();
+  await expect(trigger).toBeEnabled();
   const usesPicker = (await trigger.innerText()).trim() === continuationText(locale, "continue");
   await trigger.press("Enter");
-  if (usesPicker) await continuationMethod(surface, locale, "saved").press("Enter");
+  if (usesPicker) {
+    const method = continuationMethod(surface, locale, "saved");
+    await expect(method).toBeEnabled();
+    await method.press("Enter");
+  }
 }

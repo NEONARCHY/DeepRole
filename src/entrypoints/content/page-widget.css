@@ -19,7 +19,7 @@
 .dr-capacity-actions .button { width:100%; min-height:40px; white-space:normal; }
 .dr-capacity-disable { margin:14px auto 0; display:block; padding:8px; border:0; background:transparent; color:var(--dr-muted); cursor:pointer; }
 .dr-capacity-disable:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; border-radius:6px; }
-.dr-meter-transfer { width:100%; margin-top:8px; padding:6px; border:1px solid var(--dr-border); border-radius:7px; background:var(--dr-surface); color:var(--dr-text); font:inherit; font-size:10px; cursor:pointer; overflow-wrap:anywhere; }
+.dr-meter-transfer { width:100%; margin-top:var(--dr-layout-row); padding:var(--dr-layout-label); border:0; border-radius:var(--desktop-detail,8px); background:var(--dr-surface); color:var(--dr-text); font:inherit; font-size:10px; cursor:pointer; overflow-wrap:anywhere; }
 .dr-meter-transfer:disabled { opacity:.5; cursor:default; }
 .dr-continuation-progress { pointer-events:auto; position:fixed; z-index:4; left:16px; bottom:16px; width:min(300px,calc(100vw - 32px)); display:grid; gap:10px; padding:16px; border:1px solid var(--dr-border); border-radius:14px; background:var(--dr-panel); box-shadow:0 12px 40px #0006; font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
 .dr-continuation-progress button { padding:9px 12px; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:var(--dr-text); cursor:pointer; font-size:12px; }
@@ -96,7 +96,7 @@ button { font: inherit; }
 .dr-review-pill { max-width: 200px; }
 .dr-panel { max-height: min(75vh, 720px); overflow-y: auto; }
 .dr-pill-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; width:max-content; max-width:calc(100vw - 36px); }
-.dr-chat-meter { --meter-accent:#9dbba7; pointer-events:auto; display:grid; gap:7px; width:188px; max-width:calc(100vw - 36px); padding:10px 12px; border:1px solid color-mix(in srgb,var(--meter-accent) 38%,var(--dr-border)); border-radius:12px; background:var(--dr-panel); color:var(--dr-text); box-shadow:0 8px 24px rgba(0,0,0,.22); }
+.dr-chat-meter { --meter-accent:var(--dr-success); pointer-events:auto; display:grid; gap:var(--dr-layout-label); width:188px; max-width:calc(100vw - 36px); padding:var(--dr-layout-gap); border-radius:var(--dr-radius); background:var(--dr-panel); color:var(--dr-text); }
 .dr-context-indicators { display:grid; justify-items:start; gap:6px; width:max-content; max-width:calc(100vw - 36px); }
 .dr-widget-deck{display:flex;flex-direction:column;align-items:flex-start;gap:3px;max-width:calc(100vw - var(--dr-min-left, 8px) - 8px)}
 .dr-widget-deck[data-overflow=true]{position:fixed;top:var(--dr-min-top, 8px);bottom:8px;left:var(--dr-min-left, 8px);width:max-content;max-width:calc(100vw - var(--dr-min-left, 8px) - 8px);overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding-right:2px}
@@ -109,19 +109,19 @@ button { font: inherit; }
 .dr-widget-tile>:not(.dr-widget-tools){min-width:0;box-sizing:border-box;width:100%;max-width:100%}
 .dr-widget-tile>.dr-characters{margin:0}
 .dr-widget-deck[data-adaptive] .dr-widget-tile>.dr-characters{width:var(--dr-panel-width);max-width:100%}
-.dr-widget-deck[data-adaptive] .dr-chat-meter{width:100%;padding:10px 12px}
+.dr-widget-deck[data-adaptive] .dr-chat-meter{width:100%;padding:var(--dr-layout-gap)}
 .dr-widget-tile>.dr-pill{border-radius:12px;justify-content:flex-start;text-align:start}
-.dr-widget-tile>.dr-characters{padding:10px}
+.dr-widget-tile>.dr-characters{padding:var(--dr-layout-gap)}
 .dr-world-scene { border:1px solid var(--dr-border); border-radius:12px; background:var(--dr-panel); color:var(--dr-text); }
 .dr-world-scene .scene-controls.is-compact {
-  width:100%; min-inline-size:0; margin:0; padding:8px 12px 4px;
+  width:100%; min-inline-size:0; margin:0; padding:var(--dr-layout-gap) var(--dr-layout-gap) var(--dr-layout-row);
   border:0; background:none; box-shadow:none;
 }
-.dr-world-scene .scene-controls-line { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
-.dr-world-scene .scene-world { display:grid; gap:4px; }
+.dr-world-scene .scene-controls-line { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--dr-layout-row); }
+.dr-world-scene .scene-world { display:grid; gap:var(--dr-layout-row); }
 .dr-world-scene .scene-world > span { color:var(--dr-muted); font-size:max(12px,.75rem); letter-spacing:normal; text-transform:none; }
 .dr-world-scene .scene-world select {
-  width:100%; min-height:44px; padding-inline-start:8px; border-color:var(--dr-border-strong);
+  width:100%; min-height:44px; padding-inline-start:var(--dr-layout-gap); border:0;
   background-color:var(--dr-bg); font-size:max(14px,.875rem); font-weight:600;
 }
 .dr-world-scene .scene-focus-toggle, .dr-world-scene > .dr-saved-memory-action {
@@ -129,16 +129,16 @@ button { font: inherit; }
   white-space:normal; text-align:start; line-height:1.4; overflow-wrap:anywhere;
   background:transparent; color:var(--dr-text); font-size:max(13px,.8125rem);
 }
-.dr-world-scene .scene-focus-toggle { justify-content:space-between; padding:4px; }
+.dr-world-scene .scene-focus-toggle { justify-content:space-between; padding:var(--dr-layout-label); }
 .dr-world-scene .scene-focus-toggle svg, .dr-world-scene > .dr-saved-memory-action svg { flex:none; color:var(--dr-primary); }
 .dr-world-scene .scene-focus-toggle[aria-expanded=true] svg { transform:rotate(180deg); }
 .dr-world-scene > .dr-saved-memory-action {
-  margin:0; padding:8px 12px; border:0; border-top:1px solid var(--dr-border-strong);
+  margin:0; padding:var(--dr-layout-label) var(--dr-layout-gap); border:0;
   border-radius:0 0 11px 11px; color:var(--dr-primary); font-weight:500;
 }
 .dr-world-scene :is(.scene-focus-toggle,.dr-saved-memory-action):not(:disabled):hover { background-color:var(--dr-surface); }
 .dr-world-scene :is(button,select):focus-visible { outline:2px solid var(--dr-primary); outline-offset:-3px; }
-.dr-widget-deck[data-adaptive] .dr-characters{padding:10px}
+.dr-widget-deck[data-adaptive] .dr-characters{padding:var(--dr-layout-gap)}
 .dr-widget-deck[data-compact] .dr-widget-tile{overflow:auto;overscroll-behavior:contain;z-index:4;max-width:calc(100vw - var(--dr-min-left) - 54px);padding:0 46px 0 0;box-sizing:content-box}
 .dr-widget-deck[data-compact] .dr-widget-tools{inset-inline-start:auto;inset-inline-end:0}
 .dr-widget-deck[data-compact] .dr-widget-tools{opacity:1;pointer-events:auto}

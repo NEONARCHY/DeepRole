@@ -44,6 +44,58 @@ async function command(panel: Page, message: any) {
     return api.tabs.sendMessage(tab.id, message);
   }, message);
 }
+
+test("installed extension gives the narrow library the same material and round controls", async ({}, info) => {
+  const { context, panel, chat } = await setup([["world", { id: "w", name: "Мастерская", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 }]], "ru");
+  try {
+    await panel.emulateMedia({ colorScheme: "light" });
+    await panel.setViewportSize({ width: 320, height: 640 });
+    const main = panel.locator(".app-main");
+    const nav = panel.locator(".workspace-nav");
+    await expect(main).toHaveCSS("padding-inline", "12px");
+    await expect(nav).toHaveCSS("margin-inline", "12px");
+    await expect(panel.locator(".dr-play-start .dr-play-main")).toHaveCSS("padding", "16px");
+    await expect(panel.locator(".dr-play-start .scene-world select")).toHaveCSS("border-width", "0px");
+    await panel.getByRole("button", { name: "Миры", exact: true }).click();
+    await panel.locator(".dr-world-picker-trigger").click();
+    await panel.getByRole("menuitemradio", { name: "Мастерская" }).click();
+    await expect(panel.locator(".lore-connection")).toHaveCSS("padding", "16px");
+    const attach = panel.locator(".lore-connection .primary");
+    await expect(attach).toHaveCSS("background-color", "rgb(54, 104, 181)");
+    await expect(attach).toHaveCSS("background-clip", "padding-box, padding-box, border-box");
+    for (const selector of [".dr-play-choice", ".dr-world-picker-trigger", ".rp-view-switch", ".lore-connection", ".dr-cast-setup"]) {
+      await expect(panel.locator(selector).first()).toHaveCSS("border-width", "0px");
+    }
+    await expect(panel.locator(".rp-view-switch [aria-pressed=true]")).toHaveCSS("box-shadow", "none");
+    await panel.screenshot({ path: info.outputPath("worlds-light.png"), fullPage: true, animations: "disabled" });
+    await panel.emulateMedia({ colorScheme: "dark" });
+    await expect(attach).toHaveCSS("background-color", "rgb(145, 189, 248)");
+    await expect(panel.locator(".rp-view-switch [aria-pressed=true]")).toHaveCSS("color", "rgb(153, 194, 255)");
+    await panel.screenshot({ path: info.outputPath("worlds-dark.png"), fullPage: true, animations: "disabled" });
+    await panel.emulateMedia({ colorScheme: "light" });
+    await panel.getByRole("button", { name: "Настройки", exact: true }).click();
+    await expect(panel.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(nav).toBeInViewport();
+    await expect(panel.locator(".dr-settings-route").first()).toHaveCSS("border-width", "0px");
+    await panel.bringToFront();
+    const help = panel.locator(".dr-guide-launch");
+    await help.hover();
+    await expect.poll(() => help.evaluate(button => ({
+      radius: getComputedStyle(button, "::before").borderRadius,
+      rim: getComputedStyle(button, "::before").backgroundClip,
+      halo: getComputedStyle(button, "::after").opacity,
+    }))).toEqual({ radius: "50%", rim: "padding-box, border-box", halo: "1" });
+    expect(await panel.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+    await panel.screenshot({ path: info.outputPath("extension-library.png") });
+    await chat.bringToFront();
+    await expect(chat.locator(".dr-world-scene select")).toHaveCSS("border-width", "0px");
+    await chat.locator(".dr-panel-tools-open").click();
+    await expect(chat.locator(".dr-panel-tools-dialog")).toHaveCSS("background-clip", "padding-box, padding-box, border-box");
+    await expect(chat.locator(".dr-panel-tools-body")).toHaveCSS("gap", "16px");
+    await expect(chat.locator(".dr-panel-layout-reset button")).toHaveCSS("border-width", "0px");
+  } finally { await context.close(); }
+});
+
 async function holdNextVaultRead(worker: Worker) {
   await worker.evaluate(() => {
     const api = (globalThis as any).chrome; const original = api.storage.local.get.bind(api.storage.local);
@@ -67,9 +119,11 @@ async function startCommand(panel: Page, message: any) {
 async function databaseRecords(panel: Page) {
   return panel.evaluate(() => new Promise<any[]>((resolve) => { const open = indexedDB.open("deeprole"); open.onsuccess = () => { const db = open.result; const all = db.transaction("records").objectStore("records").getAll(); all.onsuccess = () => { resolve(all.result); db.close(); }; }; }));
 }
-async function enableServiceComposer(chat: Page) {
-  await chat.evaluate(() => {
-    document.querySelector("#conversation")!.innerHTML = '<article data-message-id="user">Mira arrived.</article><article data-message-id="answer">The gate opened.</article>';
+async function enableServiceComposer(chat: Page, withSceneRoles = false) {
+  await chat.evaluate((withRoles) => {
+    const userRole = withRoles ? ' data-role="user"' : "";
+    const assistantRole = withRoles ? ' data-role="assistant"' : "";
+    document.querySelector("#conversation")!.innerHTML = `<article data-message-id="user"${userRole}>Mira arrived.</article><article data-message-id="answer"${assistantRole}>The gate opened.</article>`;
     document.querySelector("form")!.addEventListener("submit", (event) => {
       event.preventDefault(); const composer = document.querySelector("textarea")!; const prompt = composer.value; composer.value = "";
       const user = document.createElement("article"); user.dataset.messageId = "service-user"; user.textContent = prompt;
@@ -81,7 +135,7 @@ async function enableServiceComposer(chat: Page) {
       void fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt }), signal: controller.signal })
         .then(() => { transport.headersReceived = true; }).catch(() => undefined);
     });
-  });
+  }, withSceneRoles);
 }
 async function enableContinuationComposer(chat: Page, options: { changes?: boolean; manualSummary?: boolean } = {}) {
   await chat.evaluate(options => {
@@ -1256,7 +1310,7 @@ test("character cast: installed roster, preview, focus and outgoing action stay 
 });
 
 const choicesWorld = { id: "choices-world", name: "Test observatory", description: "", color: "#64b5f6", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
-const choicesBinding = { id: "binding:a", chatId: "a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+const choicesBinding = { id: "binding:a", chatId: "a", chatUrl: "https://chat.deepseek.com/chat/s/a", worldId: choicesWorld.id, bookId: null, focusIds: [], messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
 const choicesPayload = '<deeprole_choices>' + JSON.stringify({ version: 1, options: ["positive", "neutral", "negative", "surprise"].map((kind) => ({ kind, label: "Move " + kind, text: "MY_MOVE_" + kind })) }) + '</deeprole_choices>';
 test("automatic choices loader starts with hidden transport, not story or thinking, in the installed extension", async ({}, info) => {
   const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
@@ -1280,11 +1334,14 @@ test("automatic choices loader starts with hidden transport, not story or thinki
     const firstPaint = await chat.locator(".ds-markdown").evaluate(async body => {
       body.append(' <deeprole_characters>{"request":"');
       await new Promise(resolve => requestAnimationFrame(resolve));
-      return { text: (body as HTMLElement).innerText, loaders: document.querySelectorAll("[data-deeprole-choices-loading]").length };
+      const prose = body.previousElementSibling?.shadowRoot?.querySelector("div");
+      return { text: prose?.textContent?.trim(), rawVisible: body.getClientRects().length > 0, loaders: document.querySelectorAll("[data-deeprole-choices-loading]").length };
     });
-    expect(firstPaint).toEqual({ text: "Mira opens the gate.", loaders: 1 });
+    expect(firstPaint).toEqual({ text: "Mira opens the gate.", rawVisible: false, loaders: 1 });
     await chat.locator(".ds-markdown").evaluate((body, payload) => { body.append('abc"}</deeprole_characters> ' + payload.slice(0, 75)); }, choicesPayload);
-    await expect(loader).toHaveCount(1); await expect(chat.locator(".ds-markdown")).toHaveText("Mira opens the gate.", { useInnerText: true });
+    await expect(loader).toHaveCount(1);
+    await expect(chat.locator(".ds-markdown")).toBeHidden();
+    await expect(chat.locator("[data-deeprole-payload-view] div")).toHaveText("Mira opens the gate.");
     await chat.screenshot({ path: info.outputPath("json-loader.png") });
     await chat.locator(".ds-markdown").evaluate((body, payload) => { body.textContent = "Mira opens the gate. " + payload; }, choicesPayload);
     await expect(loader).toHaveCount(1); await expect(chat.locator("[data-deeprole-choices-host]")).toHaveCount(0);
@@ -1316,11 +1373,75 @@ test("existing choices render without a connected world, but send nothing and re
   } finally { await context.close(); }
 });
 async function enableChoicesScene(chat: Page) {
-  await enableServiceComposer(chat);
-  await chat.locator("[data-message-id='user']").evaluate((row) => row.setAttribute("data-role", "user"));
-  await chat.locator("[data-message-id='answer']").evaluate((row) => row.setAttribute("data-role", "assistant"));
+  await enableServiceComposer(chat, true);
   await expect(chat.getByRole("button", { name: "Suggest options", exact: true })).toBeVisible();
 }
+
+test("the installed extension keeps the story at the same height when metadata streams across Markdown nodes", async () => {
+  const { context, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
+  try {
+    await chat.setViewportSize({ width: 1000, height: 700 });
+    await chat.addStyleTag({ content: "main{width:440px;margin:0 auto}.ds-markdown p{margin:22px 0;line-height:24px;overflow-wrap:anywhere}" });
+    await chat.evaluate(() => {
+      const stop = document.createElement("button");
+      stop.dataset.testid = "stop-generation";
+      document.body.append(stop);
+      document.querySelector("#conversation")!.innerHTML = '<article data-message-id="user" data-role="user">Mira tries the gate.</article><article data-message-id="answer" data-role="assistant"><div class="ds-think-content">Thinking about the gate.</div><div class="ds-markdown"><p id="prose">Mira opens the gate.</p></div></article>';
+    });
+    const body = chat.locator(".ds-markdown");
+    const source = await body.evaluate(node => ({ height: node.getBoundingClientRect().height, top: node.getBoundingClientRect().top }));
+    const parts = [
+      '<p><span>&lt;deeprole_</span><em>char</em></p>',
+      '<p><span>&lt;deeprole_</span><em>characters</em><span>&gt;{"state":"</span></p>',
+      `<p>${"CHARACTER_STATE ".repeat(90)}"}</p>`,
+      '<p><em>&lt;/deeprole_</em><span>characters&gt;</span></p>',
+      '<p><span>&lt;deeprole_</span><em>cho</em></p>',
+      '<p><code>&lt;deeprole_</code><span>choices&gt;{"version":1,</span></p>',
+      `<p>${"CHOICE_STATE ".repeat(90)}</p>`,
+    ];
+    for (const [index, html] of parts.entries()) {
+      const frame = await body.evaluate(async (node, { html, index }) => {
+        const template = document.createElement("template"); template.innerHTML = html;
+        if (index === 1 || index === 5) node.lastElementChild!.replaceWith(template.content);
+        else node.append(template.content);
+        await new Promise(requestAnimationFrame);
+        const rect = node.getBoundingClientRect();
+        return { text: (node as HTMLElement).innerText.trim(), height: rect.height, top: rect.top };
+      }, { html, index });
+      expect(frame, `paint after fragment ${index+1}`).toEqual({ text: "Mira opens the gate.", ...source });
+    }
+    const inline = await body.evaluate(async node => {
+      node.querySelectorAll("p:not(#prose)").forEach(fragment => fragment.remove());
+      node.querySelector("#prose")!.firstChild!.textContent += " <deeprole_cho";
+      await new Promise(requestAnimationFrame);
+      const view = node.querySelector("[data-deeprole-payload-view]")?.shadowRoot;
+      const rect = node.getBoundingClientRect();
+      return { text: view?.querySelector("p")?.textContent?.trim(), height: rect.height, top: rect.top };
+    });
+    expect(inline).toEqual({ text: "Mira opens the gate.", ...source });
+    const replaced = await body.evaluate(async node => {
+      const prose = node.ownerDocument.createElement("p");
+      prose.id = "prose"; prose.textContent = "Mira opens the gate.";
+      node.querySelector("#prose")!.replaceWith(prose);
+      await new Promise(requestAnimationFrame);
+      const rect = node.getBoundingClientRect();
+      return { visible: (node as HTMLElement).innerText.trim(), projections: node.querySelectorAll("[data-deeprole-payload-view]").length, height: rect.height };
+    });
+    expect(replaced).toEqual({ visible: "Mira opens the gate.", projections: 0, height: source.height });
+    await body.evaluate((node, payload) => {
+      node.querySelectorAll("p:not(#prose)").forEach(fragment => fragment.remove());
+      node.querySelector("#prose")!.textContent = "Mira opens the gate.";
+      const characters = document.createElement("p");
+      characters.textContent = '<deeprole_characters>{"present":[],"updates":[]}</deeprole_characters>';
+      const choices = document.createElement("p"); choices.textContent = payload;
+      node.append(characters, choices);
+      document.querySelector("[data-testid='stop-generation']")!.remove();
+    }, choicesPayload);
+    await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible();
+    await expect(body).toHaveText("Mira opens the gate.", { useInnerText: true });
+    await expect(chat.locator(".ds-think-content")).toHaveText("Thinking about the gate.");
+  } finally { await context.close(); }
+});
 
 test("scene recovery waits for response JSON before a loader, then survives reopening without another request", async () => {
   const { context, panel, chat } = await setup([["world", choicesWorld], ["binding", choicesBinding]]);
@@ -1344,7 +1465,7 @@ test("scene recovery waits for response JSON before a loader, then survives reop
     await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(0);
     await chat.locator("[data-message-id='service-answer']").evaluate((row, text) => { row.textContent = text.slice(0, 75); }, choicesPayload);
     await expect(chat.locator("[data-deeprole-choices-loading]")).toHaveCount(1);
-    await expect(chat.locator("[data-message-id='service-answer']")).not.toContainText("deeprole_choices", { useInnerText: true });
+    await expect(chat.locator("[data-message-id='service-answer']")).toBeHidden();
     await chat.locator("[data-message-id='service-answer']").evaluate((row, text) => { row.setAttribute("data-role", "assistant"); row.textContent = text; }, choicesPayload);
     await expect.poll(() => pendingService(panel)).toBeNull();
     await expect(chat.getByRole("button", { name: /Move positive/ })).toBeVisible();
@@ -1379,9 +1500,17 @@ test("scene choices: full text, keyboard, expired turns and return use the insta
     const buttons = card.locator(".grid button");
     const composer = chat.getByRole("textbox", { name: "Message", exact: true });
     await expect(buttons).toHaveCount(4);
+    const optionFills = await buttons.evaluateAll(items => items.map(item => getComputedStyle(item).backgroundImage));
+    expect(new Set(optionFills).size).toBe(4);
+    expect(optionFills.every(fill => fill.startsWith("linear-gradient"))).toBe(true);
     const expand = card.getByRole("button", { name: "Full text", exact: true });
     await expect(expand.locator("svg")).toHaveCount(1); expect(await expand.textContent()).toBe("");
     expect(await expand.evaluate(button => [button.getBoundingClientRect().width, button.getBoundingClientRect().height])).toEqual([32, 32]);
+    await expand.hover();
+    await expect.poll(() => expand.evaluate(button => ({
+      radius: getComputedStyle(button, "::before").borderRadius,
+      halo: getComputedStyle(button, "::after").opacity,
+    }))).toEqual({ radius: "50%", halo: "1" });
     await expect(card.locator(".choice-status")).toBeHidden();
     await expect(card).not.toContainText("A choice fills the message box");
     await expand.click();

@@ -1,3 +1,4 @@
+import { CHAT_HOME } from "./chat-host";
 import type { ChatBinding, HandoffSnapshot, Locale, MemoryBook, WorldProfile } from "./types";
 import { memoryWorld } from "./scene";
 export interface OldChatNotice { sourceChatId: string; targetChatId: string; snapshotId: string; sent: boolean; dismissed: boolean }
@@ -9,7 +10,7 @@ export const chatId = (v: unknown): v is string => typeof v === "string" && /^[\
 const time = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 0;
 export const validOldChatNoticeReceipt = (v: unknown): v is OldChatNoticeReceipt => object(v) && Object.keys(v).every(k => ["snapshotId", "sentAt", "dismissedAt"].includes(k)) && id(v.snapshotId) && (v.sentAt !== undefined || v.dismissedAt !== undefined) && (v.sentAt === undefined || time(v.sentAt)) && (v.dismissedAt === undefined || time(v.dismissedAt));
 export const validOldChatNoticeEdit = (v: unknown): v is OldChatNoticeEdit => object(v) && Object.keys(v).length === 6 && ["chatId", "chatUrl", "worldId", "snapshotId", "targetChatId", "mode"].every(k => Object.hasOwn(v, k)) && chatId(v.chatId) && chatId(v.targetChatId) && v.chatId !== v.targetChatId && typeof v.chatUrl === "string" && v.chatUrl.length <= 2048 && (v.worldId === null || id(v.worldId)) && id(v.snapshotId) && ["sent", "dismissed"].includes(String(v.mode));
-export const currentChatUrl = (targetChatId: string) => "https://chat.deepseek.com/a/chat/s/" + encodeURIComponent(targetChatId);
+export const currentChatUrl = (targetChatId: string) => `${CHAT_HOME}a/chat/s/` + encodeURIComponent(targetChatId);
 
 /** One world has one confirmed continuation destination. Opening a tab is not a transfer. */
 export function oldChatNotice(binding: ChatBinding | undefined, snapshots: HandoffSnapshot[], books: MemoryBook[] = [], worlds: WorldProfile[] = []): OldChatNotice | null {
