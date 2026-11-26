@@ -15,6 +15,7 @@ export interface RequestContext {
   omittedMessages: number;
   input?: number;
   output?: number;
+  timings?: { preparationMs?: number; firstTextMs: number; totalMs: number };
 }
 export interface Chat extends ChatInfo {
   head: number | null;
@@ -43,7 +44,7 @@ export const chatUrl = (id: string) => `/a/chat/s/${encodeURIComponent(id)}`;
 export const activeChat = () => location.pathname.match(/^\/(?:a\/)?chat\/(?:s\/)?([\w-]+)\/?$/u)?.[1];
 export const emptyChat = (id = ""): Chat => ({ id, title: "", updatedAt: 0, head: null, messages: [] });
 
-export function selectedLine(chat: Chat) {
+export function chatTranscript(chat: Chat) {
   const byId = new Map(chat.messages.map(message => [message.id, message]));
   const line: Turn[] = [];
   const seen = new Set<number>();
@@ -54,19 +55,35 @@ export function selectedLine(chat: Chat) {
     line.push(message);
     cursor = message.parent;
   }
-  return line.reverse();
+  const groups = new Map<number | null, Map<string, Turn[]>>();
+  const variants = new Map<number, Turn[]>();
+  for (const reply of chat.messages) {
+    if (reply.role !== "assistant" || reply.parent === null) continue;
+    const user = byId.get(reply.parent);
+    if (user?.role !== "user") continue;
+    let branch = groups.get(user.parent);
+    if (!branch) groups.set(user.parent, branch = new Map());
+    let siblings = branch.get(user.visible);
+    if (!siblings) branch.set(user.visible, siblings = []);
+    siblings.push(reply);
+    variants.set(reply.id, siblings);
+  }
+  return { line: line.reverse(), byId, variants };
 }
 
 export function sendNative(
   id: string, draft: string, parent: number | null, edit: number | undefined,
   frame: (name: string, data: Frame) => void,
 ) {
+  const startedAt = Date.now();
   const xhr = new XMLHttpRequest();
-  const preparation = new AbortController();
-  xhr.open("POST", edit === undefined ? "/api/v0/chat/completion" : "/api/v0/chat/edit_message");
+  let stop = () => xhr.abort();
+  const requestId = crypto.randomUUID();
+  const endpoint = edit === undefined ? "/api/v0/chat/completion" : "/api/v0/chat/edit_message";
+  xhr.open("POST", endpoint + "?request_id=" + requestId);
   xhr.setRequestHeader("Content-Type", "application/json");
   xhr.timeout = 5 * 60_000 + 5000;
-  let cursor = 0, done = false, failure: string | undefined;
+  let cursor = 0, done = false, stopping = false, failure: string | undefined;
   function read() {
     const text = xhr.responseText;
     for (let end = text.indexOf("\n\n", cursor); end >= 0; end = text.indexOf("\n\n", cursor)) {
@@ -82,8 +99,15 @@ export function sendNative(
     }
   }
   const promise = new Promise<void>((resolve, reject) => {
-    const fail = (message: string) => reject(Error(message));
-    preparation.signal.addEventListener("abort", () => fail("model-stopped"), { once: true });
+    const fail = (message: string) => { if (!stopping) reject(Error(message)); };
+    stop = () => {
+      if (stopping) return;
+      stopping = true;
+      xhr.abort();
+      // Electron does not always cancel the upstream request when XHR aborts before headers.
+      void request(chatEndpoint("stop-reply", id) + "&request_id=" + requestId, { method: "POST" })
+        .catch(() => undefined).finally(() => reject(Error("model-stopped")));
+    };
     xhr.addEventListener("progress", () => {
       if (xhr.status !== 200) return;
       try { read(); } catch { fail("model-interrupted"); xhr.abort(); }
@@ -100,20 +124,10 @@ export function sendNative(
     xhr.addEventListener("timeout", () => fail("model-unavailable"));
     xhr.addEventListener("abort", () => fail("model-stopped"));
     xhr.addEventListener("deeprole-blocked", () => fail("memory-blocked"));
-    const body = JSON.stringify({
-      chat_session_id: id, prompt: draft, visible: draft,
+    xhr.send(JSON.stringify({
+      chat_session_id: id, prompt: draft, visible: draft, client_started_at: startedAt,
       ...(edit !== undefined ? { message_id: edit } : { parent_message_id: parent }),
-    });
-    const bytes = new TextEncoder().encode(draft).byteLength;
-    if (bytes > 8192) {
-      void request<{ bytes: number | null }>(`/__desktop/memory-budget?bytes=${bytes}`, {
-        signal: AbortSignal.any([preparation.signal, AbortSignal.timeout(3000)]),
-      }).catch(() => undefined).then(budget => {
-        if (preparation.signal.aborted) return;
-        if (budget?.bytes === null) fail("model-context-limit");
-        else xhr.send(body);
-      }).catch(() => fail("model-request-failed"));
-    } else xhr.send(body);
+    }));
   });
-  return { promise, stop: () => { preparation.abort(); xhr.abort(); } };
+  return { promise, stop };
 }

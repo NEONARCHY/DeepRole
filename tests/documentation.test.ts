@@ -41,11 +41,9 @@ describe("published bilingual feature pages", () => {
     });
   }
 
-  it("keeps credits explicit and memory approval distinct from played progress", () => {
+  it("keeps memory approval distinct from played progress", () => {
     for (const { file } of pages) {
       const markdown = readFileSync(resolve(file), "utf8");
-      expect([...markdown.matchAll(/Better Deepseek \(BDS\)/gu)]).toHaveLength(2);
-      expect([...markdown.matchAll(/\[Better Deepseek \(BDS\)\]\(https:\/\/github\.com\/EdgeTypE\/better-deepseek\)/gu)]).toHaveLength(2);
       expect(markdown).toContain("0–100");
       expect(markdown).toContain("90%");
       expect(markdown).toContain("97%");

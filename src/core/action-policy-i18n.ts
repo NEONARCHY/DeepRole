@@ -3,7 +3,7 @@ import type { Locale } from "./types";
 const copy = {
   ru: {
     title: "Доступные действия", count: "Доступно {count} из {total}",
-    hint: "Правило персонажа для всех чатов этого мира. DeepSeek получает разрешённый список; DeepRole не применяет запрещённые действия.",
+    hint: "Правило персонажа для всех чатов этого мира. Модель получает разрешённый список; DeepRole не применяет запрещённые действия.",
     customize: "Настроить список", search: "Найти действие", allow: "Разрешить действие: {action}",
     all: "Разрешить все", neutralOnly: "Только спокойствие", neutral: "Всегда доступно для безопасного возврата.",
     safety: "Если модель вернёт запрещённое действие, останется прежнее допустимое или «Спокойствие». Остальные поля обновятся. Это не гарантирует запрет в сюжетном тексте.",
@@ -16,7 +16,7 @@ const copy = {
   },
   en: {
     title: "Available actions", count: "{count} of {total} available",
-    hint: "A character rule shared by all chats in this world. DeepSeek receives the allowed list; DeepRole rejects blocked actions.",
+    hint: "A character rule shared by all chats in this world. The model receives the allowed list; DeepRole rejects blocked actions.",
     customize: "Customize list", search: "Find an action", allow: "Allow action: {action}",
     all: "Allow all", neutralOnly: "Calm only", neutral: "Always available as a safe fallback.",
     safety: "If the model returns a blocked action, the previous allowed action stays, or Calm is used. Other fields still update. This cannot guarantee a ban in story text.",

@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "notes": "Frozen before the first Stage 2 acceptance run. Fictional facts and sources were authored by hand. Every assistant source represents two messages with its preceding player turn. Outcomes require played evidence. Cases specify only required or excluded facts, leaving unrelated safe context unrestricted.",
+  "scenarios": [
+    {
+      "name": "Синий футляр",
+      "locale": "ru",
+      "sourceCount": 112,
+      "messageCount": 224,
+      "people": [
+        { "id": "mira", "name": "Мира", "aliases": [] },
+        { "id": "timur", "name": "Тимур", "aliases": [] },
+        { "id": "anya", "name": "Аня", "aliases": [] },
+        { "id": "lada", "name": "Лада", "aliases": [] }
+      ],
+      "present": ["mira"],
+      "fillerTemplate": "Дежурный перенёс ящик №{number} к лестнице.",
+      "events": [
+        { "id": "photo", "order": 9, "kind": "event", "quote": "Мира, Тимур и Аня сфотографировали синий футляр." },
+        { "id": "near-match", "order": 17, "kind": "event", "quote": "Лада сфотографировала синий конверт." },
+        { "id": "open", "order": 13, "kind": "plan", "quote": "Мира, Тимур и Аня договорились проверить синий футляр.", "task": { "key": "check-case", "title": "проверить синий футляр", "status": "open" } },
+        { "id": "promise", "order": 5, "kind": "promise", "quote": "Мира сказала Тимуру: «Я обещаю переписать инвентарный лист»." },
+        { "id": "other-promise", "order": 43, "kind": "promise", "quote": "Лада сказала Тимуру: «Я обещаю переписать инвентарный лист»." },
+        { "id": "time", "order": 94, "kind": "event", "quote": "Прошло три дня.", "clock": "three-days" },
+        { "id": "old-place", "order": 6, "kind": "event", "quote": "Мира в оранжерее.", "claim": { "key": "mira-location", "scope": "state", "value": "оранжерея", "lifetime": "scene" } },
+        { "id": "place", "order": 100, "kind": "event", "quote": "Мира в архиве.", "claim": { "key": "mira-location", "scope": "state", "value": "архив", "lifetime": "scene", "transition": "progress" } },
+        { "id": "done", "order": 110, "kind": "event", "quote": "Мира, Тимур и Аня проверили синий футляр.", "task": { "key": "check-case", "title": "проверить синий футляр", "status": "completed" } }
+      ],
+      "expected": {
+        "importantOrder": ["promise", "old-place", "photo", "open", "near-match", "other-promise", "time", "place", "done"],
+        "photoPeople": ["anya", "mira", "timur"],
+        "partyView": "anya",
+        "partyEventIds": ["photo", "open", "done"],
+        "photoObject": "синий футляр",
+        "nearMatchObject": "синий конверт",
+        "goalKey": "check-case",
+        "afterClockFact": "open",
+        "afterPlayedOutcomeFact": "done",
+        "drafts": [
+          { "text": "Напомни про синий футляр", "through": 109, "include": ["photo", "open"], "exclude": ["near-match", "done"] },
+          { "text": "Напомни про синий футляр", "through": 112, "include": ["photo", "done"], "exclude": ["near-match", "open"] },
+          { "text": "Что Мира обещала Тимуру и где сейчас Мира?", "through": 112, "include": ["promise", "place"], "exclude": ["other-promise", "old-place"] },
+          { "text": "Что Мира обещала Тимуру?", "through": 112, "include": ["promise"], "exclude": ["other-promise", "place", "old-place"] }
+        ]
+      }
+    },
+    {
+      "name": "Brass compass",
+      "locale": "en",
+      "sourceCount": 124,
+      "messageCount": 248,
+      "people": [
+        { "id": "nora", "name": "Nora", "aliases": [] },
+        { "id": "inez", "name": "Inez", "aliases": [] },
+        { "id": "tomas", "name": "Tomas", "aliases": [] },
+        { "id": "della", "name": "Della", "aliases": [] }
+      ],
+      "present": ["nora"],
+      "fillerTemplate": "The clerk moved crate number {number} to the stairs.",
+      "events": [
+        { "id": "photo", "order": 11, "kind": "event", "quote": "Nora, Inez and Tomas photographed the brass compass." },
+        { "id": "near-match", "order": 19, "kind": "event", "quote": "Della photographed the brass clock." },
+        { "id": "open", "order": 13, "kind": "plan", "quote": "Nora, Inez and Tomas agreed to inspect the brass compass.", "task": { "key": "inspect-compass", "title": "inspect the brass compass", "status": "open" } },
+        { "id": "promise", "order": 7, "kind": "promise", "quote": "Nora told Inez: “I promise to copy the inventory sheet.”" },
+        { "id": "other-promise", "order": 53, "kind": "promise", "quote": "Della told Inez: “I promise to copy the inventory sheet.”" },
+        { "id": "time", "order": 103, "kind": "event", "quote": "Three days passed.", "clock": "three-days" },
+        { "id": "old-place", "order": 8, "kind": "event", "quote": "Nora is in the greenhouse.", "claim": { "key": "nora-location", "scope": "state", "value": "greenhouse", "lifetime": "scene" } },
+        { "id": "place", "order": 107, "kind": "event", "quote": "Nora is in the archive.", "claim": { "key": "nora-location", "scope": "state", "value": "archive", "lifetime": "scene", "transition": "progress" } },
+        { "id": "done", "order": 118, "kind": "event", "quote": "Nora, Inez and Tomas inspected the brass compass.", "task": { "key": "inspect-compass", "title": "inspect the brass compass", "status": "completed" } }
+      ],
+      "expected": {
+        "importantOrder": ["promise", "old-place", "photo", "open", "near-match", "other-promise", "time", "place", "done"],
+        "photoPeople": ["inez", "nora", "tomas"],
+        "partyView": "tomas",
+        "partyEventIds": ["photo", "open", "done"],
+        "photoObject": "brass compass",
+        "nearMatchObject": "brass clock",
+        "goalKey": "inspect-compass",
+        "afterClockFact": "open",
+        "afterPlayedOutcomeFact": "done",
+        "drafts": [
+          { "text": "Remind me about the brass compass", "through": 117, "include": ["photo", "open"], "exclude": ["near-match", "done"] },
+          { "text": "Remind me about the brass compass", "through": 124, "include": ["photo", "done"], "exclude": ["near-match", "open"] },
+          { "text": "What did Nora promise Inez, and where is Nora now?", "through": 124, "include": ["promise", "place"], "exclude": ["other-promise", "old-place"] },
+          { "text": "What did Nora promise Inez?", "through": 124, "include": ["promise"], "exclude": ["other-promise", "place", "old-place"] }
+        ]
+      }
+    }
+  ],
+  "sharedOutcomeScenarios": [
+    {
+      "locale": "ru",
+      "actor": "Мира",
+      "other": "Аня",
+      "first": { "key": "case", "title": "проверить синий футляр", "quote": "Мира обещала проверить синий футляр." },
+      "second": { "key": "inventory", "title": "сверить инвентарный лист", "quote": "Мира обещала сверить инвентарный лист." },
+      "unrelated": { "key": "other-case", "title": "проверить синий футляр", "quote": "Аня обещала проверить синий футляр." },
+      "played": "Мира проверила синий футляр и сверила инвентарный лист.",
+      "clockOnly": "Прошло три дня.",
+      "accepted": ["case", "inventory"],
+      "remainOpen": ["other-case"]
+    },
+    {
+      "locale": "en",
+      "actor": "Nora",
+      "other": "Tomas",
+      "first": { "key": "compass", "title": "inspect the brass compass", "quote": "Nora promised to inspect the brass compass." },
+      "second": { "key": "inventory", "title": "check the inventory", "quote": "Nora promised to check the inventory." },
+      "unrelated": { "key": "other-compass", "title": "inspect the brass compass", "quote": "Tomas promised to inspect the brass compass." },
+      "played": "Nora inspected the brass compass and checked the inventory.",
+      "clockOnly": "Three days passed.",
+      "accepted": ["compass", "inventory"],
+      "remainOpen": ["other-compass"]
+    }
+  ]
+}

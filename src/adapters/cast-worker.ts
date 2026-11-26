@@ -29,7 +29,7 @@ function currentChat(): string | undefined { return castChatId(location.pathname
 
 // The native client has a local delete operation for an exact chat ID.
 // An interrupted first request may have no history row yet.
-async function deleteDesktopCastChat(chatId: string, authorize: () => Promise<boolean>): Promise<boolean> {
+export async function deleteDesktopServiceChat(chatId: string, authorize: () => Promise<boolean>): Promise<boolean> {
   for (let attempt = 0; attempt < 40; attempt++) {
     if (!await authorize() || currentChat() !== chatId) return false;
     const result = await fetch("/__desktop/chat?cancel_generation=1&chat_session_id=" + encodeURIComponent(chatId), { method: "DELETE" });
@@ -162,7 +162,7 @@ export async function startCastWorker(): Promise<boolean> {
             for (let i = 0; i < 40 && adapter.isGenerating(); i++) await pause(250);
           }
           if (!adapter.isGenerating()) ok = await (IS_DESKTOP
-            ? deleteDesktopCastChat(chatId, authorize)
+            ? deleteDesktopServiceChat(chatId, authorize)
             : deleteOwnedChat(chatId, document, pause, authorize));
         }
       }

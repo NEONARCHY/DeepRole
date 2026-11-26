@@ -1,3 +1,5 @@
+const { createHash } = require("node:crypto");
+
 const DEFAULT_WINDOW = 32_768;
 const CONTEXT_SAFETY = 0.9;
 const catalog = new Map();
@@ -24,29 +26,61 @@ function validWindow(value) {
   return Number.isSafeInteger(value) && value >= 512 && value <= 20_000_000;
 }
 
-async function modelProfile(base, key, model, signal) {
+async function modelCatalog(base, key, { signal, background = false } = {}) {
+  signal?.throwIfAborted();
   const url = new URL(base.href.replace(/\/$/, "") + "/models");
   if (base.hostname === "api.venice.ai") url.searchParams.set("type", "text");
-  const cacheKey = JSON.stringify([url.href, model]);
-  const cached = catalog.get(cacheKey);
-  if (cached?.until > Date.now()) return cached.profile;
-  let profile = null;
+  const cacheKey = JSON.stringify([url.href, createHash("sha256").update(key).digest("hex")]);
+  let entry = catalog.get(cacheKey);
+  if (!entry) {
+    if (catalog.size >= 64) catalog.delete(catalog.keys().next().value);
+    entry = { rows: null, freshUntil: 0, retryAt: 0 };
+    catalog.set(cacheKey, entry);
+  }
+  const now = Date.now();
+  if (entry.freshUntil > now) return entry.rows;
+  const cached = entry.freshUntil + 30 * 60_000 > now ? entry.rows : null;
+  if (background && entry.retryAt > now) return cached;
+
+  entry.pending ??= fetchCatalog(url, key).then(rows => {
+    if (rows) {
+      entry.rows = rows;
+      entry.freshUntil = Date.now() + 300_000;
+      entry.retryAt = 0;
+    } else entry.retryAt = Date.now() + 20_000;
+    return rows;
+  }).finally(() => { entry.pending = undefined; });
+  // Discovery and sends share the refresh, but normal sends use the limits
+  // already known locally even if this is the first request since launch.
+  if (background) return cached;
+  if (!signal) return entry.pending;
+  let cancel;
+  try {
+    return await Promise.race([entry.pending, new Promise((_, reject) => {
+      cancel = () => reject(signal.reason);
+      signal.addEventListener("abort", cancel, { once: true });
+    })]);
+  } finally { signal.removeEventListener("abort", cancel); }
+}
+
+async function fetchCatalog(url, key) {
   try {
     const response = await fetch(url, {
       headers: key ? { Authorization: "Bearer " + key } : {},
       redirect: "error",
-      signal: AbortSignal.any([signal, AbortSignal.timeout(2500)]),
+      signal: AbortSignal.timeout(2500),
     });
     if (response.ok) {
       const body = await response.json();
-      if (Array.isArray(body.data)) profile = body.data.find(item => item?.id === model) ?? null;
+      if (Array.isArray(body.data)) return body.data;
     } else await response.body?.cancel();
   } catch { /* OpenAI-compatible servers may omit discovery. */ }
-  if (!signal.aborted) {
-    if (catalog.size >= 64) catalog.delete(catalog.keys().next().value);
-    catalog.set(cacheKey, { profile, until: Date.now() + (profile ? 300_000 : 20_000) });
-  }
-  return profile;
+  return null;
+}
+
+async function modelProfile(base, key, model, signal, { wait = false } = {}) {
+  const rows = await modelCatalog(base, key, { signal, background: !wait });
+  return rows?.find(item => item?.id === model) ?? null;
 }
 
 function estimateMessage({ content }) {
@@ -172,4 +206,4 @@ function withEarlierStoryScene(plan, messages, limits) {
   return { ...plan, estimatedInput, messages: [...plan.messages.slice(0, -1), next] };
 }
 
-module.exports = { modelProfile, modelLimits, fitMessages, validWindow, availableMemoryBytes, storyMemoryEnabled, earlierSceneQuery, withEarlierStoryScene };
+module.exports = { modelCatalog, modelProfile, modelLimits, fitMessages, validWindow, availableMemoryBytes, storyMemoryEnabled, earlierSceneQuery, withEarlierStoryScene };

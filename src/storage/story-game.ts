@@ -20,10 +20,22 @@ import { profileValues } from "../core/character-profile";
 import { assertWorldGameWriter } from "../core/world-game";
 import { resetWorldGame, undoWorldGameReset } from "./world-game";
 import { planStoryAccompaniment } from "./story-automation";
+import type { NativeStorySample } from "../core/story-transport";
 
 const rows = (all: DataRecord[]) => all.filter(r => r.kind === "story").map(r => r.data as StoryRecord);
 const people = (all: DataRecord[], world: string, chat: string) => all.filter(r => r.kind === "entity" && (r.data as SceneEntity).worldId === world && (r.data as SceneEntity).kind === "character" && characterInChat(r.data as SceneEntity, chat)).map(r => r.data as SceneEntity);
 const state = (scene?: CharacterScene) => ({ states: scene?.states ?? {}, presentIds: scene?.presentIds ?? [], partnerIds: scene?.partnerIds ?? (scene?.partnerId ? [scene.partnerId] : []) });
+
+/** A regeneration can replace the reply at an unused checkpoint. Prove the
+ * repeated player turn and its parent before moving the start of recording. */
+function replacesCheckpointReply(line: NativeStorySample[], anchor: string, samples: Map<string, NativeStorySample>) {
+  const reply = samples.get(anchor);
+  if (reply?.identity.role !== "assistant" || reply.completion !== "complete" || !reply.identity.nativeParentKey) return false;
+  const user = samples.get(reply.identity.nativeParentKey);
+  if (user?.identity.role !== "user" || user.completion !== "complete") return false;
+  return line.some((sample, index) => index % 2 === 0 && line[index + 1]?.identity.role === "assistant"
+    && sample.identity.nativeParentKey === user.identity.nativeParentKey && sample.content === user.content);
+}
 /** A missing pre-send history read is recoverable only from the exact new
  * root and its completed reply. Old turns and other variants stay outside. */
 function openingAnchor(all: DataRecord[], binding: ChatBinding, world: WorldProfile, input: StoryGameInput): "root" | "wait" | undefined {
@@ -185,10 +197,11 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     if (input.operation === "edit" && (!edited || edited.identity.role !== "user" || edited.completion !== "complete")) throw Error("story-native-line-unavailable");
     if (edited) preparedParentKey = edited.identity.nativeParentKey;
     const desiredKey = edited ? edited.identity.nativeParentKey : input.operation === "parent" ? input.nativeParentKey : input.snapshot.selectedNativeKey;
-    const line: import("../core/story-transport").NativeStorySample[] = [], seen = new Set<string>();
+    const line: NativeStorySample[] = [], seen = new Set<string>();
+    const anchor = baseline.origin.nativeAnchor.nativeMessageKey;
     let key = desiredKey;
-    while (key !== baseline.origin.nativeAnchor.nativeMessageKey) {
-      if (key === null || seen.has(key)) throw Error("story-native-line-unavailable");
+    while (key !== null && key !== anchor) {
+      if (seen.has(key)) throw Error("story-native-line-unavailable");
       seen.add(key);
       const sample = samples.get(key);
       if (!sample) throw Error("story-native-line-unavailable");
@@ -197,6 +210,17 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
     }
     line.reverse();
     if (line.some((s, i) => s.identity.role !== (i % 2 === 0 ? "user" : "assistant"))) throw Error("story-native-line-unavailable");
+    if (key !== anchor) {
+      if (input.operation !== "parent" || !anchor || !desiredKey || desiredKey !== input.snapshot.selectedNativeKey
+        || line.at(-1)?.identity.role !== "assistant" || branch.headRevisionId !== null || manualDifference
+        || rows(all).some(r => r.type === "revision" && r.branchId === branch.id)
+        || !replacesCheckpointReply(line, anchor, samples)) throw Error("story-native-line-unavailable");
+      // Old native turns remain in the chat. Only future turns may produce
+      // recorded effects, starting at the completed selected reply.
+      baseline = { ...baseline, updatedAt: Date.now(), origin: { ...baseline.origin, nativeAnchor: { nativeMessageKey: desiredKey, role: "assistant" } } };
+      write([storyRow(baseline)]);
+      line.length = 0;
+    }
     const dispatches = all.filter(r => r.kind === "dispatch").map(r => r.data as StoryDispatchCapture);
     const dispatchScope = { bindingId: binding!.id, worldId: input.worldId, chatId: input.chatId };
     let parent: string | null = null;
@@ -236,8 +260,9 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
           const parentSample = samples.get(sample.identity.nativeParentKey!);
           const parentCapture = parentSample && matchingStoryAssistantCapture(matchingStoryUserCaptures(dispatches, dispatchScope, parentSample), sample, parentSample);
           const recoveredOpening = sample.identity.nativeParentKey === continuation?.userKey ? continuation : undefined;
-          const parsed = parseStoryUpdate(sample.content, { world: input.worldId, chat: input.chatId, branch: branch.id, base, entities: people(virtual, input.worldId, input.chatId), scene: prefixScene, requestId: parentCapture?.id ?? recoveredOpening?.requestId });
-          revision = { ...revision, updateDiagnostic: parsed.diagnostic }; write([storyRow(revision)]);
+          const portraitActionsPaused = settings.characterSpritesEnabled === false || parentCapture?.portraitActionsPaused === true;
+          const parsed = parseStoryUpdate(sample.content, { world: input.worldId, chat: input.chatId, branch: branch.id, base, entities: people(virtual, input.worldId, input.chatId), scene: prefixScene, requestId: parentCapture?.id ?? recoveredOpening?.requestId, portraitActionsPaused });
+          revision = { ...revision, updateDiagnostic: parsed.diagnostic, ...(portraitActionsPaused ? { portraitActionsPaused: true } : {}) }; write([storyRow(revision)]);
           const roleCapture = parentCapture?.origin === "local" && parentCapture.injection === "context" && parentCapture.purpose === "user-turn" && parentCapture.roleRoster !== undefined && parentCapture.wire.link?.assistantMessageKey === sample.identity.nativeMessageKey ? parentCapture : undefined;
           revision = { ...revision, roleRoster: sourceRoleRoster(roleCapture?.roleRoster??[],input.worldId,storyReplyProse(sample.content)), ...(roleCapture?{roleRosterRequestId:roleCapture.id}:{}) }; write([storyRow(revision)]);
           const turn = settings.characterSheetsEnabled !== false ? parsed.turn : null;
@@ -256,7 +281,7 @@ export function planStoryGame(initial: DataRecord[], input: StoryGameInput, sett
             && parentSample?.content === confirmedDispatchText(paidCapture);
           const planned = planCharacterTurn(virtual, { worldId: input.worldId, chatId: input.chatId, base, chatUrl: binding!.chatUrl, replyText: sample.content, replyIdentity: sample.identity.nativeMessageKey }, bound,
             actionsFor(world.characterActions ?? settings.characterActions), false, settings.relationshipsEnabled !== false && world.relationshipsEnabled !== false,
-            imagesAllowed, true); // Replay/import cannot grant paid image permission.
+            imagesAllowed, true, portraitActionsPaused); // Replay/import cannot grant paid image permission.
           for (const row of planned.records) if (row.kind === "entity" && !virtual.some(v => v.kind === "entity" && v.id === row.id)) (row.data as SceneEntity).playthroughChatId = input.chatId;
           const next = planned.records.find(r => r.kind === "binding")!.data as ChatBinding;
           const policyRejected = next.characterScenes?.[input.worldId]?.progress?.rejected ?? 0;

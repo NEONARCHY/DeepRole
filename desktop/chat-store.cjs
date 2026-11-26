@@ -176,14 +176,23 @@ async function streamDelta(response, consume, captureMetadata) {
   } finally { await reader.cancel().catch(() => undefined); }
 }
 
-async function generate(data, safeStorage, request) {
+async function generate(data, safeStorage, request, requestId) {
+  const receivedAt = Date.now();
+  const startedAt = performance.now();
   const body = await request.json();
+  const clientDelay = Number.isSafeInteger(body.client_started_at) ? receivedAt - body.client_started_at : -1;
   const id = body.chat_session_id;
   if (typeof id !== "string" || !idPattern.test(id) || typeof body.prompt !== "string" || body.prompt.length > 2_000_000
       || typeof body.visible !== "string" || body.visible.length > 2_000_000 || !body.visible.trim()) return json({ error: "invalid-request" }, 400);
   if (loading.has(id)) return json({ error: "chat-busy" }, 409);
   const controller = new AbortController();
-  loading.set(id, controller);
+  let resolveFinished;
+  const finished = new Promise(resolve => { resolveFinished = resolve; });
+  loading.set(id, { controller, requestId, finished });
+  const release = () => {
+    loading.delete(id);
+    resolveFinished();
+  };
   let delegated = false;
   let attempt, providerRequestId, tokens;
   async function finishUsage(status) {
@@ -211,7 +220,7 @@ async function generate(data, safeStorage, request) {
     });
     const current = { role: "user", content: body.prompt, sceneQuery: route ? sceneQuery : undefined };
     const signal = AbortSignal.any([request.signal, controller.signal]);
-    let contextStats;
+    let contextStats, dispatchedAt, firstTextAt;
     const response = await complete(data, safeStorage, [...context, current], signal, async (plan, profile) => {
       const { window, windowSource, replyTokens, estimatedInput, omittedMessages } = plan;
       contextStats = { window, windowSource, replyTokens, estimatedInput, omittedMessages };
@@ -229,8 +238,8 @@ async function generate(data, safeStorage, request) {
       if (attempt) return;
       const row = { id: randomUUID(), at: Date.now(), chatId: id, kind, ...profile };
       attempt = row;
-      await recordUsage(data, { id: row.id, at: row.at, chatId: id, kind, model: row.model, venice: row.venice }).catch(() => undefined);
-    });
+      void recordUsage(data, { id: row.id, at: row.at, chatId: id, kind, model: row.model, venice: row.venice }).catch(() => undefined);
+    }, () => { dispatchedAt ??= performance.now(); });
     if (!response.ok) return response;
     const last = chat.messages.at(-1)?.id ?? 0;
     const user = { id: last + 1, parent, role: "user", text: body.prompt, visible: body.visible };
@@ -243,6 +252,7 @@ async function generate(data, safeStorage, request) {
           send("ready", { request_message_id: user.id, response_message_id: reply.id });
           await streamDelta(response, (text, reasoning) => {
             if (signal.aborted) throw signal.reason;
+            if (firstTextAt === undefined && text.trim()) firstTextAt = performance.now();
             reply.text += text;
             reply.reasoning += reasoning;
             if (reply.text.length > 250_000 || reply.reasoning.length > 500_000) throw Error("model-incomplete");
@@ -251,6 +261,7 @@ async function generate(data, safeStorage, request) {
             if (typeof packet.id === "string" && packet.id) providerRequestId = packet.id;
             tokens = readTokenUsage(packet.usage) ?? tokens;
           });
+          const completedAt = performance.now();
           if (signal.aborted) throw signal.reason;
           if (!reply.text.trim()) throw Error("model-empty");
           if (kind === "story") reply.text = normalizeStoryMetadata(reply.text, body.prompt, id, body.visible);
@@ -259,7 +270,15 @@ async function generate(data, safeStorage, request) {
           chat.head = reply.id;
           chat.title ||= user.visible.trim().replace(/\s+/g, " ").slice(0, 76);
           chat.updatedAt = Date.now();
-          chat.lastContext = { ...contextStats, ...(tokens ? { input: tokens.input, output: tokens.output } : {}) };
+          chat.lastContext = {
+            ...contextStats,
+            ...(tokens ? { input: tokens.input, output: tokens.output } : {}),
+            timings: {
+              ...(clientDelay >= 0 && clientDelay <= 60_000 ? { preparationMs: Math.round(clientDelay + dispatchedAt - startedAt) } : {}),
+              firstTextMs: Math.round(firstTextAt - dispatchedAt),
+              totalMs: Math.round(completedAt - dispatchedAt),
+            },
+          };
           await saveChat(data, chat);
           await finishUsage("complete");
           send("finish", {});
@@ -268,7 +287,7 @@ async function generate(data, safeStorage, request) {
         } catch (error) {
           await finishUsage("interrupted");
           try { send("hint", { error: ["model-empty", "model-incomplete"].includes(error.message) ? error.message : "model-interrupted" }); output.close(); } catch { /* The app stopped this request. */ }
-        } finally { loading.delete(id); }
+        } finally { release(); }
       },
       cancel() { controller.abort(); },
     });
@@ -276,7 +295,7 @@ async function generate(data, safeStorage, request) {
   } finally {
     if (!delegated) {
       await finishUsage(controller.signal.aborted ? "interrupted" : "failed");
-      loading.delete(id);
+      release();
     }
   }
 }
@@ -312,9 +331,21 @@ async function chatRequest(data, safeStorage, request) {
       }));
       return json(list.sort((a, b) => b.updatedAt - a.updatedAt));
     }
-    if (["/api/v0/chat/completion", "/api/v0/chat/edit_message"].includes(url.pathname) && request.method === "POST") return await generate(data, safeStorage, request);
+    if (["/api/v0/chat/completion", "/api/v0/chat/edit_message"].includes(url.pathname) && request.method === "POST") {
+      return await generate(data, safeStorage, request, url.searchParams.get("request_id"));
+    }
     const id = url.searchParams.get("chat_session_id");
     if (!id || !idPattern.test(id)) return json({ error: "invalid-chat" }, 400);
+    if (url.pathname === "/__desktop/stop-reply" && request.method === "POST") {
+      const requestId = url.searchParams.get("request_id");
+      if (!requestId || !idPattern.test(requestId)) return json({ error: "invalid-request" }, 400);
+      const active = loading.get(id);
+      if (active?.requestId === requestId) {
+        active.controller.abort();
+        await active.finished;
+      }
+      return json({ ok: true });
+    }
     if (url.pathname === "/api/v0/chat/history_messages" && request.method === "GET") {
       const chat = await readChat(data, id);
       const chat_messages = chat.messages.map(message => ({
@@ -333,7 +364,7 @@ async function chatRequest(data, safeStorage, request) {
       if (loading.has(id)) {
         // An owned service worker may cancel before the renderer has received
         // any response headers. Wait for generation to release the chat.
-        if (deleting && url.searchParams.get("cancel_generation") === "1") loading.get(id)?.abort();
+        if (deleting && url.searchParams.get("cancel_generation") === "1") loading.get(id)?.controller.abort();
         return json({ error: "chat-busy" }, 409);
       }
       loading.set(id, null);

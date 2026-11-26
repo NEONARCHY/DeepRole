@@ -18,6 +18,7 @@ import { composerBounds, fitPinnedChoices, pinnedSceneFit, inlineSceneFit } from
 
 export interface PortraitStageOptions {
   scope: string;
+  previewIds?: readonly string[];
   layout?: PortraitLayout;
   resetAt?: number;
   pinSceneChoices?: boolean;
@@ -37,6 +38,7 @@ const attr = (node: HTMLElement, key: string, value: string) => { if (node.getAt
 const css = (node: HTMLElement, key: string, value: string) => { if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value); };
 const PORTRAIT_CHOICE_GAP = 24;
 const PORTRAIT_PEER_GAP = 6;
+const composerAnchor = "[data-deeprole-portrait-anchor]";
 
 function portraitMotion(stage: Stage) {
   return stage.options?.animations !== false && typeof stage.overlay.animate === "function" &&
@@ -107,7 +109,9 @@ function clearAdaptive(stage: Stage) {
 
 /** A shared lane fits the options and portraits; constrained lanes use a scrollable portrait strip. */
 function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
-  if (!stage.options?.adaptiveLayout) return false;
+  const host = stage.anchor;
+  const standalone = host.matches(composerAnchor);
+  if (!stage.options || (!stage.options.adaptiveLayout && !standalone)) return false;
   if (stage.dragging) {
     const widget = stage.widgets.get(stage.draggingId ?? "");
     if (widget?.pose) {
@@ -120,39 +124,42 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
     return true;
   }
   if (!stage.anchor.isConnected) return true;
-  const host = stage.anchor;
-  const section = host.shadowRoot!.querySelector<HTMLElement>("section")!;
+  const section = host.shadowRoot?.querySelector<HTMLElement>("section");
+  const pinned = !standalone && stage.options.pinSceneChoices;
   const parent = host.parentElement!.getBoundingClientRect();
   const parentStyle = host.ownerDocument.defaultView!.getComputedStyle(host.parentElement!);
   const contentLeft = parent.left + (parseFloat(parentStyle.paddingLeft) || 0) + (parseFloat(parentStyle.borderLeftWidth) || 0);
   const left = sceneAvailableLeft(host.ownerDocument), right = sceneAvailableRight(host.ownerDocument);
-  const center = stage.options.pinSceneChoices ? (left + right - 8) / 2 : parent.left + parent.width / 2;
+  const center = pinned ? (left + right - 8) / 2 : parent.left + parent.width / 2;
   // The fit helpers reserve one left-hand hero slot. If that hero was enlarged
   // into the floating frame, preserve the right-side budget for every NPC.
   const fitCount = stage.widgets.size + (stage.heroId && !stage.widgets.has(stage.heroId) ? 1 : 0);
-  const fitted = stage.options.pinSceneChoices ? pinnedSceneFit(host.ownerDocument, fitCount)
-    : composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, fitCount) : fitScene(right, left, center, fitCount);
+  const fitted = pinned ? pinnedSceneFit(host.ownerDocument, fitCount)
+    : standalone || composerBounds(host.ownerDocument, true) ? inlineSceneFit(host.ownerDocument, fitCount) : fitScene(right, left, center, fitCount);
   const trayHeight = height < 560 ? 70 : 104;
   const dock = widgetDeck(host.ownerDocument)?.querySelector<HTMLElement>(".dr-widget-dock")?.getBoundingClientRect();
-  const laneKey = JSON.stringify([width, height, left, parent.left, parent.width, fitted.compact, fitted.x, fitted.choices, fitted.portrait, stage.heroId, [...stage.partnerIds], [...stage.widgets].map(([id, widget]) => [id, widget.pose, widget.statsKey]), stage.options.pinSceneChoices, stage.options.pinLeft, stage.options.pinRight, stage.options.pinSceneChoices ? host.style.bottom : null]);
+  const laneKey = JSON.stringify([width, height, left, parent.left, parent.width, standalone ? host.getBoundingClientRect().bottom : null, fitted.compact, fitted.x, fitted.choices, fitted.portrait, stage.heroId, [...stage.partnerIds], [...stage.widgets].map(([id, widget]) => [id, widget.pose, widget.statsKey]), pinned, stage.options.pinLeft, stage.options.pinRight, pinned ? host.style.bottom : null]);
   const changed = stage.placementKey !== laneKey;
   stage.placementKey = laneKey;
   host.dataset.adaptivePortraits = "true";
   host.dataset.pinnedPortraitCount = String(fitCount);
-  css(host, "width", `${fitted.choices}px`);
-  css(host, "left", stage.options.pinSceneChoices ? `${fitted.x + fitted.choices / 2}px` : "");
-  css(host, "margin-left", stage.options.pinSceneChoices ? "0px" : `${fitted.x - contentLeft}px`);
-  css(host, "padding-top", fitted.compact && !stage.options.pinSceneChoices ? `${trayHeight + 8}px` : "");
-  css(section, "padding-top", "");
-  host.dataset.pinnedPortraitReserve = String(fitted.compact ? trayHeight + 8 + Math.max(0, (dock?.bottom ?? 0) - 60) : 0);
-  css(section, "max-height", "");
-  fitPinnedChoices(host);
-  const anchor = section.getBoundingClientRect();
+  css(host, "padding-top", fitted.compact && !pinned ? `${trayHeight + 8}px` : "");
+  if (section) {
+    css(host, "width", `${fitted.choices}px`);
+    css(host, "left", pinned ? `${fitted.x + fitted.choices / 2}px` : "");
+    css(host, "margin-left", pinned ? "0px" : `${fitted.x - contentLeft}px`);
+    css(section, "padding-top", "");
+    css(section, "max-height", "");
+    host.dataset.pinnedPortraitReserve = String(fitted.compact ? trayHeight + 8 + Math.max(0, (dock?.bottom ?? 0) - 60) : 0);
+    fitPinnedChoices(host);
+  }
+  const rect = (section ?? host).getBoundingClientRect();
+  const anchor = standalone ? new DOMRect(fitted.x, rect.bottom, fitted.choices, 0) : rect;
   stage.frame.removeAttribute("data-pinned-compact");
   if (fitted.compact) {
     stage.frame.dataset.adaptiveCompact = "true";
     attr(stage.frame, "data-short", String(height < 560));
-    if (changed || stage.options.pinSceneChoices || !stage.frame.style.top) {
+    if (changed || pinned || !stage.frame.style.top) {
       let top = clamp(anchor.top - trayHeight - 8, 8, height - trayHeight - 8);
       if (dock && dock.left < fitted.x + fitted.choices && dock.right > fitted.x && top < dock.bottom && top + trayHeight > dock.top) top = Math.min(height - trayHeight - 8, dock.bottom + 8);
       css(stage.frame, "left", `${fitted.x}px`); css(stage.frame, "top", `${top}px`);
@@ -173,7 +180,7 @@ function arrangeAdaptive(stage: Stage, width: number, height: number): boolean {
   const heroId = stage.heroId ?? widgets[0]?.[0];
   for (const [id, widget] of widgets) css(widget.box, "width", `${Math.round(fitted.portrait * (id === heroId || stage.partnerIds.has(id) ? 1 : .85))}px`);
   const tallest = Math.max(...widgets.map(([, widget]) => widget.box.offsetHeight));
-  const availableBottom = stage.options.pinSceneChoices || IS_DESKTOP ? (composerBounds(host.ownerDocument)?.top ?? height) - 12 : height - 8;
+  const availableBottom = standalone ? rect.bottom - 12 : pinned || IS_DESKTOP ? (composerBounds(host.ownerDocument)?.top ?? height) - 12 : height - 8;
   const baseline = clamp(anchor.top, 8, availableBottom - tallest) + tallest;
   let rightX = anchor.right + PORTRAIT_CHOICE_GAP;
   let leftX = anchor.left - PORTRAIT_CHOICE_GAP;
@@ -500,28 +507,34 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
 
 export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], scene: CharacterScene | undefined, locale: Locale, onOpen: (id: string) => void, root: ParentNode = document, options?: PortraitStageOptions) {
   const scope = options?.scope ?? "";
-  const people = enabled ? characterCast(entities, scene) : [];
+  const people = enabled ? [...new Set([...characterCast(entities, scene), ...entities.filter(entity => options?.previewIds?.includes(entity.id))])] : [];
   for (const stage of activeStages) if (stage.scope !== scope || !people.length || !scope && !stage.anchor.isConnected) dispose(stage);
   if (!people.length) return;
   const hosts = [...root.querySelectorAll<HTMLElement>("[data-deeprole-choices-host]")];
+  if (!hosts.length && IS_DESKTOP && options) {
+    const fallback = root.querySelector<HTMLElement>(composerAnchor);
+    if (fallback) hosts.push(fallback);
+  }
   // Choices disappear as soon as a new request starts. Keep the body-level
   // portrait layer until the next reply, and reattach it to the next card.
   const detached = [...activeStages].filter(stage => !stage.anchor.isConnected && stage.scope === scope).map(stage => stage.anchor);
   for (const host of [...hosts, ...(!hosts.length ? detached : [])]) {
     const shadow = host.shadowRoot; const section = shadow?.querySelector("section");
     const controls = section?.querySelector(".choice-tools");
-    if (!shadow || !section || !controls) continue;
-    if (!shadow.querySelector("[data-portrait-stage-style]")) { const style = host.ownerDocument.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
-    section.classList.add("dr-cast-content");
+    if ((!shadow || !section || !controls) && !host.matches(composerAnchor)) continue;
+    if (shadow && !shadow.querySelector("[data-portrait-stage-style]")) { const style = host.ownerDocument.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
+    section?.classList.add("dr-cast-content");
     let stage = stages.get(host);
     if (!stage) {
-      stage = [...activeStages].find(candidate => !candidate.anchor.isConnected && candidate.scope === scope);
+      stage = [...activeStages].find(candidate => candidate.scope === scope && (!candidate.anchor.isConnected || candidate.anchor.matches(composerAnchor)));
       if (stage) {
+        clearAdaptive(stage);
         stages.delete(stage.anchor);
         stage.observer.disconnect(); stage.observer.observe(stage.frame);
         stage.anchor = host;
-        controls.insertBefore(stage.reset, controls.querySelector(".choice-expand"));
-        section.append(stage.status);
+        stage.reset.remove(); stage.status.remove();
+        controls?.insertBefore(stage.reset, controls.querySelector(".choice-expand"));
+        section?.append(stage.status);
         stage.placementKey = undefined; stage.needsRedock = true;
         stages.set(host, stage); stage.observer.observe(host);
         for (const widget of stage.widgets.values()) stage.observer.observe(widget.box);
@@ -529,14 +542,12 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
     }
     if (!stage) {
       const doc = host.ownerDocument;
-      if (!shadow.querySelector("[data-portrait-stage-style]")) { const style = doc.createElement("style"); style.dataset.portraitStageStyle = "true"; style.textContent = portraitStyle; shadow.append(style); }
       const overlay = doc.createElement("div"); overlay.dataset.deeprolePortraitLayer = "true";
       const floating = overlay.attachShadow({ mode: "open" });
       const style = doc.createElement("style"); style.textContent = designTokens + workspacePalette + portraitStyle + workspaceMaterial;
       const frame = doc.createElement("div"); frame.className = "dr-cast-frame";
       const manualFrame = doc.createElement("div"); manualFrame.className = "dr-cast-manual-frame";
       floating.append(style, frame, manualFrame); doc.body.append(overlay);
-      section.classList.add("dr-cast-content");
       const reset = doc.createElement("button"); reset.type = "button"; reset.className = "choice-pin";
       const icon = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
       icon.setAttribute("viewBox", "0 0 24 24");
@@ -545,7 +556,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       path.setAttribute("d", "M3 12a9 9 0 1 1 2.6 6.4M3 4v8h8");
       icon.append(path); reset.append(icon);
       const status = doc.createElement("p"); status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite"); status.className = "dr-cast-layout-status";
-      controls.insertBefore(reset, controls.querySelector(".choice-expand")); section.append(status);
+      controls?.insertBefore(reset, controls.querySelector(".choice-expand")); section?.append(status);
       // The same layer can move to a new choices card after the next reply.
       // Keep resize/scroll listeners bound to the layer, not its former host.
       let currentStage: Stage | undefined;
@@ -572,6 +583,7 @@ export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], sce
       });
     }
     stage.options = options; stage.locale = locale;
+    if (host.matches(composerAnchor) && host.parentElement) stage.observer.observe(host.parentElement);
     const motion = portraitMotion(stage);
     const resetLabel = characterText(locale, "layoutReset");
     attr(stage.reset, "aria-label", resetLabel); attr(stage.reset, "title", resetLabel);

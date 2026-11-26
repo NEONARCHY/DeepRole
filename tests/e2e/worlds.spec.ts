@@ -112,7 +112,7 @@ test("world tree edits entry relationships without changing lore", async ({ page
   await page.getByRole("button", { name: "Миры", exact: true }).click();
   await page.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click();
   await page.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Древо.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ "Башня": { value: "Исходный текст башни", importance: "always" }, "Дверь": { value: "Исходный текст двери", importance: "called" } })) });
-  await expect(page.getByText("Распознана память Better Deepseek (BDS)", { exact: true })).toBeVisible();
+  await expect(page.getByText("Распознаны записи памяти", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click();
   await page.getByRole("button", { name: "Список записей", exact: true }).click();
   const tower = page.locator(".memory-card").filter({ has: page.getByRole("heading", { name: "Башня", exact: true }) });

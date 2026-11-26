@@ -20,6 +20,8 @@ import { approveStoryFact } from "../src/storage/story-facts";
 import { characterEditBaseline,mergeCharacterEdit } from "../src/core/character-edit";
 import { createBackup, parseBackup, restoreBackup } from "../src/storage/backup";
 import { storyWorld } from "./fixtures/story-worlds";
+import { createStoryJournal } from "../src/core/story-journal";
+import type { StoryFact } from "../src/core/story-update";
 const dbs: DeepRoleDatabase[] = [];
 afterEach(async () => { await Promise.all(dbs.splice(0).map(d => d.delete())); });
 const fact = (text: string, risk = "ordinary", kind = "event", claim?: unknown) => ({ text,quote:text,kind,risk,...(claim ? { claim } : {}) });
@@ -71,6 +73,43 @@ it("uses an exact scene quote as the text of a plain fact", async () => {
   await f.send([{ kind: "event", quote, risk: "ordinary" }]);
   expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: quote, quote }]);
   expect((await f.review()).total).toBe(0);
+});
+it.each(["automatic", "review"] as const)("leaves incidental waking in the scene without adding a fact or review (%s)", async mode => {
+  const f = await fixture(mode);
+  const routine = "Мира сказала, что она встала утром.";
+  const meaningful = "Мира встала утром, чтобы открыть шлюз до прилива.";
+  await f.send([fact(routine), fact(meaningful)], [], { prose: routine + "\n\n" + meaningful });
+  const records = await f.repo.list<StoryRecord>("story");
+  expect(records.some(record => record.type === "revision" && record.content.includes(routine))).toBe(true);
+  expect(records.filter(record => record.type === "event" && record.memory).map(record => (record as StoryEvent).memory?.text)).toEqual([meaningful]);
+  expect((await f.review()).total).toBe(mode === "review" ? 1 : 0);
+});
+it("keeps a waking detail tied to a consequence or explicit conflict for review", async () => {
+  const f = await fixture();
+  const waking = "Мира проснулась.";
+  await f.send([fact(waking)], [], { prose: waking + " Это подтвердило, что противоядие подействовало." });
+  const changed = "Мира встала утром.";
+  await f.send([fact(changed, "conflict")]);
+  expect((await f.world()).sharedGame!.facts.map(entry => entry.text)).toContain(waking);
+  expect((await f.review()).total).toBe(1);
+});
+it("preserves a legacy binding and a linked Russian recipient through backup and restore", async () => {
+  const f = await fixture("automatic", ["Мира", "Тимур"]);
+  const previous = "Мира сказала: «Старый ключ остался у сторожа».";
+  const shared = "Мира сказала Тимуру: «Запасной ключ лежит в синей коробке».";
+  await f.send([fact(previous)]);
+  await f.send([fact(shared)]);
+  const game = (await f.world()).sharedGame!;
+  expect(game.factRoleSeeds!.map(seed => seed.binding.version)).toEqual([1, 2]);
+  const saved = await parseBackup(JSON.stringify(await createBackup(undefined, f.repo)));
+  const db = new DeepRoleDatabase("journal-role-restore-" + crypto.randomUUID()); dbs.push(db);
+  const restored = new DeepRoleRepository(db);
+  await restoreBackup(saved, "replace", restored);
+  assertStoryGraph(await restored.rawRecords());
+  const restoredGame = (await restored.get<WorldProfile>("world", f.scope().worldId))!.sharedGame!;
+  expect(restoredGame).toEqual(game);
+  const entries = createStoryJournal(restoredGame).episodes.flatMap(episode => episode.entries);
+  expect(entries.find(entry => entry.fact.text === shared)?.people.map(person => person.name)).toEqual(["Мира", "Тимур"]);
 });
 it("retains the real source quote when the model only restyles quotation marks", async () => {
   const f = await fixture(), quote = 'Mira wrote on the note: "Locker 73."';
@@ -142,6 +181,50 @@ it("updates the one old wish on a played visit across chats, preserving the sour
   expect((await f.repo.list<StoryEvent>("story")).some(e=>e.memory?.text===mira.text)).toBe(true);
   assertStoryGraph(await f.repo.rawRecords());
 });
+
+it.each(["Day 12", "2026-11-14", "Three days passed.", "Прошло три дня."])("keeps a task open when its only supposed outcome is %s", time => {
+  const task = { key: "open-gate", title: "open the gate", status: "open" as const };
+  const open: StoryFact = { kind: "promise", text: "Nora promised to open the gate.", quote: "Nora promised to open the gate.", task };
+  for (const status of ["completed", "cancelled"] as const) {
+    const proposed: StoryFact = { kind: "event", text: time, quote: time, task: { ...task, status } };
+    expect(factAutomationReason(proposed, "ordinary", [open], [])).toBe("uncertain");
+  }
+});
+
+it("closes two independently witnessed goals from one reply, preserving unrelated goals and one source", async () => {
+  const f = await fixture("automatic", ["Nora", "Leon", "Inez"]);
+  const promises = [
+    { owner: "Nora", key: "nora-compass", title: "inspect the brass compass" },
+    { owner: "Nora", key: "nora-inventory", title: "check the inventory" },
+    { owner: "Leon", key: "leon-compass", title: "inspect the brass compass" },
+    { owner: "Nora", key: "nora-gate", title: "open the gate" },
+  ];
+  await f.send(promises.map(({ owner, key, title }) => ({
+    ...fact(`${owner} promised to ${title}.`, "ordinary", "promise"), task: { key, title, status: "open" },
+  })));
+  const before = "Nora failed to inspect the brass compass and checked the inventory.";
+  await f.send(promises.slice(0, 2).map(({ key, title }) => ({ ...fact(before), task: { key, title, status: "completed" } })), [], { prose: before });
+  expect((await f.world()).sharedGame!.facts.every(entry => entry.task?.status === "open")).toBe(true);
+  const quote = "Nora inspected the brass compass and checked the inventory.";
+  await f.send(promises.map(({ key, title }) => ({ ...fact(quote), task: { key, title, status: "completed" } })), [], { prose: quote });
+  const game = (await f.world()).sharedGame!;
+  expect(game.facts.map(entry => [entry.task?.key, entry.task?.status])).toEqual([
+    ["leon-compass", "open"], ["nora-gate", "open"], ["nora-compass", "completed"], ["nora-inventory", "completed"],
+  ]);
+  const results = (await f.repo.list<StoryEvent>("story")).filter(event => event.automation?.status === "saved" && event.memory?.task?.status === "completed");
+  expect(results).toHaveLength(2);
+  expect(new Set(results.map(event => event.memoryRoles?.sourceRevisionId)).size).toBe(1);
+  expect(results.every(event => event.quote === quote)).toBe(true);
+  expect((await f.review()).total).toBe(4);
+  assertStoryGraph(await f.repo.rawRecords());
+  const backup = await parseBackup(JSON.stringify(await createBackup(undefined, f.repo)));
+  const db = new DeepRoleDatabase("compound-goal-restore-" + crypto.randomUUID()); dbs.push(db);
+  const restored = new DeepRoleRepository(db);
+  await restoreBackup(backup, "replace", restored);
+  assertStoryGraph(await restored.rawRecords());
+  expect((await restored.get<WorldProfile>("world", f.scope().worldId))!.sharedGame).toEqual(game);
+});
+
 it("ordinary new mentioned person and existing profile additions preserve author canon",async()=>{
   const f=await fixture(), original=f.entities[1]!.characterSheet!.background;
   await f.send([], [person("Neri","repairs clocks."),person("Resident 2","keeps a journal.","person-2")]);

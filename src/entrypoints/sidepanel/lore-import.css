@@ -112,7 +112,6 @@
 }
 .rp-import-dropzone[data-preview="true"] > svg { width: 20px; }
 .rp-import-choose { max-width: 100%; white-space: normal; }
-.rp-import-formats a { display: inline-flex; align-items: center; min-height: 44px; color: var(--dr-primary); }
 .rp-import-destination, .rp-import-contents { display: grid; gap: 8px; min-width: 0; }
 .rp-import-destination .field-label { min-width: 0; margin: 0; }
 .rp-import-options { border-block: 1px solid var(--dr-border); }

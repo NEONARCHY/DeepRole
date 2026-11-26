@@ -81,6 +81,7 @@ export interface StoryBranch extends StoryScope {
 export interface StoryRevision extends StoryScope {
   roleRosterRequestId?: string;
   roleRoster?: import("./story-role-binding").RolePerson[];
+  portraitActionsPaused?: true;
   memoryBatch?: MemoryBatchProgress;
   type: "revision";
   messageId: string;
@@ -216,7 +217,7 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
     case "branch": return keys(value, [...common, "baselineId", "parentBranchId", "forkRevisionId", "headRevisionId", "selectionVersion", "projectionId", "gameManaged", "pausedAtRevisionId"])
       && value.branchId === value.id && id(value.baselineId) && optionalId(value.parentBranchId) && optionalId(value.forkRevisionId) && optionalId(value.headRevisionId) && integer(value.selectionVersion)
       && (value.parentBranchId === null) === (value.forkRevisionId === null) && (value.projectionId === undefined || id(value.projectionId)) && (value.gameManaged === undefined || typeof value.gameManaged === "boolean") && (value.pausedAtRevisionId === undefined || value.gameManaged === true && optionalId(value.pausedAtRevisionId) && value.pausedAtRevisionId === value.headRevisionId);
-    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "continuationNativeContent", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch", "roleRoster", "roleRosterRequestId"])
+    case "revision": return keys(value, [...common, "messageId", "nativeMessageKey", "requestId", "parentRevisionId", "role", "completion", "content", "continuationNativeContent", "requestProof", "storyPurpose", "updateDiagnostic", "metadataRepair", "repairDiagnostic", "characterDiscovery", "memoryBatch", "roleRoster", "roleRosterRequestId", "portraitActionsPaused"])
       && id(value.messageId) && id(value.nativeMessageKey) && optionalId(value.requestId) && optionalId(value.parentRevisionId) && ["user", "assistant"].includes(String(value.role)) && ["complete", "partial", "interrupted"].includes(String(value.completion)) && text(value.content, 250_000) && (value.storyPurpose === undefined || ["game", "out-of-character"].includes(String(value.storyPurpose)))
       && (value.requestProof === undefined || id(value.requestId) && validNativeStoryKey(value.nativeMessageKey) && object(value.requestProof) && keys(value.requestProof, ["nativeParentKey"]) && (value.requestProof.nativeParentKey === null || validNativeStoryKey(value.requestProof.nativeParentKey)))
       && (value.continuationNativeContent === undefined || value.role === "user" && value.completion === "complete" && value.parentRevisionId === null && validNativeStoryKey(value.nativeMessageKey)
@@ -224,6 +225,7 @@ export function validStoryRecord(value: unknown): value is StoryRecord {
       && (value.updateDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.updateDiagnostic))
       && (value.roleRoster === undefined || value.role === "assistant" && validRoleRoster(value.roleRoster))
       && (value.roleRosterRequestId === undefined || value.roleRoster !== undefined && id(value.roleRosterRequestId))
+      && (value.portraitActionsPaused === undefined || value.role === "assistant" && value.portraitActionsPaused === true)
       && (value.repairDiagnostic === undefined || value.role === "assistant" && validStoryUpdateDiagnostic(value.repairDiagnostic))
       && (value.metadataRepair === undefined || value.role === "assistant" && object(value.metadataRepair) && Object.keys(value.metadataRepair).length === 3 && keys(value.metadataRepair, ["id", "status", "at"]) && id(value.metadataRepair.id) && ["requested", "done", "failed", "cancelled"].includes(String(value.metadataRepair.status)) && time(value.metadataRepair.at))
       && (value.memoryBatch === undefined || value.completion === "complete" && value.storyPurpose !== "out-of-character" && validMemoryBatchProgress(value.memoryBatch) && value.memoryBatch.request.end <= storyReplyProse(value.content as string).length)
@@ -277,7 +279,7 @@ export function assertStoryGraph(records: DataRecord[]): void {
   const all = new Map(rows.map(row => [row.id, row.data as StoryRecord]));
   const roleProof = (binding: import("./story-role-binding").StoryRoleBinding, worldId: string | null) => {
     const source=all.get(binding.sourceRevisionId);
-    if(source?.type!=="revision"||source.worldId!==worldId||source.completion!=="complete"||source.storyPurpose==="out-of-character"||!storyReplyProse(source.content).includes(binding.quote)||!sameStoryValue(bindStoryRoles({text:"Evidence",kind:"event",quote:binding.quote},source),binding))throw Error("story-evidence-invalid");
+    if(source?.type!=="revision"||source.worldId!==worldId||source.completion!=="complete"||source.storyPurpose==="out-of-character"||!storyReplyProse(source.content).includes(binding.quote)||!sameStoryValue(bindStoryRoles({text:"Evidence",kind:"event",quote:binding.quote},source,binding.version),binding))throw Error("story-evidence-invalid");
     return source;
   };
   const timeProof = (facts: import("./story-update").StoryFact[], seeds: import("./story-role-binding").FactRoleSeed[], worldId: string | null) => {

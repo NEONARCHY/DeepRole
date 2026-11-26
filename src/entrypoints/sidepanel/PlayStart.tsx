@@ -1,3 +1,4 @@
+import { IS_DESKTOP } from "../../core/chat-host";
 import { CHAT_HOME } from "../../core/chat-host";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, FileUp, Globe2, Plus, SlidersHorizontal } from "lucide-react";
@@ -9,12 +10,12 @@ import { storyAutomationText } from "../../core/story-automation-i18n";
 import { savedMemoryText } from "../../core/saved-memory-continuation";
 
 const ru = {
-  openSite: "Откройте чат DeepSeek",
-  offsite: "Здесь можно подготовить мир. Когда откроете DeepSeek, подключите его к чату.",
-  goToSite: "Открыть DeepSeek",
+  openSite: (IS_DESKTOP ? "Откройте чат" : "Откройте чат DeepSeek"),
+  offsite: (IS_DESKTOP ? "Подготовьте мир здесь, затем подключите его к игровой переписке." : "Здесь можно подготовить мир. Когда откроете DeepSeek, подключите его к чату."),
+  goToSite: (IS_DESKTOP ? "Открыть чат" : "Открыть DeepSeek"),
   select: "Выберите мир для игры",
   firstWorld: "Добавьте мир для игры",
-  firstWorldHint: "Мир хранит персонажей, места и правила, которые DeepSeek учитывает в игре.",
+  firstWorldHint: "Мир хранит персонажей, места и правила, которые модель учитывает в игре.",
   selectHint: "Выберите мир из списка, чтобы подключить его к этому чату.",
   importWorld: experienceText("ru", "import"),
   importHint: "Выберите файл JSON и проверьте содержимое перед импортом.",
@@ -23,11 +24,11 @@ const ru = {
   library: "Открыть библиотеку миров",
   chat: "Настроить мир и сцену",
   sceneHint: "Выбрать мир и персонажей для этого чата.",
-  play: "Продолжайте историю в DeepSeek. Сведения о мире добавятся к реплике автоматически.",
-  first: "Напишите первую реплику в DeepSeek.",
+  play: "Продолжайте историю в чате. Сведения о мире добавятся к реплике автоматически.",
+  first: "Напишите первую реплику в чате.",
   queued: "Контекст подготовлен для первого сообщения в новом чате.",
   resume: "Продолжите сохранённую игру",
-  resumeHint: "Подключите сохранённую игру, затем напишите первую реплику в DeepSeek.",
+  resumeHint: "Подключите сохранённую игру, затем напишите первую реплику в чате.",
   unavailableHint: "Если переписка не открывается, игру можно продолжить из сохранённой памяти.",
   elsewhere: "Игра продолжается в другом чате.",
   openActive: "Открыть активный чат",
@@ -40,12 +41,12 @@ const ru = {
   reviewCount: "На проверке ({count})",
 };
 const en: Record<keyof typeof ru, string> = {
-  openSite: "Open a DeepSeek chat",
-  offsite: "Prepare a world here, then open DeepSeek to connect it to your chat.",
-  goToSite: "Open DeepSeek",
+  openSite: (IS_DESKTOP ? "Open a chat" : "Open a DeepSeek chat"),
+  offsite: (IS_DESKTOP ? "Prepare a world here, then connect it to a game chat." : "Prepare a world here, then open DeepSeek to connect it to your chat."),
+  goToSite: (IS_DESKTOP ? "Open the chat" : "Open DeepSeek"),
   select: "Choose a world to play",
   firstWorld: "Add a world to play",
-  firstWorldHint: "A world holds the characters, places and rules DeepSeek uses in your story.",
+  firstWorldHint: "A world holds the characters, places and rules the model uses in your story.",
   selectHint: "Select a world from the list to connect it to this chat.",
   importWorld: experienceText("en", "import"),
   importHint: "Choose a JSON file and review its contents before importing.",
@@ -54,8 +55,8 @@ const en: Record<keyof typeof ru, string> = {
   library: "Open world library",
   chat: "Set up world and scene",
   sceneHint: "Choose the world and characters for this chat.",
-  play: "Continue your story in DeepSeek. DeepRole adds relevant world details to your message automatically.",
-  first: "Write your first turn in DeepSeek.",
+  play: "Continue your story in the chat. DeepRole adds relevant world details to your message automatically.",
+  first: "Write your first turn in the chat.",
   queued: "Context is ready for the first message in the new chat.",
   resume: "Continue your saved game",
   resumeHint: "Continue with the available game memory. You send the first message.",

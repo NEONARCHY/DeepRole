@@ -303,8 +303,8 @@ for (const locale of ["ru", "en"] as const) {
     await continuationLauncher(page, locale).click();
     const methods = page.getByRole("dialog");
     await expect(methods).toBeVisible();
-    await expect(continuationMethod(page, locale, "review")).toHaveAccessibleDescription(/сам отправит первую реплику|sends the first message/);
-    await expect(continuationMethod(page, locale, "saved")).toHaveAccessibleDescription(/отправишь сам|You send the first message/);
+    await expect(continuationMethod(page, locale, "review")).toHaveAccessibleDescription(/первый ход сделает DeepRole|DeepRole takes the first turn/);
+    await expect(continuationMethod(page, locale, "saved")).toHaveAccessibleDescription(/Первый ход за вами|You take the first turn/);
     expect(await methods.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     await page.keyboard.press("Escape");
     for (const [index, sample] of (locale === "ru"

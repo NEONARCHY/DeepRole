@@ -2,7 +2,7 @@ import { chromium, expect, test } from "@playwright/test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { DEFAULT_ACTIONS, EMPTY_CHARACTER, EMPTY_STATUS } from "../../src/core/characters";
+import { EMPTY_CHARACTER, EMPTY_STATUS } from "../../src/core/characters";
 
 test("installed personal rules survive a violating model reply and reload", async ({}, info) => {
   test.skip(info.project.name !== "chromium", "Chrome MV3 runtime scenario"); test.setTimeout(60000);
@@ -18,9 +18,9 @@ test("installed personal rules survive a violating model reply and reload", asyn
     const pack = { format: "deeprole-world", version: 1, records: [{ kind: "world", id: world.id, data: world }, { kind: "entity", id: person.id, data: person }] };
     await panel.getByRole("button", { name: "Миры", exact: true }).click(); await panel.getByRole("button", { name: "Загрузить мир из файла", exact: true }).click(); await panel.getByLabel("Выбрать JSON", { exact: true }).setInputFiles({ name: "Harbor.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(pack)) }); await panel.getByRole("checkbox", { name: "Подготовить персонажей из лора", exact: true }).uncheck(); await panel.getByRole("button", { name: "Сохранить в библиотеку", exact: true }).click(); await expect(panel.getByRole("heading", { name: "Harbor", exact: true })).toBeVisible();
     const chat = await context.newPage(); await chat.goto("https://chat.deepseek.com/chat/s/action-runtime"); await chat.getByRole("combobox", { name: "Мир", exact: true }).selectOption({ label: "Harbor" }); await expect(chat.locator(".dr-character-row").filter({ hasText: "Mira" })).toBeVisible();
-    let prompt = ""; await context.route("https://chat.deepseek.com/api/v0/chat/completion", async route => { prompt = route.request().postDataJSON().prompt; await route.fulfill({ contentType: "application/json", body: "{}" }); });
+    let prompt = "", posts = 0; await context.route("https://chat.deepseek.com/api/v0/chat/completion", async route => { posts++; prompt = route.request().postDataJSON().prompt; await route.fulfill({ contentType: "application/json", body: "{}" }); });
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, let us open the gate." }) })); await expect.poll(() => prompt).toContain("Personal action rules:");
-    expect(JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!)).toContainEqual({ id: "Mira", allowed: DEFAULT_ACTIONS.filter(key => key !== "angry"), portraits: ["happy"] }); expect(prompt).not.toContain("data:image");
+    expect(JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!)).toEqual({ blocked: [{ ids: ["Mira"], actions: ["angry"] }], portraits: [{ ids: ["Mira"], actions: ["happy"] }] }); expect(prompt).not.toContain("data:image");
     const schema = JSON.parse(prompt.match(/\nSchema: (.+)\nRoster:/)![1]!);
     await expect.poll(() => panel.evaluate(async () => { const api = (globalThis as any).chrome; const [tab] = await api.tabs.query({ url: "https://chat.deepseek.com/chat/s/action-runtime" }); return (await api.storage.session.get(`deeprole_tab_state_${tab.id}`))[`deeprole_tab_state_${tab.id}`]?.characterRequest?.accepted; })).toBe(true);
     const turn = { request: schema.request, present: ["Mira"], partners: ["Mira"], updates: [{ id: "Mira", name: "Mira", blockedActions: [], state: { ...EMPTY_STATUS, action: "angry", condition: "Tired", goal: "Open the gate", stats: [{ label: "Energy", value: "Low" }] } }] };
@@ -53,6 +53,28 @@ test("installed personal rules survive a violating model reply and reload", asyn
     await chat.reload(); await expect(chat.locator(".dr-character-row").filter({ hasText: "Mira" })).toBeVisible();
     expect((await stored()).person.characterSheet).toEqual(after.person.characterSheet);
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira, the gate is open." }) }));
-    await expect.poll(() => JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!)).toContainEqual({ id: "Mira", allowed: DEFAULT_ACTIONS.filter(key => !["angry", "happy"].includes(key)), portraits: [] });
+    await expect.poll(() => JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!)).toEqual({ blocked: [{ ids: ["Mira"], actions: ["happy", "angry"] }] });
+    const setPortraits = (enabled: boolean) => panel.evaluate(async value => {
+      const storage = (globalThis as any).chrome.storage.local;
+      const { deeprole_settings } = await storage.get("deeprole_settings");
+      await storage.set({ deeprole_settings: { ...deeprole_settings, characterSpritesEnabled: value } });
+    }, enabled);
+    await setPortraits(false);
+    await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: "Mira watches the gate." }) }));
+    await expect.poll(() => prompt).toContain("Omit state.action");
+    expect(prompt).not.toMatch(/Action catalog:|Personal action rules:|Player avatar:|"action":/u);
+    const hidden = { ...turn, request: JSON.parse(prompt.match(/\nSchema: (.+)\nRoster:/)![1]!).request,
+      updates: [{ id: "Mira", state: { ...EMPTY_STATUS, action: "sitting", condition: "Watching the gate" } }] };
+    await chat.evaluate(update => {
+      const row = document.createElement("article");
+      row.dataset.role = "assistant"; row.dataset.messageId = "answer-hidden";
+      const body = document.createElement("div"); body.className = "ds-markdown";
+      body.textContent = `Mira watches the gate.\n<deeprole_characters>${JSON.stringify(update)}</deeprole_characters>`;
+      row.append(body); document.querySelector("#story")!.replaceChildren(row);
+    }, hidden);
+    await expect.poll(stored).toMatchObject({ state: { action: "neutral", condition: "Watching the gate" } });
+    await setPortraits(true);
+    await expect(chat.locator(".dr-character-row").filter({ hasText: "Mira" })).toContainText("Спокойствие");
+    expect(posts).toBe(3);
   } finally { await context.close(); }
 });

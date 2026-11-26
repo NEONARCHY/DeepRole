@@ -25,6 +25,8 @@ For long games, select evidence that fits the current turn and its participants,
 
 ## Project conventions
 
+- Keep one current Windows ZIP at `downloads/DeepRole-Desktop-Windows-x64.zip`. Replace it only after packaging succeeds. Retire the immediately preceding generated archive if it used an older filename.
+
 - Explain changes to the user in short, plain Russian. Do not assume coding knowledge.
 - Preserve user lore, ages, events and imported text. Interface changes do not authorize rewriting stored stories.
 - Update ROADMAP.md after each implementation iteration, distinguishing automated tests from live-account checks.

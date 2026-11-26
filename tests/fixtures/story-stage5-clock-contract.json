@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "ru-advance",
+      "story": "observatory",
+      "draft": "Дожидаюсь, пока часы в зале покажут 20:05. Когда они показывают 20:05, открываю футляр на столе.",
+      "marker": {
+        "day": 12,
+        "clock": "20:05"
+      },
+      "current": {
+        "day": 12,
+        "clock": "20:05"
+      }
+    },
+    {
+      "id": "ru-unchanged",
+      "story": "observatory",
+      "draft": "Не прерывая разговор, показываю Ульяне лист с картой и спрашиваю, что означает крестик.",
+      "marker": null,
+      "current": {
+        "day": 12,
+        "clock": "19:20"
+      }
+    },
+    {
+      "id": "ru-flashback",
+      "story": "observatory",
+      "draft": "Сыграй воспоминание Ульяны о том, как на 9-й день в 08:10 она впервые вошла в зал. Остаёмся внутри воспоминания до конца этой реплики.",
+      "marker": {
+        "day": 9,
+        "clock": "08:10",
+        "flashback": true
+      },
+      "current": {
+        "day": 12,
+        "clock": "19:20"
+      }
+    },
+    {
+      "id": "en-advance",
+      "story": "floodplain",
+      "draft": "I wait until the archive clock strikes 11:40. On the stroke, I open the case on the table.",
+      "marker": {
+        "day": 16,
+        "clock": "11:40"
+      },
+      "current": {
+        "day": 16,
+        "clock": "11:40"
+      }
+    },
+    {
+      "id": "en-relative",
+      "story": "floodplain",
+      "draft": "Three days later, I return to the archive to check whether the north gate is open.",
+      "marker": {
+        "kind": "elapsed"
+      },
+      "current": {
+        "kind": "elapsed"
+      }
+    },
+    {
+      "id": "en-unchanged",
+      "story": "floodplain",
+      "draft": "I show Iris the map without interrupting our conversation and ask what the cross means.",
+      "marker": null,
+      "current": {
+        "day": 16,
+        "part": "morning"
+      }
+    }
+  ]
+}

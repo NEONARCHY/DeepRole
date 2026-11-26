@@ -1,7 +1,7 @@
 import type { Locale } from "./types";
 import type { StoryUpdateDiagnostic } from "./story-update";
 const ru = {
-  factQuotesSkipped: "Часть записей памяти пропущена из-за неточных цитат из ответа DeepSeek. Подтверждённые изменения сохранены.",
+  factQuotesSkipped: "Часть записей памяти пропущена из-за неточных цитат из ответа модели. Подтверждённые изменения сохранены.",
   editText: "Исправить текст", saveEdit: "Сохранить правку", inactiveFact: "Вне памяти игры", inMemory: "В памяти игры",
   cancelDecision: "Отмена", confirmSave: "Подтвердить сохранение", confirmExclude: "Подтвердить исключение",
   saveFactHint: "DeepRole сможет выбирать эту запись для будущих ответов в игре.",
@@ -17,14 +17,14 @@ const ru = {
   title: "Память выбранной истории", hint: "Здесь видна принятая память и прежние ручные предложения. Можно проверить цитату, исправить или исключить факт. Новые спорные предложения находятся в «Нужно проверить». При смене варианта память следует выбранной линии.",
   event: "Случилось", promise: "Обещание — не подтверждение выполнения", plan: "План — не факт выполнения", belief: "Мнение персонажа — не доказанный факт",
   evidence: "Цитата из ответа", save: "Запомнить в этой истории", remove: "Не учитывать в памяти", saved: "Учитывается в следующих запросах", edited: "Исправлено вами", text: "Что запомнить", empty: "В выбранной линии пока нет принятой памяти или прежних ручных предложений.",
-  update: "Проверка последнего ответа", accepted: "Изменений принято: {count}", skipped: "Пропущено: {count}", partial: "Часть данных не прошла проверку. Пригодные независимые изменения сохранены; известные поля не стёрты.", rejected: "Обновление данных не прошло проверку. Сюжетный текст сохранён, карточки из этого блока не изменены.", missing: "DeepSeek не прислал обновление данных. Ответ сохранён, изменения не выдумываются.",
+  update: "Проверка последнего ответа", accepted: "Изменений принято: {count}", skipped: "Пропущено: {count}", partial: "Часть данных не прошла проверку. Пригодные независимые изменения сохранены; известные поля не стёрты.", rejected: "Обновление данных не прошло проверку. Сюжетный текст сохранён, карточки из этого блока не изменены.", missing: "Модель не прислала обновление данных. Ответ сохранён, изменения не выдумываются.",
   copy: "Скопировать безопасный отчёт", report: "Отчёт без лора и имён", copied: "Отчёт скопирован.", manualCopy: "Копирование недоступно. Выделите отчёт ниже.", technical: "Технические причины", privacy: "В отчёте только этап, счётчики, пути полей, правила и типы/длины значений. Без имён, цитат, ID чатов, текста истории и ключей API.",
   repair: "Исправить данные ответа", repairing: "Исправляем данные…", repairHint: "Один отдельный служебный запрос проверит метаданные по сохранённому тексту. Сюжет и ваша реплика не перегенерируются.", repaired: "Одноразовая коррекция завершена.", repairFailed: "Коррекция остановлена; пригодные данные и сюжет остались на месте.",
   settings: "Проверка памяти и отправки", autoRepair: "Автоматически исправлять данные ответа", autoRepairHint: "Разрешает один дополнительный служебный запрос на ответ. Запускается только без новой генерации и без черновика. Окно видимое, технический текст скрыт; запрос можно отменить.",
   strict: "Не отправлять без памяти", strictHint: "Если расширение не смогло подготовить память, отправка остановится. Повторите её самостоятельно после проверки; расширение не отправляет сообщения повторно.", blocked: "Сообщение не отправлено: память не подготовлена. Текст возвращён в поле, если оно было пустым. Проверьте мир/сейф и отправьте сами ещё раз.",
 };
 const en: Record<keyof typeof ru, string> = {
-  factQuotesSkipped: "Some memory entries were skipped because their quotes did not match the DeepSeek reply. Valid changes were saved.",
+  factQuotesSkipped: "Some memory entries were skipped because their quotes did not match the model reply. Valid changes were saved.",
   editText: "Edit text", saveEdit: "Save edit", inactiveFact: "Outside story memory", inMemory: "In story memory",
   cancelDecision: "Cancel", confirmSave: "Confirm save", confirmExclude: "Confirm exclusion",
   saveFactHint: "DeepRole can select this entry for future replies in this game.",
@@ -40,7 +40,7 @@ const en: Record<keyof typeof ru, string> = {
   title: "Memory of the selected story", hint: "Accepted memory and earlier manual proposals appear here. Check the quote, edit or exclude a fact. New uncertain proposals appear under Review needed. Memory follows the selected line when you switch replies.",
   event: "Happened", promise: "Promise — not proof of fulfillment", plan: "Plan — not proof of completion", belief: "Character’s belief — not a proven fact",
   evidence: "Quote from the reply", save: "Remember in this story", remove: "Exclude from memory", saved: "Used in future requests", edited: "Edited by you", text: "What to remember", empty: "The selected line has no accepted memory or earlier manual proposals yet.",
-  update: "Latest reply validation", accepted: "Changes accepted: {count}", skipped: "Skipped: {count}", partial: "Some data failed validation. Valid independent changes were saved; known fields were not erased.", rejected: "The metadata failed validation. The story text is saved; this block did not change character states.", missing: "DeepSeek sent no metadata update. The reply is saved; changes are not invented.",
+  update: "Latest reply validation", accepted: "Changes accepted: {count}", skipped: "Skipped: {count}", partial: "Some data failed validation. Valid independent changes were saved; known fields were not erased.", rejected: "The metadata failed validation. The story text is saved; this block did not change character states.", missing: "The model sent no metadata update. The reply is saved; changes are not invented.",
   copy: "Copy safe report", report: "Report without lore or names", copied: "Report copied.", manualCopy: "Copying is unavailable. Select the report below.", technical: "Technical reasons", privacy: "Only stage, counts, field paths, rules and value types/lengths. No names, quotes, chat IDs, story text or API keys.",
   repair: "Correct reply metadata", repairing: "Correcting metadata…", repairHint: "One separate service request checks metadata against the saved story text. It does not regenerate the story or resend your message.", repaired: "One-time correction completed.", repairFailed: "Correction stopped; valid data and the story remain unchanged.",
   settings: "Memory validation and sending", autoRepair: "Automatically correct reply metadata", autoRepairHint: "Allows one extra service request per reply. Runs only when no new reply is generating and the composer is empty. The visible window hides technical text; you can cancel the request.",

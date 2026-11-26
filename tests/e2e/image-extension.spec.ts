@@ -107,10 +107,10 @@ for (const locale of ["ru", "en"] as const) test("installed MV3 worker generates
     await expect.poll(async () => Math.abs((await suggestion.boundingBox())!.x - (await host.locator(".dr-illustration-reply").boundingBox())!.x)).toBeLessThan(1);
     const composer = chat.getByRole("textbox", { name: "Message", exact: true }); await composer.fill("UNSENT DRAFT"); await host.getByRole("button", { name: generate, exact: true }).click(); await expect(host.getByRole("alert")).toContainText(locale === "ru" ? "черновик" : "draft"); await expect(composer).toHaveValue("UNSENT DRAFT"); expect(prompts).toHaveLength(0);
     await composer.fill(""); await host.getByRole("button", { name: generate, exact: true }).click();
-    await expect(host).toContainText(locale === "ru" ? "DeepSeek готовит кадр…" : "DeepSeek is preparing the frame…");
+    await expect(host).toContainText(locale === "ru" ? "Модель готовит кадр…" : "The model is preparing the frame…");
     await expect(chat.locator(".dr-service-state")).toHaveCount(0);
     await chat.setViewportSize({ width: 360, height: 800 });
-    await expect(host).toContainText(locale === "ru" ? "DeepSeek готовит кадр…" : "DeepSeek is preparing the frame…");
+    await expect(host).toContainText(locale === "ru" ? "Модель готовит кадр…" : "The model is preparing the frame…");
     await expect(chat.locator(".dr-service-state")).toHaveCount(0);
     await chat.screenshot({ path: info.outputPath("image-preparation-" + locale + "-360.png") });
     await chat.setViewportSize({ width: 1280, height: 800 });
@@ -148,7 +148,7 @@ for (const locale of ["ru", "en"] as const) test("installed MV3 worker generates
     expect(prompts).toHaveLength(2);
     expect(await worker.evaluate(() => (globalThis as any).imageRequests.filter((r: any) => r.body).length)).toBe(2);
     await host.locator(".dr-image-error-details summary").click();
-    await expect(host.getByText(locale === "ru" ? "DeepSeek · подготовка кадра" : "DeepSeek · frame preparation", { exact: true })).toBeVisible();
+    await expect(host.getByText(locale === "ru" ? "Модель · подготовка кадра" : "The model · frame preparation", { exact: true })).toBeVisible();
     await chat.evaluate(() => { (window as any).planResponse = JSON.stringify({ scene: "At the observatory at dusk, wearing a coat.", characters: [] }); });
     await worker.evaluate(key => {
       const requests = (globalThis as any).imageRequests;

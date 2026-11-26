@@ -361,7 +361,8 @@ export default defineBackground(() => {
               const bound = turn.request ? bindCharacterTurn(turn, receipt, message.scope) : turn;
               if (!bound) throw new Error("character-conflict");
               const characterWorld = await repository.get<import("../core/types").WorldProfile>("world", message.scope.worldId);
-              await applyCharacterTurn(message.scope, bound, actionsFor(characterWorld?.characterActions ?? settings.characterActions), repository, !!turn.request, relationshipTurnEnabled(turn, receipt, message.scope, settings.relationshipsEnabled !== false), !!turn.request && receipt?.accepted === true && receipt.generatedSelfiesEnabled === true && (await getImageSettings()).enabled);
+              const portraitActionsPaused = settings.characterSpritesEnabled === false || !!turn.request && receipt?.portraitActionsPaused === true;
+              await applyCharacterTurn(message.scope, bound, actionsFor(characterWorld?.characterActions ?? settings.characterActions), repository, !!turn.request, relationshipTurnEnabled(turn, receipt, message.scope, settings.relationshipsEnabled !== false), !!turn.request && receipt?.accepted === true && receipt.generatedSelfiesEnabled === true && (await getImageSettings()).enabled, portraitActionsPaused);
               if (turn.request && receipt?.generatedSelfiesEnabled) {
                 const binding = (await repository.list<import("../core/types").ChatBinding>("binding")).find(b => b.chatId === message.scope.chatId);
                 for (const photo of binding?.scenePhotos ?? []) if (photo.generation?.status === "queued" && photo.worldId === message.scope.worldId && photo.turnKey === characterTurnKey(bound)) {

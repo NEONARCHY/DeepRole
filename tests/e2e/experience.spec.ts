@@ -6,7 +6,7 @@ test("sidebar keeps actual analysis progress and empty/error results visible", a
   await page.goto("/tests/fixtures/sidepanel.html?world=1");
   await page.getByText("Добавить или проверить память вручную", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeEnabled();
-  for (const [phase, text] of [["preparing", "Готовим запрос"], ["waiting", "DeepSeek готовит предложения"], ["empty", "Новых фактов не найдено"], ["error", "Обновление не завершилось"]] as const) {
+  for (const [phase, text] of [["preparing", "Готовим запрос"], ["waiting", "Модель готовит предложения"], ["empty", "Новых фактов не найдено"], ["error", "Обновление не завершилось"]] as const) {
     await page.evaluate((phase) => (window as any).setPageState({ activity: { phase, type: "memory-analysis" } }), phase);
     await expect(page.locator(".dr-service-state")).toContainText(text);
     if (phase === "preparing" || phase === "waiting") await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
@@ -15,7 +15,7 @@ test("sidebar keeps actual analysis progress and empty/error results visible", a
   await page.evaluate(() => (window as any).setPageState({ activity: null, generating: true }));
   await expect(page.locator(".dr-service-state")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
-  await expect(page.getByText("DeepSeek ещё отвечает", { exact: true })).toBeVisible();
+  await expect(page.getByText("Модель ещё отвечает", { exact: true })).toBeVisible();
 });
 
 for (const locale of ["ru", "en"] as const) for (const width of [320, 1280]) test(`handoff failure stays near the bottom without changing lore guidance ${locale} ${width}`, async ({ page }, info) => {
@@ -119,7 +119,7 @@ for (const locale of ["ru", "en"] as const) test(`chat context indicators do not
 test("the memory dialog shows analysis status and returns control to the chat when closed", async ({ page }) => {
   await page.goto("/tests/fixtures/page-widget.html");
   await page.evaluate(() => (window as any).setWidgetState({ canAnalyzeChat: true, activity: { phase: "waiting", type: "memory-analysis" } }));
-  await expect(page.locator(".dr-service-state")).toContainText("DeepSeek готовит предложения");
+  await expect(page.locator(".dr-service-state")).toContainText("Модель готовит предложения");
   await page.getByRole("button", { name: /^Контекст/ }).click();
   await expect(page.locator(".dr-play-tools").getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
   await page.evaluate(() => (window as any).setWidgetState({ activity: { phase: "empty", type: "memory-analysis" } }));

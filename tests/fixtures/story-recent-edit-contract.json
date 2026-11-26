@@ -1,0 +1,18 @@
+{
+  "turnCount": 18,
+  "prefixFact": "Bring tools if the road opens.",
+  "facts": [
+    { "turn": 2, "text": "Nora kept the brass ferry token.", "key": "ferry-token" },
+    { "turn": 4, "text": "Mira promised to open the western gate.", "key": "western-gate" },
+    { "turn": 9, "text": "Bell tower access closes at dusk.", "key": "bell-tower" },
+    { "turn": 18, "text": "The blue ledger is in the dry cabinet.", "key": "blue-ledger" }
+  ],
+  "cases": [
+    { "depth": 1, "turn": 18, "prefixDay": 17, "kept": ["ferry-token", "western-gate", "bell-tower"], "excluded": ["blue-ledger"] },
+    { "depth": 10, "turn": 9, "prefixDay": 8, "kept": ["ferry-token", "western-gate"], "excluded": ["bell-tower", "blue-ledger"] },
+    { "depth": 15, "turn": 4, "prefixDay": 3, "kept": ["ferry-token"], "excluded": ["western-gate", "bell-tower", "blue-ledger"] }
+  ],
+  "originalClock": "Day 18 · 09:30",
+  "alternativeClock": "Day {turn} · 18:00",
+  "alternativeFact": "The red ledger stays sealed in the station."
+}

@@ -13,6 +13,7 @@ export interface StoryDispatchCapture {
   consumeNonStoryMode?: true;
   /** First-turn request prepared before the native history was available. */
   opening?: true;
+  portraitActionsPaused?: true;
   roleRoster?: RolePerson[];
   accompaniment?: StoryAutomationCapture;
   format: "deeprole-story-dispatch";
@@ -44,6 +45,7 @@ export interface StoryDispatchCapture {
 export interface StoryDispatchCaptureInput {
   id: string; worldId: string; bindingId: string; identity: StoryTransportIdentity;
   transport: "fetch" | "xhr"; sceneRevision: string | null; originalDraft: string; proposedContext: string; opening?: true;
+  portraitActionsPaused?: true;
 }
 export interface StoryDispatchSource {
   requestId: string; identity: StoryTransportIdentity; transport: "fetch" | "xhr"; outgoingText: string;
@@ -56,9 +58,11 @@ const time = (value: unknown): value is number => typeof value === "number" && N
 const text = (value: unknown, limit: number): value is string => typeof value === "string" && value.length <= limit;
 export function validStoryDispatchCaptureInput(value: unknown): value is StoryDispatchCaptureInput {
   const opening = !!value && typeof value === "object" && Object.hasOwn(value, "opening");
-  return shape(value, ["id", "worldId", "bindingId", "identity", "transport", "sceneRevision", "originalDraft", "proposedContext", ...(opening ? ["opening"] : [])])
+  const paused = !!value && typeof value === "object" && Object.hasOwn(value, "portraitActionsPaused");
+  return shape(value, ["id", "worldId", "bindingId", "identity", "transport", "sceneRevision", "originalDraft", "proposedContext", ...(opening ? ["opening"] : []), ...(paused ? ["portraitActionsPaused"] : [])])
     && validNativeStoryId(value.id) && id(value.worldId) && id(value.bindingId) && validStoryTransportIdentity(value.identity) && transport(value.transport)
     && (!opening || value.opening === true && value.identity.nativeParentKey === null)
+    && (!paused || value.portraitActionsPaused === true)
     && (value.sceneRevision === null || id(value.sceneRevision)) && text(value.originalDraft, 100_000) && !!value.originalDraft.trim() && text(value.proposedContext, 500_000);
 }
 export function validStoryDispatchSource(value: unknown): value is StoryDispatchSource {
@@ -74,11 +78,13 @@ export function validStoryDispatchCapture(value: unknown): value is StoryDispatc
   const hasAccompaniment = !!value && typeof value === "object" && Object.hasOwn(value, "accompaniment");
   const hasRoster = !!value && typeof value === "object" && Object.hasOwn(value, "roleRoster");
   const hasOpening = !!value && typeof value === "object" && Object.hasOwn(value, "opening");
+  const hasPause = !!value && typeof value === "object" && Object.hasOwn(value, "portraitActionsPaused");
   const hasNonStoryMode = !!value && typeof value === "object" && Object.hasOwn(value, "consumeNonStoryMode");
-  if (!shape(value, ["format", "contractVersion", "id", "worldId", "bindingId", "identity", "ownerTabId", "origin", "purpose", "transport", "sceneRevision", "originalDraft", "proposedContext", "injection", "started", "delivery", "wire", "createdAt", "updatedAt", ...(hasReply ? ["reply"] : []), ...(hasBranch ? ["storyBranchId"] : []), ...(hasAccompaniment ? ["accompaniment"] : []), ...(hasRoster ? ["roleRoster"] : []), ...(hasOpening ? ["opening"] : []), ...(hasNonStoryMode ? ["consumeNonStoryMode"] : [])])
+  if (!shape(value, ["format", "contractVersion", "id", "worldId", "bindingId", "identity", "ownerTabId", "origin", "purpose", "transport", "sceneRevision", "originalDraft", "proposedContext", "injection", "started", "delivery", "wire", "createdAt", "updatedAt", ...(hasReply ? ["reply"] : []), ...(hasBranch ? ["storyBranchId"] : []), ...(hasAccompaniment ? ["accompaniment"] : []), ...(hasRoster ? ["roleRoster"] : []), ...(hasOpening ? ["opening"] : []), ...(hasNonStoryMode ? ["consumeNonStoryMode"] : []), ...(hasPause ? ["portraitActionsPaused"] : [])])
      || hasNonStoryMode && (value.consumeNonStoryMode !== true || value.purpose !== "out-of-character")
      || value.accompaniment !== undefined && !validStoryAutomationCapture(value.accompaniment)
      || value.roleRoster !== undefined && (!validRoleRoster(value.roleRoster) || value.purpose !== "user-turn")
+     || hasPause && value.portraitActionsPaused !== true
      || value.format !== "deeprole-story-dispatch" || value.contractVersion !== 1 || !(value.worldId === null || id(value.worldId))
     || !validStoryDispatchCaptureInput({ id: value.id, worldId: value.worldId ?? "detached", bindingId: value.bindingId, identity: value.identity, transport: value.transport, sceneRevision: value.sceneRevision, originalDraft: value.originalDraft, proposedContext: value.proposedContext, ...(hasOpening ? { opening: value.opening } : {}) })
     || !Number.isSafeInteger(value.ownerTabId) || (value.ownerTabId as number) < 0 || !["local", "restored"].includes(value.origin as string) || !["user-turn", "out-of-character"].includes(value.purpose as string)

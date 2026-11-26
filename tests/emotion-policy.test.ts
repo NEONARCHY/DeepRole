@@ -54,16 +54,33 @@ it.each(["normal", "service", "unbound"])("supplies off-focus personal rules and
   const imported = { ...scene, presentIds: people.map(p => p.id), states: { person8: { ...EMPTY_STATUS, action: "angry" } } };
   const prompt = characterInstruction("w", mode === "unbound" ? "" : "a", people, imported, DEFAULT_ACTIONS, [], "", "request_id", false, mode === "service");
   const rules = JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!);
-  expect(rules).toContainEqual({ id: "Person 8", allowed: DEFAULT_ACTIONS.filter(key => key !== "angry"), portraits: ["neutral"] });
+  expect(rules).toEqual({ blocked: [{ ids: ["Person 8"], actions: ["angry"] }], portraits: [{ ids: ["Person 8"], actions: ["neutral"] }] });
   expect(prompt).not.toContain('"action":"angry"');
 });
 it("does not repeat unrestricted lists or send images and local deny keys", () => {
   const normal = characterInstruction("w", "a", [{ ...entity, characterSheet: EMPTY_CHARACTER }], scene, DEFAULT_ACTIONS, [], "");
-  const rules = JSON.parse(normal.match(/Personal action rules: (.+)\n/)![1]!);
-  expect(rules).toEqual([{ id: "mira", portraits: [] }]);
+  expect(normal).not.toContain("Personal action rules:");
   expect(normal.match(/Action catalog:/g)).toHaveLength(1);
   const restricted = characterInstruction("w", "a", [entity], scene, DEFAULT_ACTIONS, [], "", "request_id");
   expect(restricted).not.toContain("data:image"); expect(restricted).not.toContain("blockedActions"); expect(restricted).not.toContain('"retired"');
+});
+it("groups identical portrait and restriction lists while preserving distinct lists", () => {
+  const people = [entity, { ...entity, id: "noah", name: "Noah" }, {
+    ...entity, id: "ines", name: "Ines", characterSheet: { ...sheet, blockedActions: [], sprites: { happy: "data:image/png;base64,AAAA" } },
+  }];
+  const prompt = characterInstruction("w", "a", people, { ...scene, presentIds: people.map(person => person.id) }, DEFAULT_ACTIONS, [], "", "request_id");
+  expect(JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!)).toEqual({
+    blocked: [{ ids: ["Mira", "Noah"], actions: ["angry"] }],
+    portraits: [{ ids: ["Mira", "Noah"], actions: ["neutral"] }, { ids: ["Ines"], actions: ["happy"] }],
+  });
+});
+it("omits actions from hidden portrait instructions, known state and legacy schema", () => {
+  const hidden = characterInstruction("w", "a", [entity], scene, DEFAULT_ACTIONS, [], "", "request_id", false, false, false, undefined, true);
+  expect(hidden).toContain("Omit state.action");
+  expect(hidden).toContain("Current profiles/state:");
+  for (const forbidden of ["Action catalog:", "Personal action rules:", "Player avatar:", '"action":']) expect(hidden).not.toContain(forbidden);
+  const schema = hidden.match(/Schema: (.+)\n/)![1]!;
+  expect(parseCharacterTurn(`<deeprole_characters>${schema}</deeprole_characters>`, true)?.updates).toHaveLength(1);
 });
 it("accepts other fields when the model violates the rule, without deleting portraits or other chats", async () => {
   const repo = await setup(); await applyCharacterTurn(scope, turn(), DEFAULT_ACTIONS, repo);

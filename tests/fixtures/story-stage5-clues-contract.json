@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "turns": 12,
+  "cases": [
+    {
+      "id": "north-gate",
+      "locale": "en",
+      "clues": [
+        {
+          "turn": 1,
+          "text": "The brass key opens the north gate.",
+          "terms": [
+            "brass key",
+            "north gate"
+          ]
+        },
+        {
+          "turn": 3,
+          "text": "The depot manifest lists a false delivery address.",
+          "terms": [
+            "manifest",
+            "false delivery address"
+          ]
+        }
+      ],
+      "filler": "The survey continues past door {turn}.",
+      "control": "The keeper pulled up a sleeve."
+    },
+    {
+      "id": "signal-box",
+      "locale": "ru",
+      "clues": [
+        {
+          "turn": 1,
+          "text": "Бронзовая табличка указывает номер запасного отсека: 37.",
+          "terms": [
+            "бронзов",
+            "37"
+          ]
+        },
+        {
+          "turn": 3,
+          "text": "Красный флажок разрешает открыть шлюз только после проверки воды.",
+          "terms": [
+            "красный флажок",
+            "после проверки воды"
+          ]
+        }
+      ],
+      "filler": "Смотритель идёт дальше вдоль окна {turn}.",
+      "control": "Смотритель поправил рукав."
+    },
+    {
+      "id": "workshop-lock",
+      "locale": "en",
+      "clues": [
+        {
+          "turn": 1,
+          "text": "The silver seal carries a backwards letter V.",
+          "terms": [
+            "silver seal",
+            "backwards letter V"
+          ]
+        },
+        {
+          "turn": 3,
+          "text": "The spare ledger is hidden under the false drawer bottom.",
+          "terms": [
+            "spare ledger",
+            "false drawer bottom"
+          ]
+        }
+      ],
+      "filler": "The keeper walks past bench {turn}.",
+      "control": "The keeper adjusted her sleeve."
+    }
+  ]
+}

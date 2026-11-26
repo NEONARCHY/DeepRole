@@ -1,3 +1,4 @@
+import { IS_DESKTOP } from "./chat-host";
 import type { Locale } from "./types";
 
 /** Presentation only. Never used to authorize a request, reply or cleanup. */
@@ -15,8 +16,8 @@ export const fieldServiceScreenCopy = (locale: Locale) => ({
    title: "Подготовка поля", request: "Задача", response: "Ход подготовки", generic: "Подготовь поле персонажа",
   brief: (field: string, name: string) => `Сгенерируй описание поля «${field}» персонажа «${name}»`,
   hint: "Можно свернуть это окно, но не закрывать. После очистки оно закроется, а текст появится в карточке персонажа.",
-  privacy: "Технический запрос, ответ и размышления скрыты в этом окне.", cancel: "Отменить запрос", reveal: "Открыть интерфейс DeepSeek",
-  review: "Автоматическая очистка не подтверждена. Можно открыть DeepSeek и проверить временный чат вручную — технические данные станут видны.",
+  privacy: "Технический запрос, ответ и размышления скрыты в этом окне.", cancel: "Отменить запрос", reveal: (IS_DESKTOP ? "Открыть служебный чат" : "Открыть интерфейс DeepSeek"),
+  review: "Проверьте временный чат вручную. В нём будут видны технические данные.",
   failed: "Запрос остановлен. Подробности доступны в карточке персонажа и диагностике палочек.",
   stages: { opening: "Открываем служебный чат", preparing: "Подготавливаем выдержки и запрос", reading: "Передаём выдержки", sending: "Отправляем запрос", waiting: "Ожидаем ответ", thinking: "Размышляю", generating: "Генерирую описание", validating: "Проверяем ответ", repairing: "Исправляем формат ответа", cleanup: "Удаляем временный чат", done: "Готово", failed: "Подготовка остановлена", "cleanup-failed": "Нужна проверка временного чата" },
  },
@@ -24,8 +25,8 @@ export const fieldServiceScreenCopy = (locale: Locale) => ({
    title: "Preparing a field", request: "Task", response: "Progress", generic: "Prepare a character field",
   brief: (field: string, name: string) => `Generate a description for “${field}” for the character “${name}”`,
   hint: "You can minimize this window, but do not close it. It will close after cleanup, and the text will appear in the character profile.",
-  privacy: "The technical request, reply and reasoning are hidden in this window.", cancel: "Cancel request", reveal: "Open DeepSeek interface",
-  review: "Automatic cleanup is not confirmed. You can open DeepSeek and check the temporary chat manually — the technical content will become visible.",
+  privacy: "The technical request, reply and reasoning are hidden in this window.", cancel: "Cancel request", reveal: (IS_DESKTOP ? "Open service chat" : "Open DeepSeek interface"),
+  review: (IS_DESKTOP ? "Check the temporary chat manually. It will show the technical content." : "Automatic cleanup is not confirmed. You can open DeepSeek and check the temporary chat manually — the technical content will become visible."),
   failed: "The request stopped. Details are available in the character profile and wand diagnostics.",
   stages: { opening: "Opening the service chat", preparing: "Preparing excerpts and the request", reading: "Sending excerpts", sending: "Sending the request", waiting: "Waiting for a reply", thinking: "Thinking", generating: "Generating the description", validating: "Checking the reply", repairing: "Correcting the reply format", cleanup: "Deleting the temporary chat", done: "Done", failed: "Preparation stopped", "cleanup-failed": "Check the temporary chat" },
  },
@@ -34,9 +35,9 @@ export const fieldServiceScreenCopy = (locale: Locale) => ({
 export function profileServiceScreenCopy(locale: Locale) {
  const base = fieldServiceScreenCopy(locale);
  return locale === "ru" ? { ...base, title: "Подготовка анкеты", generic: "Подготовь анкету персонажа", brief: (_field: string, name: string) => `Подготовь анкету персонажа «${name}»`,
-  hint: "Можно свернуть окно, но не закрывать. После очистки оно закроется, а варианты появятся в расширении для проверки. Анкета не принимается автоматически.", stages: { ...base.stages, generating: "Генерируем анкету", done: "Анкета готова к проверке" },
+  hint: "Можно свернуть окно, но не закрывать. После очистки оно закроется, а варианты появятся в DeepRole для проверки. Анкета не принимается автоматически.", stages: { ...base.stages, generating: "Генерируем анкету", done: "Анкета готова к проверке" },
  } : { ...base, title: "Preparing a profile", generic: "Prepare a character profile", brief: (_field: string, name: string) => `Prepare a profile for “${name}”`,
-  hint: "You can minimize this window, but do not close it. It will close after cleanup, and suggestions will appear in the extension for review. The profile is not accepted automatically.", stages: { ...base.stages, generating: "Generating the profile", done: "Profile ready for review" },
+  hint: "You can minimize this window, but do not close it. It will close after cleanup, and suggestions will appear in DeepRole for review. The profile is not accepted automatically.", stages: { ...base.stages, generating: "Generating the profile", done: "Profile ready for review" },
  };
 }
 export function repairServiceScreenCopy(locale: Locale) {
@@ -52,8 +53,8 @@ export function discoveryServiceScreenCopy(locale: Locale) {
 
 export function memoryServiceScreenCopy(locale: Locale) {
  const base = fieldServiceScreenCopy(locale);
- return locale === "ru" ? { ...base, title: "Проверка памяти", generic: "Проверь новые сыгранные сцены", brief: (_field: string, _name: string) => "Проверь новые сыгранные сцены и дополни память", hint: "Это отдельный запрос DeepSeek. Можно свернуть окно, но не закрывать: после проверки и очистки оно закроется. Пригодные сведения сохранятся, спорные появятся в «Нужно проверить».", failed: "Разбор остановлен. Прежняя память сохранена; повтор доступен в разделе «История».", stages: { ...base.stages, reading: "Читаем новые сцены", generating: "Проверяем события и персонажей", done: "Память проверена" } }
- : { ...base, title: "Checking memory", generic: "Review new played scenes", brief: (_field: string, _name: string) => "Review new played scenes and fill memory gaps", hint: "This is an extra DeepSeek request. You can minimize the window, but do not close it; it closes after validation and cleanup. Suitable details are saved; uncertain proposals appear under Review needed.", failed: "Analysis stopped. Existing memory is kept; retry in Story.", stages: { ...base.stages, reading: "Reading new scenes", generating: "Checking events and characters", done: "Memory reviewed" } };
+ return locale === "ru" ? { ...base, title: "Проверка памяти", generic: "Проверь новые сыгранные сцены", brief: (_field: string, _name: string) => "Проверь новые сыгранные сцены и дополни память", hint: "Это отдельный запрос моделью. Можно свернуть окно, но не закрывать: после проверки и очистки оно закроется. Пригодные сведения сохранятся, спорные появятся в «Нужно проверить».", failed: "Разбор остановлен. Прежняя память сохранена; повтор доступен в разделе «История».", stages: { ...base.stages, reading: "Читаем новые сцены", generating: "Проверяем события и персонажей", done: "Память проверена" } }
+ : { ...base, title: "Checking memory", generic: "Review new played scenes", brief: (_field: string, _name: string) => "Review new played scenes and fill memory gaps", hint: "This is an extra model request. You can minimize the window, but do not close it; it closes after validation and cleanup. Suitable details are saved; uncertain proposals appear under Review needed.", failed: "Analysis stopped. Existing memory is kept; retry in Story.", stages: { ...base.stages, reading: "Reading new scenes", generating: "Checking events and characters", done: "Memory reviewed" } };
 }
 
 /** The same surface, without field/name or per-profile promises for a roster. */

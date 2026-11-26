@@ -75,9 +75,45 @@ it("missing metadata can propose exact-quoted facts but cannot create an untrack
   expect((await f.scene()).presentIds).toEqual(previous); expect(await f.repo.list("entity")).toHaveLength(f.entities.length);
   const page = await readStoryReview({ chatId: f.binding.chatId, worldId: f.world.id, cursor: null }, f.repo); expect(page.facts).toHaveLength(1); expect(page.facts![0]!.accepted).toBe(false);
 });
+it("recovers a wrapped fact batch without accepting unsupported quotes or replacing the original reply", async () => {
+  const f = await setup(true), brief = await f.prepare();
+  const template = JSON.parse(f.body({}));
+  expect(brief.prompt).toContain(JSON.stringify(template));
+  expect(brief.prompt).not.toContain("Append ONE deeprole_characters");
+  const facts = [
+    { text: "Мира ищет медный ключ", kind: "plan", quote: "Её цель — найти медный ключ." },
+    { text: "Мира нашла ключ", kind: "event", quote: "Мира нашла ключ." },
+  ];
+  const record = { ...template.data, id: "person-1", name: "Мира", facts };
+  const wrapped = (chat: string) => JSON.stringify({ requestId: f.requestId, data: { deeprole_characters: [{ ...record, chat }] } });
+  await expect(applyStoryRepair(brief, wrapped("another-chat"), DEFAULT_SETTINGS, f.repo)).rejects.toThrow("invalid-result");
+  await applyStoryRepair(brief, wrapped(f.binding.chatId), DEFAULT_SETTINGS, f.repo);
+  const page = await readStoryReview({ chatId: f.binding.chatId, worldId: f.world.id, cursor: null }, f.repo);
+  expect(page.repair?.status).toBe("done");
+  expect(page.facts).toHaveLength(1);
+  expect(page.facts![0]).toMatchObject({ accepted: false });
+  const source = (await f.repo.get<StoryRevision>("story", f.input.revisionId))!;
+  expect(source.content).toBe(f.content);
+});
 it("cancellation is durable and never authorizes a new model attempt", async () => {
   const f = await setup(); await f.prepare(); await finishStoryRepair(f.input, f.requestId, "failed", f.repo);
   await expect(f.prepare()).rejects.toThrow("stale-step");
+});
+it("recovers the pose of a known participant with no earlier scene state", async () => {
+  const f = await setup(true);
+  const brief = await f.prepare();
+  expect(brief.prompt).toContain("Action catalog:");
+  expect(brief.prompt).toContain("Current scene:");
+  await applyStoryRepair(brief, f.body({ present: ["person-1", "person-3"], updates: [{ id: "person-3", state: { action: "sitting" } }] }), DEFAULT_SETTINGS, f.repo);
+  expect((await f.scene()).states["person-3"]?.action).toBe("sitting");
+});
+it("keeps the saved pose when a repair sent with hidden portraits completes after re-enabling", async () => {
+  const f = await setup(true);
+  const brief = await prepareStoryRepair(f.input, f.requestId, f.repo, { ...DEFAULT_SETTINGS, characterSpritesEnabled: false });
+  expect(brief.prompt).toContain("Omit state.action");
+  expect(brief.prompt).not.toMatch(/Action catalog:|Personal action rules:|"action":/u);
+  await applyStoryRepair(brief, f.body({ updates: [{ id: "person-1", state: { action: "happy", goal: "Find the key" } }] }), DEFAULT_SETTINGS, f.repo);
+  expect((await f.scene()).states["person-1"]).toMatchObject({ action: "neutral", goal: "Find the key" });
 });
 async function coordinator() {
   const f = await setup(), tabs = new Map<number, any>([[1, { id: 1, active: true, url: f.binding.chatUrl }]]);

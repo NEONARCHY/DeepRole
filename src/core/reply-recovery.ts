@@ -65,7 +65,7 @@ export function replyRecoveryText(locale: Locale) {
     restored: "Восстановлено", unsaved: "Восстановлено · не сохранено",
     sent: "Восстановлено · контекст передан",
     detail: "Локальная копия может быть неполной. Фрагмент будет добавлен к следующему обычному сообщению в этом чате; служебные запросы его не расходуют. Передаётся до 64 000 последних символов. Исходный ответ на сервере не переписывается.",
-    sentDetail: "Фрагмент передан вместе с вашим сообщением. Исходный ответ на сервере не переписан; понимание и продолжение зависят от DeepSeek.",
+    sentDetail: "Фрагмент передан вместе с вашим сообщением. Исходный ответ на сервере не переписан; понимание и продолжение зависят от модели.",
     saveFailed: "Ответ восстановлен на странице, но локальную копию сохранить не удалось.",
   } : {
     title: "Reply recovery", toggle: "Automatically restore hidden replies",
@@ -73,7 +73,7 @@ export function replyRecoveryText(locale: Locale) {
     restored: "Restored", unsaved: "Restored · not saved",
     sent: "Restored · context sent",
     detail: "The local copy may be incomplete. Its fragment will accompany your next ordinary message in this chat; service requests do not consume it. Up to the final 64,000 characters are sent. The original server reply is not rewritten.",
-    sentDetail: "The fragment was sent with your message. The original server reply is not rewritten; understanding and continuation depend on DeepSeek.",
+    sentDetail: "The fragment was sent with your message. The original server reply is not rewritten; understanding and continuation depend in the chat.",
     saveFailed: "The reply was restored on this page, but its local copy could not be saved.",
   };
 }

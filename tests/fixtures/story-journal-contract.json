@@ -1,0 +1,55 @@
+{
+  "specifiedOn": "2026-11-26",
+  "scenarios": [
+    {
+      "name": "Шлюз и запасной ключ",
+      "turnCount": 192,
+      "roster": [
+        { "id": "mira", "name": "Мира", "aliases": [] },
+        { "id": "timur", "name": "Тимур", "aliases": [] },
+        { "id": "ines", "name": "Инес", "aliases": [] }
+      ],
+      "filler": "Мира сказала, что она встала утром.",
+      "candidates": [
+        { "id": "key", "order": 181, "kind": "event", "text": "Мира сказала Тимуру: «Запасной ключ от шлюза лежит в синей коробке»." },
+        { "id": "wake-with-purpose", "order": 71, "kind": "event", "text": "Мира встала утром, чтобы открыть шлюз до прилива." },
+        { "id": "promise", "order": 19, "kind": "promise", "text": "Тимур обещал Мире: «Принесу к шлюзу ручной фонарь»." },
+        { "id": "other-promise", "order": 125, "kind": "promise", "text": "Тимур обещал Инес: «Верну ручной фонарь с красной биркой»." },
+        { "id": "legacy-meaningful", "order": null, "kind": "event", "text": "Старые ворота открывает медная печать." },
+        { "id": "legacy-routine", "order": null, "kind": "event", "text": "Мира встала утром." }
+      ],
+      "expected": {
+        "importantOrder": ["promise", "wake-with-purpose", "other-promise", "key", "legacy-meaningful"],
+        "allOrder": ["promise", "wake-with-purpose", "other-promise", "key", "legacy-meaningful", "legacy-routine"],
+        "people": { "promise": ["mira", "timur"], "wake-with-purpose": [], "other-promise": ["ines", "timur"], "key": ["mira", "timur"], "legacy-meaningful": [], "legacy-routine": [] },
+        "personViews": { "mira": ["promise", "key"], "timur": ["promise", "other-promise", "key"], "ines": ["other-promise"] },
+        "replacement": { "target": "key", "text": "Мира сказала Тимуру: «Запасной ключ от шлюза лежит в медном ларце»." }
+      }
+    },
+    {
+      "name": "The ferry signal and its witnesses",
+      "turnCount": 216,
+      "roster": [
+        { "id": "emma", "name": "Emma", "aliases": [] },
+        { "id": "ines", "name": "Ines", "aliases": [] },
+        { "id": "lucas", "name": "Lucas", "aliases": [] }
+      ],
+      "filler": "Emma said she woke up in the morning.",
+      "candidates": [
+        { "id": "signal", "order": 206, "kind": "event", "text": "Emma told Ines: “The ferry leaves when the violet light goes out.”" },
+        { "id": "precise-wake", "order": 96, "kind": "event", "text": "Emma woke up at 04:17 and saw the ferry approaching." },
+        { "id": "other-promise", "order": 73, "kind": "promise", "text": "Lucas promised to Ines: “I will bring the duplicate permit.”" },
+        { "id": "promise", "order": 31, "kind": "promise", "text": "Emma promised to Ines: “I will bring the original permit.”" },
+        { "id": "legacy-meaningful", "order": null, "kind": "event", "text": "The customs ledger uses the old pier number." },
+        { "id": "legacy-routine", "order": null, "kind": "event", "text": "Emma got out of bed." }
+      ],
+      "expected": {
+        "importantOrder": ["promise", "other-promise", "precise-wake", "signal", "legacy-meaningful"],
+        "allOrder": ["promise", "other-promise", "precise-wake", "signal", "legacy-meaningful", "legacy-routine"],
+        "people": { "promise": ["emma", "ines"], "other-promise": ["ines", "lucas"], "precise-wake": [], "signal": ["emma", "ines"], "legacy-meaningful": [], "legacy-routine": [] },
+        "personViews": { "emma": ["promise", "signal"], "ines": ["promise", "other-promise", "signal"], "lucas": ["other-promise"] },
+        "replacement": { "target": "signal", "text": "Emma told Ines: “The ferry leaves when the violet light begins to blink.”" }
+      }
+    }
+  ]
+}

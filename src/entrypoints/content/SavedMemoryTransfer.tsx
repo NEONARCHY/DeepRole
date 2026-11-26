@@ -1,6 +1,6 @@
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { History } from "lucide-react";
+import { ArrowLeft, ChevronRight, History, ListChecks } from "lucide-react";
 import { isBackgroundBuildFailure, savedMemoryText, type SavedMemoryPreview } from "../../core/saved-memory-continuation";
 import type { Locale, WorldProfile } from "../../core/types";
 import { PageMemoryDialog } from "./PageMemoryDialog";
@@ -26,6 +26,7 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   const [chooseMethod, setChooseMethod] = useState(false);
   const [preview, setPreview] = useState<SavedMemoryPreview>(), [error, setError] = useState("");
+  const [updated, setUpdated] = useState(false);
   const [world, setWorld] = useState<WorldOption>();
   const chooseBetweenWorlds = (worlds?.length ?? 0) > 1;
   const singleGame = !review && quickResume && worlds?.length === 1 && onPreview && onOpen ? worlds[0] : undefined;
@@ -33,6 +34,7 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
   const secondary = actionClassName ? "button secondary" : "dr-meter-transfer";
   const primary = actionClassName ? "button primary" : "dr-meter-transfer";
   const running = useRef(false), stepHeading = useRef<HTMLElement>(null);
+  const updatedNotice = useRef<HTMLParagraphElement>(null);
   const setStepHeading = (element: HTMLElement | null) => { stepHeading.current = element; };
   const previousOpenSignal = useRef(openSignal);
   useLayoutEffect(() => {
@@ -41,10 +43,11 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
     if (review && !running.current) { setChooseMethod(true); setOpen(true); }
   }, [openSignal, review]);
   useLayoutEffect(() => { if (open) stepHeading.current?.focus({ preventScroll: true }); }, [world, open, chooseMethod]);
+  useLayoutEffect(() => { if (open && updated && !chooseMethod) updatedNotice.current?.focus(); }, [open, updated, chooseMethod]);
 
   async function run(action: () => Promise<void>) {
     if (running.current || disabled) return;
-    running.current = true; setBusy(true); setError("");
+    running.current = true; setBusy(true); setError(""); setUpdated(false);
     try { await action(); }
     catch (e) {
       const code = e instanceof Error ? e.message : "";
@@ -70,17 +73,18 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
       setOpen(false);
     } catch (cause) {
       if (!(cause instanceof Error) || cause.message !== "handoff-stale") throw cause;
-      // Only refresh the preview. A different save needs its own confirmation.
-      choose(selected);
+      // Keep the previous excerpt visible until its replacement is available.
+      const latest = await onPreview(selected?.id);
+      setWorld(selected);
+      setPreview(latest);
+      setUpdated(true);
       setOpen(true);
-      setPreview(await onPreview(selected?.id));
-      setError(t.updated);
     }
   }
   const choosing = !!worlds && !world;
   const confirmation = !chooseMethod && !choosing && <button type="button" className={`${primary} dr-saved-memory-action`} disabled={savedDisabled || !preview} onClick={() => {
     if (preview) void run(() => confirm(preview, world));
-  }}>{worlds ? t.connect : t.open}</button>;
+  }}>{updated ? t.openUpdated : worlds ? t.connect : t.open}</button>;
 
   function startSaved() {
     setChooseMethod(false);
@@ -109,25 +113,48 @@ export function SavedMemoryTransfer({ locale, disabled, worlds, quickResume, act
       if (!running.current) { setOpen(false); setError(""); }
     }}>
       <div className="dr-saved-memory-review" aria-busy={busy}>
-        {review && !chooseMethod && <button type="button" className={`${secondary} dr-saved-memory-action`} disabled={busy} onClick={() => setChooseMethod(true)}>{picker.back}</button>}
+        {review && !chooseMethod && <button type="button" className="dr-continuation-back" disabled={busy} onClick={() => setChooseMethod(true)}>
+          <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" />{picker.back}
+        </button>}
         {review && chooseMethod ? <div className="dr-continuation-methods">
           <p ref={setStepHeading} tabIndex={-1}>{picker.intro}</p>
-          <div><button type="button" className={`${primary} dr-saved-memory-action`} aria-describedby={id + "-review"} disabled={review.disabled || busy} onClick={() => {
-            setOpen(false); review.onStart();
-          }}>{picker.review}</button><p id={id + "-review"}>{review.disabled ? picker.reviewUnavailable : picker.reviewDetail}</p></div>
-          <div><button type="button" className={`${secondary} dr-saved-memory-action`} aria-describedby={id + "-saved"} disabled={savedDisabled} onClick={startSaved}>{picker.saved}</button><p id={id + "-saved"}>{savedDisabled ? picker.savedUnavailable : picker.savedDetail}</p></div>
+          {[
+            { key: "review", Icon: ListChecks, title: picker.review, detail: review.disabled ? picker.reviewUnavailable : picker.reviewDetail,
+              firstTurn: picker.reviewFirstTurn, disabled: review.disabled || busy, select: () => { setOpen(false); review.onStart(); } },
+            { key: "saved", Icon: History, title: picker.saved, detail: savedDisabled ? picker.savedUnavailable : picker.savedDetail,
+              firstTurn: picker.savedFirstTurn, disabled: savedDisabled, select: startSaved },
+          ].map(({ key, Icon, title, detail, firstTurn, disabled, select }) => <button key={key} type="button"
+            className="dr-continuation-option" disabled={disabled} onClick={select}
+            aria-labelledby={id + "-" + key + "-title"} aria-describedby={id + "-" + key + "-description"}>
+            <Icon size={16} strokeWidth={1.5} aria-hidden="true" />
+            <span className="dr-continuation-option-copy">
+              <strong id={id + "-" + key + "-title"}>{title}</strong>
+              <span id={id + "-" + key + "-description"} className="dr-continuation-option-description">
+                <span>{detail}</span>
+                {!disabled && <strong>{firstTurn}</strong>}
+              </span>
+            </span>
+            <ChevronRight size={16} strokeWidth={1.5} aria-hidden="true" />
+          </button>)}
         </div> : choosing ? <div className="dr-saved-memory-review">
           <strong ref={setStepHeading} tabIndex={-1}>{t.chooseWorld}</strong>
           {worlds.map(item => <button type="button" key={item.id} className={`${secondary} dr-saved-memory-action`} disabled={disabled || busy} onClick={() => void loadPreview(item)}>{item.name}</button>)}
-        </div> : <>
-          {world && <strong ref={setStepHeading} tabIndex={-1}>{world.name}</strong>}
-          <p ref={world ? undefined : setStepHeading} tabIndex={world ? undefined : -1}>{worlds ? t.homeHint : t.hint}</p>
+        </div> : <div className="dr-saved-memory-preview" ref={setStepHeading} tabIndex={-1}>
+          {world && <strong>{world.name}</strong>}
           {error && <p role="alert">{error}</p>}
+          {updated && <p className="dr-saved-memory-updated" ref={updatedNotice} tabIndex={-1} role="status">{t.updated}</p>}
           {busy && !preview && <p role="status">{t.loading}</p>}
           {error && !preview && <button type="button" className={`${secondary} dr-saved-memory-action`} disabled={disabled || busy} onClick={() => void loadPreview(world)}>{t.retry}</button>}
           {world && chooseBetweenWorlds && <button type="button" className={`${secondary} dr-saved-memory-action`} disabled={busy} onClick={() => choose()}>{t.changeWorld}</button>}
-          {preview?.scene ? <><strong>{t.last}</strong>{preview.savedAt !== null && <time dateTime={new Date(preview.savedAt).toISOString()}>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(preview.savedAt)}</time>}<blockquote>{preview.scene}</blockquote></> : preview && <p>{t.empty}</p>}
-        </>}
+          {preview?.scene ? <figure className="dr-saved-scene">
+            <figcaption>
+              <strong>{t.last}</strong>
+              {preview.savedAt !== null && <time dateTime={new Date(preview.savedAt).toISOString()}>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(preview.savedAt)}</time>}
+            </figcaption>
+            <blockquote>{preview.scene}</blockquote>
+          </figure> : preview && <p>{t.empty}</p>}
+          <p className="dr-saved-memory-hint">{worlds ? t.homeHint : t.hint}</p>
+        </div>}
       </div>
     </PageMemoryDialog>
   </>;

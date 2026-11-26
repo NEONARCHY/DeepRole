@@ -22,7 +22,7 @@ for (const locale of ["ru", "en"] as const) test(`request a reviewed permanent c
   await section.click();
   const instruction = locale === "ru" ? "У Миры теперь чёрные волосы" : "Mira now has black hair";
   await dialog.getByPlaceholder(locale === "ru" ? "Например: теперь у Элис чёрные волосы вместо рыжих" : "For example: Alice now has black hair instead of red hair").fill(instruction);
-  await dialog.getByRole("button", { name: locale === "ru" ? "Попросить DeepSeek" : "Ask DeepSeek", exact: true }).click();
+  await dialog.getByRole("button", { name: locale === "ru" ? "Попросить модель" : "Ask the model", exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).factRequest)).toEqual({ entityId: "mira", brief: instruction });
   await expect(dialog).toBeHidden();
 });
@@ -39,7 +39,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   await settings.getByText(locale === "ru" ? "Редактировать списком" : "Edit as a list", { exact: true }).click();
   await expect(settings.locator("textarea")).toBeVisible();
   await expect(settings.getByRole("checkbox")).toHaveCount(2);
-  const actions = ["neutral", ...Array.from({ length: 31 }, (_, i) => `action-${i}`)];
+  const actions = ["neutral", ...Array.from({ length: 37 }, (_, i) => `action-${i}`)];
   const saveActions = settings.getByRole("button", { name: locale === "ru" ? "Сохранить действия" : "Save actions", exact: true });
   await settings.locator("textarea").fill(actions.join("\n")); await saveActions.click();
   await expect(settings.getByRole("alert")).toHaveCount(0);
@@ -53,7 +53,7 @@ for (const locale of ["ru", "en"] as const) test(`character settings in the real
   await openSettingsSection(page,"characters",locale);
   await expect(settings.locator("textarea")).toHaveValue([locale === "ru" ? "Спокойствие" : "Calm", ...actions.slice(1)].join("\n"));
   await settings.locator("textarea").fill([...actions, "extra"].join("\n")); await saveActions.click();
-  await expect(settings.getByRole("alert")).toContainText("32");
+  await expect(settings.getByRole("alert")).toContainText("38");
   await settings.locator("textarea").fill(actions.join("\n")); await saveActions.click();
   expect((await new AxeBuilder({ page }).include(".dr-character-settings").withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -76,7 +76,7 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 360, 760, 
     const dialog = page.getByRole("dialog"); await expect(dialog).toBeVisible();
     const bounds = await dialog.boundingBox(); expect(bounds!.x).toBeGreaterThan(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width); expect(bounds!.height).toBeLessThan(850);
     await expect(dialog.getByLabel(locale === "ru" ? "Имя" : "Name", { exact: true })).toBeFocused();
-    await dialog.getByLabel(locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", { exact: true }).fill("Green coat");
+    await dialog.getByRole("textbox", { name: locale === "ru" ? "Внешность и одежда" : "Appearance and clothing", exact: true }).fill("Green coat");
     await characterTab(dialog, "scene", locale);
     await dialog.getByLabel(locale === "ru" ? "Ближайшая цель" : "Current goal", { exact: true }).fill("Find the key");
     await characterTab(dialog, "images", locale);
@@ -133,7 +133,7 @@ test("upload fallback, failed save keeps draft, custom actions validation", asyn
   await expect(dialog.getByRole("alert")).toContainText("Couldn’t reach storage"); await expect(dialog.getByLabel("Name", { exact: true })).toHaveValue("Mira edited");
   await page.evaluate(() => { (window as any).rejectSave = false; }); await dialog.getByRole("button", { name: "Save character" }).click(); await closeSavedCharacter(dialog);
   await page.getByText("Edit as a list", { exact: true }).click();
-  await page.getByLabel("Portrait actions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save actions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep neutral");
+  await page.getByLabel("Portrait actions", { exact: true }).fill("happy"); await page.getByRole("button", { name: "Save actions" }).click(); await expect(page.getByRole("alert")).toContainText("Keep Calm");
   await page.getByLabel("Portrait actions", { exact: true }).fill("neutral\nFocused"); await page.getByRole("button", { name: "Save actions" }).click();
   expect(await page.evaluate(() => (window as any).settings.characterActions)).toEqual(["neutral", "Focused"]);
 });

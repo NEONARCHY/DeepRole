@@ -9,11 +9,12 @@ import { storyProfileEntities, appendProfileText, PROFILE_TEXT_FIELDS } from "..
 import { compactStoryFacts, isWholeStoryFactStatement, type StoryFact } from "../core/story-update";
 import { sameStoryValue } from "../core/story-value";
 import type { StoryDispatchCapture } from "../core/story-dispatch-capture";
-import { automationMode, factAutomationReason, inlineStoryPeople, normalizedFact, literalEvidence, sensitiveStoryText, conflictingStoryText, type AutomationReason, type StoryAutomationDecision, automationReviews } from "../core/story-automation";
+import { automationMode, factAutomationReason, inlineStoryPeople, normalizedFact, literalEvidence, sensitiveStoryText, conflictingStoryText, type AutomationReason, type StoryAutomationDecision, automationReviews, playedTaskCompletion } from "../core/story-automation";
 import { storyEffectsAt } from "./story-effect-replay";
 import { storyFactIdentity } from "../core/story-memory-lifecycle";
 import { bindStoryRoles } from "../core/story-role-binding";
 import { attendanceTask, playedAttendanceGoal } from "../core/story-attendance-goal";
+import { isStandaloneRoutineStoryFact } from "../core/story-memory-admission";
 
 /** One completed reply is one bounded portion. Stored events are the durable work
  * receipt, and the existing selected-line replay owns every resulting effect. */
@@ -36,6 +37,7 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
   const held = stored.filter((e): e is StoryEvent => e.type === "event" && (selected.revisionIds.includes(e.revisionId) || reviews.pending.includes(e.id) || reviews.resolutions[e.id] === "dismissed") && (e.automation?.status === "review" || e.automation?.status === "dismissed" || reviews.resolutions[e.id] === "dismissed"));
   const protectedTexts = all.flatMap(r => r.kind === "entry" && (r.data as import("../core/types").MemoryEntry).worldId === world.id && (r.data as import("../core/types").MemoryEntry).enabled ? [(r.data as import("../core/types").MemoryEntry).content] : []).concat(people.flatMap(p => p.characterSheet ? PROFILE_TEXT_FIELDS.map(k => p.characterSheet![k]).filter(Boolean) : []));
   const origin = batch?.source ?? source;
+  const multipleClosures = new Set(facts.flatMap(f => f.task && f.task.status !== "open" ? [f.task.key] : [])).size > 1;
   const addedSources = new Map<string,StoryRevision>();
   let historicalSources: Map<string,StoryRevision> | undefined;
   const sourceOf = (fact:StoryFact) => {
@@ -78,9 +80,13 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
     const fact = match ? { ...proposal,task:match.task } : repeated ? {...proposal,task:repeated.task} : proposal;
     const comparable = match && !match.plan.task ? [...previous,{...match.plan,task:attendanceTask(match.plan)}] : previous;
     const reason = factAutomationReason(fact, original?.risk, comparable, protectedTexts);
+    if ((reason === "new" || reason === "duplicate") && original?.risk === "ordinary" && !fact.task
+      && isStandaloneRoutineStoryFact(proposed, origin.content)) continue;
     const uncertainVisit = !match && reason === "new" && fact.task?.status === "completed"
       && previous.some(f=>f.task?.key === fact.task!.key && attendanceTask(f));
-    const automation = decision(uncertainVisit ? "uncertain" : reason);
+    const uncertainJointOutcome = multipleClosures && reason === "new" && fact.task && fact.task.status !== "open"
+      && !match && !playedTaskCompletion(fact, origin, previous, sourceOf);
+    const automation = decision(uncertainVisit || uncertainJointOutcome ? "uncertain" : reason);
     if (held.some(e => e.memory && (storyFactIdentity(e.memory) === storyFactIdentity(fact) || storyFactIdentity(e.memory) === storyFactIdentity(proposal)))) continue;
     const event: StoryEvent = { ...common, id: createId("event"), ordinal: ordinal++, label: "Memory proposal", quote: fact.quote, participantIds: [], changes: [], memory: fact, memoryRoles: bindStoryRoles(fact,batch?.source??source), ...(world.storyAutomation ? { automation } : {}) };
     result.push(storyRow(event));

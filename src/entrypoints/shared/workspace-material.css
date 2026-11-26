@@ -33,7 +33,7 @@
 }
 
 /* The hover light stays inside the face with a diffuse exterior shadow. */
-:is(.dr-feedback-button, .desktop-dialog, .desktop-model, .desktop-chat-menu, .desktop-empty button, .desktop-dialog footer button,
+:is(.dr-feedback-button, .desktop-dialog, .desktop-chat-menu, .desktop-empty button, .desktop-dialog footer button,
     .app-shell :is(.button:not(.ghost, .dr-round-action), .modal),
     .dr-root :is(.button:not(.dr-round-action), .dr-panel-tools-dialog, .dr-menu-drawer),
     .dr-memory-dialog, .dr-export-dialog, .photo-dialog, .photo-controls button:not(.dr-round-action), .dr-choice-action) {
@@ -46,7 +46,7 @@
 }
 
 /* Apply the gradient edge to dedicated controls and floating surfaces. */
-:is(.dr-feedback-button, .desktop-dialog, .desktop-model, .desktop-chat-menu, .desktop-empty button, .desktop-dialog footer button,
+:is(.dr-feedback-button, .desktop-dialog, .desktop-chat-menu, .desktop-empty button, .desktop-dialog footer button,
     html:root .app-shell :is(.button.primary:not(.danger, .danger-button, .dr-round-action), .modal),
     .dr-root :is(.button.primary:not(.danger, .danger-button, .dr-round-action), .dr-panel-tools-dialog),
     .dr-memory-dialog, .dr-export-dialog, .photo-dialog, .photo-controls button:not(.dr-round-action), .dr-choice-action) {
@@ -66,7 +66,8 @@
   --dr-material-shadow: var(--dr-depth-dialog);
 }
 
-:is(.desktop-send.desktop-primary, .app-shell .button.primary, .dr-root .button.primary, .desktop-dialog footer .desktop-primary) {
+:is(.desktop-send.desktop-primary, .app-shell .button.primary, .dr-root .button.primary,
+    .desktop-empty .desktop-primary, .desktop-dialog footer .desktop-primary) {
   --dr-material-face: var(--dr-action);
   color: var(--dr-on-action);
 }
@@ -75,14 +76,14 @@
   --dr-material-face: var(--dr-danger-soft);
   color: var(--dr-danger);
 }
-:is(.dr-feedback-button, .desktop-model, .desktop-empty button, .desktop-dialog footer button, .app-shell .button:not(.ghost, .dr-round-action),
+:is(.dr-feedback-button, .desktop-empty button, .desktop-dialog footer button, .app-shell .button:not(.ghost, .dr-round-action),
     .dr-root .button:not(.dr-round-action), .photo-controls button:not(.dr-round-action), .dr-choice-action):focus-visible {
   --dr-glint: 1;
   --dr-material-shadow: var(--dr-hover-shadow);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :is(.dr-feedback-button, .desktop-model, .desktop-empty button, .desktop-dialog footer button, .app-shell .button:not(.ghost, .dr-round-action),
+  :is(.dr-feedback-button, .desktop-empty button, .desktop-dialog footer button, .app-shell .button:not(.ghost, .dr-round-action),
       .dr-root .button:not(.dr-round-action), .photo-controls button:not(.dr-round-action), .dr-choice-action):hover:where(:not(:disabled, [aria-disabled=true])) {
     --dr-glint: 1;
     --dr-material-shadow: var(--dr-hover-shadow);

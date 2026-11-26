@@ -47,7 +47,8 @@ test("installed portrait constructor preserves multi-speaker scenes, lore and ch
     await chat.evaluate(() => fetch("/api/v0/chat/completion", { method: "POST", body: JSON.stringify({ prompt: 'Noah says: "I found the key." Leon addresses Noah. Mira stays beside the guard.' }) }));
     expect(schema.partners).toEqual([]); expect(prompts[0]).toContain("A change of addressee is not a departure"); expect(prompts[0]).not.toContain("portraitLayouts");
     expect(schema.updates[0]).toEqual({ id: "Noah", name: "Noah", state });
-    expect(JSON.parse(prompts[0]!.match(/Player avatar: (.+)\n/)![1]!)).toEqual({ id: "Noah", portraitActions: ["neutral", "Разговаривает"] });
+    expect(JSON.parse(prompts[0]!.match(/Player avatar: (.+)\n/)![1]!)).toEqual({ id: "Noah" });
+    expect(JSON.parse(prompts[0]!.match(/Personal action rules: (.+)\n/)![1]!).portraits).toContainEqual({ ids: ["Noah"], actions: ["neutral", "Разговаривает"] });
     const payload = { request: schema.request, present: people.map(p => p.name), partners: ["Leon"], updates: [{ id: "Noah", name: "Noah", state: { ...state, action: "Разговаривает" } }, { id: "Leon", name: "Leon", state: { ...state, action: "worried" } }] };
     await append(payload); await expect(chat.locator(".dr-character-status")).toHaveText("Updated after reply");
     await expect(mira.locator("img")).toHaveAttribute("src", variations[1]!);

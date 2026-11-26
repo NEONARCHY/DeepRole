@@ -8,6 +8,7 @@ import { validMergePage, type MergeAction } from "../core/story-character-merge"
 import { validCharacterDiscoveryPage, type CharacterDiscoveryAction } from "../core/story-character-discovery";
 type DiscoveryMessage = ({ type: "DR_CHARACTER_DISCOVERY" } & CharacterDiscoveryAction) | ({ type: "DR_STORY_IDENTITIES" } & IdentityAction) | ({ type: "DR_STORY_MERGE" } & MergeAction);
 import { validSupplementPage, type SupplementAction } from "../core/profile-supplements";
+import type { StoryFactApproval } from "../storage/story-facts";
 type SupplementMessage = { type: "DR_STORY_PROFILE" } & SupplementAction;
 export interface StoryReviewTabs {
   query(query: { active: boolean; currentWindow: boolean }): Promise<{ id?: number; url?: string }[]>;
@@ -58,9 +59,14 @@ export async function runActiveStoryGame(tabs: StoryReviewTabs, operation: "star
   return data;
 }
 export async function approveActiveStoryFact(tabs: StoryReviewTabs, page: StoryReviewPage, eventId: string, text: string, accept: boolean) {
+  if (!page.guard || !validStoryReviewPage(page)) throw Error("story-binding-conflict");
+  return changeActiveStoryFact(tabs, { chatId: page.chatId, worldId: page.worldId, guard: page.guard, eventId, text, accept });
+}
+export async function changeActiveStoryFact(tabs: StoryReviewTabs, input: StoryFactApproval) {
+  input = structuredClone(input);
   const before = await active(tabs);
-  if (!page.guard || !validStoryReviewPage(page) || !isSameDeepSeekChat(before.url, before.url, page.chatId)) throw Error("story-binding-conflict");
-  result(await tabs.sendMessage(before.tabId, { type: "DR_STORY_FACT", input: { chatId: page.chatId, worldId: page.worldId, guard: page.guard, eventId, text, accept } }));
+  if (!isSameDeepSeekChat(before.url, before.url, input.chatId)) throw Error("story-binding-conflict");
+  result(await tabs.sendMessage(before.tabId, { type: "DR_STORY_FACT", input }));
   sameTab(before, await active(tabs));
 }
 export async function repairActiveStory(tabs: StoryReviewTabs, page: StoryReviewPage) {

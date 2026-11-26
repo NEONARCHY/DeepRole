@@ -13,7 +13,7 @@ const ru={
  budgetScope:"Для мира «{name}». Сохраняется для его продолжений.",
  budgetSave:"Сохранить лимит", budgetSaving:"Сохраняем…",
  budgetSuggest:"Подставить {count} токенов",
- budgetHelp:"От 500 до 16 000. Больше памяти — длиннее запрос. Это бюджет добавляемой памяти, а не размер контекста DeepSeek.",
+ budgetHelp:"От 500 до 16 000. Больше памяти — длиннее запрос. Это бюджет добавляемой памяти, а не размер контекста модели.",
  budgetSaved:"Лимит сохранён. Подбор памяти пересчитан для следующего сообщения.",
  budgetFailed:"Не удалось сохранить лимит. Попробуйте ещё раз.",
  budgetConflict:"Мир или лимит изменился. Проверьте актуальное значение перед сохранением.",
@@ -27,7 +27,7 @@ const ru={
  query:"Доступные сведения подготовлены, но полнота подбора для этой формулировки не подтверждена. Проверяйте смысл по исходным записям.",
  capacity:"Найденный набор превышает защитный предел одной передачи. Полнота прежнего подбора не подтверждена.",
  notApplicable:"Проверка полного важного набора для этого сообщения не выполнялась.",
- preview:"Это подготовка к следующему сообщению, не подтверждение отправки или использования памяти DeepSeek. Проверяется найденный набор для поддержанной формулировки, а не вся история.",
+ preview:"Это подготовка к следующему сообщению, не подтверждение отправки или использования памяти моделью. Проверяется найденный набор для поддержанной формулировки, а не вся история.",
 };
 const en:Record<keyof typeof ru,string>={
  incompleteTitle:"Memory coverage for this turn is unverified",
@@ -43,7 +43,7 @@ const en:Record<keyof typeof ru,string>={
  budgetScope:"For “{name}”. Kept when continuing this world.",
  budgetSave:"Save budget", budgetSaving:"Saving…",
  budgetSuggest:"Use {count} tokens",
- budgetHelp:"500–16,000. More memory means a longer request. This limits added memory, not DeepSeek’s context window.",
+ budgetHelp:"500–16,000. More memory means a longer request. This limits added memory, not the model’s context window.",
  budgetSaved:"Budget saved. Memory selection recalculated for your next message.",
  budgetFailed:"Could not save the budget. Try again.",
  budgetConflict:"The world or budget changed. Check the current value before saving.",
@@ -57,6 +57,6 @@ const en:Record<keyof typeof ru,string>={
  query:"Available records are prepared, but selection completeness is unverified for this wording. Check their meaning against the original records.",
  capacity:"The identified set exceeds the safety bound for one transfer. Completeness of the previous selection is unverified.",
  notApplicable:"The complete important set was not checked for this message.",
- preview:"This prepares your next message; it does not confirm delivery or DeepSeek using the memory. The check covers the identified set for supported wording, not your entire history.",
+ preview:"This prepares your next message; it does not confirm delivery or the model using the memory. The check covers the identified set for supported wording, not your entire history.",
 };
 export const gameMemoryCoverageText=(locale:Locale)=>locale==="ru"?ru:en;

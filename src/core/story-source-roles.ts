@@ -3,6 +3,7 @@ import type { StoryRetrievalScope } from "./story-retrieval-query";
 import { retrievalNames, isPersonalStoryReference } from "./story-retrieval-query";
 import { normalizeText } from "./text";
 import { storyOwnerQuestion } from "./story-owner-query";
+import type { SceneEntity } from "./types";
 
 export interface SourcePerson { id: string; name: string; sourceName?: string; sourceId?: string; unavailable?: true }
 export type OwnerRole = "promisor" | "planner" | "believer";
@@ -49,11 +50,28 @@ export function createStoryRoleReader(scope: StoryRetrievalScope, draft = "", st
 /** Stored binding version 1 pins this grammar and its name normalization rules.
  * Future grammar changes require a new version, not reinterpretation of old IDs. */
 export function createStoryRoleReaderV1(scope: StoryRetrievalScope, draft = "", stored?: (fact: StoryFact) => StorySourceRoles | null | undefined): StoryRoleReader {
+  return createBoundStoryRoleReader(scope, draft, stored);
+}
+
+/** Only the recipient slot can use these additional forms. */
+export function dativeRecipientNames(entity: SceneEntity): string[] {
+  return retrievalNames(entity, false)
+    .filter(name => /^[а-я]{2,}[бвгджзклмнпрстфхцчшщ]$/u.test(name))
+    .map(name => name + "у");
+}
+
+export const createStoryRoleReaderV2 = (scope: StoryRetrievalScope) => createBoundStoryRoleReader(scope, "", undefined, true);
+
+function createBoundStoryRoleReader(scope: StoryRetrievalScope, draft: string, stored?: (fact: StoryFact) => StorySourceRoles | null | undefined, extendedRecipients = false): StoryRoleReader {
   const people = new Map(scope.entities.filter(e => e.kind === "character" && e.worldId === scope.worldId).map(e => [e.id, { id: e.id, name: e.name }]));
-  const subjects: Names = new Map(), all: Names = new Map();
+  const subjects: Names = new Map(), all: Names = new Map(), recipients: Names = new Map();
   for (const person of scope.entities) if (person.kind === "character" && people.has(person.id) && person.worldId === scope.worldId) {
     for (const name of retrievalNames(person, false)) add(subjects, name, person.id);
-    for (const name of retrievalNames(person)) add(all, name, person.id);
+    for (const name of retrievalNames(person)) {
+      add(all, name, person.id);
+      if (extendedRecipients) add(recipients, name, person.id);
+    }
+    if (extendedRecipients) for (const name of dativeRecipientNames(person)) add(recipients, name, person.id);
   }
   const ordered = (names: Names) => [...names.keys()].sort((a,b) => b.length - a.length);
   const subjectKeys = ordered(subjects), allKeys = ordered(all);
@@ -69,6 +87,10 @@ export function createStoryRoleReaderV1(scope: StoryRetrievalScope, draft = "", 
   };
   const recipient = (text: string, english: boolean) => {
     const value = english ? text.replace(/^to /u, "") : text;
+    if (extendedRecipients && !english) {
+      const ids = recipients.get(value);
+      return ids?.size === 1 ? people.get([...ids][0]!) : undefined;
+    }
     const found = nameAtStart(value, allKeys);
     // Exact header only: "Bob's sister" / "мать Миры" is not Bob/Mira.
     return found?.person && !found.rest ? found.person : undefined;

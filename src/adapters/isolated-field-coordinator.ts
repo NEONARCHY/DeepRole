@@ -261,7 +261,7 @@ export class IsolatedFieldCoordinator {
     await this.flushPending().catch(() => undefined);
     if ((await this.owners()).some(o => !o.cleanup)) throw Error("busy");
     const id = "repair_" + crypto.randomUUID(), input = structuredClone(message.input);
-    const brief = await prepareStoryRepair(input, id, this.repo), settings = await this.settings(), createdAt = Date.now();
+     const settings = await this.settings(), brief = await prepareStoryRepair(input, id, this.repo, settings), createdAt = Date.now();
     try { await beginRepairServiceOperation({ id, worldId: input.worldId, sourceChatId: input.chatId, createdAt }, this.repo); }
     catch { await finishStoryRepair(input, id, "failed", this.repo).catch(() => undefined); throw Error("interrupted"); }
     let worker: import("wxt/browser").Browser.tabs.Tab | undefined;

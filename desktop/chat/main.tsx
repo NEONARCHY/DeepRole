@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { ArrowUp, BarChart3, BookOpen, BookOpenText, Check, ChevronLeft, ChevronRight, CircleAlert, Copy, Ellipsis, Gamepad2, KeyRound, MessageCircle, Moon, PanelLeft, PanelLeftClose, Pencil, Plus, RotateCcw, Square, Sun, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, BookOpen, BookOpenText, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Copy, Ellipsis, Gamepad2, KeyRound, LoaderCircle, Moon, PanelLeft, Pencil, Plus, RotateCcw, Settings2, Square, Sun, X } from "lucide-react";
 import content from "../../src/entrypoints/content";
 import { getSettings } from "../../src/storage/settings";
 import { storyReplyProse } from "../../src/core/story-update";
 import { browser, desktop } from "../runtime/browser";
 import { ProviderDialog, type ModelSettings } from "./ProviderDialog";
 import { UsageDialog } from "./UsageDialog";
-import { DialogueText } from "./DialogueText";
+import { DialogueText, replyFormatting } from "./DialogueText";
 import { currencyName, type SpendingNotice } from "./SpendingSettings";
 import { useComposerEffects } from "./message-effects";
-import { activeChat, chatEndpoint, chatUrl, emptyChat, request, selectedLine, sendNative, type Chat, type ChatInfo, type Turn } from "./native";
+import { animateDock, useNativeDialog } from "./motion";
+import { activeChat, chatEndpoint, chatUrl, emptyChat, request, chatTranscript, sendNative, type Chat, type ChatInfo, type Turn } from "./native";
 import "./styles.css";
 import "./play-tools.css";
 
@@ -19,8 +20,30 @@ const initialView = new URLSearchParams(location.search);
 const worker = initialView.has("deeprole_cast_job") || initialView.has("deeprole_field_job");
 const darkTheme = window.matchMedia("(prefers-color-scheme: dark)");
 const wideHistory = window.matchMedia("(min-width: 751px)");
+const readingWidth = 720;
+// The reading column stays centered. A panel uses its side only if the gutter
+// can fit its minimum width and the space next to the reading column.
+function panelRoom(frameWidth: number) {
+  const gutter = (frameWidth - readingWidth) / 2;
+  return { game: gutter >= 224, library: gutter >= 336 };
+}
+
+function firstVisibleTurn(transcript: HTMLElement, top: number) {
+  const turns = transcript.children;
+  let start = 0;
+  let end = turns.length;
+  while (start < end) {
+    const middle = Math.floor((start + end) / 2);
+    if (turns[middle]!.getBoundingClientRect().bottom <= top + 1) start = middle + 1;
+    else end = middle;
+  }
+  return turns.item(start);
+}
 const historyPreference = "deeprole.desktop.historyCollapsed";
 const gamePreference = "deeprole.desktop.gameCollapsed";
+const requestDuration = (ms: number, locale: string) => ms < 1000
+  ? ms.toLocaleString(locale, { style: "unit", unit: "millisecond" })
+  : (ms / 1000).toLocaleString(locale, { style: "unit", unit: "second", maximumFractionDigits: 2 });
 const ruErrors: Record<string, string> = {
   "model-unconfigured": "Настройте подключение текстовой модели.",
   "model-key-needed": "Добавьте ключ API в настройках модели.",
@@ -47,13 +70,44 @@ const enErrors: Record<string, string> = {
 };
 const clipProse = (text: string) => storyReplyProse(text).replace(/<deeprole(?:_[a-z]*)?$/u, "");
 const serviceDraft = (text: string) => text.trimStart().startsWith("[DeepRole Service]");
+const distanceToLatest = (view: HTMLElement) => view.scrollHeight - view.scrollTop - view.clientHeight;
+const followDistance = 80;
+type ComposerDraft = { text: string; edited?: number; errorCode?: string };
+type ComposerEdit = { turnId: number; nextDraft: string };
+const messageActions = {
+  ru: { copy: "Копировать", copied: "Скопировано", copyFailed: "Не удалось скопировать", edit: "Редактировать", regenerate: "Другой ответ", previous: "Предыдущий ответ", next: "Следующий ответ" },
+  en: { copy: "Copy", copied: "Copied", copyFailed: "Could not copy", edit: "Edit", regenerate: "Regenerate", previous: "Previous reply", next: "Next reply" },
+};
+const replyStatusText = {
+  ru: { waiting: "Ждём ответ", reasoning: "Модель размышляет", receiving: "Получаем ответ", stopping: "Останавливаем ответ", stop: "Остановить ответ" },
+  en: { waiting: "Waiting for reply", reasoning: "Model is reasoning", receiving: "Receiving reply", stopping: "Stopping reply", stop: "Stop generation" },
+};
 
-function Reply({ turn, partial, animate, service }: { turn: Turn; partial: boolean; animate: boolean; service: boolean }) {
+function Reply({ turn, partial, animate, service, formatting }: {
+  turn: Turn; partial: boolean; animate: boolean; service: boolean; formatting: ReturnType<typeof replyFormatting>;
+}) {
   const text = partial ? clipProse(turn.text) : turn.text;
   return <>
     {!!turn.reasoning && <details className="ds-think-content desktop-reasoning"><summary>{document.documentElement.lang === "ru" ? "Размышления" : "Reasoning"}</summary><p>{turn.reasoning}</p></details>}
-    <div className="ds-markdown desktop-story-text">{service ? text : <DialogueText text={text} animate={animate} protectTransport />}</div>
+    <div className="ds-markdown desktop-story-text">{service ? text : <DialogueText text={text} animate={animate} story formatting={formatting} />}</div>
   </>;
+}
+
+function DeleteChatDialog({ ru, onCancel, onDelete }: { ru: boolean; onCancel: () => void; onDelete: () => Promise<boolean> }) {
+  const { modal, dismiss } = useNativeDialog();
+  const [deleting, setDeleting] = useState(false);
+  const cancel = () => { if (!deleting) dismiss(onCancel); };
+  async function confirm() {
+    setDeleting(true);
+    if (await onDelete()) dismiss(onCancel);
+    else setDeleting(false);
+  }
+  return <dialog ref={modal} className="desktop-dialog" data-window-motion aria-labelledby="desktop-delete-title"
+    onCancel={event => { event.preventDefault(); cancel(); }}>
+    <header><h2 id="desktop-delete-title">{ru ? "Удалить чат?" : "Delete chat?"}</h2></header>
+    <p>{ru ? "Переписка будет удалена с этого устройства. Лор мира сохранится." : "The conversation will be removed from this device. World lore stays saved."}</p>
+    <footer><button type="button" disabled={deleting} onClick={cancel}>{ru ? "Отмена" : "Cancel"}</button><button type="button" disabled={deleting} className="desktop-danger" onClick={() => void confirm()}>{ru ? "Удалить чат" : "Delete chat"}</button></footer>
+  </dialog>;
 }
 
 function App() {
@@ -67,47 +121,99 @@ function App() {
   const [usageOpen, setUsageOpen] = useState(false);
   const [spending, setSpending] = useState<SpendingNotice[]>([]);
   const [libraryPhase, setLibraryPhase] = useState<"closed" | "open" | "closing">("closed");
+  const [libraryEntry, setLibraryEntry] = useState<"library" | "settings" | "worlds">("library");
   const [overlay, setOverlay] = useState<"history" | "game" | null>(null);
   const [historyDocked, setHistoryDocked] = useState(wideHistory.matches);
-  const [gameDocked, setGameDocked] = useState(false);
+  const [sidePanels, setSidePanels] = useState(() => panelRoom(0));
+  const { game: gameDocked, library: libraryDocked } = sidePanels;
   const [historyCollapsed, setHistoryCollapsed] = useState(() => localStorage.getItem(historyPreference) === "true");
   const [gameCollapsed, setGameCollapsed] = useState(() => localStorage.getItem(gamePreference) === "true");
   const [dark, setDark] = useState(darkTheme.matches);
   const [menu, setMenu] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState<string>();
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [requestKind, setRequestKind] = useState<"story" | "service">();
+  const [stopping, setStopping] = useState(false);
+  const busy = requestKind !== undefined;
   const [draft, setDraft] = useState("");
-  const [edit, setEdit] = useState<number>();
+  const [edit, setEdit] = useState<ComposerEdit>();
   const [pending, setPending] = useState<Turn[]>();
-  const [copied, setCopied] = useState<number>();
+  const [outgoingText, setOutgoingText] = useState("");
+  const [unsent, setUnsent] = useState<ComposerDraft[]>([]);
+  const [copyFeedback, setCopyFeedback] = useState<{ chatId: string; turnId: number; result: "copied" | "copyFailed" }>();
+  const [readingHistory, setReadingHistory] = useState(false);
   const composer = useRef<HTMLTextAreaElement>(null);
+  const modelOpener = useRef<HTMLElement | null>(null);
   const composerEffects = useComposerEffects(composer, !worker);
   const arrivingTurn = useRef<{ user: number; assistant: number } | undefined>(undefined);
   const viewport = useRef<HTMLDivElement>(null);
+  const transcript = useRef<HTMLDivElement>(null);
   const task = useRef<ReturnType<typeof sendNative> | undefined>(undefined);
+  const selectingReply = useRef(false);
   const follow = useRef(true);
   const box = useRef<HTMLFormElement>(null);
   const library = useRef<HTMLElement>(null);
   const libraryFrame = useRef<HTMLIFrameElement>(null);
+  const libraryOpener = useRef<HTMLButtonElement>(null);
+  const libraryIntent = useRef<{ open: boolean; entry: "library" | "settings" | "worlds" }>({ open: false, entry: "library" });
   const chatFrame = useRef<HTMLElement>(null);
   const historyToggle = useRef<HTMLButtonElement>(null);
   const historyClose = useRef<HTMLButtonElement>(null);
+  const chatMenuTrigger = useRef<HTMLButtonElement>(null);
   const panelsToggle = useRef<HTMLButtonElement>(null);
   const panelsClose = useRef<HTMLButtonElement>(null);
   const panelsShell = useRef<HTMLElement>(null);
+  const measureSidePanels = useCallback((width: number) => {
+    const next = panelRoom(width);
+    setSidePanels(old => old.game === next.game && old.library === next.library ? old : next);
+  }, []);
+  const changeDock = useCallback((update: () => void) => animateDock(() => {
+    const view = viewport.current;
+    const top = view?.getBoundingClientRect().top ?? 0;
+    const anchor = !follow.current && view && transcript.current
+      ? firstVisibleTurn(transcript.current, top) : undefined;
+    const before = anchor?.getBoundingClientRect().top;
+    flushSync(update);
+    const frame = chatFrame.current;
+    if (frame && !worker) flushSync(() => measureSidePanels(frame.clientWidth));
+    if (view && follow.current) view.scrollTop = view.scrollHeight;
+    else if (view && anchor?.isConnected && before !== undefined) view.scrollTop += anchor.getBoundingClientRect().top - before;
+  }), [measureSidePanels]);
   const libraryOpen = libraryPhase === "open";
-  const setLibraryOpen = useCallback((open: boolean) => {
-    if (open) setOverlay(null);
+  const libraryOverlay = libraryOpen && !libraryDocked;
+  const setLibraryOpen = useCallback((open: boolean, entry = libraryIntent.current.entry) => {
+    libraryIntent.current = { open, entry };
+    if (open) {
+      setOverlay(null);
+      setLibraryEntry(entry);
+    }
     setLibraryPhase(phase => open ? "open" : phase === "open" ? "closing" : phase);
   }, []);
+  const closeLibrary = useCallback(() => {
+    setLibraryOpen(false);
+    requestAnimationFrame(() => {
+      const opener = libraryOpener.current;
+      if (opener?.getClientRects().length && !opener.closest("[inert]")) opener.focus({ preventScroll: true });
+      else if (opener?.closest("#desktop-play-tools")) panelsToggle.current?.focus({ preventScroll: true });
+      else historyToggle.current?.focus({ preventScroll: true });
+    });
+  }, [setLibraryOpen]);
+  function openLibrary(entry: "library" | "settings", opener: HTMLButtonElement) {
+    const { open, entry: target } = libraryIntent.current;
+    if (open && (target === "settings") === (entry === "settings")) { closeLibrary(); return; }
+    libraryOpener.current = opener;
+    setLibraryOpen(true, entry);
+  }
   const overlayHistory = !historyDocked && overlay === "history";
   const overlayPanels = !gameDocked && overlay === "game";
   const historyOpen = worker || (historyDocked ? !historyCollapsed : overlayHistory);
   const panelsOpen = !worker && (gameDocked ? !gameCollapsed : overlayPanels);
+  useEffect(() => {
+    window.dispatchEvent(new Event("deeprole-layout-change"));
+  }, [panelsOpen, gameDocked, libraryOpen, libraryDocked]);
   const historyLabel = historyOpen ? ru ? "Скрыть список чатов" : "Hide chats" : ru ? "Открыть список чатов" : "Open chats";
   const closeHistory = () => {
-    if (historyDocked) setHistoryCollapsed(true);
+    if (historyDocked) changeDock(() => setHistoryCollapsed(true));
     else setOverlay(null);
     setMenu(undefined);
     requestAnimationFrame(() => historyToggle.current?.focus());
@@ -118,7 +224,42 @@ function App() {
     panelsToggle.current?.focus();
   }, [gameDocked]);
   const providerNeeded = provider && !provider.hasKey && !provider.baseUrl.startsWith("http:");
-  const line = selectedLine(chat);
+  const modelConfigured = !!provider && !providerNeeded;
+  const style = provider?.replyStyle ?? "";
+  const formatting = useMemo(() => replyFormatting(style), [style]);
+  const { line, byId, variants: replyVariants } = useMemo(() => chatTranscript(chat), [chat]);
+  const actions = messageActions[locale];
+  const currentCopy = copyFeedback?.chatId === chat.id ? copyFeedback : undefined;
+  const setFollowing = useCallback((next: boolean) => {
+    if (follow.current === next) return;
+    follow.current = next;
+    setReadingHistory(!next);
+  }, []);
+
+  function jumpToLatest() {
+    setFollowing(true);
+    const view = viewport.current;
+    if (view && distanceToLatest(view) > 1) view.scrollTop = view.scrollHeight;
+  }
+
+  function openModel(opener: HTMLElement | null) {
+    if (!provider || busy) return;
+    modelOpener.current = opener;
+    setModelOpen(true);
+  }
+
+  function closeModel(saved?: ModelSettings) {
+    if (saved) {
+      setProvider(saved);
+      setError("");
+    }
+    setModelOpen(false);
+    requestAnimationFrame(() => {
+      const opener = modelOpener.current;
+      const focus = saved && providerNeeded ? composer.current : opener?.isConnected ? opener : composer.current;
+      focus?.focus({ preventScroll: true });
+    });
+  }
 
   const refreshList = useCallback(async () => setList(await request<ChatInfo[]>("/__desktop/chats")), []);
   const refreshSpending = useCallback(() => {
@@ -148,7 +289,13 @@ function App() {
       .catch(() => setError("chat-unavailable")).finally(() => setLoading(false));
     const update = () => void refreshSettings().catch(() => undefined);
     const onMessage = (event: MessageEvent) => {
-      if (event.source === libraryFrame.current?.contentWindow && event.origin === location.origin && event.data?.source === "deeprole-menu" && event.data?.type === "CLOSE") setLibraryOpen(false);
+      if (event.source !== libraryFrame.current?.contentWindow || event.origin !== location.origin || event.data?.source !== "deeprole-menu") return;
+      if (event.data.type === "CLOSE") closeLibrary();
+      if (event.data.type === "MODEL_SETTINGS") {
+        modelOpener.current = libraryFrame.current;
+        setModelOpen(true);
+      }
+      if (event.data.type === "USAGE") setUsageOpen(true);
     };
     const onBridge = (event: MessageEvent) => {
       if (event.origin !== location.origin || event.data?.source !== "deeprole-page-bridge") return;
@@ -158,7 +305,7 @@ function App() {
     window.addEventListener("message", onMessage);
     window.addEventListener("message", onBridge);
     return () => { browser.storage.onChanged.removeListener(update); window.removeEventListener("message", onMessage); window.removeEventListener("message", onBridge); };
-  }, [refreshList, refreshSettings, setLibraryOpen]);
+  }, [refreshList, refreshSettings, closeLibrary]);
   useEffect(() => {
     if (libraryPhase !== "closing") return;
     let cancelled = false;
@@ -182,13 +329,12 @@ function App() {
   }, []);
   useEffect(() => {
     if (!chatFrame.current || worker) return;
-    // Leave about 620px for the chat even with the full game column.
     const observer = new ResizeObserver(([entry]) => {
-      if (entry) setGameDocked(entry.contentRect.width >= 904);
+      if (entry) measureSidePanels(entry.contentRect.width);
     });
     observer.observe(chatFrame.current);
     return () => observer.disconnect();
-  }, []);
+  }, [measureSidePanels]);
   useEffect(() => {
     setOverlay(current => (current === "history" && historyDocked) || (current === "game" && gameDocked) ? null : current);
   }, [historyDocked, gameDocked]);
@@ -207,7 +353,10 @@ function App() {
     return () => panel?.removeEventListener("keydown", escape);
   }, [closePanels]);
   useEffect(() => {
-    const openWorlds = () => setLibraryOpen(true);
+    const openWorlds = (event: Event) => {
+      libraryOpener.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+      setLibraryOpen(true, event instanceof CustomEvent && event.detail === "worlds" ? "worlds" : "library");
+    };
     window.addEventListener("deeprole-desktop-open-library", openWorlds);
     return () => window.removeEventListener("deeprole-desktop-open-library", openWorlds);
   }, [setLibraryOpen]);
@@ -217,8 +366,25 @@ function App() {
     }
   }, [chat.title]);
   useEffect(() => {
-    if (follow.current && viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
-  }, [chat.head, pending, historyOpen, panelsOpen, libraryPhase, draft]);
+    const view = viewport.current;
+    const text = transcript.current;
+    if (!view || !text) return;
+    const update = () => {
+      const distance = distanceToLatest(view);
+      if (follow.current && distance > 1) view.scrollTop = view.scrollHeight;
+      else if (distance < followDistance) setFollowing(true);
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(view);
+    observer.observe(text);
+    update();
+    return () => observer.disconnect();
+  }, [setFollowing]);
+  useEffect(() => {
+    if (!copyFeedback) return;
+    const timeout = window.setTimeout(() => setCopyFeedback(undefined), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [copyFeedback]);
 
   function updateDraft(value: string) {
     if (composer.current) {
@@ -228,17 +394,63 @@ function App() {
     setDraft(value);
   }
 
-  function submit(text = composer.current?.value ?? "", edited = edit) {
-    if (!text.trim() || task.current || loading) return;
+  function beginEdit(turn: Turn) {
+    if (selectingReply.current || task.current) return;
+    if (edit?.turnId !== turn.id) {
+      const current = composer.current?.value ?? draft;
+      if (edit && current.trim() && current !== byId.get(edit.turnId)?.visible) {
+        setUnsent(previous => [...previous, { text: current, edited: edit.turnId }]);
+      }
+      setEdit({ turnId: turn.id, nextDraft: edit?.nextDraft ?? current });
+      updateDraft(turn.visible);
+    }
+    composer.current?.focus();
+  }
+
+  function cancelEdit() {
+    if (!edit || selectingReply.current) return;
+    setEdit(undefined);
+    updateDraft(edit.nextDraft);
+    composer.current?.focus();
+  }
+
+  const queuedDraft = unsent[0];
+  const canRestoreDraft = !busy && (!draft || (!edit && queuedDraft?.edited !== undefined));
+  function recoverDraft(queued: ComposerDraft) {
+    if (selectingReply.current) return;
+    if (!canRestoreDraft) {
+      void navigator.clipboard.writeText(queued.text).catch(() => undefined);
+      return;
+    }
+    setEdit(queued.edited === undefined ? undefined : { turnId: queued.edited, nextDraft: composer.current?.value ?? draft });
+    updateDraft(queued.text);
+    setUnsent(previous => previous.slice(1));
+    if (queued.errorCode) setError(current => current === queued.errorCode ? "" : current);
+    composer.current?.focus();
+  }
+
+  function submit(text: string, edited: number | undefined, fromComposer = false) {
+    if (!text.trim() || task.current || selectingReply.current || loading) return;
+    const service = worker || serviceDraft(text);
+    if (!service && !modelConfigured) {
+      openModel(fromComposer ? composer.current : document.activeElement as HTMLElement | null);
+      return;
+    }
     const id = chat.id || crypto.randomUUID();
-    const original = chat.messages.find(message => message.id === edited);
+    const original = edited === undefined ? undefined : byId.get(edited);
     let frameTurns: Turn[] | undefined;
     let frameId = 0;
     const syncFrame = () => {
       frameId = 0;
       if (frameTurns) setPending(frameTurns.map(turn => ({ ...turn })));
     };
-    setBusy(true); setError(""); follow.current = true;
+    setRequestKind(service ? "service" : "story");
+    setError(""); jumpToLatest();
+    if (fromComposer) {
+      updateDraft(edit?.nextDraft ?? "");
+      setEdit(undefined);
+      if (!service) setOutgoingText(text.length > 2000 ? text.slice(0, 2000) + "…" : text);
+    }
     if (!activeChat()) {
       // Publish the empty local chat before the first request. The shared
       // controller can then bind the world and record the first turn at root.
@@ -247,7 +459,7 @@ function App() {
     }
     const sent = sendNative(id, text, chat.head, edited, (name, payload) => {
       if (name === "ready" && payload.request_message_id && payload.response_message_id) {
-        arrivingTurn.current = worker || serviceDraft(text) ? undefined : { user: payload.request_message_id, assistant: payload.response_message_id };
+        arrivingTurn.current = service ? undefined : { user: payload.request_message_id, assistant: payload.response_message_id };
         frameTurns = [
           { id: payload.request_message_id, parent: original ? original.parent : chat.head, role: "user", text, visible: text },
           { id: payload.response_message_id, parent: payload.request_message_id, role: "assistant", text: "", visible: "", reasoning: "" },
@@ -262,16 +474,27 @@ function App() {
     });
     task.current = sent;
     void sent.promise.then(async () => {
-      await readChat(id);
-      if (composer.current?.value === text) updateDraft("");
-      setEdit(undefined);
-      void refreshList().catch(() => undefined);
-    }).catch(failure => {
-      if (failure.message !== "model-stopped") setError(failure.message);
+      try {
+        const saved = await request<Chat>(chatEndpoint("chat", id));
+        setChat(saved);
+        const summary = { id: saved.id, title: saved.title, updatedAt: saved.updatedAt };
+        setList(previous => [summary, ...previous.filter(item => item.id !== id)].sort((a, b) => b.updatedAt - a.updatedAt));
+      } catch { setError("chat-unavailable"); }
+    }, failure => {
+      const errorCode = failure.message === "model-stopped" ? undefined : failure.message;
+      if (fromComposer) {
+        if (composer.current?.value) setUnsent(previous => [...previous, { text, edited, errorCode }]);
+        else {
+          setEdit(edited === undefined ? undefined : { turnId: edited, nextDraft: "" });
+          updateDraft(text);
+        }
+      }
+      if (errorCode) setError(errorCode);
     }).finally(() => {
       if (frameId) cancelAnimationFrame(frameId);
       task.current = undefined;
-      setPending(undefined); setBusy(false);
+      setPending(undefined); setOutgoingText(""); setRequestKind(undefined);
+      setStopping(false);
       refreshSpending();
     });
   }
@@ -279,128 +502,222 @@ function App() {
   async function remove(id: string) {
     try {
       await request(chatEndpoint("chat", id), { method: "DELETE" });
-      if (activeChat() === id) { history.replaceState(null, "", "/"); setChat(emptyChat()); updateDraft(""); }
-      setConfirmDelete(undefined);
-      await refreshList();
-    } catch { setError("chat-unavailable"); }
+      if (activeChat() === id) {
+        history.replaceState(null, "", "/");
+        setChat(emptyChat());
+        setEdit(undefined);
+        setUnsent([]);
+        updateDraft("");
+      }
+      await refreshList().catch(() => setError("chat-unavailable"));
+      return true;
+    } catch { setError("chat-unavailable"); return false; }
   }
-  async function choose(head: number) {
+  async function copyTurn(turn: Turn) {
+    let result: "copied" | "copyFailed" = "copied";
+    try { await navigator.clipboard.writeText(turn.visible); }
+    catch { result = "copyFailed"; }
+    setCopyFeedback({ chatId: chat.id, turnId: turn.id, result });
+  }
+
+  async function choose(head: number, trigger: HTMLButtonElement) {
+    if (selectingReply.current || task.current) return;
+    selectingReply.current = true;
     try {
-      setChat(await request<Chat>(chatEndpoint("select", chat.id), { method: "POST", body: JSON.stringify({ head }) }));
-      setEdit(undefined); updateDraft("");
+      const selected = await request<Chat>(chatEndpoint("select", chat.id), { method: "POST", body: JSON.stringify({ head }) });
+      if (activeChat() !== selected.id) return;
+      const showVersion = () => {
+        setChat(selected);
+        if (edit && !chatTranscript(selected).line.some(turn => turn.id === edit.turnId)) {
+          const current = composer.current?.value ?? draft;
+          const changed = current.trim().length > 0 && current !== byId.get(edit.turnId)?.visible;
+          if (changed && edit.nextDraft) setUnsent(previous => [...previous, { text: current, edited: edit.turnId }]);
+          updateDraft(edit.nextDraft || (changed ? current : ""));
+          setEdit(undefined);
+        }
+      };
+      if (document.activeElement !== trigger) {
+        showVersion();
+        return;
+      }
+      flushSync(showVersion);
+      const group = viewport.current?.querySelector(`article[data-message-id="${head}"] .desktop-variants`);
+      const direction = group?.querySelector<HTMLButtonElement>(`[data-reply-step="${trigger.dataset.replyStep}"]:not(:disabled)`);
+      (direction ?? group?.querySelector<HTMLButtonElement>("button:not(:disabled)"))?.focus({ preventScroll: true });
     } catch { setError("chat-unavailable"); }
-  }
-  function siblingReplies(turn: Turn) {
-    const parent = chat.messages.find(message => message.id === turn.parent);
-    const alternatives = new Set(chat.messages.filter(message => message.role === "user" && message.parent === parent?.parent && message.visible === parent?.visible).map(message => message.id));
-    return chat.messages.filter(message => message.role === "assistant" && message.parent !== null && alternatives.has(message.parent));
+    finally { selectingReply.current = false; }
   }
   const row = (turn: Turn, partial = false) => {
-    const variants = !partial && turn.role === "assistant" ? siblingReplies(turn) : [];
+    const variants = !partial && turn.role === "assistant" ? replyVariants.get(turn.id) ?? [] : [];
     const position = variants.findIndex(message => message.id === turn.id);
-    const previous = chat.messages.find(message => message.id === turn.parent && message.role === "user");
+    const previous = turn.parent === null ? undefined : byId.get(turn.parent);
     const service = worker || serviceDraft(previous?.visible ?? pending?.[0]?.visible ?? "");
+    const copyResult = currentCopy?.turnId === turn.id ? currentCopy.result : undefined;
     return <article key={turn.id} data-role={turn.role} data-message-id={turn.id} data-streaming={partial || undefined} className={`desktop-message desktop-${turn.role}`}>
       {turn.role === "assistant" ? <>
         <div className="desktop-narrator"><span className="desktop-orb" />DeepRole</div>
-        <Reply turn={turn} partial={partial} animate={arrivingTurn.current?.assistant === turn.id} service={service} />
-      </> : <div className="desktop-message-bubble"><span className={arrivingTurn.current?.user === turn.id ? "desktop-text-reveal" : undefined}>{worker || serviceDraft(turn.visible) ? turn.visible : <DialogueText text={turn.visible} />}</span></div>}
+        <Reply turn={turn} partial={partial} animate={arrivingTurn.current?.assistant === turn.id} service={service} formatting={formatting} />
+      </> : <div className="desktop-message-bubble"><div className={arrivingTurn.current?.user === turn.id ? "desktop-text-reveal" : undefined}>{worker || serviceDraft(turn.visible) ? turn.visible : <DialogueText text={turn.visible} />}</div></div>}
       {!partial && <div className="desktop-message-actions" data-deeprole-ui>
-        <button type="button" className="desktop-icon" aria-label={ru ? "Копировать" : "Copy"} onClick={() => void navigator.clipboard.writeText(turn.visible).then(() => setCopied(turn.id)).catch(() => undefined)}>{copied === turn.id ? <Check size={15} /> : <Copy size={15} />}</button>
-        {turn.role === "user" && !serviceDraft(turn.visible) && <button type="button" className="desktop-icon" disabled={busy} aria-label={ru ? "Редактировать" : "Edit"} onClick={() => { setEdit(turn.id); updateDraft(turn.visible); composer.current?.focus(); }}><Pencil size={15} /></button>}
-        {previous && !serviceDraft(previous.visible) && <button type="button" className="desktop-icon" disabled={busy} aria-label={ru ? "Другой ответ" : "Regenerate"} onClick={() => submit(previous.visible, previous.id)}><RotateCcw size={15} /></button>}
-        {variants.length > 1 && <div className="desktop-variants">
-          <button type="button" className="desktop-icon" aria-label={ru ? "Предыдущий ответ" : "Previous reply"} disabled={busy || position <= 0} onClick={() => void choose(variants[position - 1]!.id)}><ChevronLeft size={16} /></button>
-          <span>{position + 1}/{variants.length}</span>
-          <button type="button" className="desktop-icon" aria-label={ru ? "Следующий ответ" : "Next reply"} disabled={busy || position >= variants.length - 1} onClick={() => void choose(variants[position + 1]!.id)}><ChevronRight size={16} /></button>
+        <button type="button" className="desktop-icon" aria-label={actions.copy} title={actions[copyResult ?? "copy"]} data-copy-result={copyResult} onClick={() => void copyTurn(turn)}>
+          {copyResult === "copied" ? <Check aria-hidden="true" /> : copyResult === "copyFailed" ? <CircleAlert aria-hidden="true" /> : <Copy aria-hidden="true" />}
+        </button>
+        {turn.role === "user" && !serviceDraft(turn.visible) && <button type="button" className="desktop-icon" disabled={busy} aria-label={actions.edit} title={actions.edit} onClick={() => beginEdit(turn)}><Pencil aria-hidden="true" /></button>}
+        {previous && !serviceDraft(previous.visible) && <button type="button" className="desktop-icon" disabled={busy} aria-label={actions.regenerate} title={actions.regenerate} onClick={() => submit(previous.visible, previous.id)}><RotateCcw aria-hidden="true" /></button>}
+        {variants.length > 1 && <div className="desktop-variants" role="group" aria-label={ru ? `Ответ ${position + 1} из ${variants.length}` : `Reply ${position + 1} of ${variants.length}`}>
+          <button type="button" className="desktop-icon" aria-label={actions.previous} title={actions.previous} data-reply-step="previous" disabled={busy || position <= 0} onClick={event => void choose(variants[position - 1]!.id, event.currentTarget)}><ChevronLeft aria-hidden="true" /></button>
+          <span aria-hidden="true">{position + 1} / {variants.length}</span>
+          <button type="button" className="desktop-icon" aria-label={actions.next} title={actions.next} data-reply-step="next" disabled={busy || position >= variants.length - 1} onClick={event => void choose(variants[position + 1]!.id, event.currentTarget)}><ChevronRight aria-hidden="true" /></button>
         </div>}
       </div>}
     </article>;
   };
   const parent = pending?.[0]?.parent;
   const visibleLine = parent === undefined ? line : line.slice(0, line.findIndex(message => message.id === parent) + 1);
-  return <div className={`desktop-app${worker ? " desktop-worker" : ""}`} data-library-open={libraryPhase !== "closed"}
-    data-history-docked={historyDocked && historyOpen} data-overlay={overlayHistory ? "history" : overlayPanels ? "game" : undefined}>
+  const storyTitle = chat.title || (ru ? "Новая история" : "New story");
+  const showEmpty = !line.length && !busy && !loading && (!!provider || worker);
+  const setupOnStart = !worker && showEmpty && !!providerNeeded;
+  const connectModel = ru ? "Подключить модель" : "Connect a model";
+  const modelLabel = provider && modelConfigured ? provider.model : connectModel;
+  const themeLabel = dark ? ru ? "Светлая тема" : "Light theme" : ru ? "Тёмная тема" : "Dark theme";
+  const cancelEditLabel = ru ? "Отменить редактирование" : "Cancel edit";
+  const needsModelToSend = !worker && !!providerNeeded;
+  const sendLabel = needsModelToSend ? ru ? "Настроить отправку" : "Set up sending"
+    : edit ? ru ? "Отправить правку" : "Send edit" : ru ? "Отправить" : "Send";
+  const latestLabel = ru ? "К последнему сообщению" : "Go to latest message";
+  const response = pending?.[1];
+  const statusText = replyStatusText[locale];
+  const responseLabel = requestKind === "story"
+    ? statusText[stopping ? "stopping" : response?.text ? "receiving" : response?.reasoning ? "reasoning" : "waiting"]
+    : "";
+
+  return <div className={`desktop-app${worker ? " desktop-worker" : ""}`}
+    data-history-docked={historyDocked && historyOpen} data-overlay={overlayHistory ? "history" : overlayPanels ? "game" : libraryOverlay ? "library" : undefined}>
     <div className="desktop-window-caption" aria-hidden="true">
-      <span>{chat.title ? `${chat.title} — DeepRole` : "DeepRole"}</span>
+      <span>DeepRole</span>
     </div>
-    {overlayHistory && <div className="desktop-panel-shade desktop-history-shade" aria-hidden="true" onClick={closeHistory} />}
-    <aside id="desktop-chat-history" className="desktop-sidebar" hidden={!historyOpen} aria-label={ru ? "Чаты" : "Chats"} onKeyDown={event => {
-      if (event.key === "Escape" && !event.defaultPrevented && !worker) { event.stopPropagation(); closeHistory(); }
+    <span className="desktop-copy-status" role="status">{currentCopy ? actions[currentCopy.result] : ""}</span>
+    {!worker && <div className="desktop-panel-shade desktop-history-shade" data-open={overlayHistory} aria-hidden="true" onClick={closeHistory} />}
+    <aside id="desktop-chat-history" className="desktop-sidebar" data-open={historyOpen} inert={!historyOpen} aria-label={ru ? "Чаты" : "Chats"} onKeyDown={event => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (menu) {
+        event.stopPropagation();
+        setMenu(undefined);
+        chatMenuTrigger.current?.focus();
+      } else if (!worker) {
+        event.stopPropagation();
+        closeHistory();
+      }
     }}>
       <div className="desktop-brand">
-        <span className="desktop-mark"><BookOpenText size={18} aria-hidden="true" /></span><strong>DeepRole</strong>
-        {!worker && <button ref={historyClose} type="button" className="desktop-icon" aria-label={ru ? "Закрыть панель чатов" : "Close chat sidebar"} title={ru ? "Закрыть панель чатов" : "Close chat sidebar"} onClick={closeHistory}>
-          {historyDocked ? <PanelLeftClose size={17} aria-hidden="true" /> : <X size={17} aria-hidden="true" />}
+        <BookOpenText size={16} strokeWidth={1.5} aria-hidden="true" /><span>DeepRole</span>
+        {!historyDocked && !worker && <button ref={historyClose} type="button" className="desktop-icon" aria-label={ru ? "Закрыть панель чатов" : "Close chat sidebar"} title={ru ? "Закрыть панель чатов" : "Close chat sidebar"} onClick={closeHistory}>
+          <X size={17} aria-hidden="true" />
         </button>}
       </div>
-      <nav aria-label={ru ? "История чатов" : "Chat history"}>
-        <div className="desktop-history-heading">
-          <h2>{ru ? "Чаты" : "Chats"}</h2>
-          <a href="/" className="dr-round-action" aria-label={ru ? "Новый чат" : "New chat"} title={ru ? "Новый чат" : "New chat"} aria-disabled={busy || undefined} onClick={event => { if (busy) event.preventDefault(); }}><Plus size={17} aria-hidden="true" /></a>
+      <a href="/" className="desktop-new-chat" aria-disabled={busy || undefined} onClick={event => { if (busy) event.preventDefault(); }}>
+        <Plus size={16} strokeWidth={1.5} aria-hidden="true" />{ru ? "Новый чат" : "New chat"}
+      </a>
+      <nav className="desktop-history" aria-label={ru ? "История чатов" : "Chat history"}>
+        <h2>{ru ? "Чаты" : "Chats"}</h2>
+        <div className="desktop-chat-list">
+          {list.length === 0 && <p>{ru ? "Чаты появятся после первого хода" : "Chats appear after your first turn"}</p>}
+          {list.map(item => <div className="desktop-chat-link" key={item.id} data-current={item.id === activeChat()}>
+            <a href={chatUrl(item.id)} title={item.title} aria-current={item.id === activeChat() ? "page" : undefined} onClick={event => { if (busy) event.preventDefault(); }}><span>{item.title}</span></a>
+            <button type="button" className="desktop-icon" title={ru ? "Действия чата" : "Chat options"} aria-label={ru ? "Действия чата" : "Chat options"} aria-haspopup="menu" aria-expanded={menu === item.id} onClick={event => {
+              chatMenuTrigger.current = event.currentTarget;
+              setMenu(menu === item.id ? undefined : item.id);
+            }}><Ellipsis size={16} strokeWidth={1.5} aria-hidden="true" /></button>
+            {menu === item.id && <div role="menu" className="desktop-chat-menu"><button role="menuitem" type="button" autoFocus disabled={busy} onClick={() => { setMenu(undefined); setConfirmDelete(item.id); }}>{ru ? "Удалить чат" : "Delete chat"}</button></div>}
+          </div>)}
         </div>
-        {list.length === 0 && <p>{ru ? "Здесь появятся ваши истории" : "Your stories appear here"}</p>}
-        {list.map(item => <div className="desktop-chat-link" key={item.id} data-current={item.id === activeChat()}>
-          <a href={chatUrl(item.id)} aria-current={item.id === activeChat() ? "page" : undefined} onClick={event => { if (busy) event.preventDefault(); }}><MessageCircle size={15} /><span>{item.title}</span></a>
-          <button type="button" className="desktop-icon" title={ru ? "Действия чата" : "Chat options"} aria-label={ru ? "Действия чата" : "Chat options"} aria-haspopup="menu" aria-expanded={menu === item.id} onClick={() => setMenu(menu === item.id ? undefined : item.id)}><Ellipsis size={17} /></button>
-          {menu === item.id && <div role="menu" className="desktop-chat-menu"><button role="menuitem" type="button" disabled={busy} onClick={() => { setMenu(undefined); setConfirmDelete(item.id); }}>{ru ? "Удалить чат" : "Delete chat"}</button></div>}
-        </div>)}
       </nav>
-      <button type="button" className="desktop-sidebar-link" aria-haspopup="dialog" onClick={() => { setOverlay(null); setUsageOpen(true); }}><BarChart3 size={18} />{ru ? "Расходы" : "Usage"}</button>
-      <button type="button" className="desktop-sidebar-link" aria-expanded={libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}><BookOpen size={18} />{ru ? "Библиотека и настройки" : "Library and settings"}</button>
+      <div className="desktop-sidebar-tools">
+        <button type="button" className="desktop-sidebar-link" aria-haspopup="dialog" onClick={() => { setOverlay(null); setUsageOpen(true); }}><BarChart3 size={16} strokeWidth={1.5} aria-hidden="true" />{ru ? "Расходы" : "Usage"}</button>
+        <button type="button" className="desktop-sidebar-link" aria-expanded={libraryOpen && libraryEntry !== "settings"} aria-controls="desktop-library" onClick={event => openLibrary("library", event.currentTarget)}><BookOpen size={16} strokeWidth={1.5} aria-hidden="true" />{ru ? "Библиотека" : "Library"}</button>
+      </div>
     </aside>
     <main ref={chatFrame} className="desktop-main desktop-frame" data-game-docked={gameDocked} inert={overlayHistory}>
       <header className="desktop-header">
-        {!worker && <button ref={historyToggle} type="button" className="desktop-icon desktop-panel-toggle" aria-expanded={historyOpen} aria-controls="desktop-chat-history"
+        {!worker && <button ref={historyToggle} type="button" className="desktop-icon desktop-panel-toggle desktop-history-toggle" aria-expanded={historyOpen} aria-controls="desktop-chat-history"
           aria-label={historyLabel} title={historyLabel} onClick={() => {
-            if (historyOpen) closeHistory();
-            else if (historyDocked) setHistoryCollapsed(false);
+            if (historyDocked) { setMenu(undefined); changeDock(() => setHistoryCollapsed(collapsed => !collapsed)); }
+            else if (historyOpen) closeHistory();
             else { setLibraryOpen(false); setOverlay("history"); }
-          }}><PanelLeft size={17} aria-hidden="true" /></button>}
-        <h1>{chat.title || (ru ? "Новая история" : "New story")}</h1>
-        <button type="button" className="desktop-model" disabled={!provider || busy} onClick={() => setModelOpen(true)}>{providerNeeded || !provider ? <KeyRound size={15} /> : <span className="desktop-model-dot" aria-hidden="true" />}<span>{providerNeeded || !provider ? ru ? "Подключить модель" : "Connect a model" : provider.model}</span></button>
+          }}><PanelLeft size={16} strokeWidth={1.5} aria-hidden="true" /></button>}
+        <h1 title={storyTitle} data-has-story={!!chat.title}>{storyTitle}</h1>
+        {!setupOnStart && <button type="button" className="desktop-model" data-configured={modelConfigured} aria-haspopup="dialog" title={modelLabel}
+          disabled={!provider || busy} onClick={event => openModel(event.currentTarget)}>
+          {modelConfigured ? <span className="desktop-model-dot" aria-hidden="true" /> : <KeyRound size={16} strokeWidth={1.5} aria-hidden="true" />}
+          <span>{modelLabel}</span>
+        </button>}
         {!worker && <div className="desktop-header-tools">
-          <button ref={panelsToggle} type="button" className="desktop-icon desktop-panel-toggle" aria-expanded={panelsOpen} aria-controls="desktop-play-tools" aria-label={ru ? "Игровые панели" : "Game panels"} title={ru ? "Игровые панели" : "Game panels"} onClick={() => {
-            if (panelsOpen) closePanels();
-            else if (gameDocked) setGameCollapsed(false);
+          <button ref={panelsToggle} type="button" className="desktop-icon desktop-panel-toggle desktop-game-toggle" aria-expanded={panelsOpen} aria-controls="desktop-play-tools" aria-label={ru ? "Игровые панели" : "Game panels"} title={ru ? "Игровые панели" : "Game panels"} onClick={() => {
+            if (gameDocked) setGameCollapsed(collapsed => !collapsed);
+            else if (panelsOpen) closePanels();
             else {
-              if (library.current && getComputedStyle(library.current).position === "fixed") setLibraryOpen(false);
+              if (libraryOverlay) setLibraryOpen(false);
               setOverlay("game");
             }
-          }}><Gamepad2 size={17} aria-hidden="true" /></button>
-          <button type="button" className="desktop-icon desktop-theme" aria-label={dark ? ru ? "Светлая тема" : "Light theme" : ru ? "Тёмная тема" : "Dark theme"} onClick={() => void desktop.call("setTheme", dark ? "light" : "dark").catch(() => undefined)}>{dark ? <Sun size={17} /> : <Moon size={17} />}</button>
+          }}><Gamepad2 size={16} strokeWidth={1.5} aria-hidden="true" /><span>{ru ? "Игра" : "Game"}</span></button>
+          <button type="button" className="desktop-icon desktop-settings-toggle" aria-expanded={libraryOpen && libraryEntry === "settings"} aria-controls="desktop-library"
+            aria-label={ru ? "Настройки" : "Settings"} title={ru ? "Настройки" : "Settings"} onClick={event => openLibrary("settings", event.currentTarget)}>
+            <Settings2 size={16} strokeWidth={1.5} aria-hidden="true" /><span>{ru ? "Настройки" : "Settings"}</span>
+          </button>
+          <button type="button" className="desktop-icon desktop-theme" aria-label={themeLabel} title={themeLabel} onClick={() => void desktop.call("setTheme", dark ? "light" : "dark").catch(() => undefined)}>
+            {dark ? <Sun size={16} strokeWidth={1.5} aria-hidden="true" /> : <Moon size={16} strokeWidth={1.5} aria-hidden="true" />}
+          </button>
         </div>}
       </header>
-      {overlayPanels && <div className="desktop-panel-shade desktop-game-shade" aria-hidden="true" onClick={closePanels} />}
-      {!worker && <aside ref={panelsShell} id="desktop-play-tools" className="desktop-play-tools" aria-labelledby="desktop-play-tools-title" data-deeprole-ui hidden={!panelsOpen}>
+      {!worker && <div className="desktop-panel-shade desktop-game-shade" data-open={overlayPanels} aria-hidden="true" onClick={closePanels} />}
+      {!worker && <aside ref={panelsShell} id="desktop-play-tools" className="desktop-play-tools" aria-labelledby="desktop-play-tools-title" data-deeprole-ui data-open={panelsOpen} inert={!panelsOpen}>
         <header className="desktop-play-tools-heading">
-          <h2 id="desktop-play-tools-title">{ru ? "Игра" : "Game"}</h2>
+          <h2 id="desktop-play-tools-title"><Gamepad2 size={20} strokeWidth={1.6} aria-hidden="true" />{ru ? "Игра" : "Game"}</h2>
           <button ref={panelsClose} type="button" className="desktop-icon" aria-label={ru ? "Скрыть панель игры" : "Hide game panel"} onClick={closePanels}><X size={16} aria-hidden="true" /></button>
         </header>
-        <div id="desktop-play-tools-content" />
-        {chat.lastContext && <div className="desktop-context-reading">
-          <strong>{ru ? "Последний запрос" : "Last request"}</strong>
-          <span>{ru ? "Вход" : "Input"} {chat.lastContext.input === undefined ? "≈" : ""}{(chat.lastContext.input ?? chat.lastContext.estimatedInput).toLocaleString(locale)}
-            {chat.lastContext.output !== undefined && ` · ${ru ? "Ответ" : "Reply"} ${chat.lastContext.output.toLocaleString(locale)}`}</span>
-          <span>{ru ? "Окно" : "Window"} {chat.lastContext.windowSource === "fallback" ? "≈" : ""}{chat.lastContext.window.toLocaleString(locale)}</span>
-          {chat.contextCheckpoint && <span>{ru ? "Слепок сохранён" : "Checkpoint saved"} · {new Date(chat.contextCheckpoint.at).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })}</span>}
-        </div>}
+        <div className="desktop-play-tools-scroll">
+          <div id="desktop-play-tools-content" />
+          {chat.lastContext && <details key={chat.id} className="desktop-context-reading">
+            <summary>{ru ? "Последний запрос" : "Last request"}<ChevronDown size={16} strokeWidth={1.5} aria-hidden="true" /></summary>
+            <dl>
+              <dt>{ru ? "Вход" : "Input"}</dt>
+              <dd>{chat.lastContext.input === undefined ? "≈" : ""}{(chat.lastContext.input ?? chat.lastContext.estimatedInput).toLocaleString(locale)}</dd>
+              {chat.lastContext.output !== undefined && <><dt>{ru ? "Ответ" : "Reply"}</dt><dd>{chat.lastContext.output.toLocaleString(locale)}</dd></>}
+              <dt>{ru ? "Окно модели" : "Model window"}</dt>
+              <dd>{chat.lastContext.windowSource === "fallback" ? "≈" : ""}{chat.lastContext.window.toLocaleString(locale)}</dd>
+              {chat.lastContext.timings && <>
+                {chat.lastContext.timings.preparationMs !== undefined && <>
+                  <dt>{ru ? "До отправки" : "Before sending"}</dt><dd>{requestDuration(chat.lastContext.timings.preparationMs, locale)}</dd>
+                </>}
+                <dt>{ru ? "Первый текст от API" : "First text from API"}</dt><dd>{requestDuration(chat.lastContext.timings.firstTextMs, locale)}</dd>
+                <dt>{ru ? "Весь ответ от API" : "Full reply from API"}</dt><dd>{requestDuration(chat.lastContext.timings.totalMs, locale)}</dd>
+              </>}
+              {chat.contextCheckpoint && <><dt>{ru ? "Снимок контекста" : "Context checkpoint"}</dt><dd>{new Date(chat.contextCheckpoint.at).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })}</dd></>}
+            </dl>
+          </details>}
+        </div>
       </aside>}
-      <div className="desktop-viewport" ref={viewport} inert={overlayPanels} onScroll={event => {
-        const view = event.currentTarget;
-        follow.current = view.scrollHeight - view.scrollTop - view.clientHeight < 80;
-      }}>
-        <div className="desktop-transcript">
-          {!line.length && !pending && !loading && <div className="desktop-empty">
-            <span className="desktop-emblem"><BookOpenText size={30} strokeWidth={1.55} /></span>
-            <h2>{ru ? "С чего начнётся история?" : "Where does the story begin?"}</h2>
-            <p>{ru ? "Выберите мир в библиотеке или напишите первую реплику." : "Choose a world in the library or write your first turn."}</p>
-            <button type="button" onClick={() => setLibraryOpen(true)}><BookOpen size={16} />{ru ? "Открыть библиотеку" : "Open library"}</button>
+      <div className="desktop-viewport" id="desktop-chat-viewport" ref={viewport} inert={overlayPanels || libraryOverlay}
+        role="region" aria-label={ru ? "Переписка" : "Conversation"} tabIndex={-1}
+        onScroll={event => setFollowing(distanceToLatest(event.currentTarget) < followDistance)}>
+        <div className="desktop-transcript" ref={transcript}>
+           {showEmpty && <div className="desktop-empty">
+            <h2>{setupOnStart ? ru ? "Начните историю" : "Start a story" : ru ? "Ваш первый ход" : "Your first turn"}</h2>
+            {setupOnStart ? <>
+              <p>{ru ? "Для ответа нужна текстовая модель. Реплику можно написать заранее." : "Connect a text model to get a reply. You can draft your turn now."}</p>
+              <button className="desktop-primary" type="button" aria-haspopup="dialog" onClick={event => openModel(event.currentTarget)}>
+                <KeyRound size={16} aria-hidden="true" />{connectModel}
+              </button>
+            </> : <p>{ru ? "Мир можно подключить в панели «Игра»." : "You can connect a world from the Game panel."}</p>}
           </div>}
-           {visibleLine.concat(pending ?? []).map((turn, index) => row(turn, index >= visibleLine.length))}
+            {visibleLine.concat(pending ?? []).map((turn, index) => row(turn, index >= visibleLine.length))}
+            {!pending && outgoingText && <div className="desktop-message desktop-user" data-deeprole-ui>
+              <div className="desktop-message-bubble"><DialogueText text={outgoingText} /></div>
+            </div>}
         </div>
       </div>
-      <div className="desktop-composer-area" inert={overlayPanels}>
+      <div className="desktop-composer-area" inert={overlayPanels || libraryOverlay}>
+        {!worker && <div data-deeprole-portrait-anchor aria-hidden="true" />}
         {spending.map(notice => <div role="status" className="desktop-budget-notice dr-inline-feedback" data-tone="warning" key={notice.type}>
           <CircleAlert className="dr-feedback-icon" aria-hidden="true" />
           <span>{notice.type === "weekly"
@@ -413,33 +730,75 @@ function App() {
         </div>)}
         {error && <div role="alert" className="desktop-error dr-inline-feedback" data-tone="warning">
           <CircleAlert className="dr-feedback-icon" aria-hidden="true" />
-          <span>{(ru ? ruErrors : enErrors)[error] ?? (ru ? "Не удалось завершить запрос. Черновик остался в поле." : "The request could not finish. Your draft is still here.")}</span>
+          <span>{(ru ? ruErrors : enErrors)[error] ?? (ru ? "Не удалось завершить запрос." : "The request could not finish.")}</span>
           <button className="desktop-icon" type="button" aria-label={ru ? "Закрыть сообщение" : "Dismiss"} onClick={() => setError("")}><X size={16} aria-hidden="true" /></button>
         </div>}
-        <form ref={box} className="desktop-composer" onSubmit={event => { event.preventDefault(); submit(); }}>
-          {edit !== undefined && <div className="desktop-edit"><span>{ru ? "Редактирование хода" : "Editing turn"}</span><button className="desktop-icon" type="button" aria-label={ru ? "Отменить редактирование" : "Cancel edit"} onClick={() => { setEdit(undefined); updateDraft(""); }}><X size={15} /></button></div>}
+        {queuedDraft && <div className="desktop-unsent" role="status">
+          <span>{queuedDraft.edited !== undefined
+            ? ru ? "Неотправленная правка" : "Unsent edit"
+            : ru ? "Неотправленная реплика" : "Unsent message"}{unsent.length > 1 ? ` · ${unsent.length}` : ""}</span>
+          <button type="button" onClick={() => recoverDraft(queuedDraft)}>{canRestoreDraft
+            ? queuedDraft.edited !== undefined ? ru ? "Вернуть правку" : "Restore edit" : ru ? "Вернуть в поле" : "Restore draft"
+            : ru ? "Скопировать реплику" : "Copy draft"}</button>
+        </div>}
+        <form ref={box} className="desktop-composer" onSubmit={event => { event.preventDefault(); submit(composer.current?.value ?? "", edit?.turnId, true); }}>
+          {edit && <div className="desktop-edit">
+            <Pencil size={16} aria-hidden="true" />
+            <div id="desktop-edit-description">
+              <span>{ru ? "Редактирование хода" : "Editing turn"}</span>
+              {edit.nextDraft && <small>{ru ? "Черновик вернётся в поле" : "Your draft will return"}</small>}
+            </div>
+            <button className="desktop-icon" type="button" aria-label={cancelEditLabel} title={cancelEditLabel} onClick={cancelEdit}><X size={16} aria-hidden="true" /></button>
+          </div>}
            <div className="desktop-editor">
-             <textarea ref={composer} rows={2} aria-label={ru ? "Ваша реплика" : "Your message"} placeholder={ru ? "Напишите реплику или действие…" : "Write dialogue or an action…"} onInput={event => setDraft(event.currentTarget.value)} onKeyDown={event => {
-               if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); box.current?.requestSubmit(); }
+             <textarea ref={composer} rows={2} aria-label={ru ? "Ваша реплика" : "Your message"} aria-describedby={edit ? "desktop-edit-description" : undefined} placeholder={ru ? "Напишите реплику или действие…" : "Write dialogue or an action…"} onInput={event => setDraft(event.currentTarget.value)} onKeyDown={event => {
+               if (event.nativeEvent.isComposing) return;
+               if (edit && event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancelEdit(); }
+               else if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); box.current?.requestSubmit(); }
              }} />
+             <span className="desktop-editor-placeholder" aria-hidden="true">{ru ? "Напишите реплику или действие…" : "Write dialogue or an action…"}</span>
              {composerEffects}
            </div>
           <div className="desktop-composer-controls">
-            <button type="button" className="desktop-icon" aria-label={ru ? "Открыть библиотеку" : "Open library"} onClick={() => setLibraryOpen(!libraryOpen)}><BookOpen size={17} /></button>
-            <span className="desktop-composer-hint"><kbd>Shift</kbd> + <kbd>Enter</kbd> {ru ? "новая строка" : "new line"}</span>
-            {busy ? <button className="desktop-send" type="button" data-testid="stop-generation" aria-label={ru ? "Остановить ответ" : "Stop generation"} onClick={() => task.current?.stop()}><Square size={15} /></button>
-              : <button className="desktop-send desktop-primary" type="submit" aria-label={ru ? "Отправить" : "Send"} disabled={loading || !draft.trim()}><ArrowUp size={19} /></button>}
+            <button type="button" className="desktop-icon" aria-label={ru ? "Открыть библиотеку" : "Open library"} onClick={event => openLibrary("library", event.currentTarget)}><BookOpen size={17} /></button>
+            {!worker && <div id="desktop-composer-lore" data-deeprole-ui />}
+            {!worker && readingHistory ? <div className="desktop-jump-anchor" data-deeprole-ui>
+              <button className="desktop-icon desktop-jump-latest" type="button"
+                aria-label={latestLabel} title={latestLabel} aria-controls="desktop-chat-viewport" onClick={() => {
+                  viewport.current?.focus({ preventScroll: true });
+                  jumpToLatest();
+                }}><ArrowDown aria-hidden="true" /></button>
+            </div> : !responseLabel && <span className="desktop-composer-hint"><kbd>Shift</kbd> + <kbd>Enter</kbd> {ru ? "новая строка" : "new line"}</span>}
+            <span id="desktop-response-status" className="desktop-response-status" role="status"
+              data-visible={!!responseLabel && !readingHistory}>
+              {responseLabel && <><LoaderCircle size={14} aria-hidden="true" />{responseLabel}</>}
+            </span>
+            {busy ? <button className="desktop-send desktop-stop" type="button" data-testid="stop-generation"
+              aria-label={statusText.stop} title={statusText.stop}
+              aria-describedby={responseLabel ? "desktop-response-status" : undefined}
+              disabled={stopping} onClick={() => { setStopping(true); task.current?.stop(); }}><Square size={15} fill="currentColor" aria-hidden="true" /></button>
+              : <button className={needsModelToSend ? "desktop-send" : "desktop-send desktop-primary"} type="submit" aria-label={sendLabel} title={sendLabel}
+                disabled={loading || !draft.trim() || (!worker && !provider)}>
+                {needsModelToSend ? <KeyRound size={17} aria-hidden="true" /> : <ArrowUp size={19} aria-hidden="true" />}
+              </button>}
           </div>
         </form>
       </div>
     </main>
-    {libraryPhase !== "closed" && <aside ref={library} className="desktop-library" data-state={libraryPhase} inert={!libraryOpen} aria-label={ru ? "Библиотека DeepRole" : "DeepRole library"}><iframe ref={libraryFrame} src="/sidepanel.html?embedded=1" title={ru ? "Библиотека DeepRole" : "DeepRole library"} /></aside>}
-    {modelOpen && provider && <ProviderDialog locale={locale} value={provider} onClose={() => setModelOpen(false)} onSave={next => { setProvider(next); setModelOpen(false); setError(""); }} />}
+    {!worker && <div className="desktop-panel-shade desktop-library-shade" data-open={libraryOverlay} aria-hidden="true" onClick={closeLibrary} />}
+    {libraryPhase !== "closed" && <aside ref={library} id="desktop-library" className="desktop-library" data-state={libraryPhase} data-docked={libraryDocked} inert={!libraryOpen} aria-label={ru ? "Панель DeepRole" : "DeepRole panel"}>
+      <iframe ref={libraryFrame} src={`/sidepanel.html?embedded=1${libraryEntry === "library" ? "" : `&view=${libraryEntry}`}`} title={ru ? "Панель DeepRole" : "DeepRole panel"} />
+    </aside>}
+    {modelOpen && provider && <ProviderDialog locale={locale} value={provider} onClose={() => closeModel()} onSave={closeModel} />}
     {usageOpen && <UsageDialog locale={locale} chatId={chat.id} onClose={() => setUsageOpen(false)} onSpendingChange={refreshSpending} />}
-    {confirmDelete && <div className="desktop-backdrop"><section role="dialog" aria-modal="true" className="desktop-dialog">
-      <header><h2>{ru ? "Удалить чат?" : "Delete chat?"}</h2></header><p>{ru ? "Переписка будет удалена с этого устройства. Лор мира сохранится." : "The conversation will be removed from this device. World lore stays saved."}</p>
-      <footer><button type="button" onClick={() => setConfirmDelete(undefined)}>{ru ? "Отмена" : "Cancel"}</button><button type="button" className="desktop-danger" onClick={() => void remove(confirmDelete)}>{ru ? "Удалить чат" : "Delete chat"}</button></footer>
-    </section></div>}
+    {confirmDelete && <DeleteChatDialog ru={ru} onCancel={() => {
+      setConfirmDelete(undefined);
+      requestAnimationFrame(() => {
+        const trigger = chatMenuTrigger.current;
+        if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+        else historyToggle.current?.focus({ preventScroll: true });
+      });
+    }} onDelete={() => remove(confirmDelete)} />}
   </div>;
 }
 

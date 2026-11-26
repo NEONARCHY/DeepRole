@@ -5,6 +5,7 @@ import { storyEpisodeText } from "../src/core/story-episode-i18n";
 import { storyNarrativeText } from "../src/core/story-narrative-i18n";
 import { narrativeQualityCorpus } from "./fixtures/story-narrative-quality";
 import type { WorldGame } from "../src/core/world-game";
+import { roleSeed } from "../src/core/story-role-binding";
 afterEach(cleanup);
 const base:WorldGame={version:1,id:"game",revision:"r",activationId:"a",activeBindingId:"binding:a",activeChatId:"a",managed:true,memoryOverrides:{includedIds:[],excludedIds:[]},profileSeeds:{},identitySeeds:{},mergeSeeds:{},facts:[],updatedAt:0};
 it.each(["ru","en"] as const)("narrative source control opens the exact quote and focuses it without changing accepted memory: %s",locale=>{
@@ -25,4 +26,26 @@ it.each(["ru","en"] as const)("large quotes stay complete in full records and ma
   const exact=source.parentElement!.querySelector("p")!;expect(exact).toBeVisible();expect(exact.textContent).toBe(quote);expect(document.querySelector("script")).toBeNull();
   view.rerender(<StoryEpisodePanel locale={locale} game={{...base,facts:[{...fact,quote:"<script>PRIVATE</script> a short source"}]}}/>);
   expect(document.querySelector(".dr-story-narrative-text")?.textContent).toContain("<script>PRIVATE</script>");expect(document.querySelector("script")).toBeNull();
+});
+
+it("shows one linked event for either character and keeps old routine entries available", () => {
+  const t = storyEpisodeText("ru");
+  const text = "Мира сказала Тимуру: «Запасной ключ лежит в синей коробке».";
+  const shared = { kind: "event" as const, text, quote: text };
+  const old = { kind: "event" as const, text: "Мира встала утром.", quote: "Мира встала утром." };
+  const game = { ...base, facts: [old, shared], episodeSources: ["source"], factRoleSeeds: [roleSeed(shared, {
+    version: 1, sourceRevisionId: "source", quote: text, roles: { speaker: { id: "mira", name: "Мира" }, recipient: { id: "timur", name: "Тимур" } },
+  })] };
+  render(<StoryEpisodePanel locale="ru" game={game}/>);
+  expect(screen.queryByText(t.unplaced, { exact: false })).not.toBeInTheDocument();
+  const character = screen.getByRole("combobox", { name: t.person });
+  for (const id of ["mira", "timur"]) {
+    fireEvent.change(character, { target: { value: id } });
+    expect(document.querySelectorAll(".dr-story-review-entry")).toHaveLength(1);
+    expect(document.querySelector(".dr-story-review-entry")?.textContent).toContain(text);
+  }
+  fireEvent.change(character, { target: { value: "" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: t.includeRoutine }));
+  expect(screen.getByText(t.unplaced, { exact: false })).toBeVisible();
+  expect(game.facts).toEqual([old, shared]);
 });

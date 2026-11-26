@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { request } from "./native";
 import { SpendingSettings } from "./SpendingSettings";
+import { useNativeDialog } from "./motion";
 
 type Total = { requests: number; measured: number; input: number; output: number; unknown: number; estimated: number; usd: number; diem: number; bundled: number; earned: number };
 type Usage = { days: (Total & { at: number })[]; week: Total; services: Total; images: Total; chat: Total | null; billing?: "ok" | "restricted" | "unavailable" };
 
 export function UsageDialog({ chatId, locale, onClose, onSpendingChange }: { chatId: string; locale: "ru" | "en"; onClose: () => void; onSpendingChange: () => void }) {
   const ru = locale === "ru";
-  const modal = useRef<HTMLDialogElement>(null);
+  const { modal, dismiss } = useNativeDialog();
+  const close = () => dismiss(onClose);
   const [data, setData] = useState<Usage>();
   const [error, setError] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -16,10 +18,6 @@ export function UsageDialog({ chatId, locale, onClose, onSpendingChange }: { cha
   const dollars = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 6 });
   const diem = new Intl.NumberFormat(locale, { maximumFractionDigits: 6 });
   const date = new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short" });
-
-  useEffect(() => {
-    modal.current?.showModal();
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -51,10 +49,10 @@ export function UsageDialog({ chatId, locale, onClose, onSpendingChange }: { cha
   const maxDiem = Math.max(0, ...data?.days.map(day => day.diem) ?? []);
   const maxBundled = Math.max(0, ...data?.days.map(day => day.bundled) ?? []);
   const maxEarned = Math.max(0, ...data?.days.map(day => day.earned) ?? []);
-  return <dialog ref={modal} className="desktop-dialog desktop-usage-dialog" aria-labelledby="desktop-usage-title" onCancel={event => { event.preventDefault(); onClose(); }}>
+  return <dialog ref={modal} className="desktop-dialog" data-window-motion aria-labelledby="desktop-usage-title" onCancel={event => { event.preventDefault(); close(); }}>
     <header>
       <h2 id="desktop-usage-title">{ru ? "Расходы" : "Spending"}</h2>
-      <button type="button" autoFocus className="desktop-icon" aria-label={ru ? "Закрыть" : "Close"} onClick={onClose}><X size={18} /></button>
+      <button type="button" autoFocus className="desktop-icon" aria-label={ru ? "Закрыть" : "Close"} onClick={close}><X size={18} /></button>
     </header>
     {!data && <p role={error ? "alert" : "status"}>{error ? ru ? "Не удалось прочитать расходы." : "Unable to read usage." : ru ? "Загружаем расходы…" : "Loading usage…"}</p>}
     {data && <>

@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "stories": [
+    {
+      "id": "observatory",
+      "locale": "ru",
+      "turns": 112,
+      "people": ["Лада", "Глеб", "Ульяна"],
+      "noise": "В путевом журнале комнаты {n} отмечен номер стойки {n}.",
+      "routine": "Лада поправила рукав.",
+      "routineControl": "Лада проснулась утром.",
+      "consequential": "Лада поправила рукав и нашла в шве пропавшую печать.",
+      "events": [
+        { "id": "lens-open", "turn": 4, "kind": "promise", "text": "Лада обещала Глебу вернуть янтарную линзу только после проверки печати.", "task": { "key": "amber-lens", "title": "вернуть янтарную линзу", "status": "open" } },
+        { "id": "screen-open", "turn": 11, "kind": "promise", "text": "Ульяна обещала Глебу вернуть кварцевый экран только после отключения прожектора.", "task": { "key": "quartz-screen", "title": "вернуть кварцевый экран", "status": "open" } },
+        { "id": "old-place", "turn": 18, "kind": "event", "text": "Серебряный компас лежит в ящике 41.", "claim": { "key": "silver-compass-place", "value": "ящик 41", "scope": "state", "lifetime": "scene" } },
+        { "id": "lens-done", "turn": 37, "kind": "event", "text": "Лада вернула Глебу янтарную линзу после проверки печати.", "task": { "key": "amber-lens", "title": "вернуть янтарную линзу", "status": "completed" } },
+        { "id": "new-place", "turn": 68, "kind": "event", "text": "Серебряный компас переложили в сейф 76.", "claim": { "key": "silver-compass-place", "value": "сейф 76", "scope": "state", "transition": "progress", "lifetime": "scene" } },
+        { "id": "current-clock", "turn": 110, "kind": "event", "text": "Ульяна открыла зал наблюдений.", "clock": "День 12 · 19:20" }
+      ],
+      "expectedOrder": ["lens-open", "screen-open", "old-place", "lens-done", "new-place", "current-clock"],
+      "expectedCurrent": ["screen-open", "lens-done", "new-place", "current-clock"],
+      "expectedPromisors": { "lens-open": "Лада", "screen-open": "Ульяна" },
+      "currentClock": "День 12 · 19:20",
+      "queries": [
+        {
+          "id": "completed-duty",
+          "draft": "Лада уже вернула Глебу янтарную линзу? Коротко скажи, когда и кому.",
+          "wanted": ["lens-done"], "forbidden": ["lens-open", "screen-open"],
+          "replyMustMatch": ["вернул", "Глеб", "печат"], "replyMustNotMatch": ["Ульян", "кварцев"]
+        },
+        {
+          "id": "pending-duty",
+          "draft": "Что Ульяна обещала Глебу сделать с кварцевым экраном? Уточни условие.",
+          "wanted": ["screen-open"], "forbidden": ["lens-open", "lens-done"],
+          "replyMustMatch": ["кварцев", "отключ", "прожектор"], "replyMustNotMatch": ["янтарн", "печат"]
+        },
+        {
+          "id": "current-place",
+          "draft": "Где сейчас серебряный компас? Назови только место.",
+          "wanted": ["new-place"], "forbidden": ["old-place"],
+          "replyMustMatch": ["сейф", "\b76\b"], "replyMustNotMatch": ["\b41\b"]
+        }
+      ]
+    },
+    {
+      "id": "floodplain",
+      "locale": "en",
+      "turns": 136,
+      "people": ["Iris", "Miles", "June"],
+      "noise": "The maintenance plate at landing {n} has route number {n}.",
+      "routine": "Iris adjusted her sleeve.",
+      "routineControl": "Iris woke up in the morning.",
+      "consequential": "Iris adjusted her sleeve and found the missing seal in the hem.",
+      "events": [
+        { "id": "ledger-open", "turn": 6, "kind": "promise", "text": "Iris promised Miles to deliver the cedar ledger only after the north gate opens.", "task": { "key": "cedar-ledger", "title": "deliver the cedar ledger", "status": "open" } },
+        { "id": "tube-open", "turn": 15, "kind": "promise", "text": "June promised Miles to deliver the glass tube only after the registrar signs.", "task": { "key": "glass-tube", "title": "deliver the glass tube", "status": "open" } },
+        { "id": "old-place", "turn": 23, "kind": "event", "text": "The indigo seal is in drawer 32.", "claim": { "key": "indigo-seal-place", "value": "drawer 32", "scope": "state", "lifetime": "scene" } },
+        { "id": "tube-done", "turn": 51, "kind": "event", "text": "June delivered the glass tube to Miles after the registrar signed.", "task": { "key": "glass-tube", "title": "deliver the glass tube", "status": "completed" } },
+        { "id": "new-place", "turn": 86, "kind": "event", "text": "The indigo seal was moved into locker 57.", "claim": { "key": "indigo-seal-place", "value": "locker 57", "scope": "state", "transition": "progress", "lifetime": "scene" } },
+        { "id": "current-clock", "turn": 132, "kind": "event", "text": "Iris unlocked the riverside archive.", "clock": "Day 16 · morning" }
+      ],
+      "expectedOrder": ["ledger-open", "tube-open", "old-place", "tube-done", "new-place", "current-clock"],
+      "expectedCurrent": ["ledger-open", "tube-done", "new-place", "current-clock"],
+      "expectedPromisors": { "ledger-open": "Iris", "tube-open": "June" },
+      "currentClock": "Day 16 · morning",
+      "queries": [
+        {
+          "id": "pending-duty",
+          "draft": "What exactly did Iris promise Miles about the cedar ledger, and under what condition?",
+          "wanted": ["ledger-open"], "forbidden": ["tube-open", "tube-done"],
+          "replyMustMatch": ["cedar", "north gate"], "replyMustNotMatch": ["glass tube", "registrar"]
+        },
+        {
+          "id": "completed-duty",
+          "draft": "Has June delivered the glass tube to Miles, and what had to happen first?",
+          "wanted": ["tube-done"], "forbidden": ["tube-open", "ledger-open"],
+          "replyMustMatch": ["deliver", "registrar"], "replyMustNotMatch": ["cedar", "north gate"]
+        },
+        {
+          "id": "current-place",
+          "draft": "Where is the indigo seal now? Give only its current location.",
+          "wanted": ["new-place"], "forbidden": ["old-place"],
+          "replyMustMatch": ["locker", "\b57\b"], "replyMustNotMatch": ["\b32\b"]
+        }
+      ]
+    }
+  ]
+}

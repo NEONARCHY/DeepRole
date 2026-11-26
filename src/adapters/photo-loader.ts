@@ -3,6 +3,7 @@ import { dataImageBlob } from "./image/image-codec";
 
 interface PhotoLoad {
   address: string;
+  stage: boolean;
   displayedSource?: string;
   removeImageListeners?: () => void;
   visible: boolean;
@@ -39,7 +40,7 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
         const rect = image.getBoundingClientRect();
         // Stage portraits change scale as the chat and cast reflow. Keep one
         // detailed derivative so a narrow initial layout does not lock in a tiny preview.
-        const stage = root instanceof ShadowRoot && root.host.hasAttribute("data-deeprole-portrait-layer");
+        const stage = state.stage;
         const limit = stage ? 1024 : Math.max(256, Math.min(1024, Math.ceil(Math.max(rect.width, rect.height) * win.devicePixelRatio)));
         let prepared = false;
         const original = () => isPhotoData(state.address) ? Promise.resolve(state.address) : read(state.address);
@@ -98,7 +99,9 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
     }
     for (const [image, state] of states) {
       const batch = image.dataset.drPhotoBatch, grid = image.closest(".dr-portrait-library-grid");
-      const visible = image.isConnected && (state.intersecting || !!(grid && batch !== undefined && batches.get(grid)?.has(batch)));
+      // A scene portrait is kept for the current cast while its card moves or
+      // another panel briefly covers it. Removal still releases its image.
+      const visible = image.isConnected && (state.stage || state.intersecting || !!(grid && batch !== undefined && batches.get(grid)?.has(batch)));
       if (visible === state.visible) continue;
       state.visible = visible;
       if (visible) queue.push(image); else release(image);
@@ -125,9 +128,12 @@ export function observePhotoImages(doc: Document, read: (id: string) => Promise<
         continue;
       }
       if (previous?.address === src && !previous.displayedSource) continue;
-      release(element); states.set(element, { address: src, visible: false, intersecting: previous?.intersecting ?? false, loading: false, token: 0 });
+      const owner = element.getRootNode();
+      const stage = owner instanceof ShadowRoot && owner.host.hasAttribute("data-deeprole-portrait-layer");
+      release(element); states.set(element, { address: src, stage, visible: false, intersecting: previous?.intersecting ?? false, loading: false, token: 0 });
       if (isPhotoAddress(src)) element.dataset.drPhotoSource = src;
-      element.removeAttribute("src"); intersection.observe(element);
+      element.removeAttribute("src");
+      if (!stage) intersection.observe(element);
     }
   };
   const observe = (root: Document | ShadowRoot) => {

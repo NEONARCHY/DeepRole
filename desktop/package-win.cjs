@@ -4,7 +4,6 @@ const { createHash } = require("node:crypto");
 const { spawn } = require("node:child_process");
 const { pipeline } = require("node:stream/promises");
 const path = require("node:path");
-const { version } = require("./package.json");
 
 async function main() {
   if (process.platform !== "win32") throw Error("The Windows package must be built on Windows.");
@@ -14,8 +13,7 @@ async function main() {
   const directory = await mkdtemp(path.join(outputDir, "desktop-portable-"));
   const bundle = path.join(directory, "DeepRole");
   const app = path.join(bundle, "resources", "app");
-  const build = new Date().toISOString().replace(/[-:]/gu, "").replace("T", "-").slice(0, 15);
-  const output = path.join(root, "downloads", `DeepRole-Desktop-${version}-Windows-x64-${build}.zip`);
+  const output = path.join(root, "downloads", "DeepRole-Desktop-Windows-x64.zip");
   const temp = output + ".tmp";
   try {
     await access(path.join(runtime, "electron.exe"));

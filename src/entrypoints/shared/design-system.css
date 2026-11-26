@@ -135,7 +135,6 @@
 .dr-root .dr-assistant-actions button, .app-shell .dr-assistant-actions button,
 .dr-root .dr-assistant > button, .app-shell .dr-assistant > button { min-height: 40px; padding: 10px 12px; border-radius: 10px; font-size: 12px; }
 .dr-root .dr-assistant .dr-assistant-primary, .app-shell .dr-assistant .dr-assistant-primary { background: var(--dr-action); color: var(--dr-on-action); border-color: var(--dr-action); }
-.dr-root .dr-review-actions, .app-shell .dr-review-actions { position: sticky; bottom: -16px; padding: 12px 0; background: var(--dr-surface); border-top: 1px solid var(--dr-border); }
 .dr-root .dr-proposal, .app-shell .dr-proposal { padding: 16px; border-radius: 12px; display: grid; gap: 12px; }
 .dr-loremap .lm-tools { gap: 8px; padding: 12px 16px; flex-wrap: wrap; }
 .dr-loremap .lm-search { flex: 1 1 220px; min-width: 140px; }

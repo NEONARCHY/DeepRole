@@ -19,15 +19,13 @@ describe("service transport lifecycle", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
   beforeEach(async () => {
     vi.resetModules();
-    let install!: () => void;
-    vi.stubGlobal("defineUnlistedScript", (callback: () => void) => { install = callback; return {}; });
     fetchMock = vi.fn(async () => new Response("stream", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("XMLHttpRequest", MockXHR);
     posted = vi.spyOn(window, "postMessage").mockImplementation(() => undefined);
     listeners = vi.spyOn(window, "addEventListener");
-    await import("../src/entrypoints/injected");
-    install();
+    const { default: script } = await import("../src/entrypoints/injected");
+    script.main();
   });
   afterEach(() => {
     vi.clearAllTimers(); vi.useRealTimers();

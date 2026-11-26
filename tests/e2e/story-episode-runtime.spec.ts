@@ -6,6 +6,8 @@ import { GAME_TIME_KEY } from "../../src/core/story-time";
 import { navigationText } from "../../src/core/navigation-i18n";
 import { storyNarrativeText } from "../../src/core/story-narrative-i18n";
 import { decodeStoryMemory } from "../../src/core/story-memory-transport";
+import { storyEpisodeText } from "../../src/core/story-episode-i18n";
+import { storyUpdateText } from "../../src/core/story-update-i18n";
 
 const records = (panel: Page) => panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
   const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -36,7 +38,17 @@ for (const locale of ["ru", "en"] as const) test(`installed episodes ${locale}: 
     await chat.goto(f.binding.chatUrl!); await chat.bringToFront(); await expect(chat.locator(".dr-character-row")).toHaveCount(2, { timeout: 12000 });
     const send = (message: any) => panel.evaluate(async ({ message, url }) => { const api = (globalThis as any).chrome, [tab] = await api.tabs.query({ url, active: true }); return api.tabs.sendMessage(tab.id, message); }, { message, url: f.binding.chatUrl! });
     const read = async () => (await send({ type: "DR_STORY_REVIEW_READ", cursor: null })).data;
-    const display = (id: number, text: string) => chat.evaluate(({ id, text }) => { const row = document.createElement("article"), body = document.createElement("div"); row.dataset.role = "assistant"; row.dataset.messageId = String(id); body.className = "ds-markdown"; body.textContent = text; row.append(body); document.querySelector("#story")!.replaceChildren(row); }, { id, text });
+    const display = (id: number, text: string) => chat.evaluate(({ id, text }) => {
+      const row = document.createElement("article"), body = document.createElement("div");
+      row.dataset.role = "assistant"; row.dataset.messageId = String(id); body.className = "ds-markdown";
+      for (const paragraph of text.split("\n\n")) {
+        const element = document.createElement("p");
+        element.textContent = paragraph;
+        body.append(element, "\n\n");
+      }
+      row.append(body);
+      document.querySelector("#story")!.replaceChildren(row);
+    }, { id, text });
     expect(await send({ type: "DR_STORY_GAME", operation: "start", manual: "stop" })).toMatchObject({ ok: true });
     const branch = (await read()).guard.branchId, pageCount = context.pages().length;
     const nativeSend = (draft: string, parent: number) => chat.evaluate(({ draft, parent }) => new Promise<void>(resolve => { const xhr = new XMLHttpRequest(); xhr.open("POST", "/api/v0/chat/completion"); xhr.onload = () => resolve(); xhr.send(JSON.stringify({ chat_session_id: "synthetic-a", parent_message_id: parent, prompt: draft })); }), { draft, parent });
@@ -58,36 +70,82 @@ for (const locale of ["ru", "en"] as const) test(`installed episodes ${locale}: 
     const nextPlace={kind:"event",text:library,quote:library,claim:{key:"nora-place",value:"library",scope:"state",transition:"progress",lifetime:"scene"}};
     const timeLabel=ru?"Прошло три дня.":"Three days passed.",clock={kind:"event",text:timeLabel,quote:timeLabel,claim:{key:GAME_TIME_KEY,value:timeLabel,scope:"state",transition:"progress"}};
     const endedText=ru?"Нора закончила читать.":"Nora finished reading.",ended={kind:"event",text:endedText,quote:endedText,claim:{...reading.claim,value:endedText,transition:"progress",status:"ended"}};
-    const later=timeLabel+" "+library+"\n"+endedText+"<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat:f.binding.chatId,branch,updates:[{id:"person-1",state:{...EMPTY_STATUS,condition:library}}],facts:[nextPlace,clock,ended]})+"</deeprole_characters>";
+    const sceneTime = ru ? "День 12 · 08:10" : "Day 12 · 08:10";
+    const later=sceneTime+"\n\n"+timeLabel+" "+library+"\n"+endedText+"<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat:f.binding.chatId,branch,updates:[{id:"person-1",state:{...EMPTY_STATUS,condition:library}}],facts:[nextPlace,clock,ended]})+"</deeprole_characters>";
     messages.push(message(44,43,"USER",outgoing),message(45,44,"ASSISTANT",later));selected=45;await display(45,later);
     await expect.poll(async()=> (await read()).facts?.some((x:any)=>x.text===library),{timeout:12000}).toBe(true);await approve();
+    await expect(chat.locator('[data-deeprole-scene-clock="present"]')).toHaveText(sceneTime);
     const saved=(await records(panel)).find(r=>r.kind==="world").data.sharedGame;
     expect(saved.episodeSources).toHaveLength(4);expect(saved.scene.states["person-1"].condition).toBe(library);
     await panel.locator(".bottom-nav").getByRole("button",{name:navigationText(locale,"story"),exact:true}).click();
+    await panel.locator('[data-dr-guide="story-episodes"]').click();
+    await panel.getByText(ru ? "Время сцен" : "Scene times", { exact: true }).click();
+    await expect(panel.locator(".dr-story-clock-list")).toContainText(sceneTime);
     const episode=panel.locator(".dr-story-episodes > details").first();await episode.locator(":scope > summary").click();
     const n=storyNarrativeText(locale),brief=episode.locator(".dr-story-narrative-text");
     await expect(brief).toContainText(promiseQuote);await expect(brief).toContainText(n.openPromise);await expect(brief).toContainText(n.ended);
     await episode.getByRole("button",{name:n.source.replace("{number}","1")}).click();
     await expect(episode.getByText(promiseQuote,{exact:true})).toBeVisible();
     expect((await records(panel)).find(r=>r.kind==="world").data.sharedGame.facts).toEqual(saved.facts);
-    const check=()=>{
+    const memory = () => {
       const block=outgoing.split("<deeprole_story_memory>")[1]!.split("</deeprole_story_memory>")[0]!,payload=decodeStoryMemory(JSON.parse(block.split("\n").find(x=>x.startsWith("["))!));
-      expect(payload[0]).toMatchObject({kind:"promise",text:promise.text,task,sourceQuote:promiseQuote,episodeSource:{episode:1,period:"earlier-turn"}});
-       expect(payload.find((x:any)=>x.text===library)).toMatchObject({episodeSource:{period:"latest-turn"},claim:nextPlace.claim,timeStatus:"last-known"});
-        expect(payload.find((x:any)=>x.text===coatText)).toMatchObject({timeStatus:"earlier-scene",claim:coat.claim});expect(payload.find((x:any)=>x.text===codeText)).toMatchObject({timeStatus:"persistent",claim:code.claim});
-        expect(payload.find((x:any)=>x.text===endedText)).toMatchObject({timeStatus:"ended",claim:ended.claim,episodeSource:{period:"latest-turn"}});expect(payload.some((x:any)=>x.text===readingText)).toBe(false);expect(outgoing).toContain("NOT current activity");
-       const timeBlock=outgoing.split("<deeprole_story_time>")[1]!.split("</deeprole_story_time>")[0]!,time=JSON.parse(timeBlock.split("\n").find(x=>x.startsWith("{"))!);expect(time).toMatchObject({label:timeLabel,kind:"elapsed",quote:timeLabel});
-       expect(outgoing).toContain("NOT an absolute date or summed duration");
-      expect(payload.some((x:any)=>x.text===bridge)).toBe(false);
-       expect(outgoing).toContain("last-known=NOT current proof");expect(outgoing).toContain("NEVER fulfills or cancels");
+      return payload;
     };
-    const question=ru?"Напомни, что Нора обещала Мире.":"Remind me what Nora promised Mira.";
-    await nativeSend(question,45);check();
-    await chat.reload();await chat.bringToFront();await expect(chat.locator(".dr-character-row")).toHaveCount(2,{timeout:12000});
-    await nativeSend(question,45);check();
+    const checkPromise = (payload: ReturnType<typeof memory>) => {
+      expect(payload.find(fact => fact.text === promise.text)).toMatchObject({kind:"promise",text:promise.text,task,sourceQuote:promiseQuote,episodeSource:{episode:1,period:"earlier-turn"}});
+    };
+    const checkPosition = () => {
+      const payload = memory();
+      checkPromise(payload);
+      expect(payload.find(fact => fact.text === library)).toMatchObject({episodeSource:{period:"latest-turn"},claim:nextPlace.claim,timeStatus:"last-known"});
+      expect(payload.some(fact => fact.text === bridge)).toBe(false);
+      const timeBlock=outgoing.split("<deeprole_story_time>")[1]!.split("</deeprole_story_time>")[0]!,time=JSON.parse(timeBlock.split("\n").find(x=>x.startsWith("{"))!);
+      expect(time).toMatchObject({label:sceneTime,kind:"named-day",day:12,clock:"08:10",precision:"minute"});
+      expect(outgoing).toContain("NOT an absolute date or summed duration");
+      expect(outgoing).toContain("last-known=NOT current proof");
+      expect(outgoing).toContain("NEVER fulfills or cancels");
+    };
+    const narrowQuestion=ru?"Напомни, что Нора обещала Мире.":"Remind me what Nora promised Mira.";
+    await nativeSend(narrowQuestion,45);checkPromise(memory());
+    expect(memory().some(fact => fact.text === library || fact.text === bridge)).toBe(false);
+    const compoundQuestion=ru?"Что Нора обещала Мире и где сейчас Нора?":"What did Nora promise Mira, and where is Nora now?";
+    await nativeSend(compoundQuestion,45);checkPosition();
+    await chat.reload();await chat.bringToFront();await display(45,later);
+    await expect(chat.locator(".dr-character-row")).toHaveCount(2,{timeout:12000});
+    await expect(chat.locator('[data-deeprole-scene-clock="present"]')).toHaveText(sceneTime,{timeout:12000});
+    await nativeSend(compoundQuestion,45);checkPosition();
+    await nativeSend(ru?"Продолжай.":"Continue.",45);
+    const ordinary = memory();
+    expect(ordinary.find(fact => fact.text === coatText)).toMatchObject({timeStatus:"earlier-scene",claim:coat.claim});
+    expect(ordinary.find(fact => fact.text === codeText)).toMatchObject({timeStatus:"persistent",claim:code.claim});
+    expect(ordinary.find(fact => fact.text === endedText)).toMatchObject({timeStatus:"ended",claim:ended.claim,episodeSource:{period:"latest-turn"}});
+    expect(ordinary.some(fact => fact.text === readingText)).toBe(false);
+    expect(outgoing).toContain("NOT current activity");
     const after=(await records(panel)).find(r=>r.kind==="world").data.sharedGame;
     expect(after.facts).toEqual(saved.facts);expect(after.episodeSources).toEqual(saved.episodeSources);
     expect((await records(panel)).some(r=>r.kind==="story"&&r.data.type==="revision"&&r.data.content.includes(bridge))).toBe(true);
-    expect(posts).toBe(4);expect(context.pages()).toHaveLength(pageCount);expect(errors).toEqual([]);
+    expect(posts).toBe(6);
+    const journalText=storyEpisodeText(locale);
+    await panel.locator(".bottom-nav").getByRole("button",{name:navigationText(locale,"story"),exact:true}).click({timeout:10000});
+    await panel.locator('[data-dr-guide="story-episodes"]').click({timeout:10000});
+    await panel.getByRole("combobox",{name:journalText.plot,exact:true}).selectOption(task.key,{timeout:10000});
+    const matching=panel.locator(".dr-story-episodes article");
+    await expect(matching).toHaveCount(1);
+    const section=panel.locator(".dr-story-episodes > details");
+    if (!await section.evaluate(element => (element as HTMLDetailsElement).open)) await section.locator(":scope > summary").click();
+    const source=matching.locator("details");
+    if (!await source.evaluate(element => (element as HTMLDetailsElement).open)) await source.locator("summary").click();
+    await expect(matching.getByRole("button",{name:journalText.copyQuote,exact:true})).toBeVisible();
+    await matching.getByRole("button",{name:storyUpdateText(locale,"remove"),exact:true}).click();
+    expect((await records(panel)).find(r=>r.kind==="world").data.sharedGame.facts).toEqual(saved.facts);
+    await matching.getByRole("button",{name:storyUpdateText(locale,"confirmExclude"),exact:true}).click();
+    await expect(panel.getByText(journalText.excluded,{exact:true})).toBeVisible();
+    const reduced=(await records(panel)).find(r=>r.kind==="world").data.sharedGame;
+    expect(reduced.facts).toEqual(saved.facts.filter((fact:any)=>fact.text!==promise.text));
+    expect(reduced.episodeSources).toEqual(saved.episodeSources);
+    expect((await records(panel)).some(r=>r.kind==="story"&&r.data.type==="revision"&&r.data.content.includes(promiseQuote))).toBe(true);
+    await nativeSend(ru?"Продолжай.":"Continue.",45);
+    expect(memory().some(fact=>fact.text===promise.text)).toBe(false);
+    expect(context.pages()).toHaveLength(pageCount);expect(errors).toEqual([]);
   }finally{await context.close();}
 });

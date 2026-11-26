@@ -108,6 +108,23 @@
 .dr-character-presence { position:absolute; top:14px; right:14px; height:9px; width:9px; border:1px solid var(--dr-muted); border-radius:50%; background:var(--dr-bg); box-shadow:0 0 0 3px var(--dr-bg); }
 .dr-character-presence.is-present { background:var(--dr-primary); border-color:var(--dr-primary); }
 .dr-character-dialog-layer { position:fixed; inset:0; z-index:2147483001; display:grid; place-items:center; pointer-events:auto; background:#0d1013b0; backdrop-filter:blur(6px); }
+.dr-character-dialog-layer[data-window-layer] {
+  background: var(--desktop-overlay);
+  backdrop-filter: none;
+  transition: opacity var(--desktop-window-duration, 220ms) var(--dr-ease-out);
+}
+.dr-character-dialog-layer[data-window-layer] > .dr-character-dialog {
+  transition: translate var(--desktop-window-duration, 220ms) var(--dr-ease-out), scale var(--desktop-window-duration, 220ms) var(--dr-ease-out);
+}
+.dr-character-dialog-layer[data-window-closing] { opacity: 0; pointer-events: none; }
+.dr-character-dialog-layer[data-window-closing] > .dr-character-dialog { translate: 0 8px; scale: .985; }
+@starting-style {
+  .dr-character-dialog-layer[data-window-layer] { opacity: 0; }
+  .dr-character-dialog-layer[data-window-layer] > .dr-character-dialog { translate: 0 8px; scale: .985; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dr-character-dialog-layer[data-window-layer], .dr-character-dialog-layer[data-window-layer] > .dr-character-dialog { transition: none; }
+}
 .dr-character-dialog { width:min(640px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); display:flex; flex-direction:column; border:1px solid var(--dr-border); border-radius:18px; background:var(--dr-panel); color:var(--dr-text); box-shadow:0 20px 70px #0008; font:13px/1.5 system-ui,sans-serif; overflow:hidden; }
 .dr-character-dialog>header,.dr-character-editor>header,.dr-character-gallery-view>header { display:flex; align-items:center; justify-content:space-between; gap:var(--dr-space-2); padding:16px 20px; border-bottom:1px solid var(--dr-border); }
 .dr-character-dialog h2 { margin:0; font-size:18px; overflow-wrap:anywhere; }

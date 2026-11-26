@@ -5,6 +5,8 @@ import {nativeStoryMessageKey as key} from "../src/core/story-transport";
 import {assertStoryGraph,type StoryRecord,type StoryEvent,type StoryRevision} from "../src/core/story-records";
 import {createStoryRoleReader} from "../src/core/story-source-roles";
 import {storedRoleReader} from "../src/core/story-role-binding";
+import {createStoryEventLinkReader} from "../src/core/story-event-links";
+import type {StoryFact} from "../src/core/story-update";
 import {worldGamePeople} from "../src/core/world-game";
 import type {SceneEntity,WorldProfile,ChatBinding} from "../src/core/types";
 import {DeepRoleDatabase} from "../src/storage/database";
@@ -19,9 +21,10 @@ import {createBackup,parseBackup,restoreBackup} from "../src/storage/backup";
 import {storyWorld} from "./fixtures/story-worlds";
 const dbs:DeepRoleDatabase[]=[];
 afterEach(async()=>{await Promise.all(dbs.splice(0).map(d=>d.delete()));});
-async function fixture(renameDuringSend=false,foreignTwin=false){
+async function fixture(renameDuringSend=false,foreignTwin=false,groupedEvent=false){
  const f=storyWorld("en",3);f.entities[0]!.name="Nora";f.entities[1]!.name="Mira";
  if(foreignTwin){f.entities[2]!.name="Nora";f.entities[2]!.playthroughChatId="elsewhere";}
+ if(groupedEvent)f.entities[2]!.name="Inez";
  const db=new DeepRoleDatabase("role-binding-"+crypto.randomUUID());dbs.push(db);const repo=new DeepRoleRepository(db);await repo.mergeRecords(f.records);
  const binding=async(chat=f.binding.chatId)=>(await repo.list<ChatBinding>("binding")).find(b=>b.chatId===chat)!;
  const world=()=>repo.get<WorldProfile>("world",f.world.id).then(w=>w!);
@@ -34,7 +37,8 @@ async function fixture(renameDuringSend=false,foreignTwin=false){
  await confirmDispatchCapture({...route,outgoingText},7,repo);await advanceDispatchCapture({...route,phase:"started"},7,repo);await advanceDispatchCapture({...route,phase:"settled",delivery:{status:"accepted",httpStatus:200}},7,repo);await advanceDispatchCapture({...route,phase:"ready",link:{requestId,chatId:f.binding.chatId,nativeParentKey:key("2"),userMessageKey:key("3"),assistantMessageKey:key("4")},sawFinish:false,issue:null},7,repo);
  if(renameDuringSend){const p=(await repo.get<SceneEntity>("entity","person-1"))!;await repo.put("entity",{...p,name:"Eva",updatedAt:Date.now()});}
  const branch=(await readStoryReview({chatId:f.binding.chatId,worldId:f.world.id,cursor:null},repo)).guard!.branchId;
- const fact={kind:"promise" as const,text:"Bring tools if the road opens.",quote:'Nora told Mira: “I promise to bring tools if the road opens.”'};
+ const groupQuote="Nora, Mira and Inez inspected the brass compass.";
+ const fact:StoryFact=groupedEvent ? {kind:"event",text:groupQuote,quote:groupQuote} : {kind:"promise",text:"Bring tools if the road opens.",quote:'Nora told Mira: “I promise to bring tools if the road opens.”'};
  const answer=fact.quote+`<deeprole_characters>${JSON.stringify({version:2,world:f.world.id,chat:f.binding.chatId,branch,facts:[fact]})}</deeprole_characters>`;
  snapshot.messages.push(message("3","2","user",outgoingText),message("4","3","assistant",answer));snapshot.selectedNativeKey=key("4");await play();
  const review=await readStoryReview({chatId:f.binding.chatId,worldId:f.world.id,cursor:null},repo),event=review.facts![0]!;
@@ -57,6 +61,27 @@ it("survives reload, a replacement name, and full backup restore with historical
  const db=new DeepRoleDatabase("role-restore-"+crypto.randomUUID());dbs.push(db);const restored=new DeepRoleRepository(db);await restoreBackup(await parseBackup(JSON.stringify(await createBackup(undefined,f.repo))),"replace",restored);assertStoryGraph(await restored.rawRecords());
  const w=(await restored.get<WorldProfile>("world",f.world.id))!,entities=worldGamePeople(await restored.list<SceneEntity>("entity"),w);
  expect(storedRoleReader(w.sharedGame!.factRoleSeeds!,entities,w.id)(f.fact)?.promisor).toEqual({id:"person-1",name:"Eva",sourceName:"Nora"});expect((await restored.list<any>("dispatch"))[0].origin).toBe("restored");
+});
+it("restores a source-verified group and object without reassigning a participant to a namesake",async()=>{
+ const f=await fixture(true,false,true),replacement:SceneEntity={...f.entities[0]!,id:"another-nora",name:"Nora"};
+ await f.repo.put("entity",replacement);
+ const db=new DeepRoleDatabase("event-links-restore-"+crypto.randomUUID());dbs.push(db);const restored=new DeepRoleRepository(db);
+ await restoreBackup(await parseBackup(JSON.stringify(await createBackup(undefined,f.repo))),"replace",restored);
+ const raw=await restored.rawRecords();assertStoryGraph(raw);
+ const world=(await restored.get<WorldProfile>("world",f.world.id))!,game=world.sharedGame!,entities=await restored.list<SceneEntity>("entity");
+ const proof=game.factRoleSeeds![0]!.binding;
+ expect(proof.version).toBe(3);
+ expect(createStoryEventLinkReader(game,{worldId:world.id,entities}).read(f.fact)).toEqual({
+  sourceRevisionId:proof.sourceRevisionId,objects:[{id:"brass compass",name:"brass compass"}],people:[
+   {id:"person-1",name:"Eva",sourceName:"Nora",role:"participant"},
+   {id:"person-2",name:"Mira",role:"participant"},{id:"person-3",name:"Inez",role:"participant"},
+  ],
+ });
+ const tampered=raw.find(row=>row.kind==="world"&&row.id===world.id)!.data as WorldProfile;
+ const binding=tampered.sharedGame!.factRoleSeeds![0]!.binding;
+ if(binding.version!==3)throw Error("Expected source link proof");
+ binding.eventLinks.object="brass clock";
+ expect(()=>assertStoryGraph(raw)).toThrow("story-evidence-invalid");
 });
 it("follows approved merging and undo without rewriting original source-role evidence",async()=>{
  const f=await fixture(),seed=structuredClone((await f.getWorld()).sharedGame!.factRoleSeeds),input={chatId:f.binding.chatId,worldId:f.world.id,query:"",offset:0,pair:["person-1","person-3"] as [string,string]},page=await readStoryMerge(input,f.repo);

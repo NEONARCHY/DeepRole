@@ -18,6 +18,24 @@ it("binds a quote to its original source revision and never accepts extra model 
  const w=fixture(),binding=bindStoryRoles(fact,source(w));expect(validRoleBinding(binding)).toBe(true);expect(binding).toMatchObject({sourceRevisionId:"source",quote:fact.quote,roles:{promisor:{id:"person-1",name:"Nora"},recipient:{id:"person-2",name:"Mira"}}});
  expect(validStoryFact({...fact,memoryRoles:binding})).toBe(false);expect(validStoryFact(fact)).toBe(true);
 });
+it.each([
+  ["Nora and Mira inspected the brass compass.", "Other blamed Nora and Mira inspected the brass compass."],
+  ["Nora or Mira inspected the brass compass.", "Nora or Mira inspected the brass compass."],
+  ["Nora did not inspect the brass compass.", "Nora did not inspect the brass compass."],
+  ["Nora inspected the brass compass.", 'Other said: "Nora inspected the brass compass."'],
+  ["Nora inspected the brass compass.", '“Nora inspected the brass compass.”'],
+])("does not bind roles from an alternative, reported, negative or partial action: %s", (quote,content)=>{
+ const w=fixture(),root=source(w),captured=sourceRoleRoster(captureRoleRoster(w.entities,w.world.id),w.world.id,content);
+ const binding=bindStoryRoles({kind:"event",text:quote,quote},{...root,content,roleRoster:captured});
+ expect(binding.eventLinks).toBeUndefined();
+});
+it("does not bind a name collision or use an inflected person as an object",()=>{
+ const w=fixture();w.entities[0]!.name="Нора";w.entities[1]!.name="Мира";w.entities[2]!.name="Нора Вейл";
+ const quote="Нора сфотографировала Миру.",root=source(w),captured=sourceRoleRoster(captureRoleRoster(w.entities,w.world.id),w.world.id,quote);
+ const photo:StoryFact={kind:"event",text:quote,quote};
+ expect(bindStoryRoles(photo,{...root,content:quote,roleRoster:captured}).eventLinks).toBeUndefined();
+ expect(bindStoryRoles(photo,{...root,content:quote,roleRoster:captured.filter(person=>person.id!=="person-3")}).eventLinks).toEqual({subjects:[{id:"person-1",name:"Нора"}]});
+});
 it("keeps identity after renaming without rewriting source names or facts",()=>{
  const w=fixture(),binding=bindStoryRoles(fact,source(w)),seeds=[roleSeed(fact,binding)];w.entities[0]!.name="Eva";
  const r=createStoryRoleReader({worldId:w.world.id,entities:w.entities},"What did Eva promise?",storedRoleReader(seeds,w.entities,w.world.id));

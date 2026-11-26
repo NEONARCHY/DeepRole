@@ -10,6 +10,8 @@ import { ContextBudgetSummary } from "../shared/ContextBudgetSummary";
 import { MemoryDeliverySummary } from "../shared/MemoryDeliverySummary";
 import { StoryDiagnostics } from "../shared/StoryDiagnostics";
 import { StoryWorkspace } from "../shared/StoryWorkspace";
+import { indexSceneClocks, type SceneClockIndex } from "../../core/story-scene-clock";
+import { indexStoryJournalActions, type JournalActions } from "../../core/story-journal";
 import { worldRestartPreview } from "../../core/world-restart-preview";
 import { WorldResetSetup } from "../shared/WorldResetSetup";
 import { storyUxText } from "../../core/story-ux-i18n";
@@ -145,6 +147,8 @@ interface PageState {
 }
 
 const EMPTY_PAGE: PageState = { chatId: null, chatUrl: "", messageCount: 0, compatible: false };
+const desktopEntry = IS_DESKTOP ? new URLSearchParams(window.location.search).get("view") : null;
+const settingsEntry = desktopEntry === "settings";
 
 export function App() {
   const learning = useLearning();
@@ -158,6 +162,8 @@ export function App() {
   const [settings, setSettingsState] = useState<DeepRoleSettings>(DEFAULT_SETTINGS);
   const [books, setBooks] = useState<MemoryBook[]>([]);
   const [worlds, setWorlds] = useState<WorldProfile[]>([]);
+  const [sceneClockIndex, setSceneClockIndex] = useState<SceneClockIndex>(() => new Map());
+  const [journalActions, setJournalActions] = useState<ReadonlyMap<string, JournalActions>>(() => new Map());
   const [entities, setEntities] = useState<SceneEntity[]>([]);
   const [templates, setTemplates] = useState<StoryTemplate[]>([]);
   const [libraryWorld, setLibraryWorld] = useState<string | null>(null);
@@ -171,7 +177,7 @@ export function App() {
   const refreshGeneration = useRef(0);
   const pageGeneration = useRef(0);
   const [page, setPage] = useState<PageState>(EMPTY_PAGE);
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [activeTab, setActiveTab] = useState<Tab>(desktopEntry === "settings" || desktopEntry === "worlds" ? desktopEntry : "overview");
   const [worldStart, setWorldStart] = useState<WorldStartRequest>();
   const playHeading = useRef<HTMLHeadingElement>(null);
   const focusPlayOnOpen = useRef(false);
@@ -186,7 +192,7 @@ export function App() {
   }, [activeTab, settings.onboardingComplete]);
   const [storyVisited, setStoryVisited] = useState(false);
   const [storyOverviewRequest, setStoryOverviewRequest] = useState(0);
-  const [settingsVisited, setSettingsVisited] = useState(false);
+  const [settingsVisited, setSettingsVisited] = useState(settingsEntry);
   const [settingsSaveError, setSettingsSaveError] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const settingsWriting = useRef(false);
@@ -223,6 +229,8 @@ export function App() {
     ++pageGeneration.current;
     setLocked(true);
     setBooks([]); setEntries([]); setSnapshots([]); setWorlds([]); setEntities([]); setTemplates([]);
+    setSceneClockIndex(new Map());
+    setJournalActions(new Map());
     setBindings([]); setProposals([]); setChanges([]); setReviewId(null);
     setBookEditor(null); setEntryEditor(null); setEntryBase(null); setEditorWorld(null);
     setExportRequest(null);
@@ -265,6 +273,9 @@ export function App() {
       setLoadError(false);
       setBooks(libraryRecords<MemoryBook>(records, "book")); setEntries(libraryRecords<MemoryEntry>(records, "entry"));
       setWorlds(libraryRecords<WorldProfile>(records, "world")); setEntities(libraryRecords<SceneEntity>(records, "entity")); setTemplates(libraryRecords<StoryTemplate>(records, "template"));
+      const story = libraryRecords<import("../../core/story-records").StoryRecord>(records, "story");
+      setSceneClockIndex(indexSceneClocks(story));
+      setJournalActions(indexStoryJournalActions(story));
       setBindings(libraryRecords<ChatBinding>(records, "binding")); setSnapshots(libraryRecords<HandoffSnapshot>(records, "snapshot"));
       setProposals(libraryRecords<MemoryProposalBatch>(records, "proposal")); setChanges(libraryRecords<LoreChange>(records, "change"));
     } catch (error) {
@@ -686,9 +697,10 @@ export function App() {
           </div>
         </details></div>}
 
-        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace overviewRequest={storyOverviewRequest} restartPreview={worldRestartPreview(entities, worlds.find(w => w.id === scene.worldId), page.chatId)} key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
+        {storyVisited && <div hidden={activeTab !== "story"}><StoryWorkspace overviewRequest={storyOverviewRequest} restartPreview={worldRestartPreview(entities, worlds.find(w => w.id === scene.worldId), page.chatId)} key={JSON.stringify([page.chatUrl, page.chatId, scene.worldId])} locale={settings.locale} worldId={scene.worldId} worldName={worlds.find(w => w.id === scene.worldId)?.name} automation={worlds.find(w => w.id === scene.worldId)?.storyAutomation} onAutomation={async mode => { if (!scene.worldId || !page.chatId || page.generating) throw Error("story-binding-conflict"); const world = await repository.get<WorldProfile>("world", scene.worldId); if (!world || world.sharedGame && world.sharedGame.activeChatId !== page.chatId) throw Error("story-game-inactive"); await repository.putIfUnchanged("world", { ...world, storyAutomation: { mode, revision: createId("automation") }, updatedAt: Date.now() }, world); await notifyDataChanged(); await refresh(); }} sharedGame={worlds.find(w => w.id === scene.worldId)?.sharedGame} sceneClockIndex={sceneClockIndex} journalActions={journalActions} archives={worlds.find(w => w.id === scene.worldId)?.sharedGameArchives?.length} chatId={page.chatId} connected={page.compatible} active={activeTab === "story"} generating={!!page.generating} onPlay={() => setActiveTab("overview")} onFullReset={()=>setResetDialogOpen(true)} onWorlds={() => { chooseLibraryWorld(scene.worldId); setActiveTab("worlds"); }}/></div>}
         {settingsVisited && <div hidden={activeTab !== "settings"}><fieldset className="dr-settings-save-scope" disabled={settingsSaving} aria-busy={settingsSaving}>
           <SettingsView
+            desktopPanel={IS_DESKTOP && embeddedMenu}
             onExport={() => setExportRequest({ worldId: scene.worldId ?? libraryWorld })}
             t={t}
             settings={settings}
@@ -779,12 +791,12 @@ function Overview(props: {
     <ServiceProgress locale={props.locale} activity={props.page.activity} />
     {showContext && showPreview && preview}
     {!!selection?.omittedCount && <p className="dr-inline-note">{assistantText(props.locale, "omitted")}: {selection.omittedCount}</p>}
-    {showContext && (!showPreview || report || memoryDelivery) && <details className="play-memory-details"><summary>{props.locale === "ru" ? "Что получает DeepSeek" : "What DeepSeek receives"}</summary>
+    {showContext && (!showPreview || report || memoryDelivery) && <details className="play-memory-details"><summary>{props.locale === "ru" ? "Что получает модель" : "What the model receives"}</summary>
       {!showPreview && preview}
       <ContextBudgetSummary locale={props.locale} report={report} coverage={selection?.memoryCoverage} entries={selection?.entries}/>
       <MemoryDeliverySummary locale={props.locale} receipt={memoryDelivery}/>
     </details>}
-    <details className="play-memory-details"><summary>{props.locale === "ru" ? "Добавить или проверить память вручную" : "Add or check memory manually"}</summary><div className="quick-actions"><button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button><button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{!props.page.compatible || !props.page.chatId ? (props.locale === "ru" ? "Сначала откройте игровой чат DeepSeek." : "Open a DeepSeek game chat first.") : x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button></div></details>
+    <details className="play-memory-details"><summary>{props.locale === "ru" ? "Добавить или проверить память вручную" : "Add or check memory manually"}</summary><div className="quick-actions"><button className="action-card" aria-label={mt("addFact")} onClick={props.onNewMemory}><Plus /><span><strong>{mt("addFact")}</strong><small>{mt("addFactHint")}</small></span><ChevronRight /></button><button className="action-card" aria-label={mt("update")} onClick={props.onAnalyze} disabled={blocked}><BrainCircuit /><span><strong>{mt("update")}</strong><small>{!props.page.compatible || !props.page.chatId ? (props.locale === "ru" ? (IS_DESKTOP ? "Сначала откройте игровой чат." : "Сначала откройте игровой чат DeepSeek.") : (IS_DESKTOP ? "Open a the model game chat first." : "Open a DeepSeek game chat first.")) : x(busy ? "waiting" : props.page.generating ? "generating" : !props.page.messageCount ? "startChat" : "requestsVisible")}</small></span><ChevronRight /></button></div></details>
   </div>;
 }
 
@@ -935,6 +947,7 @@ function SettingSwitch({ label, hint, checked, onChange }: {
 }
 
 function SettingsView(props: {
+  desktopPanel: boolean;
   onExport: () => void;
   t: ReturnType<typeof useTranslator>;
   settings: DeepRoleSettings;
@@ -1009,10 +1022,12 @@ function SettingsView(props: {
 
   return (
     <div className="view-stack">
-      <SettingsNavigation locale={props.settings.locale} section={section} onSelect={setSection} worldName={props.world?.name}/>
+      <SettingsNavigation locale={props.settings.locale} section={section} onSelect={setSection} worldName={props.world?.name}
+        desktopPanel={props.desktopPanel} focusOnMount={settingsEntry} />
       <div className="dr-settings-page" hidden={section !== "appearance"}>
         <SettingsCard icon={<Pin />} title={n("panels")}>
           {!IS_DESKTOP && <PanelWidthControl locale={props.settings.locale} value={props.settings.floatingPanelWidth} onSave={async width => { await props.onSettings({ ...props.settings, floatingPanelWidth: width }); }} />}
+          {IS_DESKTOP && <SettingSwitch label={n("scenePortraits")} hint={n("scenePortraitsHint")} checked={props.settings.characterSpritesEnabled !== false} onChange={characterSpritesEnabled => changePreference({ ...props.settings, characterSpritesEnabled })} />}
           <SettingSwitch label={adaptiveText(props.settings.locale).title} hint={n("adaptive")} checked={props.settings.adaptiveLayout !== false} onChange={adaptiveLayout => changePreference({ ...props.settings, adaptiveLayout })} />
           <SettingSwitch label={sceneChoiceText(props.settings.locale, "pinChoices")} hint={n("fixedChoices")} checked={!!props.settings.pinSceneChoices} onChange={pinSceneChoices => changePreference({ ...props.settings, pinSceneChoices })} />
           <SettingSwitch label={sceneChoiceText(props.settings.locale, "pinPortraits")} hint={n("fixedPortraits")} checked={!!(props.settings.pinPortraitLeft || props.settings.pinPortraitRight)} onChange={pinned => changePreference({ ...props.settings, pinPortraitLeft: pinned, pinPortraitRight: pinned })} />

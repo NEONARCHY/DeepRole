@@ -13,7 +13,7 @@ export interface StoryUpdateDiagnostic {
   version: 1; status: "accepted" | "partial" | "rejected" | "missing";
   accepted: number; skipped: number; facts: number; issues: StoryUpdateIssue[];
 }
-export interface StoryUpdateScope { world: string; chat: string; branch: string; base: string; entities: SceneEntity[]; scene?: CharacterScene; requestId?: string }
+export interface StoryUpdateScope { world: string; chat: string; branch: string; base: string; entities: SceneEntity[]; scene?: CharacterScene; requestId?: string; portraitActionsPaused?: boolean }
 const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const id = (v: unknown): v is string => typeof v === "string" && !!v && v.length <= 160 && v.trim() === v && !["__proto__", "prototype", "constructor"].includes(v);
 const string = (v: unknown, max: number) => typeof v === "string" && v.length <= max;
@@ -129,6 +129,7 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
     const state: CharacterStatus = structuredClone(narrativeCharacterStatus(scope.scene?.states[resolved] ?? person?.characterSheet?.initialStatus ?? EMPTY_STATUS));
     let fields = 0;
     for (const key of ["action", "condition", "goal", "relationship", "stats"] as const) {
+      if (key === "action" && scope.portraitActionsPaused) continue;
       const value = item.state[key]; if (value === undefined) continue;
       const operation = obj(value) ? value.op : undefined;
       if (operation === "keep" && Object.keys(value as object).length === 1) continue;

@@ -11,7 +11,8 @@ for (const locale of ["ru", "en"] as const) for (const width of [320, 900]) for 
     await page.getByRole("button", { name: l("Миры", "Worlds"), exact: true }).click();
     await page.getByRole("button", { name: l("Загрузить мир из файла", "Load a world from a file"), exact: true }).click();
     if (width === 320) await page.addStyleTag({ content: "html { font-size: 125%; }" });
-    await expect(page.getByRole("link", { name: "Better Deepseek (BDS)", exact: true })).toHaveAttribute("href", "https://github.com/EdgeTypE/better-deepseek");
+    await expect(page.locator(".rp-import-formats")).toContainText(l("Файлы с записями памяти", "Memory entry files"));
+    await expect(page.locator(".rp-import-formats a")).toHaveCount(0);
     const value = format === "entries" ? Array.from({ length: 45 }, (_, i) => ({ title: `Fact ${i}`, content: "Unchanged text.\n".repeat(120) })) : await page.evaluate(async () => {
       const { repository } = await import("/src/storage/repository.ts" as string);
       const { exportWorld } = await import("/src/storage/worlds.ts" as string);

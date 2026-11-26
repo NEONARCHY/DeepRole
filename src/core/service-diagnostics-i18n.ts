@@ -6,7 +6,7 @@ const en = {
  visibility_visible: "Visible page", visibility_hidden: "Hidden page", visibility_unknown: "Not recorded",
  title: "Wand and character preparation diagnostics",
  hint: "Reads local operation records, including records kept after temporary chats are deleted. Does not send requests, retry work or change data.",
- limit: "These are local records, not proof that a DeepSeek reply finished or that a profile was saved. Saved validation reasons are included when available. Missing information or conflicting sources do not mean a technical failure.",
+ limit: "These are local records, not proof that a model reply finished or that a profile was saved. Saved validation reasons are included when available. Missing information or conflicting sources do not mean a technical failure.",
  validation: "Reply validation reasons", validationHint: "These are rejected attempts, including format correction. A later successful result does not erase them.",
  validationAttempt: "Step {step} · {attempt}", validationOriginal: "Original reply", validationRepair: "Format correction", validationRule: "Protocol rule", validationActual: "Received shape",
  validationFieldAttempt: "Field reply check", validationFieldHint: "Reasons why this text was not accepted. These records do not change your field or repeat the request.",
@@ -36,7 +36,7 @@ const en = {
  error_context: "The chat, world or available facts did not meet the operation requirements.",
  error_timeout: "A usable reply was not received in time.", error_cleanup: "Temporary chat cleanup needs attention.",
  error_other: "The operation could not finish. The fixed code below helps identify the cause.",
- error_missingFacts: "DeepSeek did not find enough information in the supplied sources. The field is unchanged.", error_conflict: "DeepSeek reported conflicting sources. The field is unchanged.", error_long: "The reply exceeds the field limit. The field is unchanged.",
+ error_missingFacts: "The model did not find enough information in the supplied sources. The field is unchanged.", error_conflict: "The model reported conflicting sources. The field is unchanged.", error_long: "The reply exceeds the field limit. The field is unchanged.",
 } as const;
 const ru: Record<keyof typeof en, string> = {
  worker: "Последний шаг палочки", workerVisibility: "Видимость страницы", workerAt: "Шаг отмечен",
@@ -44,7 +44,7 @@ const ru: Record<keyof typeof en, string> = {
  visibility_visible: "Страница видима", visibility_hidden: "Страница скрыта", visibility_unknown: "Не отмечена",
  title: "Диагностика палочек и подготовки персонажей",
  hint: "Читает локальные отметки операций, в том числе после удаления временных чатов. Не отправляет запросы, не повторяет работу и не меняет данные.",
- limit: "Это локальные отметки, а не доказательство завершения ответа DeepSeek или сохранения анкеты. Сохранённые причины проверки включены, если они есть. Нехватка сведений или противоречия в источниках не означают техническую поломку.",
+ limit: "Это локальные отметки, а не доказательство завершения ответа модели или сохранения анкеты. Сохранённые причины проверки включены, если они есть. Нехватка сведений или противоречия в источниках не означают техническую поломку.",
  validation: "Причины проверки ответа", validationHint: "Это отклонённые попытки, включая исправление формата. Более поздний успех их не стирает.",
  validationAttempt: "Шаг {step} · {attempt}", validationOriginal: "Первый ответ", validationRepair: "Исправление формата", validationRule: "Правило протокола", validationActual: "Полученная структура",
  validationFieldAttempt: "Проверка ответа палочки", validationFieldHint: "Причины, по которым текст не был принят. Эти отметки не меняют поле и не повторяют запрос.",
@@ -74,7 +74,7 @@ const ru: Record<keyof typeof en, string> = {
  error_context: "Чат, мир или доступные факты не соответствовали условиям операции.",
  error_timeout: "Не удалось вовремя получить пригодный ответ.", error_cleanup: "Удаление временного чата требует проверки.",
  error_other: "Не удалось завершить операцию. Фиксированный код ниже поможет определить причину.",
- error_missingFacts: "DeepSeek не нашёл достаточно сведений в переданных источниках. Поле не изменено.", error_conflict: "DeepSeek сообщил о противоречии в источниках. Поле не изменено.", error_long: "Ответ длиннее лимита поля. Поле не изменено.",
+ error_missingFacts: "Модель не нашла достаточно сведений в переданных источниках. Поле не изменено.", error_conflict: "Модель сообщила о противоречии в источниках. Поле не изменено.", error_long: "Ответ длиннее лимита поля. Поле не изменено.",
 };
 export type ServiceDiagnosticsTextKey = keyof typeof en;
 export const serviceDiagnosticsText = (locale: Locale, key: ServiceDiagnosticsTextKey): string => (locale === "ru" ? ru : en)[key];

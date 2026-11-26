@@ -33,60 +33,115 @@ export function QuickMemory(props: { locale: Locale; worldName?: string; backLab
 type ProfileChoice = { description: string; appearance: string; personality: string; goals: string; background: string };
 const profileFields = ["description", "appearance", "personality", "goals", "background"] as const;
 const profileLabels = { ru: { description: "Описание", appearance: "Внешность", personality: "Характер", goals: "Цели", background: "О персонаже" }, en: { description: "Description", appearance: "Appearance", personality: "Personality", goals: "Goals", background: "Background" } } as const;
+const profileProposal = Symbol("profile");
 
 export function MemoryReview(props: { locale: Locale; batch: MemoryProposalBatch; backLabel?: string; introduction?: string; saveLabel?: string; keepLabel?: string; onKeepMemory?: () => Promise<void>; onSave: (items: MemoryCandidate[], profileChoice?: ProfileChoice) => Promise<void>; onDiscard: () => Promise<void>; onClose: () => void }) {
   const t = (key: Parameters<typeof assistantText>[1]) => assistantText(props.locale, key);
+  const profile = props.batch.profileChange;
   const [items, setItems] = useState(() => structuredClone(props.batch.items).map((item) => ({ ...item, selected: false })));
   const [profileSelected, setProfileSelected] = useState(false);
-  const [profileValues, setProfileValues] = useState<ProfileChoice>({ description: props.batch.profileChange?.afterDescription ?? "", appearance: props.batch.profileChange?.afterAppearance ?? "", personality: props.batch.profileChange?.afterPersonality ?? "", goals: props.batch.profileChange?.afterGoals ?? "", background: props.batch.profileChange?.afterBackground ?? "" });
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [profileValues, setProfileValues] = useState<ProfileChoice>({
+    description: profile?.afterDescription ?? "", appearance: profile?.afterAppearance ?? "", personality: profile?.afterPersonality ?? "",
+    goals: profile?.afterGoals ?? "", background: profile?.afterBackground ?? "",
+  });
+  const [openId, setOpenId] = useState<string | typeof profileProposal | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const invalid = items.some((item) => item.selected && !item.issue && (!item.title.trim() || !item.content.trim()));
   const selectedCount = items.filter((item) => item.selected && !item.issue).length + Number(profileSelected);
-  const availableCount = items.filter((item) => !item.issue).length + Number(!!props.batch.profileChange);
-  const changedProfileFields = props.batch.profileChange ? profileFields.filter((key) => props.batch.profileChange![`before${key[0]!.toUpperCase()}${key.slice(1)}` as "beforeAppearance"] !== props.batch.profileChange![`after${key[0]!.toUpperCase()}${key.slice(1)}` as "afterAppearance"]) : [];
+  const profileExpanded = openId === profileProposal;
+  const totalCount = items.length + Number(!!profile);
+  const availableCount = items.filter((item) => !item.issue).length + Number(!!profile);
+  const changedProfileFields = profile ? profileFields.filter(key => {
+    const field = `${key[0]!.toUpperCase()}${key.slice(1)}` as Capitalize<typeof key>;
+    return profile[`before${field}`] !== profile[`after${field}`];
+  }) : [];
   const patch = (id: string, values: Partial<MemoryCandidate>) => setItems((all) => all.map((item) => item.id === id ? { ...item, ...values } : item));
   async function act(task: () => Promise<void>) { if (busy) return; setBusy(true); setError(""); try { await task(); props.onClose(); } catch { setError(t("conflict")); } finally { setBusy(false); } }
   return <section className="dr-assistant dr-memory-review" aria-label={t("review")} aria-busy={busy}>
-    <header><div className="dr-review-heading"><strong>{t("review")}</strong><small>{t("reviewCount").replace("{selected}", String(selectedCount)).replace("{total}", String(items.length + Number(!!props.batch.profileChange)))}</small></div><button type="button" className={props.backLabel?"dr-assistant-back":undefined} disabled={busy} aria-label={props.backLabel??t("close")} onClick={props.onClose}>{props.backLabel?<><ChevronLeft aria-hidden="true" size={18}/><span>{props.backLabel}</span></>:<X aria-hidden="true" size={18}/>}</button></header>
-    <p className="dr-review-intro">{props.batch.scanVersions ? props.locale === "ru" ? `DeepRole проверил все ${Object.keys(props.batch.scanVersions).length} записей этого мира. Сравните предложения DeepSeek: он может пропустить косвенное упоминание.` : `DeepRole checked all ${Object.keys(props.batch.scanVersions).length} records in this world. Review DeepSeek's suggestions: it may miss indirect mentions.` : experienceText(props.locale, "reviewHint")}</p>
-    {props.introduction && <p className="dr-review-intro">{props.introduction}</p>}
-    <div className="dr-review-selection"><button type="button" disabled={busy || !availableCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: !item.issue }))); setProfileSelected(!!props.batch.profileChange); }}>{experienceText(props.locale, "reviewAll")}</button><button type="button" disabled={busy || !selectedCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: false }))); setProfileSelected(false); }}>{experienceText(props.locale, "reviewNone")}</button></div>
-    {props.batch.profileChange && <article className={`dr-proposal${profileSelected ? " is-selected" : ""}`}>
-      <div className="dr-proposal-top"><label className="dr-proposal-check"><input type="checkbox" checked={profileSelected} disabled={busy} aria-label={`${t("select")}: ${props.batch.profileChange.name}`} onChange={(event) => setProfileSelected(event.target.checked)} /></label><div className="dr-proposal-summary"><span className="dr-proposal-type">{props.locale === "ru" ? "Карточка персонажа" : "Character profile"}</span><strong>{props.batch.profileChange.name}</strong></div></div>
-      <div className="dr-proposal-body"><section className="dr-proposal-before"><span>{t("before")}</span>{changedProfileFields.map((key) => <p key={key}>{profileLabels[props.locale][key]}: {props.batch.profileChange![`before${key[0]!.toUpperCase()}${key.slice(1)}` as "beforeAppearance"] || "—"}</p>)}</section>
-        <div className="dr-proposal-after"><span>{t("after")}</span>{changedProfileFields.map((key) => <label key={key}>{profileLabels[props.locale][key]}<textarea rows={3} maxLength={key === "description" ? 30000 : 1200} disabled={busy} value={profileValues[key]} onChange={(event) => setProfileValues((old) => ({ ...old, [key]: event.target.value }))} /></label>)}</div></div>
-    </article>}
-    <div className="dr-review-list">{items.map((item, index) => {
-      const expanded = openId === item.id;
-      const missing = item.selected && !item.issue && (!item.title.trim() || !item.content.trim());
-      const summary = item.content.trim().replace(/\s+/gu, " ");
-      return <article key={item.id} className={`dr-proposal${item.selected ? " is-selected" : ""}${item.issue ? " has-issue" : ""}${missing ? " is-invalid" : ""}`}>
-        <div className="dr-proposal-top">
-          <label className="dr-proposal-check"><input type="checkbox" disabled={busy || !!item.issue} checked={item.selected} aria-label={`${t("select")}: ${item.title || index + 1}`} onChange={(e) => patch(item.id, { selected: e.target.checked })} /></label>
-          <button type="button" className="dr-proposal-summary" disabled={busy} aria-expanded={expanded} onClick={() => setOpenId(expanded ? null : item.id)}>
-            <span className="dr-proposal-type">{missing ? t("reviewMissingFields") : item.issue ? t("reviewNeedsReview") : item.targetEntryId ? t("update") : t("newEntry")}</span>
-            <strong>{item.title.trim() || t("newEntry")}</strong>
-            <small>{summary.slice(0, 110)}{summary.length > 110 ? "…" : ""}</small>
-            <ChevronDown aria-hidden="true" size={17} />
-          </button>
+    <div className="dr-review-scroll">
+      <header>
+        <div className="dr-review-heading">
+          <h3>{t("review")}</h3>
+          <small role="status">{t("reviewCount").replace("{selected}", String(selectedCount)).replace("{total}", String(totalCount))}</small>
         </div>
-        {item.issue && <div className="dr-proposal-issue" role="note"><AlertCircle aria-hidden="true" size={16} /><p>{t("issue")}</p>{!props.batch.scanVersions && <button type="button" disabled={busy} onClick={() => { patch(item.id, { targetEntryId: undefined, expectedEntry: undefined, issue: undefined, selected: true }); setOpenId(item.id); }}>{t("asNew")}</button>}</div>}
-        {expanded && <div className="dr-proposal-body">
-          {item.targetEntryId && item.expectedEntry && <section className="dr-proposal-before"><span>{t("before")}</span><strong>{item.expectedEntry.title}</strong><p>{item.expectedEntry.content}</p></section>}
-          <div className="dr-proposal-after"><span>{item.targetEntryId ? t("after") : t("newEntry")}</span>
-            <label>{experienceText(props.locale, "reviewTitle")}<input required maxLength={240} disabled={busy} value={item.title} onChange={(e) => patch(item.id, { title: e.target.value })} /></label>
-            <label>{t("content")}<textarea rows={5} maxLength={30000} disabled={busy} value={item.content} onChange={(e) => patch(item.id, { content: e.target.value })} /></label>
-            {item.targetEntryId ? <p className="dr-inline-note">{experienceText(props.locale, "reviewKeptMode", { mode: uiText(props.locale, item.activation) })}</p> : <MemoryModeControl locale={props.locale} value={item.activation} onChange={(activation) => patch(item.id, { activation })} disabled={busy} />}
-            {item.selected && (!item.title.trim() || !item.content.trim()) && <p role="alert">{experienceText(props.locale, "reviewRequired")}</p>}
+        <button type="button" className={props.backLabel ? "dr-assistant-back" : undefined} disabled={busy} aria-label={props.backLabel ?? t("close")} onClick={props.onClose}>
+          {props.backLabel ? <><ChevronLeft aria-hidden="true" size={16} strokeWidth={1.5} /><span>{props.backLabel}</span></> : <X aria-hidden="true" size={16} strokeWidth={1.5} />}
+        </button>
+      </header>
+      <p className="dr-review-intro">{props.batch.scanVersions ? props.locale === "ru" ? `DeepRole проверил все ${Object.keys(props.batch.scanVersions).length} записей этого мира. Проверьте предложения. Модель может пропустить косвенное упоминание.` : `DeepRole checked all ${Object.keys(props.batch.scanVersions).length} records in this world. Review the suggestions. The model may miss indirect mentions.` : experienceText(props.locale, "reviewHint")}</p>
+      {props.introduction && <p className="dr-review-intro">{props.introduction}</p>}
+      <div className="dr-review-selection">
+        <button type="button" disabled={busy || !availableCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: !item.issue }))); setProfileSelected(!!profile); }}>
+          {availableCount === totalCount ? experienceText(props.locale, "reviewAll") : t("reviewAvailable")}
+        </button>
+        <button type="button" disabled={busy || !selectedCount} onClick={() => { setItems((all) => all.map((item) => ({ ...item, selected: false }))); setProfileSelected(false); }}>{experienceText(props.locale, "reviewNone")}</button>
+      </div>
+      <div className="dr-review-list">
+        {profile && <article className={`dr-proposal${profileSelected ? " is-selected" : ""}`}>
+          <div className="dr-proposal-top">
+            <label className="dr-proposal-check"><input type="checkbox" checked={profileSelected} disabled={busy} aria-label={`${t("select")}: ${profile.name}`} onChange={(event) => setProfileSelected(event.target.checked)} /></label>
+            <button type="button" className="dr-proposal-summary" disabled={busy} aria-expanded={profileExpanded} onClick={() => setOpenId(profileExpanded ? null : profileProposal)}>
+              <span className="dr-proposal-type">{props.locale === "ru" ? "Карточка персонажа" : "Character profile"}</span>
+              <strong>{profile.name}</strong>
+              <small>{changedProfileFields.map((key) => profileLabels[props.locale][key]).join(" · ")}</small>
+              <ChevronDown aria-hidden="true" size={16} strokeWidth={1.5} />
+            </button>
           </div>
-        </div>}
-      </article>;
-    })}</div>
-    {invalid && <p role="alert">{experienceText(props.locale, "reviewRequired")}</p>}
-    {error && <p role="alert">{error}</p>}
-    <div className="dr-assistant-actions dr-review-actions">{confirmDiscard ? <><p className="dr-review-confirm" role="alert">{t("reviewDiscardConfirm")}</p><div className="dr-review-confirm-actions"><button type="button" disabled={busy} onClick={() => setConfirmDiscard(false)}>{t("reviewCancel")}</button><button type="button" className="dr-review-discard-final" disabled={busy} onClick={() => void act(props.onDiscard)}>{t("reviewDiscardFinal")}</button></div></> : <><button className="dr-assistant-primary" disabled={busy || invalid || !selectedCount && !props.onKeepMemory} onClick={() => void act(() => !selectedCount && props.onKeepMemory ? props.onKeepMemory() : profileSelected ? props.onSave(items, profileValues) : props.onSave(items))}>{!selectedCount && props.onKeepMemory ? props.keepLabel : <>{props.saveLabel ?? t("saveChanges")} · {selectedCount}</>}</button><button className="dr-review-discard" disabled={busy} onClick={() => setConfirmDiscard(true)}>{t("discard")}</button></>}</div>
+          {profileExpanded && <div className="dr-proposal-body">
+            <section className="dr-proposal-before"><span>{t("before")}</span>{changedProfileFields.map((key) => <p key={key}>{profileLabels[props.locale][key]}: {profile[`before${key[0]!.toUpperCase()}${key.slice(1)}` as "beforeAppearance"] || "—"}</p>)}</section>
+            <div className="dr-proposal-after"><span>{t("after")}</span>{changedProfileFields.map((key) => <label key={key}>{profileLabels[props.locale][key]}<textarea rows={3} maxLength={key === "description" ? 30000 : 1200} disabled={busy} value={profileValues[key]} onChange={(event) => setProfileValues((old) => ({ ...old, [key]: event.target.value }))} /></label>)}</div>
+          </div>}
+        </article>}
+        {items.map((item, index) => {
+          const expanded = openId === item.id;
+          const missing = item.selected && !item.issue && (!item.title.trim() || !item.content.trim());
+          const summary = item.content.trim().replace(/\s+/gu, " ");
+          return <article key={item.id} className={`dr-proposal${item.selected ? " is-selected" : ""}${item.issue ? " has-issue" : ""}${missing ? " is-invalid" : ""}`}>
+            <div className="dr-proposal-top">
+              <label className="dr-proposal-check"><input type="checkbox" disabled={busy || !!item.issue} checked={item.selected} aria-label={`${t("select")}: ${item.title || index + 1}`} onChange={(e) => patch(item.id, { selected: e.target.checked })} /></label>
+              <button type="button" className="dr-proposal-summary" disabled={busy} aria-expanded={expanded} onClick={() => setOpenId(expanded ? null : item.id)}>
+                <span className="dr-proposal-type">{missing ? t("reviewMissingFields") : item.issue ? t("reviewNeedsReview") : item.targetEntryId ? t("update") : t("newEntry")}</span>
+                <strong>{item.title.trim() || t("newEntry")}</strong>
+                <small>{summary.slice(0, 110)}{summary.length > 110 ? "…" : ""}</small>
+                <ChevronDown aria-hidden="true" size={16} strokeWidth={1.5} />
+              </button>
+            </div>
+            {item.issue && <div className="dr-proposal-issue" role="note"><AlertCircle aria-hidden="true" size={16} /><p>{t("issue")}</p>{!props.batch.scanVersions && <button type="button" disabled={busy} onClick={() => { patch(item.id, { targetEntryId: undefined, expectedEntry: undefined, issue: undefined, selected: true }); setOpenId(item.id); }}>{t("asNew")}</button>}</div>}
+            {expanded && <div className="dr-proposal-body">
+              {item.targetEntryId && item.expectedEntry && <section className="dr-proposal-before"><span>{t("before")}</span><strong>{item.expectedEntry.title}</strong><p>{item.expectedEntry.content}</p></section>}
+              <div className="dr-proposal-after"><span>{item.targetEntryId ? t("after") : t("newEntry")}</span>
+                <label>{experienceText(props.locale, "reviewTitle")}<input required maxLength={240} disabled={busy} value={item.title} onChange={(e) => patch(item.id, { title: e.target.value })} /></label>
+                <label>{t("content")}<textarea rows={5} maxLength={30000} disabled={busy} value={item.content} onChange={(e) => patch(item.id, { content: e.target.value })} /></label>
+                {item.targetEntryId ? <p className="dr-inline-note">{experienceText(props.locale, "reviewKeptMode", { mode: uiText(props.locale, item.activation) })}</p> : <MemoryModeControl locale={props.locale} value={item.activation} onChange={(activation) => patch(item.id, { activation })} disabled={busy} />}
+                {item.selected && (!item.title.trim() || !item.content.trim()) && <p role="alert">{experienceText(props.locale, "reviewRequired")}</p>}
+              </div>
+            </div>}
+          </article>;
+        })}
+      </div>
+      {invalid && <p role="alert">{experienceText(props.locale, "reviewRequired")}</p>}
+      {error && <p role="alert">{error}</p>}
+    </div>
+    <div className="dr-assistant-actions dr-review-actions">
+      {confirmDiscard ? <>
+        <p className="dr-review-confirm" role="alert">{t("reviewDiscardConfirm")}</p>
+        <div className="dr-review-confirm-actions">
+          <button type="button" disabled={busy} onClick={() => setConfirmDiscard(false)}>{t("reviewCancel")}</button>
+          <button type="button" className="dr-review-discard-final" disabled={busy} onClick={() => void act(props.onDiscard)}>{t("reviewDiscardFinal")}</button>
+        </div>
+      </> : <>
+        <button type="button" className="dr-assistant-primary" disabled={busy || invalid || (!selectedCount && !props.onKeepMemory)}
+          onClick={() => void act(() => {
+            if (!selectedCount && props.onKeepMemory) return props.onKeepMemory();
+            if (profileSelected) return props.onSave(items, profileValues);
+            return props.onSave(items);
+          })}>
+          {!selectedCount && props.onKeepMemory ? props.keepLabel : <>{props.saveLabel ?? t("saveChanges")} · {selectedCount}</>}
+        </button>
+        <button type="button" className="dr-review-discard" disabled={busy} onClick={() => setConfirmDiscard(true)}>{t("discard")}</button>
+      </>}
+    </div>
   </section>;
 }
 

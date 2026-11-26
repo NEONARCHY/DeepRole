@@ -46,3 +46,23 @@
 .dr-settings-page .dr-action-list > span > span { flex: 1; min-width: 0; font-size: .875rem; }
 .dr-settings-page .dr-action-list small { font-size: .8125rem; }
 .app-shell .dr-settings-page summary { padding-block: 12px; }
+
+html[data-deeprole-desktop]:has(.dr-settings-directory) { scrollbar-width: thin; scrollbar-color: var(--dr-border-strong) transparent; }
+.dr-settings-directory[data-desktop-settings] nav { gap: var(--dr-space-5); }
+.dr-settings-directory[data-desktop-settings] .dr-settings-group { gap: 0; }
+.app-shell .dr-settings-directory[data-desktop-settings] .dr-settings-group h2 {
+  margin: 0 0 var(--dr-space-1);
+  padding-inline: var(--dr-space-3);
+  font-size: .75rem;
+  font-weight: 620;
+}
+.dr-settings-directory[data-desktop-settings] .dr-settings-route {
+  min-block-size: 52px;
+  grid-template-columns: 20px minmax(0, 1fr) 16px;
+  padding-block: var(--dr-space-2);
+  background: transparent;
+}
+.dr-settings-directory[data-desktop-settings] .dr-settings-route small { margin-block-start: var(--dr-space-1); line-height: 1.35; }
+.dr-settings-directory[data-desktop-settings] .dr-settings-route:is(:hover, :focus-visible) { background: var(--dr-selected); }
+.dr-settings-directory[data-desktop-settings] .dr-settings-advanced { border-block-start: 1px solid var(--dr-border); }
+.app-shell .dr-settings-directory[data-desktop-settings] .dr-settings-advanced > summary { padding-inline: var(--dr-space-3); }

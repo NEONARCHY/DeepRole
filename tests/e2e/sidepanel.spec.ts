@@ -10,7 +10,7 @@ test("section guidance explains the workflow without per-button question marks",
   await expect(page.getByRole("link", { name: "Открыть DeepSeek" })).toHaveAttribute("href", "https://chat.deepseek.com/");
   await page.getByText("Добавить или проверить память вручную", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Обновить лор", exact: true })).toBeDisabled();
-  await expect(page.getByText("Запрос подготовлен в DeepSeek", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Запрос подготовлен в чате", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Настройки", exact: true }).click();
   await setEnglish(page);
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();

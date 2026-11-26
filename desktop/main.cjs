@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu, nativeTheme, session, safeStorage } =
 const { mkdir, readFile, writeFile, rename } = require("node:fs/promises");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
-const { providerSettings, saveProvider, imageRequest, imageReceipt } = require("./provider.cjs");
+const { providerSettings, listTextModels, saveProvider, imageRequest, imageReceipt } = require("./provider.cjs");
 const { chatRequest } = require("./chat-store.cjs");
 
 const origin = "https://deeprole.local";
@@ -185,6 +185,7 @@ ipcMain.handle("deeprole:call", async (event, method, args) => {
       if (win === background) backgroundReady?.();
       break;
     case "provider": return providerSettings(data, safeStorage);
+    case "listTextModels": return listTextModels(data, one, safeStorage);
     case "saveProvider": return saveProvider(data, one, safeStorage);
     case "setTheme": {
       if (one !== "light" && one !== "dark") throw Error("Unsupported theme");
@@ -211,7 +212,8 @@ ipcMain.handle("deeprole:call", async (event, method, args) => {
     }
     case "runtimeSend": return deliver(background.webContents.mainFrame, { event: "message", value: one, sender: source });
     case "runtimeSendEmbedded": {
-      const library = frame.frames.find(child => child.url === origin + "/sidepanel.html?embedded=1");
+      const menuUrl = origin + "/sidepanel.html?embedded=1";
+      const library = frame.frames.find(child => [menuUrl, menuUrl + "&view=settings", menuUrl + "&view=worlds"].includes(child.url));
       if (!library) throw Error("Library frame unavailable");
       return deliver(background.webContents.mainFrame, { event: "message", value: one, sender: { ...source, url: library.url, frameId: library.routingId } });
     }

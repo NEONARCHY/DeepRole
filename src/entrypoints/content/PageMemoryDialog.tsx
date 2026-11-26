@@ -1,5 +1,7 @@
 import { useId, useLayoutEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { IS_DESKTOP } from "../../core/chat-host";
+import { afterWindowMotion } from "../shared/window-motion";
 
 /** Native top layer: viewport-centred even when the widget deck has moved.
  * Keep children mounted while closed so hiding a form preserves its draft. */
@@ -11,11 +13,17 @@ export function PageMemoryDialog({open,title,closeLabel,onClose,help,children,fo
     let active=node.ownerDocument.activeElement;
     while(active?.shadowRoot?.activeElement)active=active.shadowRoot.activeElement;
     const previous=active instanceof HTMLElement?active:null;
-    node.showModal();heading.current?.focus({preventScroll:true});
+    node.inert=false;node.showModal();heading.current?.focus({preventScroll:true});
     return ()=>{node.close();if(previous?.isConnected)previous.focus({preventScroll:true});};
   },[open]);
-  const close=()=>{if(!dialog.current?.querySelector('.dr-assistant[aria-busy="true"]'))onClose();};
-  return <dialog ref={dialog} id={dialogId} className="dr-memory-dialog" aria-labelledby={id} onCancel={event=>{event.preventDefault();close();}} onKeyDown={event=>{if(event.key==="Escape")event.stopPropagation();}}
+  const close=()=>{
+    const node=dialog.current;
+    if(!node?.open||node.querySelector('.dr-assistant[aria-busy="true"]'))return;
+    if(!IS_DESKTOP){onClose();return;}
+    node.close();node.inert=true;
+    afterWindowMotion(node,onClose);
+  };
+  return <dialog ref={dialog} id={dialogId} className="dr-memory-dialog" data-window-motion={IS_DESKTOP || undefined} aria-labelledby={id} onCancel={event=>{event.preventDefault();close();}} onKeyDown={event=>{if(event.key==="Escape")event.stopPropagation();}}
     onPointerDown={event=>{
       const r=event.currentTarget.getBoundingClientRect();
       outsideDown.current=event.target===event.currentTarget&&(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom);

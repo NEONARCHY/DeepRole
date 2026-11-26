@@ -3,10 +3,14 @@ import AxeBuilder from "@axe-core/playwright";
 import { storyEpisodeText } from "../../src/core/story-episode-i18n";
 import { storyNarrativeText } from "../../src/core/story-narrative-i18n";
 
-for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`episode summaries ${locale} ${width}: source, search, keyboard and accessibility`,async({page},info)=>{
+for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`event journal ${locale} ${width}: source, search, keyboard and accessibility`,async({page},info)=>{
   await page.setViewportSize({width,height:1000});await page.goto("/tests/fixtures/story-episodes.html?locale="+locale);const t=storyEpisodeText(locale);
-  await expect(page.getByRole("heading",{name:t.title})).toBeVisible();await expect(page.getByText(t.hint)).toBeVisible();await expect(page.getByText(t.history)).toBeVisible();
+  await expect(page.getByRole("heading",{name:t.title})).toBeVisible();await expect(page.getByText(t.hint)).toBeVisible();
   await expect(page.getByText(t.time+":",{exact:true})).toBeVisible();await expect(page.getByText(t.elapsed)).toBeVisible();
+  const timeToggle=page.getByText(t.sceneTimes,{exact:true});await timeToggle.focus();await page.keyboard.press("Enter");
+  const clock=page.locator(".dr-story-clock-list");
+  await expect(clock.locator("li").last()).toContainText(locale==="ru"?"День 1 · 08:10":"Day 1 · 08:10");
+  await expect(clock.locator("li").nth(1)).toContainText(locale==="ru"?"Флешбэк · День 1 · утро":"Flashback · Day 1 · morning");
   await expect(page.locator(".dr-story-episodes > details")).toHaveCount(6);
   await page.getByRole("button",{name:t.more}).click();await expect(page.locator(".dr-story-episodes > details")).toHaveCount(9);
   const search=page.getByRole("searchbox",{name:t.search});await search.fill(locale==="ru"?"Нора":"Nora");await expect(page.locator(".dr-story-episodes > details")).toHaveCount(1);
@@ -16,6 +20,16 @@ for(const locale of ["ru","en"] as const)for(const width of [320,900])test(`epis
   const n=storyNarrativeText(locale),brief=page.locator(".dr-story-narrative-text");await expect(brief).toContainText(quote);
   const citation=page.getByRole("button",{name:n.source.replace("{number}","1")});await citation.focus();await page.keyboard.press("Enter");
   const source=page.getByText(t.source,{exact:true});await expect(source).toBeFocused();await expect(page.getByText(quote,{exact:true})).toBeVisible();
+  await page.evaluate(() => Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText:async(text:string)=>{ (window as any).copiedQuote=text; }}}));
+  await page.getByRole("button",{name:t.copyQuote,exact:true}).click();
+  await expect(page.getByText(t.quoteCopied,{exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>(window as any).copiedQuote)).toBe(quote);
+  await search.fill("");
+  const plot=page.getByRole("combobox",{name:t.plot,exact:true});
+  await plot.selectOption("open-road");
+  await expect(page.locator(".dr-story-episodes > details")).toHaveCount(1);
+  await plot.selectOption("");
+  await search.fill(locale==="ru"?"Нора":"Nora");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
   if(info.project.name==="chromium")await page.screenshot({path:info.outputPath(`episodes-${locale}-${width}.png`),fullPage:true});

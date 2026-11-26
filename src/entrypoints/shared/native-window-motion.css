@@ -1,0 +1,25 @@
+dialog[data-window-motion] {
+  --window-motion: var(--desktop-window-duration, var(--desktop-reveal, 220ms));
+  --window-ease: var(--dr-ease-out, cubic-bezier(.22, 1, .36, 1));
+  opacity: 0;
+  translate: 0 8px;
+  scale: .985;
+  transition: opacity var(--window-motion) var(--window-ease),
+    translate var(--window-motion) var(--window-ease), scale var(--window-motion) var(--window-ease),
+    display var(--window-motion) allow-discrete, overlay var(--window-motion) allow-discrete;
+}
+dialog[data-window-motion][open] { opacity: 1; translate: none; scale: none; }
+dialog[data-window-motion]:not([open]) { pointer-events: none; }
+dialog[data-window-motion]::backdrop {
+  opacity: 0;
+  transition: opacity var(--window-motion) var(--window-ease), display var(--window-motion) allow-discrete,
+    overlay var(--window-motion) allow-discrete;
+}
+dialog[data-window-motion][open]::backdrop { opacity: 1; }
+@starting-style {
+  dialog[data-window-motion][open] { opacity: 0; translate: 0 8px; scale: .985; }
+  dialog[data-window-motion][open]::backdrop { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog[data-window-motion], dialog[data-window-motion]::backdrop { transition: none; }
+}

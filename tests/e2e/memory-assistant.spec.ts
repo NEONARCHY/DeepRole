@@ -26,15 +26,17 @@ for (const locale of ["ru", "en"] as const) {
     await review.getByRole("checkbox").check();
     await expect(review.getByText(en ? "Before" : "Было", { exact: true })).toBeVisible();
     await expect(review.getByText("Мира останется в городе до рассвета.", { exact: true })).toBeVisible();
-    await page.locator("#underlying-chat-control").click();
+    const underlying = (await page.locator("#underlying-chat-control").boundingBox())!;
+    await page.mouse.click(underlying.x + underlying.width / 2, underlying.y + underlying.height / 2);
     await expect(review).toBeVisible();
+    await expect(page.locator("body")).not.toHaveAttribute("data-chat-control-clicked");
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
     await review.getByRole("button", { name: en ? "Save selected changes · 1" : "Сохранить выбранное · 1", exact: true }).click();
     expect((await page.evaluate(() => (window as any).reviewed))[0]).toMatchObject({ targetEntryId: "m1", selected: true });
   });
 }
 
-for (const size of [{ width: 360, height: 600 }, { width: 1280, height: 720 }]) {
+for (const size of [{ width: 320, height: 600 }, { width: 1280, height: 720 }]) {
   test(`review approval remains inside the viewport beside a tall context stack ${size.width}x${size.height}`, async ({ page }, info) => {
     await page.setViewportSize(size);
     await page.goto("/tests/fixtures/page-widget.html?assistant=1&locale=en");
@@ -47,12 +49,16 @@ for (const size of [{ width: 360, height: 600 }, { width: 1280, height: 720 }]) 
     await review.locator(".dr-proposal-summary").click();
     await review.getByRole("checkbox").check();
     const save = review.getByRole("button", { name: "Save selected changes · 1", exact: true });
-    await save.scrollIntoViewIfNeeded();
-    const panel = (await page.locator(".dr-panel").boundingBox())!;
+    const savePosition = (await save.boundingBox())!.y;
+    const scrollArea = review.locator(".dr-review-scroll");
+    await scrollArea.evaluate(node => { node.scrollTop = node.scrollHeight; });
+    if (size.width === 320) expect(await scrollArea.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+    const panel = (await page.getByRole("dialog").boundingBox())!;
     expect(panel.x).toBeGreaterThanOrEqual(0); expect(panel.y).toBeGreaterThanOrEqual(0);
     expect(panel.x + panel.width).toBeLessThanOrEqual(size.width);
     expect(panel.y + panel.height).toBeLessThanOrEqual(size.height);
     await expect(save).toBeInViewport();
+    expect((await save.boundingBox())!.y).toBeCloseTo(savePosition);
     await page.screenshot({ path: info.outputPath("review-approval-visible.png") });
     await save.click();
     expect((await page.evaluate(() => (window as any).reviewed))[0].selected).toBe(true);

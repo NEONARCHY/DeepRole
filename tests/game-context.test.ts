@@ -43,6 +43,37 @@ it("counts the exact complete prompt and preserves useful memory within the defa
  expect(r.text).not.toContain("Resident 3");
  expect(r.text.length).toBeLessThan(characterInstruction(...f.input.character!).length+2000);
 });
+it("keeps a requested recorded clue ahead of optional choices in a tight memory budget", () => {
+ const f = fixture();
+ const clue = "The north gate key is in the red ledger drawer.";
+ f.input.draft = "Where is the north gate key?";
+ f.input.character![6] = f.input.draft;
+ f.input.entries = [];
+ f.input.requiredContext = "The player controls their own character. Any outcome still needs to be played. ".repeat(13);
+ f.input.story!.facts = [
+  { kind: "event", text: clue, quote: clue },
+  { kind: "event", text: "Mira paid the harbor toll.", quote: "Mira paid the harbor toll." },
+ ];
+ expect(compileGameContext({ ...f.input, choices: false }).text).toContain(clue);
+ const result = compileGameContext(f.input);
+ expect(result.text, JSON.stringify(result.report)).toContain(clue);
+ expect(result.text).not.toContain("<deeprole_choice_mode");
+ expect(result.text).toContain(f.input.requiredContext.trim());
+ expect(result.text).not.toContain("Mira paid the harbor toll");
+ expect(result.report.total).toBeLessThanOrEqual(2000);
+ const enough = compileGameContext({ ...f.input, settings: { ...f.input.settings, contextBudget: 2400 } });
+ expect(enough.text).toContain(clue);
+ expect(enough.text).toContain("<deeprole_choice_mode");
+ const unrelated = compileGameContext({ ...f.input, draft: "Continue the scene." });
+ expect(unrelated.text).toContain("<deeprole_choice_mode");
+ const oneFact = compileGameContext({ ...f.input, story: { ...f.input.story!, facts: f.input.story!.facts.slice(0, 1) } });
+ expect(oneFact.text).toContain(clue);
+ expect(oneFact.text).not.toContain("<deeprole_choice_mode");
+ const impossible = compileGameContext({ ...f.input, settings: { ...f.input.settings, contextBudget: 500 } });
+ expect(impossible.text).not.toContain(clue);
+ expect(impossible.text).toContain("<deeprole_choice_mode");
+ expect(impossible.report.required).toBeGreaterThan(500);
+});
 it.each(["en","ru"] as const)("fills the saved space within the current world budget (%s)",locale=>{
  const {world,binding,entry}=storyWorld(locale);
  const ru=locale==="ru",draft=ru?"опись фонарей":"lantern inventory";

@@ -1,7 +1,7 @@
 const { readFile, writeFile, rename, rm } = require("node:fs/promises");
 const { createHash, randomUUID } = require("node:crypto");
 const path = require("node:path");
-const { modelProfile, modelLimits, fitMessages, validWindow, availableMemoryBytes, storyMemoryEnabled, withEarlierStoryScene } = require("./model-context.cjs");
+const { modelCatalog, modelProfile, modelLimits, fitMessages, validWindow, availableMemoryBytes, storyMemoryEnabled, withEarlierStoryScene } = require("./model-context.cjs");
 const { readSpending } = require("./spending.cjs");
 const { recordUsage } = require("./usage.cjs");
 
@@ -22,7 +22,10 @@ async function decryptProviderKey(key, safeStorage) {
 async function providerSettings(data, safeStorage) {
   try {
     const { baseUrl, model, maxTokens, replyStyle = "", contextTokens, key } = JSON.parse(await readFile(destination(data), "utf8"));
-    const hasKey = !!await decryptProviderKey(key, safeStorage);
+    const secret = await decryptProviderKey(key, safeStorage);
+    const hasKey = !!secret;
+    const base = endpoint(baseUrl);
+    if (hasKey || base.protocol === "http:") void modelCatalog(base, secret, { background: true }).catch(() => undefined);
     return { baseUrl, model, maxTokens, replyStyle, contextTokens, hasKey };
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
@@ -37,6 +40,23 @@ function endpoint(value) {
     throw Error("Use an HTTPS model endpoint or a local HTTP endpoint.");
   }
   return url;
+}
+
+async function listTextModels(data, input, safeStorage) {
+  const base = endpoint(input.baseUrl);
+  let key = input.key.trim();
+  if (key.length > 4096 || /[\s\p{Cf}]/u.test(key)) throw Error("Use one API key.");
+  if (!key) {
+    const saved = await readFile(destination(data), "utf8").then(JSON.parse).catch(error => {
+      if (error.code === "ENOENT") return undefined;
+      throw error;
+    });
+    if (saved && endpoint(saved.baseUrl).origin === base.origin) key = await decryptProviderKey(saved.key, safeStorage);
+  }
+  if (!key && base.protocol === "https:") throw Error("Enter the provider key.");
+  const rows = await modelCatalog(base, key);
+  if (!rows) throw Error("Model catalog unavailable.");
+  return [...new Set(rows.map(row => row?.id).filter(id => typeof id === "string" && id.length > 0 && id.length <= 240 && id === id.trim()))].sort();
 }
 
 function saveProvider(data, input, safeStorage) {
@@ -84,21 +104,30 @@ const styleFor = (config, storyMemory = false) => ({
   content: [
     "Apply this style guidance only to player-facing roleplay. Follow explicit player instructions for the current turn and keep required structured output intact.",
     config.replyStyle
-      ? config.replyStyle + "\nWhen requested, use Markdown for italics, bold and monospace in the scene prose, and Unicode for emoji. Keep evidence quotes verbatim."
+      ? config.replyStyle + "\nWrite requested styles using literal Markdown: *italics*, **bold**, `monospace`, and > at the start of a quote line. Use Unicode for emoji. Keep evidence quotes verbatim."
       : defaultReplyStyle,
     ...(storyMemory ? ["Write the scene first, then <deeprole_characters>. For a new ordinary event use {\"kind\":\"event\",\"anchor\":\"<exact words from the scene>\",\"risk\":\"ordinary\"}. Replace the placeholder with three or more exact words from one complete scene statement. Use verbatim quotes for other facts. Claims and tasks are for real changes only. Do not echo old memory, player text or choices."] : []),
   ].join("\n\n"),
 });
 
+async function profileForDraft(base, key, config, system, bytes, signal) {
+  const profile = await modelProfile(base, key, config.model, signal);
+  if (profile || validWindow(config.contextTokens) || availableMemoryBytes(system, modelLimits(config), bytes) !== null) return profile;
+  // An unusually large draft may fit the real model window even when the
+  // fallback would reject it. Consult discovery before rejecting that turn.
+  return modelProfile(base, key, config.model, signal, { wait: true });
+}
+
 async function memoryBudget(data, safeStorage, bytes, signal) {
   const config = JSON.parse(await readFile(destination(data), "utf8"));
   const base = endpoint(config.baseUrl);
   const key = await decryptProviderKey(config.key, safeStorage);
-  const profile = await modelProfile(base, key, config.model, signal);
-  return availableMemoryBytes(styleFor(config, true), modelLimits(config, profile), bytes);
+  const system = styleFor(config, true);
+  const profile = await profileForDraft(base, key, config, system, bytes, signal);
+  return availableMemoryBytes(system, modelLimits(config, profile), bytes);
 }
 
-async function complete(data, safeStorage, messages, signal, beforeSend) {
+async function complete(data, safeStorage, messages, signal, beforeSend, onDispatch) {
   let config;
   try { config = JSON.parse(await readFile(destination(data), "utf8")); }
   catch { return errorResponse("model-unconfigured", 424); }
@@ -107,12 +136,19 @@ async function complete(data, safeStorage, messages, signal, beforeSend) {
     const key = await decryptProviderKey(config.key, safeStorage);
     if (!key && base.protocol === "https:") return errorResponse("model-key-needed", 424);
     const requestUrl = new URL(base.href.replace(/\/$/, "") + "/chat/completions");
-    const profile = await modelProfile(base, key, config.model, signal);
     const venice = base.hostname === "api.venice.ai";
-    const storyMemory = storyMemoryEnabled(messages.at(-1).content);
+    const current = messages.at(-1).content;
+    const storyMemory = storyMemoryEnabled(current);
     const system = styleFor(config, storyMemory);
-    const limits = modelLimits(config, profile);
-    const initial = fitMessages(system, messages, limits);
+    let profile = await profileForDraft(base, key, config, system, Buffer.byteLength(current, "utf8"), signal);
+    let limits = modelLimits(config, profile);
+    let initial = fitMessages(system, messages, limits);
+    if (initial?.omittedMessages && !profile && !validWindow(config.contextTokens)) {
+      // A cold fallback should not discard dialogue that fits the actual window.
+      profile = await modelProfile(base, key, config.model, signal, { wait: true });
+      limits = modelLimits(config, profile);
+      initial = fitMessages(system, messages, limits);
+    }
     if (!initial) return errorResponse("model-context-limit", 400);
     const plan = storyMemory ? withEarlierStoryScene(initial, messages, limits) : initial;
     signal.throwIfAborted();
@@ -126,13 +162,18 @@ async function complete(data, safeStorage, messages, signal, beforeSend) {
       max_tokens: plan.replyTokens,
       ...(venice ? { venice_parameters: { include_venice_system_prompt: false } } : {}),
     };
-    const send = () => fetch(requestUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(key ? { Authorization: "Bearer " + key } : {}) },
-      body: JSON.stringify(body),
-      redirect: "error",
-      signal: AbortSignal.any([signal, AbortSignal.timeout(5 * 60_000)]),
-    });
+    const send = () => {
+      signal.throwIfAborted();
+      const payload = JSON.stringify(body);
+      onDispatch?.();
+      return fetch(requestUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(key ? { Authorization: "Bearer " + key } : {}) },
+        body: payload,
+        redirect: "error",
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5 * 60_000)]),
+      });
+    };
     let response = await send();
     let validation = "";
     if ([400, 422].includes(response.status)) {
@@ -275,4 +316,4 @@ async function imageRequest(request, grants, data) {
   } catch { return errorResponse("image-request-failed", 502); }
 }
 
-module.exports = { providerSettings, saveProvider, complete, veniceCharges, veniceBalances, imageRequest, imageReceipt, memoryBudget };
+module.exports = { providerSettings, listTextModels, saveProvider, complete, veniceCharges, veniceBalances, imageRequest, imageReceipt, memoryBudget };

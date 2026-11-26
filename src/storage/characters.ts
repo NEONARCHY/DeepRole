@@ -111,10 +111,10 @@ export async function saveCharacter(edit: CharacterEdit, repo: DeepRoleRepositor
   }, undefined, ["world", "entity", "binding", "story"]);
 }
 
-export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, actions: string[] = DEFAULT_ACTIONS, repo: DeepRoleRepository = repository, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false): Promise<void> {
+export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterTurn, actions: string[] = DEFAULT_ACTIONS, repo: DeepRoleRepository = repository, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false, portraitActionsPaused = false): Promise<void> {
   if (turn.world !== scope.worldId || turn.chat !== scope.chatId || turn.base !== scope.base) throw new Error("character-scope");
   await repo.updateRecords(all => {
-    const plan = planCharacterTurn(all, scope, turn, actions, namedIds, relationshipsEnabled, generatedSelfiesEnabled);
+    const plan = planCharacterTurn(all, scope, turn, actions, namedIds, relationshipsEnabled, generatedSelfiesEnabled, false, portraitActionsPaused);
     const world = all.find(r => r.kind === "world" && r.id === scope.worldId)?.data as WorldProfile | undefined;
     if (plan.records.length && world?.sharedGame && scope.replyText?.trim()) plan.records.push({ kind: "world", id: world.id, data: { ...world, sharedGame: { ...world.sharedGame, recentStory: boundStory([...(world.sharedGame.recentStory?.turns ?? []), { role: "assistant", text: storyReplyProse(scope.replyText) }], "page", true, world.sharedGame.recentStory?.omittedTurns ?? 0), recentChatId: scope.chatId } } });
     return plan;
@@ -123,7 +123,7 @@ export async function applyCharacterTurn(scope: CharacterScope, turn: CharacterT
 
 /** Shared pure planner. The chronicle calls it only against the replayed parent,
  * inside the same transaction that records and selects the resulting effects. */
-export function planCharacterTurn(all: DataRecord[], scope: CharacterScope, turn: CharacterTurn, actions: string[] = DEFAULT_ACTIONS, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false, chronicle = false) {
+export function planCharacterTurn(all: DataRecord[], scope: CharacterScope, turn: CharacterTurn, actions: string[] = DEFAULT_ACTIONS, namedIds = false, relationshipsEnabled = false, generatedSelfiesEnabled = false, chronicle = false, portraitActionsPaused = false) {
     const { binding, entities, scene } = current(all, scope);
     // A model cannot restore write authority by omitting its request ID. Match
     // the trusted native assistant link as well; text similarity is never proof.
@@ -172,7 +172,8 @@ export function planCharacterTurn(all: DataRecord[], scope: CharacterScope, turn
       mapping.set(update.id, id);
       const sheet = entities.find(person => person.id === id)?.characterSheet ?? (changes.find(row => row.id === id)?.data as SceneEntity | undefined)?.characterSheet;
       // Model output may never assign local numeric states or overwrite their history.
-      states[id] = { ...structuredClone(narrativeCharacterStatus(update.state)), action: resolveCharacterAction(sheet, update.state.action, states[id]?.action, actions), ...(states[id]?.bonds ? { bonds: structuredClone(states[id]!.bonds) } : {}), ...(states[id]?.attributes ? { attributes: structuredClone(states[id]!.attributes) } : {}) };
+      const action = portraitActionsPaused ? states[id]?.action ?? sheet?.initialStatus?.action ?? "neutral" : resolveCharacterAction(sheet, update.state.action, states[id]?.action, actions);
+      states[id] = { ...structuredClone(narrativeCharacterStatus(update.state)), action, ...(states[id]?.bonds ? { bonds: structuredClone(states[id]!.bonds) } : {}), ...(states[id]?.attributes ? { attributes: structuredClone(states[id]!.attributes) } : {}) };
     }
     const presentIds = turn.present.map(resolve);
     if (presentIds.some(id => !id) || new Set(presentIds).size !== presentIds.length) throw new Error("character-unknown");

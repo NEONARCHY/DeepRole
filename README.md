@@ -283,15 +283,13 @@ Choose **Settings → Files & security → Export → Full backup**, keep the do
 
 **Do not uninstall just to update.** Back up first, replace the files in the folder your browser loaded, reload DeepRole on the extensions page and refresh DeepSeek. A local rebuild does not update a separately unpacked folder automatically.
 
-You can also import memory records from [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek). That import does not include DeepRole's portraits or played character progress. GitHub downloads contain the extension, not your private worlds.
+You can also import memory records from JSON. That import does not include DeepRole's portraits or played character progress. GitHub downloads contain the extension, not your private worlds.
 
 ## Privacy and credits
 
 Lore, portraits and progress are stored in your browser. Selected text and service requests go to DeepSeek; portrait bytes do not. If you separately enable image generation, your chosen image provider receives the final description and selected references only on your click. DeepRole has no separate memory server or telemetry.
 
 The optional vault protects local extension data. It does not encrypt messages already sent to DeepSeek or ordinary backup files created earlier. Browser data can be cleared or lost, so keep your own backups. [Privacy details →](PRIVACY.md)
-
-Respect and thanks to [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek), the independent open-source extension whose memory format DeepRole can import. DeepRole is not its official version or a DeepSeek product.
 
 ## More help
 

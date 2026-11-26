@@ -1,10 +1,13 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { storyWorld } from "../fixtures/story-worlds";
 import { EMPTY_STATUS } from "../../src/core/characters";
 import { storyReviewText } from "../../src/core/story-review-i18n";
 import { storyUxText } from "../../src/core/story-ux-i18n";
 import { navigationText } from "../../src/core/navigation-i18n";
+const recentEdit: typeof import("../fixtures/story-recent-edit-contract.json") =
+  JSON.parse(readFileSync(new URL("../fixtures/story-recent-edit-contract.json", import.meta.url), "utf8"));
 async function rows(panel: Page) {
   return panel.evaluate(() => new Promise<any[]>((resolve, reject) => {
     const open = indexedDB.open("deeprole"); open.onerror = () => reject(open.error);
@@ -79,10 +82,35 @@ for (const locale of ["ru", "en"] as const) test(`installed playable story ${loc
     await panel.reload(); await panel.setViewportSize({ width: 320, height: 1000 }); await second.bringToFront();
     await panel.locator(".bottom-nav").getByRole("button", { name: navigationText(locale, "story"), exact: true }).click();
     await expect(panel.getByText(storyUxText(locale, "active"), { exact: true })).toBeVisible({ timeout: 12000 });
+    await panel.getByRole("button", { name: storyUxText(locale, "episodes"), exact: true }).click();
+    await panel.locator(".dr-story-advanced > summary").filter({ hasText: storyUxText(locale, "options") }).click();
     await panel.getByRole("button", { name: storyUxText(locale, "timeline"), exact: true }).click();
     await expect(panel.getByText(storyUxText(locale, "timelineHint"), { exact: true })).toBeVisible();
     expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await panel.screenshot({ path: info.outputPath(`story-hub-native-${locale}.png`), fullPage: true });
     await second.screenshot({ path: info.outputPath(`working-story-${locale}.png`), fullPage: true }); expect(posts).toBe(3); expect(errors).toEqual([]);
+
+    const target=recentEdit.cases.find(testCase=>testCase.depth===15)!;
+    const userId=(n:number)=>60+2*n, replyId=(n:number)=>userId(n)+1;
+    const oldReply=(n:number)=>"Day "+n+" · 09:30\n\n"+turn("Original passage "+n);
+    for(let n=1;n<=recentEdit.turnCount;n++){
+      messages.push(message(userId(n),n===1?53:replyId(n-1),"USER","Keep walking "+n),message(replyId(n),userId(n),"ASSISTANT",oldReply(n)));
+    }
+    const latest=replyId(recentEdit.turnCount);
+    selected=latest; await display(second,latest,oldReply(recentEdit.turnCount));
+    await expect.poll(condition,{timeout:15000}).toBe("Original passage "+recentEdit.turnCount);
+    await second.evaluate(id=>fetch("/api/v0/chat/edit_message",{method:"POST",body:JSON.stringify({
+      chat_session_id:"synthetic-a",message_id:id,prompt:"Try the old passage",action:"REGENERATE"
+    })}),userId(target.turn));
+    expect(editedPrompt).toContain("Day "+target.prefixDay+" · 09:30");
+    expect(editedPrompt).toContain('"condition":"Original passage '+target.prefixDay+'"');
+    expect(editedPrompt).not.toContain(recentEdit.originalClock);
+    const alternate=recentEdit.alternativeClock.replace("{turn}",String(target.turn))+"\n\n"+turn("Another path");
+    messages.push(message(120,replyId(target.turn-1),"USER",editedPrompt),message(121,120,"ASSISTANT",alternate));
+    selected=121; await display(second,121,alternate);
+    await expect.poll(condition,{timeout:15000}).toBe("Another path");
+    selected=latest; await display(second,latest,oldReply(recentEdit.turnCount));
+    await expect.poll(condition,{timeout:15000}).toBe("Original passage "+recentEdit.turnCount);
+    expect(posts).toBe(4); expect(errors).toEqual([]);
   } finally { await context.close(); }
 });

@@ -1,4 +1,5 @@
 import {createStoryTimeReader,GAME_TIME_KEY} from "../src/core/story-time";
+import {createSceneClockTimeline,indexSceneClocks} from "../src/core/story-scene-clock";
 import type {StoryFact} from "../src/core/story-update";
 import {automationMarker} from "../src/core/story-automation";
 import {applyMemoryBatch,changeMemoryBatch,prepareMemoryBatch} from "../src/storage/story-memory-batch";
@@ -85,6 +86,31 @@ it("retains time and lifetime through continuation, full backup, reset and resto
 it("rejects forged clock proof inside dialogue in a full backup",async()=>{
  const f=await fixture();await append(f,[clock("Day 2")]);const all=await f.repo.rawRecords(),g=(all.find(r=>r.kind==="world")!.data as WorldProfile).sharedGame!,binding=g.factRoleSeeds!.find(s=>s.binding.quote==="Day 2")!.binding,source=all.find(r=>r.id===binding.sourceRevisionId)!.data as StoryRevision;
  source.content=source.content.replace("Day 2","Nora said: Day 2");expect(()=>assertStoryGraph(all)).toThrow("story-evidence-invalid");
+});
+it("restores exact recorded scene headings and source order across chat continuation and backup", async () => {
+ const f = await fixture();
+ const current = "Day 8 · 10:35", flashback = "Flashback · Day 2 · morning";
+ f.snapshot.messages.push(f.message("5","4","user","Open the station"),f.message("6","5","assistant",current+"\n\nThe station opens."),
+   f.message("7","6","user","Recall the opening rehearsal"),f.message("8","7","assistant",flashback+"\n\nThey rehearse at the station."));
+ f.snapshot.selectedNativeKey = key("8");
+ await f.play();
+ const read = async (repo: DeepRoleRepository) => {
+   const w = (await repo.get<WorldProfile>("world",f.world.id))!, game = w.sharedGame!;
+   return createSceneClockTimeline(game.episodeSources ?? [],indexSceneClocks(await repo.list<StoryRecord>("story")),w.id,game);
+ };
+ const before = await read(f.repo);
+ expect(before.current).toMatchObject({label:current,day:8,clock:"10:35",precision:"minute"});
+ expect(before.latest).toMatchObject({label:flashback,day:2,part:"morning",precision:"part",flashback:true});
+ expect(before.transitions.map(time => time.label)).toEqual([current,flashback]);
+ const chat = "clock-continuation", b: ChatBinding = {...f.binding,id:"binding:"+chat,chatId:chat,chatUrl:"https://chat.deepseek.com/chat/s/"+chat,characterScenes:undefined};
+ await f.repo.put("binding",b);
+ await f.activate(chat,"attach");
+ await f.play("start",chat,{chatId:chat,selectedNativeKey:key("12"),messages:[f.message("11",null,"user","Continue"),f.message("12","11","assistant","At the station.")]});
+ expect(await read(f.repo)).toEqual(before);
+ const db = new DeepRoleDatabase("clock-restore-"+crypto.randomUUID());dbs.push(db);
+ const restored = new DeepRoleRepository(db);
+ await restoreBackup(await parseBackup(JSON.stringify(await createBackup(undefined,f.repo))),"replace",restored);
+ expect(await read(restored)).toEqual(before);
 });
 it("records identical elapsed labels at distinct source turns rather than dropping the second",async()=>{
  const f=await fixture();await append(f,[clock("Three days later.")]);const before=temporal((await f.getWorld()).sharedGame!).anchor!;await append(f,[clock("Three days later.")]);const after=temporal((await f.getWorld()).sharedGame!).anchor!;

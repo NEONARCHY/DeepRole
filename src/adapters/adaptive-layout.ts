@@ -7,14 +7,17 @@ export function widgetDeck(doc: Document): HTMLElement | null {
 export function widgetRects(doc: Document): DOMRect[] {
   const app = doc.getElementById("desktop-chat-history")?.parentElement;
   const panels = app
-    ? app.querySelectorAll(".desktop-sidebar:not([hidden]), .desktop-play-tools:not([hidden]), .desktop-library:not([inert])")
+    ? app.querySelectorAll(":is(.desktop-sidebar, .desktop-play-tools, .desktop-library):not([inert])")
     : widgetDeck(doc)?.querySelectorAll(".dr-widget-dock,.dr-widget-tile:not([hidden])");
   return Array.from(panels ?? [], panel => panel.getBoundingClientRect()).filter(rect => rect.width && rect.height);
 }
 
 export function sceneAvailableLeft(doc: Document): number {
   const desktopViewport = doc.querySelector(".desktop-main > .desktop-viewport");
-  if (desktopViewport) return desktopViewport.getBoundingClientRect().left + 8;
+  if (desktopViewport) {
+    const game = doc.querySelector<HTMLElement>(".desktop-main[data-game-docked=true] > .desktop-play-tools[data-open=true]");
+    return desktopViewport.getBoundingClientRect().left + (game?.offsetWidth ?? 0) + 8;
+  }
   const deck = widgetDeck(doc);
   if (!deck) return 8;
   const minimum = Number(deck.dataset.minimumLeft) || 8;
@@ -25,7 +28,9 @@ export function sceneAvailableLeft(doc: Document): number {
 }
 
 export function sceneAvailableRight(doc: Document): number {
-  return doc.querySelector(".desktop-main > .desktop-viewport")?.getBoundingClientRect().right ?? doc.documentElement.clientWidth;
+  const right = doc.querySelector(".desktop-main > .desktop-viewport")?.getBoundingClientRect().right ?? doc.documentElement.clientWidth;
+  const library = doc.querySelector<HTMLElement>(".desktop-library[data-docked=true][data-state=open]");
+  return library ? Math.min(right, library.offsetLeft - 8) : right;
 }
 
 const listening = new WeakSet<Document>();

@@ -6,7 +6,7 @@ import { sceneText } from "../../core/scene-i18n";
 import { SectionGuide } from "./Help";
 import { experienceText } from "../../core/experience-i18n";
 
-export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; books: MemoryBook[]; scene: SceneState; onChange: (scene: SceneState) => void | Promise<boolean>; compact?: boolean; worldLocked?: boolean; overlay?: boolean; worldOnly?: boolean }) {
+export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; entities: SceneEntity[]; books: MemoryBook[]; scene: SceneState; onChange: (scene: SceneState) => void | Promise<boolean>; compact?: boolean; worldLocked?: boolean; overlay?: boolean; worldOnly?: boolean; gamePanel?: boolean }) {
   const [scene, setScene] = useState(input.scene);
   const latest = useRef(input.scene); latest.current = input.scene;
   const saving = useRef(false);
@@ -34,6 +34,7 @@ export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; e
   const entities = props.entities.filter((e) => e.worldId === props.scene.worldId);
   const focus = entities.filter((e) => props.scene.focusIds.includes(e.id));
   const books = props.books.filter((b) => (b.worldId ?? null) === props.scene.worldId && b.active);
+  const summary = focus.length ? focus.map(entity => entity.name).join(", ") : t("automatic");
   return <fieldset ref={root} disabled={busy} className={`scene-controls ${props.compact ? "is-compact" : ""} ${props.overlay ? "is-overlay" : ""}`} aria-busy={busy} onKeyDown={(event) => {
     if (props.overlay && expanded && event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setExpanded(false); toggle.current?.focus(); }
   }}>
@@ -41,8 +42,10 @@ export function SceneControls(input: { locale: Locale; worlds: WorldProfile[]; e
       {!props.worldLocked && <label className="scene-world"><span>{t("world")}</span><Select aria-label={t("world")} value={props.scene.worldId ?? ""} onChange={(e) => props.onChange({ worldId: e.target.value || null, focusIds: [], bookId: null })}><option value="">{t("unassigned")}</option>{props.worlds.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</Select></label>}
       
       {!props.worldOnly && <button ref={toggle} id={`${panelId}-toggle`} type="button" className="scene-focus-toggle" aria-expanded={expanded} aria-controls={expanded ? panelId : undefined} onClick={() => setExpanded(!expanded)}>
-        <span>{t("scene")} · {focus.length ? focus.map((e) => e.name).join(", ") : t("automatic")}</span>
-        {props.compact && <ChevronDown size={16} aria-hidden="true"/>}
+        {props.gamePanel
+          ? <span className="scene-focus-label"><strong>{props.locale === "ru" ? "Настроить сцену" : "Configure scene"}</strong><small>{summary}</small></span>
+          : <span>{t("scene")} · {summary}</span>}
+        {props.compact && <ChevronDown size={16} strokeWidth={props.gamePanel ? 1.5 : undefined} aria-hidden="true"/>}
       </button>}
       
     </div>

@@ -355,6 +355,7 @@ test("reviewed continuation waits for explicit approval, uses updated memory, an
     await expect(chat).toHaveURL("https://chat.deepseek.com/chat/s/a");
     const loader = chat.locator('[data-message-id="transfer-summary-answer"] [data-deeprole-memory-card]');
     await expect(loader).toContainText("Summarizing recent scenes");
+    await expect(chat.getByRole("dialog")).toHaveCount(0);
     await chat.getByRole("button", { name: "Cancel transfer", exact: true }).click();
     await chat.evaluate(() => (window as any).finishSummary());
     await expect(chat.getByRole("region", { name: "Continue your story", exact: true })).toHaveCount(0);
@@ -473,7 +474,7 @@ for (const refused of [false, true]) {
       }, refused);
       await chat.locator(".dr-character-row").filter({ hasText: "Mira" }).click();
       const editor = chat.locator(".dr-character-dialog"), area = editor.locator('[data-character-text-field=personality]');
-      const field = area.getByRole("textbox", { name: "Personality", exact: true }), wand = area.getByRole("button", { name: "Ask DeepSeek to generate: Personality", exact: true });
+      const field = area.getByRole("textbox", { name: "Personality", exact: true }), wand = area.getByRole("button", { name: "Ask the model to generate: Personality", exact: true });
       const composer = chat.getByRole("textbox", { name: "Message", exact: true }); await composer.fill("UNSENT DRAFT");
       await wand.click(); await expect(area.getByRole("alert")).toContainText("draft");
       await expect(composer).toHaveValue("UNSENT DRAFT"); expect(prompts).toHaveLength(0);
@@ -765,9 +766,17 @@ for (const locale of ["ru", "en"] as const) test(`a blocked game turn can retry 
 
     await chat.getByRole("button", { name: russian ? /^Контекст/ : /^Context/ }).click();
     const memory = chat.getByRole("dialog", { name: russian ? "Подключённая память" : "Selected memory" });
+    await expect(memory.getByRole("heading", { name: russian ? "Для следующей реплики" : "For the next message" })).toBeVisible();
     await expect(memory).toContainText(russian ? "Повышение бюджета здесь не поможет" : "Raising this budget will not make it fit");
     if (!russian) await chat.setViewportSize({ width: 360, height: 760 });
+    const budget = memory.getByRole("spinbutton");
+    await expect(budget).toBeHidden();
+    const budgetSettings = memory.locator(".dr-memory-budget-settings > summary");
+    await budgetSettings.press("Enter");
+    await expect(budget).toBeVisible();
+    await expect(budget).toHaveValue(String(world.contextBudget));
     await expect(memory.locator(".dr-memory-budget-suggest")).toHaveCount(0);
+    await budgetSettings.press("Enter");
     await memory.getByRole("button", { name: retryLabel }).click();
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0]!.length).toBeLessThanOrEqual(DEEPSEEK_PROMPT_CHAR_LIMIT);

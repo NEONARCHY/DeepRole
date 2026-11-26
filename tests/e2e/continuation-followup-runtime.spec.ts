@@ -242,7 +242,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["recovered-a
     if (lateHistory) {
       const recovery = chat.locator(".dr-continuation-draft");
       await expect(recovery).toBeVisible();
-      const check = recovery.getByRole("button", { name: locale === "ru" ? "Проверить ответ DeepSeek" : "Check DeepSeek response", exact: true });
+      const check = recovery.getByRole("button", { name: locale === "ru" ? "Проверить ответ модели" : "Check model response", exact: true });
       await expect(check).toBeEnabled();
       expect(await revisions()).toEqual([]); expect((await game()).activeChatId).toBe(f.binding.chatId); expect(sent).toHaveLength(1);
       historyAvailable = true; await check.click();

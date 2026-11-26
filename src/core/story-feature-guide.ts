@@ -9,9 +9,9 @@ export function storyFeatureGuide(locale: Locale, topic: "recording" | "automati
     current: "",
     intro: ru
       ? recording ? "Запись сцен — журнал сыгранной истории внутри DeepRole. Сопровождение игры использует эту историю, чтобы сохранять новые сведения."
-        : "Сопровождение помогает пополнять память по ходу игры: события, обещания и сведения о персонажах приходят вместе с обычными ответами DeepSeek."
+        : "Сопровождение помогает пополнять память по ходу игры: события, обещания и сведения о персонажах приходят вместе с обычными ответами модели."
       : recording ? "Scene recording keeps a local journal of your played story in DeepRole. Game accompaniment uses that story to save new details."
-        : "Accompaniment helps build memory during play: events, promises and character details arrive with normal DeepSeek replies.",
+        : "Accompaniment helps build memory during play: events, promises and character details arrive with normal model replies.",
     sections: recording ? [
       { title: ru ? "Что это даёт" : "What it is for", lines: ru ? [
         "Сохраняет завершённые реплики и варианты ответов локально. Можно посмотреть, что произошло и откуда взялись сведения в памяти.",
@@ -24,18 +24,18 @@ export function storyFeatureGuide(locale: Locale, topic: "recording" | "automati
         ? "Мира обещала вернуть ключ после проверки башни. Запись сохраняет саму сцену; сопровождение может предложить это обещание для памяти и дел."
         : "Mira promises to return a key after a tower inspection. Recording keeps the scene itself; accompaniment can propose the promise for memory and tasks."] },
       { title: ru ? "С чего начнётся и чего не делает" : "Starting point and limits", lines: ru ? [
-        "Началом станет ответ, выбранный сейчас в DeepSeek. Дальше записываются новые завершённые сцены. Предыдущая переписка не разбирается автоматически; исходный лор и анкеты сохраняются.",
-        "Запись сама не отправляет дополнительных запросов DeepSeek. Она не увеличивает его контекстное окно и не гарантирует, что каждый факт будет найден и использован. Проверить старую историю можно отдельно.",
+        "Началом станет ответ, выбранный сейчас в чате. Дальше записываются новые завершённые сцены. Предыдущая переписка не разбирается автоматически; исходный лор и анкеты сохраняются.",
+        "Запись сама не отправляет дополнительных запросов чате. Она не увеличивает его контекстное окно и не гарантирует, что каждый факт будет найден и использован. Проверить старую историю можно отдельно.",
       ] : [
-        "Starts from the reply currently selected in DeepSeek, then records new completed scenes. Earlier chat messages are not analysed automatically; original lore and profiles are kept.",
-        "Recording itself sends no extra DeepSeek requests. It does not expand the model’s context window or guarantee recall of every fact. Earlier history can be checked separately.",
+        "Starts from the reply currently selected in the chat, then records new completed scenes. Earlier chat messages are not analysed automatically; original lore and profiles are kept.",
+        "Recording itself sends no extra model requests. It does not expand the model’s context window or guarantee recall of every fact. Earlier history can be checked separately.",
       ] },
     ] : [
       { title: ru ? "Что сохраняется" : "What gets saved", lines: ru ? [
-        "DeepSeek предлагает сведения из новых сцен. DeepRole проверяет формат, источник и противоречия перед сохранением. Нужная часть сохранённой памяти подбирается к будущим сообщениям.",
+        "Модель предлагает сведения из новых сцен. DeepRole проверяет формат, источник и противоречия перед сохранением. Нужная часть сохранённой памяти подбирается к будущим сообщениям.",
         "Например: обещание вернуть ключ может стать незавершённым делом. Позднее сообщение о возврате может обновить его состояние. Модель может пропустить деталь или ошибиться — важные сведения стоит проверять.",
       ] : [
-        "DeepSeek proposes details from new scenes. DeepRole checks their format, source and conflicts before saving. Relevant saved memory is selected for future messages.",
+        "The model proposes details from new scenes. DeepRole checks their format, source and conflicts before saving. Relevant saved memory is selected for future messages.",
         "For example, a promise to return a key can become an open task. A later scene about its return can update the task. The model can miss details or make mistakes; check important information.",
       ] },
       { title: ru ? "Как выбрать режим" : "Choosing a mode", lines: ru ? [

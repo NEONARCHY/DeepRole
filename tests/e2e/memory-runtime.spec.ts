@@ -82,7 +82,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await chat.evaluate(() => { const stop = document.createElement("button"); stop.id = "mock-stop"; stop.setAttribute("aria-label", "Stop generating"); stop.textContent = "Stop"; document.querySelector("form")!.append(stop); });
     const beforeBusy = sent.length;
     await expect(chat.getByRole("button", { name: "Update lore", exact: true })).toBeDisabled();
-    await expect(chat.locator(".dr-inline-note")).toContainText("DeepSeek is still replying");
+    await expect(chat.locator(".dr-inline-note")).toContainText("The model is still replying");
     expect(sent).toHaveLength(beforeBusy);
     await chat.evaluate(() => document.querySelector("#mock-stop")!.remove());
     const composer = chat.getByRole("textbox", { name: "Message", exact: true });
@@ -133,7 +133,7 @@ test("canonical memory stays synchronized through editing, sending, proposals an
     await expect.poll(() => sent.at(-1)).toContain("[Existing approved entries]");
     const afterAnalysis = sent.length;
     await expect(chat.getByRole("button", { name: "Update lore", exact: true })).toBeDisabled();
-    await expect(chat.locator(".dr-service-state")).toContainText("DeepSeek is preparing suggestions");
+    await expect(chat.locator(".dr-service-state")).toContainText("The model is preparing suggestions");
     expect(sent).toHaveLength(afterAnalysis);
     expect(sent.at(-1)).not.toContain("<deeprole_context");
     await expect(chat.locator("[data-message-id='service-user']")).toBeHidden();
@@ -234,9 +234,9 @@ test("new-chat lore drafting stays a proposal and preserves manual choices throu
     // Analysis of an empty conversation is refused without sending anything.
     await expect(chat.getByRole("button", { name: "Update lore", exact: true })).toBeDisabled(); expect(sent).toEqual([]);
     await chat.getByRole("button", { name: "Remember", exact: true }).click();
-    await chat.locator(".dr-assistant summary").filter({ hasText: "Ask DeepSeek to propose lore" }).click();
+    await chat.locator(".dr-assistant summary").filter({ hasText: "Suggest lore changes" }).click();
     await chat.getByRole("textbox", { name: "Describe your world or the rules you want", exact: true }).fill("Create a small spaceport world with no magic.");
-    await chat.getByRole("button", { name: "Ask DeepSeek to propose lore", exact: true }).click();
+    await chat.getByRole("button", { name: "Suggest lore changes", exact: true }).click();
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0]).toContain("[User brief]"); expect(sent[0]).not.toContain("<deeprole_context");
     await expect(chat).toHaveURL(/new-roleplay$/);

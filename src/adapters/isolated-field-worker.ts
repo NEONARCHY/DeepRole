@@ -2,8 +2,9 @@ import { browser } from "wxt/browser";
 import { DeepSeekDomAdapter } from "./deepseek-dom";
 import { nativeMessageRows, isUserMessage } from "./deepseek-message-dom";
 import { CastReplyCapture } from "./cast-reply-capture";
-import { deleteOwnedChat } from "./cast-worker";
+import { deleteDesktopServiceChat, deleteOwnedChat } from "./cast-worker";
 import { castChatId } from "../core/cast-chat";
+import { IS_DESKTOP } from "../core/chat-host";
 import type { FieldMessage } from "./isolated-field-coordinator";
 import type { FieldWorkerStage } from "../core/field-runtime";
 import { bootstrapFieldServiceScreen, createFieldServiceScreen, rememberFieldServiceScreen, finishFieldServiceScreenMarker } from "./field-service-screen";
@@ -47,7 +48,15 @@ export async function startIsolatedFieldWorker(): Promise<boolean> {
       const stop = [...document.querySelectorAll<HTMLElement>("[data-testid=stop-generation],button[aria-label*='Stop' i],button[aria-label*='Останов' i]")].find(n => n.getClientRects().length && getComputedStyle(n).visibility !== "hidden"); stop?.click();
       for (let i = 0; adapter.isGenerating() && i < 40; i++) await pause(250);
      }
-     if (!touched && !adapter.isGenerating()) ok = await deleteOwnedChat(ownedChat!, document, async ms => { if (touched) throw new Error("user-interrupted"); await pause(ms); if (touched) throw new Error("user-interrupted"); });
+     const owned = ownedChat!;
+     const authorize = async () => {
+      if (touched || chat() !== owned) return false;
+      const result = await call({ type: "DR_FIELD_WORKER", action: "authorize-cleanup", id });
+      return result.chatId === owned && !touched && chat() === owned;
+     };
+     if (!touched && !adapter.isGenerating()) ok = await (IS_DESKTOP
+      ? deleteDesktopServiceChat(owned, authorize)
+      : deleteOwnedChat(owned, document, async ms => { if (touched) throw new Error("user-interrupted"); await pause(ms); if (touched) throw new Error("user-interrupted"); }, authorize));
     } else if (!chat() && location.pathname === "/") ok = true;
    }
   } catch { /* Unknown ownership never authorizes deletion. */ }

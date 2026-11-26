@@ -524,7 +524,7 @@ for (const locale of ["ru", "en"] as const) for (const scenario of ["approve", "
        await recovery.locator("summary").click();
        await expect(recovery.locator("textarea")).toHaveValue(draft);
        await expect.poll(() => flightHistoryReads).toBeGreaterThan(0);
-       const check = recovery.getByRole("button", { name: locale === "ru" ? "Проверить ответ DeepSeek" : "Check DeepSeek response", exact: true });
+       const check = recovery.getByRole("button", { name: locale === "ru" ? "Проверить ответ модели" : "Check model response", exact: true });
        await expect(check).toBeEnabled();
        expect((await rows(panel)).find(r => r.kind === "snapshot").data.appliedAt).toBeUndefined();
        if (recordPartial) {

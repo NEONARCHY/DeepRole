@@ -5,7 +5,7 @@ import { readTransportSource, rememberTransportResult, syncTransportVisibility, 
 
 const REASONING = ".ds-think-content, .ds-think-content-wrapper, [data-testid*='thinking'], [data-testid*='reasoning']";
 
-export function latestCharacterResponse(root: ParentNode = document) {
+export function latestCharacterResponse(root: ParentNode = document, portraitActionsPaused = false) {
   const target = latestSceneChoiceTarget(root);
   if (!target) return null;
   if (target.row.matches("[data-deeprole-service-reply='true']")) return null;
@@ -13,7 +13,7 @@ export function latestCharacterResponse(root: ParentNode = document) {
   clone.querySelectorAll(`${REASONING}, [data-deeprole-characters-result], [data-deeprole-scene-photos]`).forEach(e => e.remove());
   const text = clone.textContent ?? "";
   if (text.includes("<deeprole_character_mode>")) return null;
-  return { ...target, text, turn: parseCharacterTurn(text) };
+  return { ...target, text, turn: parseCharacterTurn(text, portraitActionsPaused) };
 }
 
 /** Fold just the transport block, never hide or alter the story or reasoning. */

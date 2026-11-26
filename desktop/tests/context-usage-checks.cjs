@@ -3,11 +3,133 @@ const assert = require("node:assert/strict");
 const { mkdir, mkdtemp, readFile, writeFile } = require("node:fs/promises");
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
-const { modelLimits, fitMessages, availableMemoryBytes, earlierSceneQuery, withEarlierStoryScene } = require("../model-context.cjs");
+const { modelCatalog, modelProfile, modelLimits, fitMessages, availableMemoryBytes, earlierSceneQuery, withEarlierStoryScene } = require("../model-context.cjs");
 const { chatRequest } = require("../chat-store.cjs");
 const { recordUsage, readTokenUsage, estimatedCost, usageSummary } = require("../usage.cjs");
 const { saveSpending, spendingNotices } = require("../spending.cjs");
-const { imageRequest, imageReceipt, veniceCharges } = require("../provider.cjs");
+const { imageRequest, imageReceipt, veniceCharges, memoryBudget } = require("../provider.cjs");
+
+test("one catalog serves selection and context fitting, and refresh doesn't hold a warm request", async t => {
+  const base = new URL("https://catalog.example.test/v1");
+  const first = [{ id: "alpha", context_length: 12_000 }, { id: "beta", context_length: 16_000 }];
+  const second = [{ id: "alpha", context_length: 20_000 }];
+  const requests = [];
+  let finishRefresh;
+  const refresh = new Promise(resolve => { finishRefresh = resolve; });
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    const key = options.headers.Authorization;
+    requests.push({ url: url.href, key });
+    if (key === "Bearer second-account") return Response.json({ data: second });
+    if (requests.filter(request => request.key === key).length === 1) return Response.json({ data: first });
+    await refresh;
+    return Response.json({ data: second });
+  });
+  const signal = new AbortController().signal;
+  try {
+    assert.deepEqual(await modelCatalog(base, "first-account"), first);
+    const beta = await modelProfile(base, "first-account", "beta", signal);
+    assert.equal(beta.context_length, 16_000);
+    assert.equal(requests.length, 1);
+    assert.deepEqual(await modelCatalog(base, "second-account"), second);
+    now += 300_001;
+    const warmed = await modelProfile(base, "first-account", "alpha", AbortSignal.timeout(500));
+    assert.equal(warmed.context_length, 12_000);
+    assert.equal(requests.length, 3);
+    finishRefresh();
+    assert.deepEqual(await modelCatalog(base, "first-account"), second);
+    assert.equal(requests.length, 3);
+  } finally { finishRefresh(); }
+});
+
+test("a cold send starts before discovery and measures time to text separately from reasoning", { timeout: 3000 }, async t => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-timing-test-"));
+  await writeFile(join(data, "model.json"), JSON.stringify({ baseUrl: "http://127.0.0.1:9902/v1", model: "slow-catalogue", maxTokens: 1024 }));
+  let finishDiscovery;
+  const discovery = new Promise(resolve => { finishDiscovery = resolve; });
+  t.after(() => { finishDiscovery(); });
+  let discoveryCalls = 0, completionCalls = 0, clock = 100;
+  t.mock.method(Date, "now", () => 10_000);
+  t.mock.method(performance, "now", () => clock);
+  let upstream;
+  const encoder = new TextEncoder();
+  t.mock.method(globalThis, "fetch", async (target, options) => {
+    if (target.pathname.endsWith("/models")) {
+      discoveryCalls++;
+      await discovery;
+      return Response.json({ data: [{ id: "slow-catalogue", context_length: 256_000 }] });
+    }
+    completionCalls++;
+    assert.equal(JSON.parse(options.body).client_started_at, undefined);
+    return new Response(new ReadableStream({ start(stream) { upstream = stream; } }), { headers: { "Content-Type": "text/event-stream" } });
+  });
+  assert.ok(await memoryBudget(data, {}, 32, new AbortController().signal) > 0);
+  const response = await chatRequest(data, {}, new Request("https://deeprole.local/api/v0/chat/completion", {
+    method: "POST", body: JSON.stringify({ chat_session_id: "timed-reply", parent_message_id: null, visible: "Короткая реплика.", prompt: "Короткая реплика.", client_started_at: 9960 }),
+  }));
+  assert.equal(response.status, 200);
+  assert.equal(completionCalls, 1);
+  assert.equal(discoveryCalls, 1);
+  const client = response.body.getReader();
+  const read = async () => new TextDecoder().decode((await client.read()).value);
+  const write = packet => upstream.enqueue(encoder.encode(`data: ${JSON.stringify(packet)}\n\n`));
+  assert.match(await read(), /event: ready/);
+  clock = 130;
+  write({ choices: [{ delta: { reasoning_content: "Размышления." } }] });
+  assert.match(await read(), /Размышления/);
+  clock = 190;
+  write({ choices: [{ delta: { content: "Ответ." } }] });
+  assert.match(await read(), /Ответ/);
+  clock = 250;
+  upstream.enqueue(encoder.encode("data: [DONE]\n\n"));
+  upstream.close();
+  while (!(await client.read()).done) { /* Read through the save and close. */ }
+  const saved = JSON.parse(await readFile(join(data, "Chats", "timed-reply.json"), "utf8"));
+  assert.equal(saved.lastContext.windowSource, "fallback");
+  assert.deepEqual(saved.lastContext.timings, { preparationMs: 40, firstTextMs: 90, totalMs: 150 });
+
+  const oversizedBudget = memoryBudget(data, {}, 160_000, new AbortController().signal);
+  finishDiscovery();
+  assert.ok(await oversizedBudget > 0);
+  assert.equal(discoveryCalls, 1);
+});
+
+test("cold discovery can expand the window before a long turn would drop dialogue", { timeout: 3000 }, async t => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-cold-history-test-"));
+  const id = "long-cold-chat";
+  await mkdir(join(data, "Chats"));
+  await writeFile(join(data, "Chats", id + ".json"), JSON.stringify({ id, head: 2, title: "Long chat", messages: [
+    { id: 1, parent: null, role: "user", visible: "One earlier scene. ".repeat(3000) },
+    { id: 2, parent: 1, role: "assistant", text: "Another earlier scene. ".repeat(3000) },
+  ] }));
+  await writeFile(join(data, "model.json"), JSON.stringify({ baseUrl: "http://127.0.0.1:9903/v1", model: "wide", maxTokens: 1024 }));
+  let announceDiscovery, finishDiscovery;
+  const started = new Promise(resolve => { announceDiscovery = resolve; });
+  const discovery = new Promise(resolve => { finishDiscovery = resolve; });
+  t.after(() => { finishDiscovery(); });
+  const posts = [];
+  t.mock.method(globalThis, "fetch", async (target, options) => {
+    if (target.pathname.endsWith("/models")) {
+      announceDiscovery();
+      await discovery;
+      return Response.json({ data: [{ id: "wide", context_length: 256_000 }] });
+    }
+    posts.push(JSON.parse(options.body));
+    return Response.json({ choices: [{ message: { content: "The scene continues." } }] });
+  });
+  const reply = chatRequest(data, {}, new Request("https://deeprole.local/api/v0/chat/completion", {
+    method: "POST", body: JSON.stringify({ chat_session_id: id, parent_message_id: 2, visible: "Continue.", prompt: "Continue." }),
+  }));
+  await started;
+  await new Promise(setImmediate);
+  assert.equal(posts.length, 0);
+  finishDiscovery();
+  const response = await reply;
+  assert.equal(response.status, 200);
+  await response.text();
+  assert.deepEqual(posts.map(post => post.messages.map(({ role }) => role)), [["system", "user", "assistant", "user"]]);
+});
 
 test("model window reserves the answer and keeps contiguous complete exchanges", () => {
   const limits = modelLimits({ maxTokens: 4096 }, { model_spec: { availableContextTokens: 24_000 } });

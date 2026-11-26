@@ -11,6 +11,7 @@ import type { ChatBinding, SceneEntity, WorldProfile } from "../src/core/types";
 import { isSameDeepSeekChat } from "../src/core/chat-scope";
 import { characterEditBaseline } from "../src/core/character-edit";
 import { assignLibraryImages, withPortraitLibrary } from "../src/core/portrait-library";
+import { portraitParticipants } from "../src/core/portrait-presence";
 
 const entity: SceneEntity = { id: "mira", worldId: "w", name: "Mira", kind: "character", description: "  ORIGINAL LORE\n", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, appearance: "Blue coat", sprites: {} } };
 const world: WorldProfile = { id: "w", name: "World", description: "", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
@@ -25,6 +26,18 @@ afterEach(async () => { await Promise.all(databases.map(db => db.delete())); dat
 const scope = () => ({ worldId: "w", chatId: "a", chatUrl: binding.chatUrl, base: characterRevision([entity]) });
 const turn = (): CharacterTurn => ({ world: "w", chat: "a", base: scope().base, present: ["mira"], updates: [{ id: "mira", state: { ...EMPTY_STATUS, action: "happy", condition: "Safe", stats: [{ label: "Energy", value: "Tired" }] } }] });
 const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
+
+it("recognizes a directly attributed portrait speaker without treating mentions, memories or calls as presence", () => {
+  const mira = { ...entity, aliases: ["Мира"] };
+  expect(portraitParticipants([mira], ["— Я здесь, — сказала Мира и подняла фонарь."])).toEqual([mira.id]);
+  expect(portraitParticipants([mira], ["“I'm here,” Mira said."])).toEqual([mira.id]);
+  expect(portraitParticipants([mira], ["Мира замерла. Фонарь качнулся у двери."])).toEqual([mira.id]);
+  expect(portraitParticipants([mira], ["Мира замерла бы от такого звука."])).toEqual([]);
+  expect(portraitParticipants([mira], ["В трубке щёлкнул телефон.", "— Я здесь, — сказала Мира."])).toEqual([]);
+  expect(portraitParticipants([mira], ["Ной вспомнил вчерашний разговор.", "— Я здесь, — сказала Мира."])).toEqual([]);
+  expect(portraitParticipants([mira], ["— Я здесь, — сказал Ной и вспомнил Миру.", "Ной спросил Миру, где ключ."])).toEqual([]);
+  expect(portraitParticipants([mira, { ...mira, id: "another" }], ["— Я здесь, — сказала Мира."])).toEqual([]);
+});
 
 it("returns a fresh editing baseline for repeated saves, including new characters and intervening scene updates", async () => {
   const repo = await setup();
@@ -431,7 +444,8 @@ describe("character protocol", () => {
     const scene = { revision: "current", presentIds: ["hero", "mira"], partnerIds: ["mira"], states: { hero: state }, updatedAt: 1 };
     const prompt = characterInstruction("w", "a", [entity, hero], scene, ["neutral", speaking, "angry"], [], 'I say: "I found the key."', "player-request-123");
     const avatar = JSON.parse(prompt.match(/Player avatar: (.+)\n/)![1]!);
-    expect(avatar).toEqual({ id: "Leon", portraitActions: ["neutral", speaking] });
+    expect(avatar).toEqual({ id: "Leon" });
+    expect(JSON.parse(prompt.match(/Personal action rules: (.+)\n/)![1]!).portraits).toContainEqual({ ids: ["Leon"], actions: ["neutral", speaking] });
     expect(prompt).toContain("latest user message"); expect(prompt).toContain("EVERY story reply");
     expect(prompt).toContain("not every message means speaking"); expect(prompt).toContain("The player is never a partners entry");
     expect(prompt).not.toContain("base64"); expect(prompt).not.toContain("Only neutral action");

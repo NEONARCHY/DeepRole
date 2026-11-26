@@ -1,12 +1,14 @@
-import { qualifiedLabels } from "./text";
+import { normalizeText, qualifiedLabels } from "./text";
 import type { WorldProfile, SceneEntity } from "./types";
 import { createId } from "./id";
 import { validProfileVersions, PROFILE_TEXT_FIELDS, type ProfileFieldRevisions } from "./story-profile-view";
-import { storyReplyProse, type StoryFact } from "./story-update";
-import type { StoryBaseline, StoryEvent, StoryProjection, StoryRecord } from "./story-records";
+import { isWholeStoryFactStatement, storyReplyProse, type StoryFact } from "./story-update";
+import type { StoryBaseline, StoryEvent, StoryProjection, StoryRecord, StoryRevision } from "./story-records";
 import { relatedStoryFacts, STORY_TASK_INSTRUCTION, memoryKeyText } from "./story-memory-lifecycle";
 import { gameTimeLabel, gameTimeMovesBack, isGameTimeFact, STORY_TIME_INSTRUCTION, STORY_TIME_COMPACT } from "./story-time";
 import { circumstanceReview } from "./story-circumstances";
+import { STORY_IMPORTANCE_RULE } from "./story-memory-admission";
+import { bindStoryRoles } from "./story-role-binding";
 export type ReviewResolutions = Record<string, "saved" | "dismissed">;
 export const validReviewResolutions = (v: unknown): v is ReviewResolutions => obj(v) && Object.entries(v).every(([k,s]) => id(k) && (s === "saved" || s === "dismissed"));
 export function automationReviews(records: StoryRecord[], baseline: StoryBaseline | undefined, projection: Pick<StoryProjection,"revisionIds"|"appliedEventIds"> | undefined) {
@@ -86,13 +88,70 @@ export function storyFactConflicts(f: StoryFact, previous: StoryFact[]) {
   const related = new Set(relatedStoryFacts(f,previous));
   return previous.filter(p => related.has(p) || !p.task && !f.task && conflictingStoryText(p.text,f.text)).slice(-8);
 }
+
+const playedTaskVerbs = new Map<string, readonly string[]>([
+  ["inspect", ["inspected"]], ["check", ["checked"]], ["verify", ["verified"]],
+  ["open", ["opened"]], ["close", ["closed"]], ["deliver", ["delivered"]],
+  ["return", ["returned"]], ["repair", ["repaired"]], ["sign", ["signed"]],
+  ["проверить", ["проверил", "проверила"]], ["сверить", ["сверил", "сверила"]],
+  ["открыть", ["открыл", "открыла"]], ["закрыть", ["закрыл", "закрыла"]],
+  ["доставить", ["доставил", "доставила"]], ["вернуть", ["вернул", "вернула"]],
+  ["починить", ["починил", "починила"]], ["подписать", ["подписал", "подписала"]],
+]);
+const playedTaskForms = new Set([...playedTaskVerbs.values()].flat());
+
+/** Extra proof for a reply with several independently proposed completions.
+ * The earlier owner and exact task wording must agree with a played clause. */
+export function playedTaskCompletion(fact: StoryFact, source: StoryRevision, previous: StoryFact[], sourceOf: (fact: StoryFact) => StoryRevision | undefined) {
+  const task = fact.task;
+  if (fact.kind !== "event" || task?.status !== "completed") return false;
+  const original = previous.filter(entry => entry.task?.key === task.key);
+  const open = original.length === 1 ? original[0] : undefined;
+  if (open?.task?.status !== "open" || open.task.title !== task.title) return false;
+  const title = normalizeText(task.title), separator = title.indexOf(" ");
+  const verbs = playedTaskVerbs.get(title.slice(0, separator));
+  if (separator < 0 || !verbs) return false;
+  const earlier = sourceOf(open);
+  if (!earlier || earlier.id === source.id || earlier.worldId !== source.worldId || !storyReplyProse(earlier.content).includes(open.quote)
+    || uncertain(open.quote) || negative(open.quote)
+    || /(?:^| )(?:after|before|unless|until|when|пока|после|до того|когда)(?: |$)/u.test(normalizeText(open.quote))) return false;
+  const roles = bindStoryRoles(open, earlier).roles, owner = roles.promisor ?? roles.planner;
+  if (!owner || !isWholeStoryFactStatement(fact.quote, source.content) || uncertain(fact.quote) || negative(fact.quote)
+    || /[!?.:,;\r\n«»“”"…]/u.test(fact.quote.replace(/\.$/u, ""))) return false;
+  if (previous.some(entry => {
+    if (entry.task?.status !== "open" || entry.task.key === task.key || normalizeText(entry.task.title) !== title) return false;
+    const witness = sourceOf(entry);
+    const competing = witness && bindStoryRoles(entry, witness).roles;
+    const other = competing && (competing.promisor ?? competing.planner);
+    return !other || other.id === owner.id;
+  })) return false;
+
+  const names = (source.roleRoster ?? []).flatMap(person => [person.name, ...person.aliases]
+    .map(name => ({ id: person.id, name: normalizeText(name) }))).filter(person => person.name);
+  const actions = new Set(verbs.map(verb => verb + title.slice(separator)));
+  let actor: string | undefined, matched = false;
+  for (const clause of normalizeText(fact.quote).split(/ (?:and|и) /u)) {
+    const named = names.filter(person => clause.startsWith(person.name + " "));
+    const longest = named.reduce((length, person) => Math.max(length, person.name.length), 0);
+    const subjects = new Set(named.filter(person => person.name.length === longest).map(person => person.id));
+    if (subjects.size > 1) return false;
+    if (longest) actor = subjects.values().next().value;
+    const action = longest ? clause.slice(longest + 1) : clause;
+    // Only a chain of direct finite actions can carry forward its named subject.
+    if (!actor || !playedTaskForms.has(action.split(" ", 1)[0]!)) return false;
+    if (actor === owner.id && actions.has(action)) matched = true;
+  }
+  return matched;
+}
+
 export function factAutomationReason(fact: StoryFact, assessment: unknown, previous: StoryFact[], protectedTexts: string[]): AutomationReason {
   const related = relatedStoryFacts(fact,previous), old = related.at(-1);
   if (circumstanceReview(fact, old)) return "uncertain";
   if (old && gameTimeMovesBack(old, fact)) return "conflict";
   if (old?.claim && fact.claim && old.claim.lifetime !== fact.claim.lifetime && (old.claim.lifetime !== undefined || old.claim.value === fact.claim.value)) return "uncertain";
   if (fact.task) {
-    if (fact.task.status !== "open" && (negative(fact.quote) || /(?:\b(?:claims?|claimed|says?|said|reports?|reported)\b|утвержда|сказа|говорит|сообщил)/iu.test(fact.quote))) return "uncertain";
+    if (fact.task.status !== "open" && ([fact.quote, fact.text].some(value => gameTimeLabel(value.trim().replace(/[:：]$/u, "")))
+      || negative(fact.quote) || /(?:\b(?:claims?|claimed|says?|said|reports?|reported)\b|утвержда|сказа|говорит|сообщил)/iu.test(fact.quote))) return "uncertain";
     if (old?.task && memoryKeyText(old.task.title) !== memoryKeyText(fact.task.title)) return "conflict";
     if (fact.task.status !== "open" && !old?.task) return "uncertain";
     if (old?.task && old.task.status !== "open" && old.task.status !== fact.task.status) return "uncertain";
@@ -127,10 +186,16 @@ export function automationMarker(world: WorldProfile) {
   return world.storyAutomation ? `<deeprole_game_automation>${JSON.stringify({ world: world.id, ...world.storyAutomation })}</deeprole_game_automation>` : "";
 }
 // Same evidence/schema rules, condensed so source/time guides leave room for facts.
-const COMPACT_TEMPORAL_POLICY = 'max8 facts:{text,kind,quote,risk,claim?,task?} in ONE character JSON. Literal played clause/exact quote; keep speaker/negation/conditions; no JSON/choices. risk ordinary=direct+consistent memory/manual lore, else uncertain/conflict. claim:{key,value,scope:event|state,transition?}: reuse property key; event immutable; mutable progress played ONLY; correction/different value without progress review. task:{key,title,status:open|completed|cancelled}: same key/title per concrete goal. Save fulfillment once on that goal; preparation is not fulfillment. Open promise/plan/task+literal title. Terminal event+played fulfillment/cancellation; NO future/promise/belief/negation/silence/choice; unknown link/reopen review. NO replaces. people max4,fields4:[{id:rosterID|new:Name,name,quote,risk,fields:[{key:appearance|personality|goals|background,text,quote,risk}]}]. Exact named prose,literal NEW lasting fields,NOT temporary. No invented age/numbers/identity/biography/relationships/places/groups. Mention is NOT presence. Identity/alias/namesake review. Preserve filled/protected/manual fields/lore; omit unknown/repeats.';
+const COMPACT_TEMPORAL_POLICY = [
+  'max8 facts:{text,kind,quote,risk,claim?,task?}; literal clause/exact reply quote, keep speaker/negation/conditions, no JSON/choices. ordinary=direct+consistent memory/lore, else uncertain/conflict.',
+  'claim:{key,value,scope:event|state,transition?}; reuse keys. Event immutable. Played mutable change=progress; correction/unproved change review.',
+  'task:{key,title,status:open|completed|cancelled}; exact known key/title per goal. Open promise/plan/task+literal title; terminal event+played outcome. One row per proved goal; shared quote OK. No preparation/future/promise/belief/negation/silence/choice. Unknown link/reopen review. No replaces.',
+  'people max4 fields4:[{id:rosterID|new:Name,name,quote,risk,fields:[{key:appearance|personality|goals|background,text,quote,risk}]}]. Exact named prose; only new lasting fields. No invented ages/numbers/identity/biography/relationships/places/groups. Mentions do not establish presence. Identity/alias/namesake review. Keep filled/protected/manual fields/lore; omit unknown/repeats.',
+].join(' ');
 export function storyAutomationInstruction(world: WorldProfile, compact = false, temporal = world.sharedGame?.episodeSources !== undefined) {
   const mode = automationMode(world);
   if (!world.storyAutomation) return "";
-  if (compact) return `${automationMarker(world)}\nMemory accompaniment mode is ${mode}. No extra reply or service request. ${mode==="off"?"Omit facts and people; ordinary scene updates remain enabled.":temporal?COMPACT_TEMPORAL_POLICY:'In the ONE existing character JSON propose max8 facts:{text,kind,quote,risk,claim?,task?}; text=literal clause retaining speaker/negation/conditions; quote=one verbatim span from this reply; no added ellipses, player text, JSON or choices. risk ordinary only directly established AND consistent with current memory/manual lore, else uncertain/conflict. Optional claim:{key,value,scope:"event"|"state",transition?}; reuse supplied subject/property keys; event immutable, explicit mutable progress=transition:"progress", correction="correction". No transition on differing state requires review. Optional task:{key,title,status:"open"|"completed"|"cancelled"} reuses EXACT known task key/title; one concrete goal per key. Save its played outcome once on that goal. A preparatory step leaves it open. Open title literal in quote, kind promise/plan/task. Terminal requires kind event and explicitly played fulfillment/cancellation, NOT promise/future/belief/negation/silence/choices; unknown linkage or reopening uncertain. Never output replaces. Optional people:[{id:"exact roster ID or new:Name",name:"exact name",quote:"exact named-person prose",risk:"ordinary|uncertain|conflict",fields:[{key:"appearance|personality|goals|background",text:"literal lasting clause",quote:"exact prose",risk:"ordinary|uncertain|conflict"}]}], max4 people/4 fields. Mentions do not mean presence; no places/groups. Uncertain identity/aliases/namesakes require review. Only NEW lasting details, not temporary clothes/poses/moods/current goals. No invented ages, numbers, identities, biographies or relationships. Filled/protected/manual fields and author lore must never be replaced; omit unknowns/repeats.'}\n${mode === "off" || !temporal ? "" : STORY_TIME_COMPACT}`;
-  return `${automationMarker(world)}\n${mode === "off" ? "Game-memory accompaniment is paused. Omit facts and people; ordinary scene-state updates remain enabled." : `Memory accompaniment mode is ${mode}. No extra reply or service request. In the ONE existing character JSON block, propose at most 8 specific facts and 4 people per completed reply. facts: {text,kind,quote,risk,claim?,task?}. text must be a concise literal clause from quote, retaining speaker attribution and conditions; quote copies one continuous span from this reply. Do not add ellipses or quote the player's message, choices or JSON. kind: event (happened), promise (commitment, not fulfillment), plan (intention), belief (speaker belief, not objective truth), secret (explicitly revealed information), task (explicitly assigned task, retain completion status). risk: ordinary ONLY when directly established and consistent with current memory/manual lore; uncertain or conflict otherwise. Optional claim:{key,value,scope:"event"|"state"} uses a stable subject/property key and faithful value. event keys are immutable; state keys may change only through explicitly played progress. Reuse claim keys from current memory. Never rewrite ages, names, player identity or manual lore.\n${STORY_TASK_INSTRUCTION}\n${temporal ? STORY_TIME_INSTRUCTION : ""}\nOptional people:[{id:"EXACT roster ID or new:Name",name:"exact known name",quote:"exact named-person evidence",risk:"ordinary|uncertain|conflict",fields:[{key:"appearance|personality|goals|background",text:"literal lasting detail",quote:"exact source quote",risk:"ordinary|uncertain|conflict"}]}]. Include new people even when merely mentioned; distinguish mention from physical presence. Only real characters, no places or groups. Existing people keep exact stable IDs and names. Use a new name only when explicitly established; aliases, namesakes or uncertain identity require review. Profile fields contain ONLY newly established lasting details, not temporary poses, clothes or current scene goals; these belong to scene state. Each field text is a literal clause supported by its quote, no invented ages, numbers, biographies or relationships. Omit unknown fields and repeated details. Filled or manually protected fields must not be replaced.`}`;
+  const importance = mode === "off" ? "" : STORY_IMPORTANCE_RULE + "\n";
+  if (compact) return `${automationMarker(world)}\n${importance}Memory accompaniment mode is ${mode}. ${mode==="off"?"Omit facts and people; ordinary scene updates remain enabled.":temporal?COMPACT_TEMPORAL_POLICY:'Same character JSON, max8 facts:{text,kind,quote,risk,claim?,task?}; literal clause/exact quote from this reply, keep speaker/negation/conditions; no ellipses, player text, JSON or choices. risk ordinary only directly established AND consistent with current memory/manual lore, else uncertain/conflict. Optional claim:{key,value,scope:"event"|"state",transition?}; reuse supplied subject/property keys; event immutable, explicit mutable progress=transition:"progress", correction="correction". No transition on differing state requires review. Optional task:{key,title,status:"open"|"completed"|"cancelled"} reuses EXACT known task key/title; one concrete goal per key. One row per proved goal; shared quote OK. A preparatory step leaves it open. Open title literal in quote, kind promise/plan/task. Terminal requires kind event and explicitly played fulfillment/cancellation, NOT promise/future/belief/negation/silence/choices; unknown linkage or reopening uncertain. Never output replaces. People max4,fields4:[{id:rosterID|new:Name,name,quote,risk,fields:[{key:appearance|personality|goals|background,text,quote,risk}]}]. Exact named prose. Mentions do not mean presence; no places/groups. Uncertain identity/aliases/namesakes require review. Only NEW lasting details, not temporary clothes/poses/moods/current goals. No invented ages, numbers, identities, biographies or relationships. Filled/protected/manual fields and author lore must never be replaced; omit unknowns/repeats.'}\n${mode === "off" || !temporal ? "" : STORY_TIME_COMPACT}`;
+  return `${automationMarker(world)}\n${importance}${mode === "off" ? "Game-memory accompaniment is paused. Omit facts and people; ordinary scene-state updates remain enabled." : `Memory accompaniment mode is ${mode}. No extra reply or service request. In the ONE existing character JSON block, propose at most 8 specific facts and 4 people per completed reply. facts: {text,kind,quote,risk,claim?,task?}. text must be a concise literal clause from quote, retaining speaker attribution and conditions; quote copies one continuous span from this reply. Do not add ellipses or quote the player's message, choices or JSON. kind: event (happened), promise (commitment, not fulfillment), plan (intention), belief (speaker belief, not objective truth), secret (explicitly revealed information), task (explicitly assigned task, retain completion status). risk: ordinary ONLY when directly established and consistent with current memory/manual lore; uncertain or conflict otherwise. Optional claim:{key,value,scope:"event"|"state"} uses a stable subject/property key and faithful value. event keys are immutable; state keys may change only through explicitly played progress. Reuse claim keys from current memory. Never rewrite ages, names, player identity or manual lore.\n${STORY_TASK_INSTRUCTION}\n${temporal ? STORY_TIME_INSTRUCTION : ""}\nOptional people:[{id:"EXACT roster ID or new:Name",name:"exact known name",quote:"exact named-person evidence",risk:"ordinary|uncertain|conflict",fields:[{key:"appearance|personality|goals|background",text:"literal lasting detail",quote:"exact source quote",risk:"ordinary|uncertain|conflict"}]}]. Include new people even when merely mentioned; distinguish mention from physical presence. Only real characters, no places or groups. Existing people keep exact stable IDs and names. Use a new name only when explicitly established; aliases, namesakes or uncertain identity require review. Profile fields contain ONLY newly established lasting details, not temporary poses, clothes or current scene goals; these belong to scene state. Each field text is a literal clause supported by its quote, no invented ages, numbers, biographies or relationships. Omit unknown fields and repeated details. Filled or manually protected fields must not be replaced.`}`;
 }

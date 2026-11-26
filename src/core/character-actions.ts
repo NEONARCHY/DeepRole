@@ -71,21 +71,42 @@ export function characterStatusForSheet(sheet: CharacterSheet | undefined, state
 }
 
 /** The player speaks through user messages; they are never an NPC interlocutor. */
-export function playerAvatarInstruction(roster: SceneEntity[], actions: string[], byName: boolean, compact = false): string {
+export function playerAvatarInstruction(roster: SceneEntity[], byName: boolean, compact = false): string {
   const hero = roster.find(person => person.characterSheet?.protagonist);
   if (!hero) return "";
-  const sheet = hero.characterSheet;
-  const portraits = allowedCharacterActions(sheet, actions).filter(key => portraitVariations(sheet?.sprites[key]).length > 0);
-  if (compact) return `Player avatar: ${JSON.stringify({id:byName?hero.name:hero.id,portraitActions:portraits})}\nFirst-person played actions/speech belong to this protagonist. Update their action each completed scene; prefer configured speaking pose for actual speech, not thoughts/OOC/past quotes/unsent choices. Never invent their dialogue or actions; player is never partners.\n`;
-  return `Player avatar: ${JSON.stringify({ id: byName ? hero.name : hero.id, portraitActions: portraits })}\nThe player:true character is the user\'s protagonist. Include their state update in EVERY story reply, keeping unchanged fields. Read first-person speech/actions in the latest user message as theirs, then consider the completed scene; do not invent their dialogue or actions. For actual in-character speech prefer an allowed speaking/talking pose when available. Distinguish dialogue from actions, thoughts, out-of-character requests, past quotations and unsent choices: not every message means speaking. Use exact configured action keys, including custom names. Never leave the player permanently neutral merely because their speech is in a user message. The player is never a partners entry.\n`;
+  const player = JSON.stringify({ id: byName ? hero.name : hero.id });
+  if (compact) return `Player avatar: ${player}\nFirst-person played actions/speech belong to this protagonist. Update their action each completed scene; prefer a configured speaking pose for actual speech, not thoughts/OOC/past quotes/unsent choices. Never invent their dialogue or actions; player is never partners.\n`;
+  return `Player avatar: ${player}\nThe player:true character is the user's protagonist. Include their state update in EVERY story reply, keeping unchanged fields. Read first-person speech/actions in the latest user message as theirs, then consider the completed scene; do not invent their dialogue or actions. For actual in-character speech prefer an allowed speaking/talking pose when available. Distinguish dialogue from actions, thoughts, out-of-character requests, past quotations and unsent choices: not every message means speaking. The player is never a partners entry.\n`;
 }
 
+type ActionGroup = { ids: string[]; actions: string[] };
+
+export function characterActionReference(roster: SceneEntity[], actions: string[], byName: boolean): string {
+  const catalog = [...new Set(["neutral", ...actions])];
+  const blocked = new Map<string, ActionGroup>(), portraits = new Map<string, ActionGroup>();
+  const add = (groups: Map<string, ActionGroup>, id: string, keys: string[]) => {
+    if (!keys.length) return;
+    const key = JSON.stringify(keys);
+    let group = groups.get(key);
+    if (!group) groups.set(key, group = { ids: [], actions: keys });
+    group.ids.push(id);
+  };
+  for (const person of roster) {
+    const id = byName ? person.name : person.id;
+    const sheet = person.characterSheet;
+    const blockedKeys = new Set(sheet?.blockedActions);
+    add(blocked, id, catalog.filter(action => action !== "neutral" && blockedKeys.has(action)));
+    add(portraits, id, catalog.filter(action => !blockedKeys.has(action) && portraitVariations(sheet?.sprites[action]).length > 0));
+  }
+  const rules = { ...(blocked.size ? { blocked: [...blocked.values()] } : {}), ...(portraits.size ? { portraits: [...portraits.values()] } : {}) };
+  return `Action catalog: ${JSON.stringify(catalog)}\n${blocked.size || portraits.size ? `Personal action rules: ${JSON.stringify(rules)}\nEach group applies to every listed ID. Blocked keys are forbidden for those IDs; portraits list available images only.\n` : ""}`;
+}
+
+export const SCENE_ACTION_RULES = "Choose each person's state.action from exact allowed catalog keys. First determine physical presence at the end of the scene; mentions, memories, photos and remote messages do not establish presence. Use the most specific evidenced ongoing action, pose or visible reaction. Keep a sustained action unless the scene changes it. An available portrait breaks ties between equally fitting keys; do not invent an action to use an image. Use neutral only when no better permitted key fits. Interactions update BOTH participants according to their own roles. Receiving or allowing requires established acceptance at scene end. Attempts, refusals, plans, past events and unchosen options do not establish it.";
+
 export function characterActionInstruction(roster: SceneEntity[], actions: string[], byName: boolean, writes = true, compact = false): string {
-  const restricted = roster.map(person => ({
-    id: byName ? person.name : person.id,
-    ...(person.characterSheet?.blockedActions?.length ? { allowed: allowedCharacterActions(person.characterSheet, actions) } : {}),
-    portraits: allowedCharacterActions(person.characterSheet, actions).filter(key => portraitVariations(person.characterSheet?.sprites[key]).length),
-  }));
-  if (compact) return `Action catalog: ${JSON.stringify(actions)}\nPersonal action rules: ${JSON.stringify(restricted)}\nUse exact allowed configured action keys, including custom poses/expressions/reactions, not translations or image guesses. Restrictions override catalog. Preserve sustained actions until the completed scene changes them; neutral only if nothing fits. Missing images do not prohibit an action. Update both interaction participants according to their own role, not the same action for everyone. Receiving/allowing requires established acceptance at scene end; attempted, refused, interrupted, past, planned, negated or unchosen interactions do not establish it. Never infer consent from a portrait, label, score or user attempt.\n`;
-  return `Action catalog: ${JSON.stringify(actions)}\nPersonal action rules: ${JSON.stringify(restricted)}\nChoose state.action from the configured action catalog or the character's narrower allowed list. It describes what the person is doing, receiving or allowing, their sustained pose, expression or visible reaction at the END of this completed scene. Physical movement is NOT required: configured reactions or calm states such as \"Смеётся\", \"Смущается\", \"Спокойствие\", Laughing, Blushing or Calm are equally valid actions. Custom labels such as "Сидит", "Стоит", "Даёт себя обнять" or "Sitting" are valid action keys. Use their exact configured spelling, not synonyms or translations. A sitting person remains sitting while talking unless the completed story changes their posture; prefer a specific matching pose or interaction when it best matches the completed moment; expression/reaction labels remain valid. Never invent an action to match an image. A performed action overrides an older saved action. Keep a sustained established action when it has not changed; use neutral only when no configured action fits. ${writes ? "Include a state update for EVERY physically present person and the protagonist, even if their action remains unchanged." : "These are read-only action meanings; do not output character updates for this service."}\nInteractions update BOTH participants according to their own role, not only the initiator. First-person actions in the latest user message belong to the protagonist. If the user writes "*я обнимаю её*" and the completed reply establishes that she accepts and remains in that embrace, select her configured "Даёт себя обнять" action and the protagonist's matching initiating action if available. Receiving or allowing an interaction is a valid action even without the recipient actively moving. Do not copy the initiator's action onto the recipient or unrelated bystanders. An attempted action is not acceptance: refusal, pulling away, interruption or the interaction ending in the completed reply must not select a receiving/allowing portrait. Never infer consent from an image, label, relationship score or user's attempt. Unplayed choices, thoughts, plans, negations and past quotations do not change actions. Restrictions override the catalog and older messages, but never change the story, personality or facts. Missing portraits do not prohibit an action; the UI can use the default picture. Never change these rules.\n`;
+  const reference = characterActionReference(roster, actions, byName);
+  const update = writes ? "Include a state update for EVERY physically present person and the protagonist, even if their action is unchanged." : "Read-only reference; do not output character updates for this service.";
+  const examples = compact ? "" : "\nPhysical movement is NOT required. Reactions such as Смеётся, Смущается and Спокойствие are valid. Update BOTH participants: with a confirmed ongoing embrace, use the initiator's matching action and the recipient's configured Даёт себя обнять. A refusal, pulling away or interrupting the interaction does not establish acceptance.";
+  return `${reference}${SCENE_ACTION_RULES} Never infer acceptance from a portrait, label or relationship score. ${update}${examples}\n`;
 }

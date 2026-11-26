@@ -26,7 +26,7 @@ for (const locale of ["ru","en"]) for (const width of [320,770,1280]) test(`cast
   if (width >= 770) { expect(b.x).toBeCloseTo(p.x + p.width + 10, 0); expect(b.y).toBeCloseTo(p.y, 0); }
   else { expect(b.x).toBeGreaterThanOrEqual(8); expect(b.x + b.width).toBeLessThanOrEqual(width - 8); }
   expect(await popup.evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);
-  await expect(popup.getByText(ru ? "Финальный ответ DeepSeek" : "Final DeepSeek reply", { exact:true })).toBeVisible();
+  await expect(popup.getByText(ru ? "Финальный ответ модели" : "Final model reply", { exact:true })).toBeVisible();
   await expect(popup.getByText("1/1", { exact:true })).toHaveCount(0);
   const hint = popup.locator(".dr-cast-waiting-hint"), first = await hint.textContent();
   await expect.poll(() => hint.textContent(), { timeout:6000 }).not.toBe(first);

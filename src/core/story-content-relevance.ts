@@ -12,7 +12,7 @@ const framing=uniqueTokens("what where when why how which who do did does has ha
 const topicRequest=/^(?:please |пожалуйста )?(?:what|where|when|why|how|which|who|remind|tell|show|list|что|где|когда|почему|зачем|как|кто|кому|какой|какая|какие|напомни|расскажи|покажи|перечисли)(?= |$)/u;
 const ownershipWord=(word:string)=>/^(?:own(?:s|ed|ing)?|owner(?:s|ship)?|belong(?:s|ed|ing)?|whose|владе(?:ю|ешь|ет|ем|ете|ют|ть|ние|ния|нию|нием)|владел(?:ец|ьц|иц)\p{L}*|собственник\p{L}*|принадлеж\p{L}*|чей|чья|чье|чьи|чь\p{L}*)$/u.test(word);
 const topicToken=(word:string)=>ownershipWord(word)?"__ownership__":word;
-const noMatch={score:(_:StoryFact)=>0,related:(_:StoryFact)=>0,admission:undefined};
+const noMatch={score:(_:StoryFact)=>0,related:(_:StoryFact)=>0,admission:undefined,onlyRelevantFact:undefined};
 const prepared=new WeakMap<MemoryEntry,{text:string;title:string;names:string;tokens:Set<string>}>();
 
 /** Whole text and task title, not the 90-character title/8-keyword projection.
@@ -51,12 +51,12 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
   for(const fact of facts)for(const term of requested)if(tokens(fact).has(term))frequency.set(term,frequency.get(term)!+1);
   const weights=requested.flatMap(term=>{const count=frequency.get(term)!;return count>0&&count<facts.length?[[term,1-count/facts.length] as const]:[];});
   const total=weights.reduce((n,[,weight])=>n+weight,0);
-  // All meaningful terms must exist, at least one must distinguish candidates,
-  // and action-only/compound action requests keep the previous admission.
+  // All meaningful terms must exist. At least one must distinguish candidates
+  // to trim the tail. A sole full match can still reserve space in the prompt.
   // Coverage is checked AGAIN against whole facts actually admitted by budget.
   const hasOwnership=frequency.get("__ownership__")!>0,hasObjectTerm=requested.some(term=>term!=="__ownership__"&&frequency.get(term)!>0);
-  const specific=(topicRequest.test(normalizeText(query))||ownershipQuestion)&&total>0&&(ownershipQuestion?hasOwnership&&hasObjectTerm:requested.every(term=>frequency.get(term)!>0))&&(!storyConceptSearch(query,names).concepts.length||ownershipQuestion);
-  const admission=specific?{
+  const specific=(topicRequest.test(normalizeText(query))||ownershipQuestion)&&(ownershipQuestion?hasOwnership&&hasObjectTerm:requested.every(term=>frequency.get(term)!>0))&&(!storyConceptSearch(query,names).concepts.length||ownershipQuestion);
+  const admission=specific&&total>0?{
     // An open obligation sharing even a common requested topic is not noise.
     matches:(fact:StoryFact)=>ownershipQuestion
       ?tokens(fact).has("__ownership__")&&requested.some(term=>term!=="__ownership__"&&tokens(fact).has(term))
@@ -65,7 +65,8 @@ export function storyContentRelevance(facts:StoryFact[],query:string,excludedNam
       ?selected.some(fact=>tokens(fact).has("__ownership__")&&requested.some(term=>term!=="__ownership__"&&frequency.get(term)!==0&&tokens(fact).has(term)))
       :requested.every(term=>selected.some(fact=>tokens(fact).has(term))),
   }:undefined;
-  return {admission,related,score(fact:StoryFact){
+  const onlyRelevantFact = specific && facts.length === 1 ? facts[0] : undefined;
+  return {admission,onlyRelevantFact,related,score(fact:StoryFact){
     if(!total)return 0;
     const terms=tokens(fact),matched=weights.reduce((n,[term,weight])=>n+(terms.has(term)?weight:0),0);
     // A bounded content bonus: all matching distinctive query terms =32.

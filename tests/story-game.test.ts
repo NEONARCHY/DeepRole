@@ -96,6 +96,37 @@ describe("working selected story", () => {
     await f.play("parent", key("2")); expect((await f.scene()).states["person-1"]!.condition).toBe("In the workshop.");
     await f.play(); expect((await f.scene()).states["person-1"]!.condition).toBe("Future");
   });
+  it("repairs an unused checkpoint after regenerating its opening reply", async () => {
+    const f = await setup(); await f.play("start");
+    const scene = await f.scene();
+    f.snapshot.messages.push(f.message("3", null, "user", "Start"), f.answer("4", "3", "Alternate opening"),
+      f.message("5", "4", "user", "Continue"), f.answer("6", "5", "Old untracked reply"));
+    f.snapshot.selectedNativeKey = key("6");
+
+    expect(await f.play("parent", key("6"))).toMatchObject({ active: true, changed: true });
+    const after = await f.repo.list<StoryRecord>("story");
+    expect(after.find(r => r.type === "baseline")?.origin.nativeAnchor?.nativeMessageKey).toBe(key("6"));
+    expect(after.filter(r => r.type === "revision" || r.type === "event")).toHaveLength(0);
+    expect(await f.scene()).toEqual(scene);
+    assertStoryGraph(await f.repo.rawRecords());
+
+    f.snapshot.messages.push(f.message("7", "6", "user", "Next"), f.answer("8", "7", "Recorded after repair"));
+    f.snapshot.selectedNativeKey = key("8");
+    await f.play();
+    expect((await f.scene()).states["person-1"]!.condition).toBe("Recorded after repair");
+  });
+  it.each(["changed opening", "recorded turns", "different selected parent"])("keeps a checkpoint when automatic repair is unsafe (%s)", async reason => {
+    const f = await setup(); await f.play("start");
+    if (reason === "recorded turns") {
+      f.snapshot.messages.push(f.message("7", "2", "user", "Recorded"), f.answer("8", "7", "Already canon"));
+      f.snapshot.selectedNativeKey = key("8"); await f.play();
+    }
+    f.snapshot.messages.push(f.message("3", null, "user", reason === "changed opening" ? "Different start" : "Start"), f.answer("4", "3", "Alternate opening"));
+    f.snapshot.selectedNativeKey = key(reason === "different selected parent" ? "2" : "4");
+    const before = await f.repo.rawRecords();
+    await expect(f.play("parent", key("4"))).rejects.toThrow("story-native-line-unavailable");
+    expect(await f.repo.rawRecords()).toEqual(before);
+  });
   it("pauses without writes for unknown ancestry and incomplete selected reply", async () => {
     const f = await setup(); await f.play("start"); const before = await f.repo.rawRecords();
     f.snapshot.messages.push(f.message("3", "missing", "user", "Unknown"), f.answer("4", "3", "Bad")); f.snapshot.selectedNativeKey = key("4");
@@ -162,6 +193,32 @@ describe("working selected story", () => {
   it("unknown old statuses do not block a new starting point", async () => {
     const f = await setup(); f.snapshot.messages[0]!.completion = "interrupted"; await f.play("start");
     f.snapshot.messages.push(f.message("3", "2", "user", "Act"), f.answer("4", "3", "A")); f.snapshot.selectedNativeKey = key("4"); await f.play(); expect((await f.scene()).states["person-1"]!.condition).toBe("A");
+  });
+  it("applies story updates but preserves poses after a hidden turn arrives with portraits re-enabled", async () => {
+    const f = await setup();
+    f.binding.characterScenes![f.world.id]!.states["person-1"]!.action = "happy";
+    await f.repo.put("binding", f.binding);
+    await f.play("start");
+    const draft = "Look at the key", context = "Omit state.action", id = crypto.randomUUID();
+    const identity = { chatId: f.binding.chatId, nativeParentKey: key("2") }, route = { requestId: id, identity, transport: "xhr" as const };
+    await prepareDispatchCapture({ id, worldId: f.world.id, bindingId: f.binding.id, identity, transport: "xhr",
+      sceneRevision: (await f.scene()).revision, originalDraft: draft, proposedContext: context, portraitActionsPaused: true }, 7, f.repo);
+    const outgoingText = context + "\n\n[User message]\n" + draft;
+    await confirmDispatchCapture({ ...route, outgoingText }, 7, f.repo);
+    await advanceDispatchCapture({ ...route, phase: "started" }, 7, f.repo);
+    await advanceDispatchCapture({ ...route, phase: "settled", delivery: { status: "accepted", httpStatus: 200 } }, 7, f.repo);
+    const link = { requestId: id, ...identity, userMessageKey: key("3"), assistantMessageKey: key("4") };
+    await advanceDispatchCapture({ ...route, phase: "ready", link, sawFinish: false, issue: null }, 7, f.repo);
+    await advanceDispatchCapture({ ...route, phase: "closed", link, sawFinish: true, issue: null }, 7, f.repo);
+    f.snapshot.messages.push(f.message("3", "2", "user", outgoingText), f.answer("4", "3", "Holding the key"));
+    f.snapshot.selectedNativeKey = key("4");
+    await f.play();
+    expect((await f.scene()).states["person-1"]).toMatchObject({ action: "happy", condition: "Holding the key" });
+    expect((await f.repo.list<StoryRecord>("story")).find(row => row.type === "revision" && row.nativeMessageKey === key("4"))).toMatchObject({ portraitActionsPaused: true });
+    f.snapshot.messages.push(f.message("5", "4", "user", "Put it away"), f.answer("6", "5", "Key stored"));
+    f.snapshot.selectedNativeKey = key("6");
+    await f.play();
+    expect((await f.scene()).states["person-1"]).toMatchObject({ action: "neutral", condition: "Key stored" });
   });
   it.each(['manual', 'ru', 'en'])("the explicitly marked off-topic exchange is saved but never changes the scene: %s", async mode => {
     const f = await setup(); await f.play("start"); if (mode === 'manual') await markNonStoryMessage(f.binding.chatId, f.world.id, f.repo);

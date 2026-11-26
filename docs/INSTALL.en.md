@@ -17,7 +17,7 @@
 
 ## First use
 
-Open **DeepRole → Lore**. Create a world or import a DeepRole world, a list of records, or memory from [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek). Choose **Use in this chat** so DeepSeek receives selected memory with your next message. **Context** shows what has been selected; **Remember** saves a fact you write yourself; **Update lore** asks DeepSeek for suggestions that you review before saving.
+Open **DeepRole → Lore**. Create a world or import a DeepRole world, a list of records, or a JSON memory library. Choose **Use in this chat** so DeepSeek receives selected memory with your next message. **Context** shows what has been selected; **Remember** saves a fact you write yourself; **Update lore** asks DeepSeek for suggestions that you review before saving.
 
 To correct an established detail, open a character sheet and choose **Correct a lasting fact**. DeepRole submits the connected world's lore records for review and asks DeepSeek to propose replacements. Compare and approve each change. Old chat messages remain unchanged, and the model may miss indirect mentions. Worlds over 100 records or 60,000 lore characters are not partially scanned.
 

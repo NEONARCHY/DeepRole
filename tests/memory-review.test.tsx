@@ -32,6 +32,22 @@ it("explains missing names before save instead of reporting a false storage conf
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
+it("bulk selection leaves proposals with stale sources out of the save", async () => {
+  const save = vi.fn(async () => {});
+  const conflicted = { ...batch.items[0]!, id: "stale", title: "The old gate", issue: "stale" as const };
+  render(<MemoryReview locale="en" batch={{ ...batch, items: [...batch.items, conflicted] }} onSave={save} onDiscard={async () => {}} onClose={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Select available changes" }));
+  const blocked = screen.getByRole("checkbox", { name: /The old gate/ });
+  expect(blocked).toBeDisabled();
+  expect(blocked).not.toBeChecked();
+  expect(screen.getByRole("status")).toHaveTextContent("1 of 2 selected");
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save selected changes · 1" })));
+  expect(save).toHaveBeenCalledWith([
+    expect.objectContaining({ id: "new", selected: true }),
+    expect.objectContaining({ id: "stale", selected: false }),
+  ]);
+});
+
 it("does not allow changes to a draft while its save is in flight", async () => {
   let resolve!: () => void;
   const save = vi.fn(() => new Promise<void>((done) => { resolve = done; }));

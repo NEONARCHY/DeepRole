@@ -20,6 +20,8 @@ import { StoryGameClient } from "../adapters/story-game-client";
 import { worldGameBinding, worldGamePeople, type WorldGameActivation } from "../core/world-game";
 import type { StoryFact } from "../core/story-update";
 import { compileGameContext } from "../core/game-context";
+import { createSceneClockTimeline, indexSceneClocks, type SceneClockIndex } from "../core/story-scene-clock";
+import { presentSceneClocks } from "../adapters/story-clock-dom";
 import { readTaskArchive, type TaskArchive } from "../core/story-task-archive";
 import { GameSearchIndex } from "../core/game-search-index";
 import { awaitingTransferredContext, memoryDeliveryView } from "../core/memory-delivery-view";
@@ -133,6 +135,7 @@ import type { SceneState, WorldProfile, SceneEntity, StoryTemplate } from "../co
 import { sceneText } from "../core/scene-i18n";
 import { bindCharacterTurn, characterInstruction, characterRevision, characterTurnKey, actionsFor, characterInChat, type CharacterCopyKey, type CharacterRequestReceipt } from "../core/characters";
 import { foldCharacterPayload, latestCharacterResponse, syncChoicePortraits } from "../adapters/deepseek-characters-dom";
+import { portraitParticipants } from "../core/portrait-presence";
 import type { CharacterEdit } from "../storage/characters";
 import { relationshipLoreBrief } from "../core/relationship-setup";
 import { handoffCharacterScene, withHandoffCharacters } from "../core/relationship-handoff";
@@ -205,6 +208,7 @@ class PageController {
   private characterReceiptTask: Promise<unknown> = Promise.resolve();
   private recoveryReceiptTask: Promise<unknown> = Promise.resolve();
   private characterScan: { scope: string; key: string; since: number; done: boolean } | null = null;
+  private portraitPreview?: { scope: string; revision?: string; ids: string[] };
   private characterSaving = false;
   private characterScanTask: Promise<void> | null = null;
   private characterRescanQueued = false;
@@ -252,6 +256,7 @@ class PageController {
   private worlds: WorldProfile[] = [];
   private entities: SceneEntity[] = [];
   private storyRecords: import("../core/story-records").StoryRecord[] = [];
+  private sceneClockIndex: SceneClockIndex = new Map();
   private handoffPassages: { snapshotId: string; passages: HandoffPassage[] } | null = null;
   private draftScene: SceneState = { ...EMPTY_SCENE };
   private previousChatId: string | null = null;
@@ -478,6 +483,7 @@ class PageController {
     this.replyRecovery.configure(this.adapter.getChatId(), location.href, this.settings.replyRecoveryEnabled !== false && !this.adapter.isAuthenticationPage(), this.state.locale, this.currentBinding()?.recoveredReplies);
     this.worlds = libraryRecords<WorldProfile>(records, "world"); this.entities = libraryRecords<SceneEntity>(records, "entity");
     this.storyRecords = storyProfileRecords(records);
+    this.sceneClockIndex = indexSceneClocks(libraryRecords<import("../core/story-records").StoryRecord>(records, "story"));
     const gameBranches = new Set(records.flatMap(r => r.kind === "story" && (r.data as import("../core/story-records").StoryRecord).type === "branch" && (r.data as import("../core/story-records").StoryBranch).gameManaged ? [r.id] : []));
     this.trackedBindings = new Set(records.flatMap(r => r.kind === "story" && (r.data as import("../core/story-records").StoryRecord).type === "baseline" && gameBranches.has((r.data as import("../core/story-records").StoryBaseline).branchId) ? [(r.data as import("../core/story-records").StoryBaseline).origin.bindingId] : []));
     const revisions = new Map(records.flatMap(r => r.kind === "story" && (r.data as import("../core/story-records").StoryRecord).type === "revision" ? [[r.id, r.data as import("../core/story-records").StoryRevision] as const] : []));
@@ -697,6 +703,8 @@ class PageController {
     if (!pending.length) { window.clearTimeout(this.selfieScanTimer); this.selfieScanTimer = 0; }
   }
   private clearPrivateState() {
+    this.sceneClockIndex.clear();
+    presentSceneClocks(document, null);
     this.handoffPassages = null;
     this.searchIndex.clear();
     this.reviewReminderTarget = undefined;
@@ -966,6 +974,8 @@ class PageController {
     const profilesEnabled = !!(world && this.settings.characterSheetsEnabled && !this.state.vaultLocked);
     const sheetsEnabled = profilesEnabled && !!chatId;
     const recentGame = world?.sharedGame;
+    const sceneClock = world && recentGame && !this.state.vaultLocked && !this.pendingService
+      ? createSceneClockTimeline(recentGame.episodeSources ?? [], this.sceneClockIndex, world.id, recentGame) : undefined;
     const gameBranch = this.trackedBranches.get(this.currentBinding()?.id ?? "");
     const savedBranch = savedMemoryTarget && recentGame ? this.trackedBranches.get(recentGame.activeBindingId) : undefined;
     const characterScope = `${scene.worldId}:${chatId}`;
@@ -979,6 +989,7 @@ class PageController {
     const compiled = compileGameContext({
       draft,
       readOnly,
+      portraitActionsPaused: this.settings.characterSpritesEnabled === false,
       recentMessages,
       entries: this.entries,
       activeBookId: scene.bookId,
@@ -987,7 +998,7 @@ class PageController {
       excludedIds: overrides.excludedIds,
       settings: world ?? this.settings,
       character: profilesEnabled ? [world!.id,chatId ?? requestChatId ?? "",characterEntities,characterScene,actionsFor(world?.characterActions ?? this.settings.characterActions),scene.focusIds,[draft,...recentMessages.slice(-2)].join("\n"),characterRequestId,this.settings.relationshipsEnabled !== false && world?.relationshipsEnabled !== false,!!this.pendingService || savedMemoryTarget,this.imageSettings.enabled && isSelfieRequest(draft)] : undefined,
-      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled} : (opening || savedMemoryTarget) && world && (chatId || requestChatId) ? {world,chat:(chatId ?? requestChatId)!,facts:world.sharedGame?.facts ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled} : world && recentGame && savedBranch && !this.pendingService ? {world,chat:recentGame.activeChatId,branch:savedBranch,facts:recentGame.facts,taskArchive:this.taskArchives.get(savedBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,referenceOnly:true} : undefined,
+      story: tracked && gameBranch && world && chatId && !this.pendingService ? {world,chat:chatId,branch:gameBranch,facts:world.sharedGame?.facts ?? this.trackedFacts.get(this.currentBinding()!.id) ?? [],taskArchive:this.taskArchives.get(gameBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,sceneClock} : (opening || savedMemoryTarget) && world && (chatId || requestChatId) ? {world,chat:(chatId ?? requestChatId)!,facts:world.sharedGame?.facts ?? [],sheetsEnabled:!!this.settings.characterSheetsEnabled,sceneClock} : world && recentGame && savedBranch && !this.pendingService ? {world,chat:recentGame.activeChatId,branch:savedBranch,facts:recentGame.facts,taskArchive:this.taskArchives.get(savedBranch),sheetsEnabled:!!this.settings.characterSheetsEnabled,referenceOnly:true,sceneClock} : undefined,
       snapshot: snapshot && savedMemoryTarget && !this.pendingService && this.handoffPassages?.snapshotId === snapshot.id
         ? { ...snapshot, summary: handoffLocationReference(snapshot.summary, draft, this.handoffPassages.passages) } : snapshot,
       continuation: !this.pendingService && !recentGame?.restartPending && recentGame?.recentStory?.turns.length && recentGame.recentChatId !== chatId && !snapshot ? recentGame.recentStory : undefined,
@@ -1000,6 +1011,7 @@ class PageController {
     // A reduced retry belongs only to this network request. The live preview
     // and all future messages still reflect the user's saved selection.
     if (fitLore) return compiled.text;
+    presentSceneClocks(document, chatId, sceneClock);
     this.selection = {...compiled.selection,memoryCoverage}; this.documents = compiled.documents;
     this.state.pendingHandoff = this.pendingContinuationCommit ? undefined : snapshot?.title;
     const memoryText = compiled.memoryText;
@@ -1191,7 +1203,7 @@ class PageController {
       onRetryCharacters={() => { this.characterScan = null; void this.scanCharacters(); }}
       onCharacterOpened={() => { if (this.state.characters) this.state.characters.openId = null; }}
       authenticationPage={authenticationPage}
-      composerActionPosition={this.adapter.getComposerAttachmentActionPosition()}
+      composerActionPosition={IS_DESKTOP ? null : this.adapter.getComposerAttachmentActionPosition()}
       onToggleEntry={(entry, included) => {
         void this.overrideMemory(entry.id, included ? "reset" : "exclude").catch(() => this.showToast(sceneText(this.state.locale, "failed")));
       }}
@@ -1329,9 +1341,11 @@ class PageController {
     } : undefined, { allowReply: row => !this.choicesPurposePending() && !this.isOutOfCharacterReply(row), adaptiveLayout: this.settings.adaptiveLayout !== false, animations: this.settings.animationsEnabled !== false, pinSceneChoices: !!this.settings.pinSceneChoices, pinPortraits: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), onToggle: key => this.toggleChoicePin(key) });
     const characters = this.state.characters;
     const worldId = characters?.worldId; const chatId = characters?.chatId; const chatUrl = location.href;
+    const preview = this.portraitPreview;
     const resetAt = this.settings.portraitLayoutResetAt ?? 0;
     syncChoicePortraits(!!characters && this.settings.characterSpritesEnabled !== false && !this.state.vaultLocked, characters?.entities ?? [], characters?.scene, this.state.locale, id => { if (this.state.characters) { this.state.characters.openId = id; this.render(); } }, document, worldId && chatId ? {
       scope: JSON.stringify([worldId, chatId]), layout: this.currentBinding()?.portraitLayouts?.[worldId], resetAt,
+      previewIds: preview && preview.scope === `${worldId}:${chatId}` && preview.revision === characters?.scene?.revision ? preview.ids : undefined,
       pinSceneChoices: !!this.settings.pinSceneChoices, pinLeft: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), pinRight: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight),
       adaptiveLayout: this.settings.adaptiveLayout !== false, animations: this.settings.animationsEnabled !== false,
       onSave: async (entityId, pose) => {
@@ -1505,6 +1519,23 @@ class PageController {
     try { return await task; } finally { if (this.characterDiscoveryTask === task) { this.characterDiscoveryTask = null; this.characterDiscoveryAbort = null; } this.scheduleScan(); }
   }
 
+  private updatePortraitPreview(response: NonNullable<ReturnType<typeof latestCharacterResponse>>, scope: string, outOfCharacter: boolean) {
+    const characters = this.state.characters;
+    if (!IS_DESKTOP || !characters || `${characters.worldId}:${characters.chatId}` !== scope) return;
+    const user = response.row.previousElementSibling;
+    const draft = user?.querySelector(".desktop-message-bubble")?.textContent ?? "";
+    const bracketed = this.worlds.find(world => world.id === characters.worldId)?.bracketedOoc === true;
+    const hasCast = response.turn || /<\/?deeprole_characters\b/iu.test(response.text);
+    const prose = response.row.querySelector(".desktop-story-text");
+    const paragraphs = [...(prose?.querySelectorAll("p") ?? [])].filter(node => !node.closest("blockquote, pre"))
+      .slice(-16).map(node => node.textContent?.trim() ?? "");
+    this.portraitPreview = {
+      scope, revision: characters.scene?.revision,
+      ids: !outOfCharacter && !hasCast && user?.matches("[data-role=user]") && !explicitOutOfCharacter(draft, bracketed)
+        ? portraitParticipants(characters.entities, paragraphs) : [],
+    };
+  }
+
   private async scanCharacterTurn() {
     if (!this.sharedGameActive()) return;
     // Metadata repairs run in a separate owned worker lane.
@@ -1512,7 +1543,7 @@ class PageController {
     await this.dispatchCaptures.flush();
     const characters = this.state.characters;
     if (!characters || this.characterSaving || this.state.vaultLocked || this.adapter.isGenerating() || this.preparingService || this.currentActivity()?.phase === "waiting") return;
-    const response = latestCharacterResponse();
+    const response = latestCharacterResponse(document, this.settings.characterSpritesEnabled === false || this.characterReceipt?.portraitActionsPaused === true);
     if (!response) return;
     const scope = `${characters.worldId}:${characters.chatId}`;
     const turnKey = response.turn ? characterTurnKey(response.turn) : response.signature;
@@ -1533,6 +1564,7 @@ class PageController {
         if (!outOfCharacter) this.queueMetadataRepair(synced);
         this.clearStoryGameWarning();
         if (synced.changed) await this.reload();
+        this.updatePortraitPreview(response, scope, outOfCharacter);
         const status: CharacterCopyKey = outOfCharacter ? "outOfCharacter" : synced.update ? synced.update.status === "accepted" || synced.update.status === "partial" ? "updated" : synced.update.status === "missing" ? "missing" : "invalidUpdate" : response.turn ? "updated" : response.text.includes("<deeprole_characters>") ? "invalidUpdate" : "missing";
         if (!outOfCharacter && synced.update && synced.update.status !== "accepted") this.storyGameWarning = this.state.warning = storyUpdateNotice(this.state.locale, synced.update);
         this.characterStatus = status;
@@ -1541,6 +1573,10 @@ class PageController {
         this.syncSceneChoices(); this.render(); return;
       }
     } catch (error) {
+      if (latestCharacterResponse()?.signature === response.signature) {
+        this.updatePortraitPreview(response, scope, outOfCharacter);
+        this.syncSceneChoices();
+      }
       this.storyGameWarning = this.state.warning = storyReviewText(this.state.locale, storyReviewError(error)); this.render();
       const code = error instanceof Error ? error.message : "";
       if (["story-review-stale", "story-binding-conflict", "story-source-incomplete", "story-native-line-unavailable"].includes(code) && (this.storyScanRetries.get(key) ?? 0) < 2) {
@@ -1553,6 +1589,7 @@ class PageController {
       return;
     }
     const rawTurn = response.turn;
+    this.updatePortraitPreview(response, scope, outOfCharacter);
     if (outOfCharacter) {
       if (!this.state.characters || `${this.state.characters.worldId}:${this.state.characters.chatId}` !== scope) return;
       this.characterStatus = 'outOfCharacter'; this.state.characters.status = 'outOfCharacter';
@@ -1762,7 +1799,7 @@ class PageController {
   }
   private async generateCharacterText(draft: CharacterTextRequest, _imageAttempt?: import("../core/image-plan").ImageAttempt): Promise<string> {
     const outcome = await this.generateIsolatedCharacterText(draft);
-    if (outcome.cleanup === "failed") this.showToast(this.state.locale === "ru" ? "Текст готов, но временный чат не удалён. Проверьте список чатов DeepSeek." : "Text is ready, but the temporary chat was not deleted. Check your DeepSeek chat list.");
+    if (outcome.cleanup === "failed") this.showToast(this.state.locale === "ru" ? "Текст готов, но временный чат не удалён. Проверьте список чатов чате." : "Text is ready, but the temporary chat was not deleted. Check your chat list.");
     return outcome.text;
   }
   private syncCharacterTextServices() {
@@ -2565,7 +2602,10 @@ class PageController {
     if (event.data.type === "SERVICE_REQUEST_FAILED" && typeof event.data.id === "string") {
       void this.failedService(event.data.id).catch(() => undefined); return;
     }
-    if (event.data.type === "REQUEST_CONTEXT" && typeof event.data.id === "string" && typeof event.data.draft === "string" && event.data.draft.length <= 100000) {
+    // The desktop receiver accepts larger drafts and applies the model's own
+    // window. Dropping these events would make the sender wait for a timeout.
+    if (event.data.type === "REQUEST_CONTEXT" && typeof event.data.id === "string" && typeof event.data.draft === "string"
+        && event.data.draft.length <= (IS_DESKTOP ? 2_000_000 : 100_000)) {
       const loreRetry = this.loreLengthRetry?.armedUntil && this.loreLengthRetry.armedUntil >= Date.now()
         && this.loreLengthRetry.draft === event.data.draft && !event.data.editing ? this.loreLengthRetry : undefined;
       this.clearLoreLengthRetry();
@@ -2585,7 +2625,8 @@ class PageController {
       // Once this request uses a saved transfer it must never fall back to a bare send.
       let requiresTransfer = Boolean(opening) || this.needsTransferredContext();
       let preparationStage: MemoryPreparationStage = "navigation";
-      const prepareContext = async (url: string) => {
+      let ordinaryRetry: { chatId: string; worldId: string; gameId?: string } | undefined;
+      const prepareContext = async (url: string, expected?: typeof ordinaryRetry) => {
         preparationStage = "navigation";
         let draft = initialDraft, storyIdentity = requestIdentity;
         if (this.adapter.getChatId() !== this.previousChatId) this.navigate();
@@ -2620,6 +2661,8 @@ class PageController {
         }
         requiresTransfer ||= this.needsTransferredContext();
         if (!loaded || location.href !== url) throw new Error("context-changed");
+        if (expected && (requiresTransfer || this.adapter.getChatId() !== expected.chatId || this.currentBinding()?.worldId !== expected.worldId
+          || this.worlds.find(world => world.id === expected.worldId)?.sharedGame?.id !== expected.gameId)) throw new Error("context-changed");
         if (this.pendingContinuationCommit) throw Error("handoff-commit-pending");
         const oldNotice = oldChatNotice(this.currentBinding(), this.snapshots, this.books, this.worlds);
         if (!this.pendingService && requestChatId === this.adapter.getChatId() && !this.sharedGameActive() && oldNotice && (oldNotice.sent || oldNotice.dismissed)) {
@@ -2681,6 +2724,11 @@ class PageController {
         const generation = this.reloadGeneration;
         const sceneKey = this.contextScopeKey();
         const scene = this.currentScene();
+        const retryChatId = this.adapter.getChatId();
+        if (IS_DESKTOP && !requiresTransfer && !this.pendingService && !event.data.editing && !loreRetry
+          && scene.worldId && retryChatId && (!requestChatId || requestChatId === retryChatId)) {
+          ordinaryRetry = { chatId: retryChatId, worldId: scene.worldId, gameId: this.worlds.find(world => world.id === scene.worldId)?.sharedGame?.id };
+        }
         // A library notification can be delayed/missed while this tab stays
         // open. Never compile a send's mode from that cached world policy:
         // durable capture below reads the saved world too. Read just this
@@ -2781,6 +2829,7 @@ class PageController {
           const entities = this.entities.filter(e => e.worldId === scene.worldId && e.kind === "character" && characterInChat(e, characterChatId));
           const characterScene = this.currentBinding()?.characterScenes?.[scene.worldId] ?? this.worlds.find(w => w.id === scene.worldId)?.sharedGame?.scene ?? handoffCharacterScene(this.appliedSnapshot, scene.worldId);
           delivery.characterRequest = { id, worldId: scene.worldId, chatId: characterChatId, base: characterRevision(entities, characterScene), createdAt: Date.now(), accepted: false, generatedSelfiesEnabled: !this.pendingService && this.imageSettings.enabled && isSelfieRequest(draft), relationshipsEnabled: !this.pendingService && this.settings.relationshipsEnabled !== false && this.worlds.find(w => w.id === scene.worldId)?.relationshipsEnabled !== false };
+          if (this.settings.characterSpritesEnabled === false) delivery.characterRequest.portraitActionsPaused = true;
           if (storyIdentity) delivery.characterRequest.storyIdentity = storyIdentity;
           if (!await this.saveTabState({ characterRequest: delivery.characterRequest })) throw new Error("context-changed");
         }
@@ -2793,7 +2842,7 @@ class PageController {
         const capture = storyIdentity && binding && scene.worldId && binding.worldId === scene.worldId && !this.pendingService
           && (event.data.captureTransport === "xhr" || event.data.captureTransport === "fetch")
           ? await this.dispatchCaptures.prepare({ id, worldId: scene.worldId, bindingId: binding.id, identity: storyIdentity, transport: event.data.captureTransport,
-            sceneRevision: binding.characterScenes?.[scene.worldId]?.revision ?? null, originalDraft: draft, proposedContext: context, ...(opening ? { opening: true } : {}) }) : false;
+            sceneRevision: binding.characterScenes?.[scene.worldId]?.revision ?? null, originalDraft: draft, proposedContext: context, ...(opening ? { opening: true } : {}), ...(this.settings.characterSpritesEnabled === false ? { portraitActionsPaused: true } : {}) }) : false;
         this.assertScope(delivery.scope);
         if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
         await this.preserveContinuationSend(id, delivery, draft, context);
@@ -2803,10 +2852,23 @@ class PageController {
         window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: true, context, ...(delivery.snapshot ? { continuation: true, url } : {}), ...(capture ? { capture: true } : {}), ...(draft !== initialDraft ? { replacementDraft: draft } : {}), ...(typeof event.data.editNativeKey === "string" && storyIdentity ? { preparedIdentity: storyIdentity } : {}) }, "*");
         this.maybeWarnContext();
       };
-      void prepareContext(initialUrl).catch(async (error: unknown) => {
-        // Native navigation can allocate the first chat while context is being read.
-        // Reprepare the same draft once. No model request has been made yet.
+      const prepareWithLibraryRefresh = async () => {
+        for (let attempt = 0; ; attempt++) {
+          try {
+            await prepareContext(initialUrl, attempt ? ordinaryRetry : undefined);
+            return;
+          } catch (error) {
+            // Activation and storage notifications can refresh the cache in
+            // succession. Rebuild within the same game before any dispatch.
+            if (attempt >= 2 || !ordinaryRetry || location.href !== initialUrl || ordinaryRetry.chatId !== this.adapter.getChatId()
+              || requiresTransfer || !(error instanceof Error) || error.message !== "context-changed") throw error;
+            this.deliveries.delete(id);
+          }
+        }
+      };
+      void prepareWithLibraryRefresh().catch(async (error: unknown) => {
         const url = location.href;
+        // Native navigation can also allocate the first chat during a transfer.
         if (!opening || !requestChatId || !isDeepSeekFirstChatRoute(initialUrl, url, requestChatId)
           || this.appliedSnapshot?.id !== opening.snapshot?.id || this.snapshotToken !== opening.token || this.currentBinding()
           || !(error instanceof Error) || !["context-changed", "scene-changed"].includes(error.message)) throw error;
@@ -2818,7 +2880,8 @@ class PageController {
         if (error instanceof Error && error.message.startsWith("story-")) { this.state.warning = storyReviewText(this.state.locale, storyReviewError(error)); this.render(); }
         const incompatible = isBackgroundBuildFailure(error);
         if (incompatible) this.showToast(savedMemoryText(this.state.locale).transferMismatch);
-        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible || Boolean(loreRetry) }, location.origin);
+        const unverifiedParent = IS_DESKTOP && preparationStage === "parent" && error instanceof Error && error.message === "story-native-line-unavailable";
+        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible || Boolean(loreRetry) || unverifiedParent }, location.origin);
       });
       return;
     }

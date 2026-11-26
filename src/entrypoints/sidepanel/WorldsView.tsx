@@ -444,7 +444,7 @@ function BdsImport(props: { locale: Locale; worlds: WorldProfile[]; target?: Wor
       <button type="button" className="button secondary small rp-import-choose" disabled={busy} onClick={() => inputRef.current?.click()}>{t(fileName ? "changeFile" : "chooseFile")}</button>
       <input ref={inputRef} className="rp-import-input" hidden aria-label={t("chooseFile")} type="file" accept=".json,application/json" disabled={busy} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void readFile(file); }} />
     </div>
-    {!preview && <div className="rp-import-formats"><p>{t("importDropHint")}</p><a href="https://github.com/EdgeTypE/better-deepseek" target="_blank" rel="noopener noreferrer">Better Deepseek (BDS)</a></div>}
+    {!preview && <div className="rp-import-formats"><p>{t("importDropHint")}</p></div>}
     {busy && <p role="status">{t(savingImport ? "importSaving" : "importReading")}</p>}
     {error && <p role="alert">{error}</p>}
     {preview && <div className="rp-import-destination">

@@ -24,7 +24,7 @@ DeepRole:
 
 Отдельно, только по явной команде пользователя, DeepRole отправляет служебную инструкцию через открытый чат DeepSeek, чтобы предложить записи, изменения существующей памяти или сжатый перенос сюжета. При анализе передаётся ограниченный набор существующих записей с ID; при создании лора — введённое описание. Анализ не запускается автоматически. Предложения сохраняются как память только после подтверждения пользователя. Служебный запрос и ответ видны в чате. После обработки технический блок данных заменяется коротким сообщением; исходная реплика остаётся в истории на стороне DeepSeek.
 
-Импорт памяти [Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) обрабатывается локально. Исходный файл не изменяется; вместе с импортированными записями сохраняются исходные названия и значения важности. Экспорт мира, профиля или заготовки — обычный незашифрованный JSON; защищённый экспорт всей библиотеки доступен в настройках.
+Импорт из файла JSON обрабатывается локально. Исходный файл не изменяется; вместе с импортированными записями сохраняются исходные названия и значения важности. Экспорт мира, профиля или заготовки — обычный незашифрованный JSON; защищённый экспорт всей библиотеки доступен в настройках.
 
 Обычное хранилище расширения не зашифровано. Пользователь может включить локальный сейф или создать защищённую паролем копию. Для них используется AES-256-GCM, а ключ создаётся из пароля через PBKDF2-SHA-256 со случайными salt и IV.
 
@@ -58,7 +58,7 @@ With Scene choices enabled and a world connected, DeepRole includes an instructi
 
 With Reply recovery enabled, DeepRole saves a local copy of the last visible fragment replaced by DeepSeek's exact refusal. Copies are chat-scoped, included in full backups and encrypted by the vault. The latest applicable recovery automatically accompanies your next ordinary message in the same chat as quoted assistant history; long text sends its final 64,000 characters without modifying the full local copy. A successful network response records delivery so subsequent sends and reloads do not repeat it. Service requests do not consume it. Disabling the feature or locking the vault stops transmission; the original server reply is not rewritten. No separate model request is made.
 
-[Better Deepseek (BDS)](https://github.com/EdgeTypE/better-deepseek) imports are processed locally without changing the source file. Original titles and importance values are retained. World/profile/starter exports are unencrypted JSON; encrypted full-library backups are available in Settings.
+JSON memory imports are processed locally without changing the source file. Original titles and importance values are retained. World/profile/starter exports are unencrypted JSON; encrypted full-library backups are available in Settings.
 
 Regular extension storage is not encrypted. The optional local vault and password-protected backups use AES-256-GCM with a PBKDF2-SHA-256 password-derived key and random salt and IV.
 

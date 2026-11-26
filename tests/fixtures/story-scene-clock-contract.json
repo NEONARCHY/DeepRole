@@ -1,0 +1,40 @@
+{
+  "notes": "Prepared before the first Stage 3 test. Source order is selected revision order. Each assistant source has a preceding player message in the synthetic transcript.",
+  "scenarios": [
+    {
+      "name": "Архив у моста",
+      "sources": 112,
+      "events": [
+        {"at": 8, "heading": "День 2 · 09:20", "expected": "current"},
+        {"at": 19, "heading": "День 2 · 09:20", "expected": "current"},
+        {"at": 32, "heading": "День 3 · утро", "expected": "current"},
+        {"at": 45, "heading": "Флешбэк · День 1 · 21:40", "expected": "flashback"},
+        {"at": 58, "heading": "«День 5 · 10:35»", "expected": "ignored"},
+        {"at": 68, "heading": "День 50 · 22:00", "ooc": true, "expected": "ignored"},
+        {"at": 77, "heading": "День 2 · 18:30", "expected": "ignored"},
+        {"at": 87, "heading": "**День 3 · 13:10**", "expected": "current"},
+        {"at": 104, "heading": "Время сцены · День 4", "expected": "current"}
+      ],
+      "current": {"through": 68, "day": 3, "part": "morning", "precision": "part", "source": 32},
+      "last": {"day": 4, "precision": "day", "source": 104},
+      "alternate": {"at": 104, "heading": "День 4 · 15:30", "clock": "15:30"}
+    },
+    {
+      "name": "The observatory log",
+      "sources": 124,
+      "events": [
+        {"at": 10, "heading": "2024-02-29 · 23:40", "expected": "current"},
+        {"at": 21, "heading": "2024-02-29 · 22:40", "expected": "ignored"},
+        {"at": 28, "heading": "2024-03-01 · 00:10", "expected": "current"},
+        {"at": 49, "heading": "Flashback · 2024-02-28 · afternoon", "expected": "flashback"},
+        {"at": 70, "heading": "If 2024-03-02 · 08:00 comes, leave.", "expected": "ignored"},
+        {"at": 88, "heading": "2030-01-01 · 11:00", "ooc": true, "expected": "ignored"},
+        {"at": 98, "heading": "Scene time · Three days later.", "expected": "current"},
+        {"at": 113, "heading": "## 2024-03-04 · evening", "expected": "current"}
+      ],
+      "current": {"through": 88, "date": "2024-03-01", "clock": "00:10", "precision": "minute", "source": 28},
+      "last": {"date": "2024-03-04", "part": "evening", "precision": "part", "source": 113},
+      "alternate": {"at": 113, "heading": "2024-03-04 · 19:30", "clock": "19:30"}
+    }
+  ]
+}
