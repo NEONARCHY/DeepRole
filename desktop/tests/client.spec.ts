@@ -1,11 +1,13 @@
-import { _electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { _electron, expect, test, type ElectronApplication, type Page, type TestInfo } from "@playwright/test";
+import { cp, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 import { EMPTY_CHARACTER, EMPTY_STATUS } from "../../src/core/characters";
 import { oldChatNoticeText } from "../../src/core/old-chat-notice";
 import { imageText } from "../../src/core/image-i18n";
 import { savedMemoryText } from "../../src/core/saved-memory-continuation";
+import { hasPortraitCast } from "../../src/core/portrait-presence";
+import { nativeStoryMessageKey } from "../../src/core/story-transport";
 import { boundStory } from "../../src/core/story-continuation";
 import { castBatch, castWorld } from "../../tests/fixtures/cast-data";
 import { storyWorld } from "../../tests/fixtures/story-worlds";
@@ -14,6 +16,11 @@ import { realPng } from "../../tests/image-fixtures";
 import type { DataRecord } from "../../src/core/types";
 import type { MemoryBatchStatus } from "../../src/core/story-memory-batch";
 import { continuationLauncher, continuationMethod } from "../../tests/e2e/continuation-helpers";
+import languageSwitch from "../../tests/fixtures/story-language-switch.json";
+import portraitContract from "../../tests/fixtures/portrait-presence-contract.json";
+import multiplePortraits from "../../tests/fixtures/portrait-multi-npc-contract.json";
+import pronounPortraits from "../../tests/fixtures/portrait-pronoun-contract.json";
+import returningPortraits from "../../tests/fixtures/portrait-pronoun-return-contract.json";
 
 async function openClient(data: string, portable = false) {
   await mkdir(data, { recursive: true });
@@ -64,6 +71,297 @@ async function seedLibrary(page: Page, records: DataRecord[]) {
     };
   }), records);
 }
+
+const liveMistralModel = "mistral-small-3-2-24b-instruct";
+
+async function copyLiveMistralProfile(profile: string, data: string) {
+  const config = JSON.parse(await readFile(path.join(profile, "model.json"), "utf8"));
+  expect(new URL(config.baseUrl).origin).toBe("https://api.venice.ai");
+  expect(Boolean(config.key)).toBe(true);
+  await cp(path.join(profile, "Local State"), path.join(data, "Local State"));
+  await writeFile(path.join(data, "model.json"), JSON.stringify({
+    baseUrl: config.baseUrl, key: config.key, model: liveMistralModel, maxTokens: 1024,
+  }));
+}
+
+async function closeLiveMistralProfile(app: ElectronApplication | undefined, data: string) {
+  try {
+    await app?.close();
+  } finally {
+    await Promise.all(["model.json", "Local State"].map(name => unlink(path.join(data, name)).catch(error => {
+      if (error.code !== "ENOENT") throw error;
+    })));
+  }
+}
+
+for (const scenario of languageSwitch.cases) {
+  test(`live Mistral language switch: ${scenario.id}`, async ({}, info) => {
+    const profile = process.env.DEEPROLE_LIVE_VENICE_PROFILE;
+    test.skip(!profile, "Requires an explicitly provided Windows test credential source.");
+    const data = info.outputPath("language-switch-profile");
+    const f = storyWorld("en", 2);
+    f.entities[1]!.name = "Mira";
+    f.world.storyAutomation = { mode: "automatic", revision: "language-switch" };
+    f.entry.content = scenario.old;
+    f.entry.activation = "always";
+    f.binding.chatUrl = "https://deeprole.local/a/chat/s/" + f.binding.chatId;
+    const chats = path.join(data, "Chats");
+    const file = path.join(chats, f.binding.chatId + ".json");
+    const matches = (quote: string, patterns: string[]) => patterns.every(pattern => new RegExp(pattern, "iu").test(quote));
+    let app: ElectronApplication | undefined;
+    try {
+      await mkdir(chats, { recursive: true });
+      await copyLiveMistralProfile(profile!, data);
+      await writeFile(path.join(data, "settings.json"), JSON.stringify({
+        deeprole_settings: { locale: "en", onboardingComplete: true, sceneChoicesEnabled: false, automaticMetadataRepair: false },
+      }));
+      await writeFile(file, JSON.stringify({
+        id: f.binding.chatId, title: "Synthetic language switch", head: 2, updatedAt: 1,
+        messages: [scenario.oldDraft, scenario.old].map((text, index) => ({
+          id: index + 1, parent: index || null, role: index ? "assistant" : "user", text, visible: text,
+        })),
+      }));
+      const started = await openClient(data);
+      app = started.app;
+      const { page } = started;
+      const dispatches = await app.evaluateHandle(() => {
+        const sent: { model: string; russian: boolean; finalReminder: boolean }[] = [];
+        const fetch = globalThis.fetch;
+        globalThis.fetch = (url, options) => {
+          if (options?.method === "POST" && String(url) === "https://api.venice.ai/api/v1/chat/completions") {
+            const packet = JSON.parse(String(options.body));
+            sent.push({
+              model: packet.model,
+              russian: packet.messages[0].content.startsWith("Сцену и диалоги пиши только по-русски."),
+              finalReminder: packet.messages.at(-1).content.split("\n\n").at(-1).startsWith("Ответ по-русски."),
+            });
+          }
+          return fetch(url, options);
+        };
+        return sent;
+      });
+      await seedLibrary(page, f.records);
+      await page.goto(f.binding.chatUrl);
+      await expect(page.locator("[data-role=assistant]")).toContainText(scenario.old);
+      await expect.poll(async () => page.evaluate(async scope => {
+        const [tab] = await window.deepRoleDesktop.call<{ id: number }[]>("tabQuery", { currentWindow: true, active: true });
+        return tab ? window.deepRoleDesktop.call("tabSend", tab.id, { type: "DR_STORY_GAME", operation: "start", scope }) : null;
+      }, { worldId: f.world.id, chatId: f.binding.chatId })).toMatchObject({ ok: true });
+      await page.getByRole("textbox", { name: "Your message", exact: true }).fill(scenario.draft);
+      await page.getByRole("button", { name: "Send", exact: true }).click();
+      await expect(page.locator("[data-role=assistant]")).toHaveCount(2, { timeout: 35_000 });
+      await expect(page.getByTestId("stop-generation")).toHaveCount(0, { timeout: 35_000 });
+      const { messages } = JSON.parse(await readFile(file, "utf8"));
+      const reply = messages.at(-1);
+      expect(messages.at(-2).text).toContain(scenario.old);
+      expect(messages.at(-2).text).toContain(scenario.draft);
+      const sourceKey = nativeStoryMessageKey(String(reply.id));
+      const isSource = (row: Awaited<ReturnType<typeof libraryRecords>>[number]) =>
+        row.kind === "story" && row.data.type === "revision" && row.data.role === "assistant" && row.data.nativeMessageKey === sourceKey;
+      await expect.poll(async () => (await libraryRecords(page)).some(isSource), { timeout: 12_000 }).toBe(true);
+      const rows = await libraryRecords(page);
+      const source = rows.find(isSource)!.data;
+      const saved = rows.filter(row => row.kind === "story" && row.data.revisionId === source.id
+        && row.data.memory && row.data.automation?.status === "saved").map(row => row.data.memory);
+      const usage = (await readFile(path.join(data, "Model Usage.jsonl"), "utf8")).trim().split("\n").map(line => JSON.parse(line));
+      const requests = usage.filter(row => row.kind).length;
+      console.log(JSON.stringify({ case: scenario.id, reply: reply.visible, saved, diagnostic: source.updateDiagnostic, requests }));
+      expect(requests).toBe(1);
+      expect(await dispatches.jsonValue()).toEqual([{ model: liveMistralModel, russian: true, finalReminder: true }]);
+      for (const fact of saved) {
+        expect(reply.visible).toContain(fact.quote);
+        expect(source.content).toContain(fact.quote);
+        expect(scenario.exclude.some(pattern => new RegExp(pattern, "iu").test(fact.quote))).toBe(false);
+      }
+      if (scenario.evidence.length) {
+        expect(reply.visible).toMatch(/[а-яё]{4}/iu);
+        expect(matches(reply.visible, scenario.evidence)).toBe(true);
+        expect(saved.some(fact => fact.kind === "event" && matches(fact.quote, scenario.evidence))).toBe(true);
+      } else {
+        expect(saved.filter(fact => fact.kind === "event")).toEqual([]);
+      }
+    } finally {
+      await closeLiveMistralProfile(app, data);
+    }
+  });
+}
+
+test("live Mistral shows and removes an NPC portrait without a cast list", async ({}, info) => {
+  const profile = process.env.DEEPROLE_LIVE_VENICE_PROFILE;
+  test.skip(!profile, "Requires an explicitly provided Windows test credential source.");
+  const data = info.outputPath("portrait-presence-profile");
+  const f = storyWorld("ru", 2);
+  const [hero, npc] = f.entities as [typeof f.entities[number], typeof f.entities[number]];
+  hero.name = "Ной";
+  npc.name = "Мира";
+  npc.aliases = ["Mira"];
+  npc.characterSheet = { ...EMPTY_CHARACTER, sprites: { neutral: `data:image/png;base64,${realPng}` } };
+  f.binding.characterScenes![f.world.id]!.presentIds = [hero.id];
+  f.binding.chatUrl = "https://deeprole.local/a/chat/s/" + f.binding.chatId;
+  const chats = path.join(data, "Chats");
+  const file = path.join(chats, f.binding.chatId + ".json");
+  let app: ElectronApplication | undefined;
+  try {
+    await mkdir(chats, { recursive: true });
+    await copyLiveMistralProfile(profile!, data);
+    await writeFile(path.join(data, "settings.json"), JSON.stringify({
+      deeprole_settings: { locale: "ru", onboardingComplete: true, sceneChoicesEnabled: false, automaticMetadataRepair: false },
+    }));
+    await writeFile(file, JSON.stringify({
+      id: f.binding.chatId, title: "Проверка портретов", head: 2, updatedAt: 1,
+      messages: [
+        { id: 1, parent: null, role: "user", text: "Я жду у стола.", visible: "Я жду у стола." },
+        { id: 2, parent: 1, role: "assistant", text: "Комната пока пуста, на столе горит фонарь.", visible: "Комната пока пуста, на столе горит фонарь." },
+      ],
+    }));
+    const started = await openClient(data);
+    app = started.app;
+    const { page } = started;
+    await seedLibrary(page, f.records);
+    await page.goto(f.binding.chatUrl);
+    const portrait = page.locator(`.dr-cast-widget[data-character-id=${npc.id}]`);
+    await expect(page.locator(`.dr-cast-widget[data-character-id=${hero.id}]`)).toBeVisible();
+    await expect(portrait).toHaveCount(0);
+    const draft = page.getByRole("textbox", { name: "Ваша реплика", exact: true });
+    for (const [index, scenario] of [portraitContract.entry, portraitContract.exit].entries()) {
+      await draft.fill(scenario.draft);
+      await draft.press("Enter");
+      await expect(page.locator(".desktop-story-text")).toHaveCount(index + 2, { timeout: 35_000 });
+      await expect(page.getByTestId("stop-generation")).toHaveCount(0, { timeout: 35_000 });
+      const { messages } = JSON.parse(await readFile(file, "utf8"));
+      const reply = messages.at(-1);
+      console.log(JSON.stringify({ expectedPortrait: scenario.expectedPortrait, reply: reply.visible, hasCast: hasPortraitCast(reply.text) }));
+      expect(hasPortraitCast(reply.text)).toBe(false);
+      if (scenario.expectedPortrait) {
+        await expect(portrait).toBeVisible();
+        await expect.poll(() => portrait.locator("img[data-current]").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+      } else {
+        await expect(portrait).toHaveCount(0);
+      }
+    }
+    const usage = (await readFile(path.join(data, "Model Usage.jsonl"), "utf8")).trim().split("\n").map(line => JSON.parse(line));
+    expect(usage.filter(row => row.kind)).toMatchObject([
+      { kind: "story", model: liveMistralModel }, { kind: "story", model: liveMistralModel },
+    ]);
+  } finally {
+    await closeLiveMistralProfile(app, data);
+  }
+});
+
+type LivePortraitTurn = { draft: string; visibleNpcs: string[]; reply: string | RegExp[] };
+
+function exactPortraitTurn(scenario: { reply: string; visibleNpcs: string[] }): LivePortraitTurn {
+  return {
+    ...scenario,
+    draft: "Напиши следующую реплику рассказчика ровно так, как она дана ниже. Это заготовка ответа, события из неё ещё не произошли. Скопируй текст дословно от первого слова до последней точки. В служебном блоке оставь только идентификатор запроса и пустой список facts. Поля present, partners и updates пропусти.\n\n" + scenario.reply,
+  };
+}
+
+async function checkLiveNpcPortraits(info: TestInfo, turns: LivePortraitTurn[]) {
+  const profile = process.env.DEEPROLE_LIVE_VENICE_PROFILE;
+  test.skip(!profile, "Requires an explicitly provided Windows test credential source.");
+  const data = info.outputPath("portrait-profile");
+  const f = storyWorld("ru", multiplePortraits.npcs.length + 1);
+  const [hero, ...characters] = f.entities;
+  hero!.name = multiplePortraits.hero;
+  const npcs = multiplePortraits.npcs.map((expected, index) => {
+    const person = characters[index]!;
+    person.name = expected.name;
+    person.characterSheet = { ...EMPTY_CHARACTER, sprites: { neutral: `data:image/png;base64,${realPng}` } };
+    return { ...expected, id: person.id };
+  });
+  const before = npcs.filter(npc => npc.before).map(npc => npc.id).sort();
+  f.binding.characterScenes![f.world.id]!.presentIds = [hero!.id, ...before];
+  f.binding.chatUrl = "https://deeprole.local/a/chat/s/" + f.binding.chatId;
+  const chats = path.join(data, "Chats");
+  const file = path.join(chats, f.binding.chatId + ".json");
+  let app: ElectronApplication | undefined;
+  try {
+    await mkdir(chats, { recursive: true });
+    await copyLiveMistralProfile(profile!, data);
+    await writeFile(path.join(data, "settings.json"), JSON.stringify({
+      deeprole_settings: { locale: "ru", onboardingComplete: true, sceneChoicesEnabled: false, automaticMetadataRepair: false },
+    }));
+    await writeFile(file, JSON.stringify({
+      id: f.binding.chatId, title: "Три персонажа у письма", head: 2, updatedAt: 1,
+      messages: [
+        { id: 1, parent: null, role: "user", text: "Я подхожу к столу.", visible: "Я подхожу к столу." },
+        { id: 2, parent: 1, role: "assistant", text: multiplePortraits.opening, visible: multiplePortraits.opening },
+      ],
+    }));
+    const started = await openClient(data);
+    app = started.app;
+    const { page } = started;
+    await seedLibrary(page, f.records);
+    await page.goto(f.binding.chatUrl);
+    const portraits = page.locator(`.dr-cast-widget:not([data-character-id=${hero!.id}])`);
+    const shownNpcs = () => portraits.evaluateAll(nodes => nodes.map(node => node.getAttribute("data-character-id")).sort());
+    const checkPortraits = async (ids: string[]) => {
+      await expect.poll(shownNpcs).toEqual(ids);
+      for (const id of ids) {
+        const portrait = portraits.and(page.locator(`[data-character-id=${id}]`));
+        await expect(portrait).toBeVisible();
+        await expect.poll(() => portrait.locator("img[data-current]").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+      }
+    };
+    await expect.poll(shownNpcs).toEqual(before);
+    const draft = page.getByRole("textbox", { name: "Ваша реплика", exact: true });
+    let previous = before;
+    for (const [index, turn] of turns.entries()) {
+      const after = npcs.filter(npc => turn.visibleNpcs.includes(npc.name)).map(npc => npc.id).sort();
+      expect(after).toHaveLength(turn.visibleNpcs.length);
+      await draft.fill(turn.draft);
+      await draft.press("Enter");
+      await expect(page.locator(".desktop-story-text")).toHaveCount(index + 2, { timeout: 35_000 });
+      await expect(page.getByTestId("stop-generation")).toHaveCount(0, { timeout: 35_000 });
+      const { messages } = JSON.parse(await readFile(file, "utf8"));
+      const reply = messages.at(-1);
+      console.log(JSON.stringify({ reply: reply.visible, hasCast: hasPortraitCast(reply.text), expectedNpcs: after }));
+      expect(hasPortraitCast(reply.text)).toBe(false);
+      if (typeof turn.reply === "string") {
+        const prose = await page.locator(".desktop-story-text").last().locator("p:not(blockquote p, pre p)").allTextContents();
+        expect(prose.join(" ").trim().replace(/\s+/g, " ")).toBe(turn.reply);
+      } else {
+        for (const pattern of turn.reply) expect(reply.visible).toMatch(pattern);
+      }
+      if (after.length === previous.length && after.every((id, i) => id === previous[i])) {
+        // The unchanged portrait set must survive the completed-turn scan.
+        await page.waitForTimeout(1_600);
+      }
+      await checkPortraits(after);
+      previous = after;
+    }
+    await page.reload();
+    if (turns.length > 1) await page.waitForTimeout(1_600);
+    await checkPortraits(previous);
+    const usage = (await readFile(path.join(data, "Model Usage.jsonl"), "utf8")).trim().split("\n").map(line => JSON.parse(line));
+    expect(usage.filter(row => row.kind)).toMatchObject(turns.map(() => ({ kind: "story", model: liveMistralModel })));
+  } finally {
+    await closeLiveMistralProfile(app, data);
+  }
+}
+
+test("live Mistral keeps only the NPC who stays in a scene without a cast list", async ({}, info) => {
+  await checkLiveNpcPortraits(info, [{
+    draft: multiplePortraits.draft,
+    visibleNpcs: multiplePortraits.npcs.filter(npc => npc.after).map(npc => npc.name),
+    reply: [/Мир[аыеуой]/iu, /Лин[аыеуой]/iu, /Вер[аыеуой]/iu],
+  }]);
+});
+
+for (const scenario of pronounPortraits) {
+  test(`live Mistral pronoun departure without a cast list (${scenario.id})`, async ({}, info) => {
+    const draft = "Продолжи сцену следующими двумя фразами дословно, закончив художественный текст точкой после слова «мастерской». Оставь местоимение «Она», без уточнений, кто ушёл или остался. В служебном блоке оставь только идентификатор запроса и пустой список facts. Поля present, partners и updates в этом ответе пропусти.\n\n" + scenario.reply;
+    await checkLiveNpcPortraits(info, [{ ...scenario, draft }]);
+  });
+}
+
+test("live Mistral restores an NPC after a pronoun return without a cast list", async ({}, info) => {
+  const turns = returningPortraits.map(exactPortraitTurn);
+  const finalTurn = turns.at(-1)!;
+  finalTurn.draft = "Продолжи сцену одним коротким предложением рассказчика. Ответ состоит ровно из двух слов и точки. После точки сразу закончи, без списка участников, кода или служебного блока. Вот весь текст ответа:\n\n" + finalTurn.reply;
+  await checkLiveNpcPortraits(info, turns);
+});
 
 const runtimeCommand = (page: Page, message: object) => page.evaluate(input =>
   (window as unknown as { deepRoleDesktop: { call(method: string, input: object): Promise<any> } }).deepRoleDesktop.call("runtimeSend", input), message);
@@ -123,6 +421,7 @@ for (const mode of ["off", "automatic"] as const) {
     f.world.storyAutomation = { mode: "automatic", revision: "request-count-inline" };
     f.binding.chatUrl = "https://deeprole.local/a/chat/s/" + f.binding.chatId;
     const clue = "The brass key opens the north gate.";
+    const unassessed = "The silver seal carries a backwards letter V.";
     const talk = "I show Iris the brass key.";
     const reply = "Day 4 · 11:40\n\nIris studies the brass key.";
     const data = info.outputPath("memory-review-data");
@@ -132,7 +431,8 @@ for (const mode of ["off", "automatic"] as const) {
       const requestId = /\[Request ID: ([^\]]+)\]/u.exec(prompt)?.[1];
       return JSON.stringify({ requestId, results: sourcesOf(prompt).map(source => ({
         source: source.id, complete: true, people: [],
-        facts: source.role === "assistant" && source.text === clue ? [{ kind: "event", text: clue, quote: clue, risk: "ordinary" }] : [],
+        facts: source.role === "assistant" && ([clue, unassessed].includes(source.text) || source.text.startsWith("The survey continues past door "))
+          ? [{ kind: "event", text: source.text, quote: source.text, risk: source.text === unassessed ? undefined : "ordinary" }] : [],
       })) });
     });
     let app: ElectronApplication | undefined;
@@ -175,7 +475,7 @@ for (const mode of ["off", "automatic"] as const) {
       await expect.poll(async () => (await operation("start"))?.ok).toBe(true);
       for (let i = 1; i <= 11; i++) {
         append("user", "I continue the rounds.");
-        append("assistant", i === 1 ? clue : `The survey continues past door ${i}.`);
+        append("assistant", i === 1 ? clue : i === 2 ? unassessed : `The survey continues past door ${i}.`);
       }
       await save();
       await page.reload();
@@ -208,6 +508,10 @@ for (const mode of ["off", "automatic"] as const) {
       const records = await libraryRecords(page);
       const saved = records.find(row => row.kind === "world" && row.data.id === f.world.id)?.data.sharedGame?.facts ?? [];
       expect(saved.some((fact: { text: string }) => fact.text === clue)).toBe(mode === "automatic");
+      expect(saved.some((fact: { text: string }) => fact.text === unassessed)).toBe(false);
+      expect(records.filter(row => row.kind === "story" && row.data.memoryBatchSourceRevisionId && row.data.memory)
+        .map(row => `${row.data.automation.status}: ${row.data.memory.text}`).sort())
+        .toEqual(mode === "automatic" ? [`review: ${unassessed}`, `saved: ${clue}`] : []);
       await expect.poll(async () => (await libraryRecords(page)).filter(row => row.kind === "service")
         .map(row => ({ phase: row.data.phase, cleanup: row.data.cleanup }))).toEqual(
         mode === "automatic" ? [{ phase: "result", cleanup: "done" }] : []);
@@ -261,7 +565,7 @@ test("plays a streamed turn and opens the same history from a copied data direct
         return overlay?.visible;
       })).toBe(true);
       await expect(caption).toHaveCSS("height", "32px");
-      await expect(caption).toHaveCSS("background-color", "rgb(32, 32, 32)");
+      await expect(caption).toHaveCSS("background-color", "oklch(0.165 0.006 285)");
       await expect(caption).toHaveCSS("-webkit-app-region", "drag");
       expect(await app.evaluate(({ BrowserWindow }) => {
         const win = BrowserWindow.getAllWindows().find(window => window.webContents.getURL() === "https://deeprole.local/");
@@ -339,7 +643,7 @@ test("plays a streamed turn and opens the same history from a copied data direct
     await expect(speechParts.first()).toHaveCSS("font-family", /Cascadia Mono/);
     await expect(speechParts.last()).toHaveText(speech, { useInnerText: true });
     await expect(speechParts.last()).toHaveCSS("box-decoration-break", "clone");
-    await expect(speechParts.last()).toHaveCSS("background-color", "rgb(38, 38, 38)");
+    await expect(speechParts.last()).toHaveCSS("background-color", "oklch(0.26 0.009 285)");
     const paragraphs = reply.locator(":scope > p");
     await expect(paragraphs).toHaveCount(4);
     await expect(paragraphs.nth(2)).toHaveCSS("margin-block-start", "16px");
@@ -347,7 +651,7 @@ test("plays a streamed turn and opens the same history from a copied data direct
     await expect(reply.locator("blockquote")).toHaveText("Записка По лестнице.", { useInnerText: true });
     expect(await reply.textContent()).toBe(opening + scene);
     await expect(page.locator(".desktop-chat-link")).toContainText("Открываю дверь.");
-    await expect(page.locator("html")).toHaveCSS("background-color", "rgb(23, 23, 23)");
+    await expect(page.locator("html")).toHaveCSS("background-color", "oklch(0.195 0.007 285)");
     await expect(page.locator("html")).toHaveCSS("font-family", /Manrope/);
     await expect(page.getByTestId("stop-generation")).toHaveCount(0);
     await expect(draft).toHaveValue("Открываю дверь.");
@@ -356,11 +660,11 @@ test("plays a streamed turn and opens the same history from a copied data direct
     const themeButton = page.getByRole("button", { name: "Светлая тема", exact: true });
     const round = (button: Element) => {
       const face = getComputedStyle(button, "::before");
-      return { radius: face.borderRadius, inset: face.left, halo: getComputedStyle(button, "::after").opacity };
+      return { radius: face.borderRadius, inset: face.left, halo: face.backgroundColor !== "rgba(0, 0, 0, 0)" ? "1" : "0" }; // DeepRole Ink: hover shows a tonal face.
     };
     await draft.hover();
-    await expect.poll(() => themeButton.evaluate(round)).toEqual({ radius: "50%", inset: "4px", halo: "0" });
-    for (const [control, radius] of [[themeButton, "50%"], [page.getByRole("button", { name: "Игровые панели" }), "12px"]] as const) {
+    await expect.poll(() => themeButton.evaluate(round)).toEqual({ radius: "10px", inset: "4px", halo: "0" });
+    for (const [control, radius] of [[themeButton, "10px"], [page.getByRole("button", { name: "Игровые панели" }), "10px"]] as const) {
       await control.hover();
       await expect.poll(() => control.evaluate(round)).toEqual({ radius, inset: "4px", halo: "1" });
     }
@@ -370,28 +674,28 @@ test("plays a streamed turn and opens the same history from a copied data direct
     const send = page.locator(".desktop-send");
     await page.getByRole("textbox", { name: "Ваша реплика" }).fill("Проверка кнопки.");
     await expect(send).toBeEnabled();
-    await expect.poll(() => send.evaluate(button => getComputedStyle(button, "::before").backgroundColor)).toBe("rgb(145, 189, 248)");
+    await expect.poll(() => send.evaluate(button => getComputedStyle(button, "::before").backgroundColor)).toBe("oklch(0.75 0.13 282)");
     await page.getByRole("textbox", { name: "Ваша реплика" }).clear();
     expect(captured).toHaveLength(1);
     expect(captured[0].messages.at(-1).content).toContain("Открываю дверь.");
     await page.screenshot({ path: info.outputPath("chat.png") });
     await themeButton.click();
     await page.emulateMedia({ colorScheme: null });
-    await expect(page.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    if (process.platform === "win32") await expect(caption).toHaveCSS("background-color", "rgb(245, 245, 245)");
+    await expect(page.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
+    if (process.platform === "win32") await expect(caption).toHaveCSS("background-color", "oklch(0.964 0.004 285)");
     await app.close();
     app = undefined;
     await cp(original, copied, { recursive: true, filter: source => !/(?:^|[\\/])(?:Singleton\w*|LOCK|lockfile|Crashpad|GPUCache|Code Cache|Cache)$/u.test(source) });
     const restored = await openClient(copied);
     app = restored.app;
-    await expect(restored.page.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(restored.page.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     await restored.page.getByRole("link", { name: "Открываю дверь." }).click();
     await expect(restored.page.locator('[data-role="assistant"]')).toContainText("За стеной плеснула вода.");
     const restoredReply = restored.page.locator(".desktop-story-text");
     await expect(restoredReply.locator("code").first()).toHaveText("— Слышишь?", { useInnerText: true });
     await restored.page.setViewportSize({ width: 320, height: 620 });
     const wrappedSpeech = restoredReply.locator("code").last();
-    await expect(wrappedSpeech).toHaveCSS("background-color", "rgb(245, 245, 245)");
+    await expect(wrappedSpeech).toHaveCSS("background-color", "oklch(0.966 0.004 285)");
     expect(await wrappedSpeech.evaluate(node => node.getClientRects().length)).toBeGreaterThan(1);
     expect(await restoredReply.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     await wrappedSpeech.scrollIntoViewIfNeeded();
@@ -407,7 +711,7 @@ test("plays a streamed turn and opens the same history from a copied data direct
     const selectedChat = history.getByRole("link", { name: "Открываю дверь." });
     await expect(selectedChat).toHaveAttribute("aria-current", "page");
     await expect(selectedChat).toHaveCSS("min-height", "36px");
-    expect(await selectedChat.evaluate(link => getComputedStyle(link.parentElement!, "::before").width)).toBe("2px");
+    expect(await selectedChat.evaluate(link => getComputedStyle(link.parentElement!, "::before").width)).toBe("3px");
     const chatActions = history.getByRole("button", { name: "Действия чата" });
     await chatActions.focus();
     await expect(chatActions).toHaveCSS("opacity", "1");
@@ -481,12 +785,12 @@ test("plays a streamed turn and opens the same history from a copied data direct
     await historyToggle.click();
     await restored.page.getByRole("button", { name: "Библиотека" }).first().click();
     const library = restored.page.frameLocator(".desktop-library iframe");
-    await expect(library.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(library.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     await expect(library.locator(".workspace-nav")).toBeInViewport();
     await expect(library.locator(".app-main")).toHaveCSS("padding-inline", "12px");
     const close = library.getByRole("button", { name: "Закрыть", exact: true }).first();
     await close.hover();
-    await expect.poll(() => close.evaluate(round)).toEqual({ radius: "50%", inset: "4px", halo: "1" });
+    await expect.poll(() => close.evaluate(round)).toEqual({ radius: "10px", inset: "4px", halo: "1" });
     await expect(close).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await library.getByRole("button", { name: "Настройки", exact: true }).click();
     await library.getByRole("button", { name: /Язык и уведомления/ }).click();
@@ -549,7 +853,7 @@ test("starts a Windows story with one setup action and keeps the first draft", a
     const init = page.getByRole("button", { name: "Подключить модель", exact: true });
     await expect(init).toHaveCount(1);
     await expect(init).toBeInViewport();
-    await expect(init).toHaveCSS("background-color", "rgb(145, 189, 248)");
+    await expect(init).toHaveCSS("background-color", "oklch(0.75 0.13 282)");
     await expect(page.locator(".desktop-header .desktop-model")).toHaveCount(0);
     await page.screenshot({ path: info.outputPath("new-story-setup.png"), animations: "disabled" });
 
@@ -577,7 +881,7 @@ test("starts a Windows story with one setup action and keeps the first draft", a
     await page.setViewportSize({ width: 320, height: 620 });
     await page.evaluate(() => window.deepRoleDesktop.call("storageSet", "local", { deeprole_settings: { locale: "en", onboardingComplete: true } }));
     await expect(page.getByRole("heading", { name: "Your first turn", exact: true })).toBeInViewport();
-    await expect(page.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(page.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
     await page.screenshot({ path: info.outputPath("new-story-ready-320.png"), animations: "disabled" });
     const englishDraft = page.getByRole("textbox", { name: "Your message" });
@@ -677,7 +981,7 @@ test("opens Windows settings directly and lets the empty composer hint fade in",
       const label = button.querySelector("span")!.getBoundingClientRect();
       return label.width > 0 && label.left >= icon.right && Math.abs(icon.y + icon.height / 2 - label.y - label.height / 2) < 1;
     })).toBe(true);
-    expect(await settings.evaluate(button => getComputedStyle(button, "::before").borderRadius)).toBe("12px");
+    expect(await settings.evaluate(button => getComputedStyle(button, "::before").borderRadius)).toBe("10px");
     await settings.press("Enter");
     await expect(settings).toHaveAttribute("aria-expanded", "true");
     await expect(library.getByRole("heading", { name: "Настройки", exact: true })).toBeFocused();
@@ -720,10 +1024,10 @@ test("opens Windows settings directly and lets the empty composer hint fade in",
     });
     const narrowSettings = page.getByRole("button", { name: "Settings", exact: true });
     await expect(narrowSettings).toHaveCSS("width", "44px");
-    expect(await narrowSettings.evaluate(button => getComputedStyle(button, "::before").borderRadius)).toBe("50%");
+    expect(await narrowSettings.evaluate(button => getComputedStyle(button, "::before").borderRadius)).toBe("10px");
     await narrowSettings.click();
     await expect(library.getByRole("heading", { name: "Settings", exact: true })).toBeFocused();
-    await expect(library.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(library.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     await expect(library.getByRole("button", { name: "Text model", exact: true })).toBeInViewport();
     expect(await library.locator("html").evaluate(node => node.scrollWidth === node.clientWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath("settings-light-320.png"), animations: "disabled" });
@@ -873,6 +1177,37 @@ test("keeps the Windows reading column still beside panels and animates the draw
     await expect(drawer).toBeHidden();
     await expect(gameToggle).toBeFocused();
   } finally { await app.close(); }
+});
+
+test("restores the Windows draft when the model sends only hidden metadata", async ({}, info) => {
+  const prompt = "Где ключ от мастерской?";
+  const answer = "Ключ в ящике стола.";
+  let count = 0;
+  const mock = await provider(() => ++count === 1
+    ? '<deeprole_characters>{"present":[],"updates":[]}</deeprole_characters>'
+    : answer);
+  let app: ElectronApplication | undefined;
+  try {
+    const client = await openClient(info.outputPath("data"));
+    app = client.app;
+    const { page } = client;
+    await attachModel(page, mock.url);
+    const draft = page.getByRole("textbox", { name: "Ваша реплика" });
+    await draft.fill(prompt);
+    await draft.press("Enter");
+    await expect(page.getByRole("alert")).toContainText("Модель не вернула видимый ответ.");
+    await expect(draft).toHaveValue(prompt);
+    await expect(page.locator("article[data-role=assistant]")).toHaveCount(0);
+    expect(mock.prompts).toHaveLength(1);
+    await draft.press("Enter");
+    await expect(page.locator("article[data-role=assistant]")).toHaveText(/Ключ в ящике стола\./);
+    await expect(draft).toHaveValue("");
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    expect(mock.prompts).toHaveLength(2);
+  } finally {
+    await app?.close();
+    mock.close();
+  }
 });
 
 test("shows reply progress and restores a stopped Windows draft", async ({}, info) => {
@@ -1064,7 +1399,7 @@ test("follows new replies at the bottom and preserves the reading position in Wi
     const narrowView = page.getByRole("region", { name: "Conversation", exact: true });
     const jump = page.getByRole("button", { name: "Go to latest message", exact: true });
     await expect(jump).toBeVisible();
-    await expect(page.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(page.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     const buttonBox = (await jump.boundingBox())!;
     const controlsBox = (await page.locator(".desktop-composer-controls").boundingBox())!;
     expect(Math.abs((buttonBox.x + buttonBox.width / 2) - (controlsBox.x + controlsBox.width / 2))).toBeLessThan(1);
@@ -1144,7 +1479,7 @@ test("keeps the Windows draft and keyboard focus while browsing saved replies", 
     await expect(composer).toHaveValue(draft);
     await composer.focus();
     await page.mouse.move(0, 0);
-    await expect.poll(() => next(2).evaluate(button => getComputedStyle(button, "::before").opacity)).toBe("0");
+    await expect.poll(() => next(2).evaluate(button => getComputedStyle(button, "::before").backgroundColor)).toBe("rgba(0, 0, 0, 0)"); // No face at rest.
     await page.screenshot({ path: info.outputPath("message-actions.png"), animations: "disabled" });
     await next(2).press("Enter");
     await expect(reply).toHaveText(replies[2]!);
@@ -1207,7 +1542,7 @@ test("keeps the Windows draft and keyboard focus while browsing saved replies", 
     const englishComposer = page.getByRole("textbox", { name: "Your message" });
     await expect(englishComposer).toHaveValue(revision);
     await expect(englishComposer).toHaveAccessibleDescription(/Your draft will return/u);
-    await expect(page.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(page.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     expect(await english.evaluate(node => node.closest(".desktop-message-actions")!.scrollWidth)).toBeLessThanOrEqual(288);
     await english.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath("editing-draft-320.png"), animations: "disabled" });
@@ -1223,7 +1558,7 @@ test("keeps the Windows draft and keyboard focus while browsing saved replies", 
 
 test("sends the saved API key and persists adaptive or custom pacing", async ({}, info) => {
   const plainScene = "Стражник кивнул.\n\n— Проходите.";
-  const api = await provider(() => plainScene);
+  const api = await provider(() => plainScene, 128_000);
   let app: ElectronApplication | undefined;
   try {
     const client = await openClient(info.outputPath("style"));
@@ -1255,6 +1590,7 @@ test("sends the saved API key and persists adaptive or custom pacing", async ({}
     });
     await model.click();
     await expect(style).toHaveValue("");
+    await expect(dialog.getByRole("combobox", { name: "Лимит ответа", exact: true })).toHaveValue("auto");
     await style.fill(customStyle);
     const key = dialog.getByLabel("Ключ API");
     const paste = (text: string) => key.evaluate((input, value) => {
@@ -1273,6 +1609,7 @@ test("sends the saved API key and persists adaptive or custom pacing", async ({}
     await dialog.getByLabel("ID модели").clear();
     await dialog.getByRole("button", { name: "Загрузить список моделей" }).click();
     const models = dialog.getByRole("combobox", { name: "Модель", exact: true });
+    await expect(models.locator('option[value="test-story"]')).toHaveText(/test-story · 128\s000 ток\./u);
     await models.selectOption("test-story");
     await expect(dialog.getByLabel("ID модели")).toHaveCount(0);
     expect(api.modelRequests.filter(Boolean)).toEqual(["Bearer " + testKey]);
@@ -1476,7 +1813,7 @@ test("a Windows world reset waits for confirmation and opens a fresh story", asy
     await expect(screen.locator(".screen")).not.toContainText(/\bDeepSeek\b/iu);
     await expect(service).toHaveTitle("Подготовка сброса мира — DeepRole");
     await service.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
-    await expect(screen.locator(".screen")).toHaveCSS("background-color", "rgb(23, 23, 23)");
+    await expect(screen.locator(".screen")).toHaveCSS("background-color", "oklch(0.195 0.007 285)");
     const nativeWindow = await launched.app.browserWindow(service);
     expect(await nativeWindow.evaluate(window => window.isVisible())).toBe(false);
     expect(await windowsShown()).toEqual([]);
@@ -1618,11 +1955,12 @@ test("imports and connects an existing world, sends its lore, renders choices, a
     { kind: "surprise", label: "Осмотреть чердак", text: "Осматриваю чердак." },
   ];
   let allowFailure!: () => void;
+  let triedShortReply = false;
   const holdFailure = new Promise<void>(resolve => { allowFailure = resolve; });
   const mock = await provider(async prompt => {
     if (prompt.endsWith("Проверка нового черновика.")) { await holdFailure; return null; }
-    return prompt.endsWith("Проверка обрыва.")
-      ? null : `У моста ждёт Мира.\n<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
+    if (prompt.endsWith("Проверка обрыва.") && !triedShortReply) { triedShortReply = true; return null; }
+    return `У моста ждёт Мира.\n<deeprole_choices>${JSON.stringify({ version: 1, options })}</deeprole_choices>`;
   });
   let app: ElectronApplication | undefined;
   try {
@@ -1660,6 +1998,14 @@ test("imports and connects an existing world, sends its lore, renders choices, a
     await expect(page.getByRole("alert").filter({ hasText: "Ответ оборвался" })).toBeVisible();
     await expect(draft).toHaveValue("Проверка обрыва.");
     await expect(page.locator("[data-role=assistant]")).toHaveCount(1);
+    await page.getByRole("button", { name: "Повторить с большим лимитом", exact: true }).click();
+    await expect(page.locator("[data-role=assistant]")).toHaveCount(2);
+    await expect(draft).toHaveValue("");
+    expect(mock.requests.slice(1, 3).map(request => request.max_tokens)).toEqual([4096, 8192]);
+    const sceneRequests = mock.requests.slice(1, 3).map(request => request.messages.at(-1)!.content);
+    const withoutReceipt = (prompt: string) => prompt.replace(/"request"\s*:\s*"[\w-]+"/gu, '"request":"receipt"');
+    expect(sceneRequests[1]).toContain("У реки есть медный фонарь.");
+    expect(withoutReceipt(sceneRequests[1]!)).toBe(withoutReceipt(sceneRequests[0]!));
     await draft.fill("Проверка нового черновика.");
     await draft.press("Enter");
     await expect(draft).toHaveValue("");
@@ -1808,10 +2154,12 @@ test("shows an updated saved scene before opening a Windows chat", async ({}, in
 test("recovers character instructions after a library refresh and shows named participants without a cast packet", async ({}, info) => {
   const world = { id: "lantern-room", name: "Комната у маяка", description: "", color: "#527788", contextBudget: 3000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
   const hero = { id: "noah", name: "Ной", worldId: world.id, kind: "character", description: "", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, protagonist: true } };
-  const person = { ...hero, id: "mira", name: "Мира", characterSheet: EMPTY_CHARACTER };
-  const firstReply = "У двери качнулся фонарь.\n\nМира замерла.\n\n— Я здесь.";
-  const mock = await provider(prompt => prompt.endsWith("Вхожу в комнату.") ? firstReply
-    : 'Дверь закрылась.\n\n<deeprole_characters>{"present":["Ной"],"partners":[],"updates":[]}</deeprole_characters>');
+  const person = { ...hero, id: "mira", name: "Мира", characterSheet: { ...EMPTY_CHARACTER, sprites: { neutral: `data:image/png;base64,${realPng}` } } };
+  const binding = { id: "binding:lantern-probe", chatId: "lantern-probe", chatUrl: "https://deeprole.local/a/chat/s/lantern-probe", worldId: world.id,
+    focusIds: [], bookId: null, messageCountAtAnalysis: 0, createdAt: 1, updatedAt: 1 };
+  const mock = await provider(prompt => prompt.endsWith("Вхожу в комнату.") ? portraitContract.entry.prose
+    : prompt.endsWith("Смотрю на фонарь.") ? portraitContract.quiet.prose + '\n\n<deeprole_characters>{"version":2,"world":"lantern-room","chat":"lantern-probe","facts":[]}</deeprole_characters>'
+    : portraitContract.exit.prose);
   const data = info.outputPath("data");
   const chats = path.join(data, "Chats");
   await mkdir(chats, { recursive: true });
@@ -1829,12 +2177,11 @@ test("recovers character instructions after a library refresh and shows named pa
   });
   try {
     await attachModel(page, mock.url);
-    await seedLibrary(page, [{ kind: "world", id: world.id, data: world }, ...[hero, person].map(data => ({ kind: "entity" as const, id: data.id, data: { ...data, kind: "character" as const } }))]);
-    await page.reload();
-    await page.getByRole("link", { name: "У маяка", exact: true }).click();
-    const game = page.getByRole("complementary", { name: "Игра", exact: true });
-    await game.getByRole("combobox", { name: "Мир", exact: true }).selectOption(world.id);
-    await expect(game.locator("option:checked").first()).toHaveText(world.name);
+    await seedLibrary(page, [
+      { kind: "world", id: world.id, data: world }, { kind: "binding", id: binding.id, data: binding },
+      ...[hero, person].map(data => ({ kind: "entity" as const, id: data.id, data: { ...data, kind: "character" as const } })),
+    ]);
+    await page.goto(binding.chatUrl);
     const draft = page.getByRole("textbox", { name: "Ваша реплика" });
     await page.evaluate(() => {
       const originalFetch = window.fetch;
@@ -1852,21 +2199,39 @@ test("recovers character instructions after a library refresh and shows named pa
     });
     await draft.fill("Вхожу в комнату.");
     await draft.press("Enter");
-    await expect(page.locator(".desktop-story-text").last()).toContainText("Мира замерла");
+    await expect(page.locator(".desktop-story-text").last()).toContainText(portraitContract.entry.prose);
     expect(mock.prompts).toHaveLength(1);
     const reads = await page.locator("html").getAttribute("data-test-budget-reads");
     expect(mock.prompts[0], [...preparation, `Budget reads ${reads}`].join("\n")).toContain("<deeprole_character_mode>");
     await expect(page.locator("html")).toHaveAttribute("data-test-budget-reads", "2");
     const portrait = page.locator(".dr-cast-widget[data-character-id=mira]");
     await expect(portrait).toBeVisible();
+    await expect.poll(() => portrait.locator("img[data-current]").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
     expect((await libraryRecords(page)).some(row => row.kind === "binding"
       && row.data.characterScenes?.[world.id]?.presentIds.includes(person.id))).toBe(false);
+    await page.reload();
+    await expect(portrait).toBeVisible();
+    await draft.fill("Смотрю на фонарь.");
+    await draft.press("Enter");
+    await expect(page.locator(".desktop-story-text").last()).toContainText(portraitContract.quiet.prose);
+    await expect(page.getByTestId("stop-generation")).toHaveCount(0);
+    await page.reload();
+    await expect(portrait).toBeVisible();
+    await seedLibrary(page, [{ kind: "binding", id: binding.id, data: { ...binding, characterScenes: {
+      [world.id]: { revision: "known-cast", updatedAt: 2, presentIds: [hero.id, person.id], states: {} },
+    } } }]);
     await page.reload();
     await expect(portrait).toBeVisible();
     await draft.fill("Остаюсь в комнате один.");
     await draft.press("Enter");
     await expect(page.locator(".desktop-story-text").last()).toContainText("Дверь закрылась");
     await expect(portrait).toHaveCount(0);
+    expect((await libraryRecords(page)).some(row => row.kind === "binding"
+      && row.data.characterScenes?.[world.id]?.presentIds.includes(person.id))).toBe(true);
+    await page.reload();
+    await expect(page.locator(".desktop-story-text").last()).toContainText(portraitContract.exit.prose);
+    await expect(portrait).toHaveCount(0);
+    expect(mock.prompts).toHaveLength(3);
   } finally {
     await app.close();
     mock.close();
@@ -1992,8 +2357,8 @@ test("records character states and sourced memory and recalls them after moving 
     await page.screenshot({ path: info.outputPath("game.png") });
     await page.emulateMedia({ colorScheme: "light" });
     const choices = page.locator("[data-deeprole-choices-host]");
-    await expect(choices.locator("section")).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await expect(page.locator(".dr-cast-widget").first()).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(choices.locator("section")).toHaveCSS("background-color", "oklch(1 0 0)");
+    await expect(page.locator(".dr-cast-widget").first()).toHaveCSS("background-color", "oklch(1 0 0)");
     const optionFills = await choices.locator(".grid button").evaluateAll(buttons => buttons.map(button => getComputedStyle(button).backgroundImage));
     expect(new Set(optionFills).size).toBe(4);
     expect(optionFills.every(fill => fill.startsWith("linear-gradient"))).toBe(true);
@@ -2202,6 +2567,7 @@ test("records character states and sourced memory and recalls them after moving 
     const importedData = info.outputPath("extension-import");
     await imported.page.getByRole("button", { name: "test-story", exact: true }).click();
     const model = imported.page.getByRole("dialog", { name: "Текстовая модель" });
+    await model.getByRole("combobox", { name: "Лимит ответа", exact: true }).selectOption("manual");
     await model.getByLabel("Лимит токенов на ответ").fill("256");
     await model.getByLabel("Окно контекста вручную").fill("8192");
     await model.getByRole("button", { name: "Сохранить подключение", exact: true }).click();

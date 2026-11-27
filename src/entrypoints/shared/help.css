@@ -1,5 +1,7 @@
-button.dr-help, .dr-help-wrap > button.dr-help, .dr-help-section > button.dr-help { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; min-height: 24px; padding: 0; border: 1px solid var(--dr-border-strong); border-radius: 50%; background: var(--dr-panel); color: var(--dr-primary); font: 700 11px/1 system-ui, sans-serif; cursor: help; box-shadow: none; }
-button.dr-help:hover, button.dr-help:focus-visible { background: var(--dr-surface); border-color: var(--dr-primary); outline: 2px solid var(--dr-primary); outline-offset: 2px; }
+/* Help triggers use the icon-button material with a round tonal face. */
+button.dr-help, .dr-help-wrap > button.dr-help, .dr-help-section > button.dr-help { --dr-material-face: var(--ui-layer-2); --dr-round-radius: 50%; min-height: 0; color: var(--ui-text-2); font: var(--ui-weight-bold) var(--ui-text-xs) / 1 var(--ui-font); cursor: help; }
+button.dr-help::before { box-shadow: inset 0 0 0 1px var(--ui-line-strong); }
+button.dr-help:focus-visible::before { box-shadow: 0 0 0 2px var(--ui-focus); }
 .dr-help-tooltip {
   position: fixed;
   z-index: 2147483647;

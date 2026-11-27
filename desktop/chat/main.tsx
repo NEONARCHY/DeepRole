@@ -51,8 +51,10 @@ const ruErrors: Record<string, string> = {
   "model-payment-required": "Провайдер просит пополнить баланс.",
   "model-limit": "Провайдер ограничил запросы. Черновик сохранён.",
   "model-context-limit": "Реплика и необходимые данные сцены не помещаются в окно модели. Черновик сохранён. Сократите реплику, уменьшите лимит ответа или выберите модель с большим окном.",
-  "model-incomplete": "Ответ оборвался. Увеличьте лимит ответа или повторите ход.",
-  "model-empty": "Модель не вернула текст ответа.",
+  "model-incomplete": "Ответ оборвался. Повторите ход.",
+  "model-reply-length": "Ответ оборвался на лимите токенов.",
+  "model-retry-stale": "Этот повтор больше недоступен. Черновик сохранён.",
+  "model-empty": "Модель не вернула видимый ответ. Попробуйте отправить реплику ещё раз.",
   "chat-stale": "Чат изменился в другом окне. Откройте его заново.",
   "memory-blocked": "DeepRole приостановил отправку. Проверьте подсказку памяти.",
 };
@@ -63,8 +65,10 @@ const enErrors: Record<string, string> = {
   "model-payment-required": "The provider requires additional credit.",
   "model-limit": "The provider limited requests. Your draft is still here.",
   "model-context-limit": "The turn and required scene data exceed the model window. Your draft is still here. Shorten it, lower the reply limit, or choose a larger model window.",
-  "model-incomplete": "The reply was cut short. Increase the reply limit or try again.",
-  "model-empty": "The model did not return reply text.",
+  "model-incomplete": "The reply was interrupted. Try sending it again.",
+  "model-reply-length": "The reply reached its token limit.",
+  "model-retry-stale": "This retry is unavailable. Your draft is still here.",
+  "model-empty": "The model returned no visible reply. Try sending your message again.",
   "chat-stale": "The chat changed in another window. Reopen it.",
   "memory-blocked": "DeepRole paused sending. Check the memory notice.",
 };
@@ -72,7 +76,8 @@ const clipProse = (text: string) => storyReplyProse(text).replace(/<deeprole(?:_
 const serviceDraft = (text: string) => text.trimStart().startsWith("[DeepRole Service]");
 const distanceToLatest = (view: HTMLElement) => view.scrollHeight - view.scrollTop - view.clientHeight;
 const followDistance = 80;
-type ComposerDraft = { text: string; edited?: number; errorCode?: string };
+type ComposerDraft = { text: string; edited?: number; errorCode?: string; retryId?: string };
+type ReplyRetry = { id: string; chatId: string; head: number | null; text: string; edited?: number };
 type ComposerEdit = { turnId: number; nextDraft: string };
 const messageActions = {
   ru: { copy: "Копировать", copied: "Скопировано", copyFailed: "Не удалось скопировать", edit: "Редактировать", regenerate: "Другой ответ", previous: "Предыдущий ответ", next: "Следующий ответ" },
@@ -117,7 +122,11 @@ function App() {
   const [list, setList] = useState<ChatInfo[]>([]);
   const [loading, setLoading] = useState(!!activeChat());
   const [provider, setProvider] = useState<ModelSettings>();
-  const [modelOpen, setModelOpen] = useState(false);
+  // Each opening is its own session, so a dialog that is still fading out
+  // after closing can never swallow or close the next one.
+  const [modelSession, setModelSession] = useState<number>();
+  const modelSessions = useRef(0);
+  const openModelSession = () => setModelSession(++modelSessions.current);
   const [usageOpen, setUsageOpen] = useState(false);
   const [spending, setSpending] = useState<SpendingNotice[]>([]);
   const [libraryPhase, setLibraryPhase] = useState<"closed" | "open" | "closing">("closed");
@@ -132,6 +141,7 @@ function App() {
   const [menu, setMenu] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState<string>();
   const [error, setError] = useState("");
+  const [replyRetry, setReplyRetry] = useState<ReplyRetry>();
   const [requestKind, setRequestKind] = useState<"story" | "service">();
   const [stopping, setStopping] = useState(false);
   const busy = requestKind !== undefined;
@@ -245,15 +255,16 @@ function App() {
   function openModel(opener: HTMLElement | null) {
     if (!provider || busy) return;
     modelOpener.current = opener;
-    setModelOpen(true);
+    openModelSession();
   }
 
-  function closeModel(saved?: ModelSettings) {
+  function closeModel(saved?: ModelSettings, session = modelSessions.current) {
+    if (session !== modelSessions.current) return;
     if (saved) {
       setProvider(saved);
       setError("");
     }
-    setModelOpen(false);
+    setModelSession(undefined);
     requestAnimationFrame(() => {
       const opener = modelOpener.current;
       const focus = saved && providerNeeded ? composer.current : opener?.isConnected ? opener : composer.current;
@@ -293,7 +304,7 @@ function App() {
       if (event.data.type === "CLOSE") closeLibrary();
       if (event.data.type === "MODEL_SETTINGS") {
         modelOpener.current = libraryFrame.current;
-        setModelOpen(true);
+        openModelSession();
       }
       if (event.data.type === "USAGE") setUsageOpen(true);
     };
@@ -429,7 +440,13 @@ function App() {
     composer.current?.focus();
   }
 
-  function submit(text: string, edited: number | undefined, fromComposer = false) {
+  const retryTurn = error === "model-reply-length" && replyRetry?.chatId === chat.id && replyRetry.head === chat.head ? replyRetry : undefined;
+  function repeatWithMoreTokens(turn: ReplyRetry) {
+    const fromComposer = composer.current?.value === turn.text && edit?.turnId === turn.edited;
+    submit(turn.text, turn.edited, fromComposer, turn.id);
+  }
+
+  function submit(text: string, edited: number | undefined, fromComposer = false, retryId?: string) {
     if (!text.trim() || task.current || selectingReply.current || loading) return;
     const service = worker || serviceDraft(text);
     if (!service && !modelConfigured) {
@@ -439,12 +456,14 @@ function App() {
     const id = chat.id || crypto.randomUUID();
     const original = edited === undefined ? undefined : byId.get(edited);
     let frameTurns: Turn[] | undefined;
+    let nextRetryId: string | undefined;
     let frameId = 0;
     const syncFrame = () => {
       frameId = 0;
       if (frameTurns) setPending(frameTurns.map(turn => ({ ...turn })));
     };
     setRequestKind(service ? "service" : "story");
+    setReplyRetry(undefined);
     setError(""); jumpToLatest();
     if (fromComposer) {
       updateDraft(edit?.nextDraft ?? "");
@@ -458,7 +477,8 @@ function App() {
       setChat(emptyChat(id));
     }
     const sent = sendNative(id, text, chat.head, edited, (name, payload) => {
-      if (name === "ready" && payload.request_message_id && payload.response_message_id) {
+      if (name === "hint") nextRetryId = payload.reply_retry_id;
+      else if (name === "ready" && payload.request_message_id && payload.response_message_id) {
         arrivingTurn.current = service ? undefined : { user: payload.request_message_id, assistant: payload.response_message_id };
         frameTurns = [
           { id: payload.request_message_id, parent: original ? original.parent : chat.head, role: "user", text, visible: text },
@@ -471,9 +491,10 @@ function App() {
         reply.reasoning += payload.reasoning ?? "";
         if (!frameId) frameId = requestAnimationFrame(syncFrame);
       }
-    });
+    }, retryId);
     task.current = sent;
     void sent.promise.then(async () => {
+      if (retryId) setUnsent(previous => previous.filter(item => item.retryId !== retryId));
       try {
         const saved = await request<Chat>(chatEndpoint("chat", id));
         setChat(saved);
@@ -482,8 +503,10 @@ function App() {
       } catch { setError("chat-unavailable"); }
     }, failure => {
       const errorCode = failure.message === "model-stopped" ? undefined : failure.message;
+      if (errorCode === "model-reply-length" && nextRetryId) setReplyRetry({ id: nextRetryId, chatId: id, head: chat.head, text, edited });
+      if (retryId) setUnsent(previous => previous.map(item => item.retryId === retryId ? { ...item, errorCode, retryId: nextRetryId } : item));
       if (fromComposer) {
-        if (composer.current?.value) setUnsent(previous => [...previous, { text, edited, errorCode }]);
+        if (composer.current?.value) setUnsent(previous => [...previous, { text, edited, errorCode, retryId: nextRetryId }]);
         else {
           setEdit(edited === undefined ? undefined : { turnId: edited, nextDraft: "" });
           updateDraft(text);
@@ -699,7 +722,12 @@ function App() {
       </aside>}
       <div className="desktop-viewport" id="desktop-chat-viewport" ref={viewport} inert={overlayPanels || libraryOverlay}
         role="region" aria-label={ru ? "Переписка" : "Conversation"} tabIndex={-1}
-        onScroll={event => setFollowing(distanceToLatest(event.currentTarget) < followDistance)}>
+        onScroll={event => {
+          const view = event.currentTarget;
+          const scrolled = String(view.scrollTop > 4);
+          if (view.dataset.scrolled !== scrolled) view.dataset.scrolled = scrolled;
+          setFollowing(distanceToLatest(view) < followDistance);
+        }}>
         <div className="desktop-transcript" ref={transcript}>
            {showEmpty && <div className="desktop-empty">
             <h2>{setupOnStart ? ru ? "Начните историю" : "Start a story" : ru ? "Ваш первый ход" : "Your first turn"}</h2>
@@ -730,7 +758,11 @@ function App() {
         </div>)}
         {error && <div role="alert" className="desktop-error dr-inline-feedback" data-tone="warning">
           <CircleAlert className="dr-feedback-icon" aria-hidden="true" />
-          <span>{(ru ? ruErrors : enErrors)[error] ?? (ru ? "Не удалось завершить запрос." : "The request could not finish.")}</span>
+          <span>{(ru ? ruErrors : enErrors)[error] ?? (ru ? "Не удалось завершить запрос." : "The request could not finish.")}
+            {retryTurn && <button className="desktop-reply-retry" type="button" disabled={busy} onClick={() => repeatWithMoreTokens(retryTurn)}>
+              {ru ? "Повторить с большим лимитом" : "Retry with a higher limit"}
+            </button>}
+          </span>
           <button className="desktop-icon" type="button" aria-label={ru ? "Закрыть сообщение" : "Dismiss"} onClick={() => setError("")}><X size={16} aria-hidden="true" /></button>
         </div>}
         {queuedDraft && <div className="desktop-unsent" role="status">
@@ -760,7 +792,7 @@ function App() {
              {composerEffects}
            </div>
           <div className="desktop-composer-controls">
-            <button type="button" className="desktop-icon" aria-label={ru ? "Открыть библиотеку" : "Open library"} onClick={event => openLibrary("library", event.currentTarget)}><BookOpen size={17} /></button>
+            <button type="button" className="desktop-icon" aria-label={ru ? "Открыть библиотеку" : "Open library"} title={ru ? "Открыть библиотеку" : "Open library"} onClick={event => openLibrary("library", event.currentTarget)}><BookOpen size={17} aria-hidden="true" /></button>
             {!worker && <div id="desktop-composer-lore" data-deeprole-ui />}
             {!worker && readingHistory ? <div className="desktop-jump-anchor" data-deeprole-ui>
               <button className="desktop-icon desktop-jump-latest" type="button"
@@ -789,7 +821,7 @@ function App() {
     {libraryPhase !== "closed" && <aside ref={library} id="desktop-library" className="desktop-library" data-state={libraryPhase} data-docked={libraryDocked} inert={!libraryOpen} aria-label={ru ? "Панель DeepRole" : "DeepRole panel"}>
       <iframe ref={libraryFrame} src={`/sidepanel.html?embedded=1${libraryEntry === "library" ? "" : `&view=${libraryEntry}`}`} title={ru ? "Панель DeepRole" : "DeepRole panel"} />
     </aside>}
-    {modelOpen && provider && <ProviderDialog locale={locale} value={provider} onClose={() => closeModel()} onSave={closeModel} />}
+    {modelSession && provider && <ProviderDialog key={modelSession} locale={locale} value={provider} onClose={() => closeModel(undefined, modelSession)} onSave={saved => closeModel(saved, modelSession)} />}
     {usageOpen && <UsageDialog locale={locale} chatId={chat.id} onClose={() => setUsageOpen(false)} onSpendingChange={refreshSpending} />}
     {confirmDelete && <DeleteChatDialog ru={ru} onCancel={() => {
       setConfirmDelete(undefined);

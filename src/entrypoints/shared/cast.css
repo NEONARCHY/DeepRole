@@ -101,29 +101,4 @@
 .dr-cast-diagnostics section { padding-block:10px; border-bottom:1px solid var(--dr-border,#ffffff0d); }
 .dr-cast-diagnostics > button { margin-block:8px; }
 .dr-cast-diagnostics textarea { box-sizing:border-box; width:100%; min-width:0; resize:vertical; padding:8px; background:var(--dr-panel,#1d242b); color:var(--dr-text,#eef3f7); border:1px solid var(--dr-border,#ffffff0d); border-radius:8px; }
-.dr-cast-status .button.dr-cast-review-ready {
-  --dr-action-light:none;
-  --dr-action-depth:0 2px 8px #0002;
-  --dr-action-glow:0 0 16px color-mix(in srgb,var(--dr-focus) 28%,transparent);
-  position:relative;
-  isolation:isolate;
-  background:var(--dr-action);
-  border:0;
-  color:var(--dr-on-action);
-  box-shadow:0 2px 8px #0002;
-}
-.dr-cast-status .dr-cast-review-ready::after {
-  content:""; position:absolute; inset:0; border-radius:inherit;
-  box-shadow:var(--dr-action-glow);
-  opacity:0; pointer-events:none; transition:opacity 160ms cubic-bezier(.23,1,.32,1);
-}
-@media(hover:hover) and (pointer:fine) {
-  .dr-cast-status .button.dr-cast-review-ready:hover:not(:disabled) { background:var(--dr-action-hover); color:var(--dr-on-action); }
-  .dr-cast-status .dr-cast-review-ready:hover:not(:disabled)::after { opacity:1; }
-}
-.dr-cast-status .button.dr-cast-review-ready:focus-visible { outline:2px solid var(--dr-focus); outline-offset:3px; }
-.dr-cast-status button.button.primary.dr-cast-review-ready::before { content:none; }
-.dr-cast-status .dr-cast-review-ready:focus-visible::after { opacity:1; transition:none; }
-.dr-cast-status .button.dr-cast-review-ready:active:not(:disabled) { background:var(--dr-action-hover); box-shadow:none; }
-.dr-cast-status .dr-cast-review-ready:disabled::after { opacity:0; }
-@media(prefers-reduced-motion:reduce) { .dr-cast-status .dr-cast-review-ready::after { transition:none; } }
+/* "Review characters" is the main action of the status row and uses the shared primary recipe. */

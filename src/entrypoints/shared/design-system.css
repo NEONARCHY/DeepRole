@@ -39,10 +39,7 @@
 .app-shell .button, .dr-loremap .button, .dr-root .button { min-height: 40px; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.35; gap: 8px; white-space: normal; }
 .dr-root .button { display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
 .dr-root .button:disabled { opacity:.5; cursor:default; }
-.app-shell .button.primary, .dr-loremap .button.primary, .dr-root .button.primary { background: var(--dr-action); border: 1px solid var(--dr-action); color: var(--dr-on-action); box-shadow: none; }
-.app-shell .button.primary:hover:not(:disabled), .dr-loremap .button.primary:hover:not(:disabled), .dr-root .button.primary:hover:not(:disabled) { background: var(--dr-action-hover); border-color: var(--dr-action-hover); }
-.app-shell .button.secondary, .dr-loremap .button.secondary, .dr-root .button.secondary { background: var(--dr-raised); border: 1px solid var(--dr-border); color: var(--dr-text); box-shadow: none; }
-.app-shell .button.danger-button, .app-shell .button.danger, .dr-loremap .button.danger { background: var(--dr-panel); border: 1px solid var(--dr-danger); color: var(--dr-danger); box-shadow: none; }
+/* Button variants (primary, secondary, danger, ghost, selected) live in design-effects.css. */
 .app-shell .icon-button, .dr-loremap .lm-tools > button { min-width: 36px; min-height: 36px; border-radius: 10px; flex-shrink: 0; }
 .app-shell .icon-button.accent { background: var(--dr-action); border-color: var(--dr-action); color: var(--dr-on-action); }
 .app-shell .suggestion-check input:checked + span { background: var(--dr-action); color: var(--dr-on-action); }
@@ -98,17 +95,22 @@
 .app-shell .settings-card details { border-top: 1px solid var(--dr-border); padding-top: 12px; }
 .app-shell summary, .dr-loremap summary { font-size: 12px; line-height: 1.5; }
 .app-shell .toggle-row { gap: 12px; font-size: 13px; }
-.app-shell :is(button, input, select, textarea):focus-visible, .dr-root :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--dr-primary); outline-offset: 3px; }
+.app-shell :is(button, input, select, textarea):focus-visible, .dr-root :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
 .app-shell .dr-memory-use, .dr-loremap .dr-memory-use { padding-top: 12px; margin-top: 12px; }
-/* One quiet switch language throughout DeepRole; native checkbox semantics stay intact. */
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"] { appearance:none; position:relative; flex:none; box-sizing:border-box; width:38px; height:22px; min-width:38px; margin:0; padding:0; border:1px solid var(--dr-border-strong); border-radius:999px; background:var(--dr-raised); cursor:pointer; vertical-align:middle; transition:background-color .18s ease,border-color .18s ease; }
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]::before { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--dr-text); box-shadow:0 1px 4px rgba(0,0,0,.34); transition:transform .18s ease; }
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked { border-color:var(--dr-action-hover); background:var(--dr-action-hover); }
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked::before { transform:translateX(16px); }
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked::before { background:var(--dr-on-action); }
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:disabled { opacity:.5; cursor:not-allowed; }
-:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:focus-visible { outline:2px solid var(--dr-primary); outline-offset:3px; }
-.app-shell .lm-person-entries input[type="checkbox"] { width:38px; height:22px; padding:0; }
+/* One switch language throughout DeepRole; native checkbox semantics stay intact.
+   Track 36×20 with a 16 px thumb; on = accent track, off = layer 3 with a hairline. */
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"] { appearance:none; position:relative; flex:none; box-sizing:border-box; width:36px; height:20px; min-width:36px; margin:0; padding:0; border:0; border-radius:var(--ui-r-full); background:var(--ui-layer-3); box-shadow:inset 0 0 0 1px var(--ui-line-strong); cursor:pointer; vertical-align:middle; transition:background-color var(--ui-dur-fast) var(--ui-ease-out), box-shadow var(--ui-dur-fast) var(--ui-ease-out); }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]::before { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--ui-text-2); box-shadow:0 1px 3px oklch(0% 0 0 / .3); transition:transform var(--ui-dur-base) var(--ui-ease-out), background-color var(--ui-dur-fast) var(--ui-ease-out), width var(--ui-dur-fast) var(--ui-ease-out); }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked { background:var(--ui-accent); box-shadow:none; }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked::before { transform:translateX(16px); background:var(--ui-on-accent); }
+@media (hover:hover) and (pointer:fine) {
+  :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:hover:not(:disabled, :checked) { box-shadow:inset 0 0 0 1px var(--ui-text-3); }
+  :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:hover:not(:disabled):checked { background:var(--ui-accent-hover); }
+}
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:disabled { opacity:var(--ui-disabled); cursor:not-allowed; }
+:is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:focus-visible { outline:2px solid var(--ui-focus); outline-offset:2px; }
+.app-shell .lm-person-entries input[type="checkbox"] { width:36px; height:20px; padding:0; }
+@media (forced-colors:active) { :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"] { border:1px solid ButtonText; } :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]::before { forced-color-adjust:none; background:ButtonText; } :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]:checked::before { background:Highlight; } }
 @media (prefers-reduced-motion:reduce) { :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"], :is(.app-shell, .dr-root, .dr-loremap) input[type="checkbox"]::before { transition:none; } }
 .dr-memory-use .dr-use-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; font-size: 12px; }
 .dr-memory-use .dr-chat-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
@@ -166,12 +168,12 @@
   color-scheme: var(--dr-native-scheme, dark);
   padding-right: 36px;
   border-color: var(--dr-border);
-  background-color: var(--dr-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a9bfd0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-color: var(--ui-layer-2);
+  background-image: var(--ui-chevron);
   background-repeat: no-repeat;
   background-position: right 11px center;
   background-size: 14px;
-  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+  transition: background-color var(--ui-dur-fast) var(--ui-ease-out), box-shadow var(--ui-dur-fast) var(--ui-ease-out);
   cursor: pointer;
 }
 .app-shell select:hover:not(:disabled),
@@ -183,8 +185,8 @@
 .dr-loremap .lm-world-picker select:hover:not(:disabled),
 .dr-root select:hover:not(:disabled),
 .dr-root .scene-controls select:hover:not(:disabled) {
-  border-color: var(--dr-primary);
-  background-color: var(--dr-panel);
+  border-color: transparent;
+  background-color: var(--ui-layer-3);
 }
 .app-shell select:disabled,
 .dr-loremap select:disabled,
@@ -196,7 +198,7 @@
 .dr-root select option,
 .dr-root select optgroup {
   color: var(--dr-text);
-  background-color: var(--dr-panel);
+  background-color: var(--ui-layer-3);
 }
 .dr-context-budget { margin-block: 10px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .dr-context-budget summary { cursor: pointer; font-weight: 600; min-height: 24px; padding-block: 4px; }
@@ -209,6 +211,6 @@
 .dr-game-memory-notice strong { display:block; font-weight:600; }
 .dr-game-memory-notice p { margin:8px 0 0; }
 .dr-game-memory-notice button { min-height:32px; max-width:100%; margin-top:10px; padding:6px 10px; border:1px solid var(--dr-border); border-radius:8px; background:var(--dr-surface); color:var(--dr-text); font:inherit; white-space:normal; cursor:pointer; }
-.dr-game-memory-notice button:focus-visible { outline:2px solid var(--dr-primary); outline-offset:2px; }
+.dr-game-memory-notice button:focus-visible { outline:2px solid var(--ui-focus); outline-offset:2px; }
 .dr-game-memory-coverage { overflow-wrap:anywhere; }
 .dr-memory-delivery textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; resize: vertical; }

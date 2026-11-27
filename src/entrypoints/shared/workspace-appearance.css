@@ -50,15 +50,31 @@ html:root .app-shell .app-header {
   padding: var(--dr-layout-gap) var(--dr-layout-gutter);
 }
 
-html:root .app-shell .view-title h1 { font-size: 25px; letter-spacing: -.045em; line-height: 1.23; }
+html:root .app-shell .view-title h1 { font-size: var(--ui-text-xl); font-weight: var(--ui-weight-bold); letter-spacing: var(--ui-tracking-display); line-height: var(--ui-leading-xl); }
+/* Main sections switch like a segmented control: the track is layer 2, the
+   selected segment rises to layer 1 with accent text. */
 html:root .app-shell .bottom-nav {
   margin: var(--dr-layout-label) var(--dr-layout-gutter) 0;
-  padding: var(--dr-layout-row);
-  gap: var(--dr-layout-row);
+  padding: var(--ui-s-1);
+  gap: var(--ui-s-1);
   border: 0;
-  border-radius: var(--desktop-panel);
-  box-shadow: var(--dr-depth-panel);
+  border-radius: var(--ui-r-md);
+  background: var(--ui-layer-2);
+  box-shadow: none;
 }
+html:root .app-shell .bottom-nav button {
+  border-radius: var(--ui-r-sm);
+  color: var(--ui-text-2);
+  font-weight: var(--ui-weight-semibold);
+  transition: background-color var(--ui-dur-fast) var(--ui-ease-out), color var(--ui-dur-fast) var(--ui-ease-out), box-shadow var(--ui-dur-fast) var(--ui-ease-out);
+}
+html:root .app-shell .bottom-nav button.active {
+  background: var(--ui-layer-1);
+  color: var(--ui-accent-text);
+  border-radius: var(--ui-r-sm);
+  box-shadow: var(--ui-shadow-sm), inset 0 0 0 1px var(--ui-line);
+}
+html:root .app-shell .bottom-nav button:hover:where(:not(.active)) { background: var(--ui-hover); color: var(--ui-text); }
 
 html:root .app-shell :is(.settings-card, .panel-card, .books-block, .memory-card, .snapshot-card, .hero-card, .rp-card, .tutorial-card, .action-card) {
   background: var(--dr-surface);
@@ -92,16 +108,33 @@ html:root .app-shell .button.primary:not(.danger, .danger-button) {
   color: var(--dr-on-action);
 }
 
-html:root .app-shell :is(.bottom-nav button.active, .segmented button.active) {
-  background: var(--dr-selected);
-  color: var(--dr-focus);
-  border-radius: var(--desktop-control);
+/* Every two- to four-way switch is one segmented control. */
+html:root .app-shell :is(.segmented, .rp-view-switch) {
+  gap: var(--ui-s-1);
+  padding: var(--ui-s-1);
+  border: 0;
+  border-radius: var(--ui-r-md);
+  background: var(--ui-layer-2);
   box-shadow: none;
 }
-
-html:root .app-shell :is(.bottom-nav button, .segmented button):hover:where(:not(.active)) {
-  background: var(--dr-raised);
-  color: var(--dr-text);
+html:root .app-shell :is(.settings-card, .rp-card, .panel-card) :is(.segmented, .rp-view-switch) { background: var(--ui-layer-3); }
+html:root .app-shell :is(.segmented, .rp-view-switch) button {
+  border: 0;
+  border-radius: var(--ui-r-sm);
+  background: transparent;
+  color: var(--ui-text-2);
+  box-shadow: none;
+  font-weight: var(--ui-weight-semibold);
+  transition: background-color var(--ui-dur-fast) var(--ui-ease-out), color var(--ui-dur-fast) var(--ui-ease-out), box-shadow var(--ui-dur-fast) var(--ui-ease-out);
+}
+html:root .app-shell :is(.segmented, .rp-view-switch) button:is(.active, [aria-pressed=true], [aria-selected=true]) {
+  background: var(--ui-layer-1);
+  color: var(--ui-accent-text);
+  box-shadow: var(--ui-shadow-sm), inset 0 0 0 1px var(--ui-line);
+}
+html:root .app-shell :is(.segmented, .rp-view-switch) button:hover:where(:not(.active, [aria-pressed=true], [aria-selected=true], :disabled)) {
+  background: var(--ui-hover);
+  color: var(--ui-text);
 }
 
 html:root .app-shell :is(.modal, .dr-export-dialog, .dr-memory-dialog) {

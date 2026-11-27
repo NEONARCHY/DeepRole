@@ -165,7 +165,7 @@ export function factAutomationReason(fact: StoryFact, assessment: unknown, previ
   if (assessment !== "ordinary") return assessment === "uncertain" ? "uncertain" : "unverified";
   if (sensitiveStoryText(fact.text)) return "protected";
   if (!literalEvidence(fact.text, fact.quote) || fact.claim && !literalEvidence(fact.claim.value, fact.quote)) return "unverified";
-  if (fact.kind === "event" && /(?:\b(?:will|promises?|plans?|believes?|thinks?|suspects?|heard|dreamed)\b|обеща|планиру|собира|думает|считает|предполага|завтра|услышал)/iu.test(fact.quote)) return "uncertain";
+  if (fact.kind === "event" && /(?:\b(?:will|promises?|plans?|believes?|thinks?|suspects?|heard|dreamed)\b|обеща|планиру|собира|думает|считает|предполага|завтра|услышал|слышал[аи]?(?:,?\s+что|\s+слух)|мне (?:рассказали|рассказывали|сказали),?\s+что|по слухам)/iu.test(fact.quote)) return "uncertain";
   if ((fact.kind === "event" || fact.kind === "secret" || fact.kind === "task") && (uncertain(fact.quote) || negative(fact.quote) !== negative(fact.text))) return "uncertain";
   if (previous.some(p => p.claim && fact.claim && normalizedFact(p.claim.key) === normalizedFact(fact.claim.key) && normalizedFact(p.claim.value) !== normalizedFact(fact.claim.value) && (p.claim.scope !== "state" || fact.claim.scope !== "state")) || previous.some(p => !(p.claim?.scope === "state" && fact.claim?.scope === "state" && normalizedFact(p.claim.key) === normalizedFact(fact.claim.key)) && conflictingStoryText(p.text, fact.text)) || protectedTexts.some(s => conflictingStoryText(s, fact.text))) return "conflict";
   return "new";

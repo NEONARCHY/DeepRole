@@ -61,20 +61,20 @@ test("installed extension gives the narrow library the same material and round c
     await panel.getByRole("menuitemradio", { name: "Мастерская" }).click();
     await expect(panel.locator(".lore-connection")).toHaveCSS("padding", "16px");
     const attach = panel.locator(".lore-connection .primary");
-    await expect(attach).toHaveCSS("background-color", "rgb(54, 104, 181)");
-    await expect(attach).toHaveCSS("background-clip", "padding-box, padding-box, border-box");
+    await expect(attach).toHaveCSS("background-color", "oklch(0.51 0.2 280)"); // DeepRole Ink accent, light
+    await expect(attach).toHaveCSS("background-image", "none");
     for (const selector of [".dr-play-choice", ".dr-world-picker-trigger", ".rp-view-switch", ".lore-connection", ".dr-cast-setup"]) {
       await expect(panel.locator(selector).first()).toHaveCSS("border-width", "0px");
     }
-    await expect(panel.locator(".rp-view-switch [aria-pressed=true]")).toHaveCSS("box-shadow", "none");
+    await expect(panel.locator(".rp-view-switch [aria-pressed=true]")).not.toHaveCSS("box-shadow", "none"); // The selected segment rises.
     await panel.screenshot({ path: info.outputPath("worlds-light.png"), fullPage: true, animations: "disabled" });
     await panel.emulateMedia({ colorScheme: "dark" });
-    await expect(attach).toHaveCSS("background-color", "rgb(145, 189, 248)");
-    await expect(panel.locator(".rp-view-switch [aria-pressed=true]")).toHaveCSS("color", "rgb(153, 194, 255)");
+    await expect(attach).toHaveCSS("background-color", "oklch(0.75 0.13 282)"); // DeepRole Ink accent, dark
+    await expect(panel.locator(".rp-view-switch [aria-pressed=true]")).toHaveCSS("color", "oklch(0.82 0.1 282)");
     await panel.screenshot({ path: info.outputPath("worlds-dark.png"), fullPage: true, animations: "disabled" });
     await panel.emulateMedia({ colorScheme: "light" });
     await panel.getByRole("button", { name: "Настройки", exact: true }).click();
-    await expect(panel.locator("html")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(panel.locator("html")).toHaveCSS("background-color", "oklch(0.994 0.0015 285)");
     await expect(nav).toBeInViewport();
     await expect(panel.locator(".dr-settings-route").first()).toHaveCSS("border-width", "0px");
     await panel.bringToFront();
@@ -84,13 +84,13 @@ test("installed extension gives the narrow library the same material and round c
       radius: getComputedStyle(button, "::before").borderRadius,
       rim: getComputedStyle(button, "::before").backgroundClip,
       halo: getComputedStyle(button, "::after").opacity,
-    }))).toEqual({ radius: "50%", rim: "padding-box, border-box", halo: "1" });
+    }))).toMatchObject({ radius: "10px" }); // Icon face: control radius minus its inset; hover only changes tone.
     expect(await panel.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
     await panel.screenshot({ path: info.outputPath("extension-library.png") });
     await chat.bringToFront();
     await expect(chat.locator(".dr-world-scene select")).toHaveCSS("border-width", "0px");
     await chat.locator(".dr-panel-tools-open").click();
-    await expect(chat.locator(".dr-panel-tools-dialog")).toHaveCSS("background-clip", "padding-box, padding-box, border-box");
+    await expect(chat.locator(".dr-panel-tools-dialog")).not.toHaveCSS("box-shadow", "none");
     await expect(chat.locator(".dr-panel-tools-body")).toHaveCSS("gap", "16px");
     await expect(chat.locator(".dr-panel-layout-reset button")).toHaveCSS("border-width", "0px");
   } finally { await context.close(); }
@@ -1515,11 +1515,12 @@ test("scene choices: full text, keyboard, expired turns and return use the insta
     const expand = card.getByRole("button", { name: "Full text", exact: true });
     await expect(expand.locator("svg")).toHaveCount(1); expect(await expand.textContent()).toBe("");
     expect(await expand.evaluate(button => [button.getBoundingClientRect().width, button.getBoundingClientRect().height])).toEqual([32, 32]);
+    const restFace = await expand.evaluate(button => getComputedStyle(button, "::before").backgroundColor);
     await expand.hover();
-    await expect.poll(() => expand.evaluate(button => ({
+    await expect.poll(() => expand.evaluate((button, rest) => ({
       radius: getComputedStyle(button, "::before").borderRadius,
-      halo: getComputedStyle(button, "::after").opacity,
-    }))).toEqual({ radius: "50%", halo: "1" });
+      hovered: getComputedStyle(button, "::before").backgroundColor !== rest,
+    }), restFace)).toEqual({ radius: "10px", hovered: true }); // DeepRole Ink icon face: tone change on hover.
     await expect(card.locator(".choice-status")).toBeHidden();
     await expect(card).not.toContainText("A choice fills the message box");
     await expand.click();

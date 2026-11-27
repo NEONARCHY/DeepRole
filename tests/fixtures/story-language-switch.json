@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "en-ru-discovery",
+      "old": "Mira found an oval violet stamp in the cellar.",
+      "oldDraft": "I look at the stamp Mira found.",
+      "draft": "Продолжай на русском. Мира осматривает дверной косяк и находит на нём вогнутый ромб. Коротко опиши саму находку.",
+      "evidence": ["вогнут", "ромб"],
+      "exclude": ["oval violet stamp", "овальн\\S* фиолетов"]
+    },
+    {
+      "id": "en-ru-new-clue",
+      "old": "Mira uncovered a brass triangle below the window frame.",
+      "oldDraft": "I inspect the mark Mira found.",
+      "draft": "Теперь играем по-русски. Мира снимает обивку со стула и обнаруживает в ней серебряный жетон с насечкой в виде волны. Опиши находку одним предложением.",
+      "evidence": ["серебрян", "жетон", "волн"],
+      "exclude": ["brass triangle", "латунн\\S* треугольник"]
+    },
+    {
+      "id": "en-ru-rumor",
+      "old": "Mira found the blue key on the workbench.",
+      "oldDraft": "I note the place where Mira found the key.",
+      "draft": "Продолжай на русском. Мира пересказывает лишь неподтверждённый слух, что синий ключ спрятан под камнем, и говорит, что сама его там не видела.",
+      "evidence": [],
+      "exclude": []
+    }
+  ]
+}

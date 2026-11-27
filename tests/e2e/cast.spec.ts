@@ -1,28 +1,30 @@
-import {expect,test} from "@playwright/test";
+import {expect,test,type Locator} from "@playwright/test";
+// Resolve a DeepRole Ink token in the control's own scope, so assertions follow the theme.
+const token=(control:Locator,name:string,property='backgroundColor')=>control.evaluate((e,[name,property])=>{const probe=document.createElement('i');probe.style.cssText=`position:absolute;background-color:var(${name});outline:2px solid var(${name})`;e.parentElement!.append(probe);const value=(getComputedStyle(probe) as any)[property];probe.remove();return value;},[name,property] as const);
 for(const locale of ['ru','en'])for(const width of [320,1100])test(`retry and neutral controls ${locale} ${width}`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.goto(`/tests/fixtures/cast.html?locale=${locale}&phase=error`);
  const retry=page.locator('.dr-retry-action'),ordinary=page.locator('.dr-cast-trigger');
- await expect(retry).toHaveCSS('background-color','rgb(230, 185, 187)');
- await expect(ordinary).toHaveCSS('background-color','rgb(54, 62, 70)');
+ await expect(retry).toHaveCSS('background-color',await token(retry,'--dr-retry'));
  for(const control of [ordinary,retry]){
-  const box=await control.boundingBox();await control.hover();
-  await expect.poll(()=>control.evaluate(e=>getComputedStyle(e,'::after').opacity)).toBe('1');
+  const box=await control.boundingBox();const before=await control.evaluate(e=>getComputedStyle(e).backgroundColor);await control.hover();
+  await expect.poll(()=>control.evaluate(e=>getComputedStyle(e).backgroundColor)).not.toBe(before);
   expect(await control.boundingBox()).toEqual(box);
  }
  await page.screenshot({path:test.info().outputPath(`retry-${locale}-${width}.png`)});
- await retry.press('Tab');await retry.focus();await expect(retry).toBeFocused();await expect(retry).toHaveCSS('outline-color','rgb(230, 185, 187)');
- await page.emulateMedia({reducedMotion:'reduce'});expect(await retry.evaluate(e=>getComputedStyle(e,'::after').transitionDuration)).toBe('0s');
- await retry.evaluate((e:HTMLButtonElement)=>e.disabled=true);await expect.poll(()=>retry.evaluate(e=>getComputedStyle(e,'::after').opacity)).toBe('0');
+ await retry.press('Tab');await retry.focus();await expect(retry).toBeFocused();await expect(retry).toHaveCSS('outline-style','solid');await expect(retry).toHaveCSS('outline-color',await token(retry,'--ui-focus','outlineColor'));
+ await page.emulateMedia({reducedMotion:'reduce'});expect((await retry.evaluate(e=>getComputedStyle(e).transitionDuration)).split(',').every(v=>parseFloat(v)===0)).toBe(true);
+ await retry.evaluate((e:HTMLButtonElement)=>e.disabled=true);await expect(retry).toHaveCSS('opacity','0.42');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 for(const locale of ['ru','en'])for(const width of [320,1100])test(`success review styling ${locale} ${width}`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.goto(`/tests/fixtures/cast.html?locale=${locale}`);
  const button=page.locator('.dr-cast-review-ready');await expect(button).toBeVisible();
- await expect(button).toHaveCSS('background-color','rgb(191, 223, 203)');
- await button.hover();await expect.poll(()=>button.evaluate(e=>getComputedStyle(e,'::after').opacity)).toBe('1');
+ const accent=await token(button,'--ui-accent');
+ await expect(button).toHaveCSS('background-color',accent);
+ await button.hover();await expect.poll(()=>button.evaluate(e=>getComputedStyle(e).backgroundColor)).not.toBe(accent);
  await page.screenshot({path:test.info().outputPath(`ready-${locale}-${width}.png`)});
- await page.mouse.move(0,0);await button.focus();await expect(button).toBeFocused();await expect(button).toHaveCSS('outline-color','rgb(191, 223, 203)');
- await page.emulateMedia({reducedMotion:'reduce'});expect(await button.evaluate(e=>getComputedStyle(e,'::after').transitionDuration)).toBe('0s');
+ await page.mouse.move(0,0);await button.focus();await expect(button).toBeFocused();await expect(button).toHaveCSS('outline-color',await token(button,'--ui-focus','outlineColor'));
+ await page.emulateMedia({reducedMotion:'reduce'});expect((await button.evaluate(e=>getComputedStyle(e).transitionDuration)).split(',').every(v=>parseFloat(v)===0)).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await button.click();await expect(page.getByRole('dialog')).toBeVisible();
  await page.goto(`/tests/fixtures/cast.html?locale=${locale}&phase=error`);await expect(page.locator('.dr-cast-review-ready')).toHaveCount(0);

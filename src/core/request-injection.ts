@@ -106,7 +106,7 @@ export function outgoingUserText(body: string): string | null {
   return null;
 }
 
-export function injectIntoJsonBody(body: string, memoryContext: string): InjectionResult {
+export function injectIntoJsonBody(body: string, memoryContext: string, desktopContextId?: string): InjectionResult {
   let payload: Record<string, unknown>;
   try {
     const parsed: unknown = JSON.parse(body);
@@ -117,6 +117,7 @@ export function injectIntoJsonBody(body: string, memoryContext: string): Injecti
   if (typeof payload.prompt === "string") {
     if (isMarked(payload.prompt)) return { changed: false, body, failure: "memory-already-present" };
     payload.prompt = `${memoryContext}${USER_MESSAGE_SEPARATOR}${payload.prompt}`;
+    if (desktopContextId) payload.desktop_context_id = desktopContextId;
     return { changed: true, body: JSON.stringify(payload) };
   }
   if (payload.prompt !== undefined) {

@@ -166,7 +166,7 @@ export default defineUnlistedScript(() => {
       window.postMessage({ source: SOURCE, type: story ? "STORY_HISTORY_RESULT" : "CHAT_HISTORY_ESTIMATE", requestId, chatId, estimate }, location.origin);
     }
   }
-  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string, editing = false): Promise<FreshContext> {
+  function freshContext(id: string, draft: string, chatId: string | null, parentMessageId?: string, storyIdentity?: StoryTransportIdentity | null, captureTransport?: "fetch" | "xhr", editNativeKey?: string, editing = false, desktopRequest?: { nativeId: string; retryId?: string }): Promise<FreshContext> {
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {
         pending.delete(id);
@@ -177,7 +177,8 @@ export default defineUnlistedScript(() => {
       // without one, keep ordinary chats' fail-open delay short. Never retry.
       }, contextHandshakeTimeoutMs(Boolean(document.documentElement.dataset.deeproleContext), document.documentElement.dataset.deeproleStoryGame === "active"));
       pending.set(id, (result) => { window.clearTimeout(timer); pending.delete(id); resolve(result); });
-      window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId, storyIdentity: storyIdentity ?? null, ...(captureTransport ? { captureTransport } : {}), ...(editing ? { editing, editNativeKey } : {}) }, "*");
+      window.postMessage({ source: SOURCE, type: "REQUEST_CONTEXT", id, draft, chatId, parentMessageId, storyIdentity: storyIdentity ?? null,
+        ...(captureTransport ? { captureTransport } : {}), ...(editing ? { editing, editNativeKey } : {}), desktopRequest }, "*");
     });
   }
   function status(ok: boolean, id?: string, url = location.href, httpStatus?: number, reason?: string, link?: NativeStoryRequestLink) {
@@ -249,7 +250,7 @@ export default defineUnlistedScript(() => {
     }, location.origin);
     if (service) serviceFailed(deepRoleServiceRequestId(body) ?? undefined);
   }
-  async function prepare(body: string, transport: "fetch" | "xhr", capture = false, editing = false): Promise<{ body: string; attached: boolean; blocked?: boolean; id?: string; url?: string; serviceId?: string; dispatch?: StoryDispatchIdentity; continuation?: boolean }> {
+  async function prepare(body: string, transport: "fetch" | "xhr", capture = false, editing = false, nativeId?: string): Promise<{ body: string; attached: boolean; blocked?: boolean; id?: string; url?: string; serviceId?: string; dispatch?: StoryDispatchIdentity; continuation?: boolean }> {
     const unchanged = { body, attached: false };
     const draft = outgoingUserText(body);
     if (!IS_DESKTOP && draft !== null && draft.length > DEEPSEEK_PROMPT_CHAR_LIMIT && (!editing || draft.length > 100_000)) {
@@ -270,9 +271,13 @@ export default defineUnlistedScript(() => {
     };
     if (draft === null) return document.documentElement.dataset.deeproleContext || strict ? failed("unsupported-request-shape") : captured;
     const value = JSON.parse(body), editedId = value?.message_id;
+    const desktopRequest = nativeId && IS_DESKTOP ? {
+      nativeId, retryId: typeof value.reply_retry_id === "string" ? value.reply_retry_id as string : undefined,
+    } : undefined;
     const editNativeKey = editing && !readStoryTransportIdentity(body) && outgoingChatId(body) && validNativeStoryId(typeof editedId === "number" && Number.isSafeInteger(editedId) ? String(editedId) : editedId) && typeof value.prompt === "string" ? nativeStoryMessageKey(String(editedId)) : undefined;
     const contextStartedAt = Date.now();
-    const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body), capture || editing ? transport : undefined, editNativeKey, editing);
+    const contextResponse = await freshContext(id, draft, outgoingChatId(body), outgoingParentMessageId(body), readStoryTransportIdentity(body),
+      capture || editing ? transport : undefined, editNativeKey, editing, desktopRequest);
     const context = contextResponse.context;
     if (contextResponse.blockSend || continuationPaused()) {
       captureRequests.delete(id); editPreparations.delete(id);
@@ -303,7 +308,7 @@ export default defineUnlistedScript(() => {
     try {
       if (context) {
         const cleanBody = editing && edit?.draft !== undefined ? replaceOutgoingUserText(body, edit.draft).body : body;
-        const injected = injectIntoJsonBody(cleanBody, context);
+        const injected = injectIntoJsonBody(cleanBody, context, desktopRequest ? id : undefined);
         if (!injected.changed) status(false, id, url, undefined, injected.failure ?? "unsupported-request-shape");
         result = { ...captured, body: injected.body, attached: injected.changed };
       }
@@ -434,7 +439,11 @@ export default defineUnlistedScript(() => {
       const generation = this.generation;
       // Track synchronously: abort/open may happen before prepare's microtask.
       this.serviceId = deepRoleServiceRequestId(body) ?? undefined;
-      void prepare(body, "xhr", this.deepRoleMethod === "POST" && new URL(this.deepRoleUrl, location.href).pathname === "/api/v0/chat/completion", this.deepRoleMethod === "POST" && new URL(this.deepRoleUrl, location.href).pathname === "/api/v0/chat/edit_message").then((prepared) => {
+      const url = new URL(this.deepRoleUrl, location.href);
+      const capture = this.deepRoleMethod === "POST" && url.pathname === "/api/v0/chat/completion";
+      const editing = this.deepRoleMethod === "POST" && url.pathname === "/api/v0/chat/edit_message";
+      const nativeId = IS_DESKTOP && (capture || editing) ? url.searchParams.get("request_id") ?? undefined : undefined;
+      void prepare(body, "xhr", capture, editing, nativeId).then((prepared) => {
         if (generation !== this.generation) return;
         if (prepared.blocked) { this.finishService(false); this.dispatchEvent(new ProgressEvent("error")); this.dispatchEvent(new ProgressEvent("loadend")); return; }
         this.serviceId = deepRoleServiceRequestId(prepared.body) ?? undefined;

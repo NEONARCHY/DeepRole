@@ -32,8 +32,9 @@ export function openPortraitViewer(doc: Document, src: string, title: string, lo
   const minus = button("−", copy.zoomOut), plus = button("+", copy.zoomIn), actual = button(copy.actual), fit = button(copy.fit);
   minus.className = plus.className = "dr-round-action";
   const output = doc.createElement("output"); output.setAttribute("aria-label", copy.zoom);
+  const zoomControls = doc.createElement("div"); zoomControls.className = "photo-zoom"; zoomControls.append(minus, output, plus);
   const hint = doc.createElement("p"); hint.id = "photo-hint"; hint.textContent = copy.hint; body.setAttribute("aria-describedby", hint.id);
-  controls.append(minus, output, plus, actual, fit); footer.append(controls, hint); dialog.append(header, body, footer); shadow.append(css, dialog); doc.body.append(host);
+  controls.append(zoomControls, actual, fit); footer.append(controls, hint); dialog.append(header, body, footer); shadow.append(css, dialog); doc.body.append(host);
   viewers.set(doc, dialog);
   let zoom = 1, minimum = 1, fitting = true, closed = false, frame = 0, wheelDelta = 0, wheelX = 0, wheelY = 0;
   const render = () => {

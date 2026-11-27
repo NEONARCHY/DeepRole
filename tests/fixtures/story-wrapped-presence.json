@@ -1,0 +1,17 @@
+{
+  "names": ["Resident 1", "Mira"],
+  "reply": "На дверном косяке, который осматривает Мира, находится вогнутый ромб.",
+  "present": [
+    {
+      "id": "Resident 1",
+      "name": "Resident 1",
+      "state": { "action": "neutral", "condition": "In the workshop.", "goal": "Repair the clock." }
+    },
+    {
+      "id": "Mira",
+      "name": "Mira",
+      "state": { "action": "standing", "condition": "In the workshop.", "goal": "Repair the clock." }
+    }
+  ],
+  "expectedPresent": ["person-1", "person-2"]
+}

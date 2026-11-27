@@ -1,18 +1,19 @@
+/* Game panel — a floating card inside the conversation sheet. */
 .desktop-play-tools {
   position: absolute;
-  inset: var(--desktop-header) auto 0 0;
-  width: min(320px, 100%);
+  inset: var(--desktop-header) auto var(--ui-s-3) var(--ui-s-3);
+  width: min(320px, calc(100% - var(--ui-s-6)));
   z-index: var(--desktop-panel-layer);
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  color: var(--dr-text);
-  background: var(--dr-panel);
-  border-radius: 0 var(--desktop-panel) var(--desktop-panel) 0;
-  box-shadow: var(--dr-depth-dialog);
-  transition: opacity var(--desktop-window-duration) var(--dr-ease-out),
-    translate var(--desktop-window-duration) var(--dr-ease-out), visibility 0s;
+  color: var(--ui-text);
+  background: var(--ui-layer-1);
+  border-radius: var(--ui-r-lg);
+  box-shadow: var(--ui-shadow-lg);
+  transition: opacity var(--desktop-window-duration) var(--ui-ease-out),
+    translate var(--desktop-window-duration) var(--ui-ease-out), visibility 0s;
 }
 
 .desktop-play-tools-section[hidden] { display: none; }
@@ -21,132 +22,144 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--dr-layout-label);
-  min-height: 60px;
-  padding: var(--dr-space-2) var(--dr-layout-inset);
-  border-block-end: 1px solid var(--dr-border);
+  gap: var(--ui-s-2);
+  min-height: 56px;
+  padding: var(--ui-s-1) var(--ui-s-2) 0 var(--ui-s-4);
 }
 .desktop-play-tools-heading h2 {
   display: flex;
   align-items: center;
-  gap: var(--dr-space-2);
+  gap: var(--ui-s-2);
   margin: 0;
-  font-size: 18px;
-  font-weight: 660;
+  font-size: var(--ui-text-lg);
+  line-height: var(--ui-leading-lg);
+  font-weight: var(--ui-weight-bold);
+  letter-spacing: var(--ui-tracking-tight);
 }
-.desktop-play-tools-heading h2 > svg { color: var(--dr-focus); flex: none; }
+.desktop-play-tools-heading h2 > svg { color: var(--ui-accent-text); flex: none; width: var(--ui-icon-md); height: var(--ui-icon-md); }
 
 .desktop-play-tools-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-inline: var(--dr-layout-inset);
-  scrollbar-color: var(--dr-raised) transparent;
-  scrollbar-width: thin;
-  font-size: 13px;
+  padding-inline: var(--ui-s-3);
+  font-size: var(--ui-text-md);
+  line-height: var(--ui-leading-md);
 }
 #desktop-play-tools-content { display: contents; }
 
+/* Sections switch like a segmented control. */
 .desktop-play-tools-tabs {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
-  gap: var(--dr-space-1);
+  gap: var(--ui-s-1);
   position: sticky;
   top: 0;
   z-index: 1;
-  padding-block: var(--dr-space-3) var(--dr-space-2);
-  background: var(--dr-panel);
+  margin-block: var(--ui-s-2);
+  padding: var(--ui-s-1);
+  border-radius: var(--ui-r-md);
+  background: var(--ui-layer-2);
+  box-shadow: 0 0 0 var(--ui-s-2) var(--ui-layer-1);
 }
 
 .desktop-play-tools-tabs button,
 .desktop-play-tools-switch,
 .desktop-play-tools-library {
   min-width: 0;
-  min-height: 44px;
+  min-height: var(--ui-target);
   border: 0;
-  border-radius: var(--desktop-control);
+  border-radius: var(--ui-r-md);
   background: transparent;
-  color: var(--dr-muted);
+  color: var(--ui-text-2);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: var(--dr-layout-label);
-  padding: var(--dr-layout-label);
-  font-weight: 550;
+  gap: var(--ui-s-2);
+  padding: var(--ui-s-2);
+  font-weight: var(--ui-weight-medium);
   line-height: 1.35;
   overflow-wrap: anywhere;
-  transition: background-color var(--desktop-transition), color var(--desktop-transition);
+  transition: background-color var(--desktop-transition), color var(--desktop-transition), box-shadow var(--desktop-transition), transform var(--ui-dur-instant) var(--ui-ease-out);
 }
 .desktop-play-tools-tabs button {
   position: relative;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  min-height: 58px;
-  gap: var(--dr-space-1);
-  padding: var(--dr-space-2) var(--dr-space-1);
-  border-radius: var(--desktop-control);
-  background: var(--dr-surface);
-  font-size: 12px;
+  justify-content: center;
+  min-height: 36px;
+  gap: var(--ui-s-2);
+  padding: var(--ui-s-1) var(--ui-s-2);
+  border-radius: var(--ui-r-sm);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
 }
+.desktop-play-tools-tabs button svg { width: var(--ui-icon-sm); height: var(--ui-icon-sm); }
 .desktop-play-tools :is(.desktop-play-tools-tabs button, .desktop-play-tools-switch, .desktop-play-tools-library):hover {
-  background: var(--dr-raised);
-  color: var(--dr-text);
+  background: var(--ui-hover);
+  color: var(--ui-text);
 }
+.desktop-play-tools :is(.desktop-play-tools-switch, .desktop-play-tools-library):active { transform: scale(var(--ui-press-scale)); }
 .desktop-play-tools .desktop-play-tools-tabs button[aria-pressed=true] {
-  color: var(--dr-focus);
-  background: color-mix(in srgb, var(--dr-focus) 12%, var(--dr-surface));
-  font-weight: 660;
+  color: var(--ui-accent-text);
+  background: var(--ui-layer-1);
+  box-shadow: var(--ui-shadow-sm), inset 0 0 0 1px var(--ui-line);
 }
 .desktop-play-tools-notice,
 .desktop-play-tools:has(.desktop-cast-section [data-needs-attention]) [data-section=cast]::after,
 .desktop-play-tools:has(.dr-reset-status[data-needs-attention]) [data-section=scene]::after {
   content: "";
   position: absolute;
-  inset: var(--dr-space-2) var(--dr-space-2) auto auto;
+  inset: 6px 6px auto auto;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--dr-warning);
+  background: var(--ui-warning);
+  box-shadow: 0 0 0 2px var(--ui-layer-2);
   pointer-events: none;
 }
-.desktop-play-tools :is(button, select, input, summary):focus-visible { outline: 2px solid var(--dr-focus); outline-offset: -2px; }
+.desktop-play-tools :is(button, select, input, summary):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
 .desktop-play-tools :is(.desktop-play-tools-tabs, .desktop-play-tools-switch, .desktop-play-tools-library) svg { flex: none; }
 
 .desktop-play-tools-section {
   display: grid;
-  gap: var(--dr-layout-gap);
+  gap: var(--ui-s-3);
   min-width: 0;
-  padding-block: var(--dr-layout-label) var(--dr-layout-inset);
+  padding-block: var(--ui-s-1) var(--ui-s-4);
 }
 .desktop-play-tools-section > * { min-width: 0; }
 .desktop-scene-setup {
   display: grid;
-  gap: var(--dr-space-3);
+  gap: var(--ui-s-2);
   min-width: 0;
 }
 .desktop-scene-setup[data-world-linked=false] {
-  padding: var(--dr-space-4);
-  border-radius: var(--desktop-panel);
-  background: var(--dr-surface);
+  padding: var(--ui-s-4);
+  border-radius: var(--ui-r-lg);
+  background: var(--ui-layer-2);
 }
-.desktop-world-intro { display: grid; justify-items: start; gap: var(--dr-space-2); }
-.desktop-world-intro > svg { color: var(--dr-focus); }
-.desktop-world-intro h3 { margin: 0; font-size: 17px; line-height: 1.35; }
-.desktop-world-intro p { margin: 0; color: var(--dr-muted); line-height: 1.5; }
-.desktop-scene-options { padding-block-start: var(--dr-space-2); border-block-start: 1px solid var(--dr-border); }
+.desktop-world-intro { display: grid; justify-items: start; gap: var(--ui-s-2); }
+.desktop-world-intro > svg {
+  box-sizing: content-box;
+  padding: var(--ui-s-2);
+  border-radius: var(--ui-r-md);
+  color: var(--ui-accent-text);
+  background: var(--ui-accent-soft);
+}
+.desktop-world-intro h3 { margin: var(--ui-s-1) 0 0; font-size: var(--ui-text-base); line-height: var(--ui-leading-base); font-weight: var(--ui-weight-bold); }
+.desktop-world-intro p { margin: 0 0 var(--ui-s-1); color: var(--ui-text-2); line-height: var(--ui-leading-md); }
+.desktop-scene-options { padding-block-start: var(--ui-s-2); border-block-start: 1px solid var(--ui-line); }
 
 .desktop-app:has(#desktop-play-tools [data-needs-attention]) .desktop-game-toggle[aria-expanded=false] { position: relative; }
 .desktop-app:has(#desktop-play-tools [data-needs-attention]) .desktop-game-toggle[aria-expanded=false]::after {
   content: "";
   position: absolute;
-  inset: 7px 7px auto auto;
+  inset: 8px 8px auto auto;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--dr-focus);
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 2px var(--ui-base);
   pointer-events: none;
 }
 
@@ -190,34 +203,39 @@
 }
 .desktop-play-tools-library { color: var(--dr-text); }
 .desktop-play-tools .desktop-play-tools-library[data-primary=true] {
-  background: var(--dr-action);
-  color: var(--dr-on-action);
-  font-weight: 720;
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
+  font-weight: var(--ui-weight-semibold);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / .18), 0 1px 2px oklch(0% 0 0 / .16);
 }
-.desktop-play-tools .desktop-play-tools-library[data-primary=true]:hover { background: var(--dr-action-hover); }
+.desktop-play-tools .desktop-play-tools-library[data-primary=true]:hover { background: var(--ui-accent-hover); color: var(--ui-on-accent); }
+.desktop-play-tools .desktop-play-tools-library[data-primary=true] small { color: color-mix(in oklab, var(--ui-on-accent) 78%, transparent); }
+/* Same geometry as the system switch: 36 × 20 track, 16 px thumb. */
 .desktop-play-tools-switch i {
   position: relative;
   flex: none;
   margin-inline-start: auto;
-  width: 32px;
+  width: 36px;
   height: 20px;
-  border-radius: 999px;
-  background: var(--dr-raised);
-  color: var(--dr-muted);
-  transition: background-color var(--desktop-transition);
+  border-radius: var(--ui-r-full);
+  background: var(--ui-layer-3);
+  color: var(--ui-text-2);
+  box-shadow: inset 0 0 0 1px var(--ui-line-strong);
+  transition: background-color var(--desktop-transition), box-shadow var(--desktop-transition);
 }
 .desktop-play-tools-switch i::before {
   content: "";
   position: absolute;
-  inset: 4px auto auto 4px;
-  width: 12px;
-  height: 12px;
+  inset: 2px auto auto 2px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: currentColor;
-  transition: translate var(--desktop-transition);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / .3);
+  transition: translate var(--ui-dur-base) var(--ui-ease-out), background-color var(--desktop-transition);
 }
-.desktop-play-tools-switch[aria-checked=true] i { color: var(--dr-on-action); background: var(--dr-action); }
-.desktop-play-tools-switch[aria-checked=true] i::before { translate: 12px; }
+.desktop-play-tools-switch[aria-checked=true] i { color: var(--ui-on-accent); background: var(--ui-accent); box-shadow: none; }
+.desktop-play-tools-switch[aria-checked=true] i::before { translate: 16px; }
 .desktop-play-tools-library > span { flex: 1; }
 .desktop-play-tools-library small { display: block; color: var(--dr-muted); }
 
@@ -401,8 +419,8 @@
 body:has(.desktop-app[data-overlay]) > [data-deeprole-portrait-layer],
 body:has(.desktop-app[data-overlay]) [data-deeprole-choices-pinned=true] { visibility: hidden; }
 .desktop-main[data-game-docked=true] > .desktop-play-tools {
-  width: min(300px, calc((100% - var(--desktop-reading)) / 2 - var(--dr-space-3)));
-  box-shadow: none;
+  width: min(300px, calc((100% - var(--desktop-reading)) / 2 - var(--ui-s-6)));
+  box-shadow: inset 0 0 0 1px var(--ui-line), var(--ui-shadow-sm);
 }
 .desktop-play-tools[data-open=false] {
   opacity: 0;
@@ -414,4 +432,17 @@ body:has(.desktop-app[data-overlay]) [data-deeprole-choices-pinned=true] { visib
 @media (forced-colors: active) {
   .desktop-play-tools-switch[aria-checked=true] i { forced-color-adjust: none; color: HighlightText; background: Highlight; }
   .desktop-play-tools-tabs button[aria-pressed=true] { outline: 1px solid Highlight; }
+}
+
+/* In a tight column the section switch stacks the icon above its label. */
+.desktop-play-tools { container: play-tools / inline-size; }
+@container play-tools (max-width: 250px) {
+  .desktop-play-tools-tabs button {
+    flex-direction: column;
+    gap: var(--ui-s-0);
+    min-height: 48px;
+    font-size: var(--ui-text-xs);
+    line-height: var(--ui-leading-xs);
+  }
+  .desktop-play-tools-scroll { padding-inline: var(--ui-s-2); }
 }

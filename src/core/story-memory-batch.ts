@@ -2,7 +2,7 @@ import type { Locale } from "./types";
 import { STORY_TASK_INSTRUCTION } from "./story-memory-lifecycle";
 import { storyFactHint } from "./story-fact-context";
 import { storyReplyProse, validStoryFact, type StoryFact } from "./story-update";
-import { inlineStoryPeople, type InlineStoryPerson } from "./story-automation";
+import { inlineStoryPeople, literalEvidence, type AutomationRisk, type InlineStoryPerson } from "./story-automation";
 import { gameTimeEvidence, STORY_TIME_INSTRUCTION } from "./story-time";
 
 export const MEMORY_BATCH_TURNS = 12;
@@ -22,6 +22,7 @@ const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "o
 const exact = (v: Record<string, unknown>, keys: string[]) => Object.keys(v).length === keys.length && keys.every(k => Object.hasOwn(v, k));
 const id = (v: unknown): v is string => typeof v === "string" && v === v.trim() && !!v && v.length <= 160 && !["__proto__", "prototype", "constructor"].includes(v);
 const integer = (v: unknown) => Number.isSafeInteger(v) && (v as number) >= 0;
+const batchRisk = (value: unknown): value is AutomationRisk => value === "ordinary" || value === "uncertain" || value === "conflict";
 export const validMemoryBatchPolicy = (v: unknown): v is MemoryBatchPolicy => obj(v) && exact(v, ["mode", "revision"]) && ["automatic", "paused", "off"].includes(String(v.mode)) && id(v.revision);
 export const validMemoryBatchInput = (v: unknown): v is MemoryBatchInput => obj(v) && exact(v, ["worldId", "chatId", "force"]) && id(v.worldId) && typeof v.chatId === "string" && /^[\w-]{1,120}$/u.test(v.chatId) && typeof v.force === "boolean";
 export const validMemoryBatchProgress = (v: unknown): v is MemoryBatchProgress => obj(v) && exact(v, ["offset", "request"]) && integer(v.offset) && obj(v.request) && exact(v.request, ["id", "anchor", "policy", "end", "status", "at"]) && typeof v.request.id === "string" && /^field_[0-9a-f-]{36}$/u.test(v.request.id) && id(v.request.anchor) && id(v.request.policy) && integer(v.request.end) && (v.request.end as number) >= (v.offset as number) && ["requested", "done", "failed", "cancelled"].includes(String(v.request.status)) && typeof v.request.at === "number" && Number.isFinite(v.request.at) && v.request.at >= 0;
@@ -39,19 +40,26 @@ export function parseMemoryBatch(raw: string, requestId: string, parts: MemoryBa
     if (!obj(result) || !exact(result, ["source", "complete", "facts", "people"]) || typeof result.source !== "string" || seen.has(result.source) || result.complete !== true || !Array.isArray(result.facts) || result.facts.length > 8 || !Array.isArray(result.people) || result.people.length > 4) throw Error("invalid-result");
     seen.add(result.source);
     const part = parts.find(p => p.id === result.source); if (!part) throw Error("invalid-result");
-    const facts: (StoryFact & { risk: string })[] = [];
+    const facts: (StoryFact & { risk?: AutomationRisk })[] = [];
     for (const value of result.facts) {
       if (!obj(value)) { skippedEvidence = true; continue; }
       const { risk, ...fact } = value;
-      if (!["ordinary", "uncertain", "conflict"].includes(String(risk)) || !validStoryFact(fact)
-          || fact.replaces !== undefined || !part.text.includes(fact.quote) || !gameTimeEvidence(fact, part.text)) {
+      if ((risk !== undefined && !batchRisk(risk)) || !validStoryFact(fact)
+          || fact.replaces !== undefined || !part.text.includes(fact.quote) || !gameTimeEvidence(fact, part.text)
+          || (risk === undefined && !literalEvidence(fact.text, fact.quote))) {
         skippedEvidence = true;
         continue;
       }
-      facts.push({ ...fact, risk: String(risk) });
+      facts.push({ ...fact, risk });
     }
     const rawPeople = result.people;
-    const people = inlineStoryPeople(rawPeople, part.text);
+    const people = inlineStoryPeople(rawPeople.map(person => {
+      if (!obj(person) || !Array.isArray(person.fields)) return person;
+      const fields = person.fields.map(field => obj(field) && field.risk === undefined
+        && typeof field.text === "string" && typeof field.quote === "string" && literalEvidence(field.text, field.quote)
+        ? { ...field, risk: "uncertain" } : field);
+      return { ...person, risk: person.risk === undefined ? "uncertain" : person.risk, fields };
+    }), part.text);
     if (people.length !== rawPeople.length || people.some((p, i) => p.fields.length !== (rawPeople[i] as InlineStoryPerson).fields.length)) skippedEvidence = true;
     return { part, facts, people };
   });
@@ -71,6 +79,7 @@ export function memoryBatchPrompt(requestId: string, parts: MemoryBatchPart[], r
     STORY_TASK_INSTRUCTION,
     STORY_TIME_INSTRUCTION,
     "People: {id,name,quote,risk,fields:[{key,text,quote,risk}]}. Exact roster ID/name, or new:Name for an explicitly named new person. No groups or places. Ambiguous identity requires uncertain risk. Fields: appearance,personality,goals,background. Only lasting new details with an exact quote; no temporary poses, clothes, moods, guessed ages, numbers or biographies. Never overwrite protected or filled fields. Omit repeats.",
+    'Required: include "risk" on every fact, person and profile field, even with an exact quote. Values: "ordinary", "uncertain", "conflict".',
     `Language: ${locale === "ru" ? "Russian" : "English"}. Roster and retained facts are bounded hints.`,
     `Roster: ${JSON.stringify(roster)}`,
     `Retained facts: ${JSON.stringify(facts.map(f => storyFactHint(f)))}`,

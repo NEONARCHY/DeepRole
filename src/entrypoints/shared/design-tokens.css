@@ -1,38 +1,258 @@
-/* Shared palette and spacing, including small isolated cards inside DeepSeek. */
+/*
+ * DeepRole Ink — the single source of design tokens.
+ *
+ * Every DeepRole surface reads these values: the Windows client, the extension
+ * panel, and the isolated cards rendered inside DeepSeek shadow roots.
+ * Components use the semantic `--ui-*` names. The `--dr-*` and `--desktop-*`
+ * names below are compatibility aliases for older stylesheets.
+ *
+ * Rules
+ * - Spacing follows a 4 px grid. Pick the step by role, not by eye.
+ * - Radii are concentric: an inner radius equals the outer radius minus the
+ *   padding between them. Inline details 4, small controls 8, controls 12,
+ *   cards and panels 16, floating windows and the composer 20, pills 999.
+ * - One accent. It marks the main action, the selected state and focus.
+ *   Danger and warning keep their own hues and never share the accent.
+ * - Surfaces rise in tone, not in borders: canvas → base → layer 1 → 2 → 3.
+ * - Hover changes tone, press scales the face to 97 %, focus draws a 2 px
+ *   accent ring offset by 2 px, disabled lowers opacity. Positions never move.
+ */
 :root, :host {
-  --dr-space-1: 4px; --dr-space-2: 8px; --dr-space-3: 12px; --dr-space-4: 16px; --dr-space-6: 24px;
-  --dr-layout-gutter: var(--dr-space-4);
-  --dr-layout-section: var(--dr-space-4);
-  --dr-layout-inset: var(--dr-space-4);
-  --dr-layout-gap: var(--dr-space-3);
-  --dr-layout-label: var(--dr-space-2);
-  --dr-layout-row: var(--dr-space-1);
-  /* AXIS-2: graphite planes, cool daylight accents, depth rather than bright strokes. */
-  --dr-text: #eef3f7; --dr-muted: #afbcc9; --dr-border: #ffffff0d; --dr-surface: #2b343e;
-  --dr-bg: #151a20; --dr-panel: #1d242b; --dr-raised: #35424e;
-  --dr-primary: #bfdfeb; --dr-action: #bfdfeb; --dr-action-hover: #d9f1f8; --dr-on-action: #18303b;
-  --dr-selected: #344b55; --dr-border-strong: #ffffff28; --dr-primary-soft: #304752;
-  --dr-success: #9bc3fc; --dr-warning: #eac08c; --dr-danger: #f4a7ac;
-  --dr-focus: #99c2ff;
-  --dr-button-neutral: #363e46; --dr-button-neutral-hover: #414a53;
-  --dr-button-glow: 0 0 0 1px #d8dfe733, 0 0 16px #d8dfe72b;
-  --dr-retry: #e6b9bb; --dr-retry-hover: #f0ccce; --dr-on-retry: #46292d;
-  --dr-retry-glow: 0 0 0 1px #f0ccce44, 0 0 18px #e6b9bb55;
-  --dr-danger-soft: #392933; --dr-warning-soft: #3b3340;
-  /* Low-chroma pastels share a lightness; labels also identify each choice. */
-  --dr-choice-positive: oklch(80% 0.105 248);
-  --dr-choice-neutral: oklch(84% 0.040 280);
-  --dr-choice-negative: oklch(82% 0.070 15);
-  --dr-choice-surprise: oklch(82% 0.070 305);
-  /* Static depth; only the small accent overlay fades on interaction. */
-  --dr-surface-light: linear-gradient(180deg, #ffffff06, #ffffff00 96px);
-  --dr-action-light: linear-gradient(180deg, #ffffff24, #ffffff00);
-  --dr-depth-card: inset 0 1px 0 #ffffff08, 0 3px 8px #0002, 0 10px 24px #0003;
-  --dr-depth-panel: inset 0 1px 0 #ffffff0d, 0 6px 16px #0003, 0 18px 40px #0004;
-  --dr-depth-dialog: inset 0 1px 0 #ffffff10, 0 12px 28px #0004, 0 28px 64px #0006;
-  --dr-action-depth: inset 0 1px 0 #ffffff66, 0 3px 8px #0003, 0 0 18px #a6dcf02b;
-  --dr-action-glow: 0 0 0 1px #d9f1f833, 0 0 22px #a6dcf047, 0 6px 18px #a6dcf01f;
-  --dr-motion-fast: 160ms;
-  --dr-ease-out: cubic-bezier(.16, 1, .3, 1);
-  --dr-radius: 12px;
+  color-scheme: dark;
+  --dr-native-scheme: dark;
+
+  /* Typography */
+  --ui-font: Manrope, "Segoe UI Variable Text", "Segoe UI", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
+  --ui-font-mono: "Cascadia Mono", "Cascadia Code", Consolas, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", ui-monospace, monospace;
+  --ui-text-xs: 11px;   --ui-leading-xs: 16px;
+  --ui-text-sm: 12px;   --ui-leading-sm: 18px;
+  --ui-text-md: 13px;   --ui-leading-md: 20px;
+  --ui-text-base: 14px; --ui-leading-base: 22px;
+  --ui-text-read: 16px; --ui-leading-read: 28px;
+  --ui-text-lg: 18px;   --ui-leading-lg: 26px;
+  --ui-text-xl: 22px;   --ui-leading-xl: 30px;
+  --ui-text-2xl: 28px;  --ui-leading-2xl: 36px;
+  --ui-weight-regular: 450;
+  --ui-weight-medium: 550;
+  --ui-weight-semibold: 650;
+  --ui-weight-bold: 750;
+  --ui-tracking-tight: -.02em;
+  --ui-tracking-display: -.03em;
+
+  /* Spacing — 4 px grid */
+  --ui-s-0: 2px;
+  --ui-s-1: 4px;
+  --ui-s-2: 8px;
+  --ui-s-3: 12px;
+  --ui-s-4: 16px;
+  --ui-s-5: 20px;
+  --ui-s-6: 24px;
+  --ui-s-8: 32px;
+  --ui-s-10: 40px;
+  --ui-s-12: 48px;
+
+  /* Radii */
+  --ui-r-xs: 4px;
+  --ui-r-sm: 8px;
+  --ui-r-md: 12px;
+  --ui-r-lg: 16px;
+  --ui-r-xl: 20px;
+  --ui-r-full: 999px;
+
+  /* Sizes */
+  --ui-control-sm: 32px;
+  --ui-control-md: 40px;
+  --ui-control-lg: 44px;
+  --ui-target: 44px;
+  --ui-icon-sm: 16px;
+  --ui-icon-md: 18px;
+  --ui-stroke: 1.75;
+
+  /* Motion */
+  --ui-dur-instant: 90ms;
+  --ui-dur-fast: 160ms;
+  --ui-dur-base: 220ms;
+  --ui-dur-slow: 320ms;
+  --ui-ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ui-ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ui-ease-standard: cubic-bezier(.4, 0, .2, 1);
+  --ui-press-scale: .97;
+  --ui-disabled: .42;
+
+  /* Colour — dark (ink) */
+  --ui-canvas: oklch(16.5% .006 285);
+  --ui-base: oklch(19.5% .007 285);
+  --ui-layer-1: oklch(22.5% .008 285);
+  --ui-layer-2: oklch(26% .009 285);
+  --ui-layer-3: oklch(30.5% .011 285);
+  --ui-text: oklch(95.5% .004 285);
+  --ui-text-2: oklch(75% .012 285);
+  --ui-text-3: oklch(63% .014 285);
+  --ui-line: oklch(100% 0 0 / .075);
+  --ui-line-strong: oklch(100% 0 0 / .15);
+  --ui-hover: oklch(100% 0 0 / .06);
+  --ui-press: oklch(100% 0 0 / .1);
+  --ui-accent: oklch(75% .13 282);
+  --ui-accent-hover: oklch(81% .115 282);
+  --ui-accent-press: oklch(70% .14 282);
+  --ui-accent-soft: oklch(75% .13 282 / .16);
+  --ui-accent-softer: oklch(75% .13 282 / .09);
+  --ui-accent-text: oklch(82% .1 282);
+  --ui-on-accent: oklch(21% .045 282);
+  --ui-focus: oklch(80% .12 282);
+  --ui-success: oklch(80% .12 162);
+  --ui-success-soft: oklch(80% .12 162 / .14);
+  --ui-warning: oklch(84% .12 80);
+  --ui-warning-soft: oklch(84% .12 80 / .13);
+  --ui-danger: oklch(74% .14 20);
+  --ui-danger-soft: oklch(74% .14 20 / .15);
+  --ui-scrim: oklch(8% .01 285 / .62);
+  --ui-highlight: inset 0 1px 0 oklch(100% 0 0 / .05);
+  --ui-shadow-sm: 0 1px 2px oklch(0% 0 0 / .32);
+  --ui-shadow-md: 0 0 0 1px oklch(100% 0 0 / .06), 0 10px 28px oklch(0% 0 0 / .38), 0 2px 6px oklch(0% 0 0 / .24);
+  --ui-shadow-lg: 0 0 0 1px oklch(100% 0 0 / .07), 0 28px 72px oklch(0% 0 0 / .52), 0 8px 20px oklch(0% 0 0 / .3);
+  --ui-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23b4b2bf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  /* Four distinct turn options; the labels identify each choice as well. */
+  --dr-choice-positive: oklch(80% .1 248);
+  --dr-choice-neutral: oklch(84% .04 285);
+  --dr-choice-negative: oklch(80% .09 18);
+  --dr-choice-surprise: oklch(80% .1 318);
+
+  /* Layout roles */
+  --dr-layout-gutter: var(--ui-s-4);
+  --dr-layout-section: var(--ui-s-4);
+  --dr-layout-inset: var(--ui-s-4);
+  --dr-layout-gap: var(--ui-s-3);
+  --dr-layout-label: var(--ui-s-2);
+  --dr-layout-row: var(--ui-s-1);
+
+  /* Compatibility aliases. New CSS should use --ui-* names. */
+  --dr-space-1: var(--ui-s-1); --dr-space-2: var(--ui-s-2); --dr-space-3: var(--ui-s-3);
+  --dr-space-4: var(--ui-s-4); --dr-space-5: var(--ui-s-5); --dr-space-6: var(--ui-s-6); --dr-space-8: var(--ui-s-8);
+  --dr-bg: var(--ui-base);
+  --dr-panel: var(--ui-layer-1);
+  --dr-surface: var(--ui-layer-2);
+  --dr-raised: var(--ui-layer-3);
+  --dr-composer-face: var(--ui-layer-1);
+  --dr-text: var(--ui-text);
+  --dr-muted: var(--ui-text-2);
+  --dr-border: var(--ui-line);
+  --dr-border-strong: var(--ui-line-strong);
+  --dr-line: var(--ui-line);
+  --dr-primary: var(--ui-text);
+  --dr-primary-soft: var(--ui-layer-3);
+  --dr-selected: var(--ui-accent-soft);
+  --dr-accent: var(--ui-accent);
+  --dr-action: var(--ui-accent);
+  --dr-action-hover: var(--ui-accent-hover);
+  --dr-on-action: var(--ui-on-accent);
+  --dr-focus: var(--ui-focus);
+  --dr-success: var(--ui-success);
+  --dr-warning: var(--ui-warning);
+  --dr-danger: var(--ui-danger);
+  --dr-danger-soft: var(--ui-danger-soft);
+  --dr-warning-soft: var(--ui-warning-soft);
+  --dr-button-neutral: var(--ui-layer-2);
+  --dr-button-neutral-hover: var(--ui-layer-3);
+  --dr-retry: color-mix(in oklab, var(--ui-danger) 24%, var(--ui-layer-2));
+  --dr-retry-hover: color-mix(in oklab, var(--ui-danger) 32%, var(--ui-layer-2));
+  --dr-on-retry: var(--ui-text);
+  --dr-surface-light: none;
+  --dr-action-light: none;
+  --dr-depth-card: var(--ui-shadow-sm);
+  --dr-depth-panel: var(--ui-shadow-md);
+  --dr-depth-dialog: var(--ui-shadow-lg);
+  --dr-action-depth: none;
+  --dr-action-glow: none;
+  --dr-button-glow: none;
+  --dr-retry-glow: none;
+  --dr-motion-fast: var(--ui-dur-fast);
+  --dr-ease-out: var(--ui-ease-out);
+  --dr-radius: var(--ui-r-lg);
+}
+
+@media (prefers-color-scheme: light) {
+  :root, :host {
+    color-scheme: light;
+    --dr-native-scheme: light;
+
+    /* Colour — light (paper) */
+    --ui-canvas: oklch(96.4% .004 285);
+    --ui-base: oklch(99.4% .0015 285);
+    --ui-layer-1: oklch(100% 0 0);
+    --ui-layer-2: oklch(96.6% .004 285);
+    --ui-layer-3: oklch(93.2% .006 285);
+    --ui-text: oklch(23% .012 285);
+    --ui-text-2: oklch(47% .014 285);
+    --ui-text-3: oklch(51% .014 285);
+    --ui-line: oklch(25% .02 285 / .09);
+    --ui-line-strong: oklch(25% .02 285 / .17);
+    --ui-hover: oklch(25% .03 285 / .05);
+    --ui-press: oklch(25% .03 285 / .09);
+    --ui-accent: oklch(51% .2 280);
+    --ui-accent-hover: oklch(46.5% .2 280);
+    --ui-accent-press: oklch(42% .19 280);
+    --ui-accent-soft: oklch(51% .2 280 / .1);
+    --ui-accent-softer: oklch(51% .2 280 / .06);
+    --ui-accent-text: oklch(47% .2 280);
+    --ui-on-accent: oklch(100% 0 0);
+    --ui-focus: oklch(51% .2 280);
+    --ui-success: oklch(49% .11 162);
+    --ui-success-soft: oklch(60% .12 162 / .12);
+    --ui-warning: oklch(50% .11 65);
+    --ui-warning-soft: oklch(78% .13 80 / .2);
+    --ui-danger: oklch(52% .19 22);
+    --ui-danger-soft: oklch(60% .19 22 / .1);
+    --ui-scrim: oklch(25% .03 285 / .3);
+    --ui-highlight: inset 0 1px 0 oklch(100% 0 0 / .7);
+    --ui-shadow-sm: 0 1px 2px oklch(25% .03 285 / .07);
+    --ui-shadow-md: 0 0 0 1px oklch(25% .03 285 / .06), 0 10px 28px oklch(25% .03 285 / .09), 0 2px 6px oklch(25% .03 285 / .05);
+    --ui-shadow-lg: 0 0 0 1px oklch(25% .03 285 / .06), 0 28px 72px oklch(25% .03 285 / .18), 0 8px 20px oklch(25% .03 285 / .07);
+    --ui-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235f5d6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+    --dr-choice-positive: oklch(52% .15 250);
+    --dr-choice-neutral: oklch(50% .06 285);
+    --dr-choice-negative: oklch(52% .16 18);
+    --dr-choice-surprise: oklch(48% .15 318);
+
+    --dr-composer-face: var(--ui-layer-1);
+    --dr-on-retry: var(--ui-danger);
+    --dr-retry: color-mix(in oklab, var(--ui-danger) 12%, var(--ui-layer-1));
+    --dr-retry-hover: color-mix(in oklab, var(--ui-danger) 18%, var(--ui-layer-1));
+  }
+}
+
+:is([data-motion=off], .dr-root[data-motion=off]) {
+  --ui-dur-instant: 0ms;
+  --ui-dur-fast: 0ms;
+  --ui-dur-base: 0ms;
+  --ui-dur-slow: 0ms;
+  --dr-motion-fast: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root, :host {
+    --ui-dur-instant: 0ms;
+    --ui-dur-fast: 0ms;
+    --ui-dur-base: 0ms;
+    --ui-dur-slow: 0ms;
+  }
+}
+
+@media (max-width: 380px) {
+  :root, :host { --dr-layout-gutter: var(--ui-s-3); }
+}
+
+/* Windows "more contrast": stronger lines and secondary text, same layout. */
+@media (prefers-contrast: more) {
+  :root, :host {
+    --ui-line: color-mix(in oklab, var(--ui-text) 28%, transparent);
+    --ui-line-strong: color-mix(in oklab, var(--ui-text) 48%, transparent);
+    --ui-text-2: color-mix(in oklab, var(--ui-text) 88%, var(--ui-base));
+    --ui-text-3: color-mix(in oklab, var(--ui-text) 76%, var(--ui-base));
+    --dr-border: var(--ui-line);
+    --dr-border-strong: var(--ui-line-strong);
+    --dr-muted: var(--ui-text-2);
+  }
 }

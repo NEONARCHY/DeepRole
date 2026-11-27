@@ -3,7 +3,9 @@ import { KeyRound, X } from "lucide-react";
 import { desktop } from "../runtime/browser";
 import { useNativeDialog } from "./motion";
 
-export interface ModelSettings { baseUrl: string; model: string; maxTokens: number; replyStyle: string; hasKey: boolean; contextTokens?: number }
+export interface ModelSettings { baseUrl: string; model: string; maxTokens: number; replyMode: "auto" | "manual"; replyStyle: string; hasKey: boolean; contextTokens?: number }
+interface CatalogModel { id: string; contextTokens?: number }
+const tokenCounts = { ru: new Intl.NumberFormat("ru-RU"), en: new Intl.NumberFormat("en-US") };
 const invalidKeyCharacters = /[\s\p{Cf}]/u;
 export function ProviderDialog({ locale, value, onClose, onSave }: {
   locale: "ru" | "en";
@@ -15,15 +17,16 @@ export function ProviderDialog({ locale, value, onClose, onSave }: {
   const [baseUrl, setBaseUrl] = useState(value.baseUrl);
   const [model, setModel] = useState(value.model);
   const [maxTokens, setMaxTokens] = useState(value.maxTokens);
+  const [replyMode, setReplyMode] = useState(value.replyMode);
   const [contextTokens, setContextTokens] = useState(value.contextTokens?.toString() ?? "");
   const [replyStyle, setReplyStyle] = useState(value.replyStyle);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<"key" | "settings">();
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<CatalogModel[]>([]);
   const [catalogState, setCatalogState] = useState<"idle" | "loading" | "empty" | "unavailable">("idle");
   const catalogRequest = useRef(0);
-  const selectedModel = models.includes(model) ? model : "";
+  const selectedModel = models.some(item => item.id === model) ? model : "";
   const address = useRef<HTMLInputElement>(null);
   const { modal, dismiss } = useNativeDialog(address);
   const close = () => { if (!busy) dismiss(onClose); };
@@ -37,10 +40,10 @@ export function ProviderDialog({ locale, value, onClose, onSave }: {
     const request = ++catalogRequest.current;
     setCatalogState("loading");
     try {
-      const ids = await desktop.call<string[]>("listTextModels", { baseUrl, key });
+      const catalog = await desktop.call<CatalogModel[]>("listTextModels", { baseUrl, key });
       if (catalogRequest.current !== request) return;
-      setModels(ids);
-      setCatalogState(ids.length ? "idle" : "empty");
+      setModels(catalog);
+      setCatalogState(catalog.length ? "idle" : "empty");
     } catch {
       if (catalogRequest.current === request) setCatalogState("unavailable");
     }
@@ -67,7 +70,7 @@ export function ProviderDialog({ locale, value, onClose, onSave }: {
     }
     setBusy(true); setError(undefined);
     try {
-      const saved = await desktop.call<ModelSettings>("saveProvider", { baseUrl, model, maxTokens, replyStyle, contextTokens: contextTokens === "" ? null : Number(contextTokens), key, clearKey });
+      const saved = await desktop.call<ModelSettings>("saveProvider", { baseUrl, model, maxTokens, replyMode, replyStyle, contextTokens: contextTokens === "" ? null : Number(contextTokens), key, clearKey });
       dismiss(() => onSave(saved));
     }
     catch { setError("settings"); }
@@ -86,7 +89,11 @@ export function ProviderDialog({ locale, value, onClose, onSave }: {
           {models.length > 0 && <label>{ru ? "Модель" : "Model"}
             <select value={selectedModel} onChange={event => setModel(event.target.value)}>
               <option value="">{ru ? "Ввести ID вручную" : "Enter ID manually"}</option>
-              {models.map(id => <option key={id} value={id}>{id}</option>)}
+              {models.map(item => <option key={item.id} value={item.id}>
+                {item.id} · {item.contextTokens === undefined
+                  ? (ru ? "лимит неизвестен" : "limit unknown")
+                  : tokenCounts[locale].format(item.contextTokens) + (ru ? " ток." : " tokens")}
+              </option>)}
             </select>
           </label>}
           {!selectedModel && <label>{ru ? "ID модели" : "Model ID"}<input required value={model} onChange={event => setModel(event.target.value)} /></label>}
@@ -96,8 +103,14 @@ export function ProviderDialog({ locale, value, onClose, onSave }: {
           {catalogState === "empty" && <small role="status">{ru ? "Провайдер не вернул ни одной модели. Можно ввести ID вручную." : "The provider returned no models. You can enter the ID manually."}</small>}
           {catalogState === "unavailable" && <small role="status">{ru ? "Список недоступен. Проверьте адрес и ключ API или введите ID вручную." : "The list is unavailable. Check the API address and key or enter the ID manually."}</small>}
         </div>
-        <label>{ru ? "Лимит токенов на ответ" : "Reply token limit"}<input type="number" min="256" max="32768" required value={maxTokens} onChange={event => setMaxTokens(event.target.valueAsNumber)} /></label>
-        <label>{ru ? "Окно контекста вручную" : "Manual context window"}<input type="number" min="512" max="20000000" step="1" placeholder={ru ? "Автоматически" : "Automatic"} value={contextTokens} onChange={event => setContextTokens(event.target.value)} /></label>
+        <label>{ru ? "Лимит ответа" : "Reply limit"}<select value={replyMode} onChange={event => setReplyMode(event.target.value === "manual" ? "manual" : "auto")}>
+          <option value="auto">{ru ? "Авто" : "Auto"}</option>
+          <option value="manual">{ru ? "Вручную" : "Manual"}</option>
+        </select></label>
+        {replyMode === "auto" ? <small>{ru ? "DeepRole повышает лимит для выбранной модели, если ответ обрезан по длине." : "DeepRole raises the limit for the selected model when a reply hits its length limit."}</small>
+          : <label>{ru ? "Лимит токенов на ответ" : "Reply token limit"}<input type="number" min="256" max="32768" required value={maxTokens} onChange={event => setMaxTokens(event.target.valueAsNumber)} /></label>}
+        <label>{ru ? "Окно контекста вручную" : "Manual context window"}<input type="number" min="512" max="20000000" step="1" placeholder={ru ? "Автоматически" : "Automatic"} value={contextTokens} aria-describedby="model-context-hint" onChange={event => setContextTokens(event.target.value)} /></label>
+        <small id="model-context-hint">{ru ? "Общий лимит в токенах на историю чата, память игры, инструкции и новый ответ." : "Shared token limit for chat history, game memory, instructions, and the new reply."}</small>
         <div className="desktop-reply-style">
           <label htmlFor="reply-style">{ru ? "Длина и подача" : "Reply length and style"}</label>
           <textarea id="reply-style" aria-describedby="reply-style-hint" rows={3} maxLength={2000} value={replyStyle}

@@ -18,7 +18,7 @@ import { composerBounds, fitPinnedChoices, pinnedSceneFit, inlineSceneFit } from
 
 export interface PortraitStageOptions {
   scope: string;
-  previewIds?: readonly string[];
+  previewPresence?: ReadonlyMap<string, boolean>;
   layout?: PortraitLayout;
   resetAt?: number;
   pinSceneChoices?: boolean;
@@ -507,7 +507,11 @@ function manipulate(stage: Stage, widget: Widget, id: string, control: HTMLButto
 
 export function syncPortraitStage(enabled: boolean, entities: SceneEntity[], scene: CharacterScene | undefined, locale: Locale, onOpen: (id: string) => void, root: ParentNode = document, options?: PortraitStageOptions) {
   const scope = options?.scope ?? "";
-  const people = enabled ? [...new Set([...characterCast(entities, scene), ...entities.filter(entity => options?.previewIds?.includes(entity.id))])] : [];
+  const preview = options?.previewPresence;
+  const people = enabled ? [...new Set([
+    ...characterCast(entities, scene).filter(entity => preview?.get(entity.id) !== false),
+    ...entities.filter(entity => preview?.get(entity.id) === true),
+  ])] : [];
   for (const stage of activeStages) if (stage.scope !== scope || !people.length || !scope && !stage.anchor.isConnected) dispose(stage);
   if (!people.length) return;
   const hosts = [...root.querySelectorAll<HTMLElement>("[data-deeprole-choices-host]")];

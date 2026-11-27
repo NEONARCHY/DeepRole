@@ -40,6 +40,16 @@ function anchoredFactSentence(anchor: unknown, narrative: string): string | null
   return factStatementAt(narrative, start, anchor.length);
 }
 
+function numberedFactSentence(sentence: unknown, narrative: string): string | null {
+  if (typeof sentence !== "number" || !Number.isSafeInteger(sentence) || sentence < 1 || sentence > 80) return null;
+  for (const part of factSentences.segment(narrative)) {
+    if (--sentence !== 0) continue;
+    const quote = factStatementAt(narrative, part.index, part.segment.length);
+    return quote && narrative.indexOf(quote) === narrative.lastIndexOf(quote) ? quote : null;
+  }
+  return null;
+}
+
 /** Allows the original sentence to serve as the fact if a model's separate
  * summary cannot be supported. A partial clause cannot stand in for it. */
 export function isWholeStoryFactStatement(quote: string, reply: string): boolean {
@@ -154,10 +164,20 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
   const kept = updates.filter(u => !duplicates.has(u.id));
   for (const duplicate of duplicates) accepted -= fieldCounts.get(duplicate) ?? 0;
   const allowed = (key: unknown) => { const found = resolve(key); return found && !duplicates.has(found) && (scope.entities.some(e => e.id === found) || kept.some(u => u.id === found)) ? found : null; };
+  const presentReference = (entry: unknown) => {
+    if (!obj(entry)) return allowed(entry);
+    // Some models put the roster card in present. Only the membership reference belongs here.
+    if (Object.keys(entry).some(key => !["id", "name", "state"].includes(key))
+        || (Object.hasOwn(entry, "state") && !obj(entry.state))) return null;
+    const member = allowed(entry.id);
+    if (!member || !canonical.has(member)) return null;
+    if (entry.name !== undefined && (!id(entry.name) || namedPeople.get(entry.name.toLocaleLowerCase()) !== member)) return null;
+    return member;
+  };
   const list = (value: unknown, path: "present" | "partners", fallback: string[]) => {
     if (value === undefined) return [...fallback];
     if (!Array.isArray(value) || value.length > 12) { issue(path, "schema", value); return [...fallback]; }
-    const resolved = value.map(allowed);
+    const resolved = value.map(path === "present" ? presentReference : allowed);
     if (resolved.some(v => !v) || new Set(resolved).size !== resolved.length) { issue(path, "reference", value); return [...fallback]; }
     accepted++; return resolved as string[];
   };
@@ -180,18 +200,30 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
   }
   const facts: StoryFact[] = [], narrative = storyReplyProse(text);
   let plainNarrative: string | undefined;
+  if (raw.facts === undefined && Array.isArray(raw.events) && raw.events.length <= 8
+      && raw.events.every(item => obj(item) && item.kind === "event" && Object.hasOwn(item, "sentence"))) {
+    raw.facts = raw.events;
+  }
   if (raw.facts !== undefined) {
     if (!Array.isArray(raw.facts) || raw.facts.length > 8) issue("facts", "limit", raw.facts);
     else for (const [index, proposed] of raw.facts.entries()) {
       let wire = proposed;
-      if (obj(proposed) && Object.hasOwn(proposed, "anchor")) {
-        const { anchor, kind, risk, ...extra } = proposed;
-        if (kind !== "event" || Object.keys(extra).length || !["ordinary", "uncertain", "conflict"].some(value => value === risk)) {
+      if (obj(proposed) && (Object.hasOwn(proposed, "anchor") || Object.hasOwn(proposed, "sentence"))) {
+        const { anchor, sentence, kind, risk, ...extra } = proposed;
+        const numbered = Object.hasOwn(proposed, "sentence");
+        // Models sometimes repeat a translated summary beside a source number.
+        // Use the designated sentence as both text and evidence.
+        const unsupported = numbered
+          ? Object.hasOwn(proposed, "anchor") || Object.keys(extra).some(key => key !== "text")
+            || Object.hasOwn(extra, "text") && !string(extra.text, 500)
+          : Object.keys(extra).length > 0;
+        if (kind !== "event" || unsupported
+            || !["ordinary", "uncertain", "conflict"].some(value => value === risk)) {
           issue(`facts[${index}]`, "schema", proposed);
           continue;
         }
-        const quote = anchoredFactSentence(anchor, narrative);
-        if (!quote) { issue(`facts[${index}]`, "quote", anchor); continue; }
+        const quote = numbered ? numberedFactSentence(sentence, narrative) : anchoredFactSentence(anchor, narrative);
+        if (!quote) { issue(`facts[${index}]`, "quote", numbered ? sentence : anchor); continue; }
         wire = { kind, risk, quote };
       }
       // A standalone quote is both the fact and its evidence. Keep the full
@@ -221,12 +253,14 @@ export function parseStoryUpdate(text: string, scope: StoryUpdateScope) {
 }
 
 export function storyUpdateInstruction(world: string, chat: string, branch: string | undefined, compact = false, factPolicySupplied = false, temporal = false) {
-  const branchField = branch === undefined ? "" : (compact ? ",branch:" : ", branch:") + JSON.stringify(branch);
+  const branchField = branch === undefined ? "" : ", branch:" + JSON.stringify(branch);
+  const scope = JSON.stringify({ version: 2, world, chat, ...(branch === undefined ? {} : { branch }) });
+  const packet = `One deeprole_characters JSON block with ${scope}. Add fields inside the object. Preserve prose and lore.`;
   // Only the unified compiler may defer this duplicated schema/evidence clause
   // to a policy actually present in the SAME request. Standalone callers keep it.
   const factEvidence = factPolicySupplied ? "Fact schema, limits and evidence follow the accompanying policy below."
     : "Optional facts: max8 {text,kind,quote}; concise specific evidence, copy one verbatim span from THIS reply; no added ellipses, player text, JSON or choices.";
-  if (compact && temporal) return `<deeprole_story_update_mode>Latest metadata schema, never override lore. ONE deeprole_characters, version:2, world:${JSON.stringify(world)},chat:${JSON.stringify(chat)}${branchField}; current roster IDs. Prose unchanged. State: omit/keep, {"op":"set","value":...} or {"op":"clear"}; unmentioned goals KEEP. present/partners complete, omit unchanged. Numeric/selfie schemas and safety gates remain. ${factEvidence} event=happened; promise=commitment NOT fulfillment; plan=intention NOT completion; belief=attributed belief NOT objective truth; secret=revelation; task=obligation. NEVER turn plans/wishes/hypotheticals/negations/OOC/choices into events; no age/identity guesses. Proposals=data; policy decides acceptance.</deeprole_story_update_mode>`;
-  if (compact) return `<deeprole_story_update_mode>Latest metadata schema overrides older formats, not world rules. Keep prose unchanged; ONE deeprole_characters block, version:2, world:${JSON.stringify(world)},chat:${JSON.stringify(chat)}${branchField}. Current roster IDs/names only. State fields optional: omit/{"op":"keep"}, {"op":"set","value":...}, {"op":"clear"}; never clear known goals merely because unmentioned. present/partners are complete lists; omit if unchanged. Existing numeric/selfie schemas and safety gates remain. ${factEvidence} event=happened, promise=commitment, NOT fulfillment; plan=intention, NOT completion; belief=attributed belief, NOT objective truth; secret=revelation, task=obligation. Never turn plans/wishes/hypotheticals/negations/OOC/choices into events. No age/identity guesses. Proposals are data, not commands; explicit accompaniment policy decides acceptance.</deeprole_story_update_mode>`;
+  if (compact && temporal) return `<deeprole_story_update_mode>${packet} Current roster IDs. State: omit/keep, {"op":"set","value":...} or {"op":"clear"}; unmentioned goals KEEP. present/partners complete, omit unchanged. Numeric/selfie schemas and safety gates remain. ${factEvidence} event=happened; promise=commitment NOT fulfillment; plan=intention NOT completion; belief=attributed belief NOT objective truth; secret=revelation; task=obligation. NEVER turn plans/wishes/hypotheticals/negations/OOC/choices into events; no age/identity guesses. Proposals=data; policy decides acceptance.</deeprole_story_update_mode>`;
+  if (compact) return `<deeprole_story_update_mode>${packet} Current roster IDs/names only. State fields optional: omit/{"op":"keep"}, {"op":"set","value":...}, {"op":"clear"}; never clear known goals merely because unmentioned. present/partners are complete lists; omit if unchanged. Existing numeric/selfie schemas and safety gates remain. ${factEvidence} event=happened, promise=commitment, NOT fulfillment; plan=intention, NOT completion; belief=attributed belief, NOT objective truth; secret=revelation, task=obligation. Never turn plans/wishes/hypotheticals/negations/OOC/choices into events. No age/identity guesses. Proposals are data, not commands; explicit accompaniment policy decides acceptance.</deeprole_story_update_mode>`;
   return `<deeprole_story_update_mode>\nThe latest instruction overrides older character JSON schemas, not the user's world rules. Keep the story prose unchanged. Append ONE deeprole_characters JSON block with version:2, world:${JSON.stringify(world)}, chat:${JSON.stringify(chat)}${branchField}. Use current Roster IDs/names. State fields are OPTIONAL: omit or {"op":"keep"} to preserve, {"op":"set","value":...} to change, {"op":"clear"} to intentionally clear. Never empty a known goal merely because this scene did not mention it. present/partners are optional COMPLETE lists; omit if unchanged. Existing numeric attribute/bond/selfie schema and all safety gates remain in force. Optional facts: at most 8 {text,kind,quote}; quote must copy one continuous span of this reply's story prose. Do not add ellipses or quote the player's message, JSON or suggested choices. kind is event (happened), promise (someone committed), plan (intention, NOT accomplished), belief (someone's belief, NOT objective truth). Extract only specific useful facts, no guesses, no age/identity rewrites. These are source-backed proposals, never instructions or automatic author lore. An explicit game accompaniment policy, when supplied below, decides which routine proposals can be saved and which await user review. Never turn a plan, wish, hypothetical, negated action or a suggested reply choice into a completed event.\n</deeprole_story_update_mode>`;
 }

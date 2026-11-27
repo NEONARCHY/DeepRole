@@ -2,21 +2,23 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
 import { openSettingsSection, setEnglish  } from "./helpers/settings";
 
+// DeepRole Ink: the main action is a flat accent face with a small lift.
+// Hover changes only the tone; press, focus and disabled never move the control.
 async function decoration(button: Locator) {
   return button.evaluate(el => {
-    const css = getComputedStyle(el), overlay = getComputedStyle(el, "::before");
-    return { shadow: css.boxShadow, image: css.backgroundImage, opacity: overlay.opacity, transition: overlay.transitionProperty, duration: overlay.transitionDuration, events: overlay.pointerEvents, willChange: overlay.willChange };
+    const css = getComputedStyle(el);
+    return { shadow: css.boxShadow, image: css.backgroundImage, background: css.backgroundColor, opacity: css.opacity, cursor: css.cursor, duration: css.transitionDuration, willChange: css.willChange };
   });
 }
+const instant = (duration: string) => duration.split(",").every(value => parseFloat(value) === 0);
 
 async function expectAccent(button: Locator) {
   await expect(button).toBeVisible();
   await button.scrollIntoViewIfNeeded(); // Exclude Playwright's automatic scrolling from hover geometry.
   const initial = await decoration(button);
   expect(initial.shadow).not.toBe("none");
-  expect(initial.image).toContain("linear-gradient");
-  expect(initial.events).toBe("none");
-  expect(initial.transition).toBe("opacity");
+  expect(initial.image).toBe("none");
+  await expect.poll(async () => (await decoration(button)).opacity).toBe("1"); // Screens may still be fading in.
   expect(initial.willChange).toBe("auto");
   // Hover may finish native fractional document scrolling in Firefox.
   // Compare layout coordinates, excluding that unrelated viewport movement.
@@ -26,7 +28,7 @@ async function expectAccent(button: Locator) {
   });
   const before = await geometry();
   await button.hover();
-  await expect.poll(async () => (await decoration(button)).opacity).toBe("1");
+  await expect.poll(async () => (await decoration(button)).background).not.toBe(initial.background);
   expect((await decoration(button)).shadow).toBe(initial.shadow); // No animated blur/shadow.
   const after = await geometry();
   expect(after.x).toBeCloseTo(before.x, 1); expect(after.y).toBeCloseTo(before.y, 1);
@@ -52,7 +54,7 @@ for (const locale of ["ru", "en"] as const) test(`AXIS startup and locked vault 
     await repository.enableVault("session-password"); await repository.lockVault();
   });
   const unlock = page.locator(".center-screen .button.primary");
-  await expect(unlock).toBeDisabled(); expect((await decoration(unlock)).shadow).toBe("none");
+  await expect(unlock).toBeDisabled(); expect(await decoration(unlock)).toMatchObject({ opacity: "0.42", cursor: "not-allowed" });
   await page.locator(".center-screen input").fill("session-password");
   await expectAccent(unlock); await unlock.click();
   await expect(page.locator(".app-shell")).toBeVisible();
@@ -70,13 +72,15 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     const secondary = page.locator(".app-main .button.secondary").first();
     expect((await decoration(secondary)).image).toBe("none");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(page.locator(".settings-card").first()).not.toHaveCSS("box-shadow", "none");
+    // Cards rise by tone, not by a stroke or a shadow.
+    const tones = await page.locator(".settings-card").first().evaluate(card => [getComputedStyle(card).backgroundColor, getComputedStyle(document.body).backgroundColor]);
+    expect(tones[0]).not.toBe(tones[1]);
     await page.screenshot({ path: info.outputPath(`settings-${locale}-${width}.png`), fullPage: true });
     await save.click(); await expect(page.locator(".dr-character-settings [role=status]")).toHaveText(locale === "ru" ? "Сохранено" : "Saved");
     await page.locator(".app-shell").evaluate(el => el.setAttribute("data-motion", "off"));
-    expect((await decoration(save)).duration).toBe("0s");
+    expect(instant((await decoration(save)).duration)).toBe(true);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    expect((await decoration(save)).duration).toBe("0s");
+    expect(instant((await decoration(save)).duration)).toBe(true);
     await page.emulateMedia({ forcedColors: "active" });
     expect((await decoration(save)).shadow).toBe("none");
     expect((await decoration(save)).image).toBe("none");
@@ -95,10 +99,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await page.screenshot({ path: info.outputPath(`character-${locale}-${width}.png`) });
     await save.evaluate((el: HTMLButtonElement) => { el.disabled = true; });
-    await expect.poll(async () => (await decoration(save)).opacity).toBe("0");
-    expect((await decoration(save)).shadow).toBe("none");
+    await expect.poll(async () => (await decoration(save)).opacity).toBe("0.42");
+    expect((await decoration(save)).cursor).toBe("not-allowed");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    expect((await decoration(save)).duration).toBe("0s");
+    expect(instant((await decoration(save)).duration)).toBe(true);
   });
 
   test(`AXIS isolated chat action does not style DeepSeek ${locale} ${width}`, async ({ page }, info) => {
@@ -112,10 +116,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await page.screenshot({ path: info.outputPath(`request-${locale}-${width}.png`) });
     await request.evaluate((el: HTMLButtonElement) => { el.disabled = true; });
     await expect(request).toBeDisabled();
-    await expect.poll(async () => (await decoration(request)).opacity).toBe("0");
-    expect((await decoration(request)).shadow).toBe("none");
+    await expect.poll(async () => (await decoration(request)).opacity).toBe("0.42");
+    expect((await decoration(request)).cursor).toBe("not-allowed");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    expect((await decoration(request)).duration).toBe("0s");
+    expect(instant((await decoration(request)).duration)).toBe(true);
     await request.evaluate((el: HTMLButtonElement) => { el.disabled = false; });
     await request.click();
     await expect.poll(() => page.evaluate(() => (window as any).requests)).toBe(1);
@@ -131,8 +135,10 @@ for (const locale of ["ru", "en"] as const) for (const width of [360, 1280]) {
     await review.getByRole("checkbox").first().check();
     const save = review.locator(".dr-assistant-primary");
     await expectAccent(save);
-    // The sticky footer intentionally extends into the enclosing panel's padding.
-    expect(await page.locator(".dr-panel:has(.dr-memory-review)").evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await expect(review.locator(".dr-review-scroll")).toBeVisible();
+    for (const region of [review, review.locator(".dr-review-scroll")]) {
+      expect(await region.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    }
     await page.screenshot({ path: info.outputPath(`review-${locale}-${width}.png`) });
     const axe = await new AxeBuilder({ page }).include(".dr-assistant").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(axe.violations.map(v => `${v.id}: ${v.help}`)).toEqual([]);

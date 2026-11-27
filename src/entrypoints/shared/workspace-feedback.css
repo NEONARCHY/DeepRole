@@ -1,94 +1,108 @@
-/* Floating feedback shares the dialog material while inline messages stay flat. */
+/*
+ * DeepRole Ink — feedback.
+ * Floating notices share the popover material. Inline messages stay flat and
+ * use a tinted face with a coloured icon; the text keeps the body colour.
+ */
 :is(.dr-root, .app-shell) :is(.dr-alert, .dr-toast, .dr-send-notice, .dr-reset-ready-notice, .dr-continuation-progress, .dr-old-chat-notice),
 .dr-learning-popover {
-  border: 1px solid transparent;
-  border-radius: var(--desktop-panel);
+  border: 0;
+  border-radius: var(--ui-r-lg);
   padding: var(--dr-layout-inset);
-  background: linear-gradient(var(--dr-panel), var(--dr-panel)) padding-box,
-    var(--dr-material-rim) border-box var(--dr-panel);
-  box-shadow: var(--dr-depth-panel);
-  color: var(--dr-text);
-  font: 13px/1.5 var(--desktop-font);
+  background: var(--ui-layer-1);
+  box-shadow: var(--ui-shadow-md);
+  color: var(--ui-text);
+  font: var(--ui-text-md) / var(--ui-leading-md) var(--ui-font);
   overflow-wrap: anywhere;
 }
 
 .dr-root :is(.dr-alert, .dr-send-notice, .dr-reset-ready-notice, .dr-continuation-progress, .dr-old-chat-notice) p {
-  color: var(--dr-muted);
+  color: var(--ui-text-2);
 }
 .dr-root .dr-toast {
   width: max-content;
   max-width: min(340px, calc(100vw - 36px));
-  padding: var(--dr-layout-label) var(--dr-layout-gap);
+  padding: var(--ui-s-2) var(--ui-s-3);
+  border-radius: var(--ui-r-md);
 }
 
 .dr-feedback-heading {
   display: flex;
   align-items: flex-start;
-  gap: var(--dr-layout-label);
+  gap: var(--ui-s-2);
 }
-.dr-feedback-heading strong { flex: 1; }
+.dr-feedback-heading strong { flex: 1; font-weight: var(--ui-weight-semibold); }
 .dr-feedback-heading > svg, .dr-feedback-icon {
   flex: none;
-  width: 16px;
-  height: 16px;
+  width: var(--ui-icon-sm);
+  height: var(--ui-icon-sm);
   margin-top: .2em;
-  color: var(--dr-focus);
+  color: var(--ui-accent-text);
 }
-.dr-send-notice .dr-feedback-heading > svg { color: var(--dr-warning); }
-.dr-send-storage .dr-feedback-heading > svg { color: var(--dr-danger); }
+.dr-send-notice .dr-feedback-heading > svg { color: var(--ui-warning); }
+.dr-send-storage .dr-feedback-heading > svg { color: var(--ui-danger); }
 .dr-root .dr-alert-heading > .dr-alert-close { --dr-round-target: 36px; --dr-round-inset: 3px; align-self: start; }
 
 .dr-feedback-button,
 .dr-root :is(.dr-alert-actions, .dr-continuation-progress, .dr-reset-ready-notice, .dr-send-notice, .dr-menu-fallback) :is(button, a.dr-button) {
-  min-height: 44px;
+  min-height: var(--ui-target);
   border: 0;
-  border-radius: var(--desktop-control);
-  padding: var(--dr-layout-label) var(--dr-layout-gap);
-  background-color: var(--dr-surface);
-  color: var(--dr-text);
+  border-radius: var(--ui-r-md);
+  padding: var(--ui-s-2) var(--ui-s-3);
+  background-color: var(--ui-layer-2);
+  box-shadow: inset 0 0 0 1px var(--ui-line);
+  color: var(--ui-text);
   cursor: pointer;
-  font: 650 13px/1.35 var(--desktop-font);
+  font: var(--ui-weight-semibold) var(--ui-text-md) / 1.35 var(--ui-font);
   white-space: normal;
+  transition: background-color var(--ui-dur-fast) var(--ui-ease-out), transform var(--ui-dur-instant) var(--ui-ease-out);
 }
-.dr-feedback-button:is(:disabled, [aria-disabled=true]) { opacity: .55; cursor: default; }
-.dr-feedback-button:focus-visible { outline: 2px solid var(--dr-focus); outline-offset: 2px; }
+.dr-feedback-button:is(:disabled, [aria-disabled=true]) { opacity: var(--ui-disabled); cursor: not-allowed; }
+.dr-root :is(.dr-alert-actions, .dr-continuation-progress, .dr-reset-ready-notice, .dr-send-notice, .dr-menu-fallback) :is(button, a.dr-button):focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
 .dr-root :is(.dr-alert-actions, .dr-continuation-progress, .dr-reset-ready-notice, .dr-send-notice, .dr-menu-fallback) :is(button, a.dr-button):hover:not(:disabled) {
-  background-color: var(--dr-raised);
+  background-color: var(--ui-layer-3);
+}
+.dr-root :is(.dr-alert-actions, .dr-continuation-progress, .dr-reset-ready-notice, .dr-send-notice, .dr-menu-fallback) :is(button, a.dr-button):active:not(:disabled) {
+  transform: scale(var(--ui-press-scale));
 }
 .dr-root :is(.dr-reset-ready-notice, .dr-continuation-progress) .dr-meter-transfer {
-  background-color: var(--dr-action);
-  color: var(--dr-on-action);
+  background-color: var(--ui-accent);
+  box-shadow: none;
+  color: var(--ui-on-accent);
 }
 .dr-root :is(.dr-reset-ready-notice, .dr-continuation-progress) .dr-meter-transfer:hover:not(:disabled) {
-  background-color: var(--dr-action-hover);
+  background-color: var(--ui-accent-hover);
 }
 
 :is(.dr-root, .app-shell) :is(.dr-capacity-dialog, .dr-character-dialog, .dr-cast-dialog) {
-  border: 1px solid transparent;
-  border-radius: var(--desktop-card);
-  background: linear-gradient(var(--dr-panel), var(--dr-panel)) padding-box,
-    var(--dr-material-rim) border-box var(--dr-panel);
-  box-shadow: var(--dr-depth-dialog);
-  font-family: var(--desktop-font);
+  border: 0;
+  border-radius: var(--ui-r-xl);
+  background: var(--ui-layer-1);
+  box-shadow: var(--ui-shadow-lg);
+  font-family: var(--ui-font);
 }
-:is(.dr-capacity-layer, .dr-character-dialog-layer, .dr-cast-layer) { background: var(--desktop-overlay); }
-.dr-memory-dialog::backdrop { background: var(--desktop-overlay); }
-.dr-root :is(.dr-character-dialog, .dr-cast-dialog) > :is(header, footer) { border-color: var(--dr-border); }
+:is(.dr-capacity-layer, .dr-character-dialog-layer, .dr-cast-layer) { background: var(--ui-scrim); }
+.dr-memory-dialog::backdrop { background: var(--ui-scrim); }
+.dr-root :is(.dr-character-dialog, .dr-cast-dialog) > :is(header, footer) { border-color: var(--ui-line); }
 
 .dr-inline-feedback {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
-  gap: var(--dr-layout-label);
-  border-radius: var(--desktop-control);
-  padding: var(--dr-layout-label) var(--dr-layout-label) var(--dr-layout-label) var(--dr-layout-gap);
-  background: var(--dr-surface);
-  color: var(--dr-text);
-  font: 13px/1.45 var(--desktop-font);
+  gap: var(--ui-s-2);
+  border-radius: var(--ui-r-md);
+  padding: var(--ui-s-1) var(--ui-s-1) var(--ui-s-1) var(--ui-s-3);
+  background: var(--ui-layer-2);
+  color: var(--ui-text);
+  font: var(--ui-text-md) / var(--ui-leading-md) var(--ui-font);
   overflow-wrap: anywhere;
 }
-.dr-inline-feedback > span { align-self: center; }
+.dr-inline-feedback > span { align-self: center; padding-block: var(--ui-s-2); }
 .dr-inline-feedback > svg { align-self: center; margin: 0; }
-.dr-inline-feedback[data-tone=warning] { background: var(--dr-warning-soft); }
-.dr-inline-feedback[data-tone=warning] > svg { color: var(--dr-warning); }
+.dr-inline-feedback[data-tone=warning] { background: var(--ui-warning-soft); }
+.dr-inline-feedback[data-tone=warning] > svg { color: var(--ui-warning); }
+.dr-inline-feedback[data-tone=danger] { background: var(--ui-danger-soft); }
+.dr-inline-feedback[data-tone=danger] > svg { color: var(--ui-danger); }
 .dr-inline-feedback > .desktop-icon { --dr-round-target: 36px; --dr-round-inset: 3px; }

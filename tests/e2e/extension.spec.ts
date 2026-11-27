@@ -25,8 +25,8 @@ test("installed extension shares its private library with chat and remembers wor
     const confirmImport = panel.getByRole("button", { name: "Сохранить в библиотеку", exact: true });
     await panel.emulateMedia({colorScheme:"dark"});
     await expect(confirmImport).not.toHaveCSS("box-shadow", "none");
-    expect(await confirmImport.evaluate(node => getComputedStyle(node).backgroundImage)).toContain("linear-gradient");
-    expect(await confirmImport.evaluate(node => getComputedStyle(node, "::before").pointerEvents)).toBe("none");
+    expect(await confirmImport.evaluate(node => getComputedStyle(node).backgroundImage)).toBe("none"); // Flat accent face.
+    expect(await confirmImport.evaluate(node => getComputedStyle(node, "::before").content)).toBe("none");
     await confirmImport.click();
     await expect(panel.getByRole("heading", { name: "Runtime World", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Мир и профили", exact: true }).click();

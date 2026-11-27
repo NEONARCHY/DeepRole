@@ -22,6 +22,7 @@ import { createBackup, parseBackup, restoreBackup } from "../src/storage/backup"
 import { storyWorld } from "./fixtures/story-worlds";
 import { createStoryJournal } from "../src/core/story-journal";
 import type { StoryFact } from "../src/core/story-update";
+import wrappedPresence from "./fixtures/story-wrapped-presence.json";
 const dbs: DeepRoleDatabase[] = [];
 afterEach(async () => { await Promise.all(dbs.splice(0).map(d => d.delete())); });
 const fact = (text: string, risk = "ordinary", kind = "event", claim?: unknown) => ({ text,quote:text,kind,risk,...(claim ? { claim } : {}) });
@@ -40,7 +41,7 @@ async function fixture(mode: "automatic" | "review" | "off" = "automatic", names
   const play = async (operation: "start"|"sync"|"reset"|"restore" = "sync") => { const b = await binding(), people = (await repo.list<SceneEntity>("entity")).filter(p => characterInChat(p,chat)); return runStoryGame({ ...scope(),operation,snapshot,expectedBase:characterRevision(people,b.characterScenes?.[f.world.id]),manual:"stop",nativeParentKey:null },DEFAULT_SETTINGS,repo); };
   await activate("initialize"); await play("start");
   let sequence = 2;
-  const send = async (facts: unknown[] = [],people: unknown[] = [], options: {capture?:boolean; beforeReply?:()=>Promise<void>;updates?:unknown[];prose?:string} = {}) => {
+  const send = async (facts: unknown[] = [],people: unknown[] = [], options: {capture?:boolean; beforeReply?:()=>Promise<void>;updates?:unknown[];present?:unknown[];prose?:string} = {}) => {
     const parent = snapshot.selectedNativeKey!, user = String(++sequence), reply = String(++sequence), draft = "Continue "+user, policy = await world(), context = automationMarker(policy), requestId=crypto.randomUUID();
     const outgoing = context+"\n\n[User message]\n"+draft;
     if (options.capture !== false) {
@@ -53,7 +54,7 @@ async function fixture(mode: "automatic" | "review" | "off" = "automatic", names
     }
     await options.beforeReply?.();
     const prose = [...facts.map(v => (v as any).quote),...people.map(v => (v as any).quote)].join("\n") || "A normal scene.";
-    const content = (options.prose ?? prose)+"\n<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat,updates:options.updates ?? [],facts,people})+"</deeprole_characters>";
+    const content = (options.prose ?? prose)+"\n<deeprole_characters>"+JSON.stringify({version:2,world:f.world.id,chat,updates:options.updates ?? [],present:options.present,facts,people})+"</deeprole_characters>";
     snapshot.messages.push({ identity:{nativeMessageKey:key(user),nativeParentKey:parent,role:"user"},completion:"complete",content:options.capture === false ? draft : outgoing },message(reply,user,"assistant",content)); snapshot.selectedNativeKey=key(reply); await play(); return reply;
   };
   const view = async () => currentStoryProfileEntities(await repo.list<SceneEntity>("entity"),await repo.list<StoryRecord>("story"),f.world.id,chat,(await binding()).id);
@@ -73,6 +74,22 @@ it("uses an exact scene quote as the text of a plain fact", async () => {
   await f.send([{ kind: "event", quote, risk: "ordinary" }]);
   expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: quote, quote }]);
   expect((await f.review()).total).toBe(0);
+});
+it("records the wrapped Mistral presence and the sourced fact in the same turn", async () => {
+  const f = await fixture("automatic", wrappedPresence.names);
+  const scene = async () => (await f.world()).sharedGame?.scene;
+  await f.send([], [], { present: ["person-1"], updates: [{ id: "Mira", state: { goal: "Keep the gate closed" } }] });
+  expect((await scene())?.presentIds).toEqual(["person-1"]);
+  const stateBefore = (await scene())?.states["person-2"];
+  expect(stateBefore?.goal).toBe("Keep the gate closed");
+  await f.send([{ kind: "event", risk: "ordinary", sentence: 1 }], [], { present: wrappedPresence.present, prose: wrappedPresence.reply });
+  expect(await scene()).toMatchObject({ presentIds: wrappedPresence.expectedPresent });
+  expect((await scene())?.states["person-2"]).toEqual(stateBefore);
+  expect((await f.world()).sharedGame!.facts).toEqual([{ kind: "event", text: wrappedPresence.reply, quote: wrappedPresence.reply }]);
+  const saved = await f.repo.rawRecords();
+  await f.play();
+  expect(await f.repo.rawRecords()).toEqual(saved);
+  assertStoryGraph(saved);
 });
 it.each(["automatic", "review"] as const)("leaves incidental waking in the scene without adding a fact or review (%s)", async mode => {
   const f = await fixture(mode);
@@ -283,6 +300,15 @@ it("literal evidence, conditional actions, immutable claims, protected ages and 
   expect(inlineStoryPeople([person("Neri","repairs clocks.")],"<deeprole_choices>Neri repairs clocks.</deeprole_choices>")).toEqual([]);
   expect(inlineStoryPeople(Array.from({length:5},()=>person("Neri","repairs clocks.")),"Neri repairs clocks.")).toEqual([]);
   expect(validStoryAutomationPolicy({mode:"automatic",revision:"__proto__"})).toBe(false);
+});
+it("keeps attributed Russian hearsay out of confirmed events",()=>{
+  const quote = "Мне рассказывали, что синий ключ спрятан под камнем, но я сама его там не видела.";
+  expect(factAutomationReason({text:quote,quote,kind:"event"},"ordinary",[],[])).toBe("uncertain");
+});
+it.each([" (1)\n\n", " "])("does not save a bare shrug as an event with separator %j",async separator=>{
+  const f=await fixture(), quote="Мирa пожимает плечами.";
+  await f.send([fact(quote)],[],{prose:quote+separator+"— Я слышала слух, но сама ключ не видела."});
+  expect((await f.world()).sharedGame!.facts).toEqual([]);
 });
 it("alternative selection and undo remove automatic facts and overlays, then replay once",async()=>{
  const f=await fixture();const reply=await f.send([fact("The traveler returned the lantern.")],[person("Resident 2","keeps a journal.","person-2")]);await f.send();

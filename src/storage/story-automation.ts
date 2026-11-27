@@ -14,11 +14,11 @@ import { storyEffectsAt } from "./story-effect-replay";
 import { storyFactIdentity } from "../core/story-memory-lifecycle";
 import { bindStoryRoles } from "../core/story-role-binding";
 import { attendanceTask, playedAttendanceGoal } from "../core/story-attendance-goal";
-import { isStandaloneRoutineStoryFact } from "../core/story-memory-admission";
+import { isRoutineBatchStoryFact, isStandaloneRoutineStoryFact } from "../core/story-memory-admission";
 
 /** One completed reply is one bounded portion. Stored events are the durable work
  * receipt, and the existing selected-line replay owns every resulting effect. */
-export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, baseline: StoryBaseline, branch: StoryBranch, source: StoryRevision, approved: Set<string>, capture: StoryDispatchCapture | undefined, facts: StoryFact[], raw: Record<string, unknown> | null, chatId: string, batch?: { source: StoryRevision; capture: import("../core/story-automation").StoryAutomationCapture }, continuation?: import("../core/story-automation").StoryAutomationCapture) {
+export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, baseline: StoryBaseline, branch: StoryBranch, source: StoryRevision, approved: Set<string>, capture: StoryDispatchCapture | undefined, facts: StoryFact[], raw: Record<string, unknown> | null, chatId: string, batch?: { source: StoryRevision; capture: import("../core/story-automation").StoryAutomationCapture; repeatedTransit: boolean }, continuation?: import("../core/story-automation").StoryAutomationCapture) {
   const stored = all.filter(r => r.kind === "story").map(r => r.data as StoryRecord), result: DataRecord[] = [];
   const selected = projectStoryBranch(stored, branch.id, source.id, [...approved]);
   const applicable = stored.filter((e): e is StoryEvent => e.type === "event" && selected.appliedEventIds.includes(e.id)).sort((a,b) => selected.revisionIds.indexOf(a.revisionId)-selected.revisionIds.indexOf(b.revisionId) || a.ordinal-b.ordinal);
@@ -81,7 +81,8 @@ export function planStoryAccompaniment(all: DataRecord[], world: WorldProfile, b
     const comparable = match && !match.plan.task ? [...previous,{...match.plan,task:attendanceTask(match.plan)}] : previous;
     const reason = factAutomationReason(fact, original?.risk, comparable, protectedTexts);
     if ((reason === "new" || reason === "duplicate") && original?.risk === "ordinary" && !fact.task
-      && isStandaloneRoutineStoryFact(proposed, origin.content)) continue;
+      && (isStandaloneRoutineStoryFact(proposed, origin.content)
+        || batch && isRoutineBatchStoryFact(proposed, origin.content, batch.repeatedTransit))) continue;
     const uncertainVisit = !match && reason === "new" && fact.task?.status === "completed"
       && previous.some(f=>f.task?.key === fact.task!.key && attendanceTask(f));
     const uncertainJointOutcome = multipleClosures && reason === "new" && fact.task && fact.task.status !== "open"

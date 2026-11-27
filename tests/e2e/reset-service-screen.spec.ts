@@ -8,7 +8,8 @@ for(const locale of ['ru','en'] as const)for(const width of [320,520])test(`rese
  const screen=page.locator('deeprole-field-screen'),t=resetServiceScreenCopy(locale);await expect(screen.locator('h1')).toHaveText(t.title);
  await expect(screen.locator('.brief')).toHaveText(t.generic);await expect(screen.locator('.status')).toHaveText(t.stages.generating);
  await expect(screen.locator('.hint')).toHaveText(t.hint);expect(await screen.textContent()).not.toMatch(/анкеты|анкет|Персонажи из лора|profiles|Characters from lore|PRIVATE_/iu);
- await expect(screen.locator('.screen')).toHaveCSS('background-color',width===320?'rgb(255, 255, 255)':'rgb(23, 23, 23)');
+ // DeepRole Ink: paper base in light, ink base in dark.
+ await expect(screen.locator('.screen')).toHaveCSS('background-color',width===320?'oklch(0.994 0.0015 285)':'oklch(0.195 0.007 285)');
  await expect(screen.locator('.response')).toHaveCSS('border-radius','16px');
  await expect(screen.getByRole('progressbar',{name:t.response})).toBeVisible();
  expect(await screen.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);expect(await screen.locator('.brief').evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);

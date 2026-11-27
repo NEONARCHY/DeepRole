@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseStoryUpdate, validStoryUpdateDiagnostic } from "../src/core/story-update";
 import { storyUpdateNotice, storyUpdateText } from "../src/core/story-update-i18n";
 import { storyWorld } from "./fixtures/story-worlds";
+import wrappedPresence from "./fixtures/story-wrapped-presence.json";
 const f = storyWorld(), scope = { world: f.world.id, chat: f.binding.chatId, branch: "branch-a", base: "current", entities: f.entities, scene: f.binding.characterScenes![f.world.id]! };
 const block = (value: unknown, narrative = "Мира передала медный ключ. Мира обещала починить ворота завтра.") => narrative + `\n<deeprole_characters>${JSON.stringify(value)}</deeprole_characters>`;
 const turn = (patch: Record<string, unknown>) => ({ version: 2, world: scope.world, chat: scope.chat, branch: scope.branch, ...patch });
@@ -29,6 +30,31 @@ describe("safe independent game updates", () => {
     const result = parseStoryUpdate(block(turn({ updates: [{ id: "person-1", state: { goal: "A" } }, { id: f.entities[0]!.name, state: { goal: "B" } }] })), scope);
     expect(result.turn?.updates ?? []).toHaveLength(0); expect(result.diagnostic.issues.some(i => i.rule === "duplicate")).toBe(true);
   });
+  it("reads the observed Mistral presence list without applying nested state", () => {
+    const entities = scope.entities.map((person, index) => ({ ...person, name: wrappedPresence.names[index] ?? person.name }));
+    const scene = { ...scope.scene, presentIds: ["person-1"] };
+    const facts = [{ kind: "event", risk: "ordinary", sentence: 1 }];
+    const present = ["person-1", wrappedPresence.present[1]];
+    const result = parseStoryUpdate(block(turn({ present, partners: ["Mira"], facts }), wrappedPresence.reply), { ...scope, entities, scene });
+    expect(result.turn).toMatchObject({ present: wrappedPresence.expectedPresent, partners: ["person-2"], updates: [] });
+    expect(result.facts).toEqual([{ kind: "event", text: wrappedPresence.reply, quote: wrappedPresence.reply }]);
+    expect(result.diagnostic.issues).toEqual([]);
+  });
+  it.each([
+    [{ id: "person-3", name: "Resident 2" }],
+    [{ id: "new:Visitor", name: "Visitor" }],
+    [{ id: "person-3", name: "Resident 3", state: "standing" }],
+    [{ id: "person-3", name: "Resident 3", worldId: "other-world" }],
+    [{ id: "Courier" }],
+    ["person-3", { id: "person-3" }],
+  ])("holds saved presence when a membership object is invalid (%j)", (...present) => {
+    const entities = scope.entities.map(person => ({ ...person, aliases: ["Courier"] }));
+    const updates = [{ id: "person-1", state: { goal: "Take the key" } }];
+    const result = parseStoryUpdate(block(turn({ present, updates })), { ...scope, entities });
+    expect(result.turn?.present).toEqual(scope.scene.presentIds);
+    expect(result.turn?.updates[0]?.state.goal).toBe("Take the key");
+    expect(result.diagnostic.issues).toMatchObject([{ path: "present", rule: "reference" }]);
+  });
   it("keeps plans and promises separate, requires exact evidence and never auto-approves them", () => {
     const result = parseStoryUpdate(block(turn({ facts: [{ text: "Мира передала медный ключ", kind: "event", quote: "Мира передала медный ключ." }, { text: "Мира обещала ремонт завтра", kind: "promise", quote: "Мира обещала починить ворота завтра." }, { text: "Ремонт выполнен", kind: "event", quote: "Несуществующая цитата" }] })), scope);
     expect(result.facts.map(f => f.kind)).toEqual(["event", "promise"]); expect(result.diagnostic.skipped).toBe(1); expect(validStoryUpdateDiagnostic(result.diagnostic)).toBe(true);
@@ -36,6 +62,34 @@ describe("safe independent game updates", () => {
   it("does not use a quote present only inside its own metadata", () => {
     expect(parseStoryUpdate(block(turn({ facts: [{ text: "Made up", kind: "event", quote: "Private invented text" }] })), scope).facts).toEqual([]);
     expect(parseStoryUpdate(block(turn({ facts: [{ kind: "event", quote: "Мира положила ключ в ящик.", risk: "ordinary" }] })), scope).facts).toEqual([]);
+  });
+  it("keeps the Russian source verbatim and rejects its English translation", () => {
+    const quote = "Мира обнаружила на дверном косяке вогнутый ромб.";
+    const translated = "Mira found a concave diamond on the door frame.";
+    const facts = [quote, translated].map(quote => ({ kind: "event", risk: "ordinary", quote }));
+    const result = parseStoryUpdate(block(turn({ facts }), quote), scope);
+    expect(result.facts).toEqual([{ kind: "event", text: quote, quote }]);
+    expect(result.diagnostic.issues).toMatchObject([{ path: "facts[1]", rule: "quote" }]);
+  });
+  it("reads a real sentence by position and rejects pointers to a question or hidden text", () => {
+    const quote = "Мира обнаружила на дверном косяке вогнутый ромб.";
+    const facts = [1, 2, 3, "2"].map(sentence => ({ kind: "event", risk: "ordinary", sentence }));
+    const result = parseStoryUpdate(block(turn({ facts }), `Это дверь? ${quote}<deeprole_choices>Секретный ход.</deeprole_choices>`), scope);
+    expect(result.facts).toEqual([{ kind: "event", text: quote, quote }]);
+    expect(result.diagnostic).toMatchObject({ skipped: 3, facts: 1 });
+  });
+  it("stores the numbered source when the model also returns a translated summary", () => {
+    const quote = "Мира обнаружила на дверном косяке вогнутый ромб.";
+    const row = { kind: "event", risk: "ordinary", sentence: 1, text: "Mira found a concave diamond." };
+    const result = parseStoryUpdate(block(turn({ facts: [row, { ...row, claim: { key: "bad" } }] }), quote), scope);
+    expect(result.facts).toEqual([{ kind: "event", text: quote, quote }]);
+    expect(result.diagnostic).toMatchObject({ skipped: 1, facts: 1 });
+  });
+  it("recognizes numbered events in the observed Mistral packet and prefers an explicit facts list", () => {
+    const quote = "На дверном косяке обнаружился вогнутый ромб.";
+    const events = [{ kind: "event", risk: "ordinary", sentence: 1 }];
+    expect(parseStoryUpdate(block(turn({ events }), quote), scope).facts).toEqual([{ kind: "event", text: quote, quote }]);
+    expect(parseStoryUpdate(block(turn({ events, facts: [] }), quote), scope).facts).toEqual([]);
   });
   it.each([
     "Мира вспомнила, что это всего лишь рисунок.",

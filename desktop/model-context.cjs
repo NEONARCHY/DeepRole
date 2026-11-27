@@ -1,6 +1,8 @@
 const { createHash } = require("node:crypto");
 
 const DEFAULT_WINDOW = 32_768;
+const DEFAULT_REPLY_TOKENS = 4096;
+const MAX_REPLY_TOKENS = 32_768;
 const CONTEXT_SAFETY = 0.9;
 const catalog = new Map();
 const storyMemoryEnabled = prompt => /<deeprole_game_automation>[^\n]*"mode":"(?:automatic|review)"[^\n]*<\/deeprole_game_automation>/u.test(prompt);
@@ -97,15 +99,50 @@ function availableMemoryBytes(system, limits, draftBytes) {
   return bytes >= 0 ? bytes : null;
 }
 
-function modelLimits(config, profile) {
-  const spec = profile?.model_spec;
-  const reported = [spec?.availableContextTokens, profile?.context_length, profile?.context_window].find(validWindow);
+function reportedContextWindow(profile) {
+  return [
+    profile?.model_spec?.availableContextTokens,
+    profile?.context_length,
+    profile?.context_window,
+    profile?.max_context_length,
+  ].find(validWindow);
+}
+
+function replyMode(config) {
+  if (config.replyMode === "auto" || config.replyMode === "manual") return config.replyMode;
+  return Number.isSafeInteger(config.maxTokens) && config.maxTokens !== DEFAULT_REPLY_TOKENS ? "manual" : "auto";
+}
+
+function replyModelKey(config) {
+  return JSON.stringify([config.baseUrl?.replace(/\/+$/u, ""), config.model]);
+}
+
+function reportedReplyLimit(profile) {
+  return [profile?.model_spec?.maxCompletionTokens, profile?.model_spec?.maxOutputTokens, profile?.max_completion_tokens]
+    .find(value => Number.isSafeInteger(value) && value > 0);
+}
+
+function modelLimits(config, profile, retryTokens) {
+  const reported = reportedContextWindow(profile);
   const manual = validWindow(config.contextTokens) ? config.contextTokens : undefined;
   const window = reported && manual ? Math.min(reported, manual) : reported ?? manual ?? DEFAULT_WINDOW;
-  const output = [spec?.maxOutputTokens, profile?.max_completion_tokens].find(value => Number.isSafeInteger(value) && value > 0);
-  const replyTokens = Math.min(config.maxTokens, output ?? Infinity, Math.floor(window / 2));
+  const learned = config.replyLimits?.[replyModelKey(config)];
+  const preferred = replyMode(config) === "manual" ? config.maxTokens ?? DEFAULT_REPLY_TOKENS
+    : retryTokens ?? (Number.isSafeInteger(learned) && learned > DEFAULT_REPLY_TOKENS ? learned : DEFAULT_REPLY_TOKENS);
+  const replyTokens = Math.min(preferred, reportedReplyLimit(profile) ?? MAX_REPLY_TOKENS, Math.floor(window / 2), MAX_REPLY_TOKENS);
   const windowSource = manual && (!reported || manual < reported) ? "manual" : reported ? "provider" : "fallback";
   return { window, windowSource, replyTokens };
+}
+
+function increasedReplyLimit(config, profile, plan) {
+  if (replyMode(config) !== "auto") return;
+  const { window } = modelLimits(config, profile);
+  const draftBytes = Buffer.byteLength(plan.messages.at(-1).content, "utf8");
+  const room = availableMemoryBytes(plan.messages[0], { window, replyTokens: plan.replyTokens }, draftBytes);
+  if (room === null) return;
+  const next = Math.min(plan.replyTokens * 2, plan.replyTokens + Math.floor(room / 3), Math.floor(window / 2),
+    reportedReplyLimit(profile) ?? 8192, MAX_REPLY_TOKENS);
+  if (next > plan.replyTokens) return next;
 }
 
 function fitMessages(system, messages, limits) {
@@ -206,4 +243,5 @@ function withEarlierStoryScene(plan, messages, limits) {
   return { ...plan, estimatedInput, messages: [...plan.messages.slice(0, -1), next] };
 }
 
-module.exports = { modelCatalog, modelProfile, modelLimits, fitMessages, validWindow, availableMemoryBytes, storyMemoryEnabled, earlierSceneQuery, withEarlierStoryScene };
+module.exports = { modelCatalog, modelProfile, reportedContextWindow, modelLimits, fitMessages, validWindow, availableMemoryBytes,
+  replyMode, replyModelKey, increasedReplyLimit, DEFAULT_REPLY_TOKENS, MAX_REPLY_TOKENS, storyMemoryEnabled, earlierSceneQuery, withEarlierStoryScene };

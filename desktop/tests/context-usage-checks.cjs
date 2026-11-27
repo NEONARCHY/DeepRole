@@ -7,7 +7,7 @@ const { modelCatalog, modelProfile, modelLimits, fitMessages, availableMemoryByt
 const { chatRequest } = require("../chat-store.cjs");
 const { recordUsage, readTokenUsage, estimatedCost, usageSummary } = require("../usage.cjs");
 const { saveSpending, spendingNotices } = require("../spending.cjs");
-const { imageRequest, imageReceipt, veniceCharges, memoryBudget } = require("../provider.cjs");
+const { imageRequest, imageReceipt, veniceCharges, memoryBudget, providerSettings, saveProvider } = require("../provider.cjs");
 
 test("one catalog serves selection and context fitting, and refresh doesn't hold a warm request", async t => {
   const base = new URL("https://catalog.example.test/v1");
@@ -143,6 +143,73 @@ test("model window reserves the answer and keeps contiguous complete exchanges",
   assert.deepEqual(fitMessages(system, [oldest, reply, current], limits)?.messages, [system, current]);
   assert.deepEqual(modelLimits({ maxTokens: 4096, contextTokens: 1200 }, { context_length: 24_000 }),
     { window: 1200, windowSource: "manual", replyTokens: 600 });
+  assert.deepEqual(modelLimits({ maxTokens: 4096 }, { max_context_length: 128_000 }),
+    { window: 128_000, windowSource: "provider", replyTokens: 4096 });
+});
+
+test("Auto learns only from length, keeps the sent scene on retry and scopes the learned limit to the model", async t => {
+  const data = await mkdtemp(join(tmpdir(), "deeprole-reply-limit-"));
+  const baseUrl = "http://127.0.0.1:9912/v1";
+  const settings = { baseUrl, model: "alpha", maxTokens: 4096 };
+  await writeFile(join(data, "model.json"), JSON.stringify(settings));
+  const posts = [];
+  const catalogue = [
+    { id: "alpha", model_spec: { availableContextTokens: 128_000, maxCompletionTokens: 7000 } },
+    { id: "beta", model_spec: { availableContextTokens: 128_000, maxCompletionTokens: 16_000 } },
+  ];
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    if (url.pathname.endsWith("/models")) return Response.json({ data: catalogue });
+    const body = JSON.parse(options.body);
+    posts.push(body);
+    const reason = ["length", "stop", null, "length", null, "length"][posts.length - 1] ?? null;
+    const packet = { choices: [{ delta: { content: "The lantern is beside the bridge." }, finish_reason: reason }] };
+    return new Response("data: " + JSON.stringify(packet) + "\n\n", { headers: { "content-type": "text/event-stream" } });
+  });
+  await modelCatalog(new URL(baseUrl), "");
+  assert.equal((await providerSettings(data)).replyMode, "auto");
+  const visible = "Where is the lantern?";
+  const bodyFor = contextId => ({
+    chat_session_id: "lantern-chat", parent_message_id: null, visible, desktop_context_id: contextId,
+    prompt: '<deeprole_context>Beside the bridge.</deeprole_context>\n<deeprole_character_mode>Schema: {"request":"' + contextId
+      + '"}</deeprole_character_mode>\n\n[User message]\n' + visible,
+  });
+  const call = (requestId, body) => chatRequest(data, undefined, new Request(
+    "https://deeprole.local/api/v0/chat/completion?request_id=" + requestId, { method: "POST", body: JSON.stringify(body) }));
+  const first = await call("cut-one", bodyFor("receipt-one"));
+  assert.match(await first.text(), /"error":"model-reply-length","reply_retry_id":"cut-one"/u);
+  assert.deepEqual(posts.map(post => post.max_tokens), [4096]);
+
+  const retry = { ...bodyFor("receipt-two"), reply_retry_id: "cut-one" };
+  const stale = await call("wrong-scene", { ...retry, prompt: retry.prompt.replace("bridge", "market") });
+  assert.equal(stale.status, 409);
+  const sent = await call("retry-one", retry);
+  assert.match(await sent.text(), /event: close/u);
+  assert.deepEqual(posts.map(post => post.max_tokens), [4096, 7000]);
+  assert.equal(posts[1].messages.at(-1).content.replaceAll("receipt-two", "receipt-one"), posts[0].messages.at(-1).content);
+  const saved = JSON.parse(await readFile(join(data, "Chats", "lantern-chat.json"), "utf8"));
+  assert.deepEqual(saved.messages.map(message => message.role), ["user", "assistant"]);
+
+  const next = { ...bodyFor("receipt-three"), parent_message_id: saved.head };
+  assert.match(await (await call("stream-cut", next)).text(), /"error":"model-incomplete"/u);
+  assert.equal(posts.at(-1).max_tokens, 7000);
+  const cap = await (await call("at-cap", next)).text();
+  assert.match(cap, /"error":"model-reply-length"/u);
+  assert.doesNotMatch(cap, /reply_retry_id/u);
+  const config = JSON.parse(await readFile(join(data, "model.json"), "utf8"));
+  assert.deepEqual(Object.values(config.replyLimits), [7000]);
+
+  await saveProvider(data, { ...settings, key: "", model: "beta", replyMode: "auto" });
+  const beta = { ...bodyFor("receipt-four"), chat_session_id: "other-chat" };
+  assert.match(await (await call("beta-turn", beta)).text(), /"error":"model-incomplete"/u);
+  assert.equal(posts.at(-1).max_tokens, 4096);
+  assert.deepEqual(Object.values(JSON.parse(await readFile(join(data, "model.json"), "utf8")).replyLimits), [7000]);
+
+  await saveProvider(data, { ...settings, key: "", model: "beta", replyMode: "manual", maxTokens: 8000 });
+  const manual = await (await call("manual-turn", beta)).text();
+  assert.equal(posts.at(-1).max_tokens, 8000);
+  assert.match(manual, /"error":"model-reply-length"/u);
+  assert.doesNotMatch(manual, /reply_retry_id/u);
+  assert.deepEqual(Object.values(JSON.parse(await readFile(join(data, "model.json"), "utf8")).replyLimits), [7000]);
 });
 
 test("ambiguous, speculative and already-visible passages do not get an archived excerpt", () => {
@@ -201,13 +268,15 @@ test("reveals the earlier or later location according to the request, within a 2
 test("a native turn sends one matching omitted scene from its own branch in the same completion", async context => {
   const data = await mkdtemp(join(tmpdir(), "DeepRole-scene-recall-test-"));
   const id = "scene-chat";
-  const prompt = (draft, branch = "main") => '<deeprole_story_update_mode>world:"observatory",chat:"scene-chat",branch:"' + branch
-    + '"</deeprole_story_update_mode>\n<deeprole_game_automation>{"world":"observatory","mode":"automatic","revision":"p"}</deeprole_game_automation>\n\n[User message]\n' + draft;
+  const prompt = (draft, branch = "main", legacy = false) => "<deeprole_story_update_mode>"
+    + (legacy ? 'world:"observatory",chat:"scene-chat",branch:"' + branch + '"'
+      : JSON.stringify({ version: 2, world: "observatory", chat: id, branch }))
+    + '</deeprole_story_update_mode>\n<deeprole_game_automation>{"world":"observatory","mode":"automatic","revision":"p"}</deeprole_game_automation>\n\n[User message]\n' + draft;
   const excerpt = "Мира положила запасной пропуск в ящик № 29 под кобальтовым светильником.";
   const turns = [["Осматриваю пропуск.", excerpt], ["Другая ветка.", "Запасной пропуск остался в красном сейфе № 81.", "alternate"],
     ["День дождя.", "Шёл дождь над мастерской. ".repeat(240)], ["Подхожу к окну.", "За окном стучит дождь."]];
   const messages = turns.flatMap(([visible, text, branch], index) => [
-    { id: index * 2 + 1, parent: index * 2 || null, role: "user", visible, text: prompt(visible, branch) },
+    { id: index * 2 + 1, parent: index * 2 || null, role: "user", visible, text: prompt(visible, branch, true) },
     { id: index * 2 + 2, parent: index * 2 + 1, role: "assistant", visible: text, text },
   ]);
   await mkdir(join(data, "Chats"));
@@ -245,6 +314,55 @@ test("a native turn sends one matching omitted scene from its own branch in the 
   await shown.text();
   const final = JSON.parse(await readFile(file, "utf8"));
   assert.equal(final.messages.at(-1).visible, `${sceneAnswer}\n\n${echo}`);
+});
+
+test("a service-only model reply fails the story turn without replacing its history or retrying", async t => {
+  const data = await mkdtemp(join(tmpdir(), "DeepRole-visible-reply-"));
+  const id = "visible-reply";
+  const scoped = draft => '<deeprole_story_update_mode>world:"world",chat:"visible-reply",branch:"main"</deeprole_story_update_mode>\n'
+    + '<deeprole_game_automation>{"mode":"automatic"}</deeprole_game_automation>\n\n[User message]\n' + draft;
+  const packet = '{"version":2,"world":"world","chat":"visible-reply","branch":"main","updates":[]}';
+  const tagged = "<deeprole_characters>" + packet + "</deeprole_characters>";
+  const fact = '{"kind":"promise","text":"Iris promised to return the ledger."}';
+  const scene = "The ledger is on the desk.";
+  const file = join(data, "Chats", id + ".json");
+  const old = { id, title: "Archivist", updatedAt: 1, head: 2, messages: [
+    { id: 1, parent: null, role: "user", visible: "I wait.", text: scoped("I wait.") },
+    { id: 2, parent: 1, role: "assistant", visible: scene.repeat(410), text: scene.repeat(410) },
+  ] };
+  await mkdir(join(data, "Chats"));
+  await writeFile(file, JSON.stringify(old));
+  await writeFile(join(data, "model.json"), JSON.stringify({ baseUrl: "http://127.0.0.1:9903/v1", model: "visible-reply-test", maxTokens: 256, contextTokens: 4096 }));
+  let content, posts = 0;
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (url.pathname.endsWith("/models")) return Response.json({ data: [] });
+    posts++;
+    return Response.json({ choices: [{ message: { content }, finish_reason: "stop" }] });
+  });
+  const send = (draft, parent = 2, messageId) => chatRequest(data, {}, new Request("https://deeprole.local/api/v0/chat/completion", {
+    method: "POST", body: JSON.stringify({ chat_session_id: id, parent_message_id: parent, message_id: messageId, visible: draft, prompt: scoped(draft) }),
+  })).then(response => response.text());
+  for (const [index, bad] of [tagged, "```json\n" + tagged + "\n```", "<deeprole_choices>{}", fact, packet].entries()) {
+    content = bad;
+    const events = await send("Where is the ledger?", 2, index === 1 ? 1 : undefined);
+    assert.match(events, /event: hint\ndata: \{"error":"model-empty"\}/);
+    assert.doesNotMatch(events, /event: (?:finish|close)/);
+    assert.deepEqual(JSON.parse(await readFile(file, "utf8")), old);
+    assert.equal(posts, index + 1);
+  }
+  content = scene + "\n\n" + tagged;
+  assert.match(await send("Where is the ledger?"), /event: finish/);
+  let saved = JSON.parse(await readFile(file, "utf8"));
+  assert.equal(saved.messages.at(-1).visible, scene);
+  assert.equal(saved.messages.at(-1).text, content);
+  assert.deepEqual(saved.messages.slice(0, 2), old.messages);
+  assert.equal(saved.contextCheckpoint.omittedThrough, 2);
+  content = fact;
+  assert.match(await send("Show the promise as JSON.", saved.head), /event: finish/);
+  saved = JSON.parse(await readFile(file, "utf8"));
+  assert.equal(saved.messages.at(-1).visible, fact);
+  assert.match(await send("[DeepRole Service]\nCheck the promise.", saved.head), /event: finish/);
+  assert.equal(posts, 8);
 });
 
 test("actual usage survives a ledger reload and matched charges replace estimates", async () => {

@@ -56,13 +56,13 @@ import { storyReviewReminderReply } from "../core/story-review-reminder";
 import { explicitOutOfCharacter } from "../core/story-message-mode";
 import { storyReplyPurpose, storyReplyProofChanged } from "../core/story-reply-purpose";
 import { concealChoicePayloads, dismissSceneChoiceCards, latestSceneChoiceTarget, syncSceneChoiceCards, type ChoicePin } from "../adapters/deepseek-choices-dom";
-import { transportChanged } from "../adapters/deepseek-transport-visibility";
+import { readTransportSource, transportChanged } from "../adapters/deepseek-transport-visibility";
 import { hideCharacterTextServices, plainCharacterReplyText, findServiceReplyRows, findServiceResponseElements, findVirtualizedServiceReply, findVirtualizedServiceResponseElements, markServiceReplyRow, presentMemoryAnalysis, serviceReplyText, removeServicePreloader, replaceArchivedMemoryPayloads, replaceServicePayloadWithSummary, restoreServiceTurns } from "../adapters/deepseek-service-dom";
 import { experienceText } from "../core/experience-i18n";
 import { DEFAULT_SETTINGS } from "../core/defaults";
 import { validStoryContinuation, withLatestVisibleStory } from "../core/story-continuation";
 import { visibleStoryHistory } from "../adapters/story-history-dom";
-import { validStoryTransportIdentity, type StoryTransportIdentity } from "../core/story-transport";
+import { validNativeStoryId, validStoryTransportIdentity, type StoryTransportIdentity } from "../core/story-transport";
 import { validNativeStoryRequestLink } from "../core/story-exchange";
 import { clearSelfieImageCache, isSelfieRequest, SELFIE_DELAY } from "../core/selfies";
 import { ScenePhotosPresenter } from "../adapters/scene-photos-dom";
@@ -135,7 +135,7 @@ import type { SceneState, WorldProfile, SceneEntity, StoryTemplate } from "../co
 import { sceneText } from "../core/scene-i18n";
 import { bindCharacterTurn, characterInstruction, characterRevision, characterTurnKey, actionsFor, characterInChat, type CharacterCopyKey, type CharacterRequestReceipt } from "../core/characters";
 import { foldCharacterPayload, latestCharacterResponse, syncChoicePortraits } from "../adapters/deepseek-characters-dom";
-import { portraitParticipants } from "../core/portrait-presence";
+import { hasPortraitCast, observePortraitPresence, replayPortraitPresence } from "../core/portrait-presence";
 import type { CharacterEdit } from "../storage/characters";
 import { relationshipLoreBrief } from "../core/relationship-setup";
 import { handoffCharacterScene, withHandoffCharacters } from "../core/relationship-handoff";
@@ -208,7 +208,8 @@ class PageController {
   private characterReceiptTask: Promise<unknown> = Promise.resolve();
   private recoveryReceiptTask: Promise<unknown> = Promise.resolve();
   private characterScan: { scope: string; key: string; since: number; done: boolean } | null = null;
-  private portraitPreview?: { scope: string; revision?: string; ids: string[] };
+  private portraitPreview?: { scope: string; revision?: string; presence: Map<string, boolean> };
+  private readonly portraitReplies = new WeakMap<HTMLElement, { roster: string; hasCast: boolean; observations: ReturnType<typeof observePortraitPresence> }>();
   private characterSaving = false;
   private characterScanTask: Promise<void> | null = null;
   private characterRescanQueued = false;
@@ -285,6 +286,7 @@ class PageController {
   private attemptedContinuationCommit: string | null = null;
   private readonly checkedContinuationHistory = new Set<string>();
   private readonly deliveries = new Map<string, ContextDelivery>();
+  private nativeReplyContext?: { nativeId: string; id: string; scopeKey: string; url: string; draft: string; context: string };
   private loreLengthRetry?: LoreLengthRetry;
   private readonly searchIndex = new GameSearchIndex();
   private readonly malformedServiceReplies = new Map<string, { text: string; stableSince: number }>();
@@ -748,6 +750,7 @@ class PageController {
     this.retryContinuationTarget = null;
     this.pendingContinuationCommit = null; this.state.continuationCommitPending = false;
     this.transferQueue = null;
+    this.nativeReplyContext = undefined;
     this.deliveries.clear(); this.proposals = []; this.changes = []; this.pendingService = null;
     this.clearLoreLengthRetry(); this.state.promptLength = undefined;
     this.serviceFeedback = null;
@@ -1345,7 +1348,7 @@ class PageController {
     const resetAt = this.settings.portraitLayoutResetAt ?? 0;
     syncChoicePortraits(!!characters && this.settings.characterSpritesEnabled !== false && !this.state.vaultLocked, characters?.entities ?? [], characters?.scene, this.state.locale, id => { if (this.state.characters) { this.state.characters.openId = id; this.render(); } }, document, worldId && chatId ? {
       scope: JSON.stringify([worldId, chatId]), layout: this.currentBinding()?.portraitLayouts?.[worldId], resetAt,
-      previewIds: preview && preview.scope === `${worldId}:${chatId}` && preview.revision === characters?.scene?.revision ? preview.ids : undefined,
+      previewPresence: preview && preview.scope === `${worldId}:${chatId}` && preview.revision === characters?.scene?.revision ? preview.presence : undefined,
       pinSceneChoices: !!this.settings.pinSceneChoices, pinLeft: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight), pinRight: !!(this.settings.pinPortraitLeft || this.settings.pinPortraitRight),
       adaptiveLayout: this.settings.adaptiveLayout !== false, animations: this.settings.animationsEnabled !== false,
       onSave: async (entityId, pose) => {
@@ -1522,18 +1525,38 @@ class PageController {
   private updatePortraitPreview(response: NonNullable<ReturnType<typeof latestCharacterResponse>>, scope: string, outOfCharacter: boolean) {
     const characters = this.state.characters;
     if (!IS_DESKTOP || !characters || `${characters.worldId}:${characters.chatId}` !== scope) return;
-    const user = response.row.previousElementSibling;
-    const draft = user?.querySelector(".desktop-message-bubble")?.textContent ?? "";
     const bracketed = this.worlds.find(world => world.id === characters.worldId)?.bracketedOoc === true;
-    const hasCast = response.turn || /<\/?deeprole_characters\b/iu.test(response.text);
-    const prose = response.row.querySelector(".desktop-story-text");
-    const paragraphs = [...(prose?.querySelectorAll("p") ?? [])].filter(node => !node.closest("blockquote, pre"))
-      .slice(-16).map(node => node.textContent?.trim() ?? "");
-    this.portraitPreview = {
-      scope, revision: characters.scene?.revision,
-      ids: !outOfCharacter && !hasCast && user?.matches("[data-role=user]") && !explicitOutOfCharacter(draft, bracketed)
-        ? portraitParticipants(characters.entities, paragraphs) : [],
-    };
+    const roster = JSON.stringify([scope, characters.entities.map(entity => [entity.id, entity.name, entity.aliases, !!entity.characterSheet, entity.characterSheet?.protagonist])]);
+    const branchId = this.trackedBranches.get(this.currentBinding()?.id ?? "");
+    const baseline = this.storyRecords.find(row => row.type === "baseline" && row.branchId === branchId);
+    const anchor = baseline?.type === "baseline" ? baseline.origin.nativeAnchor?.nativeMessageKey : undefined;
+    const turns: ReturnType<typeof observePortraitPresence>[] = [];
+    // Replay the selected rendered line up to its last explicit cast or game
+    // anchor. Completed Windows message nodes cache their literal observations.
+    for (let row: Element | null = response.row; row; row = row.previousElementSibling) {
+      if (!(row instanceof HTMLElement)) continue;
+      if (anchor && nativeMessageIdentity(row) === anchor) break;
+      if (!row.matches("article.desktop-assistant:not([data-streaming], [data-deeprole-service-reply='true'])")) continue;
+      const user = row.previousElementSibling;
+      const draft = user?.querySelector(".desktop-message-bubble")?.textContent ?? "";
+      if (!user?.matches("[data-role=user]") || draft.trimStart().startsWith("[DeepRole Service]")
+          || explicitOutOfCharacter(draft, bracketed) || (row === response.row ? outOfCharacter : this.isOutOfCharacterReply(row))) continue;
+      let evidence = this.portraitReplies.get(row);
+      if (evidence?.roster !== roster) {
+        const prose = row.querySelector<HTMLElement>(".desktop-story-text");
+        if (!prose) continue;
+        evidence = {
+          roster,
+          hasCast: hasPortraitCast(readTransportSource(prose).text),
+          observations: observePortraitPresence(characters.entities, [...prose.querySelectorAll("p")]
+            .filter(node => !node.closest("blockquote, pre")).map(node => node.textContent?.trim() ?? "")),
+        };
+        this.portraitReplies.set(row, evidence);
+      }
+      if (evidence.hasCast) break;
+      turns.push(evidence.observations);
+    }
+    this.portraitPreview = { scope, revision: characters.scene?.revision, presence: replayPortraitPresence(turns.reverse()) };
   }
 
   private async scanCharacterTurn() {
@@ -2494,6 +2517,7 @@ class PageController {
   }
 
   private navigate() {
+    if (this.nativeReplyContext?.url !== location.href) this.nativeReplyContext = undefined;
     if (this.reviewReminderTarget?.chatId !== this.adapter.getChatId()) {
       this.reviewReminderTarget = undefined;
       this.reviewReminder.clear();
@@ -2615,6 +2639,10 @@ class PageController {
       this.scheduleHistoryRefresh(12_000);
       dismissSceneChoiceCards();
       const { id } = event.data; const initialDraft = event.data.draft as string; const initialUrl = location.href;
+      const desktopRequest = IS_DESKTOP ? event.data.desktopRequest : undefined;
+      const nativeId = validNativeStoryId(desktopRequest?.nativeId) ? desktopRequest.nativeId : undefined;
+      const retryId = nativeId && validNativeStoryId(desktopRequest?.retryId) ? desktopRequest.retryId : undefined;
+      const replay = retryId ? this.nativeReplyContext : undefined;
       const requestChatId = typeof event.data.chatId === "string" && /^[\w-]{1,120}$/u.test(event.data.chatId) ? event.data.chatId : undefined;
       const parentMessageId = typeof event.data.parentMessageId === "string" && /^[\w-]{1,120}$/u.test(event.data.parentMessageId) ? event.data.parentMessageId : undefined;
       const requestIdentity = validStoryTransportIdentity(event.data.storyIdentity) && event.data.storyIdentity.chatId === requestChatId ? structuredClone(event.data.storyIdentity) : undefined;
@@ -2723,6 +2751,9 @@ class PageController {
         preparationStage = "policy";
         const generation = this.reloadGeneration;
         const sceneKey = this.contextScopeKey();
+        if (retryId && (!replay || replay.nativeId !== retryId || replay.url !== url || replay.scopeKey !== sceneKey || replay.draft !== draft)) {
+          throw Error("context-changed");
+        }
         const scene = this.currentScene();
         const retryChatId = this.adapter.getChatId();
         if (IS_DESKTOP && !requiresTransfer && !this.pendingService && !event.data.editing && !loreRetry
@@ -2784,14 +2815,17 @@ class PageController {
           && !opening && !requiresTransfer && !snapshot && !recoveryContext && !reminder && !this.pendingService);
         if (loreRetry && (!canFitLore || loreRetry.scope.url !== url || loreRetry.scope.chatId !== currentChatId || loreRetry.scopeKey !== sceneKey || loreRetry.draft !== draft)) throw new Error("context-changed");
         let nativeContextBytes: number | undefined;
-        if (IS_DESKTOP && !reminder && (scene.worldId || scene.bookId || snapshot || recoveryContext)) {
+        if (IS_DESKTOP && !replay && !reminder && (scene.worldId || scene.bookId || snapshot || recoveryContext)) {
           const bytes = new TextEncoder().encode(draft).byteLength;
           nativeContextBytes = await fetch(`/__desktop/memory-budget?bytes=${bytes}`, { signal: AbortSignal.timeout(3000) })
             .then(async response => response.ok ? (await response.json() as { bytes: number | null }).bytes ?? 0 : undefined)
             .catch(() => undefined);
         }
-        const normalContext = await this.updateContext(draft, id, characterChatId, recoveryContext, opening, Boolean(loreRetry), nativeContextBytes);
-        const context = reminder || normalContext;
+        // Keep the selected lore and scene evidence. Rebind only the receipt
+        // ID so this generation can be validated independently of the failed one.
+        const normalContext = replay ? replay.context.replaceAll(replay.id, id)
+          : await this.updateContext(draft, id, characterChatId, recoveryContext, opening, Boolean(loreRetry), nativeContextBytes);
+        const context = replay ? normalContext : reminder || normalContext;
         if (reminder && notice) delivery.oldChatNotice = { chatId: currentChatId!, chatUrl: url, worldId: scene.worldId, snapshotId: notice.snapshotId, targetChatId: notice.targetChatId, mode: "sent" };
         if (reply && recoveryContext && !reminder) delivery.recoveredReply = { chatId: currentChatId!, chatUrl: url, reply };
         preparationStage = "vault";
@@ -2849,6 +2883,7 @@ class PageController {
         this.assertScope(delivery.scope);
         if (generation !== this.reloadGeneration || sceneKey !== this.contextScopeKey()) throw new Error("context-changed");
         if (delivery.continuationDraft) this.render();
+        if (nativeId) this.nativeReplyContext = { nativeId, id, scopeKey: sceneKey, url, draft, context };
         window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: true, context, ...(delivery.snapshot ? { continuation: true, url } : {}), ...(capture ? { capture: true } : {}), ...(draft !== initialDraft ? { replacementDraft: draft } : {}), ...(typeof event.data.editNativeKey === "string" && storyIdentity ? { preparedIdentity: storyIdentity } : {}) }, "*");
         this.maybeWarnContext();
       };
@@ -2881,7 +2916,7 @@ class PageController {
         const incompatible = isBackgroundBuildFailure(error);
         if (incompatible) this.showToast(savedMemoryText(this.state.locale).transferMismatch);
         const unverifiedParent = IS_DESKTOP && preparationStage === "parent" && error instanceof Error && error.message === "story-native-line-unavailable";
-        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible || Boolean(loreRetry) || unverifiedParent }, location.origin);
+        window.postMessage({ source: "deeprole-extension", type: "CONTEXT_READY", id, ok: false, blockSend: requiresTransfer || incompatible || Boolean(loreRetry) || Boolean(retryId) || unverifiedParent }, location.origin);
       });
       return;
     }

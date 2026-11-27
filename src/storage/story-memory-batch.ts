@@ -3,6 +3,7 @@ import { storyFactHint } from "../core/story-fact-context";
 import type { DataRecord, Locale, SceneEntity, WorldProfile } from "../core/types";
 import { storyRow, type StoryRevision } from "../core/story-records";
 import { storyReplyProse, compactStoryFacts, cleanStoryFact } from "../core/story-update";
+import { isRoutineBatchStoryFact, memoryBatchTransitPattern } from "../core/story-memory-admission";
 import { automationMode, normalizedFact, type StoryAutomationCapture } from "../core/story-automation";
 import { assertWorldGameWriter } from "../core/world-game";
 import { MEMORY_BATCH_BYTES, MEMORY_BATCH_TURNS, memoryBatchPrompt, parseMemoryBatch, validMemoryBatchInput, type MemoryBatchInput, type MemoryBatchPart, type MemoryBatchPolicy, type MemoryBatchStatus } from "../core/story-memory-batch";
@@ -138,11 +139,21 @@ export async function applyMemoryBatch(b: MemoryBatchBrief, raw: string, repo: D
     const game = f.world.sharedGame!, clock = game.facts.find(isGameTimeFact);
     const clockPosition = clock ? createEpisodeReader(game.factRoleSeeds, game.episodeSources).position(clock) : 0;
     const sourcePositions = new Map((game.episodeSources ?? []).map((id, i) => [id, i + 1]));
+    const sources = new Map(f.sources.map(source => [source.id, source]));
+    const reviewed = parsed.map(result => {
+      const source = sources.get(result.part.revisionId)!;
+      const transit = source.role === "assistant" && result.part.text === storyReplyProse(source.content)
+        ? memoryBatchTransitPattern(result.part.text) : undefined;
+      return { result, source, transit };
+    });
     let changed = [...all]; const records: DataRecord[] = [], approved = new Set(f.projection.acceptedEventIds);
-    for (const result of parsed) {
-      const source = f.sources.find(r => r.id === result.part.revisionId)!;
+    for (const { result, source, transit } of reviewed) {
+      const repeatedTransit = transit !== undefined && reviewed.some(other => other.source.id !== source.id && other.transit === transit);
       // Older state descriptions cannot replace a later accepted current value.
-      const facts = result.facts.map(fact => {
+      const facts = result.facts.filter(fact => fact.risk !== undefined
+        || !isRoutineBatchStoryFact(fact, source.content, repeatedTransit)).map(fact => {
+        // A missing assessment can preserve evidence for review, never approve it.
+        if (fact.risk === undefined) return { ...fact, risk: "uncertain" };
         // Equal elapsed wording at an older source is still an older clock.
         // Do not turn delayed extraction into a fresh time transition.
         if (isGameTimeFact(fact)) {
@@ -154,7 +165,7 @@ export async function applyMemoryBatch(b: MemoryBatchBrief, raw: string, repo: D
         const laterTask = fact.task && f.world.sharedGame!.facts.some(old => old.task?.key === fact.task!.key && old.task.status !== fact.task!.status);
         return source.role === "user" && fact.kind === "event" || (later && fact.claim?.scope === "state" || laterTask) && source.id !== head.id ? { ...fact, risk: "uncertain" } : fact;
       });
-      const additions = planStoryAccompaniment(changed, f.world, f.baseline, f.branch, head, approved, undefined, facts.map(cleanStoryFact), { facts, people: result.people }, b.input.chatId, { source, capture: b.capture });
+      const additions = planStoryAccompaniment(changed, f.world, f.baseline, f.branch, head, approved, undefined, facts.map(cleanStoryFact), { facts, people: result.people }, b.input.chatId, { source, capture: b.capture, repeatedTransit });
       records.push(...additions); changed.push(...additions);
       const revision = { ...source, memoryBatch: { offset: result.part.end, request: { ...source.memoryBatch!.request, status: "done" as const } }, updatedAt: Date.now() };
       records.push(storyRow(revision)); changed = changed.map(r => r.kind === "story" && r.id === source.id ? storyRow(revision) : r);

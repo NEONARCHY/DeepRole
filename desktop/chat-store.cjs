@@ -1,14 +1,24 @@
 const { mkdir, readFile, writeFile, rename, readdir, rm } = require("node:fs/promises");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
-const { complete, veniceCharges, veniceBalances, memoryBudget } = require("./provider.cjs");
+const { complete, learnReplyLimit, veniceCharges, veniceBalances, memoryBudget } = require("./provider.cjs");
 const { storyMemoryEnabled, earlierSceneQuery } = require("./model-context.cjs");
 const { recordUsage, readTokenUsage, estimatedCost, usageSummary, spendingSince } = require("./usage.cjs");
 const { spendingSettings, saveSpending, spendingNotices } = require("./spending.cjs");
 
 const idPattern = /^[\w-]{1,120}$/u;
 const loading = new Map();
+const replyRetries = new Map();
 const encoder = new TextEncoder();
+const retryKey = (data, id) => JSON.stringify([data, id]);
+
+function rememberRetry(key, retry) {
+  replyRetries.delete(key);
+  for (const [id, entry] of replyRetries) {
+    if (entry.until <= Date.now() || replyRetries.size >= 16) replyRetries.delete(id);
+  }
+  replyRetries.set(key, { ...retry, until: Date.now() + 10 * 60_000 });
+}
 
 function chatPath(data, id) {
   if (typeof id !== "string" || !idPattern.test(id)) throw Error("Invalid chat");
@@ -43,6 +53,9 @@ function lineAt(chat, tip) {
 }
 const effectFree = text => text.replace(/<deeprole_[^>]*>[\s\S]*?<\/deeprole_[^>]*>/gu, "").replace(/<deeprole_[^>]*>[\s\S]*$/gu, "").trim();
 const storyTransportKeys = ["request", "version", "world", "chat", "branch", "present", "partners", "updates", "attributes", "bonds", "selfies", "facts", "people"];
+const storyFactKeys = new Set(["kind", "text", "quote", "anchor", "risk", "claim", "task", "roles"]);
+const storyFactKinds = new Set(["event", "promise", "plan", "belief", "secret", "task"]);
+const requestsJson = draft => /\bjson\b/iu.test(draft);
 const echoCopulas = new Set(["is", "are", "was", "were", "был", "была", "было", "были"]);
 const echoWords = text => (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter(word => !echoCopulas.has(word));
 
@@ -73,7 +86,7 @@ function withoutFactEcho(prefix, facts) {
 }
 
 function storyMetadataRoute(prompt, chatId) {
-  const scope = /<deeprole_story_update_mode>[^<]*\bworld:\s*"([\w-]+)",\s*chat:\s*"([\w-]+)",\s*branch:\s*"([\w-]+)"/u.exec(prompt);
+  const scope = /<deeprole_story_update_mode>[^<]*\bworld"?:\s*"([\w-]+)",\s*"?chat"?:\s*"([\w-]+)",\s*"?branch"?:\s*"([\w-]+)"/u.exec(prompt);
   return scope?.[2] === chatId ? { world: scope[1], chat: chatId, branch: scope[3] } : undefined;
 }
 
@@ -88,7 +101,7 @@ function recordedStoryRoute(prompt, chatId) {
 function normalizeStoryMetadata(text, prompt, chatId, draft) {
   const route = storyMetadataRoute(prompt, chatId);
   if (!route) return text;
-  const keepJson = /\bjson\b/iu.test(draft);
+  const keepJson = requestsJson(draft);
   const characterMode = /<deeprole_character_mode>([\s\S]*?)<\/deeprole_character_mode>/u.exec(prompt)?.[1] ?? "";
   const requestId = /(?:^|\n)Schema:\s*\{"request":\s*"([\w-]+)"/u.exec(characterMode)?.[1];
   const tags = text.match(/<deeprole_characters>/gu) ?? [];
@@ -132,6 +145,19 @@ function normalizeStoryMetadata(text, prompt, chatId, draft) {
   return `${prefix}<deeprole_characters>${json}</deeprole_characters>\n${text.slice(block.index + block[0].length)}`;
 }
 
+function onlyStoryJson(text) {
+  const source = text.replace(/^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/iu, "$1").trimStart();
+  if (source[0] !== "{" || source.length > 64_000) return false;
+  let value;
+  try { value = JSON.parse(source); } catch { return false; }
+  const keys = Object.keys(value);
+  if (keys.every(key => storyFactKeys.has(key)) && storyFactKinds.has(value.kind)) {
+    return [value.text, value.anchor, value.quote].some(field => typeof field === "string" && field.trim());
+  }
+  return keys.every(key => storyTransportKeys.includes(key)) && value.version === 2
+    && ["facts", "updates", "present", "partners"].some(key => Array.isArray(value[key]));
+}
+
 const json = (value, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "no-store" } });
 
 async function streamDelta(response, consume, captureMetadata) {
@@ -139,9 +165,11 @@ async function streamDelta(response, consume, captureMetadata) {
   if (response.headers.get("content-type")?.includes("application/json")) {
     const result = await response.json();
     captureMetadata(result);
-    const message = result.choices?.[0]?.message;
+    const choice = result.choices?.[0];
+    if (choice?.finish_reason === "length") throw Error("model-reply-length");
+    const message = choice?.message;
     if (!message || typeof message.content !== "string") throw Error("model-empty");
-    if (result.choices[0].finish_reason && result.choices[0].finish_reason !== "stop") throw Error("model-incomplete");
+    if (choice.finish_reason && choice.finish_reason !== "stop") throw Error("model-incomplete");
     consume(message.content, message.reasoning_content ?? "");
     return;
   }
@@ -157,6 +185,7 @@ async function streamDelta(response, consume, captureMetadata) {
     captureMetadata(packet);
     const choice = packet.choices?.[0];
     if (!choice) return;
+    if (choice.finish_reason === "length") throw Error("model-reply-length");
     if (choice.finish_reason && choice.finish_reason !== "stop") throw Error("model-incomplete");
     finished ||= choice.finish_reason === "stop";
     const delta = choice.delta;
@@ -207,6 +236,20 @@ async function generate(data, safeStorage, request, requestId) {
     if (body.message_id !== undefined && !original) return json({ error: "chat-stale" }, 409);
     const parent = original ? original.parent : body.parent_message_id;
     if (!original && parent !== chat.head) return json({ error: "chat-stale" }, 409);
+    const key = retryKey(data, id);
+    const retryId = body.reply_retry_id;
+    const contextId = typeof body.desktop_context_id === "string" && idPattern.test(body.desktop_context_id) ? body.desktop_context_id : undefined;
+    let retry;
+    if (retryId !== undefined) {
+      const previous = replyRetries.get(key);
+      if (!previous || previous.id !== retryId || previous.until <= Date.now() || previous.head !== chat.head
+          || previous.parent !== parent || previous.edited !== body.message_id || previous.visible !== body.visible
+          || Boolean(previous.contextId) !== Boolean(contextId)) return json({ error: "model-retry-stale" }, 409);
+      const retag = prompt => previous.contextId ? prompt.replaceAll(previous.contextId, contextId) : prompt;
+      if (retag(previous.originalPrompt) !== body.prompt) return json({ error: "model-retry-stale" }, 409);
+      retry = { ...previous, prompt: retag(previous.prompt) };
+    }
+    replyRetries.delete(key);
     const line = lineAt(chat, parent);
     const kind = body.visible.trimStart().startsWith("[DeepRole") ? "service" : "story";
     const sceneQuery = kind === "story" ? earlierSceneQuery(body.visible) : undefined;
@@ -220,10 +263,11 @@ async function generate(data, safeStorage, request, requestId) {
     });
     const current = { role: "user", content: body.prompt, sceneQuery: route ? sceneQuery : undefined };
     const signal = AbortSignal.any([request.signal, controller.signal]);
-    let contextStats, dispatchedAt, firstTextAt;
-    const response = await complete(data, safeStorage, [...context, current], signal, async (plan, profile) => {
+    let contextStats, replyLimit, dispatchedAt, firstTextAt;
+    const response = await complete(data, safeStorage, [...context, current], signal, (plan, profile, adaptive) => {
       const { window, windowSource, replyTokens, estimatedInput, omittedMessages } = plan;
       contextStats = { window, windowSource, replyTokens, estimatedInput, omittedMessages };
+      replyLimit = adaptive;
       const omittedThrough = line[omittedMessages - 1]?.id;
       const retainedLast = line.at(-1);
       if (kind === "story" && omittedThrough && retainedLast && chat.contextCheckpoint?.omittedThrough !== omittedThrough) {
@@ -233,13 +277,12 @@ async function generate(data, safeStorage, request, requestId) {
           memory: separator >= 0 && body.prompt.startsWith("<deeprole_") ? body.prompt.slice(0, separator) : "",
           scene: retainedLast.visible,
         };
-        await saveChat(data, chat);
       }
       if (attempt) return;
       const row = { id: randomUUID(), at: Date.now(), chatId: id, kind, ...profile };
       attempt = row;
       void recordUsage(data, { id: row.id, at: row.at, chatId: id, kind, model: row.model, venice: row.venice }).catch(() => undefined);
-    }, () => { dispatchedAt ??= performance.now(); });
+    }, () => { dispatchedAt ??= performance.now(); }, retry);
     if (!response.ok) return response;
     const last = chat.messages.at(-1)?.id ?? 0;
     const user = { id: last + 1, parent, role: "user", text: body.prompt, visible: body.visible };
@@ -266,6 +309,8 @@ async function generate(data, safeStorage, request, requestId) {
           if (!reply.text.trim()) throw Error("model-empty");
           if (kind === "story") reply.text = normalizeStoryMetadata(reply.text, body.prompt, id, body.visible);
           reply.visible = effectFree(reply.text);
+          if (kind === "story" && (!reply.visible || /^```(?:json)?\s+```$/iu.test(reply.visible)
+              || !requestsJson(body.visible) && recordedStoryRoute(body.prompt, id) && onlyStoryJson(reply.visible))) throw Error("model-empty");
           chat.messages.push(user, reply);
           chat.head = reply.id;
           chat.title ||= user.visible.trim().replace(/\s+/g, " ").slice(0, 76);
@@ -286,7 +331,19 @@ async function generate(data, safeStorage, request, requestId) {
           output.close();
         } catch (error) {
           await finishUsage("interrupted");
-          try { send("hint", { error: ["model-empty", "model-incomplete"].includes(error.message) ? error.message : "model-interrupted" }); output.close(); } catch { /* The app stopped this request. */ }
+          const reason = ["model-empty", "model-incomplete", "model-reply-length"].includes(error.message) ? error.message : "model-interrupted";
+          let nextRetryId;
+          if (!signal.aborted && kind === "story" && reason === "model-reply-length" && replyLimit?.nextTokens) {
+            const tokens = await replyLimit.nextTokens().catch(() => undefined);
+            if (tokens && !signal.aborted) await learnReplyLimit(data, replyLimit.modelKey, tokens).catch(() => undefined);
+            if (tokens && !signal.aborted && typeof requestId === "string" && idPattern.test(requestId)) {
+              nextRetryId = requestId;
+              rememberRetry(key, { scope: replyLimit.scope, prompt: replyLimit.prompt, tokens,
+                id: requestId, head: chat.head, parent, edited: body.message_id,
+                visible: body.visible, originalPrompt: body.prompt, contextId, previousTokens: contextStats.replyTokens });
+            }
+          }
+          try { send("hint", { error: reason, ...(nextRetryId ? { reply_retry_id: nextRetryId } : {}) }); output.close(); } catch { /* The app stopped this request. */ }
         } finally { release(); }
       },
       cancel() { controller.abort(); },
@@ -369,6 +426,7 @@ async function chatRequest(data, safeStorage, request) {
       }
       loading.set(id, null);
       try {
+        replyRetries.delete(retryKey(data, id));
         if (deleting) {
           await rm(chatPath(data, id), { force: true });
           return json({ ok: true });

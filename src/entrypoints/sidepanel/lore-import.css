@@ -1,11 +1,12 @@
-.dr-worlds-heading { display: grid; gap: var(--dr-space-2); }
+.dr-worlds-heading { display: grid; gap: var(--ui-s-2); }
 .dr-worlds-heading .view-title { min-height: 0; }
 .worlds-view .dr-worlds-heading :is(h1, .dr-view-subtitle) { margin: 0; }
 
 .modal-backdrop.lore-import-backdrop {
   align-items: center;
   justify-items: center;
-  padding: 16px;
+  padding: var(--ui-s-4);
+  background: var(--ui-scrim);
   /* Keep text opaque from the first frame; fading the ancestor mixes it with
      the library behind the dialog, especially during fast import recovery. */
   animation: none;
@@ -15,10 +16,11 @@
   display: flex;
   flex-direction: column;
   width: min(100%, 560px);
-  max-height: calc(100vh - 32px);
-  border-bottom: 1px solid var(--line-strong);
-  border-radius: 20px;
-  animation: fade .16s ease;
+  max-height: calc(100dvh - 2 * var(--ui-s-4));
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-r-xl);
+  background: var(--ui-layer-1);
+  box-shadow: var(--ui-shadow-lg);
 }
 
 .modal-backdrop.lore-import-backdrop > .lore-import-modal {
@@ -28,16 +30,18 @@
 
 .lore-import-modal > .modal-body {
   min-height: 0;
-  padding: 8px 16px 16px;
+  gap: var(--ui-s-4);
+  padding: var(--ui-s-2) var(--ui-s-4) var(--ui-s-4);
+  overscroll-behavior: contain;
 }
 
 .lore-import-modal > header,
 .rp-import-footer { flex-shrink: 0; }
 
 .rp-import-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--line);
-  background: var(--dr-bg);
+  padding: var(--ui-s-3) var(--ui-s-4);
+  border-top: 1px solid var(--ui-line);
+  background: var(--ui-layer-1);
 }
 
 .rp-import-footer > .button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
@@ -55,7 +59,7 @@
 
 .rp-import-fields {
   display: grid;
-  gap: 16px;
+  gap: var(--ui-s-4);
   grid-template-columns: minmax(0, 1fr);
   min-inline-size: 0;
   margin: 0;
@@ -68,21 +72,21 @@
   display: grid;
   justify-items: center;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--ui-s-3);
+  padding: var(--ui-s-4);
   grid-template-columns: minmax(0, 1fr);
-  border: 1px dashed var(--dr-border);
-  border-radius: 14px;
-  background: var(--dr-surface);
-  color: var(--dr-text);
+  border: 1px dashed var(--ui-line-strong);
+  border-radius: var(--ui-r-lg);
+  background: var(--ui-layer-2);
+  color: var(--ui-text);
   text-align: center;
-  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  transition: border-color var(--ui-dur-fast) var(--ui-ease-standard), background var(--ui-dur-fast) var(--ui-ease-standard);
 }
 
 .rp-import-dropzone > svg {
-  width: 23px;
-  height: 23px;
-  color: var(--dr-primary);
+  width: var(--ui-s-6);
+  height: var(--ui-s-6);
+  color: var(--ui-text-2);
 }
 
 .rp-import-filename {
@@ -93,31 +97,31 @@
 .rp-import-filename p, .rp-import-formats p, .rp-import-options p,
 .rp-import-destination > p, .rp-import-contents p {
   margin: 0;
-  color: var(--dr-muted);
+  color: var(--ui-text-2);
   font-size: .8125rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 .rp-import-filename p { margin-top: 4px; }
 .rp-import-dropzone[data-preview="true"] {
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  gap: 8px;
-  padding: 8px 0 12px;
+  grid-template-columns: var(--ui-icon-md) minmax(0, 1fr) auto;
+  gap: var(--ui-s-2);
+  padding: var(--ui-s-2) 0 var(--ui-s-3);
   justify-items: start;
   text-align: start;
   border: 0;
-  border-bottom: 1px solid var(--dr-border);
+  border-bottom: 1px solid var(--ui-line);
   border-radius: 0;
   background: transparent;
 }
-.rp-import-dropzone[data-preview="true"] > svg { width: 20px; }
+.rp-import-dropzone[data-preview="true"] > svg { width: var(--ui-icon-md); }
 .rp-import-choose { max-width: 100%; white-space: normal; }
 .rp-import-destination, .rp-import-contents { display: grid; gap: 8px; min-width: 0; }
 .rp-import-destination .field-label { min-width: 0; margin: 0; }
-.rp-import-options { border-block: 1px solid var(--dr-border); }
+.rp-import-options { border-block: 1px solid var(--ui-line); }
 .rp-import-options:empty { display: none; }
 .rp-import-options > div { padding: 4px 0 12px; }
-.rp-import-options > div + div { border-top: 1px solid var(--dr-border); }
+.rp-import-options > div + div { border-top: 1px solid var(--ui-line); }
 .lore-import-modal summary {
   min-height: 44px;
   align-content: center;
@@ -126,15 +130,15 @@
 }
 .rp-import-contents { font-size: .875rem; }
 .lore-import-modal :is(a, summary):focus-visible {
-  outline: 2px solid var(--dr-primary);
+  outline: 2px solid var(--ui-focus);
   outline-offset: -2px;
 }
 
 .rp-import-dropzone.is-dragging {
   border-style: solid;
-  border-color: var(--dr-primary);
-  background: var(--dr-selected);
-  outline: 2px solid var(--dr-primary);
+  border-color: var(--ui-focus);
+  background: var(--ui-accent-soft);
+  outline: 2px solid var(--ui-focus);
   outline-offset: -2px;
 }
 

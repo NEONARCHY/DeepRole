@@ -11,7 +11,9 @@ import type { ChatBinding, SceneEntity, WorldProfile } from "../src/core/types";
 import { isSameDeepSeekChat } from "../src/core/chat-scope";
 import { characterEditBaseline } from "../src/core/character-edit";
 import { assignLibraryImages, withPortraitLibrary } from "../src/core/portrait-library";
-import { portraitParticipants } from "../src/core/portrait-presence";
+import { hasPortraitCast, observePortraitPresence, portraitPresence, replayPortraitPresence } from "../src/core/portrait-presence";
+import portraitContract from "./fixtures/portrait-presence-contract.json";
+import returningPortraits from "./fixtures/portrait-pronoun-return-contract.json";
 
 const entity: SceneEntity = { id: "mira", worldId: "w", name: "Mira", kind: "character", description: "  ORIGINAL LORE\n", aliases: [], memberIds: [], createdAt: 1, updatedAt: 1, characterSheet: { ...EMPTY_CHARACTER, appearance: "Blue coat", sprites: {} } };
 const world: WorldProfile = { id: "w", name: "World", description: "", color: "#123456", contextBudget: 2000, relevanceThreshold: 6, createdAt: 1, updatedAt: 1 };
@@ -29,6 +31,8 @@ const block = (value: unknown) => `<deeprole_characters>${JSON.stringify(value)}
 
 it("recognizes a directly attributed portrait speaker without treating mentions, memories or calls as presence", () => {
   const mira = { ...entity, aliases: ["Мира"] };
+  const portraitParticipants = (people: SceneEntity[], prose: string[]) =>
+    [...portraitPresence(people, prose)].filter(([, present]) => present).map(([id]) => id);
   expect(portraitParticipants([mira], ["— Я здесь, — сказала Мира и подняла фонарь."])).toEqual([mira.id]);
   expect(portraitParticipants([mira], ["“I'm here,” Mira said."])).toEqual([mira.id]);
   expect(portraitParticipants([mira], ["Мира замерла. Фонарь качнулся у двери."])).toEqual([mira.id]);
@@ -37,6 +41,42 @@ it("recognizes a directly attributed portrait speaker without treating mentions,
   expect(portraitParticipants([mira], ["Ной вспомнил вчерашний разговор.", "— Я здесь, — сказала Мира."])).toEqual([]);
   expect(portraitParticipants([mira], ["— Я здесь, — сказал Ной и вспомнил Миру.", "Ной спросил Миру, где ключ."])).toEqual([]);
   expect(portraitParticipants([mira, { ...mira, id: "another" }], ["— Я здесь, — сказала Мира."])).toEqual([]);
+});
+
+it("tracks played entrances and exits in order and leaves ambiguous references alone", () => {
+  const mira = { ...entity, aliases: ["Мира"] };
+  const infer = (...paragraphs: string[]) => [...portraitPresence([mira], paragraphs)];
+  expect(infer(portraitContract.entry.prose)).toEqual([[mira.id, true]]);
+  expect(infer(portraitContract.quiet.prose)).toEqual([]);
+  expect(infer(portraitContract.entry.prose, portraitContract.exit.prose)).toEqual([[mira.id, false]]);
+  expect(infer(portraitContract.exit.prose, "Mira walked into the room.")).toEqual([[mira.id, true]]);
+  expect(infer("Мира кивнула. Она вышла из комнаты.")).toEqual([[mira.id, false]]);
+  expect(infer("Мира кивнула Лине. Она вышла из комнаты.")).toEqual([[mira.id, true]]);
+  expect(infer("Мира вышла бы из комнаты.", "Мира не вошла в комнату.", "Мира вышла на связь.")).toEqual([]);
+  expect(infer("Ной пересказал услышанное: «Мира вошла в комнату. Мира вышла из комнаты.»")).toEqual([]);
+  expect(infer("Мира шепчет по телефону.", "— Я здесь, — сказала Мира.")).toEqual([]);
+});
+
+it("allows narrated presence with a facts-only packet and respects explicit membership", () => {
+  expect(hasPortraitCast(block({ facts: [{ kind: "event", text: "present" }] }))).toBe(false);
+  expect(hasPortraitCast(block({ present: [] }))).toBe(true);
+  expect(hasPortraitCast(block({ present: [{ id: "mira" }] }))).toBe(true);
+});
+
+it("restores a recently departed NPC from an unambiguous later reply", () => {
+  const mira = { ...entity, name: "Мира" };
+  const lina = { ...entity, id: "lina", name: "Лина" };
+  const observe = (paragraph: string) => observePortraitPresence([mira, lina], [paragraph]);
+  const turns = returningPortraits.map(turn => observe(turn.reply));
+  expect(replayPortraitPresence(turns.slice(0, 3))).toEqual(new Map([[mira.id, false], [lina.id, true]]));
+  expect(replayPortraitPresence(turns)).toEqual(new Map([[mira.id, true], [lina.id, true]]));
+  expect(replayPortraitPresence([turns[0]!, observe("Лина вышла из мастерской."), turns[3]!]))
+    .toEqual(new Map([[mira.id, false], [lina.id, false]]));
+  expect(replayPortraitPresence([...turns.slice(0, 3), [], turns[3]!]).get(mira.id)).toBe(false);
+  for (const reply of ["Она вернулась?", "Она вернулась к разговору.", "Она вернулась бы.", "Он вернулся.",
+    "Вчера она вернулась.", "Мира и Лина посмотрели на дверь. Она вернулась."]) {
+    expect(replayPortraitPresence([...turns.slice(0, 3), observe(reply)]).get(mira.id)).toBe(false);
+  }
 });
 
 it("returns a fresh editing baseline for repeated saves, including new characters and intervening scene updates", async () => {

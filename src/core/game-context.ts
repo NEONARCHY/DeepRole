@@ -80,6 +80,7 @@ export interface GameContextInput extends RankMemoryInput {
 type ProfilePart={id:string;name:string;field:"appearance"|"personality"|"goals"|"background";text:string;ordinal:number};
 const fields=["appearance","personality","goals","background"] as const;
 const join=(parts:string[])=>parts.filter(Boolean).join("\n\n");
+const russianReplyRequest = /^\s*(?:теперь\s+)?(?:продолжай(?:те)?|продолжим|играем|отвечай(?:те)?|ответь|ответьте|пиши(?:те)?|говори(?:те)?)\s+(?:на русском|по-русски)(?=[\s.,!?]|$)/iu;
 /** Includes the separator added by injectContextIntoPrompt, not the user's draft. */
 export const addedContextTokens=(text:string)=>estimateTokens(text?text+"\n\n[User message]\n":"");
 /** One local compiler owns the complete added prompt. No storage writes, model
@@ -538,6 +539,9 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
   const writesStory = input.story && !input.readOnly && !input.story.referenceOnly;
   const protocolEnd = writesStory && !input.story!.sheetsEnabled
     ? "Character sheet updates are disabled: omit updates/present/partners/attributes/bonds/selfies; propose evidenced facts only." : "";
+   const factReplyOrder = russianReplyRequest.test(input.draft)
+     ? 'Ответ по-русски. Для нового простого события: kind "event", risk "ordinary", sentence — номер предложения ответа с 1, без text и quote. Слухи и прошлое пропусти.'
+     : "Visible reply in requested language first. Then JSON: copy new evidence verbatim from that reply; skip recalls.";
   let clockMode: "full" | "compact" | "legacy" = "full";
   let legacyClockText = "";
  const bracketNotes=bracketedOoc&&!input.readOnly&&hasBracketNotes(input.draft)?BRACKET_NOTE_INSTRUCTION:'';
@@ -562,7 +566,10 @@ function compileGameContextPass(input:GameContextInput, options:GameContextOptio
    const clockGuide = writesStory && input.story?.sceneClock && clockMode === "full" ? sceneClockHeadingGuide(input.draft, !!time?.anchor) : "";
    const sceneText=join([characterText,protocolStart,clockText,clockGuide,protocolEnd,bracketNotes,referenceGuard,premiseGuard,restart,renderProfiles()]);
   const before=join([loreText,sceneText]);
-  const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices]);
+    const replyOrder=writesStory ? factPolicySupplied
+      ? factReplyOrder
+     : "Answer the player in visible text first. Put any required metadata after the visible reply." : "";
+   const after=join([turns.length&&history?continuationContext(boundStory(turns,history.source,true,history.omittedTurns)):"",input.requiredContext??"",choices,replyOrder]);
    const memory=formatStoryFacts(selectedFacts,true,!!input.story&&!input.story.referenceOnly&&!input.readOnly,roles,episodes,time,{legacy:options.memoryTransport==="legacy",columns:options.memoryTransport==="columns",prefixes:textPrefixes&&options.memoryPrefixes!==false,prefixTables:options.memoryPrefixTables!==false,measure:block=>addedContextTokens(join([before,block,after]))});
   return join([sceneText,memory,after]);
  };

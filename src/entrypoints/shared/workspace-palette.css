@@ -1,94 +1,18 @@
-html:root, :host {
-  color-scheme: dark;
-  --desktop-font: Manrope, "Segoe UI", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
-  --dr-space-5: 20px;
-  --dr-space-8: 32px;
-  --desktop-detail: 8px;
-  --desktop-control: 12px;
-  --desktop-panel: 16px;
-  --desktop-card: 20px;
-  --desktop-reveal: 240ms;
-  --dr-radius: var(--desktop-panel);
-  --dr-motion-fast: 160ms;
-  --dr-ease-out: cubic-bezier(.22, 1, .36, 1);
-
-  --dr-native-scheme: dark;
-  --dr-bg: #171717;
-  --desktop-sidebar: #202020;
-  --dr-panel: #202020;
-  --dr-composer-face: var(--dr-panel);
-  --dr-surface: #262626;
-  --dr-raised: #303030;
-  --dr-text: #f5f5f5;
-  --dr-muted: #aaa;
-  --dr-border: #ffffff14;
-  --dr-border-strong: #ffffff2b;
-  --dr-primary: #ededed;
-  --dr-primary-soft: #303030;
-  --dr-selected: #303030;
-  --desktop-selection: #dbdbdb;
-  --desktop-selection-ink: #262626;
-  --dr-action: #91bdf8;
-  --dr-action-hover: #aacdff;
-  --dr-on-action: #14263f;
-  --desktop-focus: var(--dr-focus);
-  --desktop-overlay: #0008;
-  --dr-button-neutral: var(--dr-surface);
-  --dr-button-neutral-hover: var(--dr-raised);
-  --dr-danger-soft: #352727;
-  --dr-warning-soft: #342d22;
-  --dr-surface-light: none;
-  --dr-action-light: none;
-  --dr-depth-card: none;
-  --dr-depth-panel: 0 8px 24px #0003;
-  --dr-depth-dialog: 0 20px 56px #0005;
-  --dr-action-depth: none;
-  --dr-action-glow: none;
-  --dr-button-glow: none;
-  --dr-retry-glow: none;
-}
-
-@media (prefers-color-scheme: light) {
-  html:root, :host {
-    color-scheme: light;
-    --dr-native-scheme: light;
-    --dr-bg: #fff;
-    --desktop-sidebar: #f5f5f5;
-    --dr-panel: #fff;
-    --dr-composer-face: var(--dr-surface);
-    --dr-surface: #f5f5f5;
-    --dr-raised: #ececec;
-    --dr-text: #242424;
-    --dr-muted: #626262;
-    --dr-border: #00000014;
-    --dr-border-strong: #00000029;
-    --dr-primary: #282828;
-    --dr-primary-soft: #ececec;
-    --dr-selected: #ececec;
-    --desktop-selection: #282828;
-    --desktop-selection-ink: #f5f5f5;
-    --dr-action: #3668b5;
-    --dr-action-hover: #2c5696;
-    --dr-on-action: #fff;
-    --dr-focus: #3064b2;
-    --desktop-overlay: #24242455;
-    --dr-success: #3064a9;
-    --dr-warning: #78500f;
-    --dr-danger: #a13140;
-    --dr-danger-soft: #f9ebed;
-    --dr-warning-soft: #fbf1df;
-    --dr-retry: #f2dbe0;
-    --dr-retry-hover: #eecbd2;
-    --dr-on-retry: #602d38;
-    --dr-depth-panel: 0 8px 24px #0001;
-    --dr-depth-dialog: 0 20px 56px #0002;
-    --dr-choice-positive: #276bc3;
-    --dr-choice-neutral: #626c9b;
-    --dr-choice-negative: #9a3444;
-    --dr-choice-surprise: #683b89;
-  }
-}
-
-@media (max-width: 380px) {
-  html:root, :host { --dr-layout-gutter: var(--dr-space-3); }
+/*
+ * Shell aliases for DeepRole Ink. Colours, spacing and radii live in
+ * design-tokens.css; this file only maps the names used by the Windows client
+ * and the embedded library onto those tokens.
+ */
+:root, :host {
+  --desktop-font: var(--ui-font);
+  --desktop-detail: var(--ui-r-sm);
+  --desktop-control: var(--ui-r-md);
+  --desktop-panel: var(--ui-r-lg);
+  --desktop-card: var(--ui-r-xl);
+  --desktop-reveal: var(--ui-dur-base);
+  --desktop-sidebar: var(--ui-canvas);
+  --desktop-selection: var(--ui-accent);
+  --desktop-selection-ink: var(--ui-on-accent);
+  --desktop-focus: var(--ui-focus);
+  --desktop-overlay: var(--ui-scrim);
 }

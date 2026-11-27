@@ -30,6 +30,7 @@ export type Frame = {
   text?: string;
   reasoning?: string;
   error?: string;
+  reply_retry_id?: string;
 };
 
 export async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -74,6 +75,7 @@ export function chatTranscript(chat: Chat) {
 export function sendNative(
   id: string, draft: string, parent: number | null, edit: number | undefined,
   frame: (name: string, data: Frame) => void,
+  retryId?: string,
 ) {
   const startedAt = Date.now();
   const xhr = new XMLHttpRequest();
@@ -126,6 +128,7 @@ export function sendNative(
     xhr.addEventListener("deeprole-blocked", () => fail("memory-blocked"));
     xhr.send(JSON.stringify({
       chat_session_id: id, prompt: draft, visible: draft, client_started_at: startedAt,
+      ...(retryId ? { reply_retry_id: retryId } : {}),
       ...(edit !== undefined ? { message_id: edit } : { parent_message_id: parent }),
     }));
   });

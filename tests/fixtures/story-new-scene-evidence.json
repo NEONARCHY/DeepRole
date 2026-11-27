@@ -1,0 +1,58 @@
+{
+  "cases": [
+    {
+      "id": "ru-en-move",
+      "old": "Мира хранила сапфировый компас в ящике 14.",
+      "oldDraft": "Запоминаю, где Мира хранит компас.",
+      "draft": "Continue in English. In the next scene, Mira moves the sapphire compass to cabinet 62. Describe the completed move briefly.",
+      "locale": "ru",
+      "newEvidence": ["sapphire compass", "cabinet (?:no\\.? )?62"],
+      "obsolete": ["\\b14\\b"]
+    },
+    {
+      "id": "en-ru-discovery",
+      "old": "Mira found an oval violet stamp in the cellar.",
+      "oldDraft": "I look at the stamp Mira found.",
+      "draft": "Продолжай на русском. Мира осматривает дверной косяк и находит на нём вогнутый ромб. Коротко опиши саму находку.",
+      "locale": "en",
+      "newEvidence": ["вогнут", "ромб"],
+      "obsolete": ["oval violet stamp", "овальн\\S* фиолетов"]
+    },
+    {
+      "id": "ru-ru-discovery",
+      "old": "Мира нашла медную бирку с номером 18.",
+      "oldDraft": "Осматриваю бирку, которую нашла Мира.",
+      "draft": "Мира теперь открывает переплёт и обнаруживает внутри жестяной ключ. Опиши, что она обнаружила.",
+      "locale": "ru",
+      "newEvidence": ["жестян", "ключ"],
+      "obsolete": ["\\b18\\b"]
+    },
+    {
+      "id": "en-en-handoff",
+      "old": "Mira lent Ivo the wooden ruler.",
+      "oldDraft": "I watch Mira hand over the ruler.",
+      "draft": "Now Mira hands Ivo a copper badge stamped with a crescent. Write one short line describing the completed handoff.",
+      "locale": "en",
+      "newEvidence": ["copper badge", "crescent"],
+      "obsolete": ["wooden ruler"]
+    },
+    {
+      "id": "recall",
+      "old": "Mira stored the amber lens in the red drawer.",
+      "oldDraft": "I watch Mira put the amber lens away.",
+      "draft": "Ask Mira to remind me where the amber lens was stored. Keep the scene unchanged and answer only with her short reply.",
+      "locale": "en",
+      "newEvidence": [],
+      "obsolete": []
+    },
+    {
+      "id": "rumor",
+      "old": "Mira found the blue key on the workbench.",
+      "oldDraft": "I note the place where Mira found the key.",
+      "draft": "Продолжай на русском. Мира пересказывает лишь неподтверждённый слух, что синий ключ спрятан под камнем, и говорит, что сама его там не видела.",
+      "locale": "en",
+      "newEvidence": [],
+      "obsolete": []
+    }
+  ]
+}

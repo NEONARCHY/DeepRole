@@ -8,6 +8,7 @@ import { activateWorldGame, captureWorldGame } from "../src/storage/world-game";
 import { exportWorld, cloneWorldPackage } from "../src/storage/worlds";
 import type { DeepRoleDatabase } from "../src/storage/database";
 import type { SceneEntity } from "../src/core/types";
+import cluesContract from "./fixtures/story-stage5-clues-contract.json";
 const dbs: DeepRoleDatabase[]=[];afterEach(async()=>{await Promise.all(dbs.splice(0).map(db=>db.delete()))});
 const fixture=async(n=12)=>{const f=await batchFixture(n);dbs.push(f.db);return f};
 it("defaults off, explicitly enables, and only counts complete post-checkpoint turns",async()=>{
@@ -27,9 +28,14 @@ it("100 turns form bounded batches with no duplicate facts or repeat processing"
  while((await readMemoryBatch(f.input,f.repo)).pendingTurns){const b=await f.prepare();await applyMemoryBatch(b,batchReply(b),f.repo);requests++;await f.play();}
  expect(requests).toBe(9);expect((await f.world()).sharedGame!.facts).toHaveLength(100);assertStoryGraph(await f.repo.rawRecords());
 });
-it.each(["foreign-id","missing-source","wrong-quote","incomplete"])("rejects %s without advancing receipts or memory",async(kind)=>{
+it.each(["foreign-id","missing-source","wrong-quote","missing-risk-wrong-quote","missing-risk-unverified-text","invalid-risk","incomplete"])("rejects %s without advancing receipts or memory",async(kind)=>{
  const f=await fixture(1),b=await f.prepare(),raw=JSON.parse(batchReply(b));
- if(kind==="foreign-id")raw.requestId="foreign";if(kind==="missing-source")raw.results.pop();if(kind==="wrong-quote")raw.results[1].facts[0].quote="Invented";if(kind==="incomplete")raw.results[1].complete=false;
+  const fact = raw.results[1].facts[0];
+  if(kind==="foreign-id")raw.requestId="foreign";if(kind==="missing-source")raw.results.pop();if(kind==="incomplete")raw.results[1].complete=false;
+  if (kind === "wrong-quote" || kind === "missing-risk-wrong-quote") fact.quote = "Invented";
+  if (kind.startsWith("missing-risk-")) delete fact.risk;
+  if (kind === "missing-risk-unverified-text") fact.text = "Invented";
+  if (kind === "invalid-risk") fact.risk = ["ordinary"];
  const before=await f.repo.rawRecords();await expect(applyMemoryBatch(b,JSON.stringify(raw),f.repo)).rejects.toThrow();expect(await f.repo.rawRecords()).toEqual(before);
 });
 it("keeps an independently verified fact in a complete receipt containing a bad quote", async () => {
@@ -38,6 +44,74 @@ it("keeps an independently verified fact in a complete receipt containing a bad 
  await applyMemoryBatch(b,JSON.stringify(raw),f.repo);
  expect((await f.world()).sharedGame!.facts.map(fact=>fact.text)).toEqual([b.parts[1]!.text]);
  expect(await readMemoryBatch(f.input,f.repo)).toMatchObject({pendingTurns:0,processedSources:2});
+});
+it("finishes the workshop batch without silently approving clues missing their risk assessment", async () => {
+  const sample = cluesContract.cases.find(item => item.id === "workshop-lock")!;
+  const f = await fixture(0);
+  for (let turn = 1; turn <= cluesContract.turns; turn++) {
+    await f.add(sample.clues.find(clue => clue.turn === turn)?.text
+      ?? (turn === 2 ? sample.control : sample.filler.replace("{turn}", String(turn))));
+  }
+  const batch = await f.prepare();
+  const raw = batchReply(batch, part => part.role === "assistant" ? {
+    facts: [{ kind: "event", text: part.text, quote: part.text }],
+  } : {});
+  await applyMemoryBatch(batch, raw, f.repo);
+  expect((await f.world()).sharedGame!.facts).toEqual([]);
+  const events = (await f.repo.list<StoryEvent>("story")).filter(event => event.type === "event" && event.memoryBatchSourceRevisionId);
+  expect(events.map(event => [event.memory?.quote, event.automation?.status, event.automation?.reason]).sort())
+    .toEqual(sample.clues.map(clue => [clue.text, "review", "uncertain"]).sort());
+  expect(await readMemoryBatch(f.input, f.repo)).toMatchObject({ pendingTurns: 0, processedSources: 24 });
+  assertStoryGraph(await f.repo.rawRecords());
+});
+it.each(["person", "field"])("keeps profile evidence in review when the %s assessment is missing", async missing => {
+  const f = await fixture(0);
+  const quote = "Rowan grew up by the harbor.";
+  await f.add(quote);
+  const batch = await f.prepare();
+  const raw = batchReply(batch, part => part.role === "assistant" ? {
+    facts: [], people: [{
+      id: "new:Rowan", name: "Rowan", quote, risk: missing === "person" ? undefined : "ordinary",
+      fields: [{ key: "background", text: "grew up by the harbor", quote, risk: missing === "field" ? undefined : "ordinary" }],
+    }],
+  } : {});
+  await applyMemoryBatch(batch, raw, f.repo);
+  expect((await f.repo.list<SceneEntity>("entity")).some(person => person.name === "Rowan")).toBe(false);
+  const review = (await f.repo.list<StoryEvent>("story")).find(event => event.characterCandidate?.name === "Rowan");
+  expect(review?.automation?.status).toBe("review");
+  expect(review?.characterProfile?.proposal.background?.evidence).toEqual([quote]);
+  expect(await readMemoryBatch(f.input, f.repo)).toMatchObject({ pendingTurns: 0, processedSources: 2 });
+  assertStoryGraph(await f.repo.rawRecords());
+});
+it.each(cluesContract.cases)("saves both clues and discards routine proposals from $id", async sample => {
+  const f = await fixture(0);
+  for (let turn = 1; turn <= cluesContract.turns; turn++) {
+    await f.add(sample.clues.find(clue => clue.turn === turn)?.text
+      ?? (turn === 2 ? sample.control : sample.filler.replace("{turn}", String(turn))));
+  }
+  const batch = await f.prepare();
+  await applyMemoryBatch(batch, batchReply(batch), f.repo);
+  const expected = sample.clues.map(clue => clue.text);
+  expect((await f.world()).sharedGame!.facts.map(fact => fact.quote)).toEqual(expected);
+  const events = (await f.repo.list<StoryEvent>("story"))
+    .filter(event => event.type === "event" && event.memoryBatchSourceRevisionId && event.memory);
+  expect(events.map(event => event.memory!.text).sort()).toEqual([...expected].sort());
+  expect(await readMemoryBatch(f.input, f.repo)).toMatchObject({ pendingTurns: 0, processedSources: 24 });
+  assertStoryGraph(await f.repo.rawRecords());
+});
+it("keeps a distinct journey, an attributed rumor and a discovery made during a routine action", async () => {
+  const f = await fixture(0);
+  const isolated = "The keeper walks past bench 7.";
+  const discovery = "The keeper pulled up a sleeve, revealing the crossed-key tattoo.";
+  const rumor = "Mira said the watchman was walking past door 5.";
+  for (const text of [isolated, discovery, rumor, "The keeper walks past door 3.", "The keeper walks past door 4."]) await f.add(text);
+  const batch = await f.prepare();
+  await applyMemoryBatch(batch, batchReply(batch, part => part.role === "assistant" ? {
+    facts: [{ kind: part.text === rumor ? "belief" : "event", text: part.text, quote: part.text, risk: "ordinary" }],
+  } : {}), f.repo);
+  const records = await f.repo.rawRecords();
+  expect((await f.world()).sharedGame!.facts.map(fact => fact.text)).toEqual([isolated, discovery, rumor]);
+  assertStoryGraph(records);
 });
 it("interruptions become visible errors, require explicit retry, and keep unfinished positions",async()=>{
  const f=await fixture(1);await f.prepare();await reconcileMemoryBatch(f.input,new Set(),f.repo);expect(await readMemoryBatch(f.input,f.repo)).toMatchObject({reason:"failed",pendingTurns:1,due:false});await expect(f.prepare()).rejects.toThrow("busy");

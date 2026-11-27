@@ -1,7 +1,8 @@
 const { readFile, writeFile, rename, rm } = require("node:fs/promises");
 const { createHash, randomUUID } = require("node:crypto");
 const path = require("node:path");
-const { modelCatalog, modelProfile, modelLimits, fitMessages, validWindow, availableMemoryBytes, storyMemoryEnabled, withEarlierStoryScene } = require("./model-context.cjs");
+const { modelCatalog, modelProfile, reportedContextWindow, modelLimits, fitMessages, validWindow, availableMemoryBytes,
+  replyMode, replyModelKey, increasedReplyLimit, DEFAULT_REPLY_TOKENS, MAX_REPLY_TOKENS, storyMemoryEnabled, withEarlierStoryScene } = require("./model-context.cjs");
 const { readSpending } = require("./spending.cjs");
 const { recordUsage } = require("./usage.cjs");
 
@@ -21,15 +22,16 @@ async function decryptProviderKey(key, safeStorage) {
 
 async function providerSettings(data, safeStorage) {
   try {
-    const { baseUrl, model, maxTokens, replyStyle = "", contextTokens, key } = JSON.parse(await readFile(destination(data), "utf8"));
+    const config = JSON.parse(await readFile(destination(data), "utf8"));
+    const { baseUrl, model, maxTokens = DEFAULT_REPLY_TOKENS, replyStyle = "", contextTokens, key } = config;
     const secret = await decryptProviderKey(key, safeStorage);
     const hasKey = !!secret;
     const base = endpoint(baseUrl);
     if (hasKey || base.protocol === "http:") void modelCatalog(base, secret, { background: true }).catch(() => undefined);
-    return { baseUrl, model, maxTokens, replyStyle, contextTokens, hasKey };
+    return { baseUrl, model, maxTokens, replyMode: replyMode(config), replyStyle, contextTokens, hasKey };
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    return { baseUrl: "https://api.venice.ai/api/v1", model: "aion-labs-aion-3-5-mini", maxTokens: 4096, replyStyle: "", hasKey: false };
+    return { baseUrl: "https://api.venice.ai/api/v1", model: "aion-labs-aion-3-5-mini", maxTokens: DEFAULT_REPLY_TOKENS, replyMode: "auto", replyStyle: "", hasKey: false };
   }
 }
 
@@ -56,57 +58,90 @@ async function listTextModels(data, input, safeStorage) {
   if (!key && base.protocol === "https:") throw Error("Enter the provider key.");
   const rows = await modelCatalog(base, key);
   if (!rows) throw Error("Model catalog unavailable.");
-  return [...new Set(rows.map(row => row?.id).filter(id => typeof id === "string" && id.length > 0 && id.length <= 240 && id === id.trim()))].sort();
+  const models = new Map();
+  for (const row of rows) {
+    const id = row?.id;
+    if (typeof id === "string" && id.length > 0 && id.length <= 240 && id === id.trim() && !models.has(id)) {
+      models.set(id, { id, contextTokens: reportedContextWindow(row) });
+    }
+  }
+  return [...models.keys()].sort().map(id => models.get(id));
+}
+
+function queueProviderWrite(operation) {
+  const task = providerWrites.then(operation);
+  providerWrites = task.catch(() => undefined);
+  return task;
+}
+
+async function writeProvider(file, config) {
+  const temp = file + ".tmp";
+  try {
+    await writeFile(temp, JSON.stringify(config));
+    await rename(temp, file);
+  } finally { await rm(temp, { force: true }); }
+}
+
+function learnReplyLimit(data, modelKey, tokens) {
+  return queueProviderWrite(async () => {
+    const file = destination(data);
+    const config = JSON.parse(await readFile(file, "utf8"));
+    const latest = Object.entries(config.replyLimits ?? {}).filter(([key]) => key !== modelKey).slice(-63);
+    if ((config.replyLimits?.[modelKey] ?? 0) >= tokens) return;
+    await writeProvider(file, { ...config, replyLimits: Object.fromEntries([...latest, [modelKey, tokens]]) });
+  });
 }
 
 function saveProvider(data, input, safeStorage) {
-  const task = providerWrites.then(async () => {
+  return queueProviderWrite(async () => {
     const file = destination(data);
     const baseUrl = endpoint(input.baseUrl).href.replace(/\/+$/, "");
     const model = input.model.trim();
     const value = input.key.trim();
-    const maxTokens = Number(input.maxTokens);
+    const requestedTokens = Number(input.maxTokens);
+    const mode = replyMode({ replyMode: input.replyMode, maxTokens: requestedTokens });
+    const validReplyTokens = Number.isSafeInteger(requestedTokens) && requestedTokens >= 256 && requestedTokens <= MAX_REPLY_TOKENS;
+    const maxTokens = validReplyTokens ? requestedTokens : DEFAULT_REPLY_TOKENS;
     const contextTokens = input.contextTokens;
     const replyStyle = input.replyStyle?.trim();
     if (!input.clearKey && /[\s\p{Cf}]/u.test(value)) throw Error("Use one API key.");
     if (!model || model.length > 240 || value.length > 4096 || (replyStyle?.length ?? 0) > 2000
         || (contextTokens != null && !validWindow(contextTokens))
-        || !Number.isSafeInteger(maxTokens) || maxTokens < 256 || maxTokens > 32_768) throw Error("Invalid model configuration");
+        || (mode === "manual" && !validReplyTokens)) throw Error("Invalid model configuration");
     let key;
     let previousReplyStyle = "";
     let previousContextTokens;
+    let replyLimits;
     try {
       const previous = JSON.parse(await readFile(file, "utf8"));
       previousReplyStyle = previous.replyStyle ?? "";
       previousContextTokens = previous.model === model && previous.baseUrl === baseUrl ? previous.contextTokens : undefined;
+      replyLimits = previous.replyLimits;
       if (new URL(previous.baseUrl).origin === new URL(baseUrl).origin) key = previous.key;
     } catch (error) { if (error.code !== "ENOENT") throw error; }
     if (input.clearKey) key = undefined;
     else if (value) key = (await safeStorage.encryptStringAsync(value)).toString("base64");
-    const temp = file + ".tmp";
-    try {
-      await writeFile(temp, JSON.stringify({
-        baseUrl, model, maxTokens, replyStyle: replyStyle ?? previousReplyStyle,
-        contextTokens: contextTokens === undefined ? previousContextTokens : contextTokens ?? undefined, key,
-      }));
-      await rename(temp, file);
-    } finally { await rm(temp, { force: true }); }
+    await writeProvider(file, {
+      baseUrl, model, maxTokens, replyMode: mode, replyLimits, replyStyle: replyStyle ?? previousReplyStyle,
+      contextTokens: contextTokens === undefined ? previousContextTokens : contextTokens ?? undefined, key,
+    });
     return providerSettings(data, safeStorage);
   });
-  providerWrites = task.catch(() => undefined);
-  return task;
 }
 
 const errorResponse = (error, status) => Response.json({ error }, { status });
 const contextRejected = value => /context_length_exceeded|context[_ ]window|maximum context|too many (?:input )?tokens/i.test(value);
-const styleFor = (config, storyMemory = false) => ({
+const styleFor = (config, storyMemory = false, russianScene = false) => ({
   role: "system",
   content: [
+    ...(russianScene ? ['Сцену и диалоги пиши только по-русски. В <deeprole_characters> для простого нового события передай kind "event", risk "ordinary" и sentence (номер предложения, с 1). Без text и quote.'] : []),
     "Apply this style guidance only to player-facing roleplay. Follow explicit player instructions for the current turn and keep required structured output intact.",
     config.replyStyle
       ? config.replyStyle + "\nWrite requested styles using literal Markdown: *italics*, **bold**, `monospace`, and > at the start of a quote line. Use Unicode for emoji. Keep evidence quotes verbatim."
       : defaultReplyStyle,
-    ...(storyMemory ? ["Write the scene first, then <deeprole_characters>. For a new ordinary event use {\"kind\":\"event\",\"anchor\":\"<exact words from the scene>\",\"risk\":\"ordinary\"}. Replace the placeholder with three or more exact words from one complete scene statement. Use verbatim quotes for other facts. Claims and tasks are for real changes only. Do not echo old memory, player text or choices."] : []),
+    ...(storyMemory && !russianScene ? [
+      "Write the scene first, then <deeprole_characters>. For a simple new fact, copy a complete sentence of the visible reply verbatim into quote, then set kind and risk. Omit text if it matches quote. Never paraphrase or translate the quote. Earlier memory, player text and choices are reference only. Claims and tasks are for real changes only.",
+    ] : []),
   ].join("\n\n"),
 });
 
@@ -127,33 +162,56 @@ async function memoryBudget(data, safeStorage, bytes, signal) {
   return availableMemoryBytes(system, modelLimits(config, profile), bytes);
 }
 
-async function complete(data, safeStorage, messages, signal, beforeSend, onDispatch) {
+async function complete(data, safeStorage, messages, signal, beforeSend, onDispatch, retry) {
   let config;
   try { config = JSON.parse(await readFile(destination(data), "utf8")); }
   catch { return errorResponse("model-unconfigured", 424); }
   try {
     const base = endpoint(config.baseUrl);
     const key = await decryptProviderKey(config.key, safeStorage);
+    const modelKey = replyModelKey(config);
+    const retryScope = createHash("sha256").update(JSON.stringify([modelKey, key, config.replyStyle, config.contextTokens])).digest("hex");
+    if (retry && (retry.scope !== retryScope || replyMode(config) !== "auto")) return errorResponse("model-retry-stale", 409);
     if (!key && base.protocol === "https:") return errorResponse("model-key-needed", 424);
     const requestUrl = new URL(base.href.replace(/\/$/, "") + "/chat/completions");
     const venice = base.hostname === "api.venice.ai";
-    const current = messages.at(-1).content;
+    const turn = messages.at(-1);
+    const current = turn.content;
     const storyMemory = storyMemoryEnabled(current);
-    const system = styleFor(config, storyMemory);
+    const draftStart = current.indexOf("\n\n[User message]\n");
+    const ruleStart = current.lastIndexOf("\n\n", draftStart - 1);
+    // Keep the compiler's language instruction closest to the visible draft.
+    // Moving the same line leaves the message size and recorded draft intact.
+    const languageRule = storyMemory && draftStart > ruleStart && ruleStart >= 0
+      ? current.slice(ruleStart + 2, draftStart) : "";
+    const russianScene = languageRule.startsWith("Ответ по-русски.") && !languageRule.includes("\n");
+    const revisedPrompt = retry?.prompt ?? (russianScene
+      ? current.slice(0, ruleStart) + current.slice(draftStart) + "\n\n" + languageRule : current);
+    const requestMessages = revisedPrompt === current ? messages : [...messages.slice(0, -1), { ...turn, content: revisedPrompt }];
+    const system = styleFor(config, storyMemory, russianScene);
     let profile = await profileForDraft(base, key, config, system, Buffer.byteLength(current, "utf8"), signal);
-    let limits = modelLimits(config, profile);
-    let initial = fitMessages(system, messages, limits);
+    if (retry && !profile) profile = await modelProfile(base, key, config.model, signal, { wait: true });
+    let limits = modelLimits(config, profile, retry?.tokens);
+    let initial = fitMessages(system, requestMessages, limits);
     if (initial?.omittedMessages && !profile && !validWindow(config.contextTokens)) {
       // A cold fallback should not discard dialogue that fits the actual window.
       profile = await modelProfile(base, key, config.model, signal, { wait: true });
-      limits = modelLimits(config, profile);
-      initial = fitMessages(system, messages, limits);
+      limits = modelLimits(config, profile, retry?.tokens);
+      initial = fitMessages(system, requestMessages, limits);
     }
+    if (retry && (!initial || limits.replyTokens <= retry.previousTokens)) return errorResponse("model-retry-stale", 409);
     if (!initial) return errorResponse("model-context-limit", 400);
-    const plan = storyMemory ? withEarlierStoryScene(initial, messages, limits) : initial;
+    const plan = storyMemory && !retry ? withEarlierStoryScene(initial, requestMessages, limits) : initial;
     signal.throwIfAborted();
     const usage = { model: config.model, venice, pricing: profile?.model_spec?.pricing };
-    await beforeSend(plan, usage);
+    const reportPlan = fitted => beforeSend(fitted, usage, {
+      scope: retryScope, modelKey, prompt: fitted.messages.at(-1).content,
+      nextTokens: replyMode(config) === "auto" ? async () => {
+        const catalogue = profile ?? await modelProfile(base, key, config.model, signal, { wait: true });
+        return increasedReplyLimit(config, catalogue, fitted);
+      } : undefined,
+    });
+    await reportPlan(plan);
     const body = {
       model: config.model,
       messages: plan.messages.map(({ role, content }) => ({ role, content })),
@@ -188,9 +246,10 @@ async function complete(data, safeStorage, messages, signal, beforeSend, onDispa
     if (contextRejected(validation) && plan.messages.length > 2) {
       // Retry only after explicit pre-generation validation. Keep the current
       // turn and selected world context intact when dropping earlier dialogue.
-      const reduced = fitMessages(system, [messages.at(-1)], limits);
+      const reduced = fitMessages(system, [requestMessages.at(-1)], limits);
+      if (!reduced) return errorResponse("model-context-limit", 400);
       signal.throwIfAborted();
-      await beforeSend({ ...reduced, omittedMessages: messages.length - 1 }, usage);
+      await reportPlan({ ...reduced, omittedMessages: messages.length - 1 });
       body.messages = reduced.messages.map(({ role, content }) => ({ role, content }));
       response = await send();
       validation = [400, 422].includes(response.status) ? (await response.text()).slice(0, 5000) : "";
@@ -316,4 +375,4 @@ async function imageRequest(request, grants, data) {
   } catch { return errorResponse("image-request-failed", 502); }
 }
 
-module.exports = { providerSettings, listTextModels, saveProvider, complete, veniceCharges, veniceBalances, imageRequest, imageReceipt, memoryBudget };
+module.exports = { providerSettings, listTextModels, saveProvider, complete, learnReplyLimit, veniceCharges, veniceBalances, imageRequest, imageReceipt, memoryBudget };
